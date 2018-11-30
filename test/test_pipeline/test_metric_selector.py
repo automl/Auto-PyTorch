@@ -3,10 +3,10 @@ __version__ = "0.0.1"
 __license__ = "BSD"
 
 import unittest
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.metric_selector import MetricSelector
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
 
-from autonet.components.metrics.standard_metrics import accuracy, auc_metric, mean_distance
+from autoPyTorch.components.metrics.standard_metrics import accuracy, auc_metric, mean_distance
 
 class TestMetricSelectorMethods(unittest.TestCase):
 

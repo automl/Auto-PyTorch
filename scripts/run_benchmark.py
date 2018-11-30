@@ -3,8 +3,8 @@
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..")))
 
-from autonet.utils.config.config_file_parser import ConfigFileParser
-from autonet.utils.benchmarking.benchmark import Benchmark
+from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
+from autoPyTorch.utils.benchmarking.benchmark import Benchmark
 
 import argparse
 

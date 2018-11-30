@@ -1,0 +1,3 @@
+from autoPyTorch.core.autonet_classes.autonet_feature_classification import AutoNetClassification
+from autoPyTorch.core.autonet_classes.autonet_feature_regression import AutoNetRegression
+from autoPyTorch.core.autonet_classes.autonet_feature_multilabel import AutoNetMultilabel

@@ -7,9 +7,9 @@ import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
 import logging
 
-from autonet import AutoNetClassification
+from autoPyTorch import AutoNetClassification
 
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch.data_management.data_manager import DataManager
 
 dm = DataManager(verbose=1)
 dataset_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'datasets'))

@@ -3,8 +3,8 @@ __version__ = "0.0.1"
 __license__ = "BSD"
 
 import unittest
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.log_functions_selector import LogFunctionsSelector
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.log_functions_selector import LogFunctionsSelector
 
 class TestLogFunctionSelectorMethods(unittest.TestCase):
 

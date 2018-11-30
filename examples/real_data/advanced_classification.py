@@ -7,12 +7,12 @@ import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
 import logging
 
-from autonet import AutoNetClassification, AutoNetMultilabel
-import autonet.pipeline.nodes as autonet_nodes
-from autonet.components.metrics.additional_logs import test_result
-import autonet.components.metrics as autonet_metrics
+from autoPyTorch import AutoNetClassification, AutoNetMultilabel
+import autoPyTorch.pipeline.nodes as autonet_nodes
+from autoPyTorch.components.metrics.additional_logs import test_result
+import autoPyTorch.components.metrics as autonet_metrics
 
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch.data_management.data_manager import DataManager
 
 dm = DataManager(verbose=1)
 dataset_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'datasets'))

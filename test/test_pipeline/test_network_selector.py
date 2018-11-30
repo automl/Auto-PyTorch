@@ -6,11 +6,11 @@ import unittest
 import torch
 import torch.nn as nn
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.network_selector import NetworkSelector
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
 
-from autonet.components.networks.feature.mlpnet import MlpNet
-from autonet.components.networks.feature.shapedmlpnet import ShapedMlpNet
+from autoPyTorch.components.networks.feature.mlpnet import MlpNet
+from autoPyTorch.components.networks.feature.shapedmlpnet import ShapedMlpNet
 
 class TestNetworkSelectorMethods(unittest.TestCase):
 

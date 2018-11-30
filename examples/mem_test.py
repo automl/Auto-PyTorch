@@ -7,11 +7,11 @@ import os
 import sys
 import logging
 
-from autonet import AutoNetClassification
+from autoPyTorch import AutoNetClassification
 
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch.data_management.data_manager import DataManager
 
-from autonet.utils.mem_test_thread import MemoryLogger
+from autoPyTorch.utils.mem_test_thread import MemoryLogger
 
 dm = DataManager(verbose=1)
 dataset_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'datasets'))

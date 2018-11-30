@@ -9,10 +9,10 @@ import time
 import torch
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from autonet.utils.configspace_wrapper import ConfigWrapper
-from autonet.pipeline.nodes.resampling_strategy_selector import ResamplingStrategySelector
+from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.pipeline.nodes.resampling_strategy_selector import ResamplingStrategySelector
 from numpy.testing import assert_array_almost_equal
-from autonet.components.preprocessing.resampling import TargetSizeStrategyUpsample, \
+from autoPyTorch.components.preprocessing.resampling import TargetSizeStrategyUpsample, \
     RandomOverSamplingWithReplacement, RandomUnderSamplingWithReplacement
 
 

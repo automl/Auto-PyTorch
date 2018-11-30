@@ -7,13 +7,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.network_selector import NetworkSelector
-from autonet.pipeline.nodes.optimizer_selector import OptimizerSelector
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
+from autoPyTorch.pipeline.nodes.optimizer_selector import OptimizerSelector
 
-from autonet.components.networks.feature.mlpnet import MlpNet
-from autonet.components.networks.feature.shapedmlpnet import ShapedMlpNet
-from autonet.components.optimizer.optimizer import AutoNetOptimizerBase, AdamOptimizer, SgdOptimizer
+from autoPyTorch.components.networks.feature.mlpnet import MlpNet
+from autoPyTorch.components.networks.feature.shapedmlpnet import ShapedMlpNet
+from autoPyTorch.components.optimizer.optimizer import AutoNetOptimizerBase, AdamOptimizer, SgdOptimizer
 
 class TestOptimizerSelectorMethods(unittest.TestCase):
 

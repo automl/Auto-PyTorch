@@ -9,8 +9,8 @@ import time
 import torch
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from autonet.utils.configspace_wrapper import ConfigWrapper
-from autonet.pipeline.nodes.normalization_strategy_selector import NormalizationStrategySelector
+from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.pipeline.nodes.normalization_strategy_selector import NormalizationStrategySelector
 from numpy.testing import assert_array_almost_equal
 from sklearn.preprocessing import MinMaxScaler
 

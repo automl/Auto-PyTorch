@@ -4,8 +4,8 @@ __license__ = "BSD"
 
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
-from autonet import AutoNetClassification
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch import AutoNetClassification
+from autoPyTorch.data_management.data_manager import DataManager
 
 # Note: You can write your own datamanager! Call fit with respective train, valid data (numpy matrices) 
 dm = DataManager()

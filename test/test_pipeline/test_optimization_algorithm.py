@@ -10,11 +10,11 @@ import torch
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from autonet.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.base.pipeline_node import PipelineNode
-from autonet.pipeline.nodes.optimization_algorithm import OptimizationAlgorithm
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
+from autoPyTorch.pipeline.nodes.optimization_algorithm import OptimizationAlgorithm
 
 class TestOptimizationAlgorithmMethods(unittest.TestCase):
 

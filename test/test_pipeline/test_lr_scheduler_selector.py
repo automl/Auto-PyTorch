@@ -7,15 +7,15 @@ import torch
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.nn as nn
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.network_selector import NetworkSelector
-from autonet.pipeline.nodes.optimizer_selector import OptimizerSelector
-from autonet.pipeline.nodes.lr_scheduler_selector import LearningrateSchedulerSelector
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
+from autoPyTorch.pipeline.nodes.optimizer_selector import OptimizerSelector
+from autoPyTorch.pipeline.nodes.lr_scheduler_selector import LearningrateSchedulerSelector
 
-from autonet.components.networks.feature.mlpnet import MlpNet
-from autonet.components.networks.feature.shapedmlpnet import ShapedMlpNet
-from autonet.components.optimizer.optimizer import AdamOptimizer, SgdOptimizer
-from autonet.components.lr_scheduler.lr_schedulers import SchedulerStepLR, SchedulerExponentialLR
+from autoPyTorch.components.networks.feature.mlpnet import MlpNet
+from autoPyTorch.components.networks.feature.shapedmlpnet import ShapedMlpNet
+from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, SgdOptimizer
+from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerStepLR, SchedulerExponentialLR
 
 class TestLearningrateSchedulerSelectorMethods(unittest.TestCase):
 

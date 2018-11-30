@@ -6,9 +6,9 @@ import unittest
 import torch
 import torch.nn as nn
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.nodes.loss_module_selector import LossModuleSelector
-from autonet.components.preprocessing.loss_weight_strategies import LossWeightStrategyWeighted
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.nodes.loss_module_selector import LossModuleSelector
+from autoPyTorch.components.preprocessing.loss_weight_strategies import LossWeightStrategyWeighted
 
 class TestLossSelectorMethods(unittest.TestCase):
 

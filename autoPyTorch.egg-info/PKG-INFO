@@ -1,0 +1,17 @@
+Metadata-Version: 1.2
+Name: autoPyTorch
+Version: 0.0.1
+Summary: Auto-PyTorch searches neural architectures using BO-HB
+Home-page: UNKNOWN
+Author: AutoML Freiburg
+Author-email: urbanm@informatik.uni-freiburg.de
+License: 3-clause BSD
+Description: UNKNOWN
+Keywords: machine learning algorithm configuration hyperparameter optimization tuning neural architecture deep learning
+Platform: Linux
+Classifier: Development Status :: 3 - Alpha
+Classifier: Topic :: Utilities
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: License :: OSI Approved :: 3-clause BSD
+Requires-Python: >=3

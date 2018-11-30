@@ -12,11 +12,11 @@ with open('optional-requirements.txt', 'r') as f:
         optional_requirements.append(line.strip())
 
 setuptools.setup(
-    name="autonet",
+    name="autoPyTorch",
     version="0.0.1",
-    author="Max Dippel, Michael Burkart and Matthias Urban",
-    author_email="[dippelm, burkartm, urbanm]@informatik.uni-freiburg.de",
-    description=("Autonet searches neural architectures using BO-HB"),
+    author="AutoML Freiburg",
+    author_email="urbanm@informatik.uni-freiburg.de",
+    description=("Auto-PyTorch searches neural architectures using BO-HB"),
     license="3-clause BSD",
     keywords="machine learning algorithm configuration hyperparameter "
              "optimization tuning neural architecture deep learning",
@@ -32,5 +32,5 @@ setuptools.setup(
 	python_requires='>=3',
     platforms=['Linux'],
     install_requires=requirements,
-    extras_require=optional_requirements
+#    extras_require=optional_requirements
 )

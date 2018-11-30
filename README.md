@@ -6,8 +6,8 @@ Clone repository
 
 ```sh
 $ cd install/path
-$ git clone https://bitbucket.org/aadfreiburg/autonet.git
-$ cd autonet
+$ git clone https://github.com/automl/Auto-PyTorch.git
+$ cd Auto-PyTorch
 ```
 If you want to contribute to this repository switch to our current develop branch
 
@@ -21,7 +21,7 @@ https://pytorch.org/
 Install autonet
 
 ```sh
-$ python setup.py
+$ python setup.py install
 ```
 
 
@@ -30,11 +30,22 @@ $ python setup.py
 In a nutshell:
 
 ```py
-1: from autonet import AutoNetClassification
-2: 
-3: autonet = AutoNetClassification()
-4: autonet.fit(X_train, Y_train)
-5: Y_pred = autonet.predict(X_test)
+from autoPyTorch import AutoNetClassification
+
+# data and metric imports
+import sklearn.model_selection
+import sklearn.datasets
+import sklearn.metrics
+X, y = sklearn.datasets.load_digits(return_X_y=True)
+X_train, X_test, y_train, y_test = \
+        sklearn.model_selection.train_test_split(X, y, random_state=1)
+
+# running Auto-PyTorch
+autoPyTorch = AutoNetClassification(log_level='info')
+autoPyTorch.fit(X_train, y_train)
+y_pred = autoPyTorch.predict(X_test)
+
+print("Accuracy score", sklearn.metrics.accuracy_score(y_test, y_pred))
 ```
 
 More examples with datasets:

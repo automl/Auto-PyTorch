@@ -5,12 +5,12 @@ __license__ = "BSD"
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", '..')))
 
-from autonet import AutoNetClassification
-from autonet.pipeline.nodes.log_functions_selector import LogFunctionsSelector
+from autoPyTorch import AutoNetClassification
+from autoPyTorch.pipeline.nodes.log_functions_selector import LogFunctionsSelector
 
-from autonet.components.metrics.additional_logs import test_result
+from autoPyTorch.components.metrics.additional_logs import test_result
 
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch.data_management.data_manager import DataManager
 
 # Note: You can write your own datamanager! Call fit with respective train, valid data (numpy matrices) 
 dm = DataManager()

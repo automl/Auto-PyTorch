@@ -9,8 +9,8 @@ import time
 import torch
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from autonet.utils.configspace_wrapper import ConfigWrapper
-from autonet.pipeline.nodes.imputation import Imputation
+from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.pipeline.nodes.imputation import Imputation
 from numpy.testing import assert_array_equal
 
 

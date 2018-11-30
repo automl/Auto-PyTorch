@@ -4,8 +4,8 @@ __license__ = "BSD"
 
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
-from autonet import AutoNetRegression
-from autonet.data_management.data_manager import DataManager
+from autoPyTorch import AutoNetRegression
+from autoPyTorch.data_management.data_manager import DataManager
 
 # Note: You can write your own datamanager! Call fit train, valid data (numpy matrices) 
 dm = DataManager()

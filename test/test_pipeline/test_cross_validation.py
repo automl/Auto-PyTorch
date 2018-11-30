@@ -9,12 +9,12 @@ import time
 import torch
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from autonet.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 
-from autonet.pipeline.base.pipeline import Pipeline
-from autonet.pipeline.base.pipeline_node import PipelineNode
-from autonet.pipeline.nodes.cross_validation import CrossValidation
-from autonet.training.budget_types import BudgetTypeEpochs
+from autoPyTorch.pipeline.base.pipeline import Pipeline
+from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
+from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
+from autoPyTorch.training.budget_types import BudgetTypeEpochs
 
 class TestCrossValidationMethods(unittest.TestCase):
 
