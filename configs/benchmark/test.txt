@@ -1,0 +1,7 @@
+result_dir=benchmark_results
+instances=datasets/classification
+autonet_configs=[configs/autonet/test.txt]
+problem_type=feature_classification
+log_level=debug
+num_runs=2
+test_split=0.2

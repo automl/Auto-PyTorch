@@ -1,0 +1,7 @@
+min_budget=5
+max_budget=5
+num_iterations=2
+min_workers=1
+log_level=debug
+budget_type=epochs
+hyperparameter_search_space_updates=configs/configspace/minimlp.txt

@@ -1,0 +1,3 @@
+network_interface_name=ib0
+working_dir=/data/workspace
+result_dir=/data/tmp/benchmark_results

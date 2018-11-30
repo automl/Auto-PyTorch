@@ -1,0 +1,10 @@
+"id", "checking_status","duration","class"
+1, '<0',6,good
+2, '0<=X<200',48,bad
+3, 'no checking',12,good
+4, '<0',42,good
+5, '<0',24,bad
+6, 'no checking',36,good
+7, 'no checking',24,good
+8, '0<=X<200',36,good
+9, 'no checking',12,excellent

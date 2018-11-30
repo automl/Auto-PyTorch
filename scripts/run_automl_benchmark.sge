@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# BASH Shell
+#$ -S /bin/bash 
+# Output files (stdout and stderr)
+#$ -o /home/urbanm/autonet.stdout -e /home/urbanm/autonet.stderr 
+# Execute  the  job  from  the  current  working  directory 
+#$ -cwd
+# send no mail for events (e.g., start or end of job)
+#$ -m n
+# Array Job with 4 subjobs
+#$ -t 1-4
+
+ulimit -m 8000000
+python3 scripts/run_benchmark.py configs/benchmark/automl.txt --run_id $JOB_ID --task_id $SGE_TASK_ID --partial_benchmark 0,0,0 --host_config configs/hosts/meta.txt

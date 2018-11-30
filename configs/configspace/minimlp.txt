@@ -1,0 +1,2 @@
+NetworkSelector mlpnet:num_layers [2,4]
+TrainNode batch_size [5,10]

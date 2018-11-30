@@ -1,0 +1,4 @@
+SimpleITK
+openml
+matplotlib
+tensorboard_logger

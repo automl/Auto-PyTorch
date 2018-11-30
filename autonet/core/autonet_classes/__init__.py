@@ -1,0 +1,3 @@
+from autonet.core.autonet_classes.autonet_feature_classification import AutoNetClassification
+from autonet.core.autonet_classes.autonet_feature_regression import AutoNetRegression
+from autonet.core.autonet_classes.autonet_feature_multilabel import AutoNetMultilabel

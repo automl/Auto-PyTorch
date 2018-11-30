@@ -1,0 +1,2 @@
+network_interface_name=ib0
+working_dir=./working_dir
