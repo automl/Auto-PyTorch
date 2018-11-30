@@ -1,0 +1,23 @@
+
+# Visual Studio
+*.vs/*
+
+# Visual Studio Code
+*.vscode/*
+
+# Python
+*__pycache__/
+
+# Temp
+*tmp_models/
+
+#Results
+benchmark_results/
+benchmark_results_cluster/
+ns_credentials*/
+configs.json
+results.json
+
+# Build
+*build/
+*autonet.egg-info
