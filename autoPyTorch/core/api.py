@@ -166,7 +166,7 @@ class AutoNet():
 
         # reverse one hot encoding 
         OHE = self.pipeline[OneHotEncoding.get_name()]
-        result = OHE.reverse_transform_y(Y_pred, OHE.fit_output['y_one_hot_encoder']).reshape(1, -1)
+        result = OHE.reverse_transform_y(Y_pred, OHE.fit_output['y_one_hot_encoder'])
         return result if not return_probabilities else (result, Y_pred)
 
     def score(self, X_test, Y_test):
