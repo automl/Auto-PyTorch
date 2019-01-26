@@ -71,6 +71,16 @@ class PipelineNode(Node):
         return []
 
     # VIRTUAL
+    def get_pipeline_config_conditions(self):
+        """Get the conditions on the pipeline config (e.g. max_budget > min_budget)
+        
+        Returns:
+            List[ConfigCondition] -- list of functions, that take a pipeline config and raise an Error, if faulty configuration is detected.
+        """
+
+        return []
+
+    # VIRTUAL
     def get_hyperparameter_search_space(self, **pipeline_config):
         """Get hyperparameter that should be optimized.
         
