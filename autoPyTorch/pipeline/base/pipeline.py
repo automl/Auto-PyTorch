@@ -2,6 +2,7 @@ import time
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.pipeline.base.node import Node
 import ConfigSpace
+import traceback
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -93,9 +94,20 @@ class Pipeline():
 
     def get_pipeline_config(self, throw_error_if_invalid=True, **pipeline_config):
         options = self.get_pipeline_config_options()
-            
+        conditions = self.get_pipeline_config_conditions()
+
         parser = ConfigFileParser(options)
         pipeline_config = parser.set_defaults(pipeline_config, throw_error_if_invalid=throw_error_if_invalid)
+
+        for c in conditions:
+            try:
+                c(pipeline_config)
+            except Exception as e:
+                if throw_error_if_invalid:
+                    raise
+                print(e)
+                traceback.print_exc()
+
         return pipeline_config
 
 
@@ -109,6 +121,17 @@ class Pipeline():
             options += node.get_pipeline_config_options()
 
         return options
+    
+    def get_pipeline_config_conditions(self):
+        if (self._parent_pipeline is not None):
+            return self._parent_pipeline.get_pipeline_config_options()
+        
+        conditions = []
+
+        for node in self._pipeline_nodes.values():
+            conditions += node.get_pipeline_config_conditions()
+        
+        return conditions
 
 
     def print_config_space(self, **pipeline_config):

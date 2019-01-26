@@ -14,6 +14,7 @@ from hpbandster.core.result import (json_result_logger,
 from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
+from autoPyTorch.utils.config.config_condition import ConfigCondition
 
 from autoPyTorch.core.hpbandster_extensions.bohb_ext import BOHBExt
 from autoPyTorch.core.hpbandster_extensions.hyperband_ext import HyperBandExt
@@ -141,6 +142,11 @@ class OptimizationAlgorithm(SubPipelineNode):
             ConfigOption("use_tensorboard_logger", default=False, type=to_bool),
         ]
         return options
+    
+    def get_pipeline_config_conditions(self):
+        return [
+            ConfigCondition.get_larger_equals_condition("max budget must be greater than or equal to min budget", "max_budget", "min_budget")
+        ]
 
     def get_default_network_interface_name(self):
         try:
@@ -193,9 +199,12 @@ class OptimizationAlgorithm(SubPipelineNode):
 
 
     def parse_results(self, result_logger_dir):
-        res = logged_results_to_HBS_result(result_logger_dir)
-        id2config = res.get_id2config_mapping()
-        incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
+        try:
+            res = logged_results_to_HBS_result(result_logger_dir)
+            id2config = res.get_id2config_mapping()
+            incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
+        except Exception as e:
+            raise RuntimeError("Error parsing results. Check results.json and output for more details. An empty results.json is usually caused by a misconfiguration of AutoNet.")
         
         if (len(incumbent_trajectory['config_ids']) == 0):
             return dict()
