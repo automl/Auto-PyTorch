@@ -144,8 +144,12 @@ class OptimizationAlgorithm(SubPipelineNode):
         return options
     
     def get_pipeline_config_conditions(self):
+        def check_runtime(pipeline_config):
+            return pipeline_config["budget_type"] != "time" or pipeline_config["max_runtime"] >= pipeline_config["max_budget"]
+
         return [
-            ConfigCondition.get_larger_equals_condition("max budget must be greater than or equal to min budget", "max_budget", "min_budget")
+            ConfigCondition.get_larger_equals_condition("max budget must be greater than or equal to min budget", "max_budget", "min_budget"),
+            ConfigCondition("When time is used as budget, the max_runtime must be larger than the max_budget", check_runtime)
         ]
 
     def get_default_network_interface_name(self):
