@@ -6,6 +6,7 @@ import unittest
 import torch
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.nn as nn
+import numpy as np
 
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
@@ -19,7 +20,7 @@ from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerStepLR, S
 
 class TestLearningrateSchedulerSelectorMethods(unittest.TestCase):
 
-    def test_selector(self):
+    def test_lr_scheduler_selector(self):
         pipeline = Pipeline([
             NetworkSelector(),
             OptimizerSelector(),
@@ -41,10 +42,11 @@ class TestLearningrateSchedulerSelectorMethods(unittest.TestCase):
 
 
         pipeline_config = pipeline.get_pipeline_config()
+        pipeline_config["random_seed"] = 42
         hyper_config = pipeline.get_hyperparameter_search_space().sample_configuration()
 
         pipeline.fit_pipeline(hyperparameter_config=hyper_config, pipeline_config=pipeline_config,
-                                X_train=torch.rand(3,3), Y_train=torch.rand(3, 2), embedding=nn.Sequential(), training_techniques=[])
+                                X=torch.rand(3,3), Y=torch.rand(3, 2), embedding=nn.Sequential(), training_techniques=[], train_indices=np.array([0, 1, 2]))
 
         sampled_lr_scheduler = pipeline[lr_scheduler_selector.get_name()].fit_output['training_techniques'][0].training_components['lr_scheduler']
 

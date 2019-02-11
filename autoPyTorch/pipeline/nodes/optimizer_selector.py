@@ -35,7 +35,7 @@ class OptimizerSelector(PipelineNode):
     def remove_optimizer(self, name):
         del self.optimizer[name]
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 

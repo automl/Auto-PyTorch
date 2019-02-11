@@ -8,8 +8,7 @@ import traceback
 import logging
 
 from hpbandster.core.nameserver import NameServer, nic_name_to_host
-from hpbandster.core.result import (json_result_logger,
-                                    logged_results_to_HBS_result)
+from hpbandster.core.result import logged_results_to_HBS_result
 
 from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
 from autoPyTorch.pipeline.base.pipeline import Pipeline
@@ -51,36 +50,36 @@ class OptimizationAlgorithm(SubPipelineNode):
 
         super(OptimizationAlgorithm, self).__init__(optimization_pipeline_nodes)
 
-        self.algorithms = dict()
-        self.algorithms["bohb"] = BOHBExt
-        self.algorithms["hyperband"] = HyperBandExt
+        self.algorithms = {"bohb": BOHBExt,
+                           "hyperband": HyperBandExt}
 
         self.budget_types = dict()
         self.budget_types["time"] = BudgetTypeTime
         self.budget_types["epochs"] = BudgetTypeEpochs
-        
-        self.logger = logging.getLogger('autonet')
 
-    def fit(self, pipeline_config, X_train, Y_train, X_valid, Y_valid, refit=None):
+    def fit(self, pipeline_config, X_train, Y_train, X_valid, Y_valid, result_loggers, dataset_info, refit=None):
+        logger = logging.getLogger('autonet')
         res = None
 
         run_id, task_id = pipeline_config['run_id'], pipeline_config['task_id']
 
-        if pipeline_config['use_tensorboard_logger']:            
+        if pipeline_config['use_tensorboard_logger'] and not refit:            
             import tensorboard_logger as tl
             directory = os.path.join(pipeline_config['result_logger_dir'], "worker_logs_" + str(task_id))
             os.makedirs(directory, exist_ok=True)
             tl.configure(directory, flush_secs=5)
 
         if (refit is not None):
+            logger.info("Start Refitting")
             res = self.sub_pipeline.fit_pipeline( 
                                     hyperparameter_config=refit["hyperparameter_config"], pipeline_config=pipeline_config, 
                                     X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid, 
-                                    budget=refit["budget"], budget_type=self.budget_types[pipeline_config['budget_type']],
-                                    optimize_start_time=time.time())
+                                    budget=refit["budget"], rescore=refit["rescore"], budget_type=self.budget_types[pipeline_config['budget_type']],
+                                    optimize_start_time=time.time(), refit=True, hyperparameter_config_id=None, dataset_info=dataset_info)
+            logger.info("Done Refitting")
             
             return {'final_metric_score': res['loss'],
-                    'optimized_hyperparamater_config': refit["hyperparameter_config"],
+                    'optimized_hyperparameter_config': refit["hyperparameter_config"],
                     'budget': refit['budget']}
 
         try:
@@ -93,14 +92,17 @@ class OptimizationAlgorithm(SubPipelineNode):
                 
 
             self.run_worker(pipeline_config=pipeline_config, run_id=run_id, task_id=task_id, ns_credentials_dir=ns_credentials_dir,
-                network_interface_name=network_interface_name, X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
+                network_interface_name=network_interface_name, X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid, dataset_info=dataset_info)
 
             # start BOHB if not on cluster or on master node in cluster
+            res = None
             if task_id in [1, -1]:
-                self.run_optimization_algorithm(pipeline_config, run_id, ns_host, ns_port, NS, task_id)
+                self.run_optimization_algorithm(pipeline_config=pipeline_config, run_id=run_id, ns_host=ns_host,
+                    ns_port=ns_port, nameserver=NS, task_id=task_id, result_loggers=result_loggers,
+                    dataset_info=dataset_info, logger=logger)
             
 
-            res = self.parse_results(pipeline_config["result_logger_dir"])
+                res = self.parse_results(pipeline_config["result_logger_dir"])
 
         except Exception as e:
             print(e)
@@ -109,9 +111,9 @@ class OptimizationAlgorithm(SubPipelineNode):
             self.clean_up(pipeline_config, ns_credentials_dir, tmp_models_dir)
 
         if (res):
-            return {'final_metric_score': res[0], 'optimized_hyperparamater_config': res[1], 'budget': res[2]}
+            return {'final_metric_score': res[0], 'optimized_hyperparameter_config': res[1], 'budget': res[2]}
         else:
-            return {'final_metric_score': None, 'optimized_hyperparamater_config': dict(), 'budget': 0}
+            return {'final_metric_score': None, 'optimized_hyperparameter_config': dict(), 'budget': 0}
 
     def predict(self, pipeline_config, X):
         result = self.sub_pipeline.predict_pipeline(pipeline_config=pipeline_config, X=X)
@@ -125,7 +127,6 @@ class OptimizationAlgorithm(SubPipelineNode):
             ConfigOption("budget_type", default="time", type=str, choices=list(self.budget_types.keys())),
             ConfigOption("min_budget", default=lambda c: self.budget_types[c["budget_type"]].default_min_budget, type=float, depends=True),
             ConfigOption("max_budget", default=lambda c: self.budget_types[c["budget_type"]].default_max_budget, type=float, depends=True),
-            ConfigOption("result_logger_dir", default=".", type="directory"),
             ConfigOption("max_runtime", 
                 default=lambda c: ((-int(np.log(c["min_budget"] / c["max_budget"]) / np.log(c["eta"])) + 1) * c["max_budget"])
                         if c["budget_type"] == "time" else float("inf"),
@@ -142,7 +143,7 @@ class OptimizationAlgorithm(SubPipelineNode):
             ConfigOption("use_tensorboard_logger", default=False, type=to_bool),
         ]
         return options
-    
+
     def get_pipeline_config_conditions(self):
         def check_runtime(pipeline_config):
             return pipeline_config["budget_type"] != "time" or pipeline_config["max_runtime"] >= pipeline_config["max_budget"]
@@ -151,6 +152,7 @@ class OptimizationAlgorithm(SubPipelineNode):
             ConfigCondition.get_larger_equals_condition("max budget must be greater than or equal to min budget", "max_budget", "min_budget"),
             ConfigCondition("When time is used as budget, the max_runtime must be larger than the max_budget", check_runtime)
         ]
+
 
     def get_default_network_interface_name(self):
         try:
@@ -192,13 +194,14 @@ class OptimizationAlgorithm(SubPipelineNode):
     
     def get_optimization_algorithm_instance(self, config_space, run_id, pipeline_config, ns_host, ns_port, loggers, previous_result=None):
         optimization_algorithm = self.algorithms[pipeline_config["algorithm"]]
-        hb = optimization_algorithm(configspace=config_space, run_id = run_id,
-                                    eta=pipeline_config["eta"], min_budget=pipeline_config["min_budget"], max_budget=pipeline_config["max_budget"],
-                                    host=ns_host, nameserver=ns_host, nameserver_port=ns_port,
-                                    result_logger=combined_logger(*loggers),
-                                    ping_interval=10**6,
-                                    working_directory=pipeline_config["working_dir"],
-                                    previous_result=previous_result)
+        kwargs = {"configspace": config_space, "run_id": run_id,
+                  "eta": pipeline_config["eta"], "min_budget": pipeline_config["min_budget"], "max_budget": pipeline_config["max_budget"],
+                  "host": ns_host, "nameserver": ns_host, "nameserver_port": ns_port,
+                  "result_logger": combined_logger(*loggers),
+                  "ping_interval": 10**6,
+                  "working_directory": pipeline_config["working_dir"],
+                  "previous_result": previous_result}
+        hb = optimization_algorithm(**kwargs)
         return hb
 
 
@@ -209,7 +212,7 @@ class OptimizationAlgorithm(SubPipelineNode):
             incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
         except Exception as e:
             raise RuntimeError("Error parsing results. Check results.json and output for more details. An empty results.json is usually caused by a misconfiguration of AutoNet.")
-        
+
         if (len(incumbent_trajectory['config_ids']) == 0):
             return dict()
         
@@ -218,7 +221,7 @@ class OptimizationAlgorithm(SubPipelineNode):
 
 
     def run_worker(self, pipeline_config, run_id, task_id, ns_credentials_dir, network_interface_name,
-            X_train, Y_train, X_valid, Y_valid):
+            X_train, Y_train, X_valid, Y_valid, dataset_info):
         if not task_id == -1:
             time.sleep(5)
         while not os.path.isdir(ns_credentials_dir):
@@ -226,7 +229,7 @@ class OptimizationAlgorithm(SubPipelineNode):
         host = nic_name_to_host(network_interface_name)
         
         worker = ModuleWorker(pipeline=self.sub_pipeline, pipeline_config=pipeline_config,
-                              X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid, 
+                              X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid, dataset_info=dataset_info,
                               budget_type=self.budget_types[pipeline_config['budget_type']],
                               max_budget=pipeline_config["max_budget"],
                               host=host, run_id=run_id,
@@ -236,19 +239,19 @@ class OptimizationAlgorithm(SubPipelineNode):
         worker.run(background=(task_id <= 1))
 
 
-    def run_optimization_algorithm(self, pipeline_config, run_id, ns_host, ns_port, nameserver, task_id):
-        config_space = self.pipeline.get_hyperparameter_search_space(**pipeline_config)
+    def run_optimization_algorithm(self, pipeline_config, run_id, ns_host, ns_port, nameserver, task_id, result_loggers,
+            dataset_info, logger):
+        config_space = self.pipeline.get_hyperparameter_search_space(dataset_info=dataset_info, **pipeline_config)
 
 
-        self.logger.info("[AutoNet] Start " + pipeline_config["algorithm"])
+        logger.info("[AutoNet] Start " + pipeline_config["algorithm"])
 
         # initialize optimization algorithm
-        loggers = [json_result_logger(directory=pipeline_config["result_logger_dir"], overwrite=True)]
         if pipeline_config['use_tensorboard_logger']:
-            loggers.append(tensorboard_logger())
+            result_loggers.append(tensorboard_logger())
 
         HB = self.get_optimization_algorithm_instance(config_space=config_space, run_id=run_id,
-            pipeline_config=pipeline_config, ns_host=ns_host, ns_port=ns_port, loggers=loggers)
+            pipeline_config=pipeline_config, ns_host=ns_host, ns_port=ns_port, loggers=result_loggers)
 
         # start algorithm
         min_num_workers = pipeline_config["min_workers"] if task_id != -1 else 1
@@ -292,9 +295,7 @@ class tensorboard_logger(object):
             tl.log_value('BOHB/all_results', result['loss'] * -1, time_step)
             if result['loss'] < self.incumbent:
                 self.incumbent = result['loss']
-                tl.log_value('BOHB/incumbent_results', self.incumbent * -1, time_step)
-        else:
-            tl.log_value('Exceptions/' + str(exception.split('\n')[-2]), budget, time_step)
+            tl.log_value('BOHB/incumbent_results', self.incumbent * -1, time_step)
 
 
 class combined_logger(object):

@@ -7,13 +7,15 @@ from autoPyTorch.utils.benchmarking.benchmark_pipeline import (BenchmarkSettings
                                                            PrepareResultFolder,
                                                            ReadInstanceData,
                                                            SaveResults,
-                                                           SetAutoNetConfig)
+                                                           SetAutoNetConfig,
+                                                           SaveEnsembleLogs)
 from autoPyTorch.utils.benchmarking.visualization_pipeline import (CollectAutoNetConfigTrajectories,
                                                                CollectRunTrajectories,
                                                                GetRunTrajectories,
                                                                PlotTrajectories,
                                                                ReadInstanceInfo,
-                                                               VisualizationSettings)
+                                                               VisualizationSettings,
+                                                               GetEnsembleTrajectories)
 from autoPyTorch.utils.benchmarking.visualization_pipeline import ForInstance as VisualizationForInstance
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 
@@ -44,7 +46,8 @@ class Benchmark():
                     ForRun([ #num_runs, run_ids
                         PrepareResultFolder(),
                         FitAutoNet(),
-                        SaveResults()
+                        SaveResults(),
+                        SaveEnsembleLogs()
                     ])
                 ])
             ])
@@ -58,7 +61,8 @@ class Benchmark():
                     CollectRunTrajectories([
                         ReadInstanceInfo(),
                         CreateAutoNet(),
-                        GetRunTrajectories()
+                        GetRunTrajectories(),
+                        GetEnsembleTrajectories()
                     ])
                 ]),
                 PlotTrajectories()

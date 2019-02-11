@@ -18,7 +18,7 @@ class VisualizationSettings(BenchmarkSettings):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("run_id_range", default="0", type=str),
+            ConfigOption("run_id_range", type=str, default=None),
             ConfigOption("log_level", default="info", type=str, choices=list(self.logger_settings.keys()))
         ]
         return options

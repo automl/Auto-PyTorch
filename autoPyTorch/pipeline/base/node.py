@@ -119,13 +119,13 @@ class Node():
             last_required_keyword_index = len(possible_keywords) - len(defaults or [])
             required_kwargs = dict()
             for index, keyword in enumerate(possible_keywords):
-                if (node.fit_output is not None and keyword in node.fit_output):
-                    required_kwargs[keyword] = node.fit_output[keyword]
-
-                elif (keyword in available_kwargs):
+                if (keyword in available_kwargs):
                     if (available_kwargs[keyword].predict_output is None):
                         print(str(type(available_kwargs[keyword])))
                     required_kwargs[keyword] = available_kwargs[keyword].predict_output[keyword]
+                
+                elif (node.fit_output is not None and keyword in node.fit_output):
+                    required_kwargs[keyword] = node.fit_output[keyword]
 
                 elif index >= last_required_keyword_index:
                     required_kwargs[keyword] = defaults[index - last_required_keyword_index]

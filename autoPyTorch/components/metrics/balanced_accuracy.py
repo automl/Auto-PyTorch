@@ -4,8 +4,8 @@ import scipy as sp
 from sklearn.metrics.classification import _check_targets, type_of_target
 
 
-def balanced_accuracy(y_true, y_pred):
-    return _balanced_accuracy(y_true.max(1)[1].cpu().numpy(), y_pred.max(1)[1].cpu().numpy()) * 100
+def balanced_accuracy(y_pred, y_true):
+    return _balanced_accuracy(np.argmax(y_pred, axis=1), np.argmax(y_true, axis=1)) * 100
 
 
 def _balanced_accuracy(solution, prediction):
@@ -16,7 +16,12 @@ def _balanced_accuracy(solution, prediction):
 
     if y_type == 'binary':
         # Do not transform into any multiclass representation
-        pass
+        max_value = max(np.max(solution), np.max(prediction))
+        min_value = min(np.min(solution), np.min(prediction))
+        if max_value == min_value:
+            return 1.0
+        solution = (solution - min_value) / (max_value - min_value)
+        prediction = (prediction - min_value) / (max_value - min_value)
 
     elif y_type == 'multiclass':
         # Need to create a multiclass solution and a multiclass predictions

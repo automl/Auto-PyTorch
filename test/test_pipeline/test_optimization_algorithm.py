@@ -5,6 +5,7 @@ __license__ = "BSD"
 import unittest
 import netifaces
 import logging
+import numpy as np
 
 import torch
 
@@ -15,6 +16,8 @@ from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.pipeline.nodes.optimization_algorithm import OptimizationAlgorithm
+from autoPyTorch.utils.config.config_option import ConfigOption
+from hpbandster.core.result import json_result_logger
 
 class TestOptimizationAlgorithmMethods(unittest.TestCase):
 
@@ -28,6 +31,11 @@ class TestOptimizationAlgorithmMethods(unittest.TestCase):
                 cs = CS.ConfigurationSpace()
                 cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('hyper', lower=0, upper=30))
                 return cs
+            
+            def get_pipeline_config_options(self):
+                return [
+                    ConfigOption("result_logger_dir", default=".", type="directory")
+                ]
 
         logger = logging.getLogger('hpbandster')
         logger.setLevel(logging.ERROR)
@@ -40,9 +48,11 @@ class TestOptimizationAlgorithmMethods(unittest.TestCase):
             ])
         ])
 
-        pipeline_config = pipeline.get_pipeline_config(num_iterations=1, budget_type='epochs')
-        pipeline.fit_pipeline(pipeline_config=pipeline_config, X_train=torch.rand(15,10), Y_train=torch.rand(15, 5), X_valid=None, Y_valid=None, one_hot_encoder=None)
+        pipeline_config = pipeline.get_pipeline_config(num_iterations=1, budget_type='epochs', result_logger_dir=".")
+        pipeline.fit_pipeline(pipeline_config=pipeline_config, X_train=np.random.rand(15,10), Y_train=np.random.rand(15, 5), X_valid=None, Y_valid=None,
+            result_loggers=[json_result_logger(directory=".", overwrite=True)], dataset_info=None)
 
-        result_of_opt_pipeline = pipeline[OptimizationAlgorithm.get_name()].fit_output['optimized_hyperparamater_config']
+        result_of_opt_pipeline = pipeline[OptimizationAlgorithm.get_name()].fit_output['optimized_hyperparameter_config']
+        print(pipeline[OptimizationAlgorithm.get_name()].fit_output)
 
         self.assertIn(result_of_opt_pipeline[ResultNode.get_name() + ConfigWrapper.delimiter + 'hyper'], list(range(0, 31)))

@@ -1,6 +1,6 @@
 import os
 import logging
-from ConfigSpace.read_and_write.pcs_new import write as write_pcs
+from ConfigSpace.read_and_write import json
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -45,8 +45,8 @@ class PrepareResultFolder(PipelineNode):
         self.write_config_to_file(run_result_dir, "benchmark.config", pipeline_config)
         self.write_config_to_file(run_result_dir, "autonet.config", autonet.get_current_autonet_config())
 
-        with open(os.path.join(run_result_dir, "configspace.pcs"), "w") as f:
-            f.write(write_pcs(autonet.pipeline.get_hyperparameter_search_space(**autonet.get_current_autonet_config())))
+        with open(os.path.join(run_result_dir, "configspace.json"), "w") as f:
+            f.write(json.write(autonet.pipeline.get_hyperparameter_search_space(**autonet.get_current_autonet_config())))
 
         return { 'result_dir': run_result_dir }
         
@@ -64,7 +64,7 @@ class PrepareResultFolder(PipelineNode):
 
 def get_names(instance, autonet_config_file, run_id, run_number):
     if isinstance(instance, list):
-        instance_name = "_".join([os.path.basename(p[0]).split(".")[0] for p in instance])
+        instance_name = "_".join([os.path.split(p)[1].split(".")[0] for p in instance])
     else:
         instance_name = os.path.basename(instance).split(".")[0]
 

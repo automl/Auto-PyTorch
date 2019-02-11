@@ -66,16 +66,16 @@ res = autonet.fit(min_budget=300,
                   normalization_strategies=['maxabs'],
                   train_metric=metric,
                   additional_metrics=additional_metrices,
-                  cv_splits=3,
+                  cross_validator='stratified_k_fold',
+                  cross_validator_args={'n_splits': 3},
                   preprocessors=["truncated_svd"],
                   log_level="debug",
                   X_train=dm.X_train,
                   Y_train=dm.Y_train,
-                  X_valid=dm.X_valid,
-                  Y_valid=dm.Y_valid,
+                  X_valid=None,
+                  Y_valid=None,
                   categorical_features=dm.categorical_features,
-                  additional_logs=["test_result"],
-                  full_eval_each_epoch=True)
+                  additional_logs=["test_result"])
 
 # Calculate quality metrics using validation data.
 autonet.score(dm.X_test, dm.Y_test)

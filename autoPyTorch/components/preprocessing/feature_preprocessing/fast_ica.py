@@ -41,7 +41,7 @@ class FastICA(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
+    def get_hyperparameter_search_space(dataset_info=None):
         cs = ConfigSpace.ConfigurationSpace()
 
         n_components = CSH.UniformIntegerHyperparameter("n_components", lower=10, upper=2000)

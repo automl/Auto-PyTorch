@@ -2,6 +2,7 @@ __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
 
+from copy import deepcopy
 import ConfigSpace
 import inspect
 from autoPyTorch.utils.config.config_option import ConfigOption
@@ -31,6 +32,16 @@ class PipelineNode(Node):
     @classmethod
     def get_name(cls):
         return cls.__name__
+    
+    def clone(self, skip=("pipeline", "fit_output", "predict_output", "child_node")):
+        node_type = type(self)
+        new_node = node_type.__new__(node_type)
+        for key, value in self.__dict__.items():
+            if key not in skip:
+                setattr(new_node, key, deepcopy(value))
+            else:
+                setattr(new_node, key, None)
+        return new_node
 
     # VIRTUAL
     def fit(self, **kwargs):
@@ -80,8 +91,9 @@ class PipelineNode(Node):
 
         return []
 
+
     # VIRTUAL
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         """Get hyperparameter that should be optimized.
         
         Returns:
@@ -92,7 +104,7 @@ class PipelineNode(Node):
         return self._apply_user_updates(ConfigSpace.ConfigurationSpace())
     
     # VIRTUAL
-    def insert_inter_node_hyperparameter_dependencies(self, config_space, **pipeline_config):
+    def insert_inter_node_hyperparameter_dependencies(self, config_space, dataset_info=None, **pipeline_config):
         """Insert Conditions and Forbiddens of hyperparameters of different nodes
 
         Returns:

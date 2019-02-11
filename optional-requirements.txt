@@ -2,3 +2,4 @@ SimpleITK
 openml
 matplotlib
 tensorboard_logger
+NamedAtomicLock

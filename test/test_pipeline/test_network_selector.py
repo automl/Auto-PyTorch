@@ -14,7 +14,7 @@ from autoPyTorch.components.networks.feature.shapedmlpnet import ShapedMlpNet
 
 class TestNetworkSelectorMethods(unittest.TestCase):
 
-    def test_selector(self):
+    def test_network_selector(self):
         pipeline = Pipeline([
             NetworkSelector()
         ])
@@ -25,9 +25,10 @@ class TestNetworkSelectorMethods(unittest.TestCase):
         selector.add_final_activation('none', nn.Sequential())
 
         pipeline_config = pipeline.get_pipeline_config()
+        pipeline_config["random_seed"] = 42
         hyper_config = pipeline.get_hyperparameter_search_space().sample_configuration()
         pipeline.fit_pipeline(hyperparameter_config=hyper_config, pipeline_config=pipeline_config, 
-                                X_train=torch.rand(3,3), Y_train=torch.rand(3, 2), embedding=nn.Sequential())
+                                X=torch.rand(3,3), Y=torch.rand(3, 2), embedding=nn.Sequential())
 
         sampled_network = pipeline[selector.get_name()].fit_output['network']
 

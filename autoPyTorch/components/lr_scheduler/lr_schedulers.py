@@ -36,7 +36,7 @@ class AutoNetLearningRateSchedulerBase(object):
 class SchedulerNone(AutoNetLearningRateSchedulerBase):
 
     def _get_scheduler(self, optimizer, config):
-        return NoScheduling()
+        return NoScheduling(optimizer=optimizer)
 
 class SchedulerStepLR(AutoNetLearningRateSchedulerBase):
 
@@ -124,9 +124,17 @@ class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
 
 
 class NoScheduling():
+    def __init__(self, optimizer):
+        self.optimizer = optimizer
 
     def step(self, epoch):
         return
+    
+    def get_lr(self):
+        try:
+            return [self.optimizer.defaults["lr"]]
+        except:
+            return [None]
 
 
 import math

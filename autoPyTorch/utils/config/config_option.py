@@ -2,10 +2,27 @@ __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
 
+import ast
 
+# TODO use ast per default in ConfigOption
 # Transform a config to a bool.
 def to_bool(value):
     return value.lower() in ["1", "true", "yes", "y"]
+
+def to_list(value):
+    r = ast.literal_eval(value)
+    assert isinstance(r, list)
+    return r
+
+def to_tuple(value):
+    r = ast.literal_eval(value)
+    assert isinstance(r, tuple)
+    return r
+
+def to_dict(value):
+    r = ast.literal_eval(value)
+    assert isinstance(r, dict)
+    return r
 
 class ConfigOption():
     """ Options in a config file. A config file specifies values for ConfigOptions. """

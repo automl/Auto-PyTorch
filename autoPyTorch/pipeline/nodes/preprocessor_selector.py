@@ -18,23 +18,21 @@ class PreprocessorSelector(PipelineNode):
         self.preprocessors = dict()
         self.add_preprocessor('none', PreprocessorBase)
 
-    def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train, X_valid, one_hot_encoder):
+    def fit(self, hyperparameter_config, pipeline_config, X, Y, train_indices, one_hot_encoder):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         preprocessor_name = hyperparameter_config['preprocessor']
         preprocessor_type = self.preprocessors[preprocessor_name]
         preprocessor_config = ConfigWrapper(preprocessor_name, hyperparameter_config)
         preprocessor = preprocessor_type(preprocessor_config)
-        preprocessor.fit(X_train, Y_train)
+        preprocessor.fit(X[train_indices], Y[train_indices])
 
         if preprocessor_name != 'none':
             one_hot_encoder = None
 
-        X_train = preprocessor.transform(X_train)
-        if (X_valid is not None):
-            X_valid = preprocessor.transform(X_valid)
+        X = preprocessor.transform(X)
 
-        return {'X_train': X_train, 'X_valid': X_valid, 'preprocessor': preprocessor, 'one_hot_encoder': one_hot_encoder}
+        return {'X': X, 'preprocessor': preprocessor, 'one_hot_encoder': one_hot_encoder}
 
     def predict(self, preprocessor, X):
         return { 'X': preprocessor.transform(X) }
@@ -50,7 +48,7 @@ class PreprocessorSelector(PipelineNode):
     def remove_preprocessor(self, name):
         del self.preprocessors[name]
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
@@ -60,7 +58,7 @@ class PreprocessorSelector(PipelineNode):
         for preprocessor_name, preprocessor_type in self.preprocessors.items():
             if (preprocessor_name not in possible_preprocessors):
                 continue
-            preprocessor_cs = preprocessor_type.get_hyperparameter_search_space()
+            preprocessor_cs = preprocessor_type.get_hyperparameter_search_space(dataset_info=dataset_info)
             cs.add_configuration_space( prefix=preprocessor_name, configuration_space=preprocessor_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': preprocessor_name})
 

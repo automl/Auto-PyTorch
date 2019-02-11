@@ -8,5 +8,4 @@ statsmodels
 scikit-learn>=0.20.0
 imblearn
 ConfigSpace
-hpbandster
 pynisher

@@ -3,3 +3,4 @@ instances=datasets/classification
 autonet_configs=[configs/autonet/bohb_local.txt]
 problem_type=feature_classification
 log_level=debug
+enable_ensemble=True

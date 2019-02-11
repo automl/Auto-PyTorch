@@ -10,7 +10,7 @@ class SetAutoNetConfig(PipelineNode):
         config = parser.read(autonet_config_file)
 
         if ('additional_logs' not in config):
-            config['additional_logs'] = ['test_result']
+            config['additional_logs'] = ['test_result' if not pipeline_config['enable_ensemble'] else 'test_predictions_for_ensemble']
 
         if (pipeline_config['use_dataset_metric'] and data_manager.metric is not None):
             config['train_metric'] = data_manager.metric
@@ -24,8 +24,11 @@ class SetAutoNetConfig(PipelineNode):
 
         config['log_level'] = pipeline_config['log_level']
         
+        if data_manager.categorical_features:
+            config['categorical_features'] = data_manager.categorical_features
+
         # Note: PrepareResultFolder will make a small run dependent update of the autonet_config
-        autonet.update_autonet_config(categorical_features=data_manager.categorical_features, **config)
+        autonet.update_autonet_config(**config)
         return dict()
 
     def get_pipeline_config_options(self):

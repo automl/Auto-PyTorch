@@ -23,7 +23,7 @@ class EmbeddingSelector(PipelineNode):
         self.embedding_modules = dict()
         self.add_embedding_module('none', NoEmbedding)
 
-    def fit(self, hyperparameter_config, pipeline_config, X_train, one_hot_encoder):
+    def fit(self, hyperparameter_config, pipeline_config, X, one_hot_encoder):
 
         if not one_hot_encoder or not one_hot_encoder.categories_:
             # no categorical features -> no embedding
@@ -35,7 +35,7 @@ class EmbeddingSelector(PipelineNode):
         embedding_type = self.embedding_modules[embedding_name]
         embedding_config = ConfigWrapper(embedding_name, hyperparameter_config)
 
-        return {'embedding': embedding_type(embedding_config, X_train.shape[1], one_hot_encoder)}
+        return {'embedding': embedding_type(embedding_config, X.shape[1], one_hot_encoder)}
 
 
     def add_embedding_module(self, name, embedding_module):
@@ -64,7 +64,7 @@ class EmbeddingSelector(PipelineNode):
         ]
         return options
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
@@ -84,7 +84,7 @@ class EmbeddingSelector(PipelineNode):
 
         return self._apply_user_updates(cs)
     
-    def insert_inter_node_hyperparameter_dependencies(self, config_space, **pipeline_config):
+    def insert_inter_node_hyperparameter_dependencies(self, config_space, dataset_info=None, **pipeline_config):
         if pipeline_config['categorical_features'] is None or not any(pipeline_config['categorical_features']) or 'none' not in pipeline_config['preprocessors']:
             # no categorical features -> no embedding
             return config_space

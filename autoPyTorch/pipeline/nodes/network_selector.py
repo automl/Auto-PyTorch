@@ -22,21 +22,21 @@ class NetworkSelector(PipelineNode):
         self.final_activations = dict()
         self.default_final_activation = None
 
-    def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train, embedding=None):
+    def fit(self, hyperparameter_config, pipeline_config, X, Y, embedding):
         config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         network_type = self.networks[config["network"]]
         network_config = ConfigWrapper(config["network"], config)
         activation = self.final_activations[pipeline_config["final_activation"]]
 
-        in_features = X_train.shape[1:] if not embedding else (embedding.num_out_feats, )
+        in_features = X.shape[1:] if not embedding else (embedding.num_out_feats, )
         if len(in_features) == 1:
             # feature data
             in_features = in_features[0]
 
         torch.manual_seed(pipeline_config["random_seed"]) 
         network = network_type( config=network_config, 
-                                in_features=in_features, out_features=Y_train.shape[1], 
+                                in_features=in_features, out_features=Y.shape[1],
                                 embedding=embedding, final_activation=activation)
         return {'network': network}
 
@@ -71,7 +71,7 @@ class NetworkSelector(PipelineNode):
         if (not self.default_final_activation or is_default_final_activation):
             self.default_final_activation = name
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 

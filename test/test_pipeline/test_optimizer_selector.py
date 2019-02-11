@@ -17,7 +17,7 @@ from autoPyTorch.components.optimizer.optimizer import AutoNetOptimizerBase, Ada
 
 class TestOptimizerSelectorMethods(unittest.TestCase):
 
-    def test_selector(self):
+    def test_optimizer_selector(self):
         pipeline = Pipeline([
             NetworkSelector(),
             OptimizerSelector()
@@ -33,9 +33,10 @@ class TestOptimizerSelectorMethods(unittest.TestCase):
         opt_selector.add_optimizer("sgd", SgdOptimizer)
 
         pipeline_config = pipeline.get_pipeline_config()
+        pipeline_config["random_seed"] = 42
         hyper_config = pipeline.get_hyperparameter_search_space().sample_configuration()
         pipeline.fit_pipeline(hyperparameter_config=hyper_config, pipeline_config=pipeline_config, 
-                                X_train=torch.rand(3,3), Y_train=torch.rand(3, 2), embedding=nn.Sequential())
+                                X=torch.rand(3,3), Y=torch.rand(3, 2), embedding=nn.Sequential())
 
         sampled_optimizer = opt_selector.fit_output['optimizer']
 

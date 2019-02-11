@@ -4,3 +4,4 @@ from autoPyTorch.utils.benchmarking.visualization_pipeline.plot_trajectories imp
 from autoPyTorch.utils.benchmarking.visualization_pipeline.read_instance_info import ReadInstanceInfo
 from autoPyTorch.utils.benchmarking.visualization_pipeline.visualization_settings import VisualizationSettings
 from autoPyTorch.utils.benchmarking.visualization_pipeline.for_instance import ForInstance
+from autoPyTorch.utils.benchmarking.visualization_pipeline.get_ensemble_trajectories import GetEnsembleTrajectories
