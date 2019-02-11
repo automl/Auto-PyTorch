@@ -8,6 +8,7 @@ __license__ = "BSD"
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.config.config_option import ConfigOption
 from autoPyTorch.components.preprocessing.resampling_base import ResamplingMethodNone, ResamplingMethodBase, TargetSizeStrategyBase
+from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
 from sklearn.preprocessing import OneHotEncoder
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
@@ -26,10 +27,9 @@ class ResamplingStrategySelector(PipelineNode):
 
         self.target_size_strategies = {'none': None}
 
-        self.logger = logging.getLogger('autonet')
-
-    def fit(self, hyperparameter_config, X_train, Y_train):
+    def fit(self, pipeline_config, hyperparameter_config, X, Y, train_indices, valid_indices):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
+        logger = logging.getLogger('autonet')
         
         if hyperparameter_config['target_size_strategy'] == 'none':
             return dict()
@@ -42,18 +42,25 @@ class ResamplingStrategySelector(PipelineNode):
         )
         target_size_strategy = self.target_size_strategies[hyperparameter_config['target_size_strategy']]()
 
-        y = np.argmax(Y_train, axis=1).astype(int)
+        y = np.argmax(Y[train_indices], axis=1).astype(int)
         ohe = OneHotEncoder(categories="auto", sparse=False)
         ohe.fit(y.reshape((-1, 1)))
 
         over_sampling_target_size = target_size_strategy.over_sample_strategy(y)
         under_sampling_target_size = target_size_strategy.under_sample_strategy(y)
 
-        self.logger.debug("Distribution before resample: " + str(np.unique(y, return_counts=True)[1]))
-        X_train, y = over_sampling_method.resample(X_train, y, over_sampling_target_size)
-        X_train, y = under_sampling_method.resample(X_train, y, under_sampling_target_size)
-        self.logger.debug("Distribution after resample: " + str(np.unique(y, return_counts=True)[1]))
-        return {'X_train': X_train, 'Y_train': ohe.transform(y.reshape((-1, 1)))}
+        logger.debug("Distribution before resample: " + str(np.unique(y, return_counts=True)[1]))
+        X_resampled, y_resampled = over_sampling_method.resample(X[train_indices], y, over_sampling_target_size, pipeline_config["random_seed"])
+        X_resampled, y_resampled  = under_sampling_method.resample(X_resampled, y_resampled, under_sampling_target_size, pipeline_config["random_seed"])
+        logger.debug("Distribution after resample: " + str(np.unique(y_resampled, return_counts=True)[1]))
+
+        if valid_indices is None:
+            return {"X": X_resampled, "Y": ohe.transform(y_resampled.reshape((-1, 1))), "train_indices": np.array(list(range(X_resampled.shape[0])))}
+
+        X, Y, split_indices = CrossValidation.get_validation_set_split_indices(pipeline_config,
+                X_train=X_resampled, X_valid=X[valid_indices],
+                Y_train=ohe.transform(y_resampled.reshape((-1, 1))), Y_valid=Y[valid_indices], allow_shuffle=False)
+        return {"X": X, "Y": Y, "train_indices": split_indices[0], "valid_indices": split_indices[1]}
 
     def add_over_sampling_method(self, name, resampling_method):
         """Add a resampling strategy.
@@ -114,7 +121,7 @@ class ResamplingStrategySelector(PipelineNode):
         ]
         return options
     
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 

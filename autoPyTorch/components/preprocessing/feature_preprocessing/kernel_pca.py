@@ -53,7 +53,7 @@ class KernelPCA(PreprocessorBase):
             return X_new
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
+    def get_hyperparameter_search_space(dataset_info=None):
         n_components = CSH.UniformIntegerHyperparameter("n_components", 10, 2000, default_value=100)
         kernel = CSH.CategoricalHyperparameter('kernel', ['poly', 'rbf', 'sigmoid', 'cosine'], 'rbf')
         gamma = CSH.UniformFloatHyperparameter("gamma", 3.0517578125e-05, 8, log=True, default_value=1.0)

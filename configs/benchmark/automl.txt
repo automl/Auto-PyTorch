@@ -1,8 +1,9 @@
 result_dir=benchmark_results_cluster
 instances=configs/datasets/automl.txt
-autonet_configs=[configs/autonet/bohb_cv_sparse.txt, configs/autonet/rs_cv_sparse.txt]
+autonet_configs=[configs/autonet/bohb_cv_sparse.txt, configs/autonet/hyperband_cv_sparse.txt]
 use_dataset_metric=True
 problem_type=feature_classification
 log_level=info
 num_runs=10
-test_split=0.2
+test_split=0.0
+enable_ensemble=True

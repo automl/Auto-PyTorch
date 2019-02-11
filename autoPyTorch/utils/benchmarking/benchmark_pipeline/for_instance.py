@@ -33,17 +33,9 @@ class ForInstance(SubPipelineNode):
                     if line.strip().startswith("openml"):
                         instances.append(line.strip())
                         continue
+                        
                     if line.strip().startswith("["):
-                        res = []
-                        import re
-                        matches = re.findall('\[([^\],]+),([^\],]+)\]', line)
-                        for match in matches:
-                            x, y = make_path(match[0], benchmark_config["dataset_root"]), make_path(match[1], benchmark_config["dataset_root"])
-                            if x is None or y is None:
-                                logging.getLogger('autonet').warning('Given dataset tuple is invalid: ' + str(match[0].strip()) + " and " + str(match[1].strip()))
-                                continue
-                            res.append([x, y])
-                        instances.append(res)
+                        instances.append([make_path(path, benchmark_config["dataset_root"]) for path in line.strip(' []').split(',')])
                         continue
 
                     instance = os.path.abspath(os.path.join(benchmark_config["dataset_root"], line.strip()))

@@ -16,7 +16,10 @@ class GetRunTrajectories(PipelineNode):
             logging.getLogger('benchmark').info('Skipping ' + run_result_dir + ' because the run is not finished yet')
             return {"trajectories": dict(), "train_metric": None}
 
-        return {"trajectories": build_run_trajectories(run_result_dir, autonet_config),
+        trajectories = build_run_trajectories(run_result_dir, autonet_config)
+        if "test_result" in trajectories:
+            trajectories["test_%s" % autonet_config["train_metric"]] = trajectories["test_result"]
+        return {"trajectories": trajectories,
                 "train_metric": autonet_config["train_metric"]}
     
     def get_pipeline_config_options(self):
@@ -29,8 +32,12 @@ class GetRunTrajectories(PipelineNode):
 
 def build_run_trajectories(results_folder, autonet_config):
     # parse results
-    res = logged_results_to_HBS_result(results_folder)
-    incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
+    try:
+        res = logged_results_to_HBS_result(results_folder)
+        incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
+    except:
+        print("No incumbent trajectory found")
+        return dict()
 
     # prepare
     metric_name = autonet_config["train_metric"]

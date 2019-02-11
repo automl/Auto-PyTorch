@@ -1,1 +1,2 @@
 budget_type=epochs
+validation_split=0.3

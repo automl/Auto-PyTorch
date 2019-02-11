@@ -5,3 +5,4 @@ from autoPyTorch.components.preprocessing.feature_preprocessing.kitchen_sinks im
 from autoPyTorch.components.preprocessing.feature_preprocessing.kernel_pca import KernelPCA
 from autoPyTorch.components.preprocessing.feature_preprocessing.nystroem import Nystroem
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
+from autoPyTorch.components.preprocessing.feature_preprocessing.power_transformer import PowerTransformer

@@ -21,7 +21,7 @@ class RandomKitchenSinks(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
+    def get_hyperparameter_search_space(dataset_info=None):
         gamma = CSH.UniformFloatHyperparameter("gamma", 3.0517578125e-05, 8, default_value=1.0, log=True)
         n_components = CSH.UniformIntegerHyperparameter("n_components", 50, 10000, default_value=100, log=True)
         cs = ConfigSpace.ConfigurationSpace()

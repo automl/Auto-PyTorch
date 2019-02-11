@@ -92,9 +92,11 @@ class DataManager(object):
             self.X, self.Y, self.X_train, self.Y_train, self.X_test, self.Y_test = deterministic_shuffle_and_split(self.X, self.Y, test_split, seed=seed)
             return
         if not test_specified:
-            # assume only interested in validation performance
+            # use validation set as test set
             self.X_test = self.X_valid
             self.Y_test = self.Y_valid
+            self.X_valid = None
+            self.Y_valid = None
         self.X_train = self.X
         self.Y_train = self.Y
 

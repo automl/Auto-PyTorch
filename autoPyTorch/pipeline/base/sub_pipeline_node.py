@@ -17,4 +17,10 @@ class SubPipelineNode(PipelineNode):
 
     def predict(self, **kwargs):
         return self.sub_pipeline.predict_pipeline(**kwargs)
+    
+    def clone(self):
+        sub_pipeline = self.sub_pipeline.clone()
+        new_node = super().clone(skip=("pipeline", "fit_output", "predict_output", "child_node", "sub_pipeline"))
+        new_node.sub_pipeline = sub_pipeline
+        return new_node
 

@@ -5,5 +5,6 @@ max_runtime=92400
 algorithm=hyperband
 budget_type=time
 train_metric=balanced_accuracy
-cv_splits=5
+cross_validator=k_fold
+cross_validator_args={"n_splits": 5}
 normalization_strategies=[minmax, standardize]

@@ -20,9 +20,10 @@ class SaveResults(PipelineNode):
         id2config = res.get_id2config_mapping()
         incumbent_trajectory = res.get_incumbent_trajectory(bigger_is_better=False, non_decreasing_budget=False)
         final_config_id = incumbent_trajectory['config_ids'][-1]
+        final_budget = incumbent_trajectory['budgets'][-1]
         incumbent_config = id2config[final_config_id]['config']
         
-        final_info = res.get_runs_by_id(final_config_id)[-1]["info"]
+        final_info = [run["info"] for run in res.get_runs_by_id(final_config_id) if run["budget"] == final_budget][0]
 
         summary = dict()
         summary["final_loss"] = final_score if autonet_config["minimize"] else -final_score

@@ -2,10 +2,10 @@ import time
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.pipeline.base.node import Node
 import ConfigSpace
-import traceback
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+import traceback
 
 
 class Pipeline():
@@ -26,6 +26,14 @@ class Pipeline():
 
     def __getitem__(self, key):
         return self._pipeline_nodes[key]
+    
+    def __contains__(self, key):
+        if isinstance(key, str):
+            return key in self._pipeline_nodes
+        elif issubclass(key, PipelineNode):
+            return key.get_name() in self._pipeline_nodes
+        else:
+            raise ValueError("Cannot check if instance " + str(key) + " of type " + str(type(key)) + " is contained in pipeline")
 
     def set_parent_pipeline(self, pipeline):
         """Set this pipeline as a child pipeline of the given pipeline.
@@ -71,7 +79,7 @@ class Pipeline():
 
         return pipeline_node
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.get_pipeline_config(**pipeline_config)
 
         if "hyperparameter_search_space_updates" in pipeline_config and pipeline_config["hyperparameter_search_space_updates"] is not None:
@@ -84,18 +92,18 @@ class Pipeline():
             cs = ConfigSpace.ConfigurationSpace()
 
         for name, node in self._pipeline_nodes.items():
-            config_space = node.get_hyperparameter_search_space(**pipeline_config)
+            config_space = node.get_hyperparameter_search_space(dataset_info=dataset_info, **pipeline_config)
             cs.add_configuration_space(prefix=name, configuration_space=config_space, delimiter=ConfigWrapper.delimiter)
         
         for name, node in self._pipeline_nodes.items():
-            cs = node.insert_inter_node_hyperparameter_dependencies(cs, **pipeline_config)
+            cs = node.insert_inter_node_hyperparameter_dependencies(cs, dataset_info=dataset_info, **pipeline_config)
 
         return cs
 
     def get_pipeline_config(self, throw_error_if_invalid=True, **pipeline_config):
         options = self.get_pipeline_config_options()
         conditions = self.get_pipeline_config_conditions()
-
+            
         parser = ConfigFileParser(options)
         pipeline_config = parser.set_defaults(pipeline_config, throw_error_if_invalid=throw_error_if_invalid)
 
@@ -107,7 +115,7 @@ class Pipeline():
                     raise
                 print(e)
                 traceback.print_exc()
-
+ 
         return pipeline_config
 
 
@@ -121,7 +129,7 @@ class Pipeline():
             options += node.get_pipeline_config_options()
 
         return options
-    
+
     def get_pipeline_config_conditions(self):
         if (self._parent_pipeline is not None):
             return self._parent_pipeline.get_pipeline_config_options()
@@ -132,7 +140,6 @@ class Pipeline():
             conditions += node.get_pipeline_config_conditions()
         
         return conditions
-
 
     def print_config_space(self, **pipeline_config):
         config_space = self.get_hyperparameter_search_space(**pipeline_config)
@@ -168,4 +175,16 @@ class Pipeline():
                 input_str += " (" + edge.out_idx + ", " + edge.target.get_name() + ", " + edge.kw + ") "
             input_str += "]"
             print(name + " \t\t Input: " + input_str)
+    
+    def clean(self):
+        self.root.clean_fit_data()
 
+    def clone(self):
+        pipeline_nodes = []
+
+        current_node = self.root.child_node
+        while current_node is not None:
+            pipeline_nodes.append(current_node.clone())
+            current_node = current_node.child_node
+        
+        return type(self)(pipeline_nodes)

@@ -19,13 +19,13 @@ class LossModuleSelector(PipelineNode):
         super(LossModuleSelector, self).__init__()
         self.loss_modules = dict()
 
-    def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train):
+    def fit(self, hyperparameter_config, pipeline_config, X, Y, train_indices):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         weights = None
         loss_module = self.loss_modules[hyperparameter_config["loss_module"]]
         if (loss_module.weight_strategy != None):
-            weights = loss_module.weight_strategy(pipeline_config, X_train, Y_train)
+            weights = loss_module.weight_strategy(pipeline_config, X[train_indices], Y[train_indices])
             weights = torch.from_numpy(weights).float()
 
         loss = loss_module.module
@@ -54,7 +54,7 @@ class LossModuleSelector(PipelineNode):
     def remove_loss_module(self, name):
         del self.loss_modules[name]
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
@@ -83,6 +83,8 @@ class AutoNetLossModule():
 
     def __call__(self, x, y):
         if not self.requires_target_class_labels:
+            return self.function(x, y)
+        elif len(y.shape) == 1:
             return self.function(x, y)
         else:
             return self.function(x, y.max(1)[1])

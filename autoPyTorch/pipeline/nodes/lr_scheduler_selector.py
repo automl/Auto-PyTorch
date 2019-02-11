@@ -18,24 +18,33 @@ class LearningrateSchedulerSelector(PipelineNode):
         super(LearningrateSchedulerSelector, self).__init__()
 
         self.lr_scheduler = dict()
+        self.lr_scheduler_settings = dict()
 
     def fit(self, hyperparameter_config, optimizer, training_techniques):
         config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         lr_scheduler_type = self.lr_scheduler[config["lr_scheduler"]]
         lr_scheduler_config = ConfigWrapper(config["lr_scheduler"], config)
+        lr_scheduler_settings = self.lr_scheduler_settings[config["lr_scheduler"]]
+        lr_scheduling = LrScheduling(training_components={"lr_scheduler": lr_scheduler_type(optimizer, lr_scheduler_config)},
+                                     **lr_scheduler_settings)
+        return {'training_techniques': [lr_scheduling] + training_techniques}
 
-        return {'training_techniques': [LrScheduling({"lr_scheduler": lr_scheduler_type(optimizer, lr_scheduler_config)})] + training_techniques}
-
-    def add_lr_scheduler(self, name, lr_scheduler_type):
+    def add_lr_scheduler(self, name, lr_scheduler_type, lr_step_after_batch=False, lr_step_with_time=False, allow_snapshot=True):
         if (not issubclass(lr_scheduler_type, AutoNetLearningRateSchedulerBase)):
             raise ValueError("learningrate scheduler type has to inherit from AutoNetLearningRateSchedulerBase")
         self.lr_scheduler[name] = lr_scheduler_type
+        self.lr_scheduler_settings[name] = {
+            "lr_step_after_batch": lr_step_after_batch,
+            "lr_step_with_time": lr_step_with_time,
+            "allow_snapshot": allow_snapshot
+        }
 
     def remove_lr_scheduler(self, name):
         del self.lr_scheduler[name]
+        del self.lr_scheduler_settings[name]
 
-    def get_hyperparameter_search_space(self, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 

@@ -77,7 +77,9 @@ class ConfigFileParser():
                 type_list = option.type if isinstance(option.type, list) else [option.type]
                 for type_conversion in type_list:
                     # convert relative directories to absolute ones
-                    if type_conversion == "directory" and not os.path.isabs(value):
+                    if type_conversion == "directory" and value == "None":
+                        value = None
+                    elif type_conversion == "directory" and not os.path.isabs(value):
                         value = os.path.abspath(os.path.join(autonet_home, value))
                     elif isinstance(type_conversion, dict):
                         value = type_conversion[value]

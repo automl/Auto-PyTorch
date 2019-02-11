@@ -15,7 +15,7 @@ __license__ = "BSD"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run benchmarks for autonet.')
-    parser.add_argument("--run_id_range", default="0", help="An id for the run. A range of run ids can be given: start-stop.")
+    parser.add_argument("--run_id_range", default=None, help="An id for the run. A range of run ids can be given: start-stop.")
     parser.add_argument("--result_dir", default=None, help="Override result dir in benchmark config.")
     parser.add_argument("--host_config", default=None, help="Override some configs according to host specifics.")
     parser.add_argument("--plot_logs", default=None, help="List of metrics to plot. If not given, plot metric given in autonet config.")
@@ -24,14 +24,17 @@ if __name__ == "__main__":
     parser.add_argument("--scale_uncertainty", default=1, type=float, help="Scale the uncertainty")
     parser.add_argument("--agglomeration", default="mean", help="Choose between mean and median.")
     parser.add_argument("--font_size", default=12, type=int, help="Set font size.")
+    parser.add_argument("--prefixes", default=[""], type=str, nargs="+", help="The prefixes to plot. Choices: none, train, val, test, ensemble, ensemble_test")
     parser.add_argument('benchmark', help='The benchmark to visualize')
 
     args = parser.parse_args()
 
-    if "-" in args.run_id_range:
-        run_id_range = range(int(args.run_id_range.split("-")[0]), int(args.run_id_range.split("-")[1]) + 1)
-    else:
-        run_id_range = range(int(args.run_id_range), int(args.run_id_range) + 1)
+    run_id_range = args.run_id_range
+    if args.run_id_range is not None:
+        if "-" in args.run_id_range:
+            run_id_range = range(int(args.run_id_range.split("-")[0]), int(args.run_id_range.split("-")[1]) + 1)
+        else:
+            run_id_range = range(int(args.run_id_range), int(args.run_id_range) + 1)
     
     benchmark_config_file = args.benchmark
     host_config_file = args.host_config
@@ -52,5 +55,6 @@ if __name__ == "__main__":
     benchmark_config['scale_uncertainty'] = args.scale_uncertainty
     benchmark_config['agglomeration'] = args.agglomeration
     benchmark_config['font_size'] = args.font_size
+    benchmark_config['prefixes'] = [p if p != "none" else "" for p in args.prefixes]
     
     benchmark.visualize_benchmark(**benchmark_config)

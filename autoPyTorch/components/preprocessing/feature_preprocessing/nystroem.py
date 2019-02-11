@@ -31,7 +31,7 @@ class Nystroem(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space():
+    def get_hyperparameter_search_space(dataset_info=None):
 
         possible_kernels = ['poly', 'rbf', 'sigmoid', 'cosine']
         kernel = CSH.CategoricalHyperparameter('kernel', possible_kernels, 'rbf')

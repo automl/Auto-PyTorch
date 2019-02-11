@@ -1,4 +1,5 @@
-from autoPyTorch import AutoNetClassification, AutoNetRegression, AutoNetMultilabel
+from autoPyTorch import AutoNetClassification, AutoNetRegression, AutoNetMultilabel, AutoNetEnsemble
+from autoPyTorch.utils.ensemble import test_predictions_for_ensemble
 import autoPyTorch.pipeline.nodes as autonet_nodes
 import autoPyTorch.components.metrics as autonet_metrics
 from autoPyTorch.components.metrics.additional_logs import test_result
@@ -10,18 +11,20 @@ from autoPyTorch.data_management.data_manager import ProblemType
 
 class CreateAutoNet(PipelineNode):
 
-    def fit(self, data_manager):
+    def fit(self, pipeline_config, data_manager):
         if (data_manager.problem_type == ProblemType.FeatureRegression):
-            autonet = AutoNetRegression()
+            autonet_type = AutoNetRegression
         elif (data_manager.problem_type == ProblemType.FeatureMultilabel):
-            autonet = AutoNetMultilabel()
+            autonet_type = AutoNetMultilabel
         elif (data_manager.problem_type == ProblemType.FeatureClassification):
-            autonet = AutoNetClassification()
+            autonet_type = AutoNetClassification
         else:
             raise ValueError('Problem type ' + str(data_manager.problem_type) + ' is not defined')
 
+        autonet = autonet_type() if not pipeline_config["enable_ensemble"] else AutoNetEnsemble(autonet_type)
+        test_logger = test_result if not pipeline_config["enable_ensemble"] else test_predictions_for_ensemble
         autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function(
-            'test_result', test_result(autonet, data_manager.X_test, data_manager.Y_test))
+            test_logger.__name__, test_logger(autonet, data_manager.X_test, data_manager.Y_test))
 
         metrics = autonet.pipeline[autonet_nodes.MetricSelector.get_name()]
         metrics.add_metric('pac_metric', autonet_metrics.pac_metric)
@@ -32,3 +35,9 @@ class CreateAutoNet(PipelineNode):
         metrics.add_metric('accuracy', autonet_metrics.accuracy)
 
         return { 'autonet': autonet }
+
+    def get_pipeline_config_options(self):
+        options = [
+            ConfigOption("enable_ensemble", default=False, type=to_bool)
+        ]
+        return options

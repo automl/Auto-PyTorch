@@ -12,4 +12,5 @@
 #$ -t 1-4
 
 ulimit -m 8000000
-python3 scripts/run_benchmark.py configs/benchmark/automl.txt --run_id $JOB_ID --task_id $SGE_TASK_ID --partial_benchmark 0,0,0 --host_config configs/hosts/meta.txt
+source activate AutoPyTorch
+python3 scripts/run_benchmark.py configs/benchmark/automl.txt --run_id $JOB_ID --task_id $SGE_TASK_ID --partial_benchmark 2,0,0 --host_config configs/hosts/meta.txt

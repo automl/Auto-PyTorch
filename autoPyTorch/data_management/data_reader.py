@@ -101,7 +101,7 @@ class OpenMlReader(DataReader):
 
     def read(self, **kwargs):
         """
-        Read the data from given openml datset file.
+        Read the data from given openml dataset file.
         
         Arguments:
             auto_convert: Automatically convert data after reading.
@@ -109,8 +109,11 @@ class OpenMlReader(DataReader):
         """
         
         dataset = self.openml.datasets.get_dataset(self.dataset_id)
-        self.X, self.Y, self.categorical_features = dataset.get_data(
-            target=dataset.default_target_attribute, return_categorical_indicator=True)
+        try:
+            self.X, self.Y, self.categorical_features = dataset.get_data(
+                target=dataset.default_target_attribute, return_categorical_indicator=True)
+        except Exception as e:
+            raise RuntimeError("An error occurred when loading the dataset and splitting it into X and Y. Please check if the dataset is suitable.")
 
         self.num_entries = self.X.shape[0]
         self.num_features = self.X.shape[1]
