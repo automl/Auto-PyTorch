@@ -1,11 +1,12 @@
+import os
 from autoPyTorch.core.api import AutoNet
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.nodes.one_hot_encoding import OneHotEncoding
 from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
-from autoPyTorch.pipeline.nodes.ensemble import EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, AddEnsembleLogger, BuildEnsemble
+from autoPyTorch.pipeline.nodes.ensemble import EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, BuildEnsemble, EnsembleServer
 
 class AutoNetEnsemble(AutoNet):
-    def __init__(self, autonet, **autonet_config):
+    def __init__(self, autonet, config_preset="medium_cs", **autonet_config):
         if isinstance(autonet, AutoNet):
             self.pipeline = autonet.pipeline
             self.autonet_type = type(autonet)
@@ -23,12 +24,19 @@ class AutoNetEnsemble(AutoNet):
         
         assert EnableComputePredictionsForEnsemble in self.pipeline
         assert SavePredictionsForEnsemble in self.pipeline
-        assert AddEnsembleLogger in self.pipeline
+        assert EnsembleServer in self.pipeline
         assert BuildEnsemble in self.pipeline
 
         self.base_config.update(autonet_config)
         self.trained_autonets = None
-    
+
+        if config_preset is not None:
+            parser = self.get_autonet_config_file_parser()
+            c = parser.read(os.path.join(os.path.dirname(__file__), "presets",
+                autonet.preset_folder_name, config_preset + ".txt"))
+            c.update(self.base_config)
+            self.base_config = c
+
     def fit(self, X_train, Y_train, X_valid=None, Y_valid=None, refit=True, **autonet_config):
         self.autonet_config = self.pipeline.get_pipeline_config(**dict(self.base_config, **autonet_config))
         self.fit_result = self.pipeline.fit_pipeline(pipeline_config=self.autonet_config,
@@ -73,7 +81,7 @@ class AutoNetEnsemble(AutoNet):
             metric = autonet.pipeline[MetricSelector.get_name()].fit_output['train_metric']
 
         # reverse one hot encoding 
-        result = OHE.reverse_transform_y(prediction, OHE.fit_output['y_one_hot_encoder']).reshape(1, -1)
+        result = OHE.reverse_transform_y(prediction, OHE.fit_output['y_one_hot_encoder'])
         if not return_probabilities and not return_metric:
             return result
         result = [result]

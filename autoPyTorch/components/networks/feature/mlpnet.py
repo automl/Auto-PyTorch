@@ -11,6 +11,7 @@ import ConfigSpace.hyperparameters as CSH
 import torch.nn as nn
 
 from autoPyTorch.components.networks.base_net import BaseFeatureNet
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -46,35 +47,38 @@ class MlpNet(BaseFeatureNet):
             layers.append(nn.Dropout(self.config["dropout_%d" % layer_id]))
 
     @staticmethod
-    def get_config_space(user_updates=None):
+    def get_config_space(
+        num_layers=((1, 15), False),
+        num_units=((10, 1024), True),
+        activation=('sigmoid', 'tanh', 'relu'),
+        dropout=(0.0, 0.8),
+        use_dropout=(True, False),
+        **kwargs
+    ):
         cs = CS.ConfigurationSpace()
-        range_num_layers=(1, 15)
-        range_num_units=(10, 1024)
-        possible_activations=('sigmoid', 'tanh', 'relu')
-        range_dropout=(0.0, 0.8)
+
+        num_layers_hp = get_hyperparameter(CSH.UniformIntegerHyperparameter, 'num_layers', num_layers)
+        cs.add_hyperparameter(num_layers_hp)
+        use_dropout_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_dropout", use_dropout)
+
+        for i in range(1, num_layers[0][1] + 1):
+            n_units_hp = get_hyperparameter(CSH.UniformIntegerHyperparameter, "num_units_%d" % i, kwargs.pop("num_units_%d" % i, num_units))
+            cs.add_hyperparameter(n_units_hp)
+
+            if i > num_layers[0][0]:
+                cs.add_condition(CS.GreaterThanCondition(n_units_hp, num_layers_hp, i - 1))
+
+            if True in use_dropout:
+                dropout_hp = get_hyperparameter(CSH.UniformFloatHyperparameter, "dropout_%d" % i, kwargs.pop("dropout_%d" % i, dropout))
+                cs.add_hyperparameter(dropout_hp)
+                dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout_hp, True)
+
+                if i > num_layers[0][0]:
+                    dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_layers_hp, i - 1)
+                    cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
+                else:
+                    cs.add_condition(dropout_condition_1)
         
-        if user_updates is not None and 'num_layers' in user_updates:
-            range_num_layers = user_updates['num_layers']
-
-        num_layers = CSH.UniformIntegerHyperparameter('num_layers', lower=range_num_layers[0], upper=range_num_layers[1])
-        cs.add_hyperparameter(num_layers)
-        use_dropout = cs.add_hyperparameter(CS.CategoricalHyperparameter("use_dropout", [True, False], default_value=True))
-
-        for i in range(1, range_num_layers[1] + 1):
-            n_units = CSH.UniformIntegerHyperparameter("num_units_%d" % i,
-                lower=range_num_units[0], upper=range_num_units[1], log=True)
-            cs.add_hyperparameter(n_units)
-            dropout = CSH.UniformFloatHyperparameter("dropout_%d" % i, lower=range_dropout[0], upper=range_dropout[1])
-            cs.add_hyperparameter(dropout)
-            dropout_condition_1 = CS.EqualsCondition(dropout, use_dropout, True)
-
-            if i > range_num_layers[0]:
-                cs.add_condition(CS.GreaterThanCondition(n_units, num_layers, i - 1))
-
-                dropout_condition_2 = CS.GreaterThanCondition(dropout, num_layers, i - 1)
-                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
-        
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter('activation', possible_activations))
+        add_hyperparameter(cs, CSH.CategoricalHyperparameter,'activation', activation)
+        assert len(kwargs) == 0, "Invalid hyperparameter updates for mlpnet: %s" % str(kwargs)
         return(cs)

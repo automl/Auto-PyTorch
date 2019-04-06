@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#SBATCH -p $${PARTITION}
+#SBATCH --mem $${MEMORY_LIMIT_MB}
+#SBATCH -c $${NUM_PROCESSES}
+#SBATCH -a 1-$${NUM_NODES}
+#SBATCH -D $${AUTONET_HOME}
+#SBATCH -o $${OUTPUT_DIR}/stdout_%a.txt
+#SBATCH -e $${OUTPUT_DIR}/stderr_%a.txt
+#SBATCH --mail-type=FAIL
+#SBATCH -J $${BENCHMARK_NAME}
+
+source activate AutoPyTorch
+python3 scripts/run_benchmark.py $${BENCHMARK} --run_id $SLURM_JOB_ID --task_id $SLURM_ARRAY_TASK_ID --partial_benchmark $${INSTANCE_ID} $${CONFIG_ID} $${RUN_NUMBER} --host_config $${HOST_CONFIG} --result_dir $${RESULT_DIR}
+
+#COMMAND sbatch run_meta.slurm
+#HOST_CONFIG configs/hosts/meta.txt
+#TEMPLATE_ARGUMENT PARTITION ml_cpu-ivy

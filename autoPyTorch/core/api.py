@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import copy
+import os
 
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 
@@ -19,7 +20,9 @@ from autoPyTorch.pipeline.nodes.optimization_algorithm import OptimizationAlgori
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 
 class AutoNet():
-    def __init__(self, pipeline=None, **autonet_config):
+    preset_folder_name = None
+
+    def __init__(self, config_preset="medium_cs", pipeline=None, **autonet_config):
         """Superclass for all AutoNet variations, that specifies the API of AutoNet.
         
         Keyword Arguments:
@@ -30,6 +33,13 @@ class AutoNet():
         self.base_config = autonet_config
         self.autonet_config = None
         self.fit_result = None
+
+        if config_preset is not None:
+            parser = self.get_autonet_config_file_parser()
+            c = parser.read(os.path.join(os.path.dirname(__file__), "presets",
+                self.preset_folder_name, config_preset + ".txt"))
+            c.update(self.base_config)
+            self.base_config = c
 
     def update_autonet_config(self, **autonet_config):
         """Update the configuration of AutoNet"""
@@ -44,7 +54,7 @@ class AutoNet():
         print("Configure AutoNet with the following keyword arguments.")
         print("Pass these arguments to either the constructor or fit().")
         print()
-        config_file_parser.print_help()
+        config_file_parser.print_help(self.base_config)
 
 
     def get_current_autonet_config(self):
@@ -108,6 +118,10 @@ class AutoNet():
         self.fit_result = self.pipeline.fit_pipeline(pipeline_config=self.autonet_config,
                                                      X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
         self.pipeline.clean()
+
+        if not self.fit_result["optimized_hyperparameter_config"]:
+            raise RuntimeError("No models fit during training, please retry with a larger max_runtime.")
+        
         if (refit):
             self.refit(X_train, Y_train, X_valid, Y_valid)
         return self.fit_result["optimized_hyperparameter_config"], self.fit_result['final_metric_score']
@@ -143,7 +157,7 @@ class AutoNet():
         if (autonet_config is None or hyperparameter_config is None):
             raise ValueError("You have to specify a hyperparameter and autonet config in order to be able to refit")
 
-        assert len(hyperparameter_config) > 0, "You have to specify a non-empty hyperparameter config for refit. Probably something went wrong in fit."
+        assert len(hyperparameter_config) > 0, "You have to specify a non-empty hyperparameter config for refit."
 
         refit_data = {'hyperparameter_config': hyperparameter_config,
                       'budget': budget,
@@ -151,7 +165,6 @@ class AutoNet():
     
         result = self.pipeline.fit_pipeline(pipeline_config=autonet_config, refit=refit_data,
                                     X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
-        print("Done")
         return result["final_metric_score"]
 
     def predict(self, X, return_probabilities=False):

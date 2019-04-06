@@ -78,14 +78,18 @@ class NetworkSelector(PipelineNode):
         possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
         
+        network_list = list()
         for network_name, network_type in self.networks.items():
             if (network_name not in possible_networks):
                 continue
-            network_cs = network_type.get_config_space(user_updates=self._get_user_hyperparameter_range_updates(prefix=network_name))
+            network_list.append(network_name)
+            network_cs = network_type.get_config_space(
+                **self._get_search_space_updates(prefix=network_name))
             cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter, 
                                        parent_hyperparameter={'parent': selector, 'value': network_name})
+        self._check_search_space_updates((possible_networks, "*"))
 
-        return self._apply_user_updates(cs)
+        return cs
 
     def get_pipeline_config_options(self):
         options = [

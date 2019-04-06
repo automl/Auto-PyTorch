@@ -9,6 +9,7 @@ from copy import deepcopy
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
 from autoPyTorch.components.networks.feature.resnet import ResNet
 from autoPyTorch.components.networks.feature.shapedmlpnet import get_shaped_neuron_counts
 
@@ -41,41 +42,42 @@ class ShapedResNet(ResNet):
 
 
     @staticmethod
-    def get_config_space(user_updates=None):
+    def get_config_space(
+        num_groups=(1, 9),
+        blocks_per_group=(1, 4),
+        max_units=((10, 1024), True),
+        activation=('sigmoid', 'tanh', 'relu'),
+        max_shake_drop_probability=(0, 1),
+        max_dropout=(0, 0.8),
+        resnet_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
+        dropout_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
+        use_dropout=(True, False),
+        use_shake_shake=(True, False),
+        use_shake_drop=(True, False)
+    ):
         cs = CS.ConfigurationSpace()
-        range_num_groups=(1, 9)
-        range_blocks_per_group=(1, 4)
-        range_max_num_units=(10, 1024)
-        possible_activations=('sigmoid', 'tanh', 'relu')
-        range_max_shake_drop_probability=(0, 1)
-        range_max_dropout=(0, 0.8)
-        possible_block_shapes=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs')
-        possible_dropout_shapes=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs')
         
-        num_groups = CS.UniformIntegerHyperparameter("num_groups", lower=range_num_groups[0], upper=range_num_groups[1])
-        cs.add_hyperparameter(num_groups)
-        num_res_blocks = CS.UniformIntegerHyperparameter("blocks_per_group", lower=range_blocks_per_group[0], upper=range_blocks_per_group[1])
-        cs.add_hyperparameter(num_res_blocks)
-        cs.add_hyperparameter(CS.CategoricalHyperparameter("activation", possible_activations))
-        use_dropout = CS.CategoricalHyperparameter("use_dropout", [True, False], default_value=True)
-        cs.add_hyperparameter(use_dropout)
-        cs.add_hyperparameter(CS.CategoricalHyperparameter("use_shake_shake", [True, False], default_value=True))
+        num_groups_hp = get_hyperparameter(CS.UniformIntegerHyperparameter, "num_groups", num_groups)
+        cs.add_hyperparameter(num_groups_hp)
+        blocks_per_group_hp = get_hyperparameter(CS.UniformIntegerHyperparameter, "blocks_per_group", blocks_per_group)
+        cs.add_hyperparameter(blocks_per_group_hp)
+        add_hyperparameter(cs, CS.CategoricalHyperparameter, "activation", activation)
+        use_dropout_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_dropout", use_dropout)
+        add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_shake_shake", use_shake_shake)
         
-        shake_drop = cs.add_hyperparameter(CS.CategoricalHyperparameter("use_shake_drop", [True, False], default_value=True))
-        shake_drop_prob = cs.add_hyperparameter(CS.UniformFloatHyperparameter("max_shake_drop_probability",
-            lower=range_max_shake_drop_probability[0], upper=range_max_shake_drop_probability[1]))
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, shake_drop, True))
+        shake_drop_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_shake_drop", use_shake_drop)
+        if True in use_shake_drop:
+            shake_drop_prob_hp = add_hyperparameter(cs, CS.UniformFloatHyperparameter, "max_shake_drop_probability",
+                max_shake_drop_probability)
+            cs.add_condition(CS.EqualsCondition(shake_drop_prob_hp, shake_drop_hp, True))
         
-        resnet_shape = CSH.CategoricalHyperparameter('resnet_shape', possible_block_shapes)
-        cs.add_hyperparameter(resnet_shape)
-        
-        max_units = CSH.UniformIntegerHyperparameter("max_units", lower=range_max_num_units[0], upper=range_max_num_units[1], log=True)
-        cs.add_hyperparameter(max_units)
+        add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'resnet_shape', resnet_shape)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "max_units", max_units)
 
-        dropout_shape = CSH.CategoricalHyperparameter('dropout_shape', possible_dropout_shapes)
-        cs.add_hyperparameter(dropout_shape)
-        max_dropout = CSH.UniformFloatHyperparameter("max_dropout", lower=range_max_dropout[0], upper=range_max_dropout[1])
-        cs.add_hyperparameter(max_dropout)
-        cs.add_condition(CS.EqualsCondition(dropout_shape, use_dropout, True))
-        cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
+        if True in use_dropout:
+            dropout_shape_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'dropout_shape', dropout_shape)
+            max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
+
+            cs.add_condition(CS.EqualsCondition(dropout_shape_hp, use_dropout_hp, True))
+            cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
         return cs

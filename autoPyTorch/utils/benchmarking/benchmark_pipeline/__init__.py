@@ -9,3 +9,4 @@ from autoPyTorch.utils.benchmarking.benchmark_pipeline.read_instance_data import
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.save_results import SaveResults
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.benchmark_settings import BenchmarkSettings
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.save_ensemble_logs import SaveEnsembleLogs
+from autoPyTorch.utils.benchmarking.benchmark_pipeline.set_ensemble_config import SetEnsembleConfig

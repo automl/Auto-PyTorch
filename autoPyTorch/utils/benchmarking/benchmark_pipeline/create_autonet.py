@@ -27,12 +27,6 @@ class CreateAutoNet(PipelineNode):
             test_logger.__name__, test_logger(autonet, data_manager.X_test, data_manager.Y_test))
 
         metrics = autonet.pipeline[autonet_nodes.MetricSelector.get_name()]
-        metrics.add_metric('pac_metric', autonet_metrics.pac_metric)
-        metrics.add_metric('balanced_accuracy', autonet_metrics.balanced_accuracy)
-        metrics.add_metric('mean_distance', autonet_metrics.mean_distance)
-        metrics.add_metric('multilabel_accuracy', autonet_metrics.multilabel_accuracy)
-        metrics.add_metric('auc_metric', autonet_metrics.auc_metric)
-        metrics.add_metric('accuracy', autonet_metrics.accuracy)
 
         return { 'autonet': autonet }
 

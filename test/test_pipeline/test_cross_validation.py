@@ -15,7 +15,7 @@ from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
-from autoPyTorch.training.budget_types import BudgetTypeEpochs
+from autoPyTorch.components.training.budget_types import BudgetTypeEpochs
 from autoPyTorch.pipeline.nodes.create_dataset_info import DataSetInfo
 
 class TestCrossValidationMethods(unittest.TestCase):

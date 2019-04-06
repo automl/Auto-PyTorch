@@ -1,0 +1,4 @@
+CreateDataLoader batch_size [32,4096] log
+InitializationSelector initializer:initialize_bias ["Zero"]
+NetworkSelector mlpnet:num_layers [1,6]
+NetworkSelector mlpnet:num_units [64,4096] log

@@ -70,6 +70,7 @@ class Node():
                     required_kwargs[keyword] = defaults[index - last_required_keyword_index]
 
                 else:
+                    print ("Available keywords:", sorted(available_kwargs.keys()))
                     raise ValueError('Node ' + str(type(node)) + ' requires keyword ' + str(keyword) + ' which is not available.')
             
             node.fit_output = node.fit(**required_kwargs)

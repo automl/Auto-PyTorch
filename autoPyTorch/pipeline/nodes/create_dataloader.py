@@ -8,6 +8,7 @@ import numpy as np
 
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter, add_hyperparameter
 
 import torch
 import scipy.sparse
@@ -61,8 +62,10 @@ class CreateDataLoader(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('batch_size', lower=32, upper=500, log=True))
-        return self._apply_user_updates(cs)
+        batch_size_range = self._get_search_space_updates().get('batch_size', ((32, 500), True))
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'batch_size', batch_size_range)
+        self._check_search_space_updates('batch_size')
+        return cs
 
     
 def to_dense(matrix):

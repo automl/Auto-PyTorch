@@ -1,0 +1,17 @@
+max_budget=6000
+min_budget=6000
+min_workers=1
+max_runtime=92400
+budget_type=time
+train_metric=balanced_accuracy
+cross_validator=k_fold
+cross_validator_args={"n_splits": 5}
+memory_limit_mb=8000
+ensemble_size=50
+ensemble_only_consider_n_best=50
+embeddings=[none]
+lr_scheduler=[cosine_annealing,plateau]
+networks=[shapedresnet]
+over_sampling_methods=[smote]
+preprocessors=[none,truncated_svd,power_transformer]
+target_size_strategies=[none,upsample,median]

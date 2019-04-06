@@ -60,8 +60,8 @@ class LossModuleSelector(PipelineNode):
 
         possible_loss_modules = set(pipeline_config["loss_modules"]).intersection(self.loss_modules.keys())
         cs.add_hyperparameter(CSH.CategoricalHyperparameter('loss_module', list(possible_loss_modules)))
-
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates()
+        return cs
         
 
     def get_pipeline_config_options(self):

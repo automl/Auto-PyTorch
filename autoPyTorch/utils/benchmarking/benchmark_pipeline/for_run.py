@@ -24,7 +24,8 @@ class ForRun(SubPipelineNode):
         ]
         return options
 
-    def parse_range(self, range_string, fallback):
+    @staticmethod
+    def parse_range(range_string, fallback):
         if (range_string is None):
             return range(fallback)
 

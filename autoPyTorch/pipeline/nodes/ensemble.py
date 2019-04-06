@@ -7,11 +7,14 @@ import os
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.config.config_option import ConfigOption
 from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
-from autoPyTorch.pipeline.nodes import OneHotEncoding
+from autoPyTorch.pipeline.nodes import OneHotEncoding, OptimizationAlgorithm
 from autoPyTorch.utils.ensemble import build_ensemble, read_ensemble_prediction_file, predictions_for_ensemble, combine_predictions, combine_test_predictions, \
-    ensemble_logger
+    ensemble_logger, start_server
 from hpbandster.core.result import logged_results_to_HBS_result
-
+import json
+import asyncio
+from hpbandster.core.nameserver import nic_name_to_host
+import time
 
 class EnableComputePredictionsForEnsemble(PipelineNode):
     """Put this Node in the training pipeline after the metric selector node"""
@@ -51,6 +54,12 @@ class SavePredictionsForEnsemble(PipelineNode):
 
     def predict(self, Y):
         return {"Y": Y}
+    
+    def get_pipeline_config_options(self):
+        options = [
+            ConfigOption("ensemble_server_credentials", default=None)
+        ]
+        return options
 
 
 class BuildEnsemble(PipelineNode):
@@ -87,10 +96,20 @@ class BuildEnsemble(PipelineNode):
         ]
         return options
 
-class AddEnsembleLogger(PipelineNode):
-    """Put this node in fromt of the optimization algorithm node"""
-    def fit(self, pipeline_config, result_loggers, refit=False):
+class EnsembleServer(PipelineNode):
+    """Put this node in front of the optimization algorithm node"""
+
+    def fit(self, pipeline_config, result_loggers, shutdownables, refit=False):
         if refit or pipeline_config["ensemble_size"] == 0:
             return dict()
+        es_credentials_file = os.path.join(pipeline_config["working_dir"], "es_credentials_%s.json" % pipeline_config["run_id"])
+
+        # start server
+        if pipeline_config["task_id"] != 1 or pipeline_config["run_worker_on_master_node"]:
+            host = nic_name_to_host(OptimizationAlgorithm.get_nic_name(pipeline_config))
+            host, port, process = start_server(host)
+            pipeline_config["ensemble_server_credentials"] = (host, port)
+            shutdownables = shutdownables + [process]
+
         result_loggers = [ensemble_logger(directory=pipeline_config["result_logger_dir"], overwrite=True)] + result_loggers
-        return {"result_loggers": result_loggers}
+        return {"result_loggers": result_loggers, "shutdownables": shutdownables}
