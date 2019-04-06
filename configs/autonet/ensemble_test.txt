@@ -1,8 +1,0 @@
-min_budget=9
-max_budget=243
-num_iterations=4
-min_workers=1
-log_level=debug
-budget_type=epochs
-validation_split=0.2
-ensemble_size=20
