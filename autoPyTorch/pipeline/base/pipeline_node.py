@@ -26,7 +26,7 @@ class PipelineNode(Node):
         """
 
         super(PipelineNode, self).__init__()
-        self.user_hyperparameter_range_updates = dict()
+        self._cs_updates = dict()
         self.pipeline = None
 
     @classmethod
@@ -99,9 +99,7 @@ class PipelineNode(Node):
         Returns:
             ConfigSpace -- config space
         """
-
-        # if you override this function make sure to call _apply_user_updates
-        return self._apply_user_updates(ConfigSpace.ConfigurationSpace())
+        return ConfigSpace.ConfigurationSpace()
     
     # VIRTUAL
     def insert_inter_node_hyperparameter_dependencies(self, config_space, dataset_info=None, **pipeline_config):
@@ -112,8 +110,7 @@ class PipelineNode(Node):
         """
         return config_space
 
-    def _update_hyperparameter_range(self, name, new_value_range, log=False,
-            check_validity=True, pipeline_config=None):
+    def _apply_search_space_update(self, name, new_value_range, log=False):
         """Allows the user to update a hyperparameter
         
         Arguments:
@@ -124,44 +121,33 @@ class PipelineNode(Node):
 
         if (len(new_value_range) == 0):
             raise ValueError("The new value range needs at least one value")
-
-        if check_validity:
-            configspace = self.get_hyperparameter_search_space(**pipeline_config)
-            # this will throw an error if such a hyperparameter does not exist
-            hyper = configspace.get_hyperparameter(name)
-            if (isinstance(hyper, ConfigSpace.hyperparameters.NumericalHyperparameter)):
-                if (len(new_value_range) != 2):
-                    raise ValueError("If you modify a NumericalHyperparameter you have to specify a lower and upper bound")
-                if (new_value_range[0] > new_value_range[1]):
-                    raise ValueError("The lower bound has to be smaller than the upper bound")
-            elif (isinstance(hyper, ConfigSpace.hyperparameters.CategoricalHyperparameter)):
-                pass
-            else:
-                raise ValueError("Modifying " + str(type(hyper)) + " is not supported")
-
-        self.user_hyperparameter_range_updates[name] = tuple([new_value_range, log])
+        self._cs_updates[name] = tuple([new_value_range, log])
     
-    def _get_user_hyperparameter_range_updates(self, prefix=None):
+    def _check_search_space_updates(self, *allowed_hps):
+        exploded_allowed_hps = list()
+        for allowed_hp in allowed_hps:
+            add = [list()]
+            allowed_hp = (allowed_hp, ) if isinstance(allowed_hp, str) else allowed_hp
+            for part in allowed_hp:
+                if isinstance(part, str):
+                    add = [x + [part] for x in add]
+                else:
+                    add = [x + [p] for p in part for x in add]
+            exploded_allowed_hps += add
+        exploded_allowed_hps = [ConfigWrapper.delimiter.join(x) for x in exploded_allowed_hps]
+        
+        for key in self._get_search_space_updates().keys():
+            if key not in exploded_allowed_hps and \
+                    ConfigWrapper.delimiter.join(key.split(ConfigWrapper.delimiter)[:-1] + ["*"]) not in exploded_allowed_hps:
+                raise ValueError("Invalid search space update given: %s" % key)
+    
+    def _get_search_space_updates(self, prefix=None):
         if prefix is None:
-            return self.user_hyperparameter_range_updates
+            return self._cs_updates
+        if isinstance(prefix, tuple):
+            prefix = ConfigWrapper.delimiter.join(prefix)
         result = dict()
-        for key in self.user_hyperparameter_range_updates.keys():
+        for key in self._cs_updates.keys():
             if key.startswith(prefix + ConfigWrapper.delimiter):
-                result[key[len(prefix + ConfigWrapper.delimiter):]] = self.user_hyperparameter_range_updates[key][0]
+                result[key[len(prefix + ConfigWrapper.delimiter):]] = self._cs_updates[key]
         return result
-
-    def _apply_user_updates(self, config_space):
-        for name, update_params in self.user_hyperparameter_range_updates.items():
-            if (config_space._hyperparameters.get(name) == None):
-                # this can only happen if the config space got modified in the pipeline update/creation process (user)
-                print("The modified hyperparameter " + name + " does not exist in the config space.")
-                continue
-
-            hyper = config_space.get_hyperparameter(name)
-            if (isinstance(hyper, ConfigSpace.hyperparameters.NumericalHyperparameter)):
-                hyper.__init__(name=hyper.name, lower=update_params[0][0], upper=update_params[0][1], log=update_params[1])
-            elif (isinstance(hyper, ConfigSpace.hyperparameters.CategoricalHyperparameter)):
-                hyper.__init__(name=hyper.name, choices=tuple(update_params[0]), log=update_params[1])
-
-        return config_space
-

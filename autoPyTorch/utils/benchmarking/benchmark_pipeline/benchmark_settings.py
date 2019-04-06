@@ -29,6 +29,11 @@ class BenchmarkSettings(PipelineNode):
         options = [
             ConfigOption("task_id", default=-1, type=int),
             ConfigOption("run_id", default="0", type=str),
-            ConfigOption("log_level", default="info", type=str, choices=list(self.logger_settings.keys()))
+            ConfigOption("log_level", default="info", type=str, choices=list(self.logger_settings.keys())),
+            ConfigOption("benchmark_name", default=None, type=str, required=True),
+
+            # pseudo options that allow to store host information in host_config... Used in run_benchmark_cluster.py
+            ConfigOption("memory_per_core", default=float("inf"), type=float),
+            ConfigOption("time_limit", default=2**32, type=int)
         ]
         return options

@@ -46,7 +46,7 @@ if TEST_CASE == 4:
 
 """ TEST CASE 5: MNIST """
 if TEST_CASE == 5:
-    dm.read_data(os.path.join(dataset_dir, "classification/phpnBqZGZ.csv"), is_classification=True)
+    dm.read_data("openml:40996", is_classification=True)
     metric = "accuracy"
     additional_metrices = []
 

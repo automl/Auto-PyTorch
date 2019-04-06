@@ -1,0 +1,40 @@
+Bootstrap: docker
+From: ubuntu
+
+%help
+Singularity container for Auto-PyTorch.
+
+%labels
+    Version v0.1
+
+%environment
+    export PATH=/data/miniconda/bin:$PATH
+
+%setup
+    mkdir ${SINGULARITY_ROOTFS}/data
+
+%files
+    move_into_container.tar.gz
+
+%post
+    apt-get update
+    apt-get -y install wget git gcc tar
+    cd /data
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /data/miniconda
+    export PATH=/data/miniconda/bin:$PATH
+    conda install -y pytorch-cpu torchvision-cpu -c pytorch
+    git clone https://github.com/urbanmatthias/Auto-PyTorch.git
+    cd Auto-PyTorch
+    git submodule update --init --recursive
+    if [ -f /move_into_container.tar.gz ]
+      then
+        tar -xzvf /move_into_container.tar.gz --overwrite
+        rm -f /move_into_container.tar.gz
+    fi
+    pip install ConfigSpace==0.4.7
+    cat requirements.txt | xargs -n 1 -L 1 pip install
+    cat optional-requirements.txt | xargs -n 1 -L 1 pip install
+    cd /data/Auto-PyTorch/submodules/HpBandSter
+    python setup.py install
+    cd /data

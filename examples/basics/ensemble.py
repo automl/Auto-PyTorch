@@ -15,7 +15,7 @@ dm.generate_classification(num_classes=3, num_features=21, num_samples=1500)
 autonet = AutoNetEnsemble(AutoNetClassification, budget_type='epochs', min_budget=1, max_budget=9, num_iterations=1, log_level='debug')
 
 
-res = autonet.fit(X_train=dm.X, Y_train=dm.Y, cross_validator="k_fold", cross_validator_args={"n_splits": 3}, min_budget_for_cv=3, validation_split=0.2,
+res = autonet.fit(X_train=dm.X, Y_train=dm.Y, cross_validator="k_fold", cross_validator_args={"n_splits": 3}, validation_split=0.2,
     ensemble_only_consider_n_best=3)
 
 print(res)

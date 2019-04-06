@@ -1,11 +1,11 @@
-
+import os
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 
 class SetAutoNetConfig(PipelineNode):
 
-    def fit(self, pipeline_config, autonet, autonet_config_file, data_manager):
+    def fit(self, pipeline_config, autonet, autonet_config_file, data_manager, instance):
         parser = autonet.get_autonet_config_file_parser()
         config = parser.read(autonet_config_file)
 
@@ -27,6 +27,7 @@ class SetAutoNetConfig(PipelineNode):
         if data_manager.categorical_features:
             config['categorical_features'] = data_manager.categorical_features
 
+        config['dataset_name'] = "_".join(os.path.basename(instance).split(":"))
         # Note: PrepareResultFolder will make a small run dependent update of the autonet_config
         autonet.update_autonet_config(**config)
         return dict()

@@ -1,0 +1,6 @@
+embeddings=[none]
+lr_scheduler=[cosine_annealing,plateau]
+networks=[shapedresnet]
+over_sampling_methods=[smote]
+preprocessors=[none,truncated_svd,power_transformer]
+target_size_strategies=[none,upsample,median]

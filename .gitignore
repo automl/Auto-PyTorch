@@ -30,12 +30,6 @@ jobs.txt
 *autonet.egg-info
 *.simg
 
-# Metalearning data
-/metalearning_data/
-/metalearning_comparison_results/
-/meta_outputs/
-/metamodels/
-
 
 # Datasets
 /datasets/

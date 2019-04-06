@@ -14,13 +14,13 @@ class AutoNetFeatureData(AutoNet):
             CrossValidation, Imputation, NormalizationStrategySelector, OneHotEncoding, PreprocessorSelector, ResamplingStrategySelector, \
             EmbeddingSelector, NetworkSelector, OptimizerSelector, LearningrateSchedulerSelector, LogFunctionsSelector, MetricSelector, \
             LossModuleSelector, TrainNode, CreateDataLoader, CreateDatasetInfo, EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, \
-            BuildEnsemble, AddEnsembleLogger, InitializationSelector
+            BuildEnsemble, EnsembleServer, InitializationSelector
         
         # build the pipeline
         pipeline = Pipeline([
             AutoNetSettings(),
             CreateDatasetInfo(),
-            AddEnsembleLogger(),
+            EnsembleServer(),
             OptimizationAlgorithm([
                 CrossValidation([
                     Imputation(),
@@ -78,7 +78,7 @@ class AutoNetFeatureData(AutoNet):
                     CreateDataLoader(),
                     TrainNode()
                 ])
-            ])
+            ]),
         ])
 
         cls._apply_default_pipeline_settings(pipeline)
@@ -104,8 +104,8 @@ class AutoNetFeatureData(AutoNet):
         from autoPyTorch.components.preprocessing.feature_preprocessing import \
                 TruncatedSVD, FastICA, RandomKitchenSinks, KernelPCA, Nystroem, PowerTransformer
 
-        from autoPyTorch.training.early_stopping import EarlyStopping
-        from autoPyTorch.training.mixup import Mixup
+        from autoPyTorch.components.training.early_stopping import EarlyStopping
+        from autoPyTorch.components.regularization.mixup import Mixup
 
         pre_selector = pipeline[PreprocessorSelector.get_name()]
         pre_selector.add_preprocessor('truncated_svd', TruncatedSVD)

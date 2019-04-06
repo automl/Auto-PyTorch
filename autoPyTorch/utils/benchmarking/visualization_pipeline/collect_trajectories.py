@@ -1,9 +1,40 @@
 from autoPyTorch.utils.config.config_option import ConfigOption
-from autoPyTorch.utils.benchmarking.benchmark_pipeline.for_run import ForRun
-from autoPyTorch.utils.benchmarking.benchmark_pipeline.for_autonet_config import ForAutoNetConfig
+from autoPyTorch.utils.benchmarking.benchmark_pipeline import ForRun, ForAutoNetConfig, ForInstance
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.prepare_result_folder import get_run_result_dir
 import os
 import logging
+import traceback
+
+class CollectInstanceTrajectories(ForInstance):
+    def fit(self, pipeline_config, run_id_range):
+        instances = self.get_instances(pipeline_config, instance_slice=self.parse_slice(pipeline_config["instance_slice"]))
+
+        result_trajectories = dict()
+        result_train_metrics = set()
+
+        for instance in instances:
+            try:
+                pipeline_result = self.sub_pipeline.fit_pipeline(pipeline_config=pipeline_config, instance=instance, run_id_range=run_id_range)
+
+                # merge the trajectories into one dict
+                instance_trajectories = pipeline_result["trajectories"]
+                train_metrics = pipeline_result["train_metrics"]
+
+                for metric, config_trajectories in instance_trajectories.items():
+                    if metric not in result_trajectories:
+                        result_trajectories[metric] = dict()
+                    for config, run_trajectories in config_trajectories.items():
+                        if config not in result_trajectories[metric]:
+                            result_trajectories[metric][config] = dict()
+                        result_trajectories[metric][config][instance] = run_trajectories
+                result_train_metrics |= train_metrics
+
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
+        return {"trajectories": result_trajectories,
+                "train_metrics": result_train_metrics}
+
 
 class CollectAutoNetConfigTrajectories(ForAutoNetConfig):
     def fit(self, pipeline_config, instance, run_id_range):

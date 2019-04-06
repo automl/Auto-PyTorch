@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
+
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 
@@ -32,10 +34,14 @@ class PowerTransformer(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_info=None):
+    def get_hyperparameter_search_space(
+        dataset_info=None,
+        standardize=(True, False),
+        method=("yeo-johnson", "box-cox"),
+    ):
         cs = ConfigSpace.ConfigurationSpace()
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter("standardize", choices=[True, False], default_value=True))
+        add_hyperparameter(cs, CSH.CategoricalHyperparameter, "standardize", standardize)
         if dataset_info is None or (
                 (dataset_info.x_min_value is None or dataset_info.x_min_value > 0) and not any(dataset_info.categorical_features)):
-            cs.add_hyperparameter(CSH.CategoricalHyperparameter("method", choices=["yeo-johnson", "box-cox"], default_value="yeo-johnson"))
+            add_hyperparameter(cs, CSH.CategoricalHyperparameter, "method", method)
         return cs

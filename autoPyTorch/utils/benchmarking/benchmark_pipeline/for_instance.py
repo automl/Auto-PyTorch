@@ -24,7 +24,8 @@ class ForInstance(SubPipelineNode):
         ]
         return options
 
-    def get_instances(self, benchmark_config, instances_must_exist=True, instance_slice=None):
+    @staticmethod
+    def get_instances(benchmark_config, instances_must_exist=True, instance_slice=None):
         # get list of instances
         instances = []
         if os.path.isfile(benchmark_config["instances"]):
@@ -53,7 +54,8 @@ class ForInstance(SubPipelineNode):
             return instances[instance_slice]
         return instances
 
-    def parse_slice(self, splice_string):
+    @staticmethod
+    def parse_slice(splice_string):
         if (splice_string is None):
             return None
 

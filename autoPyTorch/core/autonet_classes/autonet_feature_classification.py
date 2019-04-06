@@ -1,6 +1,7 @@
 from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeatureData
 
 class AutoNetClassification(AutoNetFeatureData):
+    preset_folder_name = "feature_classification"
 
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):

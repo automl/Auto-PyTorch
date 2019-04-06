@@ -3,6 +3,7 @@ import torch
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 
+from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter, add_hyperparameter
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
 
 
@@ -28,12 +29,15 @@ class PolynomialFeatures(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_info=None):
-        degree = CSH.UniformIntegerHyperparameter("degree", lower=2, upper=3)
-        interaction_only = CSH.CategoricalHyperparameter("interaction_only", [False, True])
-        include_bias = CSH.CategoricalHyperparameter("include_bias", [True, False])
-
+    def get_hyperparameter_search_space(
+        dataset_info=None,
+        degree=(2, 3),
+        interaction_only=(True, False),
+        include_bias=(True, False)
+    ):
         cs = ConfigSpace.ConfigurationSpace()
-        cs.add_hyperparameters([degree, interaction_only, include_bias])
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "degree", degree)
+        add_hyperparameter(cs, CSH.CategoricalHyperparameter, "interaction_only", [False, True])
+        add_hyperparameter(cs, CSH.CategoricalHyperparameter, "include_bias", [True, False])
 
         return cs
