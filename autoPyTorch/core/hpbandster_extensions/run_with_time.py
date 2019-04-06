@@ -30,7 +30,6 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
     self.thread_cond.acquire()
 
     start_time = time.time()
-    n_iterations -= len(self.iterations)  # in the case of a initial design iteration
     kill = False
     while True:
         if (not kill and runtime < time.time() - start_time):
