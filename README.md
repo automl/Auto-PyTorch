@@ -73,7 +73,7 @@ How to configure Auto-PyTorch for your needs:
 ```py
 
 # Print all possible configuration options.
-autoPyTorch = AutoNetClassification().print_help()
+AutoNetClassification().print_help()
 
 # You can use the constructor to configure Auto-PyTorch.
 autoPyTorch = AutoNetClassification(log_level='info', max_runtime=300, min_budget=30, max_budget=90)
