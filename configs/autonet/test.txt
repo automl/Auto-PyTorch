@@ -1,9 +1,0 @@
-min_budget=10
-max_budget=10
-num_iterations=1
-min_workers=1
-log_level=debug
-budget_type=epochs
-cross_validator=k_fold
-cross_validator_args={"n_splits": 2}
-hyperparameter_search_space_updates=configs/configspace/minimlp.txt
