@@ -12,7 +12,7 @@ class AutoNetMultilabel(AutoNetFeatureData):
         from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
 
         import torch.nn as nn
-        from autoPyTorch.components.metrics.standard_metrics import multilabel_accuracy
+        from autoPyTorch.components.metrics import multilabel_accuracy, auc_metric, pac_metric
         from autoPyTorch.components.preprocessing.loss_weight_strategies import LossWeightStrategyWeightedBinary
 
         AutoNetFeatureData._apply_default_pipeline_settings(pipeline)
@@ -26,6 +26,8 @@ class AutoNetMultilabel(AutoNetFeatureData):
 
         metric_selector = pipeline[MetricSelector.get_name()]
         metric_selector.add_metric('multilabel_accuracy', multilabel_accuracy)
+        metric_selector.add_metric('auc_metric', auc_metric)
+        metric_selector.add_metric('pac_metric', pac_metric)
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.default_minimize_value = False

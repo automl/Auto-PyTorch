@@ -55,10 +55,6 @@ autonet = AutoNetClassification() if TEST_CASE != 3 else AutoNetMultilabel()
 
 # add metrics and test_result to pipeline
 autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function('test_result', test_result(autonet, dm.X_test, dm.Y_test))
-metrics = autonet.pipeline[autonet_nodes.MetricSelector.get_name()]
-metrics.add_metric('pac_metric', autonet_metrics.pac_metric)
-metrics.add_metric('auc_metric', autonet_metrics.auc_metric)
-metrics.add_metric('accuracy', autonet_metrics.accuracy)
 
 # Fit autonet using train data
 res = autonet.fit(min_budget=300,
