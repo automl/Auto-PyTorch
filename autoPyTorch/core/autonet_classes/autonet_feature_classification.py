@@ -18,7 +18,7 @@ class AutoNetClassification(AutoNetFeatureData):
 
         import torch.nn as nn
         from sklearn.model_selection import StratifiedKFold
-        from autoPyTorch.components.metrics.standard_metrics import accuracy
+        from autoPyTorch.components.metrics import accuracy, auc_metric, pac_metric, balanced_accuracy
         from autoPyTorch.components.preprocessing.loss_weight_strategies import LossWeightStrategyWeighted
 
         AutoNetFeatureData._apply_default_pipeline_settings(pipeline)
@@ -33,6 +33,9 @@ class AutoNetClassification(AutoNetFeatureData):
 
         metric_selector = pipeline[MetricSelector.get_name()]
         metric_selector.add_metric('accuracy', accuracy)
+        metric_selector.add_metric('auc_metric', auc_metric)
+        metric_selector.add_metric('pac_metric', pac_metric)
+        metric_selector.add_metric('balanced_accuracy', balanced_accuracy)
 
         resample_selector = pipeline[ResamplingStrategySelector.get_name()]
         resample_selector.add_over_sampling_method('random', RandomOverSamplingWithReplacement)
