@@ -1,9 +1,0 @@
-max_budget=6000
-min_budget=74
-min_workers=3
-max_runtime=46200
-budget_type=time
-train_metric=balanced_accuracy
-cross_validator=k_fold
-cross_validator_args={"n_splits": 5}
-use_tensorboard_logger=True
