@@ -1,0 +1,10 @@
+#!/bin/bash
+#MOAB -N LOL
+#MOAB -l nodes=1:ppn=1,walltime=90:00:00,pmem=8gb
+#MOAB -V
+#MOAB -E
+#MOAB -t 1-73
+
+cd $HOME/Auto-PyTorch
+
+python scripts/recompute_ensemble_performance.py --partial_benchmark $MOAB_JOBARRAYINDEX 0 --host_config configs/hosts/nemo.txt configs/benchmark/openml.txt 

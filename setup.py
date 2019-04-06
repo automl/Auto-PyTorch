@@ -11,6 +11,11 @@ with open('optional-requirements.txt', 'r') as f:
     for line in f:
         optional_requirements.append(line.strip())
 
+add_presets = []
+for dirname, subdirs, files in os.walk(os.path.join('autoPyTorch', 'core', 'presets')):
+    add_presets.extend([os.path.join(dirname, f) for f in files])
+
+
 setuptools.setup(
     name="autoPyTorch",
     version="0.0.1",
@@ -32,5 +37,7 @@ setuptools.setup(
 	python_requires='>=3',
     platforms=['Linux'],
     install_requires=requirements,
+    data_files=[('', add_presets)],
+    include_package_data=True,
 #    extras_require=optional_requirements
 )

@@ -4,13 +4,13 @@
 This file contains the different learning rate schedulers of AutoNet.
 """
 
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
+
 import torch
 import torch.optim.lr_scheduler as lr_scheduler
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-
-from autoPyTorch.components.lr_scheduler.lr_schedulers_config import CSConfig
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -29,8 +29,7 @@ class AutoNetLearningRateSchedulerBase(object):
         raise ValueError('Override the method _get_scheduler and do not call the base class implementation')
 
     @staticmethod
-    def get_config_space(*args, **kwargs):
-        # currently no use but might come in handy in the future
+    def get_config_space():
         return CS.ConfigurationSpace()
 
 class SchedulerNone(AutoNetLearningRateSchedulerBase):
@@ -44,12 +43,13 @@ class SchedulerStepLR(AutoNetLearningRateSchedulerBase):
         return lr_scheduler.StepLR(optimizer=optimizer, step_size=config['step_size'], gamma=config['gamma'], last_epoch=-1)
     
     @staticmethod
-    def get_config_space(*args, **kwargs):
+    def get_config_space(
+        step_size=(1, 10),
+        gamma=(0.001, 0.9)
+    ):
         cs = CS.ConfigurationSpace()
-        config = CSConfig['step_lr']
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('step_size', lower=config['step_size'][0], upper=config['step_size'][1]))
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('gamma', lower=config['gamma'][0], upper=config['gamma'][1]))
-        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'step_size', step_size)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'gamma', gamma)
         return cs
 
 class SchedulerExponentialLR(AutoNetLearningRateSchedulerBase):
@@ -58,11 +58,11 @@ class SchedulerExponentialLR(AutoNetLearningRateSchedulerBase):
         return lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=config['gamma'], last_epoch=-1)
     
     @staticmethod
-    def get_config_space(*args, **kwargs):
+    def get_config_space(
+        gamma=(0.8, 0.9999)
+    ):
         cs = CS.ConfigurationSpace()
-        config = CSConfig['exponential_lr']
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('gamma', lower=config['gamma'][0], upper=config['gamma'][1]))
-        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'gamma', gamma)
         return cs
 
 class SchedulerReduceLROnPlateau(AutoNetLearningRateSchedulerBase):
@@ -71,12 +71,13 @@ class SchedulerReduceLROnPlateau(AutoNetLearningRateSchedulerBase):
         return lr_scheduler.ReduceLROnPlateau(optimizer=optimizer)
     
     @staticmethod
-    def get_config_space(*args, **kwargs):
+    def get_config_space(
+        factor=(0.05, 0.5),
+        patience=(3, 10)
+    ):
         cs = CS.ConfigurationSpace()
-        config = CSConfig['reduce_on_plateau']
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('factor', lower=config['factor'][0], upper=config['factor'][1]))
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('patience', lower=config['patience'][0], upper=config['patience'][1]))
-        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'factor', factor)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'patience', patience)
         return cs
 
 class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
@@ -96,13 +97,15 @@ class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
         return lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=l, last_epoch=-1)
     
     @staticmethod
-    def get_config_space(*args, **kwargs):
+    def get_config_space(
+        max_factor=(1.0, 2),
+        min_factor=(0.001, 1.0),
+        cycle_length=(3, 10)
+    ):
         cs = CS.ConfigurationSpace()
-        config = CSConfig['cyclic_lr']
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('max_factor', lower=config['max_factor'][0], upper=config['max_factor'][1]))
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('min_factor', lower=config['min_factor'][0], upper=config['min_factor'][1]))
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('cycle_length', lower=config['cycle_length'][0], upper=config['cycle_length'][1]))
-        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'max_factor', max_factor)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'min_factor', min_factor)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'cycle_length', cycle_length)
         return cs
 
 class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
@@ -114,12 +117,13 @@ class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
         return scheduler
     
     @staticmethod
-    def get_config_space(*args, **kwargs):
+    def get_config_space(
+        T_max=(1, 20),
+        T_mult=(1.0, 2.0)
+    ):
         cs = CS.ConfigurationSpace()
-        config = CSConfig['cosine_annealing_lr']
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=config['T_max'][0], upper=config['T_max'][1]))
-        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('T_mult', lower=config['T_mult'][0], upper=config['T_mult'][1]))
-        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult)
         return cs
 
 

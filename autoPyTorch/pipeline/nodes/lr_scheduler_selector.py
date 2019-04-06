@@ -11,7 +11,7 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_option import ConfigOption
-from autoPyTorch.training.lr_scheduling import LrScheduling
+from autoPyTorch.components.training.lr_scheduling import LrScheduling
 
 class LearningrateSchedulerSelector(PipelineNode):
     def __init__(self):
@@ -54,11 +54,13 @@ class LearningrateSchedulerSelector(PipelineNode):
         for lr_scheduler_name, lr_scheduler_type in self.lr_scheduler.items():
             if (lr_scheduler_name not in possible_lr_scheduler):
                 continue
-            lr_scheduler_cs = lr_scheduler_type.get_config_space()
+            lr_scheduler_cs = lr_scheduler_type.get_config_space(
+                **self._get_search_space_updates(prefix=lr_scheduler_name))
             cs.add_configuration_space( prefix=lr_scheduler_name, configuration_space=lr_scheduler_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': lr_scheduler_name})
 
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates((possible_lr_scheduler, "*"))
+        return cs
 
     def get_pipeline_config_options(self):
         options = [

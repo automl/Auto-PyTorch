@@ -22,14 +22,16 @@ class ForAutoNetConfig(SubPipelineNode):
         ]
         return options
 
-    def get_config_files(self, pipeline_config):
+    @staticmethod
+    def get_config_files(pipeline_config, parse_slice=True):
         config_files = pipeline_config['autonet_configs']
-        autonet_config_slice = self.parse_slice(pipeline_config['autonet_config_slice'])
-        if autonet_config_slice is not None:
-            return sorted(config_files)[autonet_config_slice]
-        return sorted(config_files)
+        autonet_config_slice = ForAutoNetConfig.parse_slice(pipeline_config['autonet_config_slice'])
+        if autonet_config_slice is not None and parse_slice:
+            return config_files[autonet_config_slice]
+        return config_files
 
-    def parse_slice(self, splice_string):
+    @staticmethod
+    def parse_slice(splice_string):
         if (splice_string is None):
             return None
 

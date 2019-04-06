@@ -7,6 +7,7 @@ Imlementation of a ResNet with feature data.
 import ConfigSpace
 import torch.nn as nn
 
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
 from autoPyTorch.components.networks.base_net import BaseFeatureNet
 from autoPyTorch.components.regularization.shake import (shake_drop,
                                                      shake_drop_get_bl,
@@ -57,53 +58,59 @@ class ResNet(BaseFeatureNet):
         return nn.Sequential(*blocks)
 
     @staticmethod
-    def get_config_space(user_updates=None):
+    def get_config_space(
+        num_groups=((1, 9), False),
+        blocks_per_group=((1, 4), False),
+        num_units=((10, 1024), True),
+        activation=('sigmoid', 'tanh', 'relu'),
+        max_shake_drop_probability=(0, 1),
+        dropout=(0, 0.8),
+        use_shake_drop=(True, False),
+        use_shake_shake=(True, False),
+        use_dropout=(True, False),
+        **kwargs
+    ):
         cs = ConfigSpace.ConfigurationSpace()
-        range_num_groups=(1, 9)
-        range_blocks_per_group=(1, 4)
-        range_num_units=(10, 1024)
-        possible_activations=('sigmoid', 'tanh', 'relu')
-        range_max_shake_drop_probability=(0, 1)
-        range_dropout=(0, 0.8)
 
-        if user_updates is not None and 'num_groups' in user_updates:
-            range_num_groups = user_updates['num_groups']
-        if user_updates is not None and 'blocks_per_group' in user_updates:
-            range_blocks_per_group = user_updates['blocks_per_group']
-
-        num_groups = ConfigSpace.UniformIntegerHyperparameter("num_groups", lower=range_num_groups[0], upper=range_num_groups[1])
-        cs.add_hyperparameter(num_groups)
-        num_res_blocks = ConfigSpace.UniformIntegerHyperparameter("blocks_per_group", lower=range_blocks_per_group[0], upper=range_blocks_per_group[1])
-        cs.add_hyperparameter(num_res_blocks)
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation", possible_activations))
+        num_groups_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, "num_groups", num_groups)
+        cs.add_hyperparameter(num_groups_hp)
+        blocks_per_group_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, "blocks_per_group", blocks_per_group)
+        cs.add_hyperparameter(blocks_per_group_hp)
+        add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "activation", activation)
         
-        use_dropout = ConfigSpace.CategoricalHyperparameter("use_dropout", [True, False], default_value=True)
-        cs.add_hyperparameter(use_dropout)
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_shake_shake", [True, False], default_value=True))
+        use_dropout_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, "use_dropout", use_dropout)
+        cs.add_hyperparameter(use_dropout_hp)
+        add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_shake_shake", use_shake_shake)
         
-        shake_drop = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_shake_drop", [True, False], default_value=True))
-        shake_drop_prob = cs.add_hyperparameter(ConfigSpace.UniformFloatHyperparameter("max_shake_drop_probability",
-            lower=range_max_shake_drop_probability[0], upper=range_max_shake_drop_probability[1]))
-        cs.add_condition(ConfigSpace.EqualsCondition(shake_drop_prob, shake_drop, True))
+        use_shake_drop_hp = add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_shake_drop", use_shake_drop)
+        if True in use_shake_drop:
+            shake_drop_prob_hp = add_hyperparameter(cs, ConfigSpace.UniformFloatHyperparameter, "max_shake_drop_probability",
+                max_shake_drop_probability)
+            cs.add_condition(ConfigSpace.EqualsCondition(shake_drop_prob_hp, use_shake_drop_hp, True))
         
 
         # it is the upper bound of the nr of groups, since the configuration will actually be sampled.
-        for i in range(0, range_num_groups[1] + 1):
+        for i in range(0, num_groups[0][1] + 1):
 
-            n_units = ConfigSpace.UniformIntegerHyperparameter("num_units_%d" % i, lower=range_num_units[0], upper=range_num_units[1], log=True)
-            cs.add_hyperparameter(n_units)
-            dropout = ConfigSpace.UniformFloatHyperparameter("dropout_%d" % i, lower=range_dropout[0], upper=range_dropout[1])
-            cs.add_hyperparameter(dropout)
-            dropout_condition_1 = ConfigSpace.EqualsCondition(dropout, use_dropout, True)
+            n_units_hp = add_hyperparameter(cs, ConfigSpace.UniformIntegerHyperparameter,
+                "num_units_%d" % i, kwargs.pop("num_units_%d" % i, num_units))
 
             if i > 1:
-                cs.add_condition(ConfigSpace.GreaterThanCondition(n_units, num_groups, i - 1))
-                
-                dropout_condition_2 = ConfigSpace.GreaterThanCondition(dropout, num_groups, i - 1)
-                cs.add_condition(ConfigSpace.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
+                cs.add_condition(ConfigSpace.GreaterThanCondition(n_units_hp, num_groups_hp, i - 1))
 
+            if True in use_dropout:
+                dropout_hp = add_hyperparameter(cs, ConfigSpace.UniformFloatHyperparameter,
+                    "dropout_%d" % i, kwargs.pop("dropout_%d" % i, dropout))
+                dropout_condition_1 = ConfigSpace.EqualsCondition(dropout_hp, use_dropout_hp, True)
+
+                if i > 1:
+                
+                    dropout_condition_2 = ConfigSpace.GreaterThanCondition(dropout_hp, num_groups_hp, i - 1)
+
+                    cs.add_condition(ConfigSpace.AndConjunction(dropout_condition_1, dropout_condition_2))
+                else:
+                    cs.add_condition(dropout_condition_1)
+        assert len(kwargs) == 0, "Invalid hyperparameter updates for resnet: %s" % str(kwargs)
         return cs
 
 

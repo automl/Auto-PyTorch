@@ -5,7 +5,7 @@ from sklearn.metrics.classification import _check_targets, type_of_target
 
 
 def balanced_accuracy(y_pred, y_true):
-    return _balanced_accuracy(np.argmax(y_pred, axis=1), np.argmax(y_true, axis=1)) * 100
+    return _balanced_accuracy(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1)) * 100
 
 
 def _balanced_accuracy(solution, prediction):

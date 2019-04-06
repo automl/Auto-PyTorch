@@ -75,5 +75,9 @@ def get_names(instance, autonet_config_file, run_id, run_number):
 
 def get_run_result_dir(pipeline_config, instance, autonet_config_file, run_id, run_number):
     instance_name, autonet_config_name, run_name = get_names(instance, autonet_config_file, run_id, run_number)
-    run_result_dir = os.path.join(pipeline_config['result_dir'], instance_name, autonet_config_name, run_name)
+    run_result_dir = os.path.join(pipeline_config['result_dir'],
+                                  pipeline_config["benchmark_name"],
+                                  instance_name,
+                                  autonet_config_name,
+                                  run_name)
     return run_result_dir

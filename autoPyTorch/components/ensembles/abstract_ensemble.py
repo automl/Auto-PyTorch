@@ -27,7 +27,6 @@ class AbstractEnsemble(object):
         self
 
         """
-        pass
 
     @abstractmethod
     def predict(self, base_models_predictions):
@@ -42,7 +41,6 @@ class AbstractEnsemble(object):
         -------
         array : [n_data_points]
         """
-        self
 
     @abstractmethod
     def get_models_with_weights(self, models):

@@ -37,7 +37,8 @@ class AutoNetSettings(PipelineNode):
         result_logger = []
         if not refit:
             result_logger = json_result_logger(directory=pipeline_config["result_logger_dir"], overwrite=True)
-        return { 'X_train': X_train, 'Y_train': Y_train, 'X_valid': X_valid, 'Y_valid': Y_valid, 'result_loggers':  [result_logger]}
+        return { 'X_train': X_train, 'Y_train': Y_train, 'X_valid': X_valid, 'Y_valid': Y_valid,
+            'result_loggers':  [result_logger], 'shutdownables': []}
 
     def get_pipeline_config_options(self):
         options = [

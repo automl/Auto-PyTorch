@@ -1,3 +1,4 @@
 network_interface_name=ib0
-working_dir=/data/workspace
-result_dir=/data/tmp/benchmark_results
+working_dir=/external_autonet_home/working_dir
+result_dir=benchmark_results_cluster
+time_limit=345600

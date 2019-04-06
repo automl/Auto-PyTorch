@@ -45,11 +45,13 @@ class OptimizerSelector(PipelineNode):
         for optimizer_name, optimizer_type in self.optimizer.items():
             if (optimizer_name not in possible_optimizer):
                 continue
-            optimizer_cs = optimizer_type.get_config_space()
+            optimizer_cs = optimizer_type.get_config_space(
+                **self._get_search_space_updates(prefix=optimizer_name))
             cs.add_configuration_space( prefix=optimizer_name, configuration_space=optimizer_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': optimizer_name})
 
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates(possible_optimizer, "*")
+        return cs
 
     def get_pipeline_config_options(self):
         options = [

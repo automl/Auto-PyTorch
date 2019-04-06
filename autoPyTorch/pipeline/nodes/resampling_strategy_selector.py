@@ -135,15 +135,19 @@ class ResamplingStrategySelector(PipelineNode):
         for method_name, method_type in self.over_sampling_methods.items():
             if method_name not in possible_over_sampling_methods:
                 continue
-            method_cs = method_type.get_hyperparameter_search_space()
+            method_cs = method_type.get_hyperparameter_search_space(
+                **self._get_search_space_updates(prefix=method_name))
             cs.add_configuration_space( prefix=method_name, configuration_space=method_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector_over_sampling, 'value': method_name})
         
         for method_name, method_type in self.under_sampling_methods.items():
             if method_name not in possible_under_sampling_methods:
                 continue
-            method_cs = method_type.get_hyperparameter_search_space()
+            method_cs = method_type.get_hyperparameter_search_space(
+                **self._get_search_space_updates(prefix=method_name))
             cs.add_configuration_space( prefix=method_name, configuration_space=method_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector_under_sampling, 'value': method_name})
 
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates((possible_over_sampling_methods, "*"),
+                                         (possible_under_sampling_methods, "*"))
+        return cs

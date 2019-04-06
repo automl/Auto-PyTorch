@@ -58,11 +58,13 @@ class PreprocessorSelector(PipelineNode):
         for preprocessor_name, preprocessor_type in self.preprocessors.items():
             if (preprocessor_name not in possible_preprocessors):
                 continue
-            preprocessor_cs = preprocessor_type.get_hyperparameter_search_space(dataset_info=dataset_info)
+            preprocessor_cs = preprocessor_type.get_hyperparameter_search_space(dataset_info=dataset_info,
+                **self._get_search_space_updates(prefix=preprocessor_name))
             cs.add_configuration_space( prefix=preprocessor_name, configuration_space=preprocessor_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': preprocessor_name})
 
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates((possible_preprocessors, "*"))
+        return cs
 
     def get_pipeline_config_options(self):
         options = [

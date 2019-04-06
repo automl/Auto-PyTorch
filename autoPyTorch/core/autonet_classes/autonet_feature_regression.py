@@ -6,6 +6,7 @@ import copy
 from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeatureData
 
 class AutoNetRegression(AutoNetFeatureData):
+    preset_folder_name = "feature_regression"
 
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):

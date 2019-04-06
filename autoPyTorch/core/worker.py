@@ -2,9 +2,10 @@ import logging
 import torch
 import time
 import numpy as np
+import Pyro4
 from hpbandster.core.worker import Worker
 
-from autoPyTorch.training.budget_types import BudgetTypeTime
+from autoPyTorch.components.training.budget_types import BudgetTypeTime
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -12,12 +13,14 @@ __license__ = "BSD"
 
 class ModuleWorker(Worker):
     def __init__(self, pipeline, pipeline_config,
-            X_train, Y_train, X_valid, Y_valid, dataset_info, budget_type, max_budget, *args, **kwargs):
+            X_train, Y_train, X_valid, Y_valid, dataset_info, budget_type, max_budget,
+            shutdownables, use_pynisher, *args, **kwargs):
         self.X_train = X_train #torch.from_numpy(X_train).float()
         self.Y_train = Y_train #torch.from_numpy(Y_train).long()
         self.X_valid = X_valid
         self.Y_valid = Y_valid
         self.dataset_info = dataset_info
+        self.shutdownables = shutdownables
 
         self.max_budget = max_budget
         self.budget_type = budget_type
@@ -28,7 +31,7 @@ class ModuleWorker(Worker):
         self.autonet_logger = logging.getLogger('autonet')
 
         # We can only use user defined limits (memory) if we have the required module 'resource' - not available on windows!
-        self.guarantee_limits = module_exists("resource") and module_exists("pynisher")
+        self.guarantee_limits = use_pynisher and module_exists("resource") and module_exists("pynisher")
         if (not self.guarantee_limits):
             self.autonet_logger.info("Can not guarantee memory and time limit because module 'resource' is not available")
 
@@ -87,6 +90,13 @@ class ModuleWorker(Worker):
                 tl.log_value('Exceptions/' + str(e), budget, int(time.time()))
             self.autonet_logger.info(str(e))
             raise e
+    
+    @Pyro4.expose
+    @Pyro4.oneway
+    def shutdown(self):
+        for s in self.shutdownables:
+            s.shutdown()
+        super().shutdown()
 
 def module_exists(module_name):
     try:

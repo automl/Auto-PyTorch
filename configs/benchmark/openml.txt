@@ -1,7 +1,8 @@
 result_dir=benchmark_results_cluster
 instances=configs/datasets/openml.txt
-autonet_configs=[configs/autonet/bohb_cv.txt, configs/autonet/rs_cv.txt]
+autonet_configs=[configs/autonet/openml/restricted_cs.txt, configs/autonet/openml/hyperband.txt, configs/autonet/openml/autonet1.txt, configs/autonet/openml/no_hyperband.txt, configs/autonet/openml/gpu.txt]
 problem_type=feature_classification
 log_level=info
-num_runs=5
-test_split=0.0
+num_runs=3
+test_split=0.2
+enable_ensemble=True

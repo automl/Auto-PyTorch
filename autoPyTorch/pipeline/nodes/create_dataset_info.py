@@ -21,6 +21,7 @@ class DataSetInfo():
         self.x_min_value = None
         self.x_max_value = None
         self.is_sparse = False
+        self.name = None
 
 class CreateDatasetInfo(PipelineNode):
 
@@ -38,6 +39,9 @@ class CreateDatasetInfo(PipelineNode):
             info.categorical_features = pipeline_config['categorical_features']
         else:
             info.categorical_features = [False] * info.x_shape[1]
+        
+        if 'dataset_name' in pipeline_config and pipeline_config['dataset_name']:
+            info.name = pipeline_config['dataset_name']
 
         return {'X_train' : X_train, 'Y_train' : Y_train, 'X_valid' : X_valid, 'Y_valid' : Y_valid, 'dataset_info' : info}
         
@@ -48,7 +52,8 @@ class CreateDatasetInfo(PipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption(name='categorical_features', default=None, type=to_bool, list=True,
-                info='List of booleans that specifies for each feature whether it is categorical.')
+                info='List of booleans that specifies for each feature whether it is categorical.'),
+            ConfigOption(name='dataset_name', default=None, type=str)
         ]
         return options
             
