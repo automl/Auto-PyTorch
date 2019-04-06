@@ -154,9 +154,9 @@ class ConfigFileParser():
                     if (value not in choices):
                         raise ValueError("Config option " + option_name + " has been assigned with value '" + str(value) + "', only values in " + str(choices) + " are allowed")
 
-    def print_help(self, max_column_width=40):
+    def print_help(self, base_config=None, max_column_width=40):
         columns = ["name", "default", "choices", "type"]
-        default = self.set_defaults({})
+        default = self.set_defaults(base_config or {})
         column_width = {c: len(c) for c in columns}
         format_string = dict()
         num_lines = dict()

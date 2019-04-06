@@ -11,6 +11,7 @@ import signal
 import time
 import math
 import inspect
+import sys
 from copy import deepcopy
 
 from sklearn.model_selection import BaseCrossValidator
@@ -18,7 +19,7 @@ from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool, to_dict
-from autoPyTorch.training.budget_types import BudgetTypeTime
+from autoPyTorch.components.training.budget_types import BudgetTypeTime
 
 import time
 
@@ -100,6 +101,7 @@ class CrossValidation(SubPipelineNode):
         additional_results = self.process_additional_results(additional_results=additional_results, all_sub_pipeline_kwargs=all_sub_pipeline_kwargs,
             X=X, Y=Y, logger=logger)
         loss = loss / num_cv_splits + loss_penalty
+        logger.debug("Send additional results %s to master" % str(additional_results))
         return dict({'loss': loss, 'info': info}, **additional_results)
 
     def predict(self, pipeline_config, X):
@@ -110,7 +112,7 @@ class CrossValidation(SubPipelineNode):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("validation_split", default=0.0, type=float, choices=[0, 1],
+            ConfigOption("validation_split", default=0.3, type=float, choices=[0, 1],
                 info='In range [0, 1). Part of train dataset used for validation. Ignored in fit if cross validator or valid data given.'),
             ConfigOption("refit_validation_split", default=0.0, type=float, choices=[0, 1],
                 info='In range [0, 1). Part of train dataset used for validation in refit.'),
@@ -153,7 +155,7 @@ class CrossValidation(SubPipelineNode):
         
         # no cv, split train data
         if pipeline_config['cross_validator'] == "none" or budget_too_low_for_cv:
-            logger.info("[AutoNet] No validation set given and either no cross validator given or budget to low for CV." + 
+            logger.info("[AutoNet] No validation set given and either no cross validator given or budget too low for CV." + 
                              " Continue by splitting " + str(val_split) + " of training data.")
             indices = self.shuffle_indices(np.array(list(range(dataset_info.x_shape[0]))), pipeline_config['shuffle'], pipeline_config["random_seed"])
             split = int(len(indices) * (1-val_split))

@@ -46,18 +46,19 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
             next_run = self.iterations[i].get_next_run()
             if not next_run is None: break
 
-        if not next_run is None:
+        if next_run is not None:
             if kill:
                 # register new run as finished - this will be interpreted as a crashed job
                 config_id, config, budget = next_run
                 job = Job(config_id, config=config, budget=budget, working_directory=self.working_directory)
-                self.iterations[job.id[0]].register_result(job)
+                self.iterations[job.id[0] - self.iterations[0].HPB_iter].register_result(job)
             else:
                 self.logger.debug('HBMASTER: schedule new run for iteration %i'%i)
                 self._submit_job(*next_run)
             continue
         elif not kill and n_iterations > 0:
-            self.iterations.append(self.get_next_iteration(len(self.iterations), iteration_kwargs))
+            next_HPB_iter = len(self.iterations) + (self.iterations[0].HPB_iter if len(self.iterations) > 0 else 0)
+            self.iterations.append(self.get_next_iteration(next_HPB_iter, iteration_kwargs))
             n_iterations -= 1
             continue
 

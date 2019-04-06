@@ -1,0 +1,7 @@
+result_dir=benchmark_results_cluster
+instances=configs/datasets/openml.txt
+autonet_configs=[configs/autonet/optim_alg_comparison/bohb_tiny_cs.txt, configs/autonet/optim_alg_comparison/hyperband_tiny_cs.txt]
+problem_type=feature_classification
+log_level=info
+num_runs=3
+test_split=0.0

@@ -9,10 +9,9 @@ class HyperparameterSearchSpaceUpdate():
         self.log = log
     
     def apply(self, pipeline, pipeline_config):
-        pipeline[self.node_name]._update_hyperparameter_range(name=self.hyperparameter,
-                                                              new_value_range=self.value_range,
-                                                              log=self.log, 
-                                                              pipeline_config=pipeline_config)
+        pipeline[self.node_name]._apply_search_space_update(name=self.hyperparameter,
+                                                            new_value_range=self.value_range,
+                                                            log=self.log)
 
 class HyperparameterSearchSpaceUpdates():
     def __init__(self, updates=[]):

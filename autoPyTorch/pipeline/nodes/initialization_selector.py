@@ -66,16 +66,18 @@ class InitializationSelector(PipelineNode):
         for method_name, method_type in self.initialization_methods.items():
             if (method_name not in possible_initialization_methods):
                 continue
-            method_cs = method_type.get_hyperparameter_search_space()
+            method_cs = method_type.get_hyperparameter_search_space(
+                **self._get_search_space_updates(prefix=method_name))
             cs.add_configuration_space(prefix=method_name, configuration_space=method_cs, delimiter=ConfigWrapper.delimiter, 
                                        parent_hyperparameter={'parent': selector, 'value': method_name})
 
         # add hyperparameter of initializer
         initializer = self.initializers[pipeline_config["initializer"]]
-        initializer_cs = initializer.get_hyperparameter_search_space()
+        initializer_cs = initializer.get_hyperparameter_search_space(**self._get_search_space_updates(prefix="initializer"))
         cs.add_configuration_space(prefix="initializer", configuration_space=initializer_cs, delimiter=ConfigWrapper.delimiter)
 
-        return self._apply_user_updates(cs)
+        self._check_search_space_updates(("initializer", "*"), (possible_initialization_methods, "*"))
+        return cs
 
     def get_pipeline_config_options(self):
         options = [

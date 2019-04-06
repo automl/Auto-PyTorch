@@ -3,6 +3,12 @@ import time
 import numpy as np
 import json
 import math
+import tempfile
+import uuid
+import asyncio
+import multiprocessing
+import signal
+import logging
 from autoPyTorch.components.ensembles.ensemble_selection import EnsembleSelection
 
 def build_ensemble(result, train_metric, minimize,
@@ -65,6 +71,9 @@ def combine_predictions(data, pipeline_kwargs, X, Y):
     all_indices = None
     all_predictions = None
     for split, predictions in data.items():
+        if (np.any(np.isnan(predictions))):
+            logging.getLogger("autonet").warn("Not saving predictions containing nans")
+            return None
         indices = pipeline_kwargs[split]["valid_indices"]
         assert len(predictions) == len(indices), "Different number of predictions and indices:" + str(len(predictions)) + "!=" + str(len(indices))
         all_indices = indices if all_indices is None else np.append(all_indices, indices)
@@ -72,7 +81,15 @@ def combine_predictions(data, pipeline_kwargs, X, Y):
     argsort = np.argsort(all_indices)
     sorted_predictions = all_predictions[argsort]
     sorted_indices = all_indices[argsort]
-    return sorted_predictions.tolist(), Y[sorted_indices].tolist()
+    
+    unique = uuid.uuid4()
+    tempfile.gettempdir()
+    with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_predictions_%s.npy" % unique), "wb") as f:
+        np.save(f, sorted_predictions)
+    with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique), "wb") as f:
+        np.save(f, Y[sorted_indices])
+    host, port = pipeline_kwargs[0]["pipeline_config"]["ensemble_server_credentials"]
+    return host, port, unique
 
 def combine_test_predictions(data, pipeline_kwargs, X, Y):
     predictions = [d[0] for d in data.values() if d == d]
@@ -81,16 +98,73 @@ def combine_test_predictions(data, pipeline_kwargs, X, Y):
     assert len(predictions) == len(labels)
     if len(predictions) == 0:
         return None
-    return np.mean(np.stack(predictions), axis=0).tolist(), labels[0].tolist()
+    
+    unique = uuid.uuid4()
+    tempfile.gettempdir()
+    with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_predictions_%s.npy" % unique), "wb") as f:
+        np.save(f, np.stack(predictions))
+    with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique), "wb") as f:
+        np.save(f, labels[0])
+    host, port = pipeline_kwargs[0]["pipeline_config"]["ensemble_server_credentials"]
+    return host, port, unique
 
+def filter_nan_predictions(predictions, *args):
+    nan_predictions = set([i for i, p in enumerate(predictions) if np.any(np.isnan(p))])
+    return [
+        [x for i, x in enumerate(vector) if i not in nan_predictions] if vector is not None else None
+        for vector in [predictions, *args]
+    ]
+
+async def serve_predictions(reader, writer):
+    data = await reader.read(1024)
+    name, unique = data.decode().split("_")
+    # logging.getLogger("autonet").info("Serve %s %s" % (name, unique))
+
+    with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_%s_%s.npy" % (name, unique)), "rb") as f:
+        while True:
+            buf = f.read(1024)
+            if not buf:
+                break
+            writer.write(buf)
+    os.remove(os.path.join(tempfile.gettempdir(), "autonet_ensemble_%s_%s.npy" % (name, unique)))
+    if name == "predictions" and os.path.exists(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique)):
+        os.remove(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique))
+    await writer.drain()
+    writer.close()
+
+def _start_server(host, queue):
+    def shutdown(signum, stack):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, shutdown)
+    loop = asyncio.get_event_loop()
+    coro = asyncio.start_server(serve_predictions, host, 0, loop=loop)
+    server = loop.run_until_complete(coro)
+    host, port = server.sockets[0].getsockname()
+    queue.put((host, port))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
+    # logging.getLogger("autonet").info("Ensemble Server has been shut down")
+
+def start_server(host):
+    queue = multiprocessing.Queue()
+    p = multiprocessing.Process(target=_start_server, args=(host, queue))
+    p.start()
+    host, port = queue.get()
+    p.shutdown = p.terminate
+    return host, port, p
 
 class ensemble_logger(object):
     def __init__(self, directory, overwrite):
         self.start_time = time.time()
         self.directory = directory
         self.overwrite = overwrite
-        self.labels = None
-        self.test_labels = None
+        self.labels_written = False
+        self.test_labels_written = False
         
         self.file_name = os.path.join(directory, 'predictions_for_ensemble.npy')
         self.test_file_name = os.path.join(directory, 'test_predictions_for_ensemble.npy')
@@ -105,36 +179,55 @@ class ensemble_logger(object):
         except:
             raise
         
-        if os.path.exists(self.test_file_name) and not overwrite:
-            raise FileExistsError('The file %s already exists.'%self.file_name)
+        try:
+            with open(self.test_file_name, 'x') as fh: pass
+        except FileExistsError:
+            if overwrite:
+                with open(self.test_file_name, 'w') as fh: pass
+            else:
+                raise FileExistsError('The file %s already exists.'%self.test_file_name)
+        except:
+            raise
 
     def new_config(self, *args, **kwargs):
         pass
+    
+    async def save_remote_data(self, host, port, name, unique, f):
+        remote_reader, remote_writer = await asyncio.open_connection(host, port)
+        remote_writer.write(("%s_%s" % (name, unique)).encode())
+        while not remote_reader.at_eof():
+            f.write(await remote_reader.read(1024))
+        remote_writer.close()
 
     def __call__(self, job):
         if job.result is None:
             return
-        if "predictions_for_ensemble" in job.result:
-            predictions, labels = job.result["predictions_for_ensemble"]
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        if "predictions_for_ensemble" in job.result and job.result["predictions_for_ensemble"] is None and \
+            "test_predictions_for_ensemble" in job.result and job.result["test_predictions_for_ensemble"] is not None:
+            host, port, unique =  job.result["test_predictions_for_ensemble"]
+            with open("/dev/null", "wb") as f:
+                loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
+
+        if "predictions_for_ensemble" in job.result and job.result["predictions_for_ensemble"] is not None:
+            host, port, unique = job.result["predictions_for_ensemble"]
             with open(self.file_name, "ab") as f:
-                if self.labels is None:
-                    self.labels = labels
-                    np.save(f, labels)
-                else:
-                    assert self.labels == labels
+                if not self.labels_written:
+                    loop.run_until_complete(self.save_remote_data(host, port, "labels", unique, f))
+                    self.labels_written = True
                 np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
-                np.save(f, predictions)
+                loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
             del job.result["predictions_for_ensemble"]
 
-            if "test_predictions_for_ensemble" in job.result:
-                if job.result["test_predictions_for_ensemble"] is not None:
-                    test_predictions, test_labels = job.result["test_predictions_for_ensemble"]
-                    with open(self.test_file_name, "ab") as f:
-                        if self.test_labels is None:
-                            self.test_labels = test_labels
-                            np.save(f, test_labels)
-                        else:
-                            assert self.test_labels == test_labels
-                        np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
-                        np.save(f, test_predictions)
+            if "test_predictions_for_ensemble" in job.result and job.result["test_predictions_for_ensemble"] is not None:
+                host, port, unique =  job.result["test_predictions_for_ensemble"]
+                with open(self.test_file_name, "ab") as f:
+                    if not self.test_labels_written:
+                         loop.run_until_complete(self.save_remote_data(host, port, "labels", unique, f))
+                         self.test_labels_written = True
+                    np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
+                    loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["test_predictions_for_ensemble"]
+        loop.close()

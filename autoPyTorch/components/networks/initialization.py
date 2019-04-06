@@ -1,6 +1,8 @@
 import torch
 import ConfigSpace
 
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
+
 class SimpleInitializer():
     initialize_layers = (
         torch.nn.Conv1d,
@@ -33,9 +35,11 @@ class SimpleInitializer():
         module.apply(perform_initialization)
     
     @staticmethod
-    def get_hyperparameter_search_space():
+    def get_hyperparameter_search_space(
+        initialize_bias=("Yes", "No", "Zero")
+    ):
         cs = ConfigSpace.ConfigurationSpace()
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("initialize_bias", choices=["Yes", "No", "Zero"], default_value="Yes"))
+        add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "initialize_bias", initialize_bias)
         return cs
 
 

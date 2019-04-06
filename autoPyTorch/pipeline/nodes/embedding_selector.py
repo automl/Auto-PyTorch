@@ -78,11 +78,13 @@ class EmbeddingSelector(PipelineNode):
         for embedding_name, embedding_type in self.embedding_modules.items():
             if (embedding_name not in possible_embeddings):
                 continue
-            embedding_cs = embedding_type.get_config_space(pipeline_config['categorical_features'])
-            cs.add_configuration_space( prefix=embedding_name, configuration_space=embedding_cs, delimiter=ConfigWrapper.delimiter, 
-                                        parent_hyperparameter={'parent': selector, 'value': embedding_name})
-
-        return self._apply_user_updates(cs)
+            embedding_cs = embedding_type.get_config_space(pipeline_config['categorical_features'],
+                **self._get_search_space_updates(prefix=embedding_name))
+            cs.add_configuration_space(prefix=embedding_name, configuration_space=embedding_cs, delimiter=ConfigWrapper.delimiter, 
+                                       parent_hyperparameter={'parent': selector, 'value': embedding_name})
+        
+        self._check_search_space_updates((possible_embeddings, "*"))
+        return cs
     
     def insert_inter_node_hyperparameter_dependencies(self, config_space, dataset_info=None, **pipeline_config):
         if pipeline_config['categorical_features'] is None or not any(pipeline_config['categorical_features']) or 'none' not in pipeline_config['preprocessors']:

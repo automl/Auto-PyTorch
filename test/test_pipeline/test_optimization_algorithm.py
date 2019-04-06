@@ -50,7 +50,7 @@ class TestOptimizationAlgorithmMethods(unittest.TestCase):
 
         pipeline_config = pipeline.get_pipeline_config(num_iterations=1, budget_type='epochs', result_logger_dir=".")
         pipeline.fit_pipeline(pipeline_config=pipeline_config, X_train=np.random.rand(15,10), Y_train=np.random.rand(15, 5), X_valid=None, Y_valid=None,
-            result_loggers=[json_result_logger(directory=".", overwrite=True)], dataset_info=None)
+            result_loggers=[json_result_logger(directory=".", overwrite=True)], dataset_info=None, shutdownables=[])
 
         result_of_opt_pipeline = pipeline[OptimizationAlgorithm.get_name()].fit_output['optimized_hyperparameter_config']
         print(pipeline[OptimizationAlgorithm.get_name()].fit_output)

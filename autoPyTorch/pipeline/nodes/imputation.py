@@ -49,13 +49,13 @@ class Imputation(PipelineNode):
         X = imputation_preprocessor.transform(X)
         return { 'X': X }
 
-    @staticmethod
-    def get_hyperparameter_search_space(dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
 
         possible_strategies = set(Imputation.strategies).intersection(pipeline_config['imputation_strategies'])
 
         cs = ConfigSpace.ConfigurationSpace()
         cs.add_hyperparameter(CSH.CategoricalHyperparameter("strategy", possible_strategies))
+        self._check_search_space_updates()
         return cs
 
     def get_pipeline_config_options(self):
