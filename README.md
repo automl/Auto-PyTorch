@@ -1,6 +1,6 @@
 # Auto-PyTorch
 
-Copyright (C) 2018  [AutoML Group](http://www.automl.org/)
+Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
 This a very early pre-alpha version of our upcoming Auto-PyTorch.
 So far, Auto-PyTorch only supports featurized data.
@@ -129,15 +129,14 @@ autoPyTorch = AutoNetClassification("tiny_cs", log_level='info', max_runtime=300
 ## License
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the 3-clause BSD license (please see the LICENSE file).
+it under the terms of the Apache license 2.0 (please see the LICENSE file).
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-You should have received a copy of the 3-clause BSD license
+You should have received a copy of the Apache license 2.0
 along with this program (see LICENSE file).
-If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 ## Reference
 
