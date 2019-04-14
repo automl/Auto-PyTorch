@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.nodes.one_hot_encoding import OneHotEncoding
 from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
 from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
 from autoPyTorch.pipeline.nodes.optimization_algorithm import OptimizationAlgorithm
+from autoPyTorch.pipeline.nodes.create_dataset_info import CreateDatasetInfo
 
 
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
@@ -68,12 +69,27 @@ class AutoNet():
             return self.autonet_config
         return self.pipeline.get_pipeline_config(**self.base_config)
     
-    def get_hyperparameter_search_space(self, dataset_info=None):
-        """Return the hyperparameter search space of AutoNet
+    def get_hyperparameter_search_space(self, X_train=None, Y_train=None, X_valid=None, Y_valid=None, **autonet_config):
+        """Return hyperparameter search space of Auto-PyTorch. Does depend on the dataset!
+        
+        Keyword Arguments:
+            X_train {array} -- Training data.
+            Y_train {array} -- Targets of training data.
+            X_valid {array} -- Validation data. Will be ignored if cv_splits > 1. (default: {None})
+            Y_valid {array} -- Validation data. Will be ignored if cv_splits > 1. (default: {None})
         
         Returns:
-            ConfigurationSpace -- The ConfigurationSpace that should be optimized
+            ConfigurationSpace -- The configuration space that should be optimized.
         """
+
+        dataset_info = None
+        if X_train is not None and Y_train is not None:
+            dataset_info_node = self.pipeline[CreateDatasetInfo.get_name()]
+            dataset_info = dataset_info_node.fit(pipeline_config=dict(self.base_config, **autonet_config),
+                                                 X_train=X_train,
+                                                 Y_train=Y_train,
+                                                 X_valid=X_valid,
+                                                 Y_valid=Y_valid)["dataset_info"]
 
         return self.pipeline.get_hyperparameter_search_space(dataset_info=dataset_info, **self.get_current_autonet_config())
 
