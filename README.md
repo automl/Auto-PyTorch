@@ -95,7 +95,8 @@ autoPyTorch = AutoNetClassification(networks=["resnet", "shapedresnet", "mlpnet"
 # Each hyperparameter belongs to a node in Auto-PyTorch's ML Pipeline.
 # The names of the hyperparameters are prefixed with the name of the node: NodeName:hyperparameter_name.
 # If a hyperparameter belongs to a component: NodeName:component_name:hyperparameter_name.
-autoPyTorch.get_hyperparameter_search_space()
+# Call with the same arguments as fit.
+autoPyTorch.get_hyperparameter_search_space(X_train, y_train, validation_split=0.3)
 
 # You can configure the search space of every hyperparameter of every component:
 from autoPyTorch import HyperparameterSearchSpaceUpdates
