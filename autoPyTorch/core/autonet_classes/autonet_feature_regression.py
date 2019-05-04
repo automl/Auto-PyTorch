@@ -28,7 +28,7 @@ class AutoNetRegression(AutoNetFeatureData):
         loss_selector.add_loss_module('l1_loss', nn.L1Loss)
 
         metric_selector = pipeline[MetricSelector.get_name()]
-        metric_selector.add_metric('mean_distance', mean_distance)
+        metric_selector.add_metric('mean_distance', mean_distance, loss_transform=False, requires_target_class_labels=False)
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.default_minimize_value = True

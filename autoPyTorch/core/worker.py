@@ -11,10 +11,27 @@ __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
 
-class ModuleWorker(Worker):
+class AutoNetWorker(Worker):
+    """Worker that evaluates the hyperparameter configurations of the ML-pipelines"""
+
     def __init__(self, pipeline, pipeline_config,
             X_train, Y_train, X_valid, Y_valid, dataset_info, budget_type, max_budget,
             shutdownables, use_pynisher, *args, **kwargs):
+        """Initialize the worker.
+        
+        Arguments:
+            pipeline {Pipeline} -- The ML pipeline to evaluate
+            pipeline_config {dict} -- The configuration of the pipeline
+            X_train {array} -- The data used for training the neural networks
+            Y_train {array} -- The labels used for evaluating the neural networks
+            X_valid {array} -- The data used for evaluating the neural networks
+            Y_valid {array} -- The data used for evaluating the neural networks
+            dataset_info {DatasetInfo} -- Object containing basic information about the dataset
+            budget_type {BaseTrainingTechnique} -- The type of budget used for the optimization
+            max_budget {float} -- The maximum budget
+            shutdownables {list} -- For each element of the object, the shutdown() method is called when the worker is shutting down.
+            use_pynisher {bool} -- Whether to use pynisher to guarantee resource limits
+        """
         self.X_train = X_train #torch.from_numpy(X_train).float()
         self.Y_train = Y_train #torch.from_numpy(Y_train).long()
         self.X_valid = X_valid
@@ -38,6 +55,7 @@ class ModuleWorker(Worker):
 
         super().__init__(*args, **kwargs)
     
+    # OVERRIDE
     def compute(self, config, budget, working_directory, config_id, **kwargs):
 
         self.autonet_logger.debug("Budget " + str(budget) + " config: " + str(config))
@@ -45,6 +63,7 @@ class ModuleWorker(Worker):
         start_time = time.time()
         self.autonet_logger.debug("Starting optimization!")
 
+        # guarantee time and memory limits using pynisher
         if self.guarantee_limits:
             import pynisher
             time_limit=None
@@ -53,9 +72,11 @@ class ModuleWorker(Worker):
                 grace_time = 10
                 time_limit = int(budget + 240)
 
+            # start optimization
             limit_train = pynisher.enforce_limits(mem_in_mb=self.pipeline_config['memory_limit_mb'], wall_time_in_s=time_limit)(self.optimize_pipeline)
             result = limit_train(config, config_id, budget, start_time)
 
+            # check for exceptions
             if (limit_train.exit_status == pynisher.TimeoutException):
                 raise Exception("Time limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
             elif (limit_train.exit_status == pynisher.MemorylimitException):
@@ -73,11 +94,22 @@ class ModuleWorker(Worker):
         # that is not really elegant but we can want to achieve some kind of feedback
         network_name = [v for k, v in config.items() if k.endswith('network')] or "None"
 
-        self.autonet_logger.info("Training " + str(network_name) + " with budget " + str(budget) + " resulted in score: " + str(loss) + " took " + str((time.time()-start_time)) + " seconds")
+        self.autonet_logger.info("Training " + str(network_name) + " with budget " + str(budget) + " resulted in optimize-metric-loss: " + str(loss) + " took " + str((time.time()-start_time)) + " seconds")
 
         return  result
     
     def optimize_pipeline(self, config, config_id, budget, optimize_start_time):
+        """Fit the pipeline using the sampled hyperparameter configuration.
+        
+        Arguments:
+            config {dict} -- The sampled hyperparameter configuration.
+            config_id {tuple} -- An ID for the configuration. Assigned by BOHB.
+            budget {float} -- The budget to evaluate the hyperparameter configuration.
+            optimize_start_time {float} -- The time when optimization started.
+        
+        Returns:
+            dict -- The result of fitting the pipeline.
+        """
         try:
             self.autonet_logger.info("Fit optimization pipeline")
             return self.pipeline.fit_pipeline(hyperparameter_config=config, pipeline_config=self.pipeline_config, 

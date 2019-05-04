@@ -11,11 +11,11 @@ import signal
 import logging
 from autoPyTorch.components.ensembles.ensemble_selection import EnsembleSelection
 
-def build_ensemble(result, train_metric, minimize,
+def build_ensemble(result, optimize_metric,
         ensemble_size, all_predictions, labels, model_identifiers,
         only_consider_n_best=0, sorted_initialization_n_best=0):
     id2config = result.get_id2config_mapping()
-    ensemble_selection = EnsembleSelection(ensemble_size, train_metric, minimize,
+    ensemble_selection = EnsembleSelection(ensemble_size, optimize_metric,
         only_consider_n_best=only_consider_n_best, sorted_initialization_n_best=sorted_initialization_n_best)
 
     # fit ensemble
@@ -46,10 +46,6 @@ def read_ensemble_prediction_file(filename, y_transform):
             except (EOFError, OSError):
                 break
     return all_predictions, labels, model_identifiers, all_timestamps
-
-
-def predictions_for_ensemble(y_pred, y_true):
-    return y_pred
 
 
 class test_predictions_for_ensemble():

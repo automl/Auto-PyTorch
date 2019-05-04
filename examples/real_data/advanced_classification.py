@@ -54,13 +54,13 @@ if TEST_CASE == 5:
 autonet = AutoNetClassification() if TEST_CASE != 3 else AutoNetMultilabel()
 
 # add metrics and test_result to pipeline
-autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function('test_result', test_result(autonet, dm.X_test, dm.Y_test))
+autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function('test_result', test_result(autonet, dm.X_test, dm.Y_test), True)
 
 # Fit autonet using train data
 res = autonet.fit(min_budget=300,
                   max_budget=900, max_runtime=1800, budget_type='time',
                   normalization_strategies=['maxabs'],
-                  train_metric=metric,
+                  optimize_metric=metric,
                   additional_metrics=additional_metrices,
                   cross_validator='stratified_k_fold',
                   cross_validator_args={'n_splits': 3},

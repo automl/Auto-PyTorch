@@ -6,4 +6,5 @@ log_level=debug
 budget_type=epochs
 cross_validator=k_fold
 cross_validator_args={"n_splits": 2}
+networks=[mlpnet]
 hyperparameter_search_space_updates=configs/configspace/minimlp.txt

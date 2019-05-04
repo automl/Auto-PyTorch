@@ -4,6 +4,7 @@ __license__ = "BSD"
 
 
 import numpy as np
+import scipy.sparse
 import torch
 import torch.nn as nn
 import copy
@@ -21,6 +22,7 @@ from autoPyTorch.pipeline.nodes.create_dataset_info import CreateDatasetInfo
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 
 class AutoNet():
+    """Find an optimal neural network given a ML-task using BOHB"""
     preset_folder_name = None
 
     def __init__(self, config_preset="medium_cs", pipeline=None, **autonet_config):
@@ -34,6 +36,7 @@ class AutoNet():
         self.base_config = autonet_config
         self.autonet_config = None
         self.fit_result = None
+        self.dataset_info = None
 
         if config_preset is not None:
             parser = self.get_autonet_config_file_parser()
@@ -70,10 +73,11 @@ class AutoNet():
         return self.pipeline.get_pipeline_config(**self.base_config)
     
     def get_hyperparameter_search_space(self, X_train=None, Y_train=None, X_valid=None, Y_valid=None, **autonet_config):
-        """Return hyperparameter search space of Auto-PyTorch. Does depend on the dataset and the configuration.!
+        """Return hyperparameter search space of Auto-PyTorch. Does depend on the dataset and the configuration!
+        You can either pass the dataset and the configuration or use dataset and configuration of last fit call.
         
         Keyword Arguments:
-            X_train {array} -- Training data.
+            X_train {array} -- Training data. ConfigSpace depends on Training data.
             Y_train {array} -- Targets of training data.
             X_valid {array} -- Validation data. Will be ignored if cv_splits > 1. (default: {None})
             Y_valid {array} -- Validation data. Will be ignored if cv_splits > 1. (default: {None})
@@ -82,8 +86,8 @@ class AutoNet():
         Returns:
             ConfigurationSpace -- The configuration space that should be optimized.
         """
-
-        dataset_info = None
+        X_train, Y_train, X_valid, Y_valid = self.check_data_array_types(X_train, Y_train, X_valid, Y_valid)
+        dataset_info = self.dataset_info
         pipeline_config = dict(self.base_config, **autonet_config) if autonet_config else \
             self.get_current_autonet_config()
         if X_train is not None and Y_train is not None:
@@ -129,13 +133,14 @@ class AutoNet():
         
         Returns:
             optimized_hyperparameter_config -- The best found hyperparameter config.
-            final_metric_score --  The final score of the specified train metric.
             **autonet_config -- Configure AutoNet for your needs. You can also configure AutoNet in the constructor(). Call print_help() for more info.
         """
+        X_train, Y_train, X_valid, Y_valid = self.check_data_array_types(X_train, Y_train, X_valid, Y_valid)
         self.autonet_config = self.pipeline.get_pipeline_config(**dict(self.base_config, **autonet_config))
 
         self.fit_result = self.pipeline.fit_pipeline(pipeline_config=self.autonet_config,
                                                      X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
+        self.dataset_info = self.pipeline[CreateDatasetInfo.get_name()].fit_output["dataset_info"]
         self.pipeline.clean()
 
         if not self.fit_result["optimized_hyperparameter_config"]:
@@ -143,7 +148,7 @@ class AutoNet():
         
         if (refit):
             self.refit(X_train, Y_train, X_valid, Y_valid)
-        return self.fit_result["optimized_hyperparameter_config"], self.fit_result['final_metric_score']
+        return self.fit_result
 
     def refit(self, X_train, Y_train, X_valid=None, Y_valid=None, hyperparameter_config=None, autonet_config=None, budget=None, rescore=False):
         """Refit AutoNet to given hyperparameters. This will skip hyperparameter search.
@@ -163,6 +168,7 @@ class AutoNet():
         Raises:
             ValueError -- No hyperparameter config available
         """
+        X_train, Y_train, X_valid, Y_valid = self.check_data_array_types(X_train, Y_train, X_valid, Y_valid)
         if (autonet_config is None):
             autonet_config = self.autonet_config
         if (autonet_config is None):
@@ -182,9 +188,8 @@ class AutoNet():
                       'budget': budget,
                       'rescore': rescore}
     
-        result = self.pipeline.fit_pipeline(pipeline_config=autonet_config, refit=refit_data,
-                                    X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
-        return result["final_metric_score"]
+        return self.pipeline.fit_pipeline(pipeline_config=autonet_config, refit=refit_data,
+                                          X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
 
     def predict(self, X, return_probabilities=False):
         """Predict the targets for a data matrix X.
@@ -200,6 +205,7 @@ class AutoNet():
         """
 
         # run predict pipeline
+        X, = self.check_data_array_types(X)
         autonet_config = self.autonet_config or self.base_config
         Y_pred = self.pipeline.predict_pipeline(pipeline_config=autonet_config, X=X)['Y']
 
@@ -208,8 +214,8 @@ class AutoNet():
         result = OHE.reverse_transform_y(Y_pred, OHE.fit_output['y_one_hot_encoder'])
         return result if not return_probabilities else (result, Y_pred)
 
-    def score(self, X_test, Y_test):
-        """Calculate the sore on test data using the specified train_metric
+    def score(self, X_test, Y_test, return_loss_value=False):
+        """Calculate the sore on test data using the specified optimize_metric
         
         Arguments:
             X_test {array} -- The test data matrix.
@@ -220,6 +226,7 @@ class AutoNet():
         """
 
         # run predict pipeline
+        X_test, Y_test = self.check_data_array_types(X_test, Y_test)
         autonet_config = self.autonet_config or self.base_config
         self.pipeline.predict_pipeline(pipeline_config=autonet_config, X=X_test)
         Y_pred = self.pipeline[OptimizationAlgorithm.get_name()].predict_output['Y']
@@ -228,5 +235,19 @@ class AutoNet():
         OHE = self.pipeline[OneHotEncoding.get_name()]
         Y_test = OHE.transform_y(Y_test, OHE.fit_output['y_one_hot_encoder'])
 
-        metric = self.pipeline[MetricSelector.get_name()].fit_output['train_metric']
+        metric = self.pipeline[MetricSelector.get_name()].fit_output['optimize_metric']
+        if return_loss_value:
+            return metric.get_loss_value(Y_pred, Y_test)
         return metric(Y_pred, Y_test)
+    
+    def check_data_array_types(self, *arrays):
+        result = []
+        for array in arrays:
+            if array is None or scipy.sparse.issparse(array):
+                result.append(array)
+                continue
+            
+            result.append(np.asanyarray(array))
+            if not result[-1].shape:
+                raise RuntimeError("Given data-array is of unexpected type %s. Please pass numpy arrays instead." % type(array))
+        return result
