@@ -8,11 +8,12 @@ import random
 import heapq
 
 class PlotSummary(PipelineNode):
-    def fit(self, pipeline_config, trajectories, train_metrics):
+    def fit(self, pipeline_config, trajectories, optimize_metrics):
         if not pipeline_config["skip_ranking_plot"]:
-            plot(pipeline_config, trajectories, train_metrics, "ranking", process_summary)
+            plot(dict(pipeline_config, plot_type="losses", y_scale="linear"), trajectories, optimize_metrics, "ranking", process_summary)
         if not pipeline_config["skip_average_plot"]:
-            plot(pipeline_config, trajectories, train_metrics, "average", trajectory_sampling)
+            plot(dict(pipeline_config, scale_uncertainty=0), trajectories, optimize_metrics, "average", process_summary)
+            plot(pipeline_config, trajectories, optimize_metrics, "sampled_average", trajectory_sampling)
         return dict()
 
     def get_pipeline_config_options(self):
@@ -27,7 +28,7 @@ def get_ranking_plot_values(values, names, agglomeration):
     """ values = instance_name --> [((key=prefix + metric), value), ...] """
     keys = {instance: set([key for key, _ in v]) for instance, v in values.items()}
     values = {instance: [(key, agglomeration([value for k, value in v if k == key])) for key in keys[instance]] for instance, v in values.items()}
-    sorted_values = {instance: sorted(map(lambda x: x[1], v), reverse=True) for instance, v in values.items()}  # configs sorted by value
+    sorted_values = {instance: sorted(map(lambda x: x[1], v)) for instance, v in values.items()}  # configs sorted by value
     ranks = {instance: {n: [sorted_values[instance].index(value) + 1 for config_name, value in v if config_name == n] for n in names}
              for instance, v in values.items()}
     ranks = to_dict([(n, r) for rank_dict in ranks.values() for n, r in rank_dict.items()])
@@ -51,7 +52,7 @@ get_plot_values_funcs = {
     "average": get_average_plot_values
 }
 
-def process_summary(instance_name, metric_name, prefixes, trajectories, agglomeration, scale_uncertainty, cmap):
+def process_summary(instance_name, metric_name, prefixes, trajectories, plot_type, agglomeration, scale_uncertainty, value_multiplier, cmap):
     assert instance_name in get_plot_values_funcs.keys()
     trajectory_names_to_prefix = {(("%s_%s" % (prefix, metric_name)) if prefix else metric_name): prefix
         for prefix in prefixes}
@@ -89,12 +90,12 @@ def process_summary(instance_name, metric_name, prefixes, trajectories, agglomer
         # update trajectory values and pointers
         current_trajectory = trajectories[current_name][current_config][current_instance][trajectory_id]
         current_pointer = trajectory_pointers[(current_config, current_name)][current_instance][trajectory_id]
-        current_value = current_trajectory["losses"][current_pointer]
+        current_value = current_trajectory[plot_type][current_pointer]
 
-        trajectory_values[(current_config, current_name)][current_instance][trajectory_id] = current_value * (-1 if current_trajectory["flipped"] else 1)
+        trajectory_values[(current_config, current_name)][current_instance][trajectory_id] = current_value
         trajectory_pointers[(current_config, current_name)][current_instance][trajectory_id] += 1
 
-        if trajectory_pointers[(current_config, current_name)][current_instance][trajectory_id] < len(current_trajectory["losses"]):
+        if trajectory_pointers[(current_config, current_name)][current_instance][trajectory_id] < len(current_trajectory[plot_type]):
             heapq.heappush(heap,
                 (current_trajectory["times_finished"][trajectory_pointers[(current_config, current_name)][current_instance][trajectory_id]],
                  current_config, current_name, current_instance, trajectory_id))
@@ -107,7 +108,7 @@ def process_summary(instance_name, metric_name, prefixes, trajectories, agglomer
             [x[k].pop() for x in [center, upper, lower] for k in x.keys()]
 
         # calculate ranks
-        values = to_dict([(instance, (config, name), value)
+        values = to_dict([(instance, (config, name), value * value_multiplier)
             for (config, name), instance_values in trajectory_values.items()
             for instance, values in instance_values.items()
             for value in values if value is not None])
@@ -157,7 +158,7 @@ def to_dict(tuple_list):
     return result
 
 
-def trajectory_sampling(instance_name, metric_name, prefixes, trajectories, agglomeration, scale_uncertainty, cmap, num_samples=1000):
+def trajectory_sampling(instance_name, metric_name, prefixes, trajectories, plot_type, agglomeration, scale_uncertainty, value_multiplier, cmap, num_samples=1000):
     averaged_trajectories = dict()
 
     # sample #num_samples average trajectories
@@ -185,8 +186,10 @@ def trajectory_sampling(instance_name, metric_name, prefixes, trajectories, aggl
             metric_name=metric_name,
             prefixes=prefixes,
             trajectories=sampled_trajectories,
+            plot_type=plot_type,
             agglomeration=agglomeration,
             scale_uncertainty=0,
+            value_multiplier=value_multiplier,
             cmap=cmap
         )
 
@@ -205,8 +208,7 @@ def trajectory_sampling(instance_name, metric_name, prefixes, trajectories, aggl
 
             averaged_trajectories[trajectory_name][config].append({
                 "times_finished": d["finishing_times"],
-                "losses": d["center"],
-                "flipped": False
+                plot_type: d["center"],
             })
     
     # compute mean and stddev over the averaged trajectories
@@ -215,7 +217,9 @@ def trajectory_sampling(instance_name, metric_name, prefixes, trajectories, aggl
         metric_name=metric_name,
         prefixes=prefixes,
         trajectories=averaged_trajectories,
+        plot_type=plot_type,
         agglomeration="mean",
         scale_uncertainty=scale_uncertainty,
+        value_multiplier=1,
         cmap=cmap
     )

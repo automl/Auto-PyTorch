@@ -25,7 +25,7 @@ class TestOptimizationAlgorithmMethods(unittest.TestCase):
 
         class ResultNode(PipelineNode):
             def fit(self, X_train, Y_train):
-                return {'loss': X_train.shape[1], 'info': {'a': X_train.shape[1], 'b': Y_train.shape[1]}}
+                return {'loss': X_train.shape[1], 'info': {'train_a': X_train.shape[1], 'train_b': Y_train.shape[1]}}
 
             def get_hyperparameter_search_space(self, **pipeline_config):
                 cs = CS.ConfigurationSpace()
@@ -34,7 +34,8 @@ class TestOptimizationAlgorithmMethods(unittest.TestCase):
             
             def get_pipeline_config_options(self):
                 return [
-                    ConfigOption("result_logger_dir", default=".", type="directory")
+                    ConfigOption("result_logger_dir", default=".", type="directory"),
+                    ConfigOption("optimize_metric", default="a", type=str),
                 ]
 
         logger = logging.getLogger('hpbandster')

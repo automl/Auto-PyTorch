@@ -9,12 +9,10 @@ class FitAutoNet(PipelineNode):
 
         logging.getLogger('benchmark').debug("Fit autonet")
 
-        result = autonet.fit(
+        fit_result = autonet.fit(
             data_manager.X_train, data_manager.Y_train, 
             data_manager.X_valid, data_manager.Y_valid, 
             refit=False)
-        config, score = result[0], result[1]
 
         return { 'fit_duration': int(time.time() - start_time), 
-                 'incumbent_config': config,
-                 'final_score': score }
+                 'fit_result': fit_result }

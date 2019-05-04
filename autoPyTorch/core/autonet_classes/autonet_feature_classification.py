@@ -32,10 +32,14 @@ class AutoNetClassification(AutoNetFeatureData):
         loss_selector.add_loss_module('cross_entropy_weighted', nn.CrossEntropyLoss, LossWeightStrategyWeighted(), True)
 
         metric_selector = pipeline[MetricSelector.get_name()]
-        metric_selector.add_metric('accuracy', accuracy)
-        metric_selector.add_metric('auc_metric', auc_metric)
-        metric_selector.add_metric('pac_metric', pac_metric)
-        metric_selector.add_metric('balanced_accuracy', balanced_accuracy)
+        metric_selector.add_metric('accuracy', accuracy, loss_transform=True,
+                                   requires_target_class_labels=True)
+        metric_selector.add_metric('auc_metric', auc_metric, loss_transform=True,
+                                   requires_target_class_labels=False)
+        metric_selector.add_metric('pac_metric', pac_metric, loss_transform=True,
+                                   requires_target_class_labels=False)
+        metric_selector.add_metric('balanced_accuracy', balanced_accuracy, loss_transform=True,
+                                   requires_target_class_labels=True)
 
         resample_selector = pipeline[ResamplingStrategySelector.get_name()]
         resample_selector.add_over_sampling_method('random', RandomOverSamplingWithReplacement)

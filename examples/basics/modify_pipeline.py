@@ -20,7 +20,7 @@ dm.generate_classification(num_classes=3, num_features=21, num_samples=1500)
 autonet = AutoNetClassification(budget_type='epochs', min_budget=1, max_budget=9, num_iterations=1, log_level='info')
 
 logs = autonet.pipeline[LogFunctionsSelector.get_name()]
-logs.add_log_function('test_result', test_result(autonet, dm.X_test, dm.Y_test))
+logs.add_log_function('test_result', test_result(autonet, dm.X_test, dm.Y_test), True)
 
 res = autonet.fit(X_train=dm.X, Y_train=dm.Y, X_valid=dm.X_train, Y_valid=dm.Y_train)
 

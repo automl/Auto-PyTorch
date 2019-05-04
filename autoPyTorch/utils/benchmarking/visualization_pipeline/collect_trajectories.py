@@ -10,7 +10,7 @@ class CollectInstanceTrajectories(ForInstance):
         instances = self.get_instances(pipeline_config, instance_slice=self.parse_slice(pipeline_config["instance_slice"]))
 
         result_trajectories = dict()
-        result_train_metrics = set()
+        result_optimize_metrics = set()
 
         for instance in instances:
             try:
@@ -18,7 +18,7 @@ class CollectInstanceTrajectories(ForInstance):
 
                 # merge the trajectories into one dict
                 instance_trajectories = pipeline_result["trajectories"]
-                train_metrics = pipeline_result["train_metrics"]
+                optimize_metrics = pipeline_result["optimize_metrics"]
 
                 for metric, config_trajectories in instance_trajectories.items():
                     if metric not in result_trajectories:
@@ -27,13 +27,13 @@ class CollectInstanceTrajectories(ForInstance):
                         if config not in result_trajectories[metric]:
                             result_trajectories[metric][config] = dict()
                         result_trajectories[metric][config][instance] = run_trajectories
-                result_train_metrics |= train_metrics
+                result_optimize_metrics |= optimize_metrics
 
             except Exception as e:
                 print(e)
                 traceback.print_exc()
         return {"trajectories": result_trajectories,
-                "train_metrics": result_train_metrics}
+                "optimize_metrics": result_optimize_metrics}
 
 
 class CollectAutoNetConfigTrajectories(ForAutoNetConfig):
@@ -41,7 +41,7 @@ class CollectAutoNetConfigTrajectories(ForAutoNetConfig):
         logging.getLogger('benchmark').info('Collecting data for dataset ' + instance)
 
         result_trajectories = dict()
-        result_train_metrics = set()
+        result_optimize_metrics = set()
 
         # iterate over all configs
         for config_file in self.get_config_files(pipeline_config):
@@ -53,16 +53,16 @@ class CollectAutoNetConfigTrajectories(ForAutoNetConfig):
             
             # merge the trajectories into one dict
             config_trajectories = pipeline_result["trajectories"]
-            train_metrics = pipeline_result["train_metrics"]
+            optimize_metrics = pipeline_result["optimize_metrics"]
 
             for metric, run_trajectories in config_trajectories.items():
                 if metric not in result_trajectories:
                     result_trajectories[metric] = dict()
                 result_trajectories[metric][autonet_config_name] = run_trajectories
 
-            result_train_metrics |= train_metrics
+            result_optimize_metrics |= optimize_metrics
         return {"trajectories": result_trajectories,
-                "train_metrics": result_train_metrics}
+                "optimize_metrics": result_optimize_metrics}
 
 
 class CollectRunTrajectories(ForRun):
@@ -70,13 +70,13 @@ class CollectRunTrajectories(ForRun):
         logging.getLogger('benchmark').info('Collecting data for autonet config ' + autonet_config_file)
 
         result_trajectories = dict()
-        train_metrics = set()
+        optimize_metrics = set()
 
         run_number_range = self.parse_range(pipeline_config['run_number_range'], pipeline_config['num_runs'])
         instance_result_dir = os.path.abspath(os.path.join(get_run_result_dir(pipeline_config, instance, autonet_config_file, "0", "0"), ".."))
         if not os.path.exists(instance_result_dir):
             logging.getLogger('benchmark').warn("Skipping %s because it no results exist" % instance_result_dir)
-            return {"trajectories": result_trajectories, "train_metrics": train_metrics}
+            return {"trajectories": result_trajectories, "optimize_metrics": optimize_metrics}
         run_result_dirs = next(os.walk(instance_result_dir))[1]
 
         # iterate over all run_numbers and run_ids
@@ -97,7 +97,7 @@ class CollectRunTrajectories(ForRun):
                                                                 autonet_config_file=autonet_config_file,
                                                                 run_result_dir=run_result_dir)
             run_trajectories = pipeline_result["trajectories"]
-            train_metric = pipeline_result["train_metric"]
+            optimize_metric = pipeline_result["optimize_metric"]
 
             # merge the trajectories into one dict
             for metric, trajectory in run_trajectories.items():
@@ -105,9 +105,9 @@ class CollectRunTrajectories(ForRun):
                     result_trajectories[metric] = list()
                 result_trajectories[metric].append(trajectory)
 
-            if train_metric is not None:
-                train_metrics |= set([train_metric])
-        return {"trajectories": result_trajectories, "train_metrics": train_metrics}
+            if optimize_metric is not None:
+                optimize_metrics |= set([optimize_metric])
+        return {"trajectories": result_trajectories, "optimize_metrics": optimize_metrics}
 
 def parse_run_folder_name(run_folder_name):
     assert run_folder_name.startswith("run_")

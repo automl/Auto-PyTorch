@@ -28,7 +28,7 @@ class TestLogFunctionSelectorMethods(unittest.TestCase):
 
         log_functions = selector.fit_output['log_functions']
 
-        self.assertListEqual(log_functions, [log_fnc2])
+        self.assertListEqual([x.log for x in log_functions], [log_fnc2])
 
 
 
