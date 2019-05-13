@@ -9,6 +9,11 @@ class AutoNetFeatureData(AutoNet):
 
     @classmethod
     def get_default_ensemble_pipeline(cls):
+        """Construct a default pipeline, include nodes for Ensemble.
+        
+        Returns:
+            Pipeline -- The constructed default pipeline
+        """
         from autoPyTorch.pipeline.base.pipeline import Pipeline
         from autoPyTorch.pipeline.nodes import AutoNetSettings, OptimizationAlgorithm, \
             CrossValidation, Imputation, NormalizationStrategySelector, OneHotEncoding, PreprocessorSelector, ResamplingStrategySelector, \
@@ -50,6 +55,11 @@ class AutoNetFeatureData(AutoNet):
     
     @classmethod
     def get_default_pipeline(cls):
+        """Construct a default pipeline, do not include nodes for Ensemble.
+        
+        Returns:
+            Pipeline -- The constructed default pipeline
+        """
         from autoPyTorch.pipeline.base.pipeline import Pipeline
         from autoPyTorch.pipeline.nodes import AutoNetSettings, OptimizationAlgorithm, \
             CrossValidation, Imputation, NormalizationStrategySelector, OneHotEncoding, PreprocessorSelector, ResamplingStrategySelector, \
@@ -87,6 +97,11 @@ class AutoNetFeatureData(AutoNet):
     
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):
+        """Add the components to the pipeline
+        
+        Arguments:
+            pipeline {pipeline} -- The pipelines to add the components to
+        """
         from autoPyTorch.pipeline.nodes import NormalizationStrategySelector, PreprocessorSelector, EmbeddingSelector, NetworkSelector, \
             OptimizerSelector, LearningrateSchedulerSelector, TrainNode, CrossValidation, InitializationSelector
 

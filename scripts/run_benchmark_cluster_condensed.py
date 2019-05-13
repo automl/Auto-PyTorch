@@ -2,6 +2,7 @@ import os, sys, re, shutil
 import subprocess
 import json
 from math import ceil
+from copy import copy
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..")))
 
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
@@ -24,6 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--result_dir", default=None, help="The dir to save the results")
     parser.add_argument("--output_dir", default=None, help="The dir to save the outputs")
     parser.add_argument("--template_args", default=[], nargs="+", type=str, help="Additional args specified in template")
+    parser.add_argument("--num_condense", default=100, type=int, help="How many jobs should be condensed to single job array")
     parser.add_argument("runscript", help="The script template used to submit job on cluster.")
     parser.add_argument('benchmark', help='The benchmark to run')
     args = parser.parse_args()
@@ -35,11 +37,6 @@ if __name__ == "__main__":
     autonet_home = ConfigFileParser.get_autonet_home()
     host_config_orig = [l[13:] for l in runscript_template if l.startswith("#HOST_CONFIG ")][0].strip()
     host_config_file = os.path.join(autonet_home, host_config_orig) if not os.path.isabs(host_config_orig) else host_config_orig
-
-    # parse define statements
-    for i in range(len(runscript_template)):
-        if runscript_template[i].startswith("#DEFINE"):
-            runscript_template[i] = "%s=%s\n" % (runscript_template[i].split()[1], " ".join(runscript_template[i].split()[2:]))
 
     # parse template args
     runscript_template_args = [l[19:].strip().split() for l in runscript_template if l.startswith("#TEMPLATE_ARGUMENT ")]
@@ -107,6 +104,22 @@ if __name__ == "__main__":
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
 
+    # divide script
+    divided_runscript_template = [[]]
+    for line in runscript_template:
+        if line.startswith("#JOBSCRIPT START"):
+            assert len(divided_runscript_template) == 1
+            divided_runscript_template += [[]]
+    
+        divided_runscript_template[-1].append(line)
+
+        if line.startswith("#JOBSCRIPT END"):
+            assert len(divided_runscript_template) == 2
+            divided_runscript_template += [[]]
+    replacement_dicts = list()
+    replacement_dict_keys = set()
+
+
     # iterate over all runs
     for run_number in runs_range:
         replacement_dict["RUN_NUMBER"] = run_number
@@ -140,38 +153,76 @@ if __name__ == "__main__":
                 replacement_dict.update({("TIME_LIMIT[%s]" % i): int(t + time_limit_base) for i, t in enumerate(args.time_bonus)})
                 replacement_dict["NUM_PROCESSES"] = max(autonet_config["torch_num_threads"], int(ceil(replacement_dict["MEMORY_LIMIT_MB"] / benchmark_config["memory_per_core"])))
 
-                # create output subdirectory used fot this run
-                output_dir = os.path.join(output_base_dir, "output_%s_%s_%s" % (instance_id, config_id, run_number))
-                if os.path.exists(output_dir) and input("%s exists. Delete? (y/n)" %output_dir).startswith("y"):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
+                replacement_dicts.append(copy(replacement_dict))
+                replacement_dict_keys |= set(replacement_dict.keys())
+
+    # build final runscript
+    for k in range(ceil(len(replacement_dicts) / args.num_condense)):
+        output_dir = os.path.join(output_base_dir, "part_%s" % k)
+        if os.path.exists(output_dir) and input("%s exists. Delete? (y/n)" % output_dir).startswith("y"):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        replacement_dicts_split = replacement_dicts[k * args.num_condense : (k + 1) * args.num_condense]
+
+        # unify replacement dict
+        unified_replacement_dict = {"OUTPUT_DIR": output_dir}
+        for key in replacement_dict_keys:
+            all_values = [replacement_dict[key] for replacement_dict in replacement_dicts_split]
+
+            if key == "NUM_NODES":
+                unified_replacement_dict[key] = sum(map(int, all_values))
+            elif key in ["NUM_PROCESSES", "MEMORY_LIMIT_MB"] or key.startswith("TIME_LIMIT"):
+                unified_replacement_dict[key] = max(map(int, all_values))
+            elif all(all_values[0] == v for v in all_values):
+                unified_replacement_dict[key] = all_values[0]
+
+        final_runscript = []
+        for i, part in enumerate(divided_runscript_template):
+            if i != 1:
+                pattern = re.compile("|".join(map(lambda x: re.escape("$${" + x + "}"), unified_replacement_dict.keys())))
+                runscript = [pattern.sub(lambda x: str(unified_replacement_dict[x.group()[3:-1]]), l) for l in part]
+
+                # DEFINE STATEMENTS
+                for j in range(len(runscript)):
+                    if runscript[j].startswith("#DEFINE"):
+                        runscript[j] = "GLOBAL_%s=%s\n" % (runscript[j].split()[1], " ".join(runscript[j].split()[2:]))
+                final_runscript.extend(runscript)
+                continue
+
+            final_runscript += ["TASK_ID=$GLOBAL_TASK_ID\n"]
+            for j, replacement_dict in enumerate(replacement_dicts_split):
                 replacement_dict["OUTPUT_DIR"] = output_dir
-
-                # make replacements in runscript and get command to submit the job
+                runscript = [
+                    "if [ $TASK_ID -gt 0 ]; then\n",
+                    "if [ $TASK_ID -le %s ]; then\n" % replacement_dict["NUM_NODES"],
+                    "RUN_ID=\"${GLOBAL_RUN_ID}_[%s]\"\n" % j]
                 pattern = re.compile("|".join(map(lambda x: re.escape("$${" + x + "}"), replacement_dict.keys())))
-                runscript = [pattern.sub(lambda x: str(replacement_dict[x.group()[3:-1]]), l) for l in runscript_template]
-                command = [l[9:] for l in runscript if l.startswith("#COMMAND ")][0].strip()
+                runscript += [pattern.sub(lambda x: str(replacement_dict[x.group()[3:-1]]), l) for l in part]
+                runscript += ["fi\n", "fi\n", "TASK_ID=`expr $TASK_ID - %s`\n" % replacement_dict["NUM_NODES"], "\n"]
+                final_runscript.extend(runscript)
+        
+        command = [l[9:] for l in final_runscript if l.startswith("#COMMAND ")][0].strip()
 
-                # save runscript
-                with open(os.path.join(output_dir, runscript_name), "w") as f:
-                    f.writelines(runscript)
+        # save runscript
+        with open(os.path.join(output_dir, runscript_name), "w") as f:
+            f.writelines(final_runscript)
 
-                # submit job
-                os.chdir(output_dir)
-                print("Calling %s in %s" % (command, os.getcwd()))
-                try:
-                    command_output = subprocess.check_output(command, shell=True)
-                except subprocess.CalledProcessError as e:
-                    print("Warning: %s" % e)
-                    command_output = str(e).encode("utf-8")
-                    if not input("Continue (y/n)? ").startswith("y"):
-                        raise
-                os.chdir(base_dir)
+        # submit job
+        os.chdir(output_dir)
+        print("Calling %s in %s" % (command, os.getcwd()))
+        try:
+            command_output = subprocess.check_output(command, shell=True)
+        except subprocess.CalledProcessError as e:
+            print("Warning: %s" % e)
+            command_output = str(e).encode("utf-8")
+            if not input("Continue (y/n)? ").startswith("y"):
+                raise
+        os.chdir(base_dir)
 
-                # save output and info data
-                with open(os.path.join(output_dir, "call.info"), "w") as f:
-                    print(command, file=f)
-                    json.dump(replacement_dict, f)
-                    print("", file=f)
-                with open(os.path.join(output_dir, "call.info"), "ba") as f:
-                    f.write(command_output)
+        # save output and info data
+        with open(os.path.join(output_dir, "call.info"), "w") as f:
+            print(command, file=f)
+            json.dump([unified_replacement_dict, replacement_dicts_split], f)
+            print("", file=f)
+        with open(os.path.join(output_dir, "call.info"), "ba") as f:
+            f.write(command_output)
