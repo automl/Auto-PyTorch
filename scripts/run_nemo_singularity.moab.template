@@ -9,24 +9,29 @@ cp $${BASE_DIR}/$${IMAGE} $TMPDIR/image.simg
 cp $${BENCHMARK} $TMPDIR/$${BENCHMARK_NAME}.txt
 cp $${HOST_CONFIG} $TMPDIR/host_config.txt
 module load tools/singularity/2.6
-
 cd $TMPDIR
-JOBID=(${MOAB_JOBID//[/ })
-COMMAND="python /data/Auto-PyTorch/scripts/run_benchmark.py /tmp/$${BENCHMARK_NAME}.txt --partial_benchmark $${INSTANCE_ID} $${CONFIG_ID} $${RUN_NUMBER} --host_config /tmp/host_config.txt --result_dir /tmp/benchmark_results --run_id $JOBID --task_id $MOAB_JOBARRAYINDEX"
+
+#DEFINE TASK_ID $MOAB_JOBARRAYINDEX
+#DEFINE RUN_ID (${MOAB_JOBID//[/ })
+
+#JOBSCRIPT START
+COMMAND="python /data/Auto-PyTorch/scripts/run_benchmark.py /tmp/$${BENCHMARK_NAME}.txt --partial_benchmark $${INSTANCE_ID} $${CONFIG_ID} $${RUN_NUMBER} --host_config /tmp/host_config.txt --result_dir /tmp/benchmark_results --run_id $RUN_ID --task_id $TASK_ID"
 COMMAND="singularity exec -B $${AUTONET_HOME}:/external_autonet_home/ -B $TMPDIR:/tmp image.simg $COMMAND"
 echo "Run benchmark: $COMMAND"
 timeout -k $${TIME_LIMIT[1]} $${TIME_LIMIT[0]} $COMMAND 1> $TMPDIR/stdout.txt 2> $TMPDIR/stderr.txt
 
-echo "Job finished. Copy output to $${OUTPUT_DIR}"
-cp $TMPDIR/stdout.txt $${OUTPUT_DIR}/stdout_${MOAB_JOBARRAYINDEX}.txt
-cp $TMPDIR/stderr.txt $${OUTPUT_DIR}/stderr_${MOAB_JOBARRAYINDEX}.txt
-
-if [ $MOAB_JOBARRAYINDEX -eq 1 ]
+if [ $TASK_ID -eq 1 ]
 then
     echo "Copy benchmark results"
     cd $TMPDIR 
     cp -r benchmark_results/* $${RESULT_DIR}
 fi
+#JOBSCRIPT END
+
+echo "Job finished. Copy output to $${OUTPUT_DIR}"
+cd $TMPDIR
+cp stdout.txt $${OUTPUT_DIR}/stdout_${MOAB_JOBARRAYINDEX}.txt
+cp stderr.txt $${OUTPUT_DIR}/stderr_${MOAB_JOBARRAYINDEX}.txt
 
 #COMMAND msub run_nemo_singularity.moab
 #HOST_CONFIG configs/hosts/nemo_singularity.txt

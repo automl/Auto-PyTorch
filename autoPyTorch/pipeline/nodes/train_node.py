@@ -24,7 +24,10 @@ from autoPyTorch.components.training.trainer import Trainer
 import signal
 
 class TrainNode(PipelineNode):
+    """Training pipeline node. In this node, the network will be trained."""
+
     def __init__(self):
+        """Construct the node"""
         super(TrainNode, self).__init__()
         self.default_minimize_value = True
         self.training_techniques = dict()
@@ -41,6 +44,27 @@ class TrainNode(PipelineNode):
             training_techniques,
             fit_start_time,
             refit):
+        """Train the network.
+        
+        Arguments:
+            hyperparameter_config {dict} -- The sampled hyperparameter config.
+            pipeline_config {dict} -- The user specified configuration of the pipeline
+            train_loader {DataLoader} -- Data for training.
+            valid_loader {DataLoader} -- Data for validation.
+            network {BaseNet} -- The neural network to be trained.
+            optimizer {AutoNetOptimizerBase} -- The selected optimizer.
+            optimize_metric {AutoNetMetric} -- The selected metric to optimize
+            additional_metrics {list} -- List of metrics, that should be logged
+            log_functions {list} -- List of AutoNetLofFunctions that can log additional stuff like test performance
+            budget {float} -- The budget for training
+            loss_function {_Loss} -- The selected PyTorch loss module
+            training_techniques {list} -- List of objects inheriting from BaseTrainingTechnique.
+            fit_start_time {float} -- Start time of fit
+            refit {bool} -- Whether training for refit or not.
+        
+        Returns:
+            dict -- loss and info reported to bohb
+        """
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config) 
         logger = logging.getLogger('autonet')
         logger.debug("Start train. Budget: " + str(budget))
@@ -111,6 +135,16 @@ class TrainNode(PipelineNode):
 
 
     def predict(self, pipeline_config, network, predict_loader):
+        """Predict using trained neural network
+        
+        Arguments:
+            pipeline_config {dict} -- The user specified configuration of the pipeline
+            network {BaseNet} -- The trained neural network.
+            predict_loader {DataLoader} -- The data to predict the labels for.
+        
+        Returns:
+            dict -- The predicted labels in a dict.
+        """
         if pipeline_config["torch_num_threads"] > 0:
             torch.set_num_threads(pipeline_config["torch_num_threads"])
 
@@ -181,6 +215,24 @@ class TrainNode(PipelineNode):
     
     def wrap_up_training(self, trainer, logs, epoch, train_loader, valid_loader, budget,
             training_start_time, fit_start_time, best_over_epochs, refit, logger):
+        """Wrap up and evaluate the training by computing missing log values
+        
+        Arguments:
+            trainer {Trainer} -- The trainer used for training.
+            logs {dict} -- The logs of the training
+            epoch {int} -- Number of Epochs trained
+            train_loader {DataLoader} -- The data for training
+            valid_loader {DataLoader} -- The data for validation
+            budget {float} -- Budget of training
+            training_start_time {float} -- Start time of training
+            fit_start_time {float} -- Start time of fit
+            best_over_epochs {bool} -- Whether best validation data over epochs should be used
+            refit {bool} -- Whether training was for refitting
+            logger {Logger} -- Logger for logging stuff to the console
+        
+        Returns:
+            tuple -- loss and selected final loss
+        """
         wrap_up_start_time = time.time()
         trainer.model.epochs_trained = epoch
         trainer.model.logs = logs

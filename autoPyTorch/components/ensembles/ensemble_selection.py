@@ -7,6 +7,8 @@ from autoPyTorch.components.ensembles.abstract_ensemble import AbstractEnsemble
 
 
 class EnsembleSelection(AbstractEnsemble):
+    """Ensemble Selection algorithm extracted from auto-sklearn"""
+    
     def __init__(self, ensemble_size, metric,
                  sorted_initialization_n_best=0, only_consider_n_best=0,
                  bagging=False, mode='fast'):

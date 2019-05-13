@@ -3,6 +3,7 @@ from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeature
 class AutoNetMultilabel(AutoNetFeatureData):
     preset_folder_name = "feature_multilabel"
 
+    # OVERRIDE
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):
         from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector

@@ -21,7 +21,14 @@ class ProblemType(Enum):
     FeatureMultilabel = 4
 
 class DataManager(object):
+    """ Load data from multiple sources and formants"""
+
     def __init__(self, verbose=0):
+        """Construct the DataManager
+        
+        Keyword Arguments:
+            verbose {bool} -- Whether to print stuff. (default: {0})
+        """
         self.verbose = verbose
         self.X_train, self.Y_train = None, None
         self.X_test, self.Y_test = None, None
@@ -33,6 +40,16 @@ class DataManager(object):
         self.categorical_features = None
 
     def read_data(self, file_name, test_split=0.0, is_classification=None, random_seed=0, **kwargs):
+        """Read the data.
+        
+        Arguments:
+            file_name {str} -- The name of the file to load. Different Readers are associated with different filenames.
+        
+        Keyword Arguments:
+            test_split {float} -- Amount of data to use as test split (default: {0.0})
+            is_classification {bool} -- Whether the data is a classification task (default: {None})
+            random_seed {int} -- a random seed (default: {0})
+        """
         print("Read:" + file_name)
         reader = self._get_reader(file_name, is_classification)
         reader.read()
@@ -53,6 +70,18 @@ class DataManager(object):
         self._split_data(test_split, random_seed)
 
     def _get_reader(self, file_name, is_classification):
+        """Get the reader associated with the filename.
+        
+        Arguments:
+            file_name {str} -- The file to load
+            is_classification {bool} -- Whether the data is a classification task or not
+        
+        Raises:
+            ValueError: The given file type is not supported
+        
+        Returns:
+            DataReader -- A reader that is able to read the data type
+        """
         if file_name.endswith(".csv"):
             reader = CSVReader(file_name, is_classification=is_classification)
         elif file_name.startswith("openml:"):
@@ -65,6 +94,17 @@ class DataManager(object):
         return reader
 
     def generate_classification(self, num_classes, num_features, num_samples, test_split=0.1, seed=0):
+        """Generate a classification task
+        
+        Arguments:
+            num_classes {int} -- Number of classes
+            num_features {int} -- Number of features
+            num_samples {int} -- Number of samples
+        
+        Keyword Arguments:
+            test_split {float} -- Size of test split (default: {0.1})
+            seed {int} -- A random seed (default: {0})
+        """
         #X, Y = make_classification(n_samples=800, n_features=num_feats, n_classes=num_classes, n_informative=4)
         X, y = make_multilabel_classification(
             n_samples=num_samples, n_features=num_features, n_classes=num_classes, n_labels=0.01,
@@ -78,6 +118,16 @@ class DataManager(object):
         self._split_data(test_split, seed)
 
     def generate_regression(self, num_features, num_samples, test_split=0.1, seed=0):
+        """Generate a regression task
+        
+        Arguments:
+            num_features {int} -- Number of features
+            num_samples {int} -- Number of samples
+        
+        Keyword Arguments:
+            test_split {float} -- Size of test split (default: {0.1})
+            seed {int} -- a random seed (default: {0})
+        """
         X, Y = make_regression(n_samples=num_samples, n_features=num_features, random_state=seed)
         self.categorical_features = [False] * num_features
         self.problem_type = ProblemType.FeatureRegression
@@ -85,6 +135,12 @@ class DataManager(object):
         self._split_data(test_split, seed)
         
     def _split_data(self, test_split, seed):
+        """Split the data in test (, valid) and training set.
+        
+        Arguments:
+            test_split {[type]} -- [description]
+            seed {[type]} -- [description]
+        """
         valid_specified = self.X_valid is not None and self.Y_valid is not None
         test_specified = self.X_test is not None and self.Y_test is not None
 
@@ -101,6 +157,17 @@ class DataManager(object):
         self.Y_train = self.Y
 
 def deterministic_shuffle_and_split(X, Y, split, seed):
+    """Split the data deterministically given the seed
+    
+    Arguments:
+        X {array} -- The feature data
+        Y {array} -- The targets
+        split {float} -- The size of the split
+        seed {int} -- A random seed
+    
+    Returns:
+        tuple -- Tuple of full data and the two splits
+    """
     rng = np.random.RandomState(seed)
     p = rng.permutation(X.shape[0])
 

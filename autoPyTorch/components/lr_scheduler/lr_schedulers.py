@@ -17,8 +17,18 @@ __version__ = "0.0.1"
 __license__ = "BSD"
 
 class AutoNetLearningRateSchedulerBase(object):
-    def __new__(cls, params, config):
-        scheduler = cls._get_scheduler(cls, params, config)
+    def __new__(cls, optimizer, config):
+        """Get a new instance of the scheduler
+        
+        Arguments:
+            cls {class} -- Type of scheduler
+            optimizer {Optmizer} -- A PyTorch Optimizer
+            config {dict} -- Sampled lr_scheduler config
+        
+        Returns:
+            AutoNetLearningRateSchedulerBase -- The learning rate scheduler object
+        """
+        scheduler = cls._get_scheduler(cls, optimizer, config)
         if not hasattr(scheduler, "allows_early_stopping"):
             scheduler.allows_early_stopping = True
         if not hasattr(scheduler, "snapshot_before_restart"):

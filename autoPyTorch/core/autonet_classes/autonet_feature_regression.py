@@ -8,6 +8,7 @@ from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeature
 class AutoNetRegression(AutoNetFeatureData):
     preset_folder_name = "feature_regression"
 
+    # OVERRIDE
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):
         from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector

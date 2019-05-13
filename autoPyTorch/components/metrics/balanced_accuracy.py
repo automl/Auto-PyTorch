@@ -5,6 +5,7 @@ from sklearn.metrics.classification import _check_targets, type_of_target
 
 
 def balanced_accuracy(solution, prediction):
+    """balanced accuracy implementation of auto-sklearn"""
 
     y_type, solution, prediction = _check_targets(solution, prediction)
 
