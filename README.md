@@ -156,6 +156,9 @@ along with this program (see LICENSE file).
 }
 ```
 
+**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
+
+
 ## Contact
 
 Auto-PyTorch is developed by the [AutoML Group of the University of Freiburg](http://www.automl.org/).
