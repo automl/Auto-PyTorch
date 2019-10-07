@@ -163,4 +163,3 @@ class Trainer(object):
         outputs_data = np.vstack(outputs_data)
         targets_data = np.vstack(targets_data)
         return [metric(outputs_data, targets_data) for metric in self.metrics]
-    

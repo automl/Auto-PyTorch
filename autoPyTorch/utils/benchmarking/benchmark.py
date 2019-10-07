@@ -8,6 +8,7 @@ from autoPyTorch.utils.benchmarking.benchmark_pipeline import (BenchmarkSettings
                                                                ReadInstanceData,
                                                                SaveResults,
                                                                SetAutoNetConfig,
+                                                               ApplyUserUpdates,
                                                                SaveEnsembleLogs,
                                                                SetEnsembleConfig)
 from autoPyTorch.utils.benchmarking.visualization_pipeline import (CollectAutoNetConfigTrajectories,
@@ -46,12 +47,13 @@ class Benchmark():
     def get_benchmark_pipeline(self):
         return Pipeline([
             BenchmarkSettings(),
-            ForInstance([ #instance_file
-                ReadInstanceData(), #test_split, is_classification, instance
+            ForInstance([                    # loop through instance files
+                ReadInstanceData(),          # get test_split, is_classification, instance
                 CreateAutoNet(),
-                ForAutoNetConfig([ #autonet_config_file
-                    SetAutoNetConfig(), #use_dataset_metric, use_dataset_max_runtime
-                    ForRun([ #num_runs, run_ids
+                #ApplyUserUpdates(),
+                ForAutoNetConfig([           # loop through autonet_config_file
+                    SetAutoNetConfig(),      # use_dataset_metric, use_dataset_max_runtime
+                    ForRun([                 # loop through num_runs, run_ids
                         PrepareResultFolder(),
                         FitAutoNet(),
                         SaveResults(),

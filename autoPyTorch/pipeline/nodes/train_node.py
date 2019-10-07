@@ -118,7 +118,7 @@ class TrainNode(PipelineNode):
             log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
             logger.debug("Epoch: " + str(epoch) + " : " + str(log))
             if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
-                self.tensorboard_log(budget=budget, epoch=epoch, log=log)
+                self.tensorboard_log(budget=budget, epoch=epoch, log=log, logdir=pipeline_config["result_logger_dir"])
 
             if stop_training:
                 break
@@ -205,10 +205,14 @@ class TrainNode(PipelineNode):
             options += technique.get_pipeline_config_options()
         return options
     
-    def tensorboard_log(self, budget, epoch, log):
+    def tensorboard_log(self, budget, epoch, log, logdir):
         import tensorboard_logger as tl
         worker_path = 'Train/'
-        tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
+        try:
+            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
+        except:
+            tl.configure(logdir)
+            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
         tl.log_value(worker_path + 'epoch', float(epoch + 1), int(time.time()))
         for name, value in log.items():
             tl.log_value(worker_path + name, float(value), int(time.time()))
