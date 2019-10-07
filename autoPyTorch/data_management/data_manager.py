@@ -17,8 +17,10 @@ __license__ = "BSD"
 from enum import Enum
 class ProblemType(Enum):
     FeatureClassification = 1
+    ImageClassification = 2
     FeatureRegression = 3
     FeatureMultilabel = 4
+    ImageClassificationMultipleDatasets = 5
 
 class DataManager(object):
     """ Load data from multiple sources and formants"""
@@ -155,6 +157,102 @@ class DataManager(object):
             self.Y_valid = None
         self.X_train = self.X
         self.Y_train = self.Y
+
+
+class ImageManager(DataManager):
+        
+    def read_data(self, file_name, test_split=0.0, is_classification=None, **kwargs):
+        self.is_classification = True
+        self.is_multilabel = False
+        
+        if isinstance(file_name, list):
+            import numpy as np
+            arr = np.array(file_name)
+            self.X_train = arr
+            self.Y_train = np.array([0] * len(file_name))
+            self.X_valid = self.Y_valid = self.X_test = self.Y_test = None
+            self.problem_type = ProblemType.ImageClassificationMultipleDatasets
+        elif file_name.endswith(".csv"):
+            import pandas as pd
+            import math
+            import numpy as np
+            self.data = np.array(pd.read_csv(file_name, header=None))
+
+            self.X_train = np.array(self.data[:,0])
+            self.Y_train = np.array(self.data[:,1])
+
+            self.X_valid = self.Y_valid = self.X_test = self.Y_test = None
+            
+            if test_split > 0:
+                samples = self.X_train.shape[0]
+                indices = list(range(samples))
+                np.random.shuffle(indices)
+                split = samples * test_split
+                test_indices, train_indices = indices[:math.ceil(split)], indices[math.floor(split):]
+                self.X_test, self.Y_test = self.X_train[test_indices], self.Y_train[test_indices]
+                self.X_train, self.Y_train =  self.X_train[train_indices], self.Y_train[train_indices]
+                
+            self.problem_type = ProblemType.ImageClassification
+
+    def generate_classification(self, problem="MNIST", test_split=0.1, force_download=False, train_size=-1, test_size=-1):
+        self.is_classification = True
+        data = None
+        conversion = False
+        if problem == "MNIST":
+            data = torchvision.datasets.MNIST
+        elif problem == "Fashion-MNIST":
+            data = torchvision.datasets.FashionMNIST
+        elif problem == "CIFAR":
+            conversion = True
+            data = torchvision.datasets.CIFAR10
+        else:
+            raise ValueError("Dataset not supported: " + problem)        
+    
+        
+        train_dataset = data(root='datasets/torchvision/' + problem + '/',
+                                    train=True, 
+                                    transform=transforms.ToTensor(),
+                                    download=True)
+
+        test_dataset = data(root='datasets/torchvision/' + problem + '/',
+                                    train=False, 
+                                    transform=transforms.ToTensor())
+        images_train = []
+        labels_train = []
+
+        train_size = train_dataset.__len__() if train_size == -1 else min(train_size, train_dataset.__len__())
+        test_size = test_dataset.__len__() if test_size == -1 else min(test_size, test_dataset.__len__())
+
+        for i in range(train_size):
+            sys.stdout.write("Reading " + problem + " train data ["+ str(train_size)+"] - progress: %d%%   \r" % (int(100 * (i + 1)/ train_size) ))
+            sys.stdout.flush()
+            image, label = train_dataset.__getitem__(i)
+            if conversion:
+                label = torch.tensor(label)
+            images_train.append(image.numpy())
+            labels_train.append(label.numpy())
+
+        self.X_train = np.array(images_train)
+        self.Y_train = np.array(labels_train)
+
+        images_test = []
+        labels_test = []
+        print()
+        for i in range(test_size):
+            sys.stdout.write("Reading " + problem + " test data ["+ str(test_size)+"] - progress: %d%%   \r" % (int(100 * (i + 1) / test_size) ))
+            sys.stdout.flush()
+            image, label = test_dataset.__getitem__(i)
+            if conversion:
+                label = torch.tensor(label)
+            images_test.append(image.numpy())
+            labels_test.append(label.numpy())
+
+        self.problem_type = ProblemType.ImageClassification
+        self.X_test = np.array(images_test)
+        self.Y_test = np.array(labels_test)
+
+        self.categorical_features = None
+        print()
 
 def deterministic_shuffle_and_split(X, Y, split, seed):
     """Split the data deterministically given the seed

@@ -49,7 +49,7 @@ class CreateDataLoader(PipelineNode):
 
     def predict(self, pipeline_config, X, batch_size):
         X = torch.from_numpy(to_dense(X)).float()
-        y_placeholder = torch.Tensor(X.size()[0])
+        y_placeholder = torch.zeros(X.size()[0])
 
         predict_loader = DataLoader(TensorDataset(X.float(), y_placeholder), batch_size)
 

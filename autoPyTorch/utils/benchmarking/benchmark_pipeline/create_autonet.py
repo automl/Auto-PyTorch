@@ -18,6 +18,10 @@ class CreateAutoNet(PipelineNode):
             autonet_type = AutoNetMultilabel
         elif (data_manager.problem_type == ProblemType.FeatureClassification):
             autonet_type = AutoNetClassification
+        elif data_manager.problem_type == ProblemType.ImageClassification:
+            autonet = AutoNetImageClassification()
+        elif data_manager.problem_type == ProblemType.ImageClassificationMultipleDatasets:
+            autonet = AutoNetImageClassificationMultipleDatasets()
         else:
             raise ValueError('Problem type ' + str(data_manager.problem_type) + ' is not defined')
 

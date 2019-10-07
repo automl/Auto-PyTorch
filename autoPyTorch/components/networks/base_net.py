@@ -65,3 +65,17 @@ class BaseFeatureNet(BaseNet):
     def forward(self, x):
         x = self.embedding(x)
         return super(BaseFeatureNet, self).forward(x)
+
+
+class BaseImageNet(BaseNet):
+    def __init__(self, config, in_features, out_features, final_activation):
+        super(BaseImageNet, self).__init__(config, in_features, out_features, final_activation)
+        
+        if len(in_features) == 2:
+            self.channels = 1
+            self.iw = in_features[0]
+            self.ih = in_features[1]
+        if len(in_features) == 3:
+            self.channels = in_features[0]
+            self.iw = in_features[1]
+            self.ih = in_features[2]

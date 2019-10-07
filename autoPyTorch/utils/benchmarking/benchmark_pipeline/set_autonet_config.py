@@ -27,7 +27,6 @@ class SetAutoNetConfig(PipelineNode):
         if data_manager.categorical_features:
             config['categorical_features'] = data_manager.categorical_features
 
-        config['dataset_name'] = "_".join(os.path.basename(instance).split(":"))
         # Note: PrepareResultFolder will make a small run dependent update of the autonet_config
         autonet.update_autonet_config(**config)
         return dict()

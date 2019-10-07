@@ -1,0 +1,4 @@
+lr_scheduler=[cosine_annealing]
+networks=[resnet]
+batch_loss_computation_techniques=[standard]
+optimizer=[adamw]

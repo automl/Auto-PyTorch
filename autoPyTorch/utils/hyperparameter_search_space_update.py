@@ -1,6 +1,7 @@
 import ast
 import os
 
+
 class HyperparameterSearchSpaceUpdate():
     def __init__(self, node_name, hyperparameter, value_range, log=False):
         self.node_name = node_name

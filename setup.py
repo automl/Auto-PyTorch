@@ -18,7 +18,7 @@ for dirname, subdirs, files in os.walk(os.path.join('autoPyTorch', 'core', 'pres
 
 setuptools.setup(
     name="autoPyTorch",
-    version="0.0.1",
+    version="0.0.2",
     author="AutoML Freiburg",
     author_email="urbanm@informatik.uni-freiburg.de",
     description=("Auto-PyTorch searches neural architectures using BO-HB"),

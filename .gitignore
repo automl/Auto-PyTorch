@@ -1,4 +1,3 @@
-
 # Visual Studio
 *.vs/*
 
@@ -6,8 +5,9 @@
 *.vscode/*
 
 # Python
-*__pycache__/
+*__pycache__*
 *.pyc
+.ipynb_checkpoints*
 
 # Zipped
 *.tar.gz
@@ -24,19 +24,24 @@ results.json
 outputs/
 jobs.txt
 .pylintrc
+*worker_logs*
 
 # Build
 *build/
 *autonet.egg-info
 *.simg
-
-
-# Datasets
-/datasets/
+.DS_Store
+dist/
 
 # Meta GPU
 *meta_logs/
+runs.log
+runs.log.lock
+logs/
 
 # ensemble data
 predictions_for_ensemble.npy
 test_predictions_for_ensemble.npy
+
+# testing
+tests.ipynb
