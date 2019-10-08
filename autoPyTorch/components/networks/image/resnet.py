@@ -242,6 +242,8 @@ class ResNet(BaseImageNet):
 
         self.apply(initialize_weights)
 
+        self.layers = nn.Sequential(self.model)
+
     def forward(self, x):
         x = self.model(x)
         x = x.view(-1, self.feature_maps_out)

@@ -3,7 +3,7 @@ import numpy as np
 
 # classification metrics
 def accuracy(y_true, y_pred):
-    return np.mean(y_true == y_pred)
+    return np.mean(y_true == y_pred) * 100
 
 def auc_metric(y_true, y_pred):
     return (2 * metrics.roc_auc_score(y_true, y_pred) - 1)

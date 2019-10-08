@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import copy
 import os
+import json
 
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 
@@ -265,7 +266,7 @@ class AutoNet():
 
         if return_loss_value:
             return metric.get_loss_value(Y_pred, Y_test)
-        return metric(torch.from_numpy(Y_test.astype(np.float32)), torch.from_numpy(Y_pred.astype(np.float32)))
+        return metric(torch.from_numpy(Y_pred.astype(np.float32)), torch.from_numpy(Y_test.astype(np.float32)))
 
     def get_pytorch_model(self):
         """Returns a pytorch sequential model of the current incumbent configuration
@@ -281,7 +282,7 @@ class AutoNet():
             return self.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"].layers
 
     def initialize_from_checkpoint(self, hyperparameter_config, checkpoint, in_features, out_features, final_activation=None):
-        """Returns a pytorch sequential model from a state dict and a hyperparamter config.
+        """
 
         Arguments:
             config_file: json with output as from .fit method
@@ -322,7 +323,7 @@ class AutoNet():
         # Add to pipeline
         self.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"] = model
 
-        return network.layers
+        return model
     
     def check_data_array_types(self, *arrays):
         result = []

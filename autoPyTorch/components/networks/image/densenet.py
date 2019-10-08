@@ -121,6 +121,8 @@ class DenseNet(BaseImageNet):
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
 
+        self.layers = nn.Sequential(self.features)
+
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)

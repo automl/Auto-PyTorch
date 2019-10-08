@@ -28,7 +28,7 @@ jobs.txt
 
 # Build
 *build/
-*autonet.egg-info
+*autoPyTorch.egg-info
 *.simg
 .DS_Store
 dist/
