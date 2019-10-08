@@ -77,12 +77,12 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
                 n_canceled += 1
                 break
 
-    self.logger.info('HBMASTER: Canceled %i remaining runs'%n_canceled)
+    self.logger.debug('HBMASTER: Canceled %i remaining runs'%n_canceled)
 
     # wait for remaining jobs
     while self.num_running_jobs > 0:
         self.thread_cond.wait(60)
-        self.logger.info('HBMASTER: Job finished: wait for remaining %i jobs'%self.num_running_jobs)
+        self.logger.debug('HBMASTER: Job finished: wait for remaining %i jobs'%self.num_running_jobs)
 
     self.thread_cond.release()
     

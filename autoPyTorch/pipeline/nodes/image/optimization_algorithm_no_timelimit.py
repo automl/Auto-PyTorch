@@ -95,8 +95,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         # Get permutations
         self.permutations = self.get_permutations(n_budgets)
 
-        self.logger.info('BOHB-ConfigSpace:\n' + str(config_space))
-        self.logger.info('Constant Hyperparameter:\n' + str(pprint.pformat(constants)))
+        self.logger.debug('BOHB-ConfigSpace:\n' + str(config_space))
+        self.logger.debug('Constant Hyperparameter:\n' + str(pprint.pformat(constants)))
 
         run_id, task_id = pipeline_config['run_id'], pipeline_config['task_id']
 
@@ -284,7 +284,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         reduce_runtime = pipeline_config["max_budget"] if pipeline_config["budget_type"] == "time" else 0
         
         HB.wait_for_workers(min_num_workers)
-        self.logger.info('Workers are ready!')
+        self.logger.debug('Workers are ready!')
 
         thread_read_write.append('runs.log', "{0}: {1} | {2}-{3}\n".format(
             str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
@@ -314,7 +314,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         full_config.update(constants)
         full_config.update(refit["hyperparameter_config"])
 
-        self.logger.info('Refit-Config:\n' + str(pprint.pformat(full_config)))
+        self.logger.debug('Refit-Config:\n' + str(pprint.pformat(full_config)))
 
         class Job():
             pass
