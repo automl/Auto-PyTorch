@@ -82,7 +82,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         config_space, constants = remove_constant_hyperparameter(config_space)
         config_space.seed(pipeline_config['random_seed'])
 
-        self.n_datasets = X_train.shape[0] if X_train.shape[0]<100 else 1
+        self.n_datasets = X_train.shape[0] if X_train.shape[0]<10 else 1
 
         #Get number of budgets
         max_budget = pipeline_config["max_budget"]
