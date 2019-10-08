@@ -155,6 +155,8 @@ class DenseNetFlexible(BaseImageNet):
                 self.matrix_init(m.bias, config['linear_bias_init'])
 
         # logger.debug(print(self))
+
+        self.layers = nn.Sequential(self.features)
     
     def matrix_init(self, matrix, init_type):
         if init_type == 'kaiming_normal':
