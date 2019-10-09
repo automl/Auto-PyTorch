@@ -22,7 +22,6 @@ from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 
 from autoPyTorch.core.hpbandster_extensions.bohb_ext import BOHBExt
-from autoPyTorch.core.hpbandster_extensions.bohb_multi_kde_ext import BOHBMultiKDEExt
 from autoPyTorch.core.hpbandster_extensions.hyperband_ext import HyperBandExt
 from autoPyTorch.core.worker_no_timelimit import ModuleWorkerNoTimeLimit
 
@@ -68,7 +67,6 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         self.algorithms = dict()
         self.algorithms["bohb"] = BOHBExt
         self.algorithms["hyperband"] = HyperBandExt
-        self.algorithms["bohb_multi_kde"] = BOHBMultiKDEExt
 
         self.logger = logging.getLogger('autonet')
 
