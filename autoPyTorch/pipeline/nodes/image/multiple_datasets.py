@@ -107,9 +107,9 @@ class MultipleDatasets(SubPipelineNode):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption('dataset_order', default=None, type=int, list=True),
+            ConfigOption('dataset_order', default=None, type=int, list=True, info="Order in which datasets are considered."),
 
             #autonet.refit sets this to false to avoid refit budget issues
-            ConfigOption('increase_number_of_trained_datasets', default=True, type=to_bool) 
+            ConfigOption('increase_number_of_trained_datasets', default=True, type=to_bool, info="Wether to increase the number of considered datasets with each successive halfing iteration.") 
         ]
         return options

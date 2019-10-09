@@ -63,7 +63,7 @@ class CreateImageDataLoader(CreateDataLoader):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory'),
+            ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory', info="Directory default datasets will be downloaded to."),
             ConfigOption("dataloader_worker", default=1, type=int),
             ConfigOption("dataloader_cache_size_mb", default=0, type=int)
         ]

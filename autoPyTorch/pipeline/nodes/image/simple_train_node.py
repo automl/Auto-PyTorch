@@ -295,7 +295,7 @@ class SimpleTrainNode(PipelineNode):
                 type=str, list=True, choices=list(self.batch_loss_computation_techniques.keys())),
             ConfigOption("minimize", default=self.default_minimize_value, type=to_bool, choices=[True, False]),
             ConfigOption("cuda", default=True, type=to_bool, choices=[True, False]),
-            ConfigOption("save_checkpoints", default=False, type=to_bool, choices=[True, False]),
+            ConfigOption("save_checkpoints", default=False, type=to_bool, choices=[True, False], info="Wether to save state dicts as checkpoints."),
             ConfigOption("tensorboard_min_log_interval", default=30, type=int),
             ConfigOption("tensorboard_images_count", default=0, type=int),
             ConfigOption("evaluate_on_train_data", default=True, type=to_bool),

@@ -45,3 +45,6 @@ test_predictions_for_ensemble.npy
 
 # testing
 tests.ipynb
+
+# venv
+env/

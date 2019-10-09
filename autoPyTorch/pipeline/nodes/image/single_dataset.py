@@ -26,10 +26,10 @@ class SingleDataset(SubPipelineNode):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption('dataset_order', default=None, type=int, list=True),
+            ConfigOption('dataset_order', default=None, type=int, list=True, info="Only used for multiple datasets."),
 
             #autonet.refit sets this to false to avoid refit budget issues
-            ConfigOption('increase_number_of_trained_datasets', default=False, type=to_bool)
+            ConfigOption('increase_number_of_trained_datasets', default=False, type=to_bool, info="Only used for multiple datasets.")
         ]
         return options
 

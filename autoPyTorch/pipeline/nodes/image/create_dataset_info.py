@@ -77,8 +77,8 @@ class CreateDatasetInfo(PipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption(name="file_extensions", default=['.png', '.jpg', '.JPEG', '.pgm'], type=str, list=True),
-            ConfigOption(name="images_shape", default=[3, 32, 32], type=int, list=True),
-            ConfigOption(name="images_root_folders", default=[ConfigFileParser.get_autonet_home()], type='directory', list=True),
+            ConfigOption(name="images_shape", default=[3, 32, 32], type=int, list=True, info="Image size input to the networks, images will be rescaled to this."),
+            ConfigOption(name="images_root_folders", default=[ConfigFileParser.get_autonet_home()], type='directory', list=True, info="Directory relative to which image paths are given."),
             ConfigOption(name="max_class_size", default=None, type=int),
         ]
         return options

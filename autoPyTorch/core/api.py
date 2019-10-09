@@ -269,17 +269,24 @@ class AutoNet():
         return metric(torch.from_numpy(Y_pred.astype(np.float32)), torch.from_numpy(Y_test.astype(np.float32)))
 
     def get_pytorch_model(self):
-        """Returns a pytorch sequential model of the current incumbent configuration
+        """Returns a pytorch sequential model of the current incumbent configuration. Not possible for all models.
         
         Arguments:
         
         Returns:
             model -- PyTorch sequential model of the current incumbent configuration
         """
-        if NetworkSelector.get_name() in self.pipeline:
-            return self.pipeline[NetworkSelector.get_name()].fit_output["network"].layers
-        else:
-            return self.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"].layers
+        try:
+            if NetworkSelector.get_name() in self.pipeline:
+                return self.pipeline[NetworkSelector.get_name()].fit_output["network"].layers
+            else:
+                return self.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"].layers
+        except:
+            print("Can not get PyTorch Sequential model for incumbent config. Returning Auto-PyTorch model")
+            if NetworkSelector.get_name() in self.pipeline:
+                return self.pipeline[NetworkSelector.get_name()].fit_output["network"]
+            else:
+                return self.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"]
 
     def initialize_from_checkpoint(self, hyperparameter_config, checkpoint, in_features, out_features, final_activation=None):
         """
