@@ -33,6 +33,8 @@ $ python setup.py install
 
 ## Examples
 
+For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
+
 In a nutshell:
 
 ```py
@@ -112,7 +114,7 @@ search_space_updates.append(node_name="NetworkSelector",
 autoPyTorch = AutoNetClassification(hyperparameter_search_space_updates=search_space_updates)
 ```
 
-Enable ensemble building:
+Enable ensemble building (for featurized data):
 
 ```py
 from autoPyTorch import AutoNetEnsemble
