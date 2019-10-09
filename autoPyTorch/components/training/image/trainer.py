@@ -69,7 +69,6 @@ class Trainer(object):
         metric_results = [0] * len(metrics)
         start_time = time.time()
         for step, (data, targets) in enumerate(train_loader):
-
             # import matplotlib.pyplot as plt
             # img = plt.imshow(data.numpy()[0,1,:])
             # plt.show()
@@ -125,6 +124,8 @@ class Trainer(object):
                 budget_exceeded = True
                 break
 
+        if N==0: # Fixes a bug during initialization
+            N=1
 
         if self.images_plot_count > 0:
             import tensorboard_logger as tl

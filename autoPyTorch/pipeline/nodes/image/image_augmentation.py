@@ -210,10 +210,12 @@ class ImageAugmentation(PipelineNode):
                 std = std + data.std(2).sum(0)
                 nb_samples += batch_samples
 
-        mean /= nb_samples
-        std /= nb_samples
-
-        mean, std = mean.numpy().tolist(), std.numpy().tolist()
+        if nb_samples > 0.:
+            mean /= nb_samples
+            std /= nb_samples
+            mean, std = mean.numpy().tolist(), std.numpy().tolist()
+        else:
+            mean, std = [mean], [std]
 
         log.debug('MEAN: ' + str(mean) + ' -- STD: ' + str(std))
         

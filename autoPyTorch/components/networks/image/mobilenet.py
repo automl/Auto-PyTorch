@@ -194,8 +194,6 @@ class MobileNet(BaseImageNet):
 
         self.model.default_cfg = _cfg(url='', input_size=in_features, pool_size=(10, 10), crop_pct=0.904, num_classes=out_features)
 
-        self.layers = nn.Sequential(self.model.forward_features)
-
     def forward(self, x):
         # make sure channels first
         x = self.model(x)

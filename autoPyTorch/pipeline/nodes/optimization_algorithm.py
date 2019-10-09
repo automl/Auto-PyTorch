@@ -158,18 +158,18 @@ class OptimizationAlgorithm(SubPipelineNode):
         options = [
             ConfigOption("run_id", default="0", type=str, info="Unique id for each run."),
             ConfigOption("task_id", default=-1, type=int, info="ID for each worker, if you run AutoNet on a cluster. Set to -1, if you run it locally. "),
-            ConfigOption("algorithm", default="bohb", type=str, choices=list(self.algorithms.keys())),
+            ConfigOption("algorithm", default="bohb", type=str, choices=list(self.algorithms.keys()), info="Algorithm to use for config sampling."),
             ConfigOption("budget_type", default="time", type=str, choices=list(self.budget_types.keys())),
-            ConfigOption("min_budget", default=lambda c: self.budget_types[c["budget_type"]].default_min_budget, type=float, depends=True),
-            ConfigOption("max_budget", default=lambda c: self.budget_types[c["budget_type"]].default_max_budget, type=float, depends=True),
+            ConfigOption("min_budget", default=lambda c: self.budget_types[c["budget_type"]].default_min_budget, type=float, depends=True, info="Min budget for fitting configurations."),
+            ConfigOption("max_budget", default=lambda c: self.budget_types[c["budget_type"]].default_max_budget, type=float, depends=True, info="Max budget for fitting configurations."),
             ConfigOption("max_runtime", 
                 default=lambda c: ((-int(np.log(c["min_budget"] / c["max_budget"]) / np.log(c["eta"])) + 1) * c["max_budget"])
                         if c["budget_type"] == "time" else float("inf"),
-                type=float, depends=True),
+                type=float, depends=True, info="Total time for the run."),
             ConfigOption("num_iterations", 
                 default=lambda c:  (-int(np.log(c["min_budget"] / c["max_budget"]) / np.log(c["eta"])) + 1)
                         if c["budget_type"] == "epochs" else float("inf"),
-                type=float, depends=True),
+                type=float, depends=True, info="Number of successive halving iterations."),
             ConfigOption("eta", default=3, type=float, info='eta parameter of Hyperband.'),
             ConfigOption("min_workers", default=1, type=int),
             ConfigOption("working_dir", default=".", type="directory"),
