@@ -3,7 +3,7 @@
 Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
 This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch only supports featurized data and image data.
+So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
 
 ## Installation
 
