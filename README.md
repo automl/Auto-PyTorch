@@ -3,7 +3,7 @@
 Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
 This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch only supports featurized data.
+So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
 
 ## Installation
 
@@ -32,6 +32,8 @@ $ python setup.py install
 
 
 ## Examples
+
+For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
 In a nutshell:
 
@@ -112,7 +114,7 @@ search_space_updates.append(node_name="NetworkSelector",
 autoPyTorch = AutoNetClassification(hyperparameter_search_space_updates=search_space_updates)
 ```
 
-Enable ensemble building:
+Enable ensemble building (for featurized data):
 
 ```py
 from autoPyTorch import AutoNetEnsemble

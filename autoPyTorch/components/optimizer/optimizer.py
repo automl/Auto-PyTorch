@@ -11,9 +11,11 @@ import torch.optim as optim
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 
+
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
+
 
 class AutoNetOptimizerBase(object):
     def __new__(cls, params, config):
@@ -34,8 +36,24 @@ class AdamOptimizer(AutoNetOptimizerBase):
     
     @staticmethod
     def get_config_space(
-        learning_rate=((0.0001, 0.1), True),
-        weight_decay=(0.0001, 0.1)
+        learning_rate=((1e-4, 0.1), True),
+        weight_decay=(1e-5, 0.1)
+    ):
+        cs = CS.ConfigurationSpace()
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        return cs
+
+
+class AdamWOptimizer(AutoNetOptimizerBase):
+    
+    def _get_optimizer(self, params, config):
+        return optim.AdamW(params=params, lr=config['learning_rate'], weight_decay=config['weight_decay'])
+    
+    @staticmethod
+    def get_config_space(
+        learning_rate=((1e-4, 0.1), True),
+        weight_decay=(1e-5, 0.1)
     ):
         cs = CS.ConfigurationSpace()
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
@@ -50,12 +68,32 @@ class SgdOptimizer(AutoNetOptimizerBase):
     
     @staticmethod
     def get_config_space(
-        learning_rate=((0.0001, 0.1), True),
-        momentum=((0.1, 0.9), True),
-        weight_decay=(0.0001, 0.1)
+        learning_rate=((1e-4, 0.1), True),
+        momentum=((0.1, 0.99), True),
+        weight_decay=(1e-5, 0.1)
     ):
         cs = CS.ConfigurationSpace()
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'momentum', momentum)
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        return cs
+
+
+class RMSpropOptimizer(AutoNetOptimizerBase):
+    
+    def _get_optimizer(self, params, config):
+        return optim.RMSprop(params=params, lr=config['learning_rate'], momentum=config['momentum'], weight_decay=config['weight_decay'], centered=False)
+    
+    @staticmethod
+    def get_config_space(
+        learning_rate=((1e-4, 0.1), True),
+        momentum=((0.1, 0.99), True),
+        weight_decay=(1e-5, 0.1),
+        alpha=(0.1,0.99)
+    ):
+        cs = CS.ConfigurationSpace()
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'momentum', momentum)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'alpha', alpha)
         return cs

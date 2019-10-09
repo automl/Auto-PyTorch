@@ -5,6 +5,7 @@ __license__ = "BSD"
 
 import gc
 import inspect
+import logging
 
 
 class Node():
@@ -12,6 +13,7 @@ class Node():
         self.child_node = None
         self.fit_output = None
         self.predict_output = None
+        self.logger = logging.getLogger('autonet')
 
     def fit(self, **kwargs):
         """Fit pipeline node.
@@ -105,7 +107,10 @@ class Node():
                 else:  # Neither default specified nor keyword available
                     print ("Available keywords:", sorted(available_kwargs.keys()))
                     raise ValueError('Node ' + str(type(node)) + ' requires keyword ' + str(keyword) + ' which is not available.')
-            
+
+            if type(node) != Node:
+                self.logger.debug('Fit: ' + str(type(node).__name__))
+
             # call fit method
             node.fit_output = node.fit(**required_kwargs)
             if (not isinstance(node.fit_output, dict)):

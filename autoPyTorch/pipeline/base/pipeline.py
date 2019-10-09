@@ -107,7 +107,8 @@ class Pipeline():
 
         # add the config space of each node
         for name, node in self._pipeline_nodes.items():
-            config_space = node.get_hyperparameter_search_space(dataset_info=dataset_info, **pipeline_config)
+            #print("dataset_info" in pipeline_config.keys())
+            config_space = node.get_hyperparameter_search_space(**pipeline_config)
             cs.add_configuration_space(prefix=name, configuration_space=config_space, delimiter=ConfigWrapper.delimiter)
         
         # add the dependencies between the nodes

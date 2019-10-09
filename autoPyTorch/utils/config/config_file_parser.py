@@ -39,7 +39,7 @@ class ConfigFileParser():
                 key_values[key] = value
         return key_values
         
-    def read(self, filename, key_values_dict=None):
+    def read(self, filename, key_values_dict=None, silent=False):
         """
         Read a config file.
         
@@ -58,6 +58,8 @@ class ConfigFileParser():
         # open the config file
         for key, value in key_values_dict.items():
             if (key not in self.config_options):
+                if silent:
+                    continue
                 raise ValueError("Config key '" + key + "' is not a valid autonet config option")
 
             option = self.config_options[key]

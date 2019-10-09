@@ -18,6 +18,7 @@ class ForAutoNetConfig(SubPipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption("autonet_configs", default=None, type='directory', list=True, required=True),
+            ConfigOption("autonet_config_root", default=ConfigFileParser.get_autonet_home(), type='directory'),
             ConfigOption("autonet_config_slice", default=None, type=str)
         ]
         return options
@@ -25,9 +26,13 @@ class ForAutoNetConfig(SubPipelineNode):
     @staticmethod
     def get_config_files(pipeline_config, parse_slice=True):
         config_files = pipeline_config['autonet_configs']
+        if pipeline_config['autonet_config_root'] is not None:
+            config_files = [os.path.join(pipeline_config['autonet_config_root'], config) if not os.path.isabs(config) else config for config in config_files]
+
         autonet_config_slice = ForAutoNetConfig.parse_slice(pipeline_config['autonet_config_slice'])
         if autonet_config_slice is not None and parse_slice:
             return config_files[autonet_config_slice]
+
         return config_files
 
     @staticmethod

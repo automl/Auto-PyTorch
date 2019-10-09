@@ -21,6 +21,7 @@ class ForInstance(SubPipelineNode):
             ConfigOption("instances", default=None, type='directory', required=True),
             ConfigOption("instance_slice", default=None, type=str),
             ConfigOption("dataset_root", default=ConfigFileParser.get_autonet_home(), type='directory'),
+            ConfigOption("multiple_datasets_indices", default=None, type=int, list=True),
         ]
         return options
 
@@ -30,22 +31,28 @@ class ForInstance(SubPipelineNode):
         instances = []
         if os.path.isfile(benchmark_config["instances"]):
             with open(benchmark_config["instances"], "r") as instances_file:
-                for line in instances_file:
-                    if line.strip().startswith("openml"):
-                        instances.append(line.strip())
-                        continue
-                        
-                    if line.strip().startswith("["):
-                        instances.append([make_path(path, benchmark_config["dataset_root"]) for path in line.strip(' []').split(',')])
-                        continue
+                if os.path.splitext(benchmark_config['instances'])[1] == '.json':
+                    import json
+                    datasets = [make_path(path, benchmark_config["dataset_root"]) for path in json.load(instances_file)]
+                    instances.append(datasets if benchmark_config['multiple_datasets_indices'] is None else [datasets[i] for i in benchmark_config['multiple_datasets_indices']])
+                else:
+                    for line in instances_file:
+                        if line.strip().startswith("openml"):
+                            instances.append(line.strip())
+                            continue
 
-                    instance = os.path.abspath(os.path.join(benchmark_config["dataset_root"], line.strip()))
-                    if os.path.isfile(instance) or os.path.isdir(instance):
-                        instances.append(instance)
-                    else:
-                        if not instances_must_exist:
+                        if line.strip().startswith("["):
+                            datasets = [make_path(path, benchmark_config["dataset_root"]) for path in line.strip(' []\n').split(',')]
+                            instances.append(datasets if benchmark_config['multiple_datasets_indices'] is None else [datasets[i] for i in benchmark_config['multiple_datasets_indices']])
+                            continue
+
+                        instance = os.path.abspath(os.path.join(benchmark_config["dataset_root"], line.strip()))
+                        if os.path.isfile(instance) or os.path.isdir(instance):
                             instances.append(instance)
-                        logging.getLogger('benchmark').warning(str(instance) + " does not exist")
+                        else:
+                            if not instances_must_exist:
+                                instances.append(instance)
+                            logging.getLogger('benchmark').warning(str(instance) + " does not exist")
         elif os.path.isdir(benchmark_config["instances"]):
             for root, directories, filenames in os.walk(benchmark_config["instances"]):
                 for filename in filenames: 

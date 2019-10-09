@@ -6,6 +6,7 @@ __license__ = "BSD"
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.config.config_option import ConfigOption
 
+import torch
 import numpy as np
 
 class MetricSelector(PipelineNode):
@@ -20,6 +21,9 @@ class MetricSelector(PipelineNode):
         additional_metrics = [self.metrics[metric] for metric in pipeline_config["additional_metrics"] if metric != pipeline_config["optimize_metric"]]
 
         return {'optimize_metric': optimize_metric, 'additional_metrics': additional_metrics}
+
+    def predict(self, optimize_metric):
+        return { 'optimize_metric': optimize_metric }
 
     def add_metric(self, name, metric, loss_transform=False, 
                    requires_target_class_labels=False, is_default_optimize_metric=False):
@@ -70,6 +74,11 @@ def default_minimize_transform(value):
 def no_transform(value):
     return value
 
+def ensure_numpy(y):
+    if type(y)==torch.Tensor:
+        return y.detach().cpu().numpy()
+    return y
+
 def undo_ohe(y):
     if len(y.shape) == 1:
         return(y)
@@ -83,6 +92,13 @@ class AutoNetMetric():
         self.name = name
     
     def __call__(self, Y_pred, Y_true):
+
+        Y_pred = ensure_numpy(Y_pred)
+        Y_true = ensure_numpy(Y_true)
+
+        if len(Y_pred.shape) !=  len(Y_true.shape):
+            Y_pred = undo_ohe(Y_pred)
+            Y_true = undo_ohe(Y_true)
         return self.metric(self.ohe_transform(Y_true), self.ohe_transform(Y_pred))
 
     def get_loss_value(self, Y_pred, Y_true):
