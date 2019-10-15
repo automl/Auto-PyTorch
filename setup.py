@@ -38,7 +38,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: 3-clause BSD",
+        "License :: OSI Approved :: BSD License",
     ],
 	python_requires='>=3',
     platforms=['Linux'],
