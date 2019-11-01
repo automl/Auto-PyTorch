@@ -11,8 +11,8 @@ class EarlyStopping(BaseTrainingTechnique):
     def set_up(self, trainer, pipeline_config, **kwargs):
         super(EarlyStopping, self).set_up(trainer, pipeline_config)
         self.reset_parameters = pipeline_config["early_stopping_reset_parameters"]
-        self.minimize = pipeline_config["minimize"]
         self.patience = pipeline_config["early_stopping_patience"]
+        self.loss_transform = trainer.metrics[0].loss_transform
 
         # does not work with e.g. cosine anealing with warm restarts
         if hasattr(trainer, "lr_scheduler") and not trainer.lr_scheduler.allows_early_stopping:
@@ -21,8 +21,6 @@ class EarlyStopping(BaseTrainingTechnique):
         # initialize current best performance to +/- infinity
         if trainer.model.current_best_epoch_performance is None:
             trainer.model.current_best_epoch_performance = float("inf")
-            if not self.minimize:
-                trainer.model.current_best_epoch_performance = -float("inf")
 
         trainer.logger.debug("Using Early stopping with patience: " + str(self.patience))
         trainer.logger.debug("Reset Parameters to parameters with best validation performance: " + str(self.reset_parameters))
@@ -35,11 +33,10 @@ class EarlyStopping(BaseTrainingTechnique):
             return False
         if self.reset_parameters and (not hasattr(trainer, "lr_scheduler") or not trainer.lr_scheduler.snapshot_before_restart):
             log["best_parameters"] = False
-        current_performance = log["val_" + trainer.metrics[0]]
+        current_performance = self.loss_transform(log["val_" + trainer.metrics[0]])
 
         # new best performance
-        if ((self.minimize and current_performance < trainer.model.current_best_epoch_performance) or
-            (not self.minimize and current_performance > trainer.model.current_best_epoch_performance)):
+        if current_performance < trainer.model.current_best_epoch_performance:
             trainer.model.num_epochs_no_progress = 0
             trainer.model.current_best_epoch_performance = current_performance
             trainer.logger.debug("New best performance!")

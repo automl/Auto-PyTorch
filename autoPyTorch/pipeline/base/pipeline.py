@@ -9,20 +9,24 @@ import traceback
 
 
 class Pipeline():
+    """A machine learning pipeline"""
+
     def __init__(self, pipeline_nodes=[]):
+        """Construct a Pipeline
+        
+        Keyword Arguments:
+            pipeline_nodes {list} -- The nodes of the pipeline (default: {[]})
+        """
         self.root = Node()
         self._pipeline_nodes = dict()
-        self.start_params = None
         self._parent_pipeline = None
 
+        # add all the given nodes to the pipeline
         last_node = self.root
         for node in pipeline_nodes:
             last_node.child_node = node
             self.add_pipeline_node(node)
             last_node = node
-
-    def _get_start_parameter(self):
-        return self.start_params
 
     def __getitem__(self, key):
         return self._pipeline_nodes[key]
@@ -37,7 +41,7 @@ class Pipeline():
 
     def set_parent_pipeline(self, pipeline):
         """Set this pipeline as a child pipeline of the given pipeline.
-        This will allow the parent pipeline to access the pipeline nodes of its child pipelines
+        This will allow the parent pipeline to access the pipeline nodes of its child pipelines.
         
         Arguments:
             pipeline {Pipeline} -- parent pipeline
@@ -80,33 +84,55 @@ class Pipeline():
         return pipeline_node
 
     def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+        """Get the search space of the pipeline.
+        
+        Keyword Arguments:
+            dataset_info {DatasetInfo} -- Object describing the dataset. (default: {None})
+        
+        Returns:
+            ConfigurationSpace -- The search space of the pipeline
+        """
         pipeline_config = self.get_pipeline_config(**pipeline_config)
 
+        # check for hyperparameter search space updates and apply them
         if "hyperparameter_search_space_updates" in pipeline_config and pipeline_config["hyperparameter_search_space_updates"] is not None:
             assert isinstance(pipeline_config["hyperparameter_search_space_updates"], HyperparameterSearchSpaceUpdates)
             pipeline_config["hyperparameter_search_space_updates"].apply(self, pipeline_config)
 
+        # initialize the config space
         if "random_seed" in pipeline_config:
             cs = ConfigSpace.ConfigurationSpace(seed=pipeline_config["random_seed"])
         else:
             cs = ConfigSpace.ConfigurationSpace()
 
+        # add the config space of each node
         for name, node in self._pipeline_nodes.items():
-            config_space = node.get_hyperparameter_search_space(dataset_info=dataset_info, **pipeline_config)
+            #print("dataset_info" in pipeline_config.keys())
+            config_space = node.get_hyperparameter_search_space(**pipeline_config)
             cs.add_configuration_space(prefix=name, configuration_space=config_space, delimiter=ConfigWrapper.delimiter)
         
+        # add the dependencies between the nodes
         for name, node in self._pipeline_nodes.items():
             cs = node.insert_inter_node_hyperparameter_dependencies(cs, dataset_info=dataset_info, **pipeline_config)
 
         return cs
 
     def get_pipeline_config(self, throw_error_if_invalid=True, **pipeline_config):
+        """Get the full pipeline config given a partial pipeline config
+        
+        Keyword Arguments:
+            throw_error_if_invalid {bool} -- Throw an error if invalid config option is defined (default: {True})
+        
+        Returns:
+            dict -- the full config for the pipeline, containing values for all options
+        """
         options = self.get_pipeline_config_options()
         conditions = self.get_pipeline_config_conditions()
             
         parser = ConfigFileParser(options)
         pipeline_config = parser.set_defaults(pipeline_config, throw_error_if_invalid=throw_error_if_invalid)
 
+        # check the conditions e.g. max_budget > min_budget
         for c in conditions:
             try:
                 c(pipeline_config)
@@ -120,6 +146,11 @@ class Pipeline():
 
 
     def get_pipeline_config_options(self):
+        """Get all ConfigOptions of all nodes in the pipeline.
+        
+        Returns:
+            list -- A list of ConfigOptions.
+        """
         if (self._parent_pipeline is not None):
             return self._parent_pipeline.get_pipeline_config_options()
 
@@ -131,6 +162,11 @@ class Pipeline():
         return options
 
     def get_pipeline_config_conditions(self):
+        """Get all ConfigConditions of all the nodes in the pipeline.
+        
+        Returns:
+            list -- A list of ConfigConditions
+        """
         if (self._parent_pipeline is not None):
             return self._parent_pipeline.get_pipeline_config_options()
         
@@ -140,46 +176,16 @@ class Pipeline():
             conditions += node.get_pipeline_config_conditions()
         
         return conditions
-
-    def print_config_space(self, **pipeline_config):
-        config_space = self.get_hyperparameter_search_space(**pipeline_config)
-
-        if (len(config_space.get_hyperparameters()) == 0):
-            return
-        print(config_space)
-
-    def print_config_space_per_node(self, **pipeline_config):
-        for name, node in self._pipeline_nodes.items():
-            config_space = node.get_hyperparameter_search_space(**pipeline_config)
-
-            if (len(config_space.get_hyperparameters()) == 0):
-                continue
-            print(name)
-            print(config_space)
-
-
-    def print_config_options(self):
-        for option in self.get_pipeline_config_options():
-            print(str(option))
-
-    def print_config_options_per_node(self):
-        for name, node in self._pipeline_nodes.items():
-            print(name)
-            for option in node.get_pipeline_config_options():
-                print("   " + str(option))
-
-    def print_pipeline_nodes(self):
-        for name, node in self._pipeline_nodes.items():
-            input_str = "["
-            for edge in node.in_edges:
-                input_str += " (" + edge.out_idx + ", " + edge.target.get_name() + ", " + edge.kw + ") "
-            input_str += "]"
-            print(name + " \t\t Input: " + input_str)
     
     def clean(self):
         self.root.clean_fit_data()
 
     def clone(self):
+        """Clone the pipeline
+        
+        Returns:
+            Pipeline -- The cloned pipeline
+        """
         pipeline_nodes = []
 
         current_node = self.root.child_node

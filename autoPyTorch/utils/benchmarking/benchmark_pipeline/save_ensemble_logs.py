@@ -35,7 +35,7 @@ def save_ensemble_logs(pipeline_config, autonet, result_dir, ensemble_size=None,
     # prepare some variables
     autonet_config = autonet.get_current_autonet_config()
     metrics = autonet.pipeline[MetricSelector.get_name()].metrics
-    train_metric = metrics[autonet_config["train_metric"]]
+    optimize_metric = metrics[autonet_config["optimize_metric"]]
     y_transform = autonet.pipeline[OneHotEncoding.get_name()].complete_y_tranformation
     result = logged_results_to_HBS_result(result_dir)
     filename = os.path.join(result_dir, "predictions_for_ensemble.npy")
@@ -82,7 +82,7 @@ def save_ensemble_logs(pipeline_config, autonet, result_dir, ensemble_size=None,
         # build an ensemble with current subset and size
         ensemble_start_time = time.time()
         ensemble, _ = build_ensemble(result=result,
-            train_metric=train_metric, minimize=autonet_config["minimize"], ensemble_size=ensemble_size or autonet_config["ensemble_size"],
+            optimize_metric=optimize_metric, ensemble_size=ensemble_size or autonet_config["ensemble_size"],
             all_predictions=subset_predictions, labels=labels, model_identifiers=subset_model_identifiers,
             only_consider_n_best=autonet_config["ensemble_only_consider_n_best"],
             sorted_initialization_n_best=autonet_config["ensemble_sorted_initialization_n_best"])
@@ -96,7 +96,7 @@ def save_ensemble_logs(pipeline_config, autonet, result_dir, ensemble_size=None,
         # evaluate the metrics
         metric_performances = dict()
         for metric_name, metric in metrics.items():
-            if metric_name != autonet_config["train_metric"] and metric_name not in autonet_config["additional_metrics"]:
+            if metric_name != autonet_config["optimize_metric"] and metric_name not in autonet_config["additional_metrics"]:
                 continue
             metric_performances[metric_name] = metric(ensemble_prediction, labels)
             if test_data_available:
@@ -114,8 +114,7 @@ def save_ensemble_logs(pipeline_config, autonet, result_dir, ensemble_size=None,
                 [ensemble.identifiers_[i] for i in ensemble.indices_],
                 {
                     "ensemble_size": ensemble.ensemble_size,
-                    "metric": autonet_config["train_metric"],
-                    "minimize": ensemble.minimize,
+                    "metric": autonet_config["optimize_metric"],
                     "sorted_initialization_n_best": ensemble.sorted_initialization_n_best,
                     "only_consider_n_best": ensemble.only_consider_n_best,
                     "bagging": ensemble.bagging,

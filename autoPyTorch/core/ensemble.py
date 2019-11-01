@@ -4,8 +4,12 @@ from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.nodes.one_hot_encoding import OneHotEncoding
 from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
 from autoPyTorch.pipeline.nodes.ensemble import EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, BuildEnsemble, EnsembleServer
+from autoPyTorch.pipeline.nodes.create_dataset_info import CreateDatasetInfo
 
 class AutoNetEnsemble(AutoNet):
+    """Build an ensemble of several neural networks that were evaluated during the architecure search"""
+
+    # OVERRIDE
     def __init__(self, autonet, config_preset="medium_cs", **autonet_config):
         if isinstance(autonet, AutoNet):
             self.pipeline = autonet.pipeline
@@ -29,6 +33,7 @@ class AutoNetEnsemble(AutoNet):
 
         self.base_config.update(autonet_config)
         self.trained_autonets = None
+        self.dataset_info = None
 
         if config_preset is not None:
             parser = self.get_autonet_config_file_parser()
@@ -37,16 +42,21 @@ class AutoNetEnsemble(AutoNet):
             c.update(self.base_config)
             self.base_config = c
 
+    # OVERRIDE
     def fit(self, X_train, Y_train, X_valid=None, Y_valid=None, refit=True, **autonet_config):
+        X_train, Y_train, X_valid, Y_valid = self.check_data_array_types(X_train, Y_train, X_valid, Y_valid)
         self.autonet_config = self.pipeline.get_pipeline_config(**dict(self.base_config, **autonet_config))
         self.fit_result = self.pipeline.fit_pipeline(pipeline_config=self.autonet_config,
                                                      X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
+        self.dataset_info = self.pipeline[CreateDatasetInfo.get_name()].fit_output["dataset_info"]
         self.pipeline.clean()
         if refit:
             self.refit(X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
-        return self.fit_result["ensemble_configs"], self.fit_result["ensemble_final_metric_score"], self.fit_result["ensemble"]
+        return self.fit_result
     
+    # OVERRIDE
     def refit(self, X_train, Y_train, X_valid=None, Y_valid=None, ensemble_configs=None, ensemble=None, autonet_config=None):
+        X_train, Y_train, X_valid, Y_valid = self.check_data_array_types(X_train, Y_train, X_valid, Y_valid)
         if (autonet_config is None):
             autonet_config = self.autonet_config
         if (autonet_config is None):
@@ -69,8 +79,10 @@ class AutoNetEnsemble(AutoNet):
                 hyperparameter_config=hyperparameter_config, autonet_config=autonet_config, budget=budget)
             self.trained_autonets[tuple(identifier)] = autonet
     
+    # OVERRIDE
     def predict(self, X, return_probabilities=False, return_metric=False):
         # run predict pipeline
+        X, = self.check_data_array_types(X)
         prediction = None
         models_with_weights = self.fit_result["ensemble"].get_models_with_weights(self.trained_autonets)
         autonet_config = self.autonet_config or self.base_config
@@ -78,7 +90,7 @@ class AutoNetEnsemble(AutoNet):
             current_prediction = autonet.pipeline.predict_pipeline(pipeline_config=autonet_config, X=X)["Y"]
             prediction = current_prediction if prediction is None else prediction + weight * current_prediction
             OHE = autonet.pipeline[OneHotEncoding.get_name()]
-            metric = autonet.pipeline[MetricSelector.get_name()].fit_output['train_metric']
+            metric = autonet.pipeline[MetricSelector.get_name()].fit_output['optimize_metric']
 
         # reverse one hot encoding 
         result = OHE.reverse_transform_y(prediction, OHE.fit_output['y_one_hot_encoder'])
@@ -91,8 +103,10 @@ class AutoNetEnsemble(AutoNet):
             result.append(metric)
         return tuple(result)
     
+    # OVERRIDE
     def score(self, X_test, Y_test):
         # run predict pipeline
+        X_test, Y_test = self.check_data_array_types(X_test, Y_test)
         _, Y_pred, metric = self.predict(X_test, return_probabilities=True, return_metric=True)
         Y_test, _ = self.pipeline[OneHotEncoding.get_name()].complete_y_tranformation(Y_test)
         return metric(Y_pred, Y_test)

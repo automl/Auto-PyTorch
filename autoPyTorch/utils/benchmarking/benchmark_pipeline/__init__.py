@@ -10,3 +10,4 @@ from autoPyTorch.utils.benchmarking.benchmark_pipeline.save_results import SaveR
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.benchmark_settings import BenchmarkSettings
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.save_ensemble_logs import SaveEnsembleLogs
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.set_ensemble_config import SetEnsembleConfig
+from autoPyTorch.utils.benchmarking.benchmark_pipeline.apply_user_updates import ApplyUserUpdates

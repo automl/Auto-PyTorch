@@ -1,5 +1,6 @@
 
 class test_result():
+    """Log the performance on the test set"""
     def __init__(self, autonet, X_test, Y_test):
         self.autonet = autonet
         self.X_test = X_test

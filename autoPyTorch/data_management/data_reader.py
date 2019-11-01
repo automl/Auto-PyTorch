@@ -232,3 +232,36 @@ class AutoMlReader(DataReader):
                     row_indizes.append(row)
             print("Done")
         return csr_matrix(([1] * len(row_indizes), (row_indizes, col_indizes)), shape=shape)
+
+
+class OpenMLImageReader(OpenMlReader):
+    def __init__(self, dataset_id, is_classification = None, api_key=None, nChannels=1):
+        self.channels = nChannels
+        super(OpenMLImageReader, self).__init__(dataset_id, is_classification, api_key)
+
+    def read(self, auto_convert=True, **kwargs):
+        """
+        Read the data from given openml datset file.
+        
+        Arguments:
+            auto_convert: Automatically convert data after reading.
+            *args, **kwargs: arguments for converting.
+        """
+        
+        dataset = self.openml.datasets.get_dataset(self.dataset_id)
+        self.data = dataset.get_data()
+
+
+        self.num_entries = len(self.data)
+        self.num_features = len(self.data[0]) - 1
+
+            
+        self.X = self.data[0:self.num_entries, 0:self.num_features] / 255
+
+        image_size = int(math.sqrt(self.num_features / self.channels))
+        self.X = np.reshape(self.X, (self.X.shape[0], self.channels, image_size, image_size))
+        
+        self.Y = self.data[0:self.num_entries, -1]
+        self.num_classes = len(np.unique(self.Y))
+        if self.is_classification is None:
+            self.is_classification = dataset.get_features_by_type("nominal")[-1] == self.num_features

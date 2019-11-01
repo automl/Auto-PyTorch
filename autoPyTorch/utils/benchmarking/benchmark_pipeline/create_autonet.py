@@ -18,15 +18,19 @@ class CreateAutoNet(PipelineNode):
             autonet_type = AutoNetMultilabel
         elif (data_manager.problem_type == ProblemType.FeatureClassification):
             autonet_type = AutoNetClassification
+        elif data_manager.problem_type == ProblemType.ImageClassification:
+            autonet = AutoNetImageClassification()
+        elif data_manager.problem_type == ProblemType.ImageClassificationMultipleDatasets:
+            autonet = AutoNetImageClassificationMultipleDatasets()
         else:
             raise ValueError('Problem type ' + str(data_manager.problem_type) + ' is not defined')
 
         autonet = autonet_type() if not pipeline_config["enable_ensemble"] else AutoNetEnsemble(autonet_type)
         test_logger = test_result if not pipeline_config["enable_ensemble"] else test_predictions_for_ensemble
         autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function(
-            test_logger.__name__, test_logger(autonet, data_manager.X_test, data_manager.Y_test))
-
-        metrics = autonet.pipeline[autonet_nodes.MetricSelector.get_name()]
+            name=test_logger.__name__, 
+            log_function=test_logger(autonet, data_manager.X_test, data_manager.Y_test),
+            loss_transform=(not pipeline_config["enable_ensemble"]))
 
         return { 'autonet': autonet }
 

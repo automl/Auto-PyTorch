@@ -21,9 +21,9 @@ class BudgetTypeTime(BaseTrainingTechnique):
     
     # OVERRIDE
     def on_epoch_end(self, trainer, **kwargs):
-        elapsed = time.time() - self.start_time
+        elapsed = time.time() - trainer.fit_start_time
         trainer.model.budget_trained = elapsed
-        trainer.logger.debug("Budget used: " + str(elapsed) + "/" + str(self.end_time - self.start_time))
+        trainer.logger.debug("Budget used: " + str(elapsed) + "/" + str(trainer.budget - self.compensate))
 
         if time.time() >= self.end_time:
             trainer.logger.debug("Budget exhausted!")
@@ -45,6 +45,35 @@ class BudgetTypeEpochs(BaseTrainingTechnique):
         trainer.logger.debug("Budget used: " + str(epoch) + "/" + str(self.target))
 
         if epoch >= self.target:
+            trainer.logger.debug("Budget exhausted!")
+            return True
+        return False
+
+class BudgetTypeTrainingTime(BaseTrainingTechnique):
+    default_min_budget = 120
+    default_max_budget = 6000
+
+    # OVERRIDE
+    def set_up(self, trainer, pipeline_config, **kwargs):
+        super(BudgetTypeTrainingTime, self).set_up(trainer, pipeline_config)
+        self.end_time = trainer.budget + time.time()
+        self.start_time = time.time()
+
+        if self.start_time >= self.end_time:
+            raise Exception("Budget exhausted before training started")
+
+    # OVERRIDE
+    def on_batch_end(self, **kwargs):
+        return time.time() >= self.end_time
+
+    # OVERRIDE
+    def on_epoch_end(self, trainer, **kwargs):
+        elapsed = time.time() - self.start_time
+        trainer.model.budget_trained = elapsed
+        trainer.logger.debug("Budget used: " + str(elapsed) +
+                             "/" + str(self.end_time - self.start_time))
+
+        if time.time() >= self.end_time:
             trainer.logger.debug("Budget exhausted!")
             return True
         return False

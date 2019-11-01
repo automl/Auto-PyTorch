@@ -51,6 +51,28 @@ class CrossValidation(SubPipelineNode):
 
     def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train, X_valid, Y_valid, budget, budget_type, optimize_start_time,
             refit, rescore, dataset_info):
+        """Perform cross validation.
+        
+        Arguments:
+            hyperparameter_config {dict} -- The sampled hyperparameter config
+            pipeline_config {dict} -- The user specified configuration of the pipeline
+            X_train {data} -- The data. Cross Validation might split the data,
+            Y_train {data} -- The data. Cross Validation might split the data,
+            X_valid {data} -- The data. Cross Validation might split the data,
+            Y_valid {data} -- The data. Cross Validation might split the data,
+            budget {float} -- The budget for training. 
+            budget_type {BaseTrainingTechnique} -- The type of budget.
+            optimize_start_time {float} -- Time when optimization has been started.
+            refit {bool} -- Whether we refit currently or not.
+            rescore {bool} -- Whether we refit in order to get the exact score of a hp-config during training.
+            dataset_info {DatasetInfo} -- Object containing information about the dataset.
+        
+        Raises:
+            Exception: Not a single CV split could be finished.
+        
+        Returns:
+            dict -- loss, info and additional results.
+        """
         logger = logging.getLogger('autonet')
         loss = 0
         infos = []
@@ -133,6 +155,22 @@ class CrossValidation(SubPipelineNode):
         self.sub_pipeline.root.clean_fit_data()
     
     def initialize_cross_validation(self, pipeline_config, budget, X_train, Y_train, X_valid, Y_valid, dataset_info, refit, logger):
+        """Initialize CV by computing split indices, 
+        
+        Arguments:
+            pipeline_config {dict} -- User-defined configuration of the pipeline.
+            budget {float} -- The current budget.
+            X_train {array} -- The data
+            Y_train {array} -- The data
+            X_valid {array} -- The data
+            Y_valid {array} -- The data
+            dataset_info {DatasetInfo} -- Object describing the dataset
+            refit {bool} -- Wether we currently perform a refit.
+            logger {Logger} -- Logger to log stuff on the console.
+        
+        Returns:
+            tuple -- X, Y, number of splits, split indices, a penalty added to the loss, the budget for each cv split
+        """
         budget_too_low_for_cv = budget < pipeline_config['min_budget_for_cv']
         val_split = max(0, min(1, pipeline_config['validation_split']))
         if refit:
@@ -199,6 +237,19 @@ class CrossValidation(SubPipelineNode):
         del self.cross_validators_adjust_y[name]
     
     def get_current_budget(self, cv_index, budget, budget_type, cv_start_time, num_cv_splits, logger):
+        """Get the budget for the current CV split.
+        
+        Arguments:
+            cv_index {int} -- The index of the current cv split.
+            budget {float} -- The current budget.
+            budget_type {BaseTrainingTechnique} -- The type of budget.
+            cv_start_time {float} -- Start time of cross validation.
+            num_cv_splits {int} -- total number of cv splits.
+            logger {Logger} -- A logger to log stuff on the console.
+        
+        Returns:
+            float -- The budget of the current
+        """
         # adjust budget in case of budget type time
         if budget_type == BudgetTypeTime:
             remaining_budget = budget - (time.time() - cv_start_time)
@@ -212,6 +263,22 @@ class CrossValidation(SubPipelineNode):
         return cur_budget
     
     def process_additional_results(self, additional_results, all_sub_pipeline_kwargs, X, Y, logger):
+        """Process additional results, like predictions for ensemble for example.
+        The data of additional results will be combined across the splits.
+        
+        Arguments:
+            additional_results {dict} -- Mapping from cv index to additional_results organized in a dictionary. This dictionary has the following structure:
+                                         {name1: {data1: ..., combinator1: }, name2: {data2: ..., combinator2: ...}, ...}
+                                         for each name, the given combinator should be identical across the splits.
+                                         for each name, the given combinator is called with a dictionary from split index to data                    
+            all_sub_pipeline_kwargs {dict} -- Mapping from cv index to kwargs with which the subpipeline has been called.
+            X {array} -- The full data, concatenation of training and validation.
+            Y {array} -- The target full data, concatenation of training and validation.
+            logger {Logger} -- a logger to print stuff on the console
+        
+        Returns:
+            dict -- mapping from name to combined data
+        """
         combinators = dict()
         data = dict()
         result = dict()
@@ -228,6 +295,15 @@ class CrossValidation(SubPipelineNode):
     
     @staticmethod
     def concat(upper, lower):
+        """Concatenate training and validation data
+        
+        Arguments:
+            upper {array} -- upper part of concatenated array
+            lower {array} -- lower part of concatenated value
+        
+        Returns:
+            array -- concatenated array
+        """
         if (scipy.sparse.issparse(upper)):
             return scipy.sparse.vstack([upper, lower])
         else:
@@ -235,6 +311,18 @@ class CrossValidation(SubPipelineNode):
 
     @staticmethod
     def shuffle_indices(indices, shuffle=True, seed=42):
+        """Shuffle the indices
+        
+        Arguments:
+            indices {array} -- The indices to shuffle
+        
+        Keyword Arguments:
+            shuffle {bool} -- Whether the indices should be shuffled (default: {True})
+            seed {int} -- A random seed (default: {42})
+        
+        Returns:
+            array -- Shuffled indices
+        """
         rng = np.random.RandomState(42)
         if shuffle:
             rng.shuffle(indices)
@@ -242,6 +330,21 @@ class CrossValidation(SubPipelineNode):
     
     @staticmethod
     def get_validation_set_split_indices(pipeline_config, X_train, X_valid, Y_train, Y_valid, allow_shuffle=True):
+        """Get the indices for cv.
+        
+        Arguments:
+            pipeline_config {dict} -- The user specified configuration of the pipeline
+            X_train {array} -- The data
+            X_valid {array} -- The data
+            Y_train {array} -- The data
+            Y_valid {array} -- The data
+        
+        Keyword Arguments:
+            allow_shuffle {bool} -- shuffle data indices if it is specified in pipeline config and allow_shuffle is True (default: {True})
+        
+        Returns:
+            tuple -- The concatenated data and the indices
+        """
         train_indices = CrossValidation.shuffle_indices(np.array(list(range(X_train.shape[0]))),
             pipeline_config['shuffle'] and allow_shuffle, pipeline_config['random_seed'])
         valid_indices = CrossValidation.shuffle_indices(np.array(list(range(X_train.shape[0], X_train.shape[0] + X_valid.shape[0]))),

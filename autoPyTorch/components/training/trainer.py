@@ -66,10 +66,10 @@ class Trainer(object):
     def on_epoch_end(self, log, epoch):
         return any([t.on_epoch_end(trainer=self, log=log, epoch=epoch) for t in self.training_techniques])
     
-    def final_eval(self, opt_metric_name, logs, train_loader, valid_loader, minimize, best_over_epochs, refit):
+    def final_eval(self, opt_metric_name, logs, train_loader, valid_loader, best_over_epochs, refit):
         # select log
         if best_over_epochs:
-            final_log = (min if minimize else max)(logs, key=lambda log: log[opt_metric_name])
+            final_log = min(logs, key=lambda log: self.metrics[0].loss_transform(log[opt_metric_name]))
         else:
             final_log = None
             for t in self.training_techniques:
@@ -87,10 +87,10 @@ class Trainer(object):
 
             for i, metric in enumerate(self.metrics):
                 if valid_metric_results:
-                    final_log['val_' + metric.__name__] = valid_metric_results[i]
-            if self.eval_additional_logs_on_snapshot:
+                    final_log['val_' + metric.name] = valid_metric_results[i]
+            if self.eval_additional_logs_on_snapshot and not refit:
                     for additional_log in self.log_functions:
-                        final_log[additional_log.__name__] = additional_log(self.model, None)
+                        final_log[additional_log.name] = additional_log(self.model, None)
         return final_log
 
     def train(self, epoch, train_loader):
@@ -163,4 +163,3 @@ class Trainer(object):
         outputs_data = np.vstack(outputs_data)
         targets_data = np.vstack(targets_data)
         return [metric(outputs_data, targets_data) for metric in self.metrics]
-    

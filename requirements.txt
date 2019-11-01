@@ -10,3 +10,8 @@ imblearn
 ConfigSpace
 pynisher
 hpbandster
+fasteners
+torch
+torchvision
+tensorboard_logger
+openml

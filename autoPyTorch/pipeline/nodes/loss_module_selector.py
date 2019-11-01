@@ -28,6 +28,7 @@ class LossModuleSelector(PipelineNode):
             weights = loss_module.weight_strategy(pipeline_config, X[train_indices], Y[train_indices])
             weights = torch.from_numpy(weights).float()
 
+        # pass weights to loss module
         loss = loss_module.module
         if "pos_weight" in inspect.getfullargspec(loss)[0] and weights is not None and inspect.isclass(loss):
             loss = loss(pos_weight=weights)

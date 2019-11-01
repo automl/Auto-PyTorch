@@ -24,7 +24,7 @@ class SetEnsembleConfig(PipelineNode):
         autonet.autonet_config = autonet_config
 
         return {"result_dir": run_result_dir,
-                "train_metric": autonet_config["train_metric"],
+                "optimize_metric": autonet_config["optimize_metric"],
                 "trajectories": []}
     
     def get_pipeline_config_options(self):

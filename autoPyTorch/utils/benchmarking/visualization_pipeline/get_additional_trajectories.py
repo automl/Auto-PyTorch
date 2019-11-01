@@ -4,7 +4,7 @@ import json, os, csv, traceback
 
 
 class GetAdditionalTrajectories(PipelineNode):
-    def fit(self, pipeline_config, trajectories, train_metrics, instance):
+    def fit(self, pipeline_config, trajectories, optimize_metrics, instance):
         for additional_trajectory_path in pipeline_config["additional_trajectories"]:
 
             # open trajectory description file
@@ -29,7 +29,7 @@ class GetAdditionalTrajectories(PipelineNode):
                         print("Trajectory could not be loaded: %s. Skipping." % e)
                         traceback.print_exc()                        
         return {"trajectories": trajectories,
-                "train_metrics": train_metrics}
+                "optimize_metrics": optimize_metrics}
     
     def get_pipeline_config_options(self):
         options = [
@@ -44,7 +44,8 @@ def csv_trajectory_loader(path, config_name, columns_description, trajectories):
 
         # parse the csv
         times_finished = list()
-        performances = dict()    
+        performances = dict()
+        losses = dict()   
         for row in reader:
             for i, col in enumerate(row):
                 if i == columns_description["time_column"]:
@@ -53,22 +54,26 @@ def csv_trajectory_loader(path, config_name, columns_description, trajectories):
                     log_name = columns_description["metric_columns"][str(i)]["name"]
                     transform = columns_description["metric_columns"][str(i)]["transform"] \
                         if "transform" in columns_description["metric_columns"][str(i)] else "x"
+                    loss_transform = columns_description["metric_columns"][str(i)]["loss_transform"] \
+                        if "loss_transform" in columns_description["metric_columns"][str(i)] else "x"
 
                     if log_name not in performances:
                         performances[log_name] = list()
+                        losses[log_name] = list()
                     
                     performances[log_name].append(eval_expr(transform.replace("x", col)))
+                    losses[log_name].append(eval_expr(loss_transform.replace("x", col)))
         
         # add data to the other trajectories
-        for log_name, performance_list in performances.items():
+        for log_name in performances.keys():
             if log_name not in trajectories:
                 trajectories[log_name] = dict()
             if config_name not in trajectories[log_name]:
                 trajectories[log_name][config_name] = list()
             trajectories[log_name][config_name].append({
                 "times_finished": sorted(times_finished),
-                "losses": list(zip(*sorted(zip(times_finished, performance_list))))[1],
-                "flipped": False
+                "values": list(zip(*sorted(zip(times_finished, performances[log_name]))))[1],
+                "losses": list(zip(*sorted(zip(times_finished, losses[log_name]))))[1]
             })
 
 trajectory_loaders = {"csv": csv_trajectory_loader}

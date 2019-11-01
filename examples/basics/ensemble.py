@@ -11,7 +11,7 @@ from autoPyTorch.data_management.data_manager import DataManager
 dm = DataManager()
 dm.generate_classification(num_classes=3, num_features=21, num_samples=1500)
 
-# Note: every parameter has a default value, you do not have to specify anything. The given parameter allow a fast test.
+# Note: every parameter has a default value, you do not have to specify anything. The given parameters allow for a fast test.
 autonet = AutoNetEnsemble(AutoNetClassification, budget_type='epochs', min_budget=1, max_budget=9, num_iterations=1, log_level='debug')
 
 
