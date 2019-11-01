@@ -13,7 +13,7 @@ class SetAutoNetConfig(PipelineNode):
             config['additional_logs'] = ['test_result' if not pipeline_config['enable_ensemble'] else 'test_predictions_for_ensemble']
 
         if (pipeline_config['use_dataset_metric'] and data_manager.metric is not None):
-            config['train_metric'] = data_manager.metric
+            config['optimize_metric'] = data_manager.metric
         if (pipeline_config['use_dataset_max_runtime'] and data_manager.max_runtime is not None):
             config['max_runtime'] = data_manager.max_runtime
 
@@ -27,7 +27,6 @@ class SetAutoNetConfig(PipelineNode):
         if data_manager.categorical_features:
             config['categorical_features'] = data_manager.categorical_features
 
-        config['dataset_name'] = "_".join(os.path.basename(instance).split(":"))
         # Note: PrepareResultFolder will make a small run dependent update of the autonet_config
         autonet.update_autonet_config(**config)
         return dict()

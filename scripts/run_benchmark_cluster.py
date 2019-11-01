@@ -36,6 +36,11 @@ if __name__ == "__main__":
     host_config_orig = [l[13:] for l in runscript_template if l.startswith("#HOST_CONFIG ")][0].strip()
     host_config_file = os.path.join(autonet_home, host_config_orig) if not os.path.isabs(host_config_orig) else host_config_orig
 
+    # parse define statements
+    for i in range(len(runscript_template)):
+        if runscript_template[i].startswith("#DEFINE"):
+            runscript_template[i] = "%s=%s\n" % (runscript_template[i].split()[1], " ".join(runscript_template[i].split()[2:]))
+
     # parse template args
     runscript_template_args = [l[19:].strip().split() for l in runscript_template if l.startswith("#TEMPLATE_ARGUMENT ")]
     parsed_template_args = dict()
@@ -129,7 +134,6 @@ if __name__ == "__main__":
                 autonet_config = autonet.get_current_autonet_config()
 
                 # add autonet config specific stuff to replacement dict
-                replacement_dict["NUM_WORKERS"] = autonet_config["min_workers"]
                 replacement_dict["NUM_NODES"] = autonet_config["min_workers"] + (0 if autonet_config["run_worker_on_master_node"] else 1)
                 replacement_dict["MEMORY_LIMIT_MB"] = autonet_config["memory_limit_mb"] + args.memory_bonus
                 time_limit_base = autonet_config["max_runtime"] if autonet_config["max_runtime"] < float("inf") else (benchmark_config["time_limit"] - max(args.time_bonus))

@@ -3,6 +3,7 @@ from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeature
 class AutoNetMultilabel(AutoNetFeatureData):
     preset_folder_name = "feature_multilabel"
 
+    # OVERRIDE
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):
         from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
@@ -25,9 +26,12 @@ class AutoNetMultilabel(AutoNetFeatureData):
         loss_selector.add_loss_module('bce_with_logits_weighted', nn.BCEWithLogitsLoss, LossWeightStrategyWeightedBinary(), False)
 
         metric_selector = pipeline[MetricSelector.get_name()]
-        metric_selector.add_metric('multilabel_accuracy', multilabel_accuracy)
-        metric_selector.add_metric('auc_metric', auc_metric)
-        metric_selector.add_metric('pac_metric', pac_metric)
+        metric_selector.add_metric('multilabel_accuracy', multilabel_accuracy,
+                                   loss_transform=True, requires_target_class_labels=True)
+        metric_selector.add_metric('auc_metric', auc_metric, loss_transform=True,
+                                   requires_target_class_labels=False)
+        metric_selector.add_metric('pac_metric', pac_metric, loss_transform=True,
+                                   requires_target_class_labels=False)
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.default_minimize_value = False

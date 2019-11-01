@@ -4,11 +4,9 @@ import scipy as sp
 from sklearn.metrics.classification import _check_targets, type_of_target
 
 
-def balanced_accuracy(y_pred, y_true):
-    return _balanced_accuracy(np.argmax(y_true, axis=1), np.argmax(y_pred, axis=1)) * 100
+def balanced_accuracy(solution, prediction):
+    """balanced accuracy implementation of auto-sklearn"""
 
-
-def _balanced_accuracy(solution, prediction):
     y_type, solution, prediction = _check_targets(solution, prediction)
 
     if y_type not in ["binary", "multiclass", 'multilabel-indicator']:

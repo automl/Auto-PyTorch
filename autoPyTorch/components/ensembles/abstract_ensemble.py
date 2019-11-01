@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 
 class AbstractEnsemble(object):
+    """Ensemble interface extracted from auto-sklearn"""
+
     __metaclass__ = ABCMeta
 
     @abstractmethod

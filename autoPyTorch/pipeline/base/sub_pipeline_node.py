@@ -3,7 +3,13 @@ from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 
 class SubPipelineNode(PipelineNode):
+    """A Pipeline node that contains a sub-pipeline"""
     def __init__(self, sub_pipeline_nodes):
+        """Construct the node and the sub pipeline
+        
+        Arguments:
+            sub_pipeline_nodes {list} -- A list of nodes of the sub-pipeline
+        """
         super(SubPipelineNode, self).__init__()
         
         self.sub_pipeline = Pipeline(sub_pipeline_nodes)

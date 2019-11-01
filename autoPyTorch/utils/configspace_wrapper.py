@@ -24,6 +24,12 @@ class ConfigWrapper(object):
             pprint.pprint(self.config)
         return self.config[self.config_prefix + key]
 
+    def __iter__(self):
+        for k in self.config.__iter__():
+            if not k.startswith(self.config_prefix):
+                continue
+            yield k[len(self.config_prefix):]
+
     def __str__(self):
         return str(self.config)
     

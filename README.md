@@ -1,9 +1,9 @@
 # Auto-PyTorch
 
-Copyright (C) 2018  [AutoML Group](http://www.automl.org/)
+Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
 This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch only supports featurized data.
+So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
 
 ## Installation
 
@@ -32,6 +32,8 @@ $ python setup.py install
 
 
 ## Examples
+
+For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
 In a nutshell:
 
@@ -95,7 +97,8 @@ autoPyTorch = AutoNetClassification(networks=["resnet", "shapedresnet", "mlpnet"
 # Each hyperparameter belongs to a node in Auto-PyTorch's ML Pipeline.
 # The names of the hyperparameters are prefixed with the name of the node: NodeName:hyperparameter_name.
 # If a hyperparameter belongs to a component: NodeName:component_name:hyperparameter_name.
-autoPyTorch.get_hyperparameter_search_space()
+# Call with the same arguments as fit.
+autoPyTorch.get_hyperparameter_search_space(X_train, y_train, validation_split=0.3)
 
 # You can configure the search space of every hyperparameter of every component:
 from autoPyTorch import HyperparameterSearchSpaceUpdates
@@ -111,7 +114,7 @@ search_space_updates.append(node_name="NetworkSelector",
 autoPyTorch = AutoNetClassification(hyperparameter_search_space_updates=search_space_updates)
 ```
 
-Enable ensemble building:
+Enable ensemble building (for featurized data):
 
 ```py
 from autoPyTorch import AutoNetEnsemble
@@ -129,15 +132,14 @@ autoPyTorch = AutoNetClassification("tiny_cs", log_level='info', max_runtime=300
 ## License
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the 3-clause BSD license (please see the LICENSE file).
+it under the terms of the Apache license 2.0 (please see the LICENSE file).
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-You should have received a copy of the 3-clause BSD license
+You should have received a copy of the Apache license 2.0
 along with this program (see LICENSE file).
-If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 ## Reference
 
@@ -155,6 +157,9 @@ If not, see <https://opensource.org/licenses/BSD-3-Clause>.
   note      = {To appear.},
 }
 ```
+
+**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
+
 
 ## Contact
 
