@@ -1,4 +1,3 @@
-
 import numpy as np
 import os
 import time
@@ -8,7 +7,6 @@ import traceback
 import logging
 import itertools
 import random
-
 
 import autoPyTorch.utils.thread_read_write as thread_read_write
 import datetime
@@ -75,7 +73,6 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
     def fit(self, pipeline_config, X_train, Y_train, X_valid, Y_valid, refit=None):
         res = None
 
-                
         config_space = self.pipeline.get_hyperparameter_search_space(**pipeline_config)
         config_space, constants = remove_constant_hyperparameter(config_space)
         config_space.seed(pipeline_config['random_seed'])
@@ -126,7 +123,6 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
             if task_id in [1, -1]:
                 self.run_optimization_algorithm(pipeline_config, config_space, constants, run_id, ns_host, ns_port, NS, task_id)
             
-
             res = self.parse_results(pipeline_config["result_logger_dir"])
 
         except Exception as e:
