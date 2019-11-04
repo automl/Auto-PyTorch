@@ -157,7 +157,7 @@ class OptimizationAlgorithm(SubPipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption("run_id", default="0", type=str, info="Unique id for each run."),
-            ConfigOption("task_id", default=-1, type=int, info="ID for each worker, if you run AutoNet on a cluster. Set to -1, if you run it locally. "),
+            ConfigOption("task_id", default=-1, type=int, info="ID for each worker, if you run AutoNet on a cluster. Set to -1, if you run it locally."),
             ConfigOption("algorithm", default="bohb", type=str, choices=list(self.algorithms.keys()), info="Algorithm to use for config sampling."),
             ConfigOption("budget_type", default="time", type=str, choices=list(self.budget_types.keys())),
             ConfigOption("min_budget", default=lambda c: self.budget_types[c["budget_type"]].default_min_budget, type=float, depends=True, info="Min budget for fitting configurations."),
