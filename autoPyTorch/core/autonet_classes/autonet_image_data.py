@@ -39,7 +39,7 @@ class AutoNetImageData(AutoNet):
                 SingleDataset([
 
                     ImageDatasetReader(),
-                    CreateDatasetInfo()_with_restarts,
+                    CreateDatasetInfo(),
                     CrossValidationIndices([
 
                         NetworkSelectorDatasetInfo(),
