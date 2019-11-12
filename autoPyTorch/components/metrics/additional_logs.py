@@ -80,4 +80,4 @@ class gradient_std():
         if n==0:
             n = 1
 
-        return (sum_sq - (total_sum * total_sum) / n) / n
+        return (sum_sq - (total_sum * total_sum) / n) / (n-1)
