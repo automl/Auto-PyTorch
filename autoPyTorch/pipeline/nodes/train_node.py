@@ -86,6 +86,8 @@ class TrainNode(PipelineNode):
             full_eval_each_epoch=pipeline_config["full_eval_each_epoch"])
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
 
+        model_params = self.count_parameters(network)
+
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained
         training_start_time = time.time()
@@ -101,6 +103,7 @@ class TrainNode(PipelineNode):
 
             # evaluate
             log['loss'] = train_loss
+            log['model_parameters'] = model_params
             for i, metric in enumerate(trainer.metrics):
                 log['train_' + metric.name] = optimize_metric_results[i]
 
@@ -216,6 +219,10 @@ class TrainNode(PipelineNode):
         tl.log_value(worker_path + 'epoch', float(epoch + 1), int(time.time()))
         for name, value in log.items():
             tl.log_value(worker_path + name, float(value), int(time.time()))
+
+    @staticmethod
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
     
     def wrap_up_training(self, trainer, logs, epoch, train_loader, valid_loader, budget,
             training_start_time, fit_start_time, best_over_epochs, refit, logger):
