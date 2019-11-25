@@ -255,9 +255,9 @@ class TrainNode(PipelineNode):
         for name, value in log.items():
             if isinstance(value, (list, np.ndarray)):
                 for ind, val in enumerate(value):
-                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), step=float(step+1))
+                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(epoch+1))
             else:
-                tl.log_value(worker_path + name, float(value), step=float(step+1))
+                tl.log_value(worker_path + name, float(value), int(epoch+1))
 
     @staticmethod
     def count_parameters(model):
