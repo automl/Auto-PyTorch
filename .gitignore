@@ -48,3 +48,6 @@ tests.ipynb
 
 # venv
 env/
+
+# configs
+configs/refit/step_logging_test/config_*
