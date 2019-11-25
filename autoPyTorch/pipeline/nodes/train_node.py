@@ -83,10 +83,16 @@ class TrainNode(PipelineNode):
             training_techniques=training_techniques,
             device=Trainer.get_device(pipeline_config),
             logger=logger,
-            full_eval_each_epoch=pipeline_config["full_eval_each_epoch"])
+            full_eval_each_epoch=pipeline_config["full_eval_each_epoch"],
+            log_every_n_points=pipeline_config["log_every_n_datapoints"],
+            val_loader=valid_loader,
+            logdir=pipeline_config["result_logger_dir"])
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
 
-        model_params = self.count_parameters(network)
+        if pipeline_config["log_every_n_datapoints"] is None:
+            model_params = self.count_parameters(network)
+        else:
+            model_params = 1
 
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained
@@ -98,36 +104,62 @@ class TrainNode(PipelineNode):
             
             # training
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
-            if valid_loader is not None and trainer.eval_valid_each_epoch:
-                valid_metric_results = trainer.evaluate(valid_loader)
+            
+            if pipeline_config["log_every_n_datapoints"] is None:
+                if valid_loader is not None and trainer.eval_valid_each_epoch:
+                    valid_metric_results = trainer.evaluate(valid_loader)
 
             # evaluate
             log['loss'] = train_loss
             log['model_parameters'] = model_params
-            for i, metric in enumerate(trainer.metrics):
-                log['train_' + metric.name] = optimize_metric_results[i]
 
-                if valid_loader is not None and trainer.eval_valid_each_epoch:
-                    log['val_' + metric.name] = valid_metric_results[i]
-            if trainer.eval_additional_logs_each_epoch:
-                for additional_log in trainer.log_functions:
-                    log[additional_log.name] = additional_log(trainer.model, epoch)
+            if pipeline_config["log_every_n_datapoints"] is None:
+                for i, metric in enumerate(trainer.metrics):
+                    log['train_' + metric.name] = optimize_metric_results[i]
+
+                    if valid_loader is not None and trainer.eval_valid_each_epoch:
+                        log['val_' + metric.name] = valid_metric_results[i]
+                if trainer.eval_additional_logs_each_epoch:
+                    for additional_log in trainer.log_functions:
+                        log[additional_log.name] = additional_log(trainer.model, epoch)
 
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training
 
             # handle logs
             logs.append(log)
-            log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
+            #log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
             logger.debug("Epoch: " + str(epoch) + " : " + str(log))
-            if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
-                self.tensorboard_log(budget=budget, epoch=epoch, log=log, logdir=pipeline_config["result_logger_dir"])
+
+            if pipeline_config["log_every_n_datapoints"] is None:
+                if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
+                    self.tensorboard_log(budget=budget, epoch=epoch, log=log, logdir=pipeline_config["result_logger_dir"])
 
             if stop_training:
                 break
             
             epoch += 1
             torch.cuda.empty_cache()
+
+
+        if pipeline_config["log_every_n_datapoints"] is not None:
+            total_n_points = 1
+
+            if valid_loader is not None and trainer.eval_valid_each_epoch:
+                valid_metric_results = trainer.evaluate(valid_loader)
+
+            for i, metric in enumerate(trainer.metrics):
+                log['train_' + metric.name] = optimize_metric_results[i]
+                if valid_loader is not None and trainer.eval_valid_each_epoch:
+                    log['val_' + metric.name] = valid_metric_results[i]
+            
+            if trainer.eval_additional_logs_each_epoch:
+                for additional_log in trainer.log_functions:
+                    log[additional_log.name] = additional_log(trainer.model, epoch)
+
+            logs.append(log)
+
+
 
         # wrap up
         loss, final_log = self.wrap_up_training(trainer=trainer, logs=logs, epoch=epoch,
@@ -202,7 +234,10 @@ class TrainNode(PipelineNode):
             ConfigOption("full_eval_each_epoch", default=False, type=to_bool, choices=[True, False],
                 info="Whether to evaluate everything every epoch. Results in more useful output"),
             ConfigOption("best_over_epochs", default=False, type=to_bool, choices=[True, False],
-                info="Whether to report the best performance occurred to BOHB")
+                info="Whether to report the best performance occurred to BOHB"),
+            #MODIFIED
+            ConfigOption("log_every_n_datapoints", default=None, type=int,
+                info="Log every n datapoints")
         ]
         for name, technique in self.training_techniques.items():
             options += technique.get_pipeline_config_options()
@@ -218,7 +253,11 @@ class TrainNode(PipelineNode):
             tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
         tl.log_value(worker_path + 'epoch', float(epoch + 1), int(time.time()))
         for name, value in log.items():
-            tl.log_value(worker_path + name, float(value), int(time.time()))
+            if isinstance(value, (list, np.ndarray)):
+                for ind, val in enumerate(value):
+                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(time.time()))
+            else:
+                tl.log_value(worker_path + name, float(value), int(time.time()))
 
     @staticmethod
     def count_parameters(model):

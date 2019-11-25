@@ -9,10 +9,7 @@ def auc_metric(y_true, y_pred):
     return (2 * metrics.roc_auc_score(y_true, y_pred) - 1)
 
 def cross_entropy(y_true, y_pred):
-    if y_true==1:
-        return -np.log(y_pred)
-    else:
-        return -np.log(1-y_pred)
+    return metrics.log_loss(y_true, y_pred)
 
 def top1(y_pred, y_true):
     return topN(y_pred, y_true, 1)

@@ -11,7 +11,8 @@ from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 
 class Trainer(object):
     def __init__(self, metrics, log_functions, loss_computation, model, criterion,
-            budget, optimizer, training_techniques, logger, device, full_eval_each_epoch):
+            budget, optimizer, training_techniques, logger, device, full_eval_each_epoch,
+            log_every_n_points=None, val_loader=None, logdir=None):
         
         self.criterion = criterion
         self.optimizer = optimizer
@@ -19,6 +20,13 @@ class Trainer(object):
         self.log_functions = log_functions
         self.model = model
         self.device = device
+
+        # MODIFIED
+        self.log_every_n_points = log_every_n_points
+        self.val_loader = val_loader
+        self.logdir = logdir
+        self.current_datapoint = 0
+        self.counter = 0
 
         for t in training_techniques:
             for key, value in t.training_components.items():
@@ -98,14 +106,17 @@ class Trainer(object):
             Trains the model for a single epoch
         '''
 
+
         loss_sum = 0.0
         N = 0
         self.model.train()
         outputs_data = list()
         targets_data = list()
 
+        model_parameters = self.count_parameters(self.model)
+
         for step, (data, targets) in enumerate(train_loader):
-   
+
             # prepare
             data = data.to(self.device)
             targets = targets.to(self.device)
@@ -133,11 +144,41 @@ class Trainer(object):
 
             loss_sum += loss.item() * batch_size
             N += batch_size
+            #MODIFIED
+            self.current_datapoint += batch_size
+            self.counter += batch_size
+            train_metrics_results = self.compute_metrics(outputs_data, targets_data)
+
+            #MODIFIED
+            if self.log_every_n_points is not None and self.counter>=self.log_every_n_points:
+                
+                log = dict()
+                log["model_parameters"] = model_parameters
+                log["loss"] = loss_sum/N
+
+                if self.val_loader is not None:
+                    valid_metric_results = self.evaluate(self.val_loader)
+                
+                for i, metric in enumerate(self.metrics):
+                    log['train_' + metric.name] = train_metrics_results[i]
+
+                    if self.val_loader is not None:
+                        log['val_' + metric.name] = valid_metric_results[i]
+                
+                if self.eval_additional_logs_each_epoch:
+                    for additional_log in self.log_functions:
+                        log[additional_log.name] = additional_log(self.model, epoch)
+
+                #log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
+                self.tensorboard_log_step(budget=self.budget, step=self.current_datapoint, log=log, logdir=self.logdir)
+                self.counter -= self.log_every_n_points
+            
+            self.current_datapoint += batch_size
 
             if any([t.on_batch_end(batch_loss=loss.item(), trainer=self, epoch=epoch, step=step, num_steps=len(train_loader))
                     for t in self.training_techniques]):
-                return self.compute_metrics(outputs_data, targets_data), loss_sum / N, True
-        return self.compute_metrics(outputs_data, targets_data), loss_sum / N, False
+                return train_metrics_results, loss_sum / N, True
+        return train_metrics_results, loss_sum / N, False
 
 
     def evaluate(self, test_loader):
@@ -158,8 +199,32 @@ class Trainer(object):
 
         self.model.train()
         return self.compute_metrics(outputs_data, targets_data)
-    
+
+
     def compute_metrics(self, outputs_data, targets_data):
         outputs_data = np.vstack(outputs_data)
         targets_data = np.vstack(targets_data)
         return [metric(outputs_data, targets_data) for metric in self.metrics]
+
+
+    # MODIFIED
+    def tensorboard_log_step(self, budget, step, log, logdir):
+        import tensorboard_logger as tl
+        worker_path = 'Train/'
+        try:
+            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
+        except:
+            tl.configure(logdir)
+            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
+        tl.log_value(worker_path + 'step', float(step + 1), int(time.time()))
+        for name, value in log.items():
+            if isinstance(value, (list, np.ndarray)):
+                for ind, val in enumerate(value):
+                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(time.time()))
+            else:
+                tl.log_value(worker_path + name, float(value), int(time.time()))
+
+
+    @staticmethod
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)

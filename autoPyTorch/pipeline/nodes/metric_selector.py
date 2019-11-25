@@ -96,9 +96,9 @@ class AutoNetMetric():
         Y_pred = ensure_numpy(Y_pred)
         Y_true = ensure_numpy(Y_true)
 
-        if len(Y_pred.shape) !=  len(Y_true.shape):
-            Y_pred = undo_ohe(Y_pred)
-            Y_true = undo_ohe(Y_true)
+        #if len(Y_pred.shape) !=  len(Y_true.shape):
+        #    Y_pred = undo_ohe(Y_pred)
+        #    Y_true = undo_ohe(Y_true)
         return self.metric(self.ohe_transform(Y_true), self.ohe_transform(Y_pred))
 
     def get_loss_value(self, Y_pred, Y_true):
