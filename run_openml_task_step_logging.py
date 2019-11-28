@@ -72,7 +72,7 @@ if __name__ == "__main__":
     ind_train, ind_test = task.get_train_test_split_indices()
 
     # APT settings
-    budget = np.ceil(1000000 / len(y[ind_train])) # in epochs
+    budget = np.ceil(1e6 / len(y[ind_train])) # in epochs
     logdir = "logs/bench_results_step/run_" + str(args.run_id) + "_" + str(openml_task_id)
     
     # Sample config (autonet)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     sampling_space["use_tensorboard_logger"] = True
     sampling_space["result_logger_dir"] = logdir
     sampling_space["full_eval_each_epoch"] = True
-    sampling_space["log_every_n_datapoints"] = None
+    sampling_space["log_every_n_datapoints"] = 10000
     sampling_space["optimize_metric"] = "accuracy"
     sampling_space["additional_metrics"] = ["cross_entropy"]
     sampling_space["additional_logs"] = [test_result.__name__, test_cross_entropy.__name__]

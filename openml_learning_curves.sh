@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH -p meta_gpu-x                                   # partition (queue) (test_cpu-ivy, ml_cpu-ivy, meta_gpu-ti, gpu_tesla-P100, meta_gpu-black, ml_gpu-rtx2080)
-#SBATCH --mem 8000                                      # memory pool for all cores
+#SBATCH -p bosch_cpu-cascadelake                        # partition (queue) (test_cpu-ivy, ml_cpu-ivy, meta_gpu-ti, gpu_tesla-P100, meta_gpu-black, ml_gpu-rtx2080)
+#SBATCH -w kisexe40
+#SBATCH --mem 6000                                      # memory pool for all cores
 #SBATCH -t 2-00:00                                      # time (D-HH:MM)
 #SBATCH -N 1                                            # number of nodes
-#SBATCH -c 2                                            # number of cores
-#SBATCH -a 1-2                                          # array size
-#SBATCH --gres=gpu:1                                    # reserves one GPU
+#SBATCH -c 1                                            # number of cores
+#SBATCH -a 571-900                                      # array size
 #SBATCH -o logs/bench_cluster/%x.%N.%j.out              # STDOUT  (the folder log has to be created prior to running or this won't work)
 #SBATCH -e logs/bench_cluster/%x.%N.%j.err              # STDERR  (the folder log has to be created prior to running or this won't work)
 #SBATCH -J openml_learning_curves                       # sets the job name. If not specified, the file name will be used as job name

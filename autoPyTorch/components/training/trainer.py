@@ -150,11 +150,13 @@ class Trainer(object):
             train_metrics_results = self.compute_metrics(outputs_data, targets_data)
 
             #MODIFIED
-            if self.log_every_n_points is not None and self.counter>=self.log_every_n_points:
-                
+            if (self.log_every_n_points is not None) and (self.counter>=self.log_every_n_points):
+                self.logger.info("TRAINER: Logging at step", str(self.current_datapoint), ", counter is at", str(self.counter))
+                self.logger.info("TRAINER: Points seen in current epoch", str(N) ,"of", str(len(train_loader.dataset)))
                 log = dict()
                 log["model_parameters"] = model_parameters
                 log["loss"] = loss_sum/N
+                log["lr"] = self.lr_scheduler.get_lr()[0]
 
                 if self.val_loader is not None:
                     valid_metric_results = self.evaluate(self.val_loader)
@@ -172,11 +174,8 @@ class Trainer(object):
                 #log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
                 self.tensorboard_log_step(budget=self.budget, step=self.current_datapoint, log=log, logdir=self.logdir)
                 self.counter -= self.log_every_n_points
-            
-            self.current_datapoint += batch_size
 
-            if any([t.on_batch_end(batch_loss=loss.item(), trainer=self, epoch=epoch, step=step, num_steps=len(train_loader))
-                    for t in self.training_techniques]):
+            if any([t.on_batch_end(batch_loss=loss.item(), trainer=self, epoch=epoch, step=step, num_steps=len(train_loader)) for t in self.training_techniques]):
                 return train_metrics_results, loss_sum / N, True
         return train_metrics_results, loss_sum / N, False
 

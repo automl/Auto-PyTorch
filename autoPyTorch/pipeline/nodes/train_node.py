@@ -106,6 +106,7 @@ class TrainNode(PipelineNode):
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
             
             if pipeline_config["log_every_n_datapoints"] is None:
+                # evaluate on validation data
                 if valid_loader is not None and trainer.eval_valid_each_epoch:
                     valid_metric_results = trainer.evaluate(valid_loader)
 
@@ -114,6 +115,7 @@ class TrainNode(PipelineNode):
             log['model_parameters'] = model_params
 
             if pipeline_config["log_every_n_datapoints"] is None:
+                # create log metricss
                 for i, metric in enumerate(trainer.metrics):
                     log['train_' + metric.name] = optimize_metric_results[i]
 
@@ -132,6 +134,8 @@ class TrainNode(PipelineNode):
             logger.debug("Epoch: " + str(epoch) + " : " + str(log))
 
             if pipeline_config["log_every_n_datapoints"] is None:
+                # Log if not logging every n datapoints
+                logger.info("Train node: Logging at epoch", str(epoch))
                 if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
                     self.tensorboard_log(budget=budget, epoch=epoch, log=log, logdir=pipeline_config["result_logger_dir"])
 
@@ -143,7 +147,8 @@ class TrainNode(PipelineNode):
 
 
         if pipeline_config["log_every_n_datapoints"] is not None:
-            total_n_points = 1
+
+            logger.info("Train node: Creating a final log, since we didnt log in train node.")
 
             if valid_loader is not None and trainer.eval_valid_each_epoch:
                 valid_metric_results = trainer.evaluate(valid_loader)
