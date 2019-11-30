@@ -32,8 +32,7 @@ def get_sampling_space():
     return sampling_space
 
 
-def load_hyperparameter_config(config_id):
-    config_dir = "configs/refit/step_logging_test/config_" + str(config_id) + ".json"
+def load_hyperparameter_config(config_dir):
     with open(config_dir, "r") as f:
         data = json.load(f)
     for key,val in data.items():
@@ -53,53 +52,76 @@ def seed_everything(seed):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fit a random config on an openml task')
     parser.add_argument("--run_id", type=int, help="An id for the run.")
+    parser.add_argument("--architecture", type=str, choices=["shapedresnet", "shapedmlpnet"])
+    parser.add_argument("--logging", type=str, choices=["step", "epoch"])
     args = parser.parse_args()
 
-
-    # Sample OpenML task ID from AutoML Bench
-    openml_task_ids = [3945, 14965, 7592, 9977, 7593, 146212, 167119, 146822, 146825, 34539, 146195, 146821, 146606, 146818, 168332, 
-                       168331, 168330, 168337, 168335, 168338, 168329, 167120, 168868, 168908, 168912, 168910, 168909, 189354, 168911,
-                       189356, 189355, 10101, 9952, 9981, 12, 3]
-    openml_task_id = openml_task_ids[args.run_id % len(openml_task_ids)]
-
-    # Seed
-    seed = 1
-    seed_everything(seed)
-
     # Get data
+    openml_task_ids = [3, 12, 31, 53, 3917, 7592, 9952, 9977, 9981, 10101, 14965, 146195, 146821, 146822, 146825, 167119, 167120]
+    openml_task_id = openml_task_ids[args.run_id % len(openml_task_ids)]
     task = openml.tasks.get_task(task_id=openml_task_id)
     X, y = task.get_X_and_y()
     ind_train, ind_test = task.get_train_test_split_indices()
 
-    # APT settings
-    budget = 50 # in epochs
-    logdir = "logs/bench_results/run_" + str(args.run_id) + "_" + str(openml_task_id)
+    # Settings
+    val_split = 0.3
+
+    # arg dependent
+    if args.logging=="step":
+        log_every_n_datapoints = 1e4
+        budget = np.ceil(1e6 / (len(y[ind_train]) * (1-val_split)))
+    else:
+        log_every_n_datapoints = None
+        budget = 50
+    logdir = "logs/bench_results_" + args.logging + "_" + args.architecture  + "/run_" + str(args.run_id) + "_" + str(openml_task_id)
+
+    if args.architecture=="shapedresnet":
+        hyperparameter_config_dir = "configs/refit/bench_configs/shapedresnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
+    elif args.architecture=="shapedmlpnet":
+        hyperparameter_config_dir = "configs/refit/bench_configs/shapedmlpnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
+
+    # Search space updates
+    search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name="LearningrateSchedulerSelector",
+                                hyperparameter="cosine_annealing:T_max",
+                                value_range=[budget, budget])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:max_units",
+                                value_range=[64, 1024],
+                                log=True)
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:num_layers",
+                                value_range=[2, 8])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:max_units",
+                                value_range=[10,1024])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:num_groups",
+                                value_range=[1,9])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:blocks_per_group",
+                                value_range=[1,4])
+
+    # Seed
+    seed = 1
+    seed_everything(seed)
     
     # Sample config (autonet)
     sampling_space = get_sampling_space()
     sampling_space["best_over_epochs"] = False
-    sampling_space["random_seed"] = 1
+    sampling_space["random_seed"] = seed
     sampling_space["budget_type"] = "epochs"
-    sampling_space["refit_validation_split"] = 0.3
+    sampling_space["refit_validation_split"] = val_split
     sampling_space["log_level"] = "info"
     sampling_space["run_id"] = args.run_id
     sampling_space["task_id"] = 0
     sampling_space["use_tensorboard_logger"] = True
     sampling_space["result_logger_dir"] = logdir
     sampling_space["full_eval_each_epoch"] = True
-    sampling_space["log_every_n_datapoints"] = None
+    sampling_space["log_every_n_datapoints"] = log_every_n_datapoints
     sampling_space["optimize_metric"] = "accuracy"
-    sampling_space["additional_metrics"] = ["cross_entropy"]
-    sampling_space["additional_logs"] = [test_result.__name__, test_cross_entropy.__name__]
-
-    # Decrease hyperparameter range
-    search_space_updates = HyperparameterSearchSpaceUpdates()
-    search_space_updates.append(node_name="NetworkSelector",
-                                hyperparameter="shapedmlpnet:num_layers",
-                                value_range=[1, 10])
-    search_space_updates.append(node_name="LearningrateSchedulerSelector",
-                                hyperparameter="cosine_annealing:T_max",
-                                value_range=[budget, budget])
+    sampling_space["additional_metrics"] = ["cross_entropy", "balanced_accuracy"]
+    sampling_space["additional_logs"] = [test_result.__name__, test_cross_entropy.__name__, test_balanced_accuracy.__name__]
 
     # Initialize Autonet
     autonet = AutoNetClassification(**sampling_space,
@@ -127,22 +149,29 @@ if __name__ == "__main__":
                                                                        log_function=test_result(autonet, X[ind_test], y[ind_test]))
     autonet.pipeline[LogFunctionsSelector.get_name()].add_log_function(name=test_cross_entropy.__name__,
                                                                        log_function=test_cross_entropy(autonet, X[ind_test], y[ind_test]))
+    autonet.pipeline[LogFunctionsSelector.get_name()].add_log_function(name=test_balanced_accuracy.__name__,
+                                                                       log_function=test_balanced_accuracy(autonet, X[ind_test], y[ind_test]))
 
 
     # Load hyperparameters
-    hyperparameter_config = load_hyperparameter_config(args.run_id)
+    hyperparameter_config = load_hyperparameter_config(hyperparameter_config_dir)
     if "LearningrateSchedulerSelector:cosine_annealing:T_max" in hyperparameter_config.keys():
         hyperparameter_config["LearningrateSchedulerSelector:cosine_annealing:T_max"] = budget
 
     # Print Infos
-    print("Fitting on OpenML task", openml_task_id)
-    print("Dataset points, features", X.shape)
-    print("Train/test split", len(y[ind_train]), len(y[ind_test]))
-    print("Fitting for epochs", budget)
-    print("Sampling seed", seed)
-    print("Autonet seed", sampling_space["random_seed"])
+    info = {
+            "OpenML_task_id" : openml_task_id,
+            "test_split" : len(y[ind_test])/(len(y[ind_train])+len(y[ind_test])),
+            "budget": budget,
+            "seed" : seed,
+            "instances" : len(y[ind_train])+len(y[ind_test]),
+            "classes": len(np.unique(y[ind_train])),
+            "features": X.shape[1]
+            }
+
     print("Autonet config:", autonet.get_current_autonet_config())
     print("Hyperparameter config:", hyperparameter_config)
+    print("Info", info)
 
     # Refit
     results = autonet.refit(X_train=X[ind_train],
@@ -164,5 +193,8 @@ if __name__ == "__main__":
     for key in pop_keys:
         del results["info"][key]
 
-    with open(logdir + "/results_dump.json", "w") as file:
-        json.dump(results, file)
+    with open(logdir + "/results_dump.json", "w") as f:
+        json.dump(results, f)
+
+    with open(logdir + "/info.json", "w") as f:
+        json.dump(info, f)

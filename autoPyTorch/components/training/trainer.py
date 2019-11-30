@@ -147,10 +147,10 @@ class Trainer(object):
             #MODIFIED
             self.current_datapoint += batch_size
             self.counter += batch_size
-            train_metrics_results = self.compute_metrics(outputs_data, targets_data)
 
             #MODIFIED
             if (self.log_every_n_points is not None) and (self.counter>=self.log_every_n_points):
+                train_metrics_results = self.evaluate(train_loader)
                 self.logger.info("TRAINER: Logging at step", str(self.current_datapoint), ", counter is at", str(self.counter))
                 self.logger.info("TRAINER: Points seen in current epoch", str(N) ,"of", str(len(train_loader.dataset)))
                 log = dict()
@@ -175,9 +175,10 @@ class Trainer(object):
                 self.tensorboard_log_step(budget=self.budget, step=self.current_datapoint, log=log, logdir=self.logdir)
                 self.counter -= self.log_every_n_points
 
-            if any([t.on_batch_end(batch_loss=loss.item(), trainer=self, epoch=epoch, step=step, num_steps=len(train_loader)) for t in self.training_techniques]):
-                return train_metrics_results, loss_sum / N, True
-        return train_metrics_results, loss_sum / N, False
+            if any([t.on_batch_end(batch_loss=loss.item(), trainer=self, epoch=epoch, step=step, num_steps=len(train_loader))
+                    for t in self.training_techniques]):
+                return self.compute_metrics(outputs_data, targets_data), loss_sum / N, True
+        return self.compute_metrics(outputs_data, targets_data), loss_sum / N, False
 
 
     def evaluate(self, test_loader):

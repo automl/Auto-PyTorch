@@ -101,7 +101,26 @@ class TrainNode(PipelineNode):
             # prepare epoch
             log = dict()
             trainer.on_epoch_start(log=log, epoch=epoch)
-            
+
+            # log 0th epoch
+            if epoch==0:
+                initial_log = log.copy()
+                if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
+                    initial_log['loss'] = self.get_model_loss(trainer, train_loader)
+                    initial_log['model_parameters'] = model_params
+                    for i, metric in enumerate(trainer.metrics):
+                        train_metric_results = trainer.evaluate(train_loader)
+                        initial_log['train_' + metric.name] = train_metric_results[i]
+
+                        if valid_loader is not None and trainer.eval_valid_each_epoch:
+                            valid_metric_results = trainer.evaluate(valid_loader)
+                            initial_log['val_' + metric.name] = valid_metric_results[i]
+                    if trainer.eval_additional_logs_each_epoch:
+                        for additional_log in trainer.log_functions:
+                            initial_log[additional_log.name] = additional_log(trainer.model, epoch)
+
+                    self.tensorboard_log(budget=budget, epoch=epoch-1, log=initial_log, logdir=pipeline_config["result_logger_dir"])
+
             # training
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
             
@@ -263,6 +282,30 @@ class TrainNode(PipelineNode):
                     tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(epoch+1))
             else:
                 tl.log_value(worker_path + name, float(value), int(epoch+1))
+
+    def get_model_loss(self, trainer, train_loader):
+        
+        loss_sum = 0
+        N = 0
+        
+        trainer.model.train()
+
+        for step, (data, targets) in enumerate(train_loader):
+            data = data.to(trainer.device)
+            targets = targets.to(trainer.device)
+
+            data, criterion_kwargs = trainer.loss_computation.prepare_data(data, targets)
+            batch_size = data.size(0)
+            #data = Variable(data)
+            outputs = trainer.model(data)
+            loss_func = trainer.loss_computation.criterion(**criterion_kwargs)
+            loss = loss_func(trainer.criterion, outputs)
+
+            loss_sum += loss.item() * batch_size
+            N += batch_size
+
+
+        return loss_sum/N
 
     @staticmethod
     def count_parameters(model):

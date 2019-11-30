@@ -2,6 +2,7 @@ import warnings
 import numpy as np
 import torch
 import torch.nn as nn
+from sklearn.metrics import balanced_accuracy_score
 
 
 def ensure_numpy(y):
@@ -29,6 +30,9 @@ class GradientLogger(object):
         for p in list(filter(lambda p: p.grad is not None, network.parameters())):
                 for par in torch.flatten(p.grad.data):
                     all_grads.append(par.cpu().numpy())
+
+        if all_grads==[]:
+            all_grads.append(0)
 
         return np.array(all_grads)
 
@@ -131,6 +135,9 @@ class LayerWiseGradientLogger(object):
         for p in list(filter(lambda p: p.grad is not None, network.parameters())):
                 for par in torch.flatten(p.grad.data):
                     all_grads.append(par.cpu().numpy())
+
+        if all_grads==[]:
+            all_grads.append(0)
 
         return all_grads
 
@@ -236,6 +243,22 @@ class test_cross_entropy():
         _, test_predictions = self.autonet.predict(self.X_test, return_probabilities=True)
         loss_func = nn.CrossEntropyLoss()
         return loss_func(torch.from_numpy(test_predictions), torch.from_numpy(self.Y_test))
+
+
+class test_balanced_accuracy():
+
+    def __init__(self, autonet, X_test, Y_test):
+        self.autonet = autonet
+        self.X_test = X_test
+        self.Y_test = Y_test
+
+    def __call__(self, network, epoch):
+        if self.Y_test is None or self.X_test is None:
+            return float("nan")
+
+        test_predictions = self.autonet.predict(self.X_test)
+
+        return balanced_accuracy_score(torch.from_numpy(self.Y_test), torch.from_numpy(test_predictions))
 
 
 class gradient_norm():
