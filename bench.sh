@@ -1,11 +1,10 @@
 #!/bin/bash
-#SBATCH -p meta_gpu-x                                   # partition (queue) (test_cpu-ivy, all_cpu-cascadelake, bosch_cpu-cascadelake)
+#SBATCH -p bosch_cpu-cascadelake                        # partition (queue) (test_cpu-ivy, all_cpu-cascadelake, bosch_cpu-cascadelake)
 #SBATCH --mem 6000                                      # memory pool for all cores
 #SBATCH -t 2-00:00                                      # time (D-HH:MM)
 #SBATCH -N 1                                            # number of nodes
 #SBATCH -c 1                                            # number of cores
-#SBATCH --gres=gpu:0
-#SBATCH -a 1-10                                         # array size
+#SBATCH -a 1-1000                                       # array size
 #SBATCH -o logs/cluster/%x.%N.%j.out                    # STDOUT  (the folder log has to be created prior to running or this won't work)
 #SBATCH -e logs/cluster/%x.%N.%j.err                    # STDERR  (the folder log has to be created prior to running or this won't work)
 #SBATCH -J openml_lc                                    # sets the job name. If not specified, the file name will be used as job name

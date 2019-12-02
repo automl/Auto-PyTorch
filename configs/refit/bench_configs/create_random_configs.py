@@ -15,7 +15,7 @@ def _get_shared_sampling_space():
     sampling_space["optimizer"] = ['sgd']
     sampling_space["preprocessors"] = ['truncated_svd', 'none']
     sampling_space["imputation_strategies"] = ['mean']
-    sampling_space["lr_scheduler"] = ['cosine_annealing', 'step']
+    sampling_space["lr_scheduler"] = ['cosine_annealing']
     sampling_space["normalization_strategies"] = ['standardize']
     sampling_space["over_sampling_methods"] = ['none', 'random', 'smote']
     sampling_space["under_sampling_methods"] = ['none', 'random']
@@ -91,7 +91,6 @@ if __name__=="__main__":
 
     n_configs = 1000
     """
-    
     # shaped mlp
     cs_mlpnet = get_mlpnet_configspace()
     seed=1
