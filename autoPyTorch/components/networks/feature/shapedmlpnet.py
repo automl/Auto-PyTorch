@@ -26,14 +26,14 @@ class ShapedMlpNet(MlpNet):
                                                   out_features,
                                                   self.config['max_units'],
                                                   self.config['num_layers'])
-        if self.config["use_dropout"]:
-            dropout_shape = get_shaped_neuron_counts( self.config['dropout_shape'], 0, 0, 1000, self.config['num_layers'])
+        if self.config["use_dropout"] and self.config["max_dropout"]>0.05:
+            dropout_shape = get_shaped_neuron_counts( self.config['mlp_shape'], 0, 0, 1000, self.config['num_layers'])
 
         previous = in_features
         for i in range(self.config['num_layers']-1):
             if (i >= len(neuron_counts)):
                 break
-            dropout = dropout_shape[i] / 1000 * self.config["max_dropout"] if self.config["use_dropout"] else 0
+            dropout = dropout_shape[i] / 1000 * self.config["max_dropout"] if (self.config["use_dropout"] and self.config["max_dropout"]>0.05) else 0
             self._add_layer(layers, previous, neuron_counts[i], dropout)
             previous = neuron_counts[i]
 
@@ -43,7 +43,7 @@ class ShapedMlpNet(MlpNet):
     def _add_layer(self, layers, in_features, out_features, dropout):
         layers.append(nn.Linear(in_features, out_features))
         layers.append(self.activation())
-        if self.config["use_dropout"]:
+        if self.config["use_dropout"] and self.config["max_dropout"]>0.05:
             layers.append(nn.Dropout(dropout))
 
     @staticmethod
@@ -53,7 +53,6 @@ class ShapedMlpNet(MlpNet):
         max_units=((10, 1024), True),
         activation=('sigmoid', 'tanh', 'relu'),
         mlp_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
-        dropout_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
         max_dropout=(0, 0.8),
         use_dropout=(True, False)
     ):
@@ -70,10 +69,8 @@ class ShapedMlpNet(MlpNet):
         use_dropout_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_dropout", use_dropout)
 
         if True in use_dropout:
-            dropout_shape_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'dropout_shape', dropout_shape)
             max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
         
-            cs.add_condition(CS.EqualsCondition(dropout_shape_hp, use_dropout_hp, True))
             cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
 
         add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'activation', activation)

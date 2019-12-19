@@ -1,0 +1,39 @@
+Configuration space object:
+  Hyperparameters:
+    CreateDataLoader:batch_size, Type: UniformInteger, Range: [16, 512], Default: 91, on log-scale
+    Imputation:strategy, Type: Categorical, Choices: {mean}, Default: mean
+    InitializationSelector:initialization_method, Type: Categorical, Choices: {default}, Default: default
+    InitializationSelector:initializer:initialize_bias, Type: Constant, Value: Yes
+    LearningrateSchedulerSelector:cosine_annealing:T_max, Type: Constant, Value: 50
+    LearningrateSchedulerSelector:cosine_annealing:eta_min, Type: Constant, Value: 1e-08
+    LearningrateSchedulerSelector:lr_scheduler, Type: Categorical, Choices: {cosine_annealing}, Default: cosine_annealing
+    LossModuleSelector:loss_module, Type: Categorical, Choices: {cross_entropy_weighted}, Default: cross_entropy_weighted
+    NetworkSelector:network, Type: Categorical, Choices: {shapedmlpnet}, Default: shapedmlpnet
+    NetworkSelector:shapedmlpnet:activation, Type: Constant, Value: relu
+    NetworkSelector:shapedmlpnet:max_dropout, Type: UniformFloat, Range: [0.0, 1.0], Default: 0.5
+    NetworkSelector:shapedmlpnet:max_units, Type: UniformInteger, Range: [64, 1024], Default: 256, on log-scale
+    NetworkSelector:shapedmlpnet:mlp_shape, Type: Constant, Value: funnel
+    NetworkSelector:shapedmlpnet:num_layers, Type: UniformInteger, Range: [1, 5], Default: 3
+    NetworkSelector:shapedmlpnet:use_dropout, Type: Constant, Value: 1
+    NormalizationStrategySelector:normalization_strategy, Type: Categorical, Choices: {standardize}, Default: standardize
+    OptimizerSelector:optimizer, Type: Categorical, Choices: {sgd}, Default: sgd
+    OptimizerSelector:sgd:learning_rate, Type: UniformFloat, Range: [0.0001, 0.1], Default: 0.0031622777, on log-scale
+    OptimizerSelector:sgd:momentum, Type: UniformFloat, Range: [0.1, 0.99], Default: 0.3146426545, on log-scale
+    OptimizerSelector:sgd:weight_decay, Type: UniformFloat, Range: [1e-05, 0.1], Default: 0.050005
+    PreprocessorSelector:preprocessor, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:over_sampling_method, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:target_size_strategy, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:under_sampling_method, Type: Categorical, Choices: {none}, Default: none
+    TrainNode:batch_loss_computation_technique, Type: Categorical, Choices: {standard}, Default: standard
+  Conditions:
+    LearningrateSchedulerSelector:cosine_annealing:T_max | LearningrateSchedulerSelector:lr_scheduler == 'cosine_annealing'
+    LearningrateSchedulerSelector:cosine_annealing:eta_min | LearningrateSchedulerSelector:lr_scheduler == 'cosine_annealing'
+    NetworkSelector:shapedmlpnet:activation | NetworkSelector:network == 'shapedmlpnet'
+    NetworkSelector:shapedmlpnet:max_units | NetworkSelector:network == 'shapedmlpnet'
+    NetworkSelector:shapedmlpnet:mlp_shape | NetworkSelector:network == 'shapedmlpnet'
+    NetworkSelector:shapedmlpnet:num_layers | NetworkSelector:network == 'shapedmlpnet'
+    NetworkSelector:shapedmlpnet:use_dropout | NetworkSelector:network == 'shapedmlpnet'
+    OptimizerSelector:sgd:learning_rate | OptimizerSelector:optimizer == 'sgd'
+    OptimizerSelector:sgd:momentum | OptimizerSelector:optimizer == 'sgd'
+    OptimizerSelector:sgd:weight_decay | OptimizerSelector:optimizer == 'sgd'
+

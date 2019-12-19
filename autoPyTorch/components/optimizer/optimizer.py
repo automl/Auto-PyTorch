@@ -69,7 +69,7 @@ class SgdOptimizer(AutoNetOptimizerBase):
     @staticmethod
     def get_config_space(
         learning_rate=((1e-4, 0.1), True),
-        momentum=((0.1, 0.99), True),
+        momentum=((0.1, 0.99)),
         weight_decay=(1e-5, 0.1)
     ):
         cs = CS.ConfigurationSpace()
@@ -87,7 +87,7 @@ class RMSpropOptimizer(AutoNetOptimizerBase):
     @staticmethod
     def get_config_space(
         learning_rate=((1e-4, 0.1), True),
-        momentum=((0.1, 0.99), True),
+        momentum=((0.1, 0.99)),
         weight_decay=(1e-5, 0.1),
         alpha=(0.1,0.99)
     ):

@@ -1,0 +1,47 @@
+Configuration space object:
+  Hyperparameters:
+    CreateDataLoader:batch_size, Type: UniformInteger, Range: [32, 256], Default: 91, on log-scale
+    Imputation:strategy, Type: Categorical, Choices: {mean}, Default: mean
+    InitializationSelector:initialization_method, Type: Categorical, Choices: {default}, Default: default
+    InitializationSelector:initializer:initialize_bias, Type: Constant, Value: Yes
+    LearningrateSchedulerSelector:cosine_annealing:T_max, Type: Constant, Value: 50
+    LearningrateSchedulerSelector:cosine_annealing:eta_min, Type: Constant, Value: 1e-08
+    LearningrateSchedulerSelector:lr_scheduler, Type: Categorical, Choices: {cosine_annealing}, Default: cosine_annealing
+    LossModuleSelector:loss_module, Type: Categorical, Choices: {cross_entropy_weighted}, Default: cross_entropy_weighted
+    NetworkSelector:network, Type: Categorical, Choices: {shapedresnet}, Default: shapedresnet
+    NetworkSelector:shapedresnet:activation, Type: Constant, Value: relu
+    NetworkSelector:shapedresnet:blocks_per_group, Type: UniformInteger, Range: [1, 3], Default: 2
+    NetworkSelector:shapedresnet:max_dropout, Type: UniformFloat, Range: [0.0, 1.0], Default: 0.5
+    NetworkSelector:shapedresnet:max_shake_drop_probability, Type: UniformFloat, Range: [0.0, 1.0], Default: 0.5
+    NetworkSelector:shapedresnet:max_units, Type: UniformInteger, Range: [32, 512], Default: 128, on log-scale
+    NetworkSelector:shapedresnet:num_groups, Type: UniformInteger, Range: [1, 5], Default: 3
+    NetworkSelector:shapedresnet:resnet_shape, Type: Constant, Value: funnel
+    NetworkSelector:shapedresnet:use_dropout, Type: Constant, Value: 1
+    NetworkSelector:shapedresnet:use_shake_drop, Type: Categorical, Choices: {True, False}, Default: True
+    NetworkSelector:shapedresnet:use_shake_shake, Type: Categorical, Choices: {True, False}, Default: True
+    NormalizationStrategySelector:normalization_strategy, Type: Categorical, Choices: {standardize}, Default: standardize
+    OptimizerSelector:optimizer, Type: Categorical, Choices: {sgd}, Default: sgd
+    OptimizerSelector:sgd:learning_rate, Type: UniformFloat, Range: [0.0001, 0.1], Default: 0.0031622777, on log-scale
+    OptimizerSelector:sgd:momentum, Type: UniformFloat, Range: [0.1, 0.99], Default: 0.3146426545, on log-scale
+    OptimizerSelector:sgd:weight_decay, Type: UniformFloat, Range: [1e-05, 0.1], Default: 0.050005
+    PreprocessorSelector:preprocessor, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:over_sampling_method, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:target_size_strategy, Type: Categorical, Choices: {none}, Default: none
+    ResamplingStrategySelector:under_sampling_method, Type: Categorical, Choices: {none}, Default: none
+    TrainNode:batch_loss_computation_technique, Type: Categorical, Choices: {standard}, Default: standard
+  Conditions:
+    LearningrateSchedulerSelector:cosine_annealing:T_max | LearningrateSchedulerSelector:lr_scheduler == 'cosine_annealing'
+    LearningrateSchedulerSelector:cosine_annealing:eta_min | LearningrateSchedulerSelector:lr_scheduler == 'cosine_annealing'
+    NetworkSelector:shapedresnet:activation | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:blocks_per_group | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:max_shake_drop_probability | NetworkSelector:shapedresnet:use_shake_drop == True
+    NetworkSelector:shapedresnet:max_units | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:num_groups | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:resnet_shape | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:use_dropout | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:use_shake_drop | NetworkSelector:network == 'shapedresnet'
+    NetworkSelector:shapedresnet:use_shake_shake | NetworkSelector:network == 'shapedresnet'
+    OptimizerSelector:sgd:learning_rate | OptimizerSelector:optimizer == 'sgd'
+    OptimizerSelector:sgd:momentum | OptimizerSelector:optimizer == 'sgd'
+    OptimizerSelector:sgd:weight_decay | OptimizerSelector:optimizer == 'sgd'
+

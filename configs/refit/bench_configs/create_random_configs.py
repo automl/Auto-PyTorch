@@ -2,26 +2,29 @@ import os as os
 import numpy as np
 import random
 import json
+from pprint import pprint
 from tqdm import tqdm
 
 import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 from autoPyTorch import AutoNetClassification
 from autoPyTorch import HyperparameterSearchSpaceUpdates
 
 
 def _get_shared_sampling_space():
     sampling_space = dict()
-    sampling_space["batch_loss_computation_techniques"] = ['standard', 'mixup']
+    sampling_space["batch_loss_computation_techniques"] = ['standard']
     sampling_space["optimizer"] = ['sgd']
-    sampling_space["preprocessors"] = ['truncated_svd', 'none']
+    #sampling_space["preprocessors"] = ['truncated_svd', 'none']
+    sampling_space["preprocessors"] = ['none']
     sampling_space["imputation_strategies"] = ['mean']
     sampling_space["lr_scheduler"] = ['cosine_annealing']
     sampling_space["normalization_strategies"] = ['standardize']
-    sampling_space["over_sampling_methods"] = ['none', 'random', 'smote']
-    sampling_space["under_sampling_methods"] = ['none', 'random']
-    sampling_space["target_size_strategies"] = ['upsample', 'downsample']
+    sampling_space["over_sampling_methods"] = ['none']
+    sampling_space["under_sampling_methods"] = ['none']
+    sampling_space["target_size_strategies"] = ['none']
     sampling_space["embeddings"] = ['learned']
-    sampling_space["initialization_methods"] = ['default', 'sparse']
+    sampling_space["initialization_methods"] = ['default']
     sampling_space["loss_modules"] = ['cross_entropy_weighted']
     return sampling_space
 
@@ -31,25 +34,44 @@ def get_mlpnet_configspace():
     sampling_space["networks"] = ['shapedmlpnet']
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name="InitializationSelector",
+                                hyperparameter="initializer:initialize_bias",
+                                value_range=["Yes"])
     search_space_updates.append(node_name="CreateDataLoader",
                                 hyperparameter="batch_size",
-                                value_range=[32, 256],
+                                value_range=[16, 512],
                                 log=True)
     search_space_updates.append(node_name="LearningrateSchedulerSelector",
                                 hyperparameter="cosine_annealing:T_max",
                                 value_range=[50, 50])
     search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:activation",
+                                value_range=["relu"])
+    search_space_updates.append(node_name="NetworkSelector",
                                 hyperparameter="shapedmlpnet:max_units",
                                 value_range=[64, 1024],
                                 log=True)
     search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:max_dropout",
+                                value_range=[0.0,1.0])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:use_dropout",
+                                value_range=[True])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedmlpnet:mlp_shape",
+                                value_range=["funnel"])
+    search_space_updates.append(node_name="NetworkSelector",
                                 hyperparameter="shapedmlpnet:num_layers",
-                                value_range=[2, 8])
+                                value_range=[1, 5])
     
-    autonet = AutoNetClassification(**sampling_space,
+    autonet = AutoNetClassification(config_preset="full_cs",
+                                    **sampling_space,
                                     hyperparameter_search_space_updates=search_space_updates)
     
-    return autonet.get_hyperparameter_search_space()
+    max_do = CSH.UniformFloatHyperparameter(name='NetworkSelector:shapedmlpnet:max_dropout', lower=0.0, upper=1.0)
+    cs = autonet.get_hyperparameter_search_space()
+    cs.add_hyperparameter(max_do)
+    return cs
 
 
 def get_resnet_configspace():
@@ -57,6 +79,9 @@ def get_resnet_configspace():
     sampling_space["networks"] = ['shapedresnet']
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name="InitializationSelector",
+                                hyperparameter="initializer:initialize_bias",
+                                value_range=["Yes"])
     search_space_updates.append(node_name="CreateDataLoader",
                                 hyperparameter="batch_size",
                                 value_range=[32, 256],
@@ -64,6 +89,9 @@ def get_resnet_configspace():
     search_space_updates.append(node_name="LearningrateSchedulerSelector",
                                 hyperparameter="cosine_annealing:T_max",
                                 value_range=[50, 50])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:activation",
+                                value_range=["relu"])
     search_space_updates.append(node_name="NetworkSelector",
                                 hyperparameter="shapedresnet:max_units",
                                 value_range=[32,512],
@@ -74,12 +102,24 @@ def get_resnet_configspace():
     search_space_updates.append(node_name="NetworkSelector",
                                 hyperparameter="shapedresnet:blocks_per_group",
                                 value_range=[1,3])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:max_dropout",
+                                value_range=[0.0,1.0])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:use_dropout",
+                                value_range=[True])
+    search_space_updates.append(node_name="NetworkSelector",
+                                hyperparameter="shapedresnet:resnet_shape",
+                                value_range=["funnel"])
 
     autonet = AutoNetClassification(config_preset="full_cs",
                                     **sampling_space,
                                     hyperparameter_search_space_updates=search_space_updates)
 
-    return autonet.get_hyperparameter_search_space()
+    max_do = CSH.UniformFloatHyperparameter(name='NetworkSelector:shapedresnet:max_dropout', lower=0.0, upper=1.0)
+    cs = autonet.get_hyperparameter_search_space()
+    cs.add_hyperparameter(max_do)
+    return cs
 
 
 def resnet_criterion(hyperpar_config):
@@ -89,12 +129,12 @@ def resnet_criterion(hyperpar_config):
 
 if __name__=="__main__":
 
-    n_configs = 1000
-    """
+    n_configs = 10000
+    
     # shaped mlp
     cs_mlpnet = get_mlpnet_configspace()
     seed=1
-    for current_config in range(n_configs):
+    for current_config in tqdm(range(n_configs)):
 
         np.random.seed(seed)
         random.seed(seed)
@@ -113,13 +153,21 @@ if __name__=="__main__":
             json.dump(combined_config, f)
 
         seed += 1
+    
+    # dump cs as dict
+    from ConfigSpace.read_and_write import json as jason
+
+    with open("cs_mlpnet.txt", "w") as f:
+        print(cs_mlpnet, file=f)
+
+    with open("cs_mlpnet.json", "w") as f:
+        f.write(jason.write(cs_mlpnet))
+
     """
-
-
     # shaped resnet
     cs_resnet = get_resnet_configspace()
     seed = 1
-    for current_config in range(n_configs):
+    for current_config in tqdm(range(n_configs)):
 
         np.random.seed(seed)
         random.seed(seed)
@@ -145,3 +193,13 @@ if __name__=="__main__":
             json.dump(combined_config, f)
 
         seed +=1
+
+    # dump cs as dict
+    from ConfigSpace.read_and_write import json as jason
+
+    with open("cs_resnet.txt", "w") as f:
+        print(cs_resnet, file=f)
+    
+    with open("cs_resnet.json", "w") as f:
+        f.write(jason.write(cs_resnet))
+    """

@@ -25,7 +25,6 @@ class CreateDataLoader(PipelineNode):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         # prepare data
-        drop_last = hyperparameter_config['batch_size'] < train_indices.shape[0]
         X, Y = to_dense(X), to_dense(Y)
         X, Y = torch.from_numpy(X).float(), torch.from_numpy(Y)
 
@@ -34,8 +33,7 @@ class CreateDataLoader(PipelineNode):
             dataset=train_dataset,
             batch_size=hyperparameter_config['batch_size'], 
             sampler=SubsetRandomSampler(train_indices),
-            shuffle=False,
-            drop_last=drop_last)
+            drop_last=False)
             
         valid_loader = None
         if valid_indices is not None:

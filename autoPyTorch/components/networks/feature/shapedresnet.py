@@ -30,8 +30,8 @@ class ShapedResNet(ResNet):
                 {"num_units_%d" % (i) : num for i, num in enumerate(neuron_counts)})
         
 
-        if (config['use_dropout']):
-            dropout_shape = get_shaped_neuron_counts(config['dropout_shape'], 0, 0, 1000, config['num_groups'])
+        if (config['use_dropout'] and config["max_dropout"]>0.05):
+            dropout_shape = get_shaped_neuron_counts(config['resnet_shape'], 0, 0, 1000, config['num_groups'])
             
             dropout_shape = [dropout / 1000 * config["max_dropout"] for dropout in dropout_shape]
         
@@ -50,7 +50,6 @@ class ShapedResNet(ResNet):
         max_shake_drop_probability=(0, 1),
         max_dropout=(0, 0.8),
         resnet_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
-        dropout_shape=('funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'),
         use_dropout=(True, False),
         use_shake_shake=(True, False),
         use_shake_drop=(True, False)
@@ -75,9 +74,7 @@ class ShapedResNet(ResNet):
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "max_units", max_units)
 
         if True in use_dropout:
-            dropout_shape_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'dropout_shape', dropout_shape)
             max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
 
-            cs.add_condition(CS.EqualsCondition(dropout_shape_hp, use_dropout_hp, True))
             cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
         return cs

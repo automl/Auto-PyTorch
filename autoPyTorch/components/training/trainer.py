@@ -151,8 +151,8 @@ class Trainer(object):
             #MODIFIED
             if (self.log_every_n_points is not None) and (self.counter>=self.log_every_n_points):
                 train_metrics_results = self.evaluate(train_loader)
-                self.logger.info("TRAINER: Logging at step", str(self.current_datapoint), ", counter is at", str(self.counter))
-                self.logger.info("TRAINER: Points seen in current epoch", str(N) ,"of", str(len(train_loader.dataset)))
+                print("TRAINER: Logging at step", str(self.current_datapoint), ", counter is at", str(self.counter))
+                print("TRAINER: Points seen in current epoch", str(N) ,"of", str(len(train_loader.dataset)))
                 log = dict()
                 log["model_parameters"] = model_parameters
                 log["loss"] = loss_sum/N
@@ -166,6 +166,8 @@ class Trainer(object):
 
                     if self.val_loader is not None:
                         log['val_' + metric.name] = valid_metric_results[i]
+
+                print("TRAINER: Loss/Acc.:", log["loss"], log["train_accuracy"])
                 
                 if self.eval_additional_logs_each_epoch:
                     for additional_log in self.log_functions:

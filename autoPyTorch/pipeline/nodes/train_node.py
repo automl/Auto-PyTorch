@@ -89,10 +89,7 @@ class TrainNode(PipelineNode):
             logdir=pipeline_config["result_logger_dir"])
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
 
-        if pipeline_config["log_every_n_datapoints"] is None:
-            model_params = self.count_parameters(network)
-        else:
-            model_params = 1
+        model_params = self.count_parameters(network)
 
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained

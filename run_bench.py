@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import openml
 import json
+import time
 import random
 import torch
 
@@ -57,14 +58,48 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get data
-    openml_task_ids = [3, 12, 31, 53, 3917, 7592, 9952, 9977, 9981, 10101, 14965, 146195, 146821, 146822, 146825, 167119, 167120]
+    openml_task_ids = [3, 12, 31, 53, 3917, 7592, 9952, 9977, 9981, 10101, 14965, 146195, 146821, 146822, 
+            #146825, # fashion mnist
+            167119, 167120]
+
+    # Get IDs with proper splits (ty matze)
+    new_task_ids = [] 
+    for task_id in openml_task_ids:
+        task = openml.tasks.get_task(task_id)
+        try:
+            time.sleep(args.run_id*0.01)
+            tasks_with_same_dataset = openml.tasks.list_tasks( data_id=task.dataset_id, task_type_id=1, output_format='dataframe', ) 
+            tasks_with_same_dataset = tasks_with_same_dataset.query("estimation_procedure == '33% Holdout set'" ) 
+            if 'evaluation_measures' in tasks_with_same_dataset.columns: 
+                tasks_with_same_dataset=tasks_with_same_dataset.query('evaluation_measures != evaluation_measures') 
+            else:
+                pass 
+        except Exception:
+            try:
+                time.sleep(args.run_id*0.01)
+                tasks_with_same_dataset = openml.tasks.list_tasks( data_id=task.dataset_id, task_type_id=1, output_format='dataframe', )
+                tasks_with_same_dataset = tasks_with_same_dataset.query("estimation_procedure == '33% Holdout set'" )
+                if 'evaluation_measures' in tasks_with_same_dataset.columns:
+                    tasks_with_same_dataset=tasks_with_same_dataset.query('evaluation_measures != evaluation_measures')
+                else:
+                    pass
+            except Exception:
+                print(task)
+                if len(tasks_with_same_dataset) > 1: 
+                    raise ValueError(task) 
+                elif len(tasks_with_same_dataset) == 0: 
+                    raise ValueError(task)
+        
+        new_task_ids.append(tasks_with_same_dataset['tid'].iloc[0]) 
+
+    openml_task_ids = new_task_ids
     openml_task_id = openml_task_ids[args.run_id % len(openml_task_ids)]
     task = openml.tasks.get_task(task_id=openml_task_id)
     X, y = task.get_X_and_y()
     ind_train, ind_test = task.get_train_test_split_indices()
 
     # Settings
-    val_split = 0.3
+    val_split = 0.33
 
     # arg dependent
     if args.logging=="step":
@@ -79,6 +114,8 @@ if __name__ == "__main__":
         hyperparameter_config_dir = "configs/refit/bench_configs/shapedresnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
     elif args.architecture=="shapedmlpnet":
         hyperparameter_config_dir = "configs/refit/bench_configs/shapedmlpnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
+
+    print("Using config", str(args.run_id//len(openml_task_ids)), "for task", openml_task_id, "and run id", args.run_id)
 
     # Search space updates
     search_space_updates = HyperparameterSearchSpaceUpdates()
@@ -112,6 +149,7 @@ if __name__ == "__main__":
     sampling_space["random_seed"] = seed
     sampling_space["budget_type"] = "epochs"
     sampling_space["refit_validation_split"] = val_split
+    sampling_space["validation_split"] = val_split
     sampling_space["log_level"] = "info"
     sampling_space["run_id"] = args.run_id
     sampling_space["task_id"] = 0
@@ -160,13 +198,13 @@ if __name__ == "__main__":
 
     # Print Infos
     info = {
-            "OpenML_task_id" : openml_task_id,
+            "OpenML_task_id" : int(openml_task_id),
             "test_split" : len(y[ind_test])/(len(y[ind_train])+len(y[ind_test])),
             "budget": budget,
-            "seed" : seed,
-            "instances" : len(y[ind_train])+len(y[ind_test]),
-            "classes": len(np.unique(y[ind_train])),
-            "features": X.shape[1]
+            "seed" : int(seed),
+            "instances" : int(len(y[ind_train])+len(y[ind_test])),
+            "classes": int(len(np.unique(y[ind_train]))),
+            "features": int(X.shape[1])
             }
 
     print("Autonet config:", autonet.get_current_autonet_config())
@@ -181,8 +219,8 @@ if __name__ == "__main__":
                             budget=budget)
 
     # Write to json
-    results["openml_task_id"] = openml_task_id
-    results["run_id"] = args.run_id
+    results["openml_task_id"] = int(openml_task_id)
+    results["run_id"] = int(args.run_id)
     results["validation_split"] = sampling_space["refit_validation_split"]
 
     pop_keys = []
