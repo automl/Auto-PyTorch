@@ -117,7 +117,7 @@ class ImageAugmentation(PipelineNode):
         # cutout
         if hyperparameter_config['cutout']:
             n_holes = hyperparameter_config['cutout_holes']
-            transform_list.append(Cutout(n_holes=1, length=hyperparameter_config['length'], probability=0.5))
+            transform_list.append(Cutout(n_holes=1, length=hyperparameter_config['length'], probability=1))
 
 
         train_transform = transforms.Compose(transform_list)
