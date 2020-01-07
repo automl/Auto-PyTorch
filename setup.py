@@ -18,7 +18,7 @@ add_presets = []
 for dirname, subdirs, files in os.walk(os.path.join('autoPyTorch', 'core', 'presets')):
     add_presets.extend([os.path.join(dirname, f) for f in files])
 
-
+# noinspection PyInterpreter
 setuptools.setup(
     name="autoPyTorch",
     version="0.0.2",

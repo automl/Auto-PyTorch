@@ -1,4 +1,5 @@
 setuptools
+Pillow
 Cython
 netifaces
 numpy

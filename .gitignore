@@ -49,3 +49,6 @@ tests.ipynb
 # venv
 env/
 venv/
+
+#PyCharm
+.idea/
