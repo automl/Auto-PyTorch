@@ -6,7 +6,7 @@ import unittest
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
 
-from autoPyTorch.components.metrics.standard_metrics import accuracy, auc_metric, mean_distance
+from autoPyTorch.components.metrics.standard_metrics import accuracy, auc_metric, mae
 
 class TestMetricSelectorMethods(unittest.TestCase):
 
@@ -18,7 +18,7 @@ class TestMetricSelectorMethods(unittest.TestCase):
         selector = pipeline[MetricSelector.get_name()]
         selector.add_metric("auc", auc_metric)
         selector.add_metric("accuracy", accuracy)
-        selector.add_metric("mean", mean_distance)
+        selector.add_metric("mean", mae)
 
         pipeline_config = pipeline.get_pipeline_config(optimize_metric="accuracy", additional_metrics=['auc', 'mean'])
         pipeline.fit_pipeline(pipeline_config=pipeline_config)
@@ -27,7 +27,7 @@ class TestMetricSelectorMethods(unittest.TestCase):
         selected_additional_metrics = selector.fit_output['additional_metrics']
 
         self.assertEqual(selected_optimize_metric.metric, accuracy)
-        self.assertSetEqual(set(x.metric for x in selected_additional_metrics), set([auc_metric, mean_distance]))
+        self.assertSetEqual(set(x.metric for x in selected_additional_metrics), set([auc_metric, mae]))
 
 
 
