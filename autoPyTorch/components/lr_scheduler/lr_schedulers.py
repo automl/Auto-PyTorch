@@ -1,23 +1,11 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-This file contains the different learning rate schedulers of AutoNet.
-"""
-
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
-import numpy as np
 import math
+import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 import torch
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.optim import Optimizer
 
-import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
-
-__author__ = "Max Dippel, Michael Burkart and Matthias Urban"
-__version__ = "0.0.1"
-__license__ = "BSD"
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 
 
 class AutoNetLearningRateSchedulerBase(object):

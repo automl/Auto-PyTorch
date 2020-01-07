@@ -1,7 +1,6 @@
-from collections import Counter
 import random
-
 import numpy as np
+from collections import Counter
 
 from autoPyTorch.components.ensembles.abstract_ensemble import AbstractEnsemble
 
