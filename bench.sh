@@ -17,7 +17,7 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 source env/bin/activate
 
 # Array jobs 
-python3 run_bench_with_offset.py --run_id $SLURM_ARRAY_TASK_ID --offset 96000 --architecture shapedmlpnet --logging epoch
+python3 run_bench_with_offset.py --run_id $SLURM_ARRAY_TASK_ID --offset 112000 --architecture shapedmlpnet --logging epoch
 
 # Done
 echo "DONE";
