@@ -155,7 +155,7 @@ class AutoNet():
             self.refit(X_train, Y_train, X_valid, Y_valid)
         return self.fit_result
 
-    def refit(self, X_train, Y_train, X_valid=None, Y_valid=None, hyperparameter_config=None, autonet_config=None, budget=None, rescore=False):
+    def refit(self, X_train, Y_train, X_valid=None, Y_valid=None, hyperparameter_config=None, autonet_config=None, budget=None, rescore=False, **kwargs):
         """Refit AutoNet to given hyperparameters. This will skip hyperparameter search.
         
         Arguments:
@@ -198,7 +198,7 @@ class AutoNet():
         autonet_config['increase_number_of_trained_datasets'] = False #if training multiple datasets else ignored
 
         return self.pipeline.fit_pipeline(pipeline_config=autonet_config, refit=refit_data,
-                                          X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid)
+                                          X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid, **kwargs)
 
     def predict(self, X, return_probabilities=False):
         """Predict the targets for a data matrix X.

@@ -141,6 +141,23 @@ class TrainNode(PipelineNode):
                     for additional_log in trainer.log_functions:
                         log[additional_log.name] = additional_log(trainer.model, epoch)
 
+            # callbacks
+            if pipeline_config["callbacks"] is not None:
+                """
+                Here you want probably want something that takes log as argument:
+                
+                if isinstance(pipeline_config["callback"], list):
+                   for callback in pipeline_config["callback"]:
+                        ...
+                else:
+                   stop_training = pipeline_config["callback"](log)
+
+
+                log contains "'train_' + metric.name" and "'val_' + metric.name" of the last epoch and the loss, e.g. 
+                log = {"val_accuracy", "loss", "train_accuracy", "model_parameters"}
+                """
+                raise NotImplementedError
+
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training
 
@@ -258,7 +275,9 @@ class TrainNode(PipelineNode):
                 info="Whether to report the best performance occurred to BOHB"),
             #MODIFIED
             ConfigOption("log_every_n_datapoints", default=None, type=int,
-                info="Log every n datapoints")
+                info="Log every n datapoints"),
+            ConfigOption("callbacks", default=None,
+                info="Callbacks take a log ")
         ]
         for name, technique in self.training_techniques.items():
             options += technique.get_pipeline_config_options()
