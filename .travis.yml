@@ -36,8 +36,6 @@ matrix:
   #  env: DISTRIB="conda" TEST_DIST="true" PYTHON="3.7"
   - os: linux
     env: DISTRIB="conda" EXAMPLES="true" PYTHON=3.7"
-  - os: linux
-    env: DISTRIB="conda" RUN_FLAKE8="true" SKIP_TESTS="true"
 
 
   # Temporarily disabling OSX builds
