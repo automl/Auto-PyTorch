@@ -3,7 +3,7 @@ pip --version
 pip install nose pep8 codecov coverage flake8
 
 # Install the packages in the correct order specified by the requirements.txt file
-pip freeze > requirements.txt
+#pip freeze > requirements.txt
 cat requirements.txt | xargs -n 1 -L 1 pip install
 
 # Debug output to know all exact package versions!
