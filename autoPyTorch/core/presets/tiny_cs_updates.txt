@@ -1,7 +1,5 @@
 CreateDataLoader batch_size [125]
 InitializationSelector initializer:initialize_bias ["No"]
-LearningrateSchedulerSelector cosine_annealing:T_max [10]
-LearningrateSchedulerSelector cosine_annealing:T_mult [2]
 NetworkSelector shapedresnet:activation ["relu"]
 NetworkSelector shapedresnet:max_shake_drop_probability [0.0,0.000001]
 NetworkSelector shapedresnet:resnet_shape ["brick"]
