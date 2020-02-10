@@ -48,8 +48,6 @@ class LossModuleSelector(PipelineNode):
             weight_strategy {function} -- callable that computes label weights
         """
 
-        if (not issubclass(loss_module, _Loss)):
-            raise ValueError("loss module has to be a subclass of torch.nn.modules.loss._Loss (all pytorch loss modules)")
         self.loss_modules[name] = AutoNetLossModule(loss_module, weight_strategy, requires_target_class_labels)
 
     def remove_loss_module(self, name):
@@ -61,7 +59,7 @@ class LossModuleSelector(PipelineNode):
 
         possible_loss_modules = set(pipeline_config["loss_modules"]).intersection(self.loss_modules.keys())
         cs.add_hyperparameter(CSH.CategoricalHyperparameter('loss_module', list(possible_loss_modules)))
-        self._check_search_space_updates()
+        self._check_search_space_updates(self.loss_modules.keys(), "*")
         return cs
         
 
