@@ -24,12 +24,12 @@ class Imputation(PipelineNode):
             return {'imputation_preprocessor': None, 'all_nan_columns': None}
 
         # delete all nan columns
-        all_nan = np.all(np.isnan(X[train_indices]), axis=0)
+        all_nan = np.all(np.isnan(X), axis=0)
         X = X[:, ~all_nan]
         dataset_info.categorical_features = [dataset_info.categorical_features[i] for i, is_nan in enumerate(all_nan) if not is_nan]
 
         strategy = hyperparameter_config['strategy']
-        fill_value = int(np.nanmax(X[train_indices])) + 1 if not dataset_info.is_sparse else 0
+        fill_value = int(np.nanmax(X)) + 1 if not dataset_info.is_sparse else 0
         numerical_imputer = SimpleImputer(strategy=strategy, copy=False)
         categorical_imputer = SimpleImputer(strategy='constant', copy=False, fill_value=fill_value)
         transformer = ColumnTransformer(
