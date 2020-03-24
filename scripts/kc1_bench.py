@@ -4,10 +4,10 @@
 #SBATCH -t 5-00:00                                      # time (D-HH:MM)
 #SBATCH -N 1                                            # number of nodes
 #SBATCH -c 1                                            # number of cores
-#SBATCH -a 1-16000%500                                  # array size
+#SBATCH -a 1-10000%500                                  # array size
 #SBATCH -o logs/cluster/%x.%N.%j.out                    # STDOUT  (the folder log has to be created prior to running or this won't work)
 #SBATCH -e logs/cluster/%x.%N.%j.err                    # STDERR  (the folder log has to be created prior to running or this won't work)
-#SBATCH -J openml_lc                                    # sets the job name. If not specified, the file name will be used as job name
+#SBATCH -J openml_btc                                    # sets the job name. If not specified, the file name will be used as job name
 # Print some information about the job to STDOUT
 echo "Workingdir: $PWD";
 echo "Started at $(date)";
@@ -17,7 +17,7 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 source env/bin/activate
 
 # Array jobs 
-python3 run_bench_with_offset.py --run_id $SLURM_ARRAY_TASK_ID --offset 112000 --architecture shapedmlpnet --logging epoch
+python3 run_kc1.py --run_id $SLURM_ARRAY_TASK_ID --offset 0 --architecture shapedmlpnet --logging epoch
 
 # Done
 echo "DONE";

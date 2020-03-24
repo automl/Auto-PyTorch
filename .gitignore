@@ -52,3 +52,4 @@ env/
 # configs
 configs/refit/step_logging_test/config_*
 configs/refit/bench_configs/shaped*
+configs/refit/bench_configs/bench*

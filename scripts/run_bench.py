@@ -1,3 +1,5 @@
+import os
+import sys
 import argparse
 import numpy as np
 import openml
@@ -5,7 +7,6 @@ import json
 import time
 import random
 import torch
-from sklearn.model_selection import train_test_split
 
 import ConfigSpace as cs
 from autoPyTorch import AutoNetClassification
@@ -13,12 +14,6 @@ from autoPyTorch import HyperparameterSearchSpaceUpdates
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch.components.metrics.additional_logs import *
 
-
-def resplit(X, y):
-    test_split = 0.33
-    indices = np.array(range(len(y)))
-    ind_train, ind_test = train_test_split(indices, stratify=y, test_size=test_split, shuffle=True)
-    return ind_train, ind_test
 
 def get_sampling_space():
     sampling_space = dict()
@@ -35,17 +30,6 @@ def get_sampling_space():
     sampling_space["embeddings"] = ['learned']
     sampling_space["initialization_methods"] = ['default', 'sparse']
     sampling_space["loss_modules"] = ['cross_entropy_weighted']
-    sampling_space["best_over_epochs"] = False
-    sampling_space["budget_type"] = "epochs"
-    sampling_space["refit_validation_split"] = 0.33
-    sampling_space["validation_split"] = 0.33
-    sampling_space["log_level"] = "info"
-    sampling_space["task_id"] = 0
-    sampling_space["use_tensorboard_logger"] = True
-    sampling_space["full_eval_each_epoch"] = True
-    sampling_space["log_every_n_datapoints"] = None
-    sampling_space["optimize_metric"] = "accuracy"
-    sampling_space["additional_metrics"] = ["cross_entropy", "balanced_accuracy"]
     return sampling_space
 
 
@@ -66,30 +50,74 @@ def seed_everything(seed):
     torch.manual_seed(seed)
 
 
-def get_openml_task_ids():
-    openml_task_ids = [167149, 167152, 167161, 167168, 167181, 126025, 167190, 126026, 167185, # 0.3 split (23)
-                       167184, 126029, 167201, 189905, 189906, 189909, 167083, 189908, 167104,
-                       189865, 189862, 189866, 189873, 167200,
-                       189354, 3945, 7593, 146212, 34539, 168331, 168330, 168335, 168329, 168868, #0.1 split (12)
-                       168908, 168910]
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Fit a random config on an openml task')
+    parser.add_argument("--run_id", type=int, help="An id for the run.")
+    parser.add_argument("--architecture", type=str, choices=["shapedresnet", "shapedmlpnet"])
+    parser.add_argument("--logging", type=str, choices=["step", "epoch"])
+    args = parser.parse_args()
 
-    resplit_tasks = [189354, 3945, 7593, 146212, 34539, 168332, 168331, 168330, 168337, 168335,
-                     168338, 168329, 168868, 168908, 168910, 168909]
-    
-    return openml_task_ids, resplit_tasks
+    # Get data
+    openml_task_ids = [3, 12, 31, 53, 3917, 7592, 9952, 9977, 9981, 10101, 14965, 146195, 146821, 146822, 
+            #146825, # fashion mnist
+            167119, 167120]
 
+    # Get IDs with proper splits (ty matze)
+    new_task_ids = [] 
+    for task_id in openml_task_ids:
+        task = openml.tasks.get_task(task_id)
+        try:
+            time.sleep(args.run_id*0.01)
+            tasks_with_same_dataset = openml.tasks.list_tasks( data_id=task.dataset_id, task_type_id=1, output_format='dataframe', ) 
+            tasks_with_same_dataset = tasks_with_same_dataset.query("estimation_procedure == '33% Holdout set'" ) 
+            if 'evaluation_measures' in tasks_with_same_dataset.columns: 
+                tasks_with_same_dataset=tasks_with_same_dataset.query('evaluation_measures != evaluation_measures') 
+            else:
+                pass 
+        except Exception:
+            try:
+                time.sleep(args.run_id*0.01)
+                tasks_with_same_dataset = openml.tasks.list_tasks( data_id=task.dataset_id, task_type_id=1, output_format='dataframe', )
+                tasks_with_same_dataset = tasks_with_same_dataset.query("estimation_procedure == '33% Holdout set'" )
+                if 'evaluation_measures' in tasks_with_same_dataset.columns:
+                    tasks_with_same_dataset=tasks_with_same_dataset.query('evaluation_measures != evaluation_measures')
+                else:
+                    pass
+            except Exception:
+                print(task)
+                if len(tasks_with_same_dataset) > 1: 
+                    raise ValueError(task) 
+                elif len(tasks_with_same_dataset) == 0: 
+                    raise ValueError(task)
+        
+        new_task_ids.append(tasks_with_same_dataset['tid'].iloc[0]) 
 
-def load_openml_data(openml_task_id, resplit_tasks):
+    openml_task_ids = new_task_ids
+    openml_task_id = openml_task_ids[args.run_id % len(openml_task_ids)]
     task = openml.tasks.get_task(task_id=openml_task_id)
     X, y = task.get_X_and_y()
     ind_train, ind_test = task.get_train_test_split_indices()
 
-    if openml_task_id in resplit_tasks:
-       ind_train, ind_test = resplit(X, y)
-    
-    return X, y, ind_train, ind_test
+    # Settings
+    val_split = 0.33
 
-def get_search_space_updates():
+    # arg dependent
+    if args.logging=="step":
+        log_every_n_datapoints = 1e4
+        budget = np.ceil(1e6 / (len(y[ind_train]) * (1-val_split)))
+    else:
+        log_every_n_datapoints = None
+        budget = 50
+    logdir = "logs/bench_results_" + args.logging + "_" + args.architecture  + "/run_" + str(args.run_id) + "_" + str(openml_task_id)
+
+    if args.architecture=="shapedresnet":
+        hyperparameter_config_dir = "configs/refit/bench_configs/shapedresnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
+    elif args.architecture=="shapedmlpnet":
+        hyperparameter_config_dir = "configs/refit/bench_configs/shapedmlpnet/config_" + str(args.run_id//len(openml_task_ids)) + ".json"
+
+    print("Using config", str(args.run_id//len(openml_task_ids)), "for task", openml_task_id, "and run id", args.run_id)
+
+    # Search space updates
     search_space_updates = HyperparameterSearchSpaceUpdates()
     search_space_updates.append(node_name="LearningrateSchedulerSelector",
                                 hyperparameter="cosine_annealing:T_max",
@@ -110,51 +138,33 @@ def get_search_space_updates():
     search_space_updates.append(node_name="NetworkSelector",
                                 hyperparameter="shapedresnet:blocks_per_group",
                                 value_range=[1,4])
-    return search_space_updates
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Fit a random config on an openml task')
-    parser.add_argument("--run_id", type=int, help="An id for the run.")
-    parser.add_argument("--offset", type=int, help="An offset to get larger array numbers than allowed by the cluster", default=0)
-    parser.add_argument("--seed", type=int)
-    parser.add_argument("--budget", type=int)
-    parser.add_argument("--config_dir", type=str)
-    parser.add_argument("--root_logdir", type=str)
-    args = parser.parse_args()
-
-    # args
-    run_id = args.run_id + args.offset
-    seed = args.seed
-    budget = args.budget
-    root_logdir = args.root_logdir
-    config_dir = args.config_dir
 
     # Seed
+    seed = 1
     seed_everything(seed)
-
-    # Get data
-    openml_task_ids, resplit_tasks = get_openml_task_ids()
-    openml_task_id = openml_task_ids[run_id % len(openml_task_ids)]
-    X, y, ind_train, ind_test = load_openml_data(openml_task_id, resplit_tasks)
-
-    # Settings
-    logdir = os.path.join(root_logdir, "budget_"+int(budget), "seed_"+int(seed), "run_" + str(run_id) + "_" + str(openml_task_id))
-    hyperparameter_config_dir = os.path.join(config_dir, "config_"+ str(run_id//len(openml_task_ids)) + ".json")
-
-    print("Using config", str(run_id//len(openml_task_ids)), "for task", openml_task_id, "and run id", run_id)
-
+    
     # Sample config (autonet)
-    search_space_updates = get_search_space_updates()
     sampling_space = get_sampling_space()
+    sampling_space["best_over_epochs"] = False
     sampling_space["random_seed"] = seed
-    sampling_space["run_id"] = run_id
+    sampling_space["budget_type"] = "epochs"
+    sampling_space["refit_validation_split"] = val_split
+    sampling_space["validation_split"] = val_split
+    sampling_space["log_level"] = "info"
+    sampling_space["run_id"] = args.run_id
+    sampling_space["task_id"] = 0
+    sampling_space["use_tensorboard_logger"] = True
     sampling_space["result_logger_dir"] = logdir
+    sampling_space["full_eval_each_epoch"] = True
+    sampling_space["log_every_n_datapoints"] = log_every_n_datapoints
+    sampling_space["optimize_metric"] = "accuracy"
+    sampling_space["additional_metrics"] = ["cross_entropy", "balanced_accuracy"]
     sampling_space["additional_logs"] = [test_result.__name__, test_cross_entropy.__name__, test_balanced_accuracy.__name__]
 
     # Initialize Autonet
     autonet = AutoNetClassification(**sampling_space,
                                     hyperparameter_search_space_updates=search_space_updates)
+
 
     # Add additional logs
     gl = GradientLogger()
@@ -210,7 +220,7 @@ if __name__ == "__main__":
 
     # Write to json
     results["openml_task_id"] = int(openml_task_id)
-    results["run_id"] = int(run_id)
+    results["run_id"] = int(args.run_id)
     results["validation_split"] = sampling_space["refit_validation_split"]
 
     pop_keys = []
