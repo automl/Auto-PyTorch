@@ -77,6 +77,7 @@ class AutoNetImageData(AutoNet):
         from autoPyTorch.components.networks.image.densenet_flexible import DenseNetFlexible
         from autoPyTorch.components.networks.image.resnet152 import ResNet152
         from autoPyTorch.components.networks.image.darts.model import DARTSImageNet
+        from autoPyTorch.components.networks.image.resnet9 import ResNet9
 
         from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, AdamWOptimizer, SgdOptimizer, RMSpropOptimizer
         from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerCosineAnnealingWithRestartsLR, SchedulerNone, \
@@ -93,8 +94,9 @@ class AutoNetImageData(AutoNet):
         net_selector.add_network('resnet152', ResNet152)
         net_selector.add_network('darts', DARTSImageNet)
         net_selector.add_network('mobilenet', MobileNet)
-        net_selector._apply_search_space_update('resnet:nr_main_blocks', [2, 4], log=False)
-        net_selector._apply_search_space_update('resnet:widen_factor_1', [0.5, 8], log=True)
+        net_selector.add_network('resnet9', ResNet9)
+        #net_selector._apply_search_space_update('resnet:nr_main_blocks', [2, 4], log=False)
+        #net_selector._apply_search_space_update('resnet:widen_factor_1', [0.5, 8], log=True)
 
         opt_selector = pipeline[OptimizerSelector.get_name()]
         opt_selector.add_optimizer('adam', AdamOptimizer)
@@ -113,18 +115,18 @@ class AutoNetImageData(AutoNet):
         lr_selector.add_lr_scheduler('exponential',      SchedulerExponentialLR)
         lr_selector.add_lr_scheduler('none', SchedulerNone)
         
-        lr_selector._apply_search_space_update('step:step_size', [1, 100], log=True)
-        lr_selector._apply_search_space_update('step:gamma', [0.001, 0.99], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_max', [1, 100], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_mult', [1., 2.], log=False)
+        #lr_selector._apply_search_space_update('step:step_size', [1, 100], log=True)
+        #lr_selector._apply_search_space_update('step:gamma', [0.001, 0.99], log=True)
+        #lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_max', [1, 100], log=True)
+        #lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_mult', [1., 2.], log=False)
         
         train_node = pipeline[SimpleTrainNode.get_name()]
-        #train_node.add_training_technique("early_stopping", EarlyStopping)
+        train_node.add_training_technique("early_stopping", EarlyStopping)
         train_node.add_batch_loss_computation_technique("mixup", Mixup)
 
         data_node = pipeline[CreateImageDataLoader.get_name()]
 
-        data_node._apply_search_space_update('batch_size', [32, 160], log=True)
+        #data_node._apply_search_space_update('batch_size', [32, 160], log=True)
 
         augment_node = pipeline[ImageAugmentation.get_name()]
         augment_node._apply_search_space_update('augment', [False, True])

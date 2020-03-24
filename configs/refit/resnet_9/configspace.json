@@ -1,0 +1,215 @@
+{
+  "hyperparameters": [
+    {
+      "name": "CreateImageDataLoader:batch_size",
+      "type": "uniform_int",
+      "log": true,
+      "lower": 32,
+      "upper": 500,
+      "default": 126
+    },
+    {
+      "name": "ImageAugmentation:augment",
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "name": "ImageAugmentation:cutout",
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "name": "LossModuleSelectorIndices:loss_module",
+      "type": "categorical",
+      "choices": [
+        "cross_entropy"
+      ],
+      "default": "cross_entropy"
+    },
+    {
+      "name": "NetworkSelectorDatasetInfo:network",
+      "type": "categorical",
+      "choices": [
+        "resnet9"
+      ],
+      "default": "resnet9"
+    },
+    {
+      "name": "OptimizerSelector:optimizer",
+      "type": "categorical",
+      "choices": [
+        "sgd"
+      ],
+      "default": "sgd"
+    },
+    {
+      "name": "OptimizerSelector:sgd:learning_rate",
+      "type": "normal_float",
+      "log": true,
+      "mu": 0.025,
+      "sigma": 0.05,
+      "default": 0.025
+    },
+    {
+      "name": "OptimizerSelector:sgd:weight_decay",
+      "type": "normal_float",
+      "log": true,
+      "mu": 0.0003,
+      "sigma": 0.0006,
+      "default": 0.0003
+    },
+    {
+      "name": "SimpleLearningrateSchedulerSelector:lr_scheduler",
+      "type": "categorical",
+      "choices": [
+        "cosine_annealing"
+      ],
+      "default": "cosine_annealing"
+    },
+    {
+      "name": "SimpleTrainNode:batch_loss_computation_technique",
+      "type": "categorical",
+      "choices": [
+        "standard",
+        "mixup"
+      ],
+      "default": "standard"
+    },
+    {
+      "name": "ImageAugmentation:autoaugment",
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "name": "ImageAugmentation:cutout_holes",
+      "type": "uniform_int",
+      "log": false,
+      "lower": 1,
+      "upper": 3,
+      "default": 2
+    },
+    {
+      "name": "ImageAugmentation:fastautoaugment",
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "name": "ImageAugmentation:length",
+      "type": "uniform_int",
+      "log": false,
+      "lower": 0,
+      "upper": 20,
+      "default": 10
+    },
+    {
+      "name": "OptimizerSelector:sgd:momentum",
+      "type": "uniform_float",
+      "log": false,
+      "lower": 0.1,
+      "upper": 0.99,
+      "default": 0.545
+    },
+    {
+      "name": "SimpleLearningrateSchedulerSelector:cosine_annealing:T_max",
+      "type": "uniform_int",
+      "log": false,
+      "lower": 10,
+      "upper": 500,
+      "default": 255
+    },
+    {
+      "name": "SimpleLearningrateSchedulerSelector:cosine_annealing:eta_min",
+      "type": "constant",
+      "value": 1e-08
+    },
+    {
+      "name": "SimpleTrainNode:mixup:alpha",
+      "type": "uniform_float",
+      "log": false,
+      "lower": 0.0,
+      "upper": 1.0,
+      "default": 1.0
+    }
+  ],
+  "conditions": [
+    {
+      "child": "ImageAugmentation:autoaugment",
+      "parent": "ImageAugmentation:augment",
+      "type": "EQ",
+      "value": true
+    },
+    {
+      "child": "ImageAugmentation:fastautoaugment",
+      "parent": "ImageAugmentation:augment",
+      "type": "EQ",
+      "value": true
+    },
+    {
+      "child": "ImageAugmentation:cutout_holes",
+      "parent": "ImageAugmentation:cutout",
+      "type": "EQ",
+      "value": true
+    },
+    {
+      "child": "ImageAugmentation:length",
+      "parent": "ImageAugmentation:cutout",
+      "type": "EQ",
+      "value": true
+    },
+    {
+      "child": "OptimizerSelector:sgd:learning_rate",
+      "parent": "OptimizerSelector:optimizer",
+      "type": "EQ",
+      "value": "sgd"
+    },
+    {
+      "child": "OptimizerSelector:sgd:weight_decay",
+      "parent": "OptimizerSelector:optimizer",
+      "type": "EQ",
+      "value": "sgd"
+    },
+    {
+      "child": "OptimizerSelector:sgd:momentum",
+      "parent": "OptimizerSelector:optimizer",
+      "type": "EQ",
+      "value": "sgd"
+    },
+    {
+      "child": "SimpleLearningrateSchedulerSelector:cosine_annealing:T_max",
+      "parent": "SimpleLearningrateSchedulerSelector:lr_scheduler",
+      "type": "EQ",
+      "value": "cosine_annealing"
+    },
+    {
+      "child": "SimpleLearningrateSchedulerSelector:cosine_annealing:eta_min",
+      "parent": "SimpleLearningrateSchedulerSelector:lr_scheduler",
+      "type": "EQ",
+      "value": "cosine_annealing"
+    },
+    {
+      "child": "SimpleTrainNode:mixup:alpha",
+      "parent": "SimpleTrainNode:batch_loss_computation_technique",
+      "type": "EQ",
+      "value": "mixup"
+    }
+  ],
+  "forbiddens": [],
+  "python_module_version": "0.4.11",
+  "json_format_version": 0.1
+}

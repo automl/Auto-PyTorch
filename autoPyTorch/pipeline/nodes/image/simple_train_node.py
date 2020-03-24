@@ -167,19 +167,24 @@ class SimpleTrainNode(PipelineNode):
 
             self.logger.debug("Epoch: " + str(epoch) + " : " + str(log))
 
+            if tensorboard_logging: #and time.time() - last_log_time >= pipeline_config['tensorboard_min_log_interval']:
+                import tensorboard_logger as tl
+                worker_path = 'Train/'
+                tl.log_value(worker_path + 'budget', float(budget), epoch)
+                for name, value in log.items():
+                    #tl.log_value(worker_path + name, float(value), epoch)
+                    if isinstance(value, (list, np.ndarray)):
+                        for ind, val in enumerate(value):
+                            tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(epoch))
+                    else:
+                        tl.log_value(worker_path + name, float(value), int(epoch))
+                last_log_time = time.time()
+
             if budget_type == 'epochs' and epoch + 1 >= budget:
                 break
 
             if stop_training:
                 break
-
-            if tensorboard_logging and time.time() - last_log_time >= pipeline_config['tensorboard_min_log_interval']:
-                import tensorboard_logger as tl
-                worker_path = 'Train/'
-                tl.log_value(worker_path + 'budget', float(budget), epoch)
-                for name, value in log.items():
-                    tl.log_value(worker_path + name, float(value), epoch)
-                last_log_time = time.time()
             
 
         # wrap up
@@ -201,7 +206,12 @@ class SimpleTrainNode(PipelineNode):
             worker_path = 'Train/'
             tl.log_value(worker_path + 'budget', float(budget), epoch)
             for name, value in final_log.items():
-                tl.log_value(worker_path + name, float(value), epoch)
+                #tl.log_value(worker_path + name, float(value), epoch)
+                if isinstance(value, (list, np.ndarray)):
+                    for ind, val in enumerate(value):
+                        tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(epoch))
+                else:
+                    tl.log_value(worker_path + name, float(value), int(epoch))
 
         if trainer.latest_checkpoint:
             final_log['checkpoint'] = trainer.latest_checkpoint

@@ -18,18 +18,10 @@ source env/bin/activate
 
 # Variables
 SEED=1
-BUDGET=25     # 12, 25, 50
+BUDGET=50
 
 # Array jobs
-# 1-17500
-python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 0 --seed $SEED --budget $BUDGET --config_dir configs/refit/bench_configs/bench_2k --root_logdir logs/shapedmlp_2k
-# 17500-35000
-python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 17500 --seed $SEED --budget $BUDGET --config_dir configs/refit/bench_configs/bench_2k --root_logdir logs/shapedmlp_2k
-# 35000-52500
-python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 35000 --seed $SEED --budget $BUDGET --config_dir configs/refit/bench_configs/bench_2k --root_logdir logs/shapedmlp_2k
-# 52500-70000
-python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 52500 --seed $SEED --budget $BUDGET --config_dir configs/refit/bench_configs/bench_2k --root_logdir logs/shapedmlp_2k
-
+python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 0 --seed $SEED --budget $BUDGET --config_root_dir configs/refit/resnet_9 --root_logdir logs/resnet_9 --device_type gpu --dataloader_worker 2
 
 # Done
 echo "DONE";

@@ -42,11 +42,11 @@ class Trainer(object):
             print("CUDA unavailable, continue using CPU.")
             self.model = model.to("cpu")
 
-        try:
-            self.criterion = criterion.to(self.device)
-        except:
-            print("No criterion specified.")
-            self.criterion = None
+        #try:
+        self.criterion = criterion.to(self.device)
+        #except:
+        #    print("No criterion specified.")
+        #    self.criterion = None
 
     def train(self, epoch, train_loader, metrics):
         '''
@@ -110,6 +110,12 @@ class Trainer(object):
 
             tmp = time.time()
 
+            #for i, metric in enumerate(metrics):
+            #    log['train_' + metric.name] = train_metrics_results[i]
+
+            #    if self.val_loader is not None:
+            #        log['val_' + metric.name] = valid_metric_results[i]
+            
             with torch.no_grad():
                 for i, metric in enumerate(metrics):
                     metric_results[i] += self.loss_computation.evaluate(metric, outputs, **criterion_kwargs) * batch_size

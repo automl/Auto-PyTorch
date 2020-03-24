@@ -119,8 +119,8 @@ class ConfigFileParser():
             self.check_validity(config)
         except Exception as e:
             print(e)
-            if throw_error_if_invalid:
-                raise e
+            #if throw_error_if_invalid:
+            #    raise e
         return config
 
     def check_validity(self, config):

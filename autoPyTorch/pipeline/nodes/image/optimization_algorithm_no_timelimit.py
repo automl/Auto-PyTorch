@@ -335,7 +335,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         job.timestamps = {'submitted': start_time, 'started': start_time, 'finished': end_time}
         job.result = res
 
-        result_logger(job)
+        #result_logger(job)
 
         return {'loss': res['loss'] if res else float('inf'),
                 'optimized_hyperparameter_config': full_config,

@@ -122,7 +122,7 @@ class LayerWiseGradientLogger(object):
         layer_wise_grads = []
 
         for layer in network.layers:
-            if isinstance(layer, nn.Linear):
+            if isinstance(layer, (nn.Linear, nn.Conv2d)):
                 layer_grads = self._get_gradient_list(layer)
                 layer_wise_grads.append(layer_grads)
 
