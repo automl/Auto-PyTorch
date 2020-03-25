@@ -13,6 +13,7 @@ import ConfigSpace as cs
 from autoPyTorch import AutoNetImageClassification
 from autoPyTorch import HyperparameterSearchSpaceUpdates
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
+from autoPyTorch.pipeline.nodes.image.network_selector_datasetinfo import NetworkSelectorDatasetInfo
 from autoPyTorch.components.metrics.additional_logs import *
 
 
@@ -34,7 +35,7 @@ def get_autonet_config():
             "log_level" : "info",
             "dataloader_worker": 2,
             "loss_modules": ["cross_entropy"],
-            "log_level":"debug"
+            "log_level":"info"
             }
     return autonet_config
 
@@ -102,7 +103,6 @@ if __name__ == "__main__":
     autonet = AutoNetImageClassification(**autonet_config)
 
     # Add additional logs
-    """
     gl = GradientLogger()
     lw_gl = LayerWiseGradientLogger()
     additional_logs = [gradient_max(gl), gradient_mean(gl), gradient_median(gl), gradient_std(gl),
@@ -127,7 +127,6 @@ if __name__ == "__main__":
     #                                                                   log_function=test_cross_entropy(autonet, X[ind_test], y[ind_test]))
     #autonet.pipeline[LogFunctionsSelector.get_name()].add_log_function(name=test_balanced_accuracy.__name__,
     #                                                                   log_function=test_balanced_accuracy(autonet, X[ind_test], y[ind_test]))
-    """
 
     # Load hyperparameters
     hyperparameter_config = load_hyperparameter_config(hyperparameter_config_dir)
@@ -155,6 +154,10 @@ if __name__ == "__main__":
                             autonet_config=autonet.get_current_autonet_config(),
                             budget=budget)
 
+    # Save model
+    network = autonet.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"]
+    torch.save(network.state_dict(), logdir + "/model_state_dict.pt")
+
     # Write to json
     results["run_id"] = int(run_id)
 
@@ -173,8 +176,6 @@ if __name__ == "__main__":
     for k,v in results["info"].items():
         if isinstance(v, (np.float32, np.float64)):
             results["info"][k] = float(v)
-
-    embed()
 
     with open(logdir + "/results_dump.json", "w") as f:
         json.dump(results, f)

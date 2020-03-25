@@ -70,10 +70,10 @@ def build_network(num_class=10):
 class ResNet9(BaseImageNet):
     def __init__(self, config, in_features, out_features, final_activation, **kwargs):
         super(ResNet9, self).__init__(config, in_features, out_features, final_activation)
-        self.model = build_network(num_class=out_features)
+        self.layers = build_network(num_class=out_features)
 
     def forward(self, x):
-        x = self.model.forward(x)
+        x = self.layers.forward(x)
         if not self.training and self.final_activation is not None:
             x = self.final_activation(x)
         return x

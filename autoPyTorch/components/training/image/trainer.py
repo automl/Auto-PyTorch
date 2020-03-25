@@ -1,7 +1,9 @@
 import time
-import os
+import os as os
+import numpy as np
 import torch
 import torch.nn as nn
+from IPython import embed
 
 import random
 from torch.autograd import Variable
@@ -11,7 +13,7 @@ from .checkpoints.save_load import save_checkpoint
 # from checkpoints import save_checkpoint
 
 class Trainer(object):
-    def __init__(self, loss_computation, model, criterion, budget, optimizer, scheduler, budget_type, device, images_to_plot=0, checkpoint_path=None, config_id=None):
+    def __init__(self, loss_computation, model, criterion, budget, optimizer, scheduler, budget_type, device, images_to_plot=0, checkpoint_path=None, config_id=None, pred_save_dir=None):
         self.checkpoint_path = checkpoint_path
         self.config_id = config_id
 
@@ -33,6 +35,11 @@ class Trainer(object):
         self.train_iterations = 0
 
         self.latest_checkpoint = None
+
+        self.pred_save_dir = os.path.join(pred_save_dir, "predictions")
+        
+        if self.pred_save_dir is not None:
+            os.makedirs(self.pred_save_dir, exist_ok=True)
 
         try:
             if torch.cuda.device_count() > 1:
@@ -63,6 +70,8 @@ class Trainer(object):
         classified = []
         misclassified = []
 
+        preds = []
+
         self.model.train()
 
         budget_exceeded = False
@@ -89,6 +98,8 @@ class Trainer(object):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+
+            #embed()
 
             # print('Train:', ' '.join(str(outputs).split('\n')[0:2]))
 
@@ -120,6 +131,9 @@ class Trainer(object):
                 for i, metric in enumerate(metrics):
                     metric_results[i] += self.loss_computation.evaluate(metric, outputs, **criterion_kwargs) * batch_size
 
+            if self.pred_save_dir is not None:
+                preds.append(outputs.detach().cpu().tolist())
+
             loss_sum += loss.item() * batch_size
             N += batch_size
 
@@ -148,6 +162,9 @@ class Trainer(object):
 
         self.cumulative_time += (time.time() - start_time)
         #print('LR', self.optimizer.param_groups[0]['lr'], 'Update', (metric_results[0] / N), 'loss', (loss_sum / N))
+
+        if self.pred_save_dir is not None:
+            np.save(os.path.join(self.pred_save_dir, "outputs_ep_"+str(epoch)), np.array(preds))
 
         return [res / N for res in metric_results], loss_sum / N, budget_exceeded
 

@@ -107,7 +107,8 @@ class SimpleTrainNode(PipelineNode):
             device=device,
             config_id=config_id,
             checkpoint_path=checkpoint_path if pipeline_config['save_checkpoints'] else None,
-            images_to_plot=tensorboard_logging * pipeline_config['tensorboard_images_count'])
+            images_to_plot=tensorboard_logging * pipeline_config['tensorboard_images_count'],
+            pred_save_dir=working_directory)
 
         model_params = self.count_parameters(network)
 
