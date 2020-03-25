@@ -121,7 +121,7 @@ class LayerWiseGradientLogger(object):
     def _get_layer_wise_gradients(self, network):
         layer_wise_grads = []
 
-        for layer in network.layers:
+        for layer in network.modules():
             if isinstance(layer, (nn.Linear, nn.Conv2d)):
                 layer_grads = self._get_gradient_list(layer)
                 layer_wise_grads.append(layer_grads)
@@ -223,7 +223,7 @@ class test_result():
         self.Y_test = Y_test
     
     def __call__(self, network, epochs):
-        if self.Y_test is None or self.X_test is None:
+        if self.Y_test is None and self.X_test is None:
             return float("nan")
         
         return self.autonet.score(self.X_test, self.Y_test)

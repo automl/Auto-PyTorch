@@ -67,6 +67,7 @@ class SimpleTrainNode(PipelineNode):
 
         network         = load_model(network, checkpoint)
 
+        txt_logging = "txt_logging" in pipeline_config and pipeline_config["txt_logging"]
         tensorboard_logging = 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']
 
         # from torch.optim import SGD
@@ -181,6 +182,10 @@ class SimpleTrainNode(PipelineNode):
                         tl.log_value(worker_path + name, float(value), int(epoch))
                 last_log_time = time.time()
 
+            if txt_logging:
+                path = os.path.join(working_directory, "full_log.txt")
+                self.log_to_txt(log, path) #path, log  ## also down
+
             if budget_type == 'epochs' and epoch + 1 >= budget:
                 break
 
@@ -214,6 +219,10 @@ class SimpleTrainNode(PipelineNode):
                 else:
                     tl.log_value(worker_path + name, float(value), int(epoch))
 
+        if txt_logging:
+            path = os.path.join(working_directory, "full_log.txt")
+            self.log_to_txt(final_log, path) #path, log  ## also down
+
         if trainer.latest_checkpoint:
             final_log['checkpoint'] = trainer.latest_checkpoint
         elif pipeline_config['save_checkpoints']:
@@ -237,6 +246,10 @@ class SimpleTrainNode(PipelineNode):
                          "s.\nTotal time consumption in s: " + str(int(time.time() - training_start_time)))
     
         return {'loss': loss, 'info': final_log}
+
+    def log_to_txt(self, log, path):
+        with open(path, "a+") as f:
+            f.write(log.__repr__()+"\n")
 
     def get_dataloader_times(self, dataloader):
         read = dataloader.dataset.readTime.value()
@@ -310,6 +323,7 @@ class SimpleTrainNode(PipelineNode):
             ConfigOption("tensorboard_min_log_interval", default=30, type=int),
             ConfigOption("tensorboard_images_count", default=0, type=int),
             ConfigOption("evaluate_on_train_data", default=True, type=to_bool),
+            ConfigOption("txt_logging", default=False, type=to_bool)
         ]
         for name, technique in self.training_techniques.items():
             options += technique.get_pipeline_config_options()

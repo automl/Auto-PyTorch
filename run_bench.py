@@ -25,7 +25,8 @@ def get_autonet_config():
             #"refit_validation_split" : 0.2,
             "validation_split" : 0.2,
             "task_id" : 0,
-            "use_tensorboard_logger" : True,
+            "use_tensorboard_logger" : False,
+            "txt_logging":True,
             #"full_eval_each_epoch" : True,
             #"log_every_n_datapoints" : None,
             "optimize_metric" : "accuracy",
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     #                                                                   log_function=test_cross_entropy(autonet, X[ind_test], y[ind_test]))
     #autonet.pipeline[LogFunctionsSelector.get_name()].add_log_function(name=test_balanced_accuracy.__name__,
     #                                                                   log_function=test_balanced_accuracy(autonet, X[ind_test], y[ind_test]))
-
+    
     # Load hyperparameters
     hyperparameter_config = load_hyperparameter_config(hyperparameter_config_dir)
     if "LearningrateSchedulerSelector:cosine_annealing:T_max" in hyperparameter_config.keys():
@@ -153,6 +154,8 @@ if __name__ == "__main__":
                             hyperparameter_config=hyperparameter_config,
                             autonet_config=autonet.get_current_autonet_config(),
                             budget=budget)
+
+    embed()
 
     # Save model
     network = autonet.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"]

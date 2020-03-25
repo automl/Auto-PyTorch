@@ -36,9 +36,10 @@ class Trainer(object):
 
         self.latest_checkpoint = None
 
-        self.pred_save_dir = os.path.join(pred_save_dir, "predictions")
-        
+        self.pred_save_dir = pred_save_dir
+
         if self.pred_save_dir is not None:
+            self.pred_save_dir = os.path.join(pred_save_dir, "predictions")
             os.makedirs(self.pred_save_dir, exist_ok=True)
 
         try:
@@ -49,11 +50,11 @@ class Trainer(object):
             print("CUDA unavailable, continue using CPU.")
             self.model = model.to("cpu")
 
-        #try:
-        self.criterion = criterion.to(self.device)
-        #except:
-        #    print("No criterion specified.")
-        #    self.criterion = None
+        try:
+            self.criterion = criterion.to(self.device)
+        except:
+            print("No criterion specified.")
+            self.criterion = None
 
     def train(self, epoch, train_loader, metrics):
         '''
