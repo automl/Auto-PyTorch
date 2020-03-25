@@ -36,7 +36,8 @@ def get_autonet_config():
             "log_level" : "info",
             "dataloader_worker": 2,
             "loss_modules": ["cross_entropy"],
-            "log_level":"info"
+            "log_level":"info",
+            "save_checkpoints":True
             }
     return autonet_config
 
@@ -154,8 +155,6 @@ if __name__ == "__main__":
                             hyperparameter_config=hyperparameter_config,
                             autonet_config=autonet.get_current_autonet_config(),
                             budget=budget)
-
-    embed()
 
     # Save model
     network = autonet.pipeline[NetworkSelectorDatasetInfo.get_name()].fit_output["network"]

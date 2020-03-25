@@ -186,6 +186,9 @@ class SimpleTrainNode(PipelineNode):
                 path = os.path.join(working_directory, "full_log.txt")
                 self.log_to_txt(log, path) #path, log  ## also down
 
+            if pipeline_config['save_checkpoints']:
+                path = save_checkpoint(checkpoint_path, config_id, epoch, network, optimizer, lr_scheduler)
+
             if budget_type == 'epochs' and epoch + 1 >= budget:
                 break
 
