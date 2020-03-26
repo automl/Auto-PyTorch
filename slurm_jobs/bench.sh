@@ -4,7 +4,7 @@
 #SBATCH -t 10-00:00                                      # time (D-HH:MM)
 #SBATCH -N 1                                            # number of nodes
 #SBATCH -c 1                                            # number of cores
-#SBATCH -a 1-17500%300                                  # array size
+#SBATCH -a 1-100                                        # array size
 #SBATCH -o logs/%x.%N.%j.out                    # STDOUT  (the folder log has to be created prior to running or this won't work)
 #SBATCH -e logs/%x.%N.%j.err                    # STDERR  (the folder log has to be created prior to running or this won't work)
 #SBATCH -J LCBench                                    # sets the job name. If not specified, the file name will be used as job name
