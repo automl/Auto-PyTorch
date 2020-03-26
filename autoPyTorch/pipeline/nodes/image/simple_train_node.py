@@ -150,6 +150,9 @@ class SimpleTrainNode(PipelineNode):
             log['epochs'] = epoch + 1
             log['model_parameters'] = model_params
             log['learning_rate'] = optimizer.param_groups[0]['lr']
+            log['epoch_logtime'] = log_time
+            log['timestamp'] = time.time()
+            log['epoch_train_time'] = epoch_train_time
             logs.append(log)
 
             epoch += 1
@@ -200,6 +203,8 @@ class SimpleTrainNode(PipelineNode):
             final_log = min(logs, key=lambda x:x[opt_metric_name])
         else:
             final_log = max(logs, key=lambda x:x[opt_metric_name])
+
+        final_log['timestamp'] = time.time()
 
         # Tensorboard logging
         if tensorboard_logging:
