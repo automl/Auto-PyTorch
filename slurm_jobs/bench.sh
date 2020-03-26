@@ -5,8 +5,8 @@
 #SBATCH -N 1                                            # number of nodes
 #SBATCH -c 1                                            # number of cores
 #SBATCH -a 1-17500%300                                  # array size
-#SBATCH -o logs/shapedmlp_2k/%x.%N.%j.out                    # STDOUT  (the folder log has to be created prior to running or this won't work)
-#SBATCH -e logs/shapedmlp_2k/%x.%N.%j.err                    # STDERR  (the folder log has to be created prior to running or this won't work)
+#SBATCH -o logs/%x.%N.%j.out                    # STDOUT  (the folder log has to be created prior to running or this won't work)
+#SBATCH -e logs/%x.%N.%j.err                    # STDERR  (the folder log has to be created prior to running or this won't work)
 #SBATCH -J LCBench                                    # sets the job name. If not specified, the file name will be used as job name
 # Print some information about the job to STDOUT
 echo "Workingdir: $PWD";
@@ -18,10 +18,11 @@ source env/bin/activate
 
 # Variables
 SEED=1
-BUDGET=50
+BUDGET=50                       # in epochs
+RUN_ID=$SLURM_ARRAY_TASK_ID     # this should be unique for each run since it specifies the log subdir
 
 # Array jobs
-python3 run_bench.py --run_id $SLURM_ARRAY_TASK_ID --offset 0 --seed $SEED --budget $BUDGET --config_root_dir configs/refit/resnet_9 --root_logdir logs/resnet_9 --device_type gpu --dataloader_worker 2
+python3 run_bench.py --run_id $RUN_ID --offset 0 --seed $SEED --budget $BUDGET --config_root_dir configs/refit/resnet_9 --root_logdir logs/ --device_type gpu --dataloader_worker 2
 
 # Done
 echo "DONE";

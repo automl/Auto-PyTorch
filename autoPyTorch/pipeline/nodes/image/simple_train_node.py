@@ -54,12 +54,14 @@ class SimpleTrainNode(PipelineNode):
             return {'loss': float('inf') if pipeline_config["minimize"] else -float('inf'), 'info': dict()}
 
         training_start_time = time.time()
-        # prepare
+        
+        # Device
         if not torch.cuda.is_available():
             pipeline_config["cuda"] = False
 
         device = torch.device('cuda' if pipeline_config['cuda'] else 'cpu')
 
+        # checkpoints
         checkpoint_path = get_checkpoint_dir(working_directory)
         checkpoint = None
         if pipeline_config['save_checkpoints']:
@@ -67,19 +69,13 @@ class SimpleTrainNode(PipelineNode):
 
         network         = load_model(network, checkpoint)
 
+        # logdirs
         txt_logging = "txt_logging" in pipeline_config and pipeline_config["txt_logging"]
         tensorboard_logging = 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']
 
-        # from torch.optim import SGD
-        # optimizer = SGD(network.parameters(), lr=0.3)
-
-        # optimizer       = load_optimizer(optimizer, checkpoint, device)
-        # lr_scheduler    = load_scheduler(lr_scheduler, checkpoint)
-
+        # Cnfig
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
-        
         batch_loss_name = hyperparameter_config["batch_loss_computation_technique"] if "batch_loss_computation_technique" in hyperparameter_config else pipeline_config["batch_loss_computation_techniques"][0]
-
         batch_loss_computation_technique = self.batch_loss_computation_techniques[batch_loss_name]()
         batch_loss_computation_technique.set_up(
             pipeline_config, ConfigWrapper(batch_loss_name, hyperparameter_config), self.logger)
@@ -89,6 +85,7 @@ class SimpleTrainNode(PipelineNode):
         logs = []
         epoch = 0
 
+        # Collect metrics
         optimize_metrics = []
         val_metrics = [optimize_metric] + additional_metrics
         if pipeline_config['evaluate_on_train_data']:
@@ -117,31 +114,25 @@ class SimpleTrainNode(PipelineNode):
         epoch_train_time = 0
         val_time = 0
         log_time = 0
+        last_log_time = time.time()
 
-        # tmp = time.time()
-        # for _ in range(100):
-        #     for _ in train_loader:
-        #         pass
-        # time_used = time.time() - tmp
-        # self.logger.debug("Test time: " + str(time_used) + "s : \n" + str(pprint.pformat(train_loader.dataset.get_times('train_'))))
-        
         self.logger.debug("Start train. Budget: " + str(budget))
 
-        last_log_time = time.time()
         while True:
             # prepare epoch
             log = dict()
             
-            # train
+            # training step
             tmp = time.time()
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader, optimize_metrics)
 
+            # Collect loss, metrics
             log['train_loss'] = train_loss
             for i, metric in enumerate(optimize_metrics):
                 log['train_' + metric.name] = optimize_metric_results[i]
             epoch_train_time += time.time() - tmp
 
-            # evaluate
+            # Evaluate val loss, val metrics
             tmp = time.time()
             if valid_loader is not None:
                 valid_metric_results = trainer.evaluate(valid_loader, val_metrics, epoch=epoch + 1)
@@ -159,17 +150,14 @@ class SimpleTrainNode(PipelineNode):
             log['epochs'] = epoch + 1
             log['model_parameters'] = model_params
             log['learning_rate'] = optimizer.param_groups[0]['lr']
-
-            # log.update(train_loader.dataset.get_times('train_'))
-            # log.update(valid_loader.dataset.get_times('val_'))
-
             logs.append(log)
 
             epoch += 1
 
             self.logger.debug("Epoch: " + str(epoch) + " : " + str(log))
 
-            if tensorboard_logging: #and time.time() - last_log_time >= pipeline_config['tensorboard_min_log_interval']:
+            # Tensorboard logging
+            if tensorboard_logging: #and time.time() - last_log_time >= pipeline_config['tensorboard_min_log_interval']: # Uncomment this to log every nth epoch
                 import tensorboard_logger as tl
                 worker_path = 'Train/'
                 tl.log_value(worker_path + 'budget', float(budget), epoch)
@@ -182,10 +170,12 @@ class SimpleTrainNode(PipelineNode):
                         tl.log_value(worker_path + name, float(value), int(epoch))
                 last_log_time = time.time()
 
+            # Txt logging
             if txt_logging:
                 path = os.path.join(working_directory, "full_log.txt")
-                self.log_to_txt(log, path) #path, log  ## also down
+                self.log_to_txt(log, path)
 
+            # Model saving
             if pipeline_config['save_checkpoints']:
                 path = save_checkpoint(checkpoint_path, config_id, epoch, network, optimizer, lr_scheduler)
 
@@ -197,10 +187,11 @@ class SimpleTrainNode(PipelineNode):
             
 
         # wrap up
+        self.logger.debug("Finished Training")
+        
         wrap_up_start_time = time.time()
 
-        self.logger.debug("Finished Training")
-
+        # Get final log
         opt_metric_name = 'train_' + optimize_metric.name
         if valid_loader is not None:
             opt_metric_name = 'val_' + optimize_metric.name
@@ -210,6 +201,7 @@ class SimpleTrainNode(PipelineNode):
         else:
             final_log = max(logs, key=lambda x:x[opt_metric_name])
 
+        # Tensorboard logging
         if tensorboard_logging:
             import tensorboard_logger as tl
             worker_path = 'Train/'
@@ -222,6 +214,7 @@ class SimpleTrainNode(PipelineNode):
                 else:
                     tl.log_value(worker_path + name, float(value), int(epoch))
 
+        # Txt logging
         if txt_logging:
             path = os.path.join(working_directory, "full_log.txt")
             self.log_to_txt(final_log, path) #path, log  ## also down
@@ -236,6 +229,7 @@ class SimpleTrainNode(PipelineNode):
         if valid_loader is not None:
             final_log['val_datapoints'] = len(valid_indices)
 
+        # Loss for BOHB / HB
         loss = final_log[opt_metric_name] * (1 if pipeline_config["minimize"] else -1)
 
         self.logger.info("Finished train with budget " + str(budget) +

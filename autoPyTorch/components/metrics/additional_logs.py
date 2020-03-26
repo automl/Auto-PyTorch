@@ -12,6 +12,9 @@ def ensure_numpy(y):
 
 
 class GradientLogger(object):
+    """
+    Accumulates the gradients in a model. Provide an instance of this to multiple gradient statistic loggers in order to accumulate the gradients only once.
+    """
 
     def __init__(self):
 
@@ -107,6 +110,9 @@ class gradient_q90(CustomGradientLogger):
 
 
 class LayerWiseGradientLogger(object):
+    """
+    Accumulates the gradients in a model by layer (conv/linear). Provide an instance of this to multiple gradient statistic loggers in order to accumulate the gradients only once.
+    """
 
     def __init__(self):
 

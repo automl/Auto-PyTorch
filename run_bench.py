@@ -21,14 +21,10 @@ def get_autonet_config():
     autonet_config = {
             "min_workers" : 1,
             "budget_type" : "epochs",
-            #"best_over_epochs" : False,
-            #"refit_validation_split" : 0.2,
             "validation_split" : 0.2,
             "task_id" : 0,
             "use_tensorboard_logger" : False,
             "txt_logging":True,
-            #"full_eval_each_epoch" : True,
-            #"log_every_n_datapoints" : None,
             "optimize_metric" : "accuracy",
             "default_dataset_download_dir" : "./datasets/",
             "images_root_folders" : ["./datasets/"],
@@ -150,7 +146,7 @@ if __name__ == "__main__":
     # Refit
     results = autonet.refit(X_train=np.array(["datasets/CIFAR10.csv"]), 
                             Y_train=np.array([0]),
-                            X_valid=None, 
+                            X_valid=None,    # It will automatically split 0.2 (set in autonet config)
                             Y_valid=None,
                             hyperparameter_config=hyperparameter_config,
                             autonet_config=autonet.get_current_autonet_config(),
