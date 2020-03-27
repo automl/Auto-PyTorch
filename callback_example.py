@@ -34,7 +34,7 @@ def get_33p_task(openml_task_id):
         return openml_task_id, False
 
 def resplit(X, y):
-    seed_everything()
+    seed_everything(1)
     test_split = 0.33
     indices = np.array(range(len(y)))
     ind_train, ind_test = train_test_split(indices, stratify=y, test_size=test_split, shuffle=True)
