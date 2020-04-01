@@ -17,8 +17,8 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 source env/bin/activate
 
 # Variables
-SEED=1
-BUDGET=25     # 12, 25, 50
+SEED=3
+BUDGET=50     # 12, 25, 50
 
 # Array jobs
 # 1-17500
