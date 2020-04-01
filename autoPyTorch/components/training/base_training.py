@@ -1,11 +1,13 @@
 import ConfigSpace
 
-class BaseTrainingTechnique():
+
+class BaseTrainingTechnique:
     def __init__(self, training_components=None):
         """Initialize the training technique. Should be called in a fit Method of a Pipeline node.
         
         Keyword Arguments:
-            training_components {dict} -- Maps a names to a training components necessary for this training technique (default: {None})
+            training_components {dict} -- Maps a names to a training components necessary for this
+            training technique (default: {None})
         """
         self.training_components = training_components or dict()
 

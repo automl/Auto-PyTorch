@@ -43,7 +43,9 @@ class ResNet(BaseFeatureNet):
                                             last_block_index=(i-1) * self.config["blocks_per_group"], 
                                             dropout=self.config["use_dropout"] and self.config["dropout_%d" % i]))
 
-        layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config["num_groups"]]))
+        if self.config["use_batch_normalization"]:
+            layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config["num_groups"]]))
+
         layers.append(self.activation())
 
         layers.append(nn.Linear(self.config["num_units_%i" % self.config["num_groups"]], out_features))
@@ -68,6 +70,8 @@ class ResNet(BaseFeatureNet):
         use_shake_drop=(True, False),
         use_shake_shake=(True, False),
         use_dropout=(True, False),
+        use_batch_normalization=(True, False),
+        use_swa=(True, False),
         **kwargs
     ):
         cs = ConfigSpace.ConfigurationSpace()
@@ -81,6 +85,8 @@ class ResNet(BaseFeatureNet):
         use_dropout_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, "use_dropout", use_dropout)
         cs.add_hyperparameter(use_dropout_hp)
         add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_shake_shake", use_shake_shake)
+        add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_batch_normalization", use_batch_normalization)
+        add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_swa", use_swa)
         
         use_shake_drop_hp = add_hyperparameter(cs, ConfigSpace.CategoricalHyperparameter, "use_shake_drop", use_shake_drop)
         if True in use_shake_drop:
@@ -129,7 +135,8 @@ class ResBlock(nn.Module):
         # if the shortcut needs a layer we apply batchnorm and activation to the shortcut as well (start_norm)
         if in_features != out_features:
             self.shortcut = nn.Linear(in_features, out_features)
-            self.start_norm = nn.Sequential(nn.BatchNorm1d(in_features), self.activation())
+            if self.config["use_batch_normalization"]:
+                self.start_norm = nn.Sequential(nn.BatchNorm1d(in_features), self.activation())
 
         self.block_index = block_index
         self.num_blocks = self.config["blocks_per_group"] * self.config["num_groups"]
@@ -144,11 +151,13 @@ class ResBlock(nn.Module):
         layers = list()
         
         if self.start_norm == None:
-            layers.append(nn.BatchNorm1d(in_features))
+            if self.config["use_batch_normalization"]:
+                layers.append(nn.BatchNorm1d(in_features))
             layers.append(self.activation())
         layers.append(nn.Linear(in_features, out_features))
 
-        layers.append(nn.BatchNorm1d(out_features))
+        if self.config["use_batch_normalization"]:
+            layers.append(nn.BatchNorm1d(out_features))
         layers.append(self.activation())
         
         if (self.config["use_dropout"]):

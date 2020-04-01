@@ -53,7 +53,7 @@ class BaseNet(nn.Module):
     
 
 class BaseFeatureNet(BaseNet):
-    """ Parent class for MlpNet, ResNet, ... Can use entity embedding for cagtegorical features"""
+    """ Parent class for MlpNet, ResNet, ... Can use entity embedding for categorical features"""
     def __init__(self, config, in_features, out_features, embedding, final_activation):
         """
         Initialize the BaseFeatureNet.

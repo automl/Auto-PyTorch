@@ -10,7 +10,6 @@ class AutoNetClassification(AutoNetFeatureData):
         from autoPyTorch.pipeline.nodes.loss_module_selector import LossModuleSelector
         from autoPyTorch.pipeline.nodes.metric_selector import MetricSelector
         from autoPyTorch.pipeline.nodes.train_node import TrainNode
-        from autoPyTorch.pipeline.nodes.resampling_strategy_selector import ResamplingStrategySelector
         from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
         from autoPyTorch.pipeline.nodes.one_hot_encoding import OneHotEncoding
         from autoPyTorch.pipeline.nodes.resampling_strategy_selector import ResamplingStrategySelector

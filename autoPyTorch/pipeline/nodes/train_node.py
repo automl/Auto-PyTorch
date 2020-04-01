@@ -83,7 +83,10 @@ class TrainNode(PipelineNode):
             training_techniques=training_techniques,
             device=Trainer.get_device(pipeline_config),
             logger=logger,
-            full_eval_each_epoch=pipeline_config["full_eval_each_epoch"])
+            full_eval_each_epoch=pipeline_config["full_eval_each_epoch"],
+            swa=hyperparameter_config["use_swa"],
+            number_of_batches=len(train_loader),
+        )
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
 
         logs = trainer.model.logs
