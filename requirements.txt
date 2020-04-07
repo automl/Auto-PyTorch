@@ -13,5 +13,4 @@ hpbandster
 fasteners
 torch
 torchvision
-tensorboard_logger
 openml
