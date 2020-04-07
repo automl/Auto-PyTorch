@@ -6,6 +6,7 @@ import Pyro4
 from hpbandster.core.worker import Worker
 
 from autoPyTorch.components.training.budget_types import BudgetTypeTime
+from autoPyTorch.utils.tensorboard_logging import get_tb_logger
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -117,9 +118,9 @@ class AutoNetWorker(Worker):
                                             budget=budget, budget_type=self.budget_type, max_budget=self.max_budget, optimize_start_time=optimize_start_time,
                                             refit=False, rescore=False, hyperparameter_config_id=config_id, dataset_info=self.dataset_info)
         except Exception as e:
-            if 'use_tensorboard_logger' in self.pipeline_config and self.pipeline_config['use_tensorboard_logger']:            
-                import tensorboard_logger as tl
-                tl.log_value('Exceptions/' + str(e), budget, int(time.time()))
+            if 'use_tensorboard_logger' in self.pipeline_config and self.pipeline_config['use_tensorboard_logger']:
+                writer = get_tb_logger()
+                writer.log_value('Exceptions/' + str(e), budget, int(time.time()))
             self.autonet_logger.info(str(e))
             raise e
     

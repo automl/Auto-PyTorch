@@ -27,12 +27,12 @@ from autoPyTorch.components.training.image.budget_types import BudgetTypeTime, B
 import copy
 
 from autoPyTorch.utils.modify_config_space import remove_constant_hyperparameter
-
+from autoPyTorch.utils.tensorboard_logging import configure_tb_log_dir
 from autoPyTorch.utils.loggers import combined_logger, bohb_logger, tensorboard_logger
 
 import pprint
 
-tensorboard_logger_configured = False
+
 
 class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
     def __init__(self, optimization_pipeline_nodes):
@@ -96,13 +96,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         run_id, task_id = pipeline_config['run_id'], pipeline_config['task_id']
 
 
-        global tensorboard_logger_configured
-        if pipeline_config['use_tensorboard_logger'] and not tensorboard_logger_configured:            
-            import tensorboard_logger as tl
-            directory = os.path.join(pipeline_config['result_logger_dir'], "worker_logs_" + str(task_id))
-            os.makedirs(directory, exist_ok=True)
-            tl.configure(directory, flush_secs=60)
-            tensorboard_logger_configured = True
+        if pipeline_config['use_tensorboard_logger']:
+            configure_tb_log_dir(os.path.join(pipeline_config['result_logger_dir'], "worker_logs_" + str(task_id)))
 
         if (refit is not None):
             return self.run_refit(pipeline_config, refit, constants, X_train, Y_train, X_valid, Y_valid)

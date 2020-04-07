@@ -1,6 +1,9 @@
 import time, os, shutil
 from hpbandster.core.result import json_result_logger
 
+from autoPyTorch.utils.tensorboard_logging import get_tb_logger
+
+
 class bohb_logger(json_result_logger):
     def __init__(self, constant_hyperparameter, directory, overwrite=False):
         super(bohb_logger, self).__init__(directory, overwrite)
@@ -53,7 +56,6 @@ class tensorboard_logger(object):
 
     def __call__(self, job):
         import json
-        import tensorboard_logger as tl 
 
         id = job.id
         budget = int(job.kwargs['budget'])
@@ -67,7 +69,8 @@ class tensorboard_logger(object):
 
         self.results_logged += 1
 
-        tl.log_value('BOHB/all_results', result['loss'] * -1, self.results_logged)
+        writer = get_tb_logger()
+        writer.add_scalar('BOHB/all_results', result['loss'] * -1, self.results_logged)
 
         if budget not in self.incumbent_results or result['loss'] < self.incumbent_results[budget]:
             self.incumbent_results[budget] = result['loss']
@@ -138,10 +141,10 @@ class tensorboard_logger(object):
             self.mean_results[budget][1] += 1
 
         for b, loss in self.incumbent_results.items():
-            tl.log_value('BOHB/incumbent_results_' + str(b), loss * -1, self.mean_results[b][1])
+            writer.add_scalar('BOHB/incumbent_results_' + str(b), loss * -1, self.mean_results[b][1])
 
         for b, (loss, n) in self.mean_results.items():
-            tl.log_value('BOHB/mean_results_' + str(b), loss * -1 / n if n > 0 else 0, n)
+            writer.add_scalar('BOHB/mean_results_' + str(b), loss * -1 / n if n > 0 else 0, n)
 
         status = dict()
         for b, loss in self.incumbent_results.items():

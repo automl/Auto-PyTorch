@@ -5,6 +5,7 @@ import numpy as np
 
 from torch.autograd import Variable
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.utils.tensorboard_logging import configure_tb_log_dir, get_tb_logger
 
 # from util.transforms import mixup_data, mixup_criterion
 # from checkpoints import save_checkpoint
@@ -211,21 +212,18 @@ class Trainer(object):
 
     # MODIFIED
     def tensorboard_log_step(self, budget, step, log, logdir):
-        import tensorboard_logger as tl
+        configure_tb_log_dir(logdir)
+        writer = get_tb_logger()
         worker_path = 'Train/'
-        try:
-            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
-        except:
-            tl.configure(logdir)
-            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
-        tl.log_value(worker_path + 'step', float(step + 1), int(time.time()))
+
+        writer.add_scalar(worker_path + 'budget', float(budget), int(time.time()))
+        writer.add_scalar(worker_path + 'step', float(step + 1), int(time.time()))
         for name, value in log.items():
             if isinstance(value, (list, np.ndarray)):
                 for ind, val in enumerate(value):
-                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(step+1))
+                    writer.add_scalar(worker_path + name + "_layer_" + str(ind), float(val), int(step+1))
             else:
-                tl.log_value(worker_path + name, float(value), int(step+1))
-
+                writer.add_scalar(worker_path + name, float(value), int(step+1))
 
     @staticmethod
     def count_parameters(model):

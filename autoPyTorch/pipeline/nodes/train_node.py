@@ -18,6 +18,7 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
+from autoPyTorch.utils.tensorboard_logging import configure_tb_log_dir, get_tb_logger
 from autoPyTorch.components.training.base_training import BaseTrainingTechnique, BaseBatchLossComputationTechnique
 from autoPyTorch.components.training.trainer import Trainer
 
@@ -265,20 +266,18 @@ class TrainNode(PipelineNode):
         return options
     
     def tensorboard_log(self, budget, epoch, log, logdir):
-        import tensorboard_logger as tl
+        configure_tb_log_dir(logdir)
+        writer = get_tb_logger()
+
         worker_path = 'Train/'
-        try:
-            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
-        except:
-            tl.configure(logdir)
-            tl.log_value(worker_path + 'budget', float(budget), int(time.time()))
-        tl.log_value(worker_path + 'epoch', float(epoch + 1), int(time.time()))
+        writer.add_scalar(worker_path + 'budget', float(budget), int(time.time()))
+        writer.add_scalar(worker_path + 'epoch', float(epoch + 1), int(time.time()))
         for name, value in log.items():
             if isinstance(value, (list, np.ndarray)):
                 for ind, val in enumerate(value):
-                    tl.log_value(worker_path + name + "_layer_" + str(ind), float(val), int(epoch+1))
+                    writer.add_scalar(worker_path + name + "_layer_" + str(ind), float(val), int(epoch+1))
             else:
-                tl.log_value(worker_path + name, float(value), int(epoch+1))
+                writer.add_scalar(worker_path + name, float(value), int(epoch+1))
 
     def get_model_loss(self, trainer, train_loader):
         

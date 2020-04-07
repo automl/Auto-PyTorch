@@ -24,6 +24,7 @@ from autoPyTorch.components.training.image.base_training import BaseTrainingTech
 from autoPyTorch.components.training.image.trainer import Trainer
 from autoPyTorch.components.training.image.checkpoints.save_load import save_checkpoint, load_checkpoint, get_checkpoint_dir
 from autoPyTorch.components.training.image.checkpoints.load_specific import load_model #, load_optimizer, load_scheduler
+from autoPyTorch.utils.tensorboard_logging import get_tb_logger
 
 torch.backends.cudnn.benchmark = True
 
@@ -174,11 +175,11 @@ class SimpleTrainNode(PipelineNode):
                 break
 
             if tensorboard_logging and time.time() - last_log_time >= pipeline_config['tensorboard_min_log_interval']:
-                import tensorboard_logger as tl
+                writer = get_tb_logger()
                 worker_path = 'Train/'
-                tl.log_value(worker_path + 'budget', float(budget), epoch)
+                writer.add_scalar(worker_path + 'budget', float(budget), epoch)
                 for name, value in log.items():
-                    tl.log_value(worker_path + name, float(value), epoch)
+                    writer.add_scalar(worker_path + name, float(value), epoch)
                 last_log_time = time.time()
             
 
@@ -197,11 +198,11 @@ class SimpleTrainNode(PipelineNode):
             final_log = max(logs, key=lambda x:x[opt_metric_name])
 
         if tensorboard_logging:
-            import tensorboard_logger as tl
+            writer = get_tb_logger()
             worker_path = 'Train/'
-            tl.log_value(worker_path + 'budget', float(budget), epoch)
+            writer.add_scalar(worker_path + 'budget', float(budget), epoch)
             for name, value in final_log.items():
-                tl.log_value(worker_path + name, float(value), epoch)
+                writer.add_scalar(worker_path + name, float(value), epoch)
 
         if trainer.latest_checkpoint:
             final_log['checkpoint'] = trainer.latest_checkpoint

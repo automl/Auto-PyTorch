@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
 
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
+from autoPyTorch.utils.tensorboard_logging import get_tb_logger
 
 class MultipleDatasets(SubPipelineNode):
     
@@ -46,8 +47,8 @@ class MultipleDatasets(SubPipelineNode):
             Y_valid = [None] * n_datasets
         
         if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
-            import tensorboard_logger as tl
-            tl.log_value('Train/datasets', float(n_datasets), int(time.time()))
+            writer = get_tb_logger()
+            writer.add_scalar('Train/datasets', float(n_datasets), int(time.time()))
 
         infos = []
         loss = 0
@@ -95,8 +96,8 @@ class MultipleDatasets(SubPipelineNode):
             losses.append(result['loss'])
         
         if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
-            import tensorboard_logger as tl
-            tl.log_value('Train/datasets', float(n_datasets), int(time.time()))
+            writer = get_tb_logger()
+            writer.add_scalar('Train/datasets', float(n_datasets), int(time.time()))
 
         loss = loss / n_datasets
 

@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.pipeline.nodes import MetricSelector
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.utils.config.config_condition import ConfigCondition
+from autoPyTorch.utils.tensorboard_logging import configure_tb_log_dir, get_tb_logger
 
 from autoPyTorch.core.hpbandster_extensions.bohb_ext import BOHBExt
 from autoPyTorch.core.hpbandster_extensions.hyperband_ext import HyperBandExt
@@ -85,10 +86,7 @@ class OptimizationAlgorithm(SubPipelineNode):
 
         # Use tensorboard logger
         if pipeline_config['use_tensorboard_logger'] and not refit:            
-            import tensorboard_logger as tl
-            directory = os.path.join(pipeline_config['result_logger_dir'], "worker_logs_" + str(task_id))
-            os.makedirs(directory, exist_ok=True)
-            tl.configure(directory, flush_secs=5)
+            configure_tb_log_dir(os.path.join(pipeline_config['result_logger_dir'], "worker_logs_" + str(task_id)))
 
         # Only do refitting
         if (refit is not None):
@@ -414,7 +412,7 @@ class tensorboard_logger(object):
         pass
 
     def __call__(self, job):
-        import tensorboard_logger as tl 
+        writer = get_tb_logger()
         # id = job.id
         budget = job.kwargs['budget']
         # config = job.kwargs['config']
@@ -425,10 +423,10 @@ class tensorboard_logger(object):
         time_step = int(timestamps['finished'] - self.start_time)
 
         if result is not None:
-            tl.log_value('BOHB/all_results', result['loss'] * -1, time_step)
+            writer.add_scalar('BOHB/all_results', result['loss'] * -1, time_step)
             if result['loss'] < self.incumbent:
                 self.incumbent = result['loss']
-            tl.log_value('BOHB/incumbent_results', self.incumbent * -1, time_step)
+            writer.add_scalar('BOHB/incumbent_results', self.incumbent * -1, time_step)
 
 
 class combined_logger(object):
