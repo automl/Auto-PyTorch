@@ -121,6 +121,8 @@ class AutoNetFeatureData(AutoNet):
 
         from autoPyTorch.components.training.early_stopping import EarlyStopping
         from autoPyTorch.components.regularization.mixup import Mixup
+        from autoPyTorch.components.regularization.cutmix import CutMix
+        from autoPyTorch.components.regularization.cutout import CutOut
 
         pre_selector = pipeline[PreprocessorSelector.get_name()]
         pre_selector.add_preprocessor('truncated_svd', TruncatedSVD)
@@ -166,7 +168,10 @@ class AutoNetFeatureData(AutoNet):
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.add_training_technique("early_stopping", EarlyStopping)
+        
         train_node.add_batch_loss_computation_technique("mixup", Mixup)
+        train_node.add_batch_loss_computation_technique("cutmix", CutMix)
+        train_node.add_batch_loss_computation_technique("cutout", CutOut)
 
         cv = pipeline[CrossValidation.get_name()]
         cv.add_cross_validator("k_fold", KFold)
