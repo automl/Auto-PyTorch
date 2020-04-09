@@ -3,17 +3,17 @@
 """
 This file contains the different learning rate schedulers of AutoNet.
 """
-
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
-import numpy as np
 import math
-import torch
-import torch.optim.lr_scheduler as lr_scheduler
-from torch.optim import Optimizer
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+import numpy as np
+import torch
+import torch.optim.lr_sheduler as lr_scheduler
+from torch.optim import Optimizer
+
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
+
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -21,6 +21,7 @@ __license__ = "BSD"
 
 
 class AutoNetLearningRateSchedulerBase(object):
+
     def __new__(cls, optimizer, config):
         """Get a new instance of the scheduler
         
@@ -93,7 +94,7 @@ class SchedulerReduceLROnPlateau(AutoNetLearningRateSchedulerBase):
     """
     Reduce LR on plateau learning rate scheduler
     """
-    
+
     def _get_scheduler(self, optimizer, config):
         return lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, 
                                               factor=config['factor'], 
@@ -114,7 +115,7 @@ class SchedulerAdaptiveLR(AutoNetLearningRateSchedulerBase):
     """
     Adaptive cosine learning rate scheduler
     """
-    
+
     def _get_scheduler(self, optimizer, config):
         return AdaptiveLR(optimizer=optimizer,
                           T_max=config['T_max'],
@@ -139,7 +140,7 @@ class SchedulerAdaptiveLR(AutoNetLearningRateSchedulerBase):
 
 class AdaptiveLR(object):
 
-    def __init__(self, optimizer, mode='min', T_max=30, T_mul=2.0, eta_min=0, patience=3, threshold=0.1, min_lr=0, eps=1e-8, last_epoch=-1):
+    def __init__(self, optimizer, T_max=30, T_mul=2.0, eta_min=0, patience=3, threshold=0.1, min_lr=0, last_epoch=-1):
 
         if not isinstance(optimizer, Optimizer):
             raise TypeError('{} is not an Optimizer'.format(
@@ -217,6 +218,8 @@ class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
     """
 
     def _get_scheduler(self, optimizer, config):
+
+
         maf = config['max_factor']
         mif = config['min_factor']
         cl = config['cycle_length']
@@ -226,10 +229,12 @@ class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
                 lr = mif + (r * (float(epoch % cl)/float(cl)))
             else:
                 lr = maf - (r * (float(epoch % cl)/float(cl)))
+
             return lr
             
         return lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=l, last_epoch=-1)
-    
+
+
     @staticmethod
     def get_config_space(
         max_factor=(1.0, 2),
@@ -266,6 +271,7 @@ class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
 
 
 class NoScheduling():
+
     def __init__(self, optimizer):
         self.optimizer = optimizer
 
@@ -280,7 +286,6 @@ class NoScheduling():
 
 
 class CosineAnnealingWithRestartsLR(torch.optim.lr_scheduler._LRScheduler):
-
     r"""Copyright: pytorch
     Set the learning rate of each parameter group using a cosine annealing
     schedule, where :math:`\eta_{max}` is set to the initial lr and
@@ -318,9 +323,10 @@ class CosineAnnealingWithRestartsLR(torch.optim.lr_scheduler._LRScheduler):
         super().__init__(optimizer, last_epoch)
     
     def restart(self):
+
         self.restart_every *= self.T_mult
         self.restarted_at = self.last_epoch
-    
+
     def cosine(self, base_lr):
         return self.eta_min + (base_lr - self.eta_min) * (1 + math.cos(math.pi * self.step_n / self.restart_every)) / 2
     
@@ -341,9 +347,10 @@ class SchedulerAlternatingCosineLR(AutoNetLearningRateSchedulerBase):
     """
     Alternating cosine learning rate scheduler
     """
-    
+
     def _get_scheduler(self, optimizer, config):
         scheduler = AlternatingCosineLR(optimizer, T_max=config['T_max'], T_mul=config['T_mult'], amplitude_reduction=config['amp_reduction'], last_epoch=-1)
+        scheduler.snapshot_before_restart = True
         return scheduler
     
     @staticmethod
@@ -360,17 +367,18 @@ class SchedulerAlternatingCosineLR(AutoNetLearningRateSchedulerBase):
 
 
 class AlternatingCosineLR(torch.optim.lr_scheduler._LRScheduler):
+
     def __init__(self, optimizer, T_max, T_mul=1, amplitude_reduction=0.9, eta_min=0, last_epoch=-1):
         '''
         Here last_epoch actually means last_step since the
         learning rate is decayed after each batch step.
         '''
-
         self.T_max = T_max
         self.T_mul = T_mul
         self.eta_min = eta_min
         self.cumulative_time = 0
         self.amplitude_mult = amplitude_reduction
+        self.restarted_at = 0
         self.base_lr_mult = 1
         self.frequency_mult = 1
         self.time_offset = 0
@@ -383,11 +391,25 @@ class AlternatingCosineLR(torch.optim.lr_scheduler._LRScheduler):
         '''
         if self.last_epoch >= self.T_max:
             self.T_max = self.T_max * self.T_mul
+            self.restarted_at = self.last_epoch
             self.time_offset = self.T_max / 2
             self.last_epoch = 0
             self.base_lr_mult *= self.amplitude_mult
             self.frequency_mult = 2
             self.cumulative_time = 0
+
         return [self.eta_min + (base_lr * self.base_lr_mult - self.eta_min) *
                         (1 + math.cos(math.pi * (self.time_offset + self.cumulative_time) / self.T_max * self.frequency_mult)) / 2
                         for base_lr in self.base_lrs]
+
+
+schedulers_cyclical_status = {
+    NoScheduling: False,
+    lr_scheduler.StepLR: False,
+    lr_scheduler.ExponentialLR: False,
+    lr_scheduler.ReduceLROnPlateau: False,
+    AdaptiveLR: False,
+    lr_scheduler.LambdaLR: False,
+    CosineAnnealingWithRestartsLR: True,
+    AlternatingCosineLR: True,
+}

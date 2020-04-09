@@ -110,7 +110,7 @@ class AutoNetFeatureData(AutoNet):
 
         from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, AdamWOptimizer, SgdOptimizer, RMSpropOptimizer
         from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerCosineAnnealingWithRestartsLR, SchedulerNone, \
-            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerReduceLROnPlateau, SchedulerStepLR, SchedulerAdaptiveLR, SchedulerAlternatingCosineLR
+            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerStepLR, SchedulerAdaptiveLR, SchedulerAlternatingCosineLR
         from autoPyTorch.components.networks.feature import LearnedEntityEmbedding
 
         from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler

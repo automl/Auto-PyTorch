@@ -2,7 +2,7 @@ import time
 import os
 
 import torch
-import torchcontrib
+from torchcontrib.optim import SWA
 import numpy as np
 
 from torch.autograd import Variable
@@ -16,7 +16,7 @@ class Trainer(object):
             self,
             metrics, log_functions, loss_computation, model, criterion,
             budget, optimizer, training_techniques, logger, device,
-            full_eval_each_epoch, swa, number_of_batches
+            full_eval_each_epoch, swa
     ):
         
         self.criterion = criterion
@@ -25,18 +25,8 @@ class Trainer(object):
         self.swa = swa
         # Stochastic Weight Averaging activated
         if self.swa:
-            # Start swa after we have consumed 75% of the budget
-            consumed_budget = int(0.75 * budget)
-            swa_start = consumed_budget * number_of_batches
-            # update every epoch
-            swa_freq = number_of_batches
-            # default learning rate
-            swa_lr = 0.05
-            self.optimizer = torchcontrib.optim.SWA(
-                self.optimizer,
-                swa_start=swa_start,
-                swa_freq=swa_freq,
-                swa_lr=swa_lr
+            self.optimizer = SWA(
+                self.optimizer
             )
 
         self.metrics = metrics
@@ -162,8 +152,6 @@ class Trainer(object):
                     for t in self.training_techniques]):
                 return self.compute_metrics(outputs_data, targets_data), loss_sum / N, True
 
-        if self.swa:
-            self.optimizer.swap_swa_sgd()
 
         return self.compute_metrics(outputs_data, targets_data), loss_sum / N, False
 

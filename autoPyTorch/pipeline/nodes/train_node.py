@@ -16,6 +16,7 @@ from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
+from autoPyTorch.components.lr_scheduler.lr_schedulers import schedulers_cyclical_status
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.components.training.base_training import BaseTrainingTechnique, BaseBatchLossComputationTechnique
@@ -85,9 +86,19 @@ class TrainNode(PipelineNode):
             logger=logger,
             full_eval_each_epoch=pipeline_config["full_eval_each_epoch"],
             swa=hyperparameter_config["use_swa"],
-            number_of_batches=len(train_loader),
         )
+
+
+        use_swa = hyperparameter_config["use_swa"]
+        if use_swa:
+            #  Number that represents the threshold when to start using
+            #  Stochastic Weight Averaging, typically for non cyclical schedulers.
+            consumed_budget = int(0.75 * budget)
+            lr_scheduler = trainer.lr_scheduler
+            scheduler_cyclical = schedulers_cyclical_status[type(lr_scheduler)]
+
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
+
 
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained
@@ -99,6 +110,7 @@ class TrainNode(PipelineNode):
             
             # training
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
+
             if valid_loader is not None and trainer.eval_valid_each_epoch:
                 valid_metric_results = trainer.evaluate(valid_loader)
 
@@ -116,6 +128,19 @@ class TrainNode(PipelineNode):
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training
 
+            # TODO add swa for iterations also
+            if use_swa:
+                # check if the learning rate scheduler is cyclical
+                if scheduler_cyclical:
+                    # delay with one epoch for the
+                    # snapshot since the optimizer has
+                    # not yet updated the weights.
+                    if lr_scheduler.restarted_at + 1 == epoch:
+                        trainer.optimizer.update_swa()
+                else:
+                    if epoch >= consumed_budget:
+                        trainer.optimizer.update_swa()
+
             # handle logs
             logs.append(log)
             log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
@@ -128,6 +153,9 @@ class TrainNode(PipelineNode):
             
             epoch += 1
             torch.cuda.empty_cache()
+
+        if use_swa:
+            trainer.optimizer.swap_swa_sgd()
 
         # wrap up
         loss, final_log = self.wrap_up_training(trainer=trainer, logs=logs, epoch=epoch,
