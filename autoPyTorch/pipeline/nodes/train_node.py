@@ -152,7 +152,7 @@ class TrainNode(PipelineNode):
 
             if pipeline_config["log_every_n_datapoints"] is None:
                 # Log if not logging every n datapoints
-                logger.info("Train node: Logging at epoch", str(epoch))
+                logger.info("Train node: Logging at epoch %d", epoch)
                 if 'use_tensorboard_logger' in pipeline_config and pipeline_config['use_tensorboard_logger']:
                     self.tensorboard_log(budget=budget, epoch=epoch, log=log, logdir=pipeline_config["result_logger_dir"])
 
