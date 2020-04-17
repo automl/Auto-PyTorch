@@ -9,8 +9,8 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 import torch
-import torch.optim.lr_sheduler as lr_scheduler
-from torch.optim import Optimizer
+from torch.optim import lr_scheduler
+from torch.optim.optimizer import Optimizer
 
 from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
 

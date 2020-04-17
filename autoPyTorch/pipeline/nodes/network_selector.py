@@ -5,12 +5,14 @@ __license__ = "BSD"
 
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.components.networks.base_net import BaseNet
+from autoPyTorch.components.optimizer.optimizer import Lookahead
 
 import torch
 import torch.nn as nn
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 from autoPyTorch.utils.config.config_option import ConfigOption
 
 class NetworkSelector(PipelineNode):
@@ -71,12 +73,28 @@ class NetworkSelector(PipelineNode):
         if (not self.default_final_activation or is_default_final_activation):
             self.default_final_activation = name
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(
+            self,
+            dataset_info=None,
+            use_swa=(True, False),
+            use_lookahead=(True, False),
+            **pipeline_config
+    ):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
         possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
+        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_swa", use_swa))
+        look_ahead = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_lookahead", use_lookahead))
+
+        if True in use_lookahead:
+            cs.add_configuration_space(
+                prefix='lookahead',
+                configuration_space=Lookahead.get_config_space(),
+                delimiter=ConfigWrapper.delimiter,
+                parent_hyperparameter={'parent': look_ahead, 'value': True}
+            )
         
         network_list = list()
         for network_name, network_type in self.networks.items():
@@ -85,7 +103,7 @@ class NetworkSelector(PipelineNode):
             network_list.append(network_name)
             network_cs = network_type.get_config_space(
                 **self._get_search_space_updates(prefix=network_name))
-            cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter, 
+            cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter,
                                        parent_hyperparameter={'parent': selector, 'value': network_name})
         self._check_search_space_updates((possible_networks, "*"))
 

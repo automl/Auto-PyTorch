@@ -66,12 +66,21 @@ class TrainNode(PipelineNode):
         Returns:
             dict -- loss and info reported to bohb
         """
-        hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config) 
+        network_selector_config = ConfigWrapper("NetworkSelector", hyperparameter_config)
+        use_swa = network_selector_config["use_swa"]
+        use_lookahead = network_selector_config["use_lookahead"]
+        lookahead_config = None
+        if use_lookahead:
+            lookahead_config = ConfigWrapper("NetworkSelector:lookahead", hyperparameter_config)
+        counter = 1
+        hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
         logger = logging.getLogger('autonet')
         logger.debug("Start train. Budget: " + str(budget))
 
         if pipeline_config["torch_num_threads"] > 0:
             torch.set_num_threads(pipeline_config["torch_num_threads"])
+
+
 
         trainer = Trainer(
             model=network,
@@ -85,11 +94,11 @@ class TrainNode(PipelineNode):
             device=Trainer.get_device(pipeline_config),
             logger=logger,
             full_eval_each_epoch=pipeline_config["full_eval_each_epoch"],
-            swa=hyperparameter_config["use_swa"],
+            swa=use_swa,
+            lookahead=use_lookahead,
+            lookahead_config=lookahead_config,
         )
 
-
-        use_swa = hyperparameter_config["use_swa"]
         if use_swa:
             #  Number that represents the threshold when to start using
             #  Stochastic Weight Averaging, typically for non cyclical schedulers.
@@ -128,6 +137,7 @@ class TrainNode(PipelineNode):
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training
 
+
             # TODO add swa for iterations also
             if use_swa:
                 # check if the learning rate scheduler is cyclical
@@ -136,9 +146,19 @@ class TrainNode(PipelineNode):
                     # snapshot since the optimizer has
                     # not yet updated the weights.
                     if lr_scheduler.restarted_at + 1 == epoch:
+                        print(f"{counter}-th swa update triggered")
+                        print(f"Scheduler :{type(lr_scheduler)}")
+                        for param_group in optimizer.param_groups:
+                            print(f"Learning rate {param_group['lr']}")
+                        counter += 1
                         trainer.optimizer.update_swa()
                 else:
                     if epoch >= consumed_budget:
+                        print(f"{counter}-th swa update triggered")
+                        print(f"Scheduler :{type(lr_scheduler)}")
+                        for param_group in optimizer.param_groups:
+                            print(f"Learning rate {param_group['lr']}")
+                        counter += 1
                         trainer.optimizer.update_swa()
 
             # handle logs

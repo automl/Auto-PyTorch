@@ -7,6 +7,7 @@ import numpy as np
 
 from torch.autograd import Variable
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
+from autoPyTorch.components.optimizer.optimizer import Lookahead
 
 # from util.transforms import mixup_data, mixup_criterion
 # from checkpoints import save_checkpoint
@@ -16,13 +17,17 @@ class Trainer(object):
             self,
             metrics, log_functions, loss_computation, model, criterion,
             budget, optimizer, training_techniques, logger, device,
-            full_eval_each_epoch, swa
+            full_eval_each_epoch, swa, lookahead, lookahead_config
     ):
         
         self.criterion = criterion
         self.optimizer = optimizer
         # boolean value representing stochastic weight averaging
         self.swa = swa
+        self.lookahead = lookahead
+
+        if self.lookahead:
+            self.optimizer = Lookahead(optimizer, config=lookahead_config)
         # Stochastic Weight Averaging activated
         if self.swa:
             self.optimizer = SWA(
