@@ -137,6 +137,8 @@ class ResBlock(nn.Module):
             self.shortcut = nn.Linear(in_features, out_features)
             if self.config["use_batch_normalization"]:
                 self.start_norm = nn.Sequential(nn.BatchNorm1d(in_features), self.activation())
+            else:
+                self.start_norm = nn.Sequential(self.activation())
 
         self.block_index = block_index
         self.num_blocks = self.config["blocks_per_group"] * self.config["num_groups"]

@@ -13,7 +13,7 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
-from autoPyTorch.utils.config.config_option import ConfigOption
+from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 
 class NetworkSelector(PipelineNode):
     def __init__(self):
@@ -76,8 +76,6 @@ class NetworkSelector(PipelineNode):
     def get_hyperparameter_search_space(
             self,
             dataset_info=None,
-            use_swa=(True, False),
-            use_lookahead=(True, False),
             **pipeline_config
     ):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
@@ -85,10 +83,10 @@ class NetworkSelector(PipelineNode):
 
         possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_swa", use_swa))
-        look_ahead = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_lookahead", use_lookahead))
+        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_swa", pipeline_config["use_swa"]))
+        look_ahead = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_lookahead", pipeline_config["use_lookahead"]))
 
-        if True in use_lookahead:
+        if True in pipeline_config["use_lookahead"]:
             cs.add_configuration_space(
                 prefix='lookahead',
                 configuration_space=Lookahead.get_config_space(),
@@ -112,6 +110,8 @@ class NetworkSelector(PipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption(name="networks", default=list(self.networks.keys()), type=str, list=True, choices=list(self.networks.keys())),
-            ConfigOption(name="final_activation", default=self.default_final_activation, type=str, choices=list(self.final_activations.keys()))
+            ConfigOption(name="final_activation", default=self.default_final_activation, type=str, choices=list(self.final_activations.keys())),
+            ConfigOption(name="use_lookahead", default=[True, False], type=to_bool, choices=[True, False], list=True, info='Use lookahead'),
+            ConfigOption(name="use_swa", default=[True, False], type=to_bool, choices=[True, False], list=True, info='Use stochastic weight averaging'),
         ]
         return options

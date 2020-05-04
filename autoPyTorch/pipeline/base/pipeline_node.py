@@ -146,7 +146,6 @@ class PipelineNode(Node):
         
         # join the allowed hps with ConfigWrapper delimiter
         exploded_allowed_hps = [ConfigWrapper.delimiter.join(x) for x in exploded_allowed_hps]
-        
         # Check given hyperparameter updates and raise exception if invalid hyperparameter update is given.
         for key in self._get_search_space_updates().keys():
             if key not in exploded_allowed_hps and \
