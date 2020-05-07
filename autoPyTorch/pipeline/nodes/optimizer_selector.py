@@ -50,7 +50,7 @@ class OptimizerSelector(PipelineNode):
             cs.add_configuration_space( prefix=optimizer_name, configuration_space=optimizer_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': optimizer_name})
 
-        self._check_search_space_updates(possible_optimizer, "*")
+        self._check_search_space_updates((possible_optimizer, "*"))
         return cs
 
     def get_pipeline_config_options(self):
