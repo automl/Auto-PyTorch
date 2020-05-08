@@ -7,7 +7,6 @@ from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 
 from autoPyTorch.components.optimizer.optimizer import AutoNetOptimizerBase
 
-import torch.nn as nn
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
@@ -50,7 +49,7 @@ class OptimizerSelector(PipelineNode):
             cs.add_configuration_space( prefix=optimizer_name, configuration_space=optimizer_cs, delimiter=ConfigWrapper.delimiter, 
                                         parent_hyperparameter={'parent': selector, 'value': optimizer_name})
 
-        self._check_search_space_updates(possible_optimizer, "*")
+        self._check_search_space_updates((possible_optimizer, "*"))
         return cs
 
     def get_pipeline_config_options(self):
