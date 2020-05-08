@@ -1,13 +1,9 @@
 """
 File which contains the optimizers.
 """
-from collections import defaultdict
-
-import torch
-import torch.optim as optim
-from torch.optim.optimizer import Optimizer
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+import torch.optim as optim
 
 from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 
