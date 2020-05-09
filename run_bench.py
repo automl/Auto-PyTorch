@@ -131,8 +131,8 @@ if __name__ == "__main__":
     root_logdir = args.root_logdir
     config_dir = args.config_dir
 
-    # Seed
-    seed_everything(seed)
+    # Data splitting seed
+    seed_everything(42)
 
     # Get data
     openml_task_ids, resplit_tasks = get_openml_task_ids()
@@ -144,6 +144,9 @@ if __name__ == "__main__":
     hyperparameter_config_dir = os.path.join(config_dir, "config_"+ str(run_id//len(openml_task_ids)) + ".json")
 
     print("Using config", str(run_id//len(openml_task_ids)), "for task", openml_task_id, "and run id", run_id)
+
+    # Training seed
+    seed_everything(seed)
 
     # Sample config (autonet)
     search_space_updates = get_search_space_updates()

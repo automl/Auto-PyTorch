@@ -1,3 +1,4 @@
+import argparse
 import os as os
 import json
 import numpy as np
@@ -166,10 +167,15 @@ class ResultsReader(object):
     def get_start_time(self):
         return self.accumulator.FirstEventTimestamp()
     
-    def read_scalar_data(self):
+    def read_scalar_data(self, exclude_gradient_data=True):
         uninteresting = ['Train/step', 'Train/budget', 'Train/lr_scheduler_converged', 'Train/epoch', 'Train/model_parameters']
         
+        if exclude_gradient_data:
+            gradient_tags = [t for t in self.tags if "gradient" in t]
+            uninteresting = uninteresting + gradient_tags
+        
         scalar_event_dict = {key:[] for key in self.tags if key not in uninteresting}
+
         
         epochs = []
         for event in self.accumulator.Scalars('Train/epoch'):
@@ -198,7 +204,9 @@ def convert_tbdata(tb_data):
 
 def add_results(full_dict, config_hashdict, config, tb_logs, results, info, seed, budget):
 
-    config_hash = hash(config.__repr__())
+    config_without_tmax = {k:v for k,v in config.items() if not "T_max" in k}
+    config_hash = hash(config_without_tmax.__repr__())
+    
     if config_hash in config_hashdict.keys():
         config_id = config_hashdict[config_hash]
     else:
@@ -220,7 +228,6 @@ def add_results(full_dict, config_hashdict, config, tb_logs, results, info, seed
 
 
 if __name__=="__main__":
-    
     additional_jsons_dir = []
     tb_log_root_dir = "/home/zimmerl/APT_step_logging/Auto-PyTorch/logs/shapedmlp_2k/"
     save_dir = "bench.json"
@@ -245,7 +252,13 @@ if __name__=="__main__":
             for rundir in tqdm(rundirs):
                 
                 # Get results and add to json
-                tb_logdir, info_dir, results_dir = sorted(get_subdirs(rundir))
+                try:
+                    tb_logdir, info_dir, results_dir = sorted(get_subdirs(rundir))
+                except Exception as e:
+                    if isinstance(e, ValueError):
+                        continue
+                    else:
+                        raise e
                 reader = ResultsReader(results_dir, tb_logdir, info_dir)
 
                 config = reader.get_hyperpar_config()
@@ -254,6 +267,15 @@ if __name__=="__main__":
                 info = reader.get_info()
 
                 add_results(full_dict, config_hashdict, config, tb_logs, results, info, seed, budget)
+
+            # NOTE: This saves every step
+            #logdir = "bench_"+str(budget)+"_"+str(seed)+".json"
+            #with open(save_dir, "w") as f:
+            #    json.dump(full_dict, f)
+            #full_dict = {dataset_name:{} for dataset_name in np.unique(list(TASK_DICT.values()))}
+
+            with open(save_dir, "w") as f:
+                json.dump(full_dict, f)
 
 
     # Save

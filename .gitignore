@@ -57,3 +57,5 @@ configs/refit/bench_configs/bench*
 # logs
 *.err
 *.out
+*.json
+*.zip
