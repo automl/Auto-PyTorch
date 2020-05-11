@@ -17,7 +17,7 @@ class Trainer(object):
             self,
             metrics, log_functions, loss_computation, model, criterion,
             budget, optimizer, training_techniques, logger, device,
-            full_eval_each_epoch, swa, lookahead, lookahead_config
+            full_eval_each_epoch, swa, lookahead, lookahead_config, se, se_lastk
     ):
         
         self.criterion = criterion
@@ -25,6 +25,11 @@ class Trainer(object):
         # boolean value representing stochastic weight averaging
         self.swa = swa
         self.lookahead = lookahead
+
+        self.se = se
+        if self.se:
+            self.se_lastk = se_lastk
+            self.model_snapshots = []
 
         if self.lookahead:
             self.optimizer = Lookahead(optimizer, config=lookahead_config)
@@ -58,6 +63,9 @@ class Trainer(object):
 
         self.to(device)
     
+    def update_model_snapshots(self, model_snapshots):
+        self.model_snapshots = model_snapshots
+
     def prepare(self, pipeline_config, hyperparameter_config, fit_start_time):
         self.fit_start_time = fit_start_time
         self.loss_computation.set_up(
@@ -99,17 +107,34 @@ class Trainer(object):
 
         # validation on snapshot
         if self.eval_additional_logs_on_snapshot or self.eval_valid_on_snapshot or refit:
-            self.model.load_snapshot()
-            valid_metric_results = None
-            if valid_loader is not None and self.eval_valid_on_snapshot:
-                valid_metric_results = self.evaluate(valid_loader)
+            # If snapshot ensembling is active, then by-pass evaluation, as evaluating on snapshots isn't really a thing
+            if self.se:
+                valid_metric_results = None
 
-            for i, metric in enumerate(self.metrics):
-                if valid_metric_results:
-                    final_log['val_' + metric.name] = valid_metric_results[i]
-            if self.eval_additional_logs_on_snapshot and not refit:
-                    for additional_log in self.log_functions:
-                        final_log[additional_log.name] = additional_log(self.model, None)
+                if valid_loader is not None and self.eval_valid_on_snapshot:
+                    valid_metric_results = self.evaluate_se(valid_loader, self.model_snapshots)
+
+                for i, metric in enumerate(self.metrics):
+                    if valid_metric_results:
+                        final_log['val_' + metric.name] = valid_metric_results[i]
+
+                # TODO: What to do with the additional in case of snapshot ensembling
+                if self.eval_additional_logs_on_snapshot and not refit:
+                        for additional_log in self.log_functions:
+                            final_log[additional_log.name] = additional_log(self.model, None)
+
+            else:
+                self.model.load_snapshot()
+                valid_metric_results = None
+                if valid_loader is not None and self.eval_valid_on_snapshot:
+                    valid_metric_results = self.evaluate(valid_loader)
+
+                for i, metric in enumerate(self.metrics):
+                    if valid_metric_results:
+                        final_log['val_' + metric.name] = valid_metric_results[i]
+                if self.eval_additional_logs_on_snapshot and not refit:
+                        for additional_log in self.log_functions:
+                            final_log[additional_log.name] = additional_log(self.model, None)
         return final_log
 
     def train(self, epoch, train_loader):
@@ -178,6 +203,35 @@ class Trainer(object):
                 targets_data.append(targets.data.cpu().detach().numpy())
 
         self.model.train()
+        return self.compute_metrics(outputs_data, targets_data)
+
+    def evaluate_se(self, test_loader, model_snapshots):
+        for model in model_snapshots:
+            model.eval()
+        
+        outputs_data = list()
+        targets_data = list()
+
+        with torch.no_grad():
+            for _, (data, targets) in enumerate(test_loader):
+
+                data = data.cpu()
+                data = Variable(data)
+                
+                outputs = list()
+                for model in model_snapshots:
+                    output = model(data)
+                    outputs.append(output)
+
+                outputs = torch.stack(outputs)
+                outputs = outputs.mean(dim=0)
+                
+                outputs_data.append(outputs.data.cpu().detach().numpy())
+                targets_data.append(targets.data.cpu().detach().numpy())
+
+        for model in model_snapshots:
+            model.train()
+
         return self.compute_metrics(outputs_data, targets_data)
     
     def compute_metrics(self, outputs_data, targets_data):
