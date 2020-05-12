@@ -36,7 +36,9 @@ class TrainNode(PipelineNode):
         self.training_techniques = dict()
         self.batch_loss_computation_techniques = dict()
         self.add_batch_loss_computation_technique("standard", BaseBatchLossComputationTechnique)
+        self.ensemble_models = []
 
+    
     def fit(self, hyperparameter_config, pipeline_config,
             train_loader, valid_loader,
             network, optimizer,
@@ -239,6 +241,10 @@ class TrainNode(PipelineNode):
         if use_swa:
             trainer.optimizer.swap_swa_sgd()
 
+        # Check if it was a refit for SE, then store the ensemble
+        if use_se and refit:
+            self.ensemble_models = model_snapshots
+
         # wrap up
         loss, final_log = self.wrap_up_training(trainer=trainer, logs=logs, epoch=epoch,
             train_loader=train_loader, valid_loader=valid_loader, budget=budget, training_start_time=training_start_time, fit_start_time=fit_start_time,
@@ -265,8 +271,11 @@ class TrainNode(PipelineNode):
         device = Trainer.get_device(pipeline_config)
         
         if True in pipeline_config["use_se"]:
-            print('Since snapshot ensembling is used, can not predict!')
-            raise('Cannot predict error!')
+            if len(self.ensemble_models) > 0:
+                Y = predict_se(self.ensemble_models, predict_loader)
+            else:
+                print('Since snapshot ensembling is used, ensemble models are only stored if refit is called with final config')
+                raise('Cannot predict error!')
         else:
             Y = predict(network, predict_loader, device)
         return {'Y': Y.detach().cpu().numpy()}
