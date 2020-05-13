@@ -243,13 +243,24 @@ class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
         return cs
 
 
+class CosineAnnealingToFlatLR(lr_scheduler.CosineAnnealingLR):
+
+    def __init__(self, *args, **kwargs):
+        super(CosineAnnealingToFlatLR, self).__init__(*args, **kwargs)
+
+    def get_lr(self):
+        if self.last_epoch > self.T_max:
+            return [self.eta_min for base_lr in self.base_lrs]
+        return super(CosineAnnealingToFlatLR, self).get_lr()
+
+
 class SchedulerCosineAnnealingLR(AutoNetLearningRateSchedulerBase):
     """
     Cosine annealing learning rate scheduler
     """
 
     def _get_scheduler(self, optimizer, config):
-        return lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=config['T_max'], eta_min=config['eta_min'], last_epoch=-1)
+        return CosineAnnealingToFlatLR(optimizer=optimizer, T_max=config['T_max'], eta_min=config['eta_min'], last_epoch=-1)
 
     @staticmethod
     def get_config_space(

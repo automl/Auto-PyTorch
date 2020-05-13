@@ -1,6 +1,22 @@
 import numpy as np
 import torch
 
+from sklearn.metrics import accuracy_score
+
+class test_result_ens():
+    def __init__(self, autonet, X_test, Y_test):
+        self.autonet = autonet
+        self.X_test = X_test
+        self.Y_test = Y_test
+        from autoPyTorch.core.api import AutoNet
+        self.predict = AutoNet.predict
+
+    def __call__(self, model, epochs):
+        if self.Y_test is None or self.X_test is None:
+            return float("nan")
+
+        preds = self.predict(self.autonet, self.X_test, return_probabilities=False)
+        return accuracy_score(preds, self.Y_test)
 
 class test_result():
     """Log the performance on the test set"""

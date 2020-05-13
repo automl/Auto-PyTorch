@@ -80,7 +80,8 @@ class AutoNetWorker(Worker):
             if (limit_train.exit_status == pynisher.TimeoutException):
                 raise Exception("Time limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
             elif (limit_train.exit_status == pynisher.MemorylimitException):
-                raise Exception("Memory limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
+                result = {"loss": 100000, "info":{}}
+                return result
             elif (limit_train.exit_status != 0):
                 self.autonet_logger.info('Exception occurred using config:\n' + str(config))
                 raise Exception("Exception in train pipeline. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))

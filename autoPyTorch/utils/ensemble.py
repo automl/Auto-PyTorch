@@ -32,13 +32,13 @@ def read_ensemble_prediction_file(filename, y_transform):
     labels = None
     model_identifiers = list()
     with open(filename, "rb") as f:
-        labels = np.load(f)
+        labels = np.load(f, allow_pickle=True)
         labels, _ = y_transform(labels)
 
         while True:
             try:
-                job_id, budget, timestamps = np.load(f)
-                predictions = np.load(f)
+                job_id, budget, timestamps = np.load(f, allow_pickle=True)
+                predictions = np.load(f, allow_pickle=True)
                 model_identifiers.append(job_id + (budget, ))
                 predictions = np.array(predictions)
                 all_predictions.append(predictions)
