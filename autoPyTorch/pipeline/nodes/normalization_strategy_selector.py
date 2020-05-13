@@ -10,6 +10,7 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from sklearn.compose import ColumnTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
+from scipy.sparse.csr import csr_matrix
 
 class NormalizationStrategySelector(PipelineNode):
     def __init__(self):
@@ -25,12 +26,14 @@ class NormalizationStrategySelector(PipelineNode):
         if normalizer_name == 'none':
             return {'normalizer': None}
 
-        normalizer = self.normalization_strategies[normalizer_name]()
+        if isinstance(X, csr_matrix):
+            normalizer = self.normalization_strategies[normalizer_name](with_mean=False)
+        else:
+            normalizer = self.normalization_strategies[normalizer_name]()
+        
+        transformer = ColumnTransformer(transformers=[("normalize", normalizer, [i for i, c in enumerate(dataset_info.categorical_features) if not c])],
+                                        remainder='passthrough')
 
-        transformer = ColumnTransformer(
-            transformers=[("normalize", normalizer, [i for i, c in enumerate(dataset_info.categorical_features) if not c])],
-            remainder='passthrough'
-        )
         transformer.fit(X[train_indices])
 
         X = transformer.transform(X)
