@@ -1,5 +1,5 @@
 {
-	"num_rounds" : 100,
+	"num_rounds" : 10000,
 	"num_leaves" : 128,
 	"two_round" : "True",
 	"min_data_in_leaf" : 3,
