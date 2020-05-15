@@ -42,6 +42,7 @@ logs/
 # ensemble data
 predictions_for_ensemble.npy
 test_predictions_for_ensemble.npy
+catboost_info
 
 # testing
 tests.ipynb
