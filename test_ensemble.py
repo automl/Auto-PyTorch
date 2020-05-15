@@ -3,13 +3,23 @@ import os as os
 import numpy as np
 import logging
 import json
+import random
+import torch
+import openml
 from IPython import embed
 
+import ConfigSpace as cs
+from autoPyTorch import HyperparameterSearchSpaceUpdates
+from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch import AutoNetClassification, AutoNetEnsemble
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch.components.metrics.additional_logs import *
 from autoPyTorch.utils.ensemble import test_predictions_for_ensemble
 
+def seed_everything(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 def resplit(X, y, test_split=0.33):
         uniques, counts = np.unique(y, return_counts=True)
@@ -20,13 +30,13 @@ def resplit(X, y, test_split=0.33):
             ind_train, ind_test = train_test_split(indices, test_size=test_split, shuffle=True, random_state=42)
         return ind_train, ind_test
 
-def load_openml_data(openml_id):
+def load_openml_data(openml_task_id):
     task = openml.tasks.get_task(task_id=openml_task_id)
     X, y = task.get_X_and_y()
 
-    10_splits = [3945, 146212, 34539, 168337, 168338, 7593, 189354, 168332, 168331, 168330, 168335]
+    ten_splits = [3945, 146212, 34539, 168337, 168338, 7593, 189354, 168332, 168331, 168330, 168335]
 
-    if openml_task_id in 10_splits:
+    if openml_task_id in ten_splits:
         ind_train, ind_test = resplit(X, y)
     else:
         ind_train, ind_test = task.get_train_test_split_indices()
@@ -132,29 +142,27 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'validation_split': 0.33,
             'working_dir': '.'
             }
+    return autonet_config
 
 def get_ensemble_config():
     ensemble_config = {
             "ensemble_size":50,
             "ensemble_only_consider_n_best":50,
-            "ensemble_sorted_initialization_n_best_percent":0,
             "ensemble_sorted_initialization_n_best":0
             }
     return ensemble_config
 
 if __name__ == "__main__":
+    # Test: python3 -W ignore test_ensemble.py --run_id 9999 --task_id 1 --num_workers 1 --dataset_id 4 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --num_threads 4 --test true
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("--run_id", type=int, help="An id for the run.")
     parser.add_argument("--task_id", type=int)
     parser.add_argument("--num_workers", type=int)
     parser.add_argument("--dataset_id", type=int)
-    parser.add_argument("--ressource_type", type=str, choices=["gpu", "cpu"])
     parser.add_argument("--seed", type=int)
-    parser.add_argument("--search_space", type=str, choices=["full", "resnet", "lcbench"])
     parser.add_argument("--ensemble_setting", type=str, choices=["normal", "ensemble"])
     parser.add_argument("--portfolio_type", type=str, choices=["none", "simple", "greedy"])
-    parser.add_argument("--optimizer", type=str, choices=["bohb", "bo", "hb"])
-    parser.add_argument("--num_threads", type=str, default="3")
+    parser.add_argument("--num_threads", type=str, default="1")
     parser.add_argument("--test", type=str, choices=["true", "false"], default="false")
     args = parser.parse_args()
 
@@ -165,17 +173,20 @@ if __name__ == "__main__":
     # Get data
     openml_ids = [7593, 168331, 167200, 189905, 167152, 189860, 167190, 189871]
     openml_id = openml_ids[int(args.dataset_id)]
-    utils.seed_everything(42)
+    seed_everything(42)
     X_train, X_test, y_train, y_test = load_openml_data(openml_id)
 
     # Seed
     seed = args.seed
-    utils.seed_everything(seed)
+    seed_everything(seed)
 
     # Get autonet config
-    autonet_config = get_autonet_config_lcbench(min_budget=12,
-                                                max_budget=50, 
-                                                max_runtime=3*24*60*60, 
+    min_budget=12 if args.test=="false" else 1
+    max_budget=50 if args.test=="false" else 4
+    max_runtime = 60*60 if args.test=="false" else 30
+    autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
+                                                max_budget=max_budget, 
+                                                max_runtime=max_runtime,
                                                 run_id=args.run_id, 
                                                 task_id=args.task_id, 
                                                 num_workers=args.num_workers, 
@@ -184,10 +195,7 @@ if __name__ == "__main__":
 
     autonet_config["algorithm"] = "bohb"
     #autonet_config["algorithm"] = "portfolio_bohb"
-    #autonet_config["portfolio_dir"] = portfolios[portfolio_id]
-
-    portfolios = {"simple_lcbench": "/home/zimmerl/ieee/apt_ieee/optimizers/portfolios/incumbent_configs_lcbench.json",
-                  "greedy_lcbench": "/home/zimmerl/ieee/apt_ieee/optimizers/portfolios/greedy_portfolio_lcbench.json"}
+    #autonet_config["portfolio_type"] = args.portfolio
 
     # Categoricals
     cat_feats = [type(f)==str for f in X_train[0]]
@@ -201,7 +209,7 @@ if __name__ == "__main__":
     # Initialize (ensemble)
     if args.ensemble_setting == "ensemble":
         print("Using ensembles!")
-        ensemble_config = configs.get_ensemble_config()
+        ensemble_config = get_ensemble_config()
         autonet_config = {**autonet_config, **ensemble_config}
         autonet = AutoNetEnsemble(AutoNetClassification, config_preset="full_cs", **autonet_config)
     elif args.ensemble_setting == "normal":
@@ -217,20 +225,16 @@ if __name__ == "__main__":
     print(autonet.get_current_autonet_config())
 
     # Fit
-    results = autonet.fit(X_train, y_train, **autonet.get_current_autonet_config())
+    fit_results = autonet.fit(X_train, y_train, **autonet.get_current_autonet_config())
+    
+    # Score
     score = autonet.score(X_test, y_test) if y_test is not None else None
 
     # Write to json
-    results["run_id"] = int(run_id)
-    resutls["test_score"] = score
-
-    outconfig = {k:v for k,v in autonet.get_current_autonet_config() if not "yper" in k}
-
-    info = {"seed" : int(seed),
-            "autonet_config" : outconfig}
+    results = dict()
+    results["run_id"] = int(args.run_id)
+    results["test_score"] = score
+    results["seed"] = int(seed)
 
     with open(logdir + "/results_dump.json", "w") as f:
         json.dump(results, f)
-
-    with open(logdir + "/info.json", "w") as f:
-        json.dump(info, f)

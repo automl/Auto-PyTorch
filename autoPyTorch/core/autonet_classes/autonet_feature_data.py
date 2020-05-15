@@ -19,7 +19,7 @@ class AutoNetFeatureData(AutoNet):
             CrossValidation, Imputation, NormalizationStrategySelector, OneHotEncoding, PreprocessorSelector, ResamplingStrategySelector, \
             EmbeddingSelector, NetworkSelector, OptimizerSelector, LearningrateSchedulerSelector, LogFunctionsSelector, MetricSelector, \
             LossModuleSelector, TrainNode, CreateDataLoader, CreateDatasetInfo, EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, \
-            BuildEnsemble, EnsembleServer, InitializationSelector
+            BuildEnsemble, EnsembleServer, InitializationSelector, BaselineTrainer
         
         # build the pipeline
         pipeline = Pipeline([
@@ -29,6 +29,7 @@ class AutoNetFeatureData(AutoNet):
             OptimizationAlgorithm([
                 CrossValidation([
                     Imputation(),
+                    BaselineTrainer(),
                     NormalizationStrategySelector(),
                     OneHotEncoding(),
                     PreprocessorSelector(),

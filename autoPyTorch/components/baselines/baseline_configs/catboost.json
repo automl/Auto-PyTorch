@@ -1,0 +1,5 @@
+{
+	"iterations" : 100,
+	"learning_rate" : 0.1,
+	"eval_metric" : "Accuracy"
+}

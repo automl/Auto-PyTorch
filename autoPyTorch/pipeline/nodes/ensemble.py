@@ -16,6 +16,7 @@ import json
 import asyncio
 from hpbandster.core.nameserver import nic_name_to_host
 import time
+import logging
 
 
 def predictions_for_ensemble(y_true, y_pred):
@@ -35,7 +36,7 @@ class EnableComputePredictionsForEnsemble(PipelineNode):
 
 class SavePredictionsForEnsemble(PipelineNode):
     """Put this Node in the training pipeline after the training node"""
-    def fit(self, pipeline_config, loss, info, refit, loss_penalty):
+    def fit(self, pipeline_config, loss, info, refit, loss_penalty, baseline_predictions_for_ensemble=None, baseline_id=None):
         if refit or pipeline_config["ensemble_size"] == 0 or loss_penalty > 0:
             return {"loss": loss, "info": info}
 
@@ -51,15 +52,34 @@ class SavePredictionsForEnsemble(PipelineNode):
             "data": predictions
         }
 
+        # has to be int or float to be passed to logger
+        info["baseline_id"] = baseline_id[0] if baseline_id is not None else None
+
+        if baseline_predictions_for_ensemble is not None:
+            baseline_predictions = baseline_predictions_for_ensemble
+
+            baseline_combinator = {
+                    "combinator": combine_predictions,
+                    "data": baseline_predictions
+                    }
+        else:
+            baseline_combinator = None
+
         if not "test_predictions_for_ensemble" in info:
-            return {"loss": loss, "info": info, "predictions_for_ensemble": combinator}
+            if baseline_combinator is not None:
+                return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "baseline_predictions_for_ensemble": baseline_combinator}
+            else:
+                return {"loss": loss, "info": info, "predictions_for_ensemble": combinator}
         
         test_combinator = {
             "combinator": combine_test_predictions,
             "data": info["test_predictions_for_ensemble"]
         }
         del info["test_predictions_for_ensemble"]
-        return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator} 
+
+        if baseline_combinator is not None:
+            return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator, "baseline_predictions_for_ensemble": baseline_combinator}
+        return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator}
 
     def predict(self, Y):
         return {"Y": Y}
@@ -101,8 +121,8 @@ class BuildEnsemble(PipelineNode):
     
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("ensemble_size", default=3, type=int, info="Build a ensemble of well performing autonet configurations. 0 to disable."),
-            ConfigOption("ensemble_only_consider_n_best", default=0, type=int, info="Only consider the n best models for ensemble building."),
+            ConfigOption("ensemble_size", default=50, type=int, info="Build a ensemble of well performing autonet configurations. 0 to disable."),
+            ConfigOption("ensemble_only_consider_n_best", default=30, type=int, info="Only consider the n best models for ensemble building."),
             ConfigOption("ensemble_sorted_initialization_n_best", default=0, type=int, info="Initialize ensemble with n best models.")
         ]
         return options
