@@ -110,14 +110,6 @@ class LGBBaseline(BaseBaseline):
         y_pred = np.argmax(y_pred, axis=1)
         return y_pred
 
-    def save(self, model_path, info_path):
-        info_dict = {"nan_cols": self.all_nan,
-                     "encode_dict": self.encode_dicts}
-        
-        pickle.dump(info_dict, open(info_path, "wb"))
-        pickle.dump(self.model, open(model_path, "wb"))
-        #lgb.save(self.model, model_path)
-
 
 class CatboostBaseline(BaseBaseline):
 
