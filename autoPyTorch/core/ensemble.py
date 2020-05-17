@@ -72,7 +72,7 @@ class AutoNetEnsemble(AutoNet):
             autonet_config = self.autonet_config
         if (autonet_config is None):
             autonet_config = self.base_config
-        if (ensemble_configs is None and self.fit_result):
+        if (ensemble_configs is None and self.fit_result and "ensemble_configs" in self.fit_result.keys()):
             ensemble_configs = self.fit_result["ensemble_configs"]
         if (ensemble is None and self.fit_result):
             ensemble = self.fit_result["ensemble"]

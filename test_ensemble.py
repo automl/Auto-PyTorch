@@ -6,11 +6,12 @@ import json
 import random
 import torch
 import openml
+from sklearn.model_selection import train_test_split
 from IPython import embed
 
 import ConfigSpace as cs
 from autoPyTorch import HyperparameterSearchSpaceUpdates
-from autoPyTorch.pipeline.nodes import LogFunctionsSelector
+from autoPyTorch.pipeline.nodes import LogFunctionsSelector, BaselineTrainer
 from autoPyTorch import AutoNetClassification, AutoNetEnsemble
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch.components.metrics.additional_logs import *
@@ -147,7 +148,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
 def get_ensemble_config():
     ensemble_config = {
             "ensemble_size":50,
-            "ensemble_only_consider_n_best":50,
+            "ensemble_only_consider_n_best":30,
             "ensemble_sorted_initialization_n_best":0
             }
     return ensemble_config
@@ -181,9 +182,9 @@ if __name__ == "__main__":
     seed_everything(seed)
 
     # Get autonet config
-    min_budget=12 if args.test=="false" else 1
+    min_budget=10 if args.test=="false" else 1
     max_budget=50 if args.test=="false" else 4
-    max_runtime = 60*60 if args.test=="false" else 30
+    max_runtime = 10*60*60 if args.test=="false" else 30
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 
                                                 max_runtime=max_runtime,
@@ -193,9 +194,11 @@ if __name__ == "__main__":
                                                 logdir=logdir, 
                                                 seed=args.seed)
 
-    autonet_config["algorithm"] = "bohb"
-    #autonet_config["algorithm"] = "portfolio_bohb"
-    #autonet_config["portfolio_type"] = args.portfolio
+    if args.portfolio_type=="none":
+        autonet_config["algorithm"] = "bohb"
+    else:
+        autonet_config["algorithm"] = "portfolio_bohb"
+        autonet_config["portfolio_type"] = args.portfolio_type
 
     # Categoricals
     cat_feats = [type(f)==str for f in X_train[0]]
@@ -221,6 +224,8 @@ if __name__ == "__main__":
                                                                        loss_transform=False)
     autonet.pipeline[LogFunctionsSelector.get_name()].add_log_function(name=test_result_ens.__name__,
                                                                        log_function=test_result_ens(autonet, X_test, y_test))
+
+    autonet.pipeline[BaselineTrainer.get_name()].add_test_data(X_test)
 
     print(autonet.get_current_autonet_config())
 

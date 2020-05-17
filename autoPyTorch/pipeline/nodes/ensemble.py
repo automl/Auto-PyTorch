@@ -36,7 +36,7 @@ class EnableComputePredictionsForEnsemble(PipelineNode):
 
 class SavePredictionsForEnsemble(PipelineNode):
     """Put this Node in the training pipeline after the training node"""
-    def fit(self, pipeline_config, loss, info, refit, loss_penalty, baseline_predictions_for_ensemble=None, baseline_id=None):
+    def fit(self, pipeline_config, loss, info, refit, loss_penalty, baseline_predictions_for_ensemble=None, baseline_id=None, baseline_test_predictions_for_ensemble=None):
         if refit or pipeline_config["ensemble_size"] == 0 or loss_penalty > 0:
             return {"loss": loss, "info": info}
 
@@ -65,6 +65,8 @@ class SavePredictionsForEnsemble(PipelineNode):
         else:
             baseline_combinator = None
 
+
+
         if not "test_predictions_for_ensemble" in info:
             if baseline_combinator is not None:
                 return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "baseline_predictions_for_ensemble": baseline_combinator}
@@ -77,9 +79,22 @@ class SavePredictionsForEnsemble(PipelineNode):
         }
         del info["test_predictions_for_ensemble"]
 
+        if baseline_test_predictions_for_ensemble is not None:
+            baseline_test_combinator = {
+                    "combinator" : combine_test_predictions,
+                    "data" : baseline_test_predictions_for_ensemble
+                    }
+        else:
+            baseline_test_combinator = None
+
+        return_dict = {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator}
+
         if baseline_combinator is not None:
-            return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator, "baseline_predictions_for_ensemble": baseline_combinator}
-        return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator}
+            return_dict["baseline_predictions_for_ensemble"] = baseline_combinator
+        if baseline_test_combinator is not None:
+            return_dict["baseline_test_predictions_for_ensemble"] = baseline_test_combinator
+
+        return return_dict
 
     def predict(self, Y):
         return {"Y": Y}

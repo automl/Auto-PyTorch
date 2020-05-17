@@ -56,7 +56,7 @@ class BaseBaseline():
 
         info = pickle.load(open(info_path, "rb"))
 
-        self.name = info["model_name"]
+        #self.name = info["model_name"]
         self.all_nan = info["nan_cols"]
         self.categoricals = info["categoricals"]
         self.encode_dicts = info["encode_dict"]

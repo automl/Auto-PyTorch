@@ -98,12 +98,12 @@ class LGBBaseline(BaseBaseline):
         
         return results
 
-    def predict(self, X_test, return_proba=False):
+    def predict(self, X_test, predict_proba=False):
         X_test = X_test[:, ~self.all_nan]
         X_test = np.nan_to_num(X_test)
         X_test, _, _ = encode_categoricals(X_test, encode_dicts=self.encode_dicts)
         
-        if return_proba:
+        if predict_proba:
             y_pred_proba = self.model.predict_proba(X_test)
             return y_pred_proba
         y_pred = self.model.predict(X_test)

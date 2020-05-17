@@ -69,7 +69,7 @@ class MetricSelector(PipelineNode):
 
 
 def default_minimize_transform(value):
-    return 1 - value
+    return -1 * value
 
 def no_transform(value):
     return value

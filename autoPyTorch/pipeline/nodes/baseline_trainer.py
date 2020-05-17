@@ -43,6 +43,14 @@ class BaselineTrainer(PipelineNode):
                        -2: baselines.ExtraTreesBaseline,
                        -1: baselines.KNNBaseline}
 
+    def __init__(self):
+        super(BaselineTrainer, self).__init__()
+
+        self.X_test = None
+
+    def add_test_data(self, X_test):
+        self.X_test = X_test
+
     def fit(self, pipeline_config, X, Y, train_indices, valid_indices, refit):
 
         baseline_name = self.get_baseline_to_train(pipeline_config)
@@ -56,14 +64,12 @@ class BaselineTrainer(PipelineNode):
         fit_output = baseline_model.fit(X[train_indices], Y[train_indices], X[valid_indices], Y[valid_indices])
         baseline_preds = np.array(fit_output["val_preds"])
 
-        #if get_dimensions(baseline_preds)!=get_dimensions(Y):
-        #    baseline_preds = np.argmax(baseline_preds, axis=1)
-        #else:
-        #    if isinstance(baseline_preds, list):
-        #        baseline_preds = np.array(baseline_preds)
-
-        #logging.info("==> Baseline preds: " + baseline_preds.shape.__repr__())
-        #logging.info("==> Y:" + np.array(Y[valid_indices]).shape.__repr__())
+        # Test data
+        if self.X_test is not None:
+            test_preds = baseline_model.predict(X_test=self.X_test, predict_proba=True)
+            test_preds = test_preds.tolist()
+        else:
+            test_preds = None
 
         # Save model
         identifier = BaselineTrainer.identifiers[baseline_name]
@@ -74,7 +80,7 @@ class BaselineTrainer(PipelineNode):
         baseline_model.save(model_path=model_savedir, info_path=info_savedir)
 
         
-        return {"baseline_id": identifier, "baseline_predictions_for_ensemble": baseline_preds}
+        return {"baseline_id": identifier, "baseline_predictions_for_ensemble": baseline_preds, "baseline_test_predictions_for_ensemble": test_preds}
 
     def get_baseline_to_train(self, pipeline_config):
         trained_baseline_logdir = os.path.join(pipeline_config["result_logger_dir"], "trained_baselines.txt")

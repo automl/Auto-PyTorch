@@ -246,4 +246,14 @@ class ensemble_logger(object):
                     np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
                     loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["test_predictions_for_ensemble"]
+
+            if "baseline_test_predictions_for_ensemble" in job.result and job.result["baseline_test_predictions_for_ensemble"] is not None:
+                host, port, unique =  job.result["baseline_test_predictions_for_ensemble"]
+                logging.info("==> Logging baseline test preds")
+                with open(self.test_file_name, "ab") as f:
+                    if not self.test_labels_written:
+                         raise RuntimeError("Baseline test predictions found but no labels logged yet.")
+                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object))
+                    loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
+                del job.result["baseline_test_predictions_for_ensemble"]
         loop.close()
