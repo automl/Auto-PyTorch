@@ -16,6 +16,7 @@ import json
 import asyncio
 from hpbandster.core.nameserver import nic_name_to_host
 import time
+import numpy as np
 import logging
 
 
@@ -52,6 +53,10 @@ class SavePredictionsForEnsemble(PipelineNode):
             "data": predictions
         }
 
+        #logging.info("Val: ", type(predictions), len(predictions))
+        #logging.info("Val: ", type(predictions[0]), type(predictions[1]))
+        #logging.info("Val: ", predictions[0].shape, predictions[1].shape)
+
         # has to be int or float to be passed to logger
         info["baseline_id"] = baseline_id[0] if baseline_id is not None else None
 
@@ -66,13 +71,16 @@ class SavePredictionsForEnsemble(PipelineNode):
             baseline_combinator = None
 
 
-
         if not "test_predictions_for_ensemble" in info:
             if baseline_combinator is not None:
                 return {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "baseline_predictions_for_ensemble": baseline_combinator}
             else:
                 return {"loss": loss, "info": info, "predictions_for_ensemble": combinator}
         
+        #logging.info("Test: ", type(info["test_predictions_for_ensemble"]), len(info["test_predictions_for_ensemble"]))
+        #logging.info("Test: ", type(info["test_predictions_for_ensemble"][0]), type(info["test_predictions_for_ensemble"][1]))
+        #logging.info("Test: ", info["test_predictions_for_ensemble"][0].shape, info["test_predictions_for_ensemble"][1].shape)
+
         test_combinator = {
             "combinator": combine_test_predictions,
             "data": info["test_predictions_for_ensemble"]
@@ -82,10 +90,12 @@ class SavePredictionsForEnsemble(PipelineNode):
         if baseline_test_predictions_for_ensemble is not None:
             baseline_test_combinator = {
                     "combinator" : combine_test_predictions,
-                    "data" : baseline_test_predictions_for_ensemble
+                    "data" : (baseline_test_predictions_for_ensemble, np.argmax(baseline_test_predictions_for_ensemble, axis=1))
                     }
         else:
             baseline_test_combinator = None
+
+        #logging.info("Baseline test: ", type(baseline_test_predictions_for_ensemble), np.array(baseline_test_predictions_for_ensemble).shape)
 
         return_dict = {"loss": loss, "info": info, "predictions_for_ensemble": combinator, "test_predictions_for_ensemble": test_combinator}
 

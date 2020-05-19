@@ -67,7 +67,7 @@ class BaselineTrainer(PipelineNode):
         # Test data
         if self.X_test is not None:
             test_preds = baseline_model.predict(X_test=self.X_test, predict_proba=True)
-            test_preds = test_preds.tolist()
+            test_preds = np.array(test_preds)
         else:
             test_preds = None
 

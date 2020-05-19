@@ -235,6 +235,8 @@ if __name__ == "__main__":
     # Score
     score = autonet.score(X_test, y_test) if y_test is not None else None
 
+    print("Test score:", score)
+
     # Write to json
     results = dict()
     results["run_id"] = int(args.run_id)
