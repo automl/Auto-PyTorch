@@ -174,7 +174,7 @@ if __name__=="__main__":
     if args.test=="true":
         from sklearn import metrics
         test_dir = args.rundir
-        test_dir = "/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs/0/run_1"
+        test_dir = "/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs/2/run_3"
 
         #simulator = EnsembleTrajectorySimulator(ensemble_pred_dir=test_dir, ensemble_config=ensemble_config, n_steps=3)
         simulator = EnsembleTrajectorySimulator(ensemble_pred_dir=test_dir, ensemble_config=ensemble_config)

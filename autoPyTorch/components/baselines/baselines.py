@@ -48,8 +48,8 @@ class LGBBaseline(BaseBaseline):
     def fit(self, X_train, y_train, X_val, y_val, categoricals=None):
         results = dict()
 
-        num_classes = len(np.unique(y_train))
-        self.config["num_class"] = num_classes
+        self.num_classes = len(np.unique(y_train))
+        self.config["num_class"] = self.num_classes
 
         self.all_nan = np.all(np.isnan(X_train), axis=0)
         X_train = X_train[:, ~self.all_nan]
@@ -71,7 +71,7 @@ class LGBBaseline(BaseBaseline):
         pred_val = self.model.predict_proba(X_val)
 
         # This fixes a bug
-        if num_classes==2:
+        if self.num_classes==2:
             pred_train = pred_train.transpose()[0:len(y_train)]
             pred_val = pred_val.transpose()[0:len(y_val)]
 
@@ -105,8 +105,13 @@ class LGBBaseline(BaseBaseline):
         
         if predict_proba:
             y_pred_proba = self.model.predict_proba(X_test)
+            if self.num_classes==2:
+                y_pred_proba = y_pred_proba.transpose()[0:len(X_test)]
             return y_pred_proba
+        
         y_pred = self.model.predict(X_test)
+        if self.num_classes==2:
+            y_pred = y_pred.transpose()[0:len(X_test)]
         y_pred = np.argmax(y_pred, axis=1)
         return y_pred
 
@@ -190,8 +195,8 @@ class RFBaseline(BaseBaseline):
         X_val = np.nan_to_num(X_val)
 
         self.config["warm_start"] = False
-        num_classes = len(np.unique(y_train))
-        if num_classes>2:
+        self.num_classes = len(np.unique(y_train))
+        if self.num_classes>2:
             print("==> Using warmstarting for multiclass")
             final_n_estimators = self.config["n_estimators"]
             self.config["n_estimators"] = 8
@@ -253,8 +258,8 @@ class ExtraTreesBaseline(BaseBaseline):
         X_val = np.nan_to_num(X_val)
 
         self.config["warm_start"] = False
-        num_classes = len(np.unique(y_train))
-        if num_classes>2:
+        self.num_classes = len(np.unique(y_train))
+        if self.num_classes>2:
             print("==> Using warmstarting for multiclass")
             final_n_estimators = self.config["n_estimators"]
             self.config["n_estimators"] = 8
@@ -320,7 +325,7 @@ class KNNBaseline(BaseBaseline):
         X_train = np.nan_to_num(X_train)
         X_val = np.nan_to_num(X_val)
 
-        num_classes = len(np.unique(y_train))
+        self.num_classes = len(np.unique(y_train))
         
         self.model = KNeighborsClassifier(**self.config)
         self.model.fit(X_train, y_train)

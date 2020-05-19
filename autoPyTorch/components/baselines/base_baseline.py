@@ -22,6 +22,7 @@ class BaseBaseline():
         self.categoricals = None
         self.all_nan = None
         self.encode_dicts = None
+        self.num_classes = None
 
     def configure_logging(self):
         self.logger = logging.getLogger(__name__)
@@ -47,7 +48,8 @@ class BaseBaseline():
         info_dict = {"nan_cols": self.all_nan,
                      "encode_dict": self.encode_dicts,
                      "categoricals": self.categoricals,
-                     "model_name": self.name}
+                     "model_name": self.name,
+                     "num_classes": self.num_classes}
 
         pickle.dump(info_dict, open(info_path, "wb"))
         pickle.dump(self.model, open(model_path, "wb"))
@@ -60,6 +62,7 @@ class BaseBaseline():
         self.all_nan = info["nan_cols"]
         self.categoricals = info["categoricals"]
         self.encode_dicts = info["encode_dict"]
+        self.num_classes = info["num_classes"]
 
         self.model = pickle.load(open(model_path, "rb"))
 
