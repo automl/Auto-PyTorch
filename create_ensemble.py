@@ -32,24 +32,50 @@ class EnsembleTrajectorySimulator():
 
         self.ensemble_selection = EnsembleSelection(**ensemble_config)
 
-    def read_runfiles(self):
+    def read_runfiles(self, shuffle=False, val_split=0.33):
 
         self.ensemble_identifiers = []
         self.ensemble_predictions = []
+        self.ensemble_predictions_enstest = []
         self.ensemble_timestamps = []
 
         with open(self.ensemble_pred_dir, "rb") as f:
             self.labels = np.load(f, allow_pickle=True)
             print("Skipping y transform")
 
+            #if shuffle:
+            #    sorting_labels_inv = inv_perm(np.argsort(self.labels))
+
+            if val_split is not None and val_split>0:
+                indices = np.arange(len(self.labels))
+                np.random.shuffle(indices)
+                split = int(len(indices) * (1-val_split))
+                self.train_indices = indices[:split]
+                self.val_indices = indices[split:]
+                self.labels_enstest = self.labels[self.val_indices]
+                self.labels = self.labels[self.train_indices]
+
             while True:
                 try:
                     job_id, budget, timestamps = np.load(f, allow_pickle=True)
                     predictions = np.array(np.load(f, allow_pickle=True))
                     
-                    self.ensemble_identifiers.append(job_id + (budget, ))
-                    self.ensemble_predictions.append(predictions)
-                    self.ensemble_timestamps.append(timestamps)
+                    #if shuffle:
+                    #    label_inds = np.arange(len(self.labels))
+                    #    np.random.shuffle(label_inds)
+                    #    labels_temp = self.labels[label_inds]
+                    #    sorting_pred_labels = np.argsort(labels_temp)
+                    #    predictions = predictions[sorting_pred_labels][sorting_labels_inv]
+                    
+                    if val_split is not None and val_split>0:
+                        self.ensemble_identifiers.append(job_id + (budget, ))
+                        self.ensemble_predictions.append(predictions[self.train_indices])
+                        self.ensemble_predictions_enstest.append(predictions[self.val_indices])
+                        self.ensemble_timestamps.append(timestamps)
+                    else:
+                        self.ensemble_identifiers.append(job_id + (budget, ))
+                        self.ensemble_predictions.append(predictions)
+                        self.ensemble_timestamps.append(timestamps)
                 except (EOFError, OSError):
                     break
 
@@ -81,12 +107,12 @@ class EnsembleTrajectorySimulator():
         print("==> Found %i timestamps" %len(self.ensemble_timestamps))
 
     def transform_timestamps(self, add_time):
-        #NOTE: timestamps are sorted
+        # timestamps are sorted
         transformed_timestamps = [t["finished"]+add_time for t in self.ensemble_timestamps]
         self.ensemble_timestamps = transformed_timestamps
 
     def get_timesteps(self):
-        #NOTE: we want at least 2 models
+        # we want at least 2 models
         first_timestep = self.ensemble_timestamps[1]
         final_timestep = self.ensemble_timestamps[-1]
         if self.n_steps is not None:
@@ -94,15 +120,15 @@ class EnsembleTrajectorySimulator():
         return self.ensemble_timestamps[1:]
 
     def get_ensemble_performance(self, timestep):
-        cutoff_ind = np.argmin([abs(t - timestep) for t in self.ensemble_timestamps])+1   #MODIFIED
+        cutoff_ind = np.argmin([abs(t - timestep) for t in self.ensemble_timestamps])+1
         print("==> Considering %i models and timestep %f" %(cutoff_ind, timestep))
 
         self.ensemble_selection.fit(np.array(self.ensemble_predictions[0:cutoff_ind]), self.labels, self.ensemble_identifiers[0:cutoff_ind])
 
-        print("==> Ensemble weights (%i):" %len(self.ensemble_selection.weights_), self.ensemble_selection.weights_)
+        #print("==> Ensemble weights (%i):" %len(self.ensemble_selection.weights_), self.ensemble_selection.weights_)
 
         if self.test_labels is not None:
-            print("==> Test preds: %i" %len(self.ensemble_predictions_test))
+            #print("==> Test preds: %i" %len(self.ensemble_predictions_test))
             test_preds = self.ensemble_selection.predict(self.ensemble_predictions_test[0:cutoff_ind])
             if len(test_preds.shape)==3:
                 test_preds = test_preds[0]
@@ -112,17 +138,29 @@ class EnsembleTrajectorySimulator():
         else:
             test_performance = 0
 
-        return self.ensemble_selection.get_validation_performance(), test_performance
+        if len(self.ensemble_pred_dir_test)>0:
+            enstest_preds = self.ensemble_selection.predict(self.ensemble_predictions_enstest[0:cutoff_ind])
+            if len(enstest_preds.shape)==3:
+                enstest_preds = enstest_preds[0]
+            if len(enstest_preds.shape)==2:
+                enstest_preds = np.argmax(enstest_preds, axis=1)
+            enstest_performance = accuracy(self.labels_enstest, enstest_preds)
+        else:
+            enstest_performance = 0
+
+        return self.ensemble_selection.get_validation_performance(), test_performance, enstest_performance
 
     def simulate_trajectory(self):
         self.trajectory = []
         self.test_trajectory = []
+        self.enstest_trajectory = []
         for ind, t in enumerate(self.timesteps):
             print("==> Building ensemble at %i -th timestep %f" %(ind, t))
-            ensemble_performance, test_performance = self.get_ensemble_performance(t)
-            print("==> Performance:", ensemble_performance, "/", test_performance)
+            ensemble_performance, test_performance, enstest_performance = self.get_ensemble_performance(t)
+            print("==> Performance:", ensemble_performance, "/", test_performance, "/", enstest_performance)
             self.trajectory.append((t, ensemble_performance))
             self.test_trajectory.append((t, test_performance))
+            self.enstest_trajectory.append((t, enstest_performance))
             #print(self.trajectory[-1])
 
     def save_trajectory(self, save_file, test=False):
@@ -166,7 +204,7 @@ if __name__=="__main__":
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
 
     ensemble_config = {"ensemble_size" : 50,
-                       "only_consider_n_best" : 30,
+                       "only_consider_n_best" : 10,
                        "sorted_initialization_n_best" : 0,
                        #"only_consider_n_best_percent" : 0,
                        "metric" : autonet_accuracy}
@@ -174,7 +212,7 @@ if __name__=="__main__":
     if args.test=="true":
         from sklearn import metrics
         test_dir = args.rundir
-        test_dir = "/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs/2/run_3"
+        test_dir = "/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs/4/run_5"
 
         #simulator = EnsembleTrajectorySimulator(ensemble_pred_dir=test_dir, ensemble_config=ensemble_config, n_steps=3)
         simulator = EnsembleTrajectorySimulator(ensemble_pred_dir=test_dir, ensemble_config=ensemble_config)
