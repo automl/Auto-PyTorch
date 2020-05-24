@@ -13,6 +13,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader, TensorDataset
 
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
+from autoPyTorch.pipeline.nodes.one_hot_encoding import OneHotEncoding
 
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
@@ -21,6 +22,7 @@ from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.components.training.base_training import BaseTrainingTechnique, BaseBatchLossComputationTechnique
 from autoPyTorch.components.training.trainer import Trainer
+
 
 from copy import deepcopy
 
@@ -37,6 +39,9 @@ class TrainNode(PipelineNode):
         self.batch_loss_computation_techniques = dict()
         self.add_batch_loss_computation_technique("standard", BaseBatchLossComputationTechnique)
         self.ensemble_models = []
+        #self.adversarial_training_technique = dict()
+        #self.adversarial_training_technique[""]
+
 
     
     def fit(self, hyperparameter_config, pipeline_config,
@@ -107,6 +112,13 @@ class TrainNode(PipelineNode):
             print('lastk: ', se_lastk)
         else:
             se_lastk = False
+        
+        # Decide here between adversarial training and other regularizers
+        if hyperparameter_config["batch_loss_computation_technique"] == "standard":
+            use_adversarial_training = hyperparameter_config["use_adversarial_training"]
+        else:
+            use_adversarial_training = False
+
 
         trainer = Trainer(
             model=network,
@@ -124,7 +136,8 @@ class TrainNode(PipelineNode):
             lookahead=use_lookahead,
             lookahead_config=lookahead_config,
             se=use_se,
-            se_lastk=se_lastk
+            se_lastk=se_lastk,
+            use_adversarial_training=use_adversarial_training
         )
 
         if use_swa or use_se:
@@ -300,6 +313,11 @@ class TrainNode(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
+        # Decide here between adversarial training or batch_loss_computation_technique
+        use_adversarial_training = CSH.CategoricalHyperparameter("use_adversarial_training", [True, False])
+
+        cs.add_hyperparameter(use_adversarial_training)
+
         possible_techniques = set(pipeline_config['batch_loss_computation_techniques']).intersection(self.batch_loss_computation_techniques.keys())
         hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_techniques)
         cs.add_hyperparameter(hp_batch_loss_computation)
@@ -314,6 +332,8 @@ class TrainNode(PipelineNode):
             cs.add_configuration_space(prefix=name, configuration_space=technique_cs,
                 delimiter=ConfigWrapper.delimiter, parent_hyperparameter={'parent': hp_batch_loss_computation, 'value': name})
 
+        cond1 = ConfigSpace.EqualsCondition(use_adversarial_training, hp_batch_loss_computation, "standard")
+        cs.add_condition(cond1)
         self._check_search_space_updates((possible_techniques, "*"))
         return cs
 
