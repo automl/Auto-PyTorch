@@ -9,6 +9,8 @@ from torch.autograd import Variable
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.components.optimizer.optimizer import Lookahead
 
+from copy import deepcopy
+
 # from util.transforms import mixup_data, mixup_criterion
 # from checkpoints import save_checkpoint
 
@@ -17,7 +19,8 @@ class Trainer(object):
             self,
             metrics, log_functions, loss_computation, model, criterion,
             budget, optimizer, training_techniques, logger, device,
-            full_eval_each_epoch, swa, lookahead, lookahead_config, se, se_lastk
+            full_eval_each_epoch, swa, lookahead, lookahead_config, se, se_lastk,
+            use_adversarial_training
     ):
         
         self.criterion = criterion
@@ -62,6 +65,7 @@ class Trainer(object):
         self.eval_additional_logs_on_snapshot = not full_eval_each_epoch and self.log_functions
 
         self.to(device)
+        self.use_adversarial_training = use_adversarial_training
     
     def update_model_snapshots(self, model_snapshots):
         self.model_snapshots = model_snapshots
@@ -163,9 +167,20 @@ class Trainer(object):
 
             # training
             self.optimizer.zero_grad()
-            outputs = self.model(data)
-            loss_func = self.loss_computation.criterion(**criterion_kwargs)
-            loss = loss_func(self.criterion, outputs)
+            ## If adversarial training is used then a little bit different here
+            if not self.use_adversarial_training:
+                outputs = self.model(data)
+
+                loss_func = self.loss_computation.criterion(**criterion_kwargs)
+                loss = loss_func(self.criterion, outputs)
+            else:
+                data_adv = self.fgsm_attack(data, targets, eps=0.007)
+
+                outputs = self.model(data)
+                outputs_adv = self.model(data_adv)
+
+                loss = 0.5 * self.criterion(outputs, targets) + 0.5 * self.criterion(outputs_adv, targets)
+
             loss.backward()
             self.optimizer.step()
 
@@ -238,3 +253,17 @@ class Trainer(object):
         outputs_data = np.vstack(outputs_data)
         targets_data = np.vstack(targets_data)
         return [metric(outputs_data, targets_data) for metric in self.metrics]
+
+    def fgsm_attack(self, data, target, eps=0.007):
+        data_copy = deepcopy(data)
+        data_copy.requires_grad = True
+
+        outputs = self.model(data_copy)
+        cost = self.criterion(outputs, target)
+
+        grad = torch.autograd.grad(cost, data_copy, retain_graph=False, create_graph=False)[0]
+
+        adv_data = data_copy + eps * grad.sign()
+        adv_data = torch.clamp(adv_data, min=0, max=1).detach()
+
+        return adv_data
