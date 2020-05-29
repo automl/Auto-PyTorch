@@ -112,7 +112,7 @@ class Trainer(object):
         # validation on snapshot
         if self.eval_additional_logs_on_snapshot or self.eval_valid_on_snapshot or refit:
             # If snapshot ensembling is active, then by-pass evaluation, as evaluating on snapshots isn't really a thing
-            if self.se:
+            if self.se and len(self.model_snapshots) > 1:
                 valid_metric_results = None
 
                 if valid_loader is not None and self.eval_valid_on_snapshot:

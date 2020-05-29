@@ -4,6 +4,7 @@ import numpy as np
 from torch.autograd import Variable
 import ConfigSpace
 import torch
+import random
 
 class CutOut(BaseBatchLossComputationTechnique):
     def set_up(self, pipeline_config, hyperparameter_config, logger):
@@ -19,10 +20,10 @@ class CutOut(BaseBatchLossComputationTechnique):
             lam = 1
             return x, { 'y_a': y_a, 'y_b': y_b, 'lam' : lam }
 
-        # Draw parameters of a random bounding box
-        bbx1, bbx2 = self.rand_bbox(x.size(), self.patch_ratio)
+        # Draw a uniform sample of indices which denotes what to turn off 
+        indices = self.rand_indices(x.size(), self.patch_ratio)
 
-        x[:, bbx1:bbx2] = 0.0
+        x[:, indices] = 0.0
         lam = 1
         y_a = y
         y_b = y
@@ -42,14 +43,11 @@ class CutOut(BaseBatchLossComputationTechnique):
         add_hyperparameter(cs, ConfigSpace.hyperparameters.UniformFloatHyperparameter, "cutout_prob", cutout_prob)
         return cs
 
-    def rand_bbox(self, size, patch_ratio):
+    def rand_indices(self, size, patch_ratio):
         L = size[1]
-        cut_l = np.int(L * patch_ratio)
-        # uniform
-        cx = np.random.randint(L)
+        k_choose = np.int(L * patch_ratio)
+        # sample indices
+        sample_indices = random.sample(range(L), k_choose)
 
-        bbx1 = np.clip(cx - cut_l // 2, 0, L)
-        bbx2 = np.clip(cx + cut_l // 2, 0, L)
-
-        return bbx1, bbx2
+        return torch.tensor(sample_indices)
         

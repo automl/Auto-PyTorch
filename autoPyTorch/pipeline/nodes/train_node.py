@@ -314,7 +314,7 @@ class TrainNode(PipelineNode):
         cs = ConfigSpace.ConfigurationSpace()
 
         # Decide here between adversarial training or batch_loss_computation_technique
-        use_adversarial_training = CSH.CategoricalHyperparameter("use_adversarial_training", [True, False])
+        use_adversarial_training = CSH.CategoricalHyperparameter("use_adversarial_training", pipeline_config['use_adversarial_training'])
 
         cs.add_hyperparameter(use_adversarial_training)
 
@@ -342,6 +342,7 @@ class TrainNode(PipelineNode):
             ConfigOption(name="batch_loss_computation_techniques", default=list(self.batch_loss_computation_techniques.keys()),
                 type=str, list=True, choices=list(self.batch_loss_computation_techniques.keys())),
             ConfigOption("cuda", default=True, type=to_bool, choices=[True, False]),
+            ConfigOption(name="use_adversarial_training", default=[True, False], type=to_bool, choices=[True, False], list=True, info='use_adversarial_training'),
             ConfigOption("torch_num_threads", default=1, type=int),
             ConfigOption("full_eval_each_epoch", default=False, type=to_bool, choices=[True, False],
                 info="Whether to evaluate everything every epoch. Results in more useful output"),
