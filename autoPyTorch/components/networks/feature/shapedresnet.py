@@ -55,6 +55,7 @@ class ShapedResNet(ResNet):
         use_shake_shake=(True, False),
         use_batch_normalization=(True, False),
         use_shake_drop=(True, False),
+        use_skip_connection=(True, False),
     ):
         cs = CS.ConfigurationSpace()
         
@@ -66,6 +67,7 @@ class ShapedResNet(ResNet):
         use_dropout_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_dropout", use_dropout)
         add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_shake_shake", use_shake_shake)
         add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_batch_normalization", use_batch_normalization)
+        add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_skip_connection", use_skip_connection)
 
         shake_drop_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_shake_drop", use_shake_drop)
         if True in use_shake_drop:
@@ -77,6 +79,7 @@ class ShapedResNet(ResNet):
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "max_units", max_units)
 
         if True in use_dropout:
+
             dropout_shape_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'dropout_shape', dropout_shape)
             max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
 

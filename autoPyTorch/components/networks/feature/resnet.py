@@ -193,5 +193,7 @@ class ResBlock(nn.Module):
             bl = shake_drop_get_bl(self.block_index, 1 - self.config["max_shake_drop_probability"], self.num_blocks, self.training, x.is_cuda)
             x = shake_drop(x, alpha, beta, bl)
 
-        x = x + residual
+        if self.config["use_skip_connection"]:
+            x = x + residual
+
         return x
