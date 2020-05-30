@@ -54,15 +54,27 @@ class AdamOptimizer(AutoNetOptimizerBase):
             'use_weight_decay',
             use_weight_decay
         )
-        if True in use_weight_decay:
+        validate_if_activated = False
+        if isinstance(use_weight_decay, tuple):
+            if isinstance(use_weight_decay[0], list):
+                value_to_check = use_weight_decay[0]
+
+            else:
+                value_to_check = use_weight_decay
+                validate_if_activated = True
+        else:
+            if isinstance(use_weight_decay, bool):
+                value_to_check = use_weight_decay
+
+        if True in value_to_check:
             weight_decay_value = add_hyperparameter(
                 cs,
                 CSH.UniformFloatHyperparameter,
                 'weight_decay',
                 weight_decay
             )
-
-            cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
 
         return cs
 
@@ -91,15 +103,27 @@ class AdamWOptimizer(AutoNetOptimizerBase):
             'use_weight_decay',
             use_weight_decay
         )
-        if True in use_weight_decay:
+        validate_if_activated = False
+        if isinstance(use_weight_decay, tuple):
+            if isinstance(use_weight_decay[0], list):
+                value_to_check = use_weight_decay[0]
+
+            else:
+                value_to_check = use_weight_decay
+                validate_if_activated = True
+        else:
+            if isinstance(use_weight_decay, bool):
+                value_to_check = use_weight_decay
+
+        if True in value_to_check:
             weight_decay_value = add_hyperparameter(
                 cs,
                 CSH.UniformFloatHyperparameter,
                 'weight_decay',
                 weight_decay
             )
-
-            cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
 
         return cs
 
@@ -131,15 +155,27 @@ class SgdOptimizer(AutoNetOptimizerBase):
             'use_weight_decay',
             use_weight_decay
         )
-        if True in use_weight_decay:
+        validate_if_activated = False
+        if isinstance(use_weight_decay, tuple):
+            if isinstance(use_weight_decay[0], list):
+                value_to_check = use_weight_decay[0]
+
+            else:
+                value_to_check = use_weight_decay
+                validate_if_activated = True
+        else:
+            if isinstance(use_weight_decay, bool):
+                value_to_check = use_weight_decay
+
+        if True in value_to_check:
             weight_decay_value = add_hyperparameter(
                 cs,
                 CSH.UniformFloatHyperparameter,
                 'weight_decay',
                 weight_decay
             )
-
-            cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
 
         return cs
 
@@ -171,15 +207,27 @@ class RMSpropOptimizer(AutoNetOptimizerBase):
             'use_weight_decay',
             use_weight_decay
         )
-        if True in use_weight_decay:
+        validate_if_activated = False
+        if isinstance(use_weight_decay, tuple):
+            if isinstance(use_weight_decay[0], list):
+                value_to_check = use_weight_decay[0]
+
+            else:
+                value_to_check = use_weight_decay
+                validate_if_activated = True
+        else:
+            if isinstance(use_weight_decay, bool):
+                value_to_check = use_weight_decay
+
+        if True in value_to_check:
             weight_decay_value = add_hyperparameter(
                 cs,
                 CSH.UniformFloatHyperparameter,
                 'weight_decay',
                 weight_decay
             )
-
-            cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
 
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'alpha', alpha)
         return cs

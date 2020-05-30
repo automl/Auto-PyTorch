@@ -70,19 +70,59 @@ class ShapedResNet(ResNet):
         add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_skip_connection", use_skip_connection)
 
         shake_drop_hp = add_hyperparameter(cs, CS.CategoricalHyperparameter, "use_shake_drop", use_shake_drop)
-        if True in use_shake_drop:
-            shake_drop_prob_hp = add_hyperparameter(cs, CS.UniformFloatHyperparameter, "max_shake_drop_probability",
-                max_shake_drop_probability)
-            cs.add_condition(CS.EqualsCondition(shake_drop_prob_hp, shake_drop_hp, True))
+
+        validate_if_activated = False
+        if isinstance(use_shake_drop, tuple):
+            if isinstance(use_shake_drop[0], list):
+                value_to_check = use_shake_drop[0]
+
+            else:
+                value_to_check = use_shake_drop
+                validate_if_activated = True
+        else:
+            if isinstance(use_shake_drop, bool):
+                value_to_check = use_shake_drop
+
+        if True in value_to_check:
+            shake_drop_prob_hp = add_hyperparameter(
+                cs,
+                CS.UniformFloatHyperparameter,
+                "max_shake_drop_probability",
+                max_shake_drop_probability,
+            )
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(shake_drop_prob_hp, shake_drop_hp, True))
         
         add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'resnet_shape', resnet_shape)
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "max_units", max_units)
 
-        if True in use_dropout:
+        validate_if_activated = False
+        if isinstance(use_dropout, tuple):
+            if isinstance(use_dropout[0], list):
+                value_to_check = use_dropout[0]
 
-            dropout_shape_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'dropout_shape', dropout_shape)
-            max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
+            else:
+                value_to_check = use_dropout
+                validate_if_activated = True
+        else:
+            if isinstance(use_dropout, bool):
+                value_to_check = use_dropout
 
-            cs.add_condition(CS.EqualsCondition(dropout_shape_hp, use_dropout_hp, True))
-            cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
+        if True in value_to_check:
+            dropout_shape_hp = add_hyperparameter(
+                cs,
+                CSH.CategoricalHyperparameter,
+                'dropout_shape',
+                dropout_shape
+            )
+            max_dropout_hp = add_hyperparameter(
+                cs,
+                CSH.UniformFloatHyperparameter,
+                'max_dropout',
+                max_dropout
+            )
+            if validate_if_activated:
+                cs.add_condition(CS.EqualsCondition(dropout_shape_hp, use_dropout_hp, True))
+                cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
+
         return cs

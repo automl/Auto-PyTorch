@@ -219,16 +219,17 @@ class TrainNode(PipelineNode):
             if use_swa:
                 # check if the learning rate scheduler is cyclical
                 if scheduler_cyclical:
-                    # delay with one epoch for the
-                    # snapshot since the optimizer has
-                    # not yet updated the weights.
-                    if lr_scheduler.restarted_at + 1 == epoch:
-                        print(f"{counter}-th swa update triggered")
-                        print(f"Scheduler :{type(lr_scheduler)}")
-                        for param_group in optimizer.param_groups:
-                            print(f"Learning rate {param_group['lr']}")
-                        counter += 1
-                        trainer.optimizer.update_swa()
+                    if epoch >= consumed_budget:
+                        # delay with one epoch for the
+                        # snapshot since the optimizer has
+                        # not yet updated the weights.
+                        if lr_scheduler.restarted_at + 1 == epoch:
+                            print(f"{counter}-th swa update triggered")
+                            print(f"Scheduler :{type(lr_scheduler)}")
+                            for param_group in optimizer.param_groups:
+                                print(f"Learning rate {param_group['lr']}")
+                            counter += 1
+                            trainer.optimizer.update_swa()
                 else:
                     if epoch >= consumed_budget:
                         print(f"{counter}-th swa update triggered")
