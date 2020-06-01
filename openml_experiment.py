@@ -260,6 +260,7 @@ autonet = AutoNetClassification(
     categorical_features=categorical_indicator,
     min_workers=args.nr_workers,
     dataset_name=dataset.name,
+
     working_dir=result_directory,
     batch_loss_computation_techniques=[args.example_augmentation],
     use_lookahead=[args.use_lookahead],

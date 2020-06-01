@@ -345,8 +345,8 @@ class Lookahead(Optimizer):
 
     @staticmethod
     def get_config_space(
-            la_steps=((1, 5), False),
-            la_alpha=((0.5, 0.8), True),
+            la_steps=((5, 10), False),
+            la_alpha=((0.5, 0.8), False),
     ):
         cs = CS.ConfigurationSpace()
         add_hyperparameter(cs, CS.UniformIntegerHyperparameter, 'la_steps', la_steps)
