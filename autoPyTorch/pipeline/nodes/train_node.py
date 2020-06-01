@@ -313,12 +313,7 @@ class TrainNode(PipelineNode):
     def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
-
-        # Decide here between adversarial training or batch_loss_computation_technique
-        use_adversarial_training = CSH.CategoricalHyperparameter("use_adversarial_training", pipeline_config['use_adversarial_training'])
-
-        cs.add_hyperparameter(use_adversarial_training)
-
+        
         possible_techniques = set(pipeline_config['batch_loss_computation_techniques']).intersection(self.batch_loss_computation_techniques.keys())
         hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_techniques)
         cs.add_hyperparameter(hp_batch_loss_computation)
@@ -333,8 +328,12 @@ class TrainNode(PipelineNode):
             cs.add_configuration_space(prefix=name, configuration_space=technique_cs,
                 delimiter=ConfigWrapper.delimiter, parent_hyperparameter={'parent': hp_batch_loss_computation, 'value': name})
 
-        cond1 = ConfigSpace.EqualsCondition(use_adversarial_training, hp_batch_loss_computation, "standard")
-        cs.add_condition(cond1)
+        # Decide here between adversarial training or batch_loss_computation_technique
+        if "standard" in possible_techniques:
+            use_adversarial_training = CSH.CategoricalHyperparameter("use_adversarial_training", pipeline_config['use_adversarial_training'])
+            cs.add_hyperparameter(use_adversarial_training)
+            cond1 = ConfigSpace.EqualsCondition(use_adversarial_training, hp_batch_loss_computation, "standard")
+            cs.add_condition(cond1)
         self._check_search_space_updates((possible_techniques, "*"))
         return cs
 
