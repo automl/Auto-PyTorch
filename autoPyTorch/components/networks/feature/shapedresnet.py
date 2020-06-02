@@ -73,7 +73,8 @@ class ShapedResNet(ResNet):
         add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'resnet_shape', resnet_shape)
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "max_units", max_units)
 
-        max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
-        cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
+        if True in use_dropout:
+            max_dropout_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "max_dropout", max_dropout)
+            cs.add_condition(CS.EqualsCondition(max_dropout_hp, use_dropout_hp, True))
 
         return cs
