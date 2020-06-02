@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 
 from autoPyTorch import (
     AutoNetClassification,
@@ -172,7 +173,7 @@ search_space_updates.append(
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:num_groups",
-    value_range=[4],
+    value_range=[2],
     log=False,
 )
 search_space_updates.append(
@@ -252,10 +253,12 @@ ind_train, ind_test = task.get_train_test_split_indices()
 X_train, Y_train = X[ind_train], y[ind_train]
 X_test, Y_test = X[ind_test], y[ind_test]
 
+run_id = re.sub(r"\D+\d+(\d|\])*$", "", args.run_id)
+
 autonet = AutoNetClassification(
-   'no_regularization',
+   '/home/fr/fr_fr/fr_rj50/new_runs/Auto-PyTorch/no_regularization',
     random_seed=args.random_seed,
-    run_id=args.run_id,
+    run_id=run_id,
     task_id=args.array_id,
     categorical_features=categorical_indicator,
     min_workers=args.nr_workers,
