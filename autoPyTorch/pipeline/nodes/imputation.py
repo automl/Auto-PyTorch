@@ -51,8 +51,7 @@ class Imputation(PipelineNode):
 
     def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
 
-        possible_strategies = set(Imputation.strategies).intersection(pipeline_config['imputation_strategies'])
-        possible_strategies = list(possible_strategies)
+        possible_strategies = sorted(set(Imputation.strategies).intersection(pipeline_config['imputation_strategies']))
 
         cs = ConfigSpace.ConfigurationSpace()
         cs.add_hyperparameter(CSH.CategoricalHyperparameter("strategy", possible_strategies))

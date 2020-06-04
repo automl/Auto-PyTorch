@@ -200,7 +200,7 @@ class DenseNetFlexible(BaseImageNet):
         batchnorm_weight_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'batchnorm_weight_init', batchnorm_weight_init)
         batchnorm_bias_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'batchnorm_bias_init', batchnorm_bias_init)
         linear_bias_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'linear_bias_init', linear_bias_init)
-        first_activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'first_activation', list(set(activations).intersection(all_activations)))
+        first_activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'first_activation', sorted(set(activations).intersection(all_activations)))
         blocks_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'blocks', nr_blocks)
 
         cs.add_hyperparameter(growth_rate_hp)
@@ -227,7 +227,7 @@ class DenseNetFlexible(BaseImageNet):
         for i in range(1, max_blocks+1):
             layer_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'layer_in_block_%d' % i, layer_range)
             pool_kernel_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'pool_kernel_%d' % i, kernel_range)
-            activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'activation_%d' % i, list(set(activations).intersection(all_activations)))
+            activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'activation_%d' % i, sorted(set(activations).intersection(all_activations)))
             cs.add_hyperparameter(layer_hp)
             cs.add_hyperparameter(pool_kernel_hp)
             cs.add_hyperparameter(activation_hp)
