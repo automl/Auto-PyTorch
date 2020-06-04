@@ -73,7 +73,7 @@ class EmbeddingSelector(PipelineNode):
             return cs
 
         possible_embeddings = set(pipeline_config["embeddings"]).intersection(self.embedding_modules.keys())
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("embedding", possible_embeddings, default_value="none"))
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("embedding", sorted(possible_embeddings), default_value="none"))
         
         for embedding_name, embedding_type in self.embedding_modules.items():
             if (embedding_name not in possible_embeddings):

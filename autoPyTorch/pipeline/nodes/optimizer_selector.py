@@ -38,9 +38,9 @@ class OptimizerSelector(PipelineNode):
     def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
-
-        possible_optimizer = list(set(pipeline_config["optimizer"]).intersection(self.optimizer.keys()))
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("optimizer", possible_optimizer))
+        
+        possible_optimizer = set(pipeline_config["optimizer"]).intersection(self.optimizer.keys())
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("optimizer", sorted(possible_optimizer)))
         
         for optimizer_name, optimizer_type in self.optimizer.items():
             if (optimizer_name not in possible_optimizer):

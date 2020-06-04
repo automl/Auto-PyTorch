@@ -75,8 +75,8 @@ class NetworkSelector(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_networks = list(set(pipeline_config["networks"]).intersection(self.networks.keys()))
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
+        possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", sorted(possible_networks)))
         
         network_list = list()
         for network_name, network_type in self.networks.items():

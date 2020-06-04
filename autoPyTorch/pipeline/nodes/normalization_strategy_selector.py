@@ -74,8 +74,8 @@ class NormalizationStrategySelector(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_normalization_strategies = list(set(pipeline_config["normalization_strategies"]).intersection(self.normalization_strategies.keys()))
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter("normalization_strategy", possible_normalization_strategies))
+        possible_normalization_strategies = set(pipeline_config["normalization_strategies"]).intersection(self.normalization_strategies.keys())
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter("normalization_strategy", sorted(possible_normalization_strategies)))
 
         self._check_search_space_updates()
         return cs

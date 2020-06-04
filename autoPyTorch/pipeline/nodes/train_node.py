@@ -184,8 +184,8 @@ class TrainNode(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_techniques = list(set(pipeline_config['batch_loss_computation_techniques']).intersection(self.batch_loss_computation_techniques.keys()))
-        hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_techniques)
+        possible_techniques = set(pipeline_config['batch_loss_computation_techniques']).intersection(self.batch_loss_computation_techniques.keys())
+        hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", sorted(possible_techniques))
         cs.add_hyperparameter(hp_batch_loss_computation)
 
         for name, technique in self.batch_loss_computation_techniques.items():

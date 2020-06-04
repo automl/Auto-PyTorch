@@ -274,7 +274,7 @@ class SimpleTrainNode(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        hp_batch_loss_computation = cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", list(self.batch_loss_computation_techniques.keys())))
+        hp_batch_loss_computation = cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", sorted(self.batch_loss_computation_techniques.keys())))
 
         for name, technique in self.batch_loss_computation_techniques.items():
             parent = {'parent': hp_batch_loss_computation, 'value': name} if hp_batch_loss_computation is not None else None
