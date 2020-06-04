@@ -39,7 +39,7 @@ class OptimizerSelector(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_optimizer = set(pipeline_config["optimizer"]).intersection(self.optimizer.keys())
+        possible_optimizer = list(set(pipeline_config["optimizer"]).intersection(self.optimizer.keys()))
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("optimizer", possible_optimizer))
         
         for optimizer_name, optimizer_type in self.optimizer.items():

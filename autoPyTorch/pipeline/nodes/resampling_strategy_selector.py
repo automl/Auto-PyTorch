@@ -125,9 +125,9 @@ class ResamplingStrategySelector(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_over_sampling_methods = set(pipeline_config["over_sampling_methods"]).intersection(self.over_sampling_methods.keys())
-        possible_under_sampling_methods = set(pipeline_config["under_sampling_methods"]).intersection(self.under_sampling_methods.keys())
-        possible_target_size_strategies = set(pipeline_config["target_size_strategies"]).intersection(self.target_size_strategies.keys())
+        possible_over_sampling_methods = list(set(pipeline_config["over_sampling_methods"]).intersection(self.over_sampling_methods.keys()))
+        possible_under_sampling_methods = list(set(pipeline_config["under_sampling_methods"]).intersection(self.under_sampling_methods.keys()))
+        possible_target_size_strategies = list(set(pipeline_config["target_size_strategies"]).intersection(self.target_size_strategies.keys()))
         selector_over_sampling = cs.add_hyperparameter(CSH.CategoricalHyperparameter("over_sampling_method", possible_over_sampling_methods))
         selector_under_sampling = cs.add_hyperparameter(CSH.CategoricalHyperparameter("under_sampling_method", possible_under_sampling_methods))
         cs.add_hyperparameter(CSH.CategoricalHyperparameter("target_size_strategy", possible_target_size_strategies))

@@ -48,7 +48,7 @@ class LearningrateSchedulerSelector(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_lr_scheduler = set(pipeline_config["lr_scheduler"]).intersection(self.lr_scheduler.keys())
+        possible_lr_scheduler = list(set(pipeline_config["lr_scheduler"]).intersection(self.lr_scheduler.keys()))
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("lr_scheduler", possible_lr_scheduler))
         
         for lr_scheduler_name, lr_scheduler_type in self.lr_scheduler.items():

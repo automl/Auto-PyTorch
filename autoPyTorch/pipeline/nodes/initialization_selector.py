@@ -60,7 +60,7 @@ class InitializationSelector(PipelineNode):
         cs = ConfigSpace.ConfigurationSpace()
 
         # add hyperparameters of initialization method
-        possible_initialization_methods = set(pipeline_config["initialization_methods"]).intersection(self.initialization_methods.keys())
+        possible_initialization_methods = list(set(pipeline_config["initialization_methods"]).intersection(self.initialization_methods.keys()))
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("initialization_method", possible_initialization_methods))
 
         for method_name, method_type in self.initialization_methods.items():

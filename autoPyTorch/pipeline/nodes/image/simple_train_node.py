@@ -281,7 +281,7 @@ class SimpleTrainNode(PipelineNode):
             cs.add_configuration_space(prefix=name, configuration_space=technique.get_hyperparameter_search_space(**pipeline_config),
                 delimiter=ConfigWrapper.delimiter, parent_hyperparameter=parent)
 
-        possible_loss_comps = sorted(set(pipeline_config["batch_loss_computation_techniques"]).intersection(self.batch_loss_computation_techniques.keys()))
+        possible_loss_comps = sorted(list(set(pipeline_config["batch_loss_computation_techniques"]).intersection(self.batch_loss_computation_techniques.keys())))
 
         if 'batch_loss_computation_techniques' not in pipeline_config.keys():
             cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_loss_comps))
