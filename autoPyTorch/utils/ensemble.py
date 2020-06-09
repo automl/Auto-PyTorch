@@ -22,7 +22,11 @@ def build_ensemble(result, optimize_metric,
     ensemble_selection.fit(np.array(all_predictions), labels, model_identifiers)
     ensemble_configs = dict()
     for identifier in ensemble_selection.get_selected_model_identifiers():
-        ensemble_configs[tuple(identifier[:3])] = id2config[tuple(identifier[:3])]["config"]
+        try:
+            ensemble_configs[tuple(identifier[:3])] = id2config[tuple(identifier[:3])]["config"]
+        except:
+            #TODO: Do this properly (baseline configs are not logged by bohb)
+            ensemble_configs[tuple(identifier[:3])] = {"model": "baseline"}
     return ensemble_selection, ensemble_configs
 
 
@@ -207,8 +211,13 @@ class ensemble_logger(object):
             with open("/dev/null", "wb") as f:
                 loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
 
+        #logging.info(job.result.__repr__()) #TODO: delete
+
         if "predictions_for_ensemble" in job.result and job.result["predictions_for_ensemble"] is not None:
             host, port, unique = job.result["predictions_for_ensemble"]
+            #logging.info("==> Saving preds...") # #TODO: delete
+            #if not self.labels_written:
+            #    logging.info("==> (Labels)") #TODO: delete
             with open(self.file_name, "ab") as f:
                 if not self.labels_written:
                     loop.run_until_complete(self.save_remote_data(host, port, "labels", unique, f))
@@ -216,6 +225,17 @@ class ensemble_logger(object):
                 np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
                 loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
             del job.result["predictions_for_ensemble"]
+
+            if "baseline_predictions_for_ensemble" in job.result and job.result["baseline_predictions_for_ensemble"] is not None:
+                baseline_id = (int(job.result["info"]["baseline_id"]), 0, 0)
+                host, port, unique = job.result["baseline_predictions_for_ensemble"]
+                #logging.info("==> Saving baseline preds...") # #TODO: delete
+                with open(self.file_name, "ab") as f:
+                    if not self.labels_written:
+                        raise RuntimeError("Baseline predictions found but no labels logged yet.")
+                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object))
+                    loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
+                del job.result["baseline_predictions_for_ensemble"]
 
             if "test_predictions_for_ensemble" in job.result and job.result["test_predictions_for_ensemble"] is not None:
                 host, port, unique =  job.result["test_predictions_for_ensemble"]
@@ -226,4 +246,14 @@ class ensemble_logger(object):
                     np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
                     loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["test_predictions_for_ensemble"]
+
+            if "baseline_test_predictions_for_ensemble" in job.result and job.result["baseline_test_predictions_for_ensemble"] is not None:
+                host, port, unique =  job.result["baseline_test_predictions_for_ensemble"]
+                logging.info("==> Logging baseline test preds")
+                with open(self.test_file_name, "ab") as f:
+                    if not self.test_labels_written:
+                         raise RuntimeError("Baseline test predictions found but no labels logged yet.")
+                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object))
+                    loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
+                del job.result["baseline_test_predictions_for_ensemble"]
         loop.close()

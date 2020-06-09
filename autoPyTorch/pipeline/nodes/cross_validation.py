@@ -50,7 +50,7 @@ class CrossValidation(SubPipelineNode):
 
 
     def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train, X_valid, Y_valid, budget, budget_type, optimize_start_time,
-            refit, rescore, dataset_info):
+            refit, rescore, dataset_info, hyperparameter_config_id):
         """Perform cross validation.
         
         Arguments:
@@ -103,7 +103,8 @@ class CrossValidation(SubPipelineNode):
                 "valid_indices": split_indices[1],
                 "dataset_info": deepcopy(dataset_info),
                 "refit": refit,
-                "loss_penalty": loss_penalty}
+                "loss_penalty": loss_penalty,
+                "hyperparameter_config_id": hyperparameter_config_id}
             all_sub_pipeline_kwargs[i] = deepcopy(sub_pipeline_kwargs)
             result = self.sub_pipeline.fit_pipeline(X=X, Y=Y, **sub_pipeline_kwargs)
             logger.info("[AutoNet] Done with current split!")

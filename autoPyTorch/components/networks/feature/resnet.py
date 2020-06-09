@@ -41,7 +41,7 @@ class ResNet(BaseFeatureNet):
             layers.append(self._add_group(  in_features=self.config["num_units_%d" % (i-1)], 
                                             out_features=self.config["num_units_%d" % i], 
                                             last_block_index=(i-1) * self.config["blocks_per_group"], 
-                                            dropout=self.config["use_dropout"] and self.config["dropout_%d" % i]))
+                                            dropout=self.config["use_dropout"]))
 
         layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config["num_groups"]]))
         layers.append(self.activation())
@@ -64,7 +64,7 @@ class ResNet(BaseFeatureNet):
         num_units=((10, 1024), True),
         activation=('sigmoid', 'tanh', 'relu'),
         max_shake_drop_probability=(0, 1),
-        dropout=(0, 0.8),
+        dropout=(0, 1.0),
         use_shake_drop=(True, False),
         use_shake_shake=(True, False),
         use_dropout=(True, False),

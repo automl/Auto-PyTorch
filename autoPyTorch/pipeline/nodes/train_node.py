@@ -2,6 +2,7 @@ __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
 
+import os as os
 import torch
 import time
 import logging
@@ -43,7 +44,8 @@ class TrainNode(PipelineNode):
             loss_function,
             training_techniques,
             fit_start_time,
-            refit):
+            refit,
+            hyperparameter_config_id):
         """Train the network.
         
         Arguments:
@@ -65,6 +67,9 @@ class TrainNode(PipelineNode):
         Returns:
             dict -- loss and info reported to bohb
         """
+        self.hyperparameter_config_id = hyperparameter_config_id
+        self.pipeline_config = pipeline_config
+        self.budget = budget
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config) 
         logger = logging.getLogger('autonet')
         logger.debug("Start train. Budget: " + str(budget))
@@ -86,6 +91,8 @@ class TrainNode(PipelineNode):
             full_eval_each_epoch=pipeline_config["full_eval_each_epoch"])
         trainer.prepare(pipeline_config, hyperparameter_config, fit_start_time)
 
+        model_params = self.count_parameters(network)
+
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained
         training_start_time = time.time()
@@ -101,6 +108,7 @@ class TrainNode(PipelineNode):
 
             # evaluate
             log['loss'] = train_loss
+            log['model_parameters'] = model_params
             for i, metric in enumerate(trainer.metrics):
                 log['train_' + metric.name] = optimize_metric_results[i]
 
@@ -145,6 +153,9 @@ class TrainNode(PipelineNode):
         Returns:
             dict -- The predicted labels in a dict.
         """
+        if pipeline_config["predict_model"] is not None:
+            network=pipeline_config["predict_model"]
+
         if pipeline_config["torch_num_threads"] > 0:
             torch.set_num_threads(pipeline_config["torch_num_threads"])
 
@@ -174,7 +185,7 @@ class TrainNode(PipelineNode):
         cs = ConfigSpace.ConfigurationSpace()
 
         possible_techniques = set(pipeline_config['batch_loss_computation_techniques']).intersection(self.batch_loss_computation_techniques.keys())
-        hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_techniques)
+        hp_batch_loss_computation = CSH.CategoricalHyperparameter("batch_loss_computation_technique", sorted(possible_techniques))
         cs.add_hyperparameter(hp_batch_loss_computation)
 
         for name, technique in self.batch_loss_computation_techniques.items():
@@ -199,7 +210,9 @@ class TrainNode(PipelineNode):
             ConfigOption("full_eval_each_epoch", default=False, type=to_bool, choices=[True, False],
                 info="Whether to evaluate everything every epoch. Results in more useful output"),
             ConfigOption("best_over_epochs", default=False, type=to_bool, choices=[True, False],
-                info="Whether to report the best performance occurred to BOHB")
+                info="Whether to report the best performance occurred to BOHB"),
+            ConfigOption("save_models", default=False, type=to_bool, choices=[True, False]),
+            ConfigOption("predict_model", default=None, info="Model to use for predicting"),
         ]
         for name, technique in self.training_techniques.items():
             options += technique.get_pipeline_config_options()
@@ -216,6 +229,10 @@ class TrainNode(PipelineNode):
         tl.log_value(worker_path + 'epoch', float(epoch + 1), int(time.time()))
         for name, value in log.items():
             tl.log_value(worker_path + name, float(value), int(time.time()))
+
+    @staticmethod
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
     
     def wrap_up_training(self, trainer, logs, epoch, train_loader, valid_loader, budget,
             training_start_time, fit_start_time, best_over_epochs, refit, logger):
@@ -248,6 +265,13 @@ class TrainNode(PipelineNode):
         final_log = trainer.final_eval(opt_metric_name=opt_metric_name,
             logs=logs, train_loader=train_loader, valid_loader=valid_loader, best_over_epochs=best_over_epochs, refit=refit)
         loss = trainer.metrics[0].loss_transform(final_log[opt_metric_name])
+
+        # Save for ensembles
+        if self.pipeline_config["save_models"]:
+            identifier = self.hyperparameter_config_id + (self.budget,)
+            save_dir = os.path.join(self.pipeline_config["result_logger_dir"], "models", str(identifier) + ".torch")
+            os.makedirs(os.path.dirname(save_dir), exist_ok=True)
+            torch.save(trainer.model, save_dir)
 
         logger.info("Finished train with budget " + str(budget) +
                          ": Preprocessing took " + str(int(training_start_time - fit_start_time)) +

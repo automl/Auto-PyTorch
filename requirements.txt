@@ -15,3 +15,5 @@ torch
 torchvision
 tensorboard_logger
 openml
+lightgbm
+catboost

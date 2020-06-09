@@ -18,6 +18,7 @@ from autoPyTorch.utils.config.config_condition import ConfigCondition
 
 from autoPyTorch.core.hpbandster_extensions.bohb_ext import BOHBExt
 from autoPyTorch.core.hpbandster_extensions.hyperband_ext import HyperBandExt
+from autoPyTorch.core.hpbandster_extensions.portfolio_bohb_ext import PortfolioBOHBExt
 from autoPyTorch.core.worker import AutoNetWorker
 
 from autoPyTorch.components.training.budget_types import BudgetTypeTime, BudgetTypeEpochs, BudgetTypeTrainingTime
@@ -52,7 +53,8 @@ class OptimizationAlgorithm(SubPipelineNode):
         super(OptimizationAlgorithm, self).__init__(optimization_pipeline_nodes)
 
         self.algorithms = {"bohb": BOHBExt,
-                           "hyperband": HyperBandExt}
+                           "hyperband": HyperBandExt,
+                           "portfolio_bohb": PortfolioBOHBExt}
 
         self.budget_types = dict()
         self.budget_types["time"] = BudgetTypeTime
@@ -159,6 +161,7 @@ class OptimizationAlgorithm(SubPipelineNode):
             ConfigOption("run_id", default="0", type=str, info="Unique id for each run."),
             ConfigOption("task_id", default=-1, type=int, info="ID for each worker, if you run AutoNet on a cluster. Set to -1, if you run it locally."),
             ConfigOption("algorithm", default="bohb", type=str, choices=list(self.algorithms.keys()), info="Algorithm to use for config sampling."),
+            ConfigOption("portfolio_type", default="greedy", type=str, choices=["greedy", "simple"]),
             ConfigOption("budget_type", default="time", type=str, choices=list(self.budget_types.keys())),
             ConfigOption("min_budget", default=lambda c: self.budget_types[c["budget_type"]].default_min_budget, type=float, depends=True, info="Min budget for fitting configurations."),
             ConfigOption("max_budget", default=lambda c: self.budget_types[c["budget_type"]].default_max_budget, type=float, depends=True, info="Max budget for fitting configurations."),
@@ -286,6 +289,10 @@ class OptimizationAlgorithm(SubPipelineNode):
                   "ping_interval": 10**6,
                   "working_directory": pipeline_config["working_dir"],
                   "previous_result": previous_result}
+
+        if "portfolio" in pipeline_config["algorithm"]:
+             kwargs["portfolio_type"] = pipeline_config["portfolio_type"]
+
         hb = optimization_algorithm(**kwargs)
         return hb
 

@@ -80,7 +80,8 @@ class AutoNetImageData(AutoNet):
 
         from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, AdamWOptimizer, SgdOptimizer, RMSpropOptimizer
         from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerCosineAnnealingWithRestartsLR, SchedulerNone, \
-            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerReduceLROnPlateau, SchedulerStepLR, SchedulerAlternatingCosineLR, SchedulerAdaptiveLR, SchedulerExponentialLR
+            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerReduceLROnPlateau, SchedulerStepLR, \
+            SchedulerAlternatingCosineLR, SchedulerAdaptiveLR, SchedulerExponentialLR, SchedulerCosineAnnealingLR
 
         from autoPyTorch.components.training.image.early_stopping import EarlyStopping
         from autoPyTorch.components.training.image.mixup import Mixup
@@ -102,7 +103,8 @@ class AutoNetImageData(AutoNet):
         opt_selector.add_optimizer('rmsprop',  RMSpropOptimizer)
 
         lr_selector = pipeline[SimpleLearningrateSchedulerSelector.get_name()]
-        lr_selector.add_lr_scheduler('cosine_annealing', SchedulerCosineAnnealingWithRestartsLR)
+        lr_selector.add_lr_scheduler('cosine_annealing', SchedulerCosineAnnealingLR)
+        lr_selector.add_lr_scheduler('cosine_annealing_with_restarts', SchedulerCosineAnnealingWithRestartsLR)
         lr_selector.add_lr_scheduler('cyclic', SchedulerCyclicLR)
         lr_selector.add_lr_scheduler('step', SchedulerStepLR)
         lr_selector.add_lr_scheduler('adapt', SchedulerAdaptiveLR)
@@ -113,8 +115,8 @@ class AutoNetImageData(AutoNet):
         
         lr_selector._apply_search_space_update('step:step_size', [1, 100], log=True)
         lr_selector._apply_search_space_update('step:gamma', [0.001, 0.99], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing:T_max', [1, 100], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing:T_mult', [1., 2.], log=False)
+        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_max', [1, 100], log=True)
+        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_mult', [1., 2.], log=False)
         
         train_node = pipeline[SimpleTrainNode.get_name()]
         #train_node.add_training_technique("early_stopping", EarlyStopping)

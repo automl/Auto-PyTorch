@@ -53,7 +53,7 @@ class PreprocessorSelector(PipelineNode):
         cs = ConfigSpace.ConfigurationSpace()
 
         possible_preprocessors = set(pipeline_config["preprocessors"]).intersection(self.preprocessors.keys())
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("preprocessor", possible_preprocessors))
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("preprocessor", sorted(possible_preprocessors)))
         
         for preprocessor_name, preprocessor_type in self.preprocessors.items():
             if (preprocessor_name not in possible_preprocessors):

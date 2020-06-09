@@ -19,7 +19,7 @@ class AutoNetFeatureData(AutoNet):
             CrossValidation, Imputation, NormalizationStrategySelector, OneHotEncoding, PreprocessorSelector, ResamplingStrategySelector, \
             EmbeddingSelector, NetworkSelector, OptimizerSelector, LearningrateSchedulerSelector, LogFunctionsSelector, MetricSelector, \
             LossModuleSelector, TrainNode, CreateDataLoader, CreateDatasetInfo, EnableComputePredictionsForEnsemble, SavePredictionsForEnsemble, \
-            BuildEnsemble, EnsembleServer, InitializationSelector
+            BuildEnsemble, EnsembleServer, InitializationSelector, BaselineTrainer
         
         # build the pipeline
         pipeline = Pipeline([
@@ -29,6 +29,7 @@ class AutoNetFeatureData(AutoNet):
             OptimizationAlgorithm([
                 CrossValidation([
                     Imputation(),
+                    BaselineTrainer(),
                     NormalizationStrategySelector(),
                     OneHotEncoding(),
                     PreprocessorSelector(),
@@ -110,7 +111,8 @@ class AutoNetFeatureData(AutoNet):
 
         from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, AdamWOptimizer, SgdOptimizer, RMSpropOptimizer
         from autoPyTorch.components.lr_scheduler.lr_schedulers import SchedulerCosineAnnealingWithRestartsLR, SchedulerNone, \
-            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerReduceLROnPlateau, SchedulerStepLR, SchedulerAdaptiveLR, SchedulerAlternatingCosineLR
+            SchedulerCyclicLR, SchedulerExponentialLR, SchedulerReduceLROnPlateau, SchedulerReduceLROnPlateau, SchedulerStepLR, \
+            SchedulerAdaptiveLR, SchedulerAlternatingCosineLR, SchedulerCosineAnnealingLR
         from autoPyTorch.components.networks.feature import LearnedEntityEmbedding
 
         from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler
@@ -155,14 +157,15 @@ class AutoNetFeatureData(AutoNet):
         opt_selector.add_optimizer('rmsprop',  RMSpropOptimizer)
 
         lr_selector = pipeline[LearningrateSchedulerSelector.get_name()]
-        lr_selector.add_lr_scheduler('cosine_annealing',   SchedulerCosineAnnealingWithRestartsLR)
-        lr_selector.add_lr_scheduler('cyclic',             SchedulerCyclicLR)
-        lr_selector.add_lr_scheduler('exponential',        SchedulerExponentialLR)
-        lr_selector.add_lr_scheduler('step',               SchedulerStepLR)
-        lr_selector.add_lr_scheduler('adapt',              SchedulerAdaptiveLR)
-        lr_selector.add_lr_scheduler('plateau',            SchedulerReduceLROnPlateau)
-        lr_selector.add_lr_scheduler('alternating_cosine', SchedulerAlternatingCosineLR)
-        lr_selector.add_lr_scheduler('none',               SchedulerNone)
+        lr_selector.add_lr_scheduler('cosine_annealing',                 SchedulerCosineAnnealingLR)
+        lr_selector.add_lr_scheduler('cosine_annealing_with_restarts',   SchedulerCosineAnnealingWithRestartsLR)
+        lr_selector.add_lr_scheduler('cyclic',                           SchedulerCyclicLR)
+        lr_selector.add_lr_scheduler('exponential',                      SchedulerExponentialLR)
+        lr_selector.add_lr_scheduler('step',                             SchedulerStepLR)
+        lr_selector.add_lr_scheduler('adapt',                            SchedulerAdaptiveLR)
+        lr_selector.add_lr_scheduler('plateau',                          SchedulerReduceLROnPlateau)
+        lr_selector.add_lr_scheduler('alternating_cosine',               SchedulerAlternatingCosineLR)
+        lr_selector.add_lr_scheduler('none',                             SchedulerNone)
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.add_training_technique("early_stopping", EarlyStopping)

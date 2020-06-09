@@ -61,7 +61,7 @@ class InitializationSelector(PipelineNode):
 
         # add hyperparameters of initialization method
         possible_initialization_methods = set(pipeline_config["initialization_methods"]).intersection(self.initialization_methods.keys())
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("initialization_method", possible_initialization_methods))
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("initialization_method", sorted(possible_initialization_methods)))
 
         for method_name, method_type in self.initialization_methods.items():
             if (method_name not in possible_initialization_methods):

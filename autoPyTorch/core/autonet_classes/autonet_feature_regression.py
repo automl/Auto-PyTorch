@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,7 +17,7 @@ class AutoNetRegression(AutoNetFeatureData):
         from autoPyTorch.pipeline.nodes.cross_validation import CrossValidation
 
         import torch.nn as nn
-        from autoPyTorch.components.metrics.standard_metrics import mean_distance
+        from autoPyTorch.components.metrics.standard_metrics import mae, rmse
 
         AutoNetFeatureData._apply_default_pipeline_settings(pipeline)
 
@@ -29,7 +28,8 @@ class AutoNetRegression(AutoNetFeatureData):
         loss_selector.add_loss_module('l1_loss', nn.L1Loss)
 
         metric_selector = pipeline[MetricSelector.get_name()]
-        metric_selector.add_metric('mean_distance', mean_distance, loss_transform=False, requires_target_class_labels=False)
+        metric_selector.add_metric('mean_abs_error', mae, loss_transform=False, requires_target_class_labels=False)
+        metric_selector.add_metric('rmse', rmse, loss_transform=False, requires_target_class_labels=False)
 
         train_node = pipeline[TrainNode.get_name()]
         train_node.default_minimize_value = True
