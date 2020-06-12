@@ -153,9 +153,10 @@ class TrainNode(PipelineNode):
         logs = trainer.model.logs
         epoch = trainer.model.epochs_trained
         training_start_time = time.time()
+        log = dict()
+
         while True:
             # prepare epoch
-            log = dict()
             trainer.on_epoch_start(log=log, epoch=epoch)
             
             # training
@@ -169,15 +170,29 @@ class TrainNode(PipelineNode):
                     valid_metric_results = trainer.evaluate(valid_loader)
 
             # evaluate
-            log['loss'] = train_loss
+            if 'loss' in log:
+                log['loss'].append(train_loss)
+            else:
+                log['loss'] = [train_loss]
+
             for i, metric in enumerate(trainer.metrics):
-                log['train_' + metric.name] = optimize_metric_results[i]
+                if 'train_' + metric.name in log:
+                    log['train_' + metric.name].append(optimize_metric_results[i])
+                else:
+                    log['train_' + metric.name] = [optimize_metric_results[i]]
 
                 if valid_loader is not None and trainer.eval_valid_each_epoch:
-                    log['val_' + metric.name] = valid_metric_results[i]
+                    if 'val_' + metric.name in log:
+                        log['val_' + metric.name].append(valid_metric_results[i])
+                    else:
+                        log['val_' + metric.name] = [valid_metric_results[i]]
+
             if trainer.eval_additional_logs_each_epoch:
                 for additional_log in trainer.log_functions:
-                    log[additional_log.name] = additional_log(trainer.model, epoch)
+                    if additional_log.name in log:
+                        log[additional_log.name].append(additional_log(trainer.model, epoch))
+                    else:
+                        log[additional_log.name] = [additional_log(trainer.model, epoch)]
 
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training

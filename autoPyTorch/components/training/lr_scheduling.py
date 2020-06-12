@@ -31,9 +31,15 @@ class LrScheduling(BaseTrainingTechnique):
             return
 
         if self.lr_step_with_time:
-            log["lr_scheduler_converged"] = self.perform_scheduling(trainer, time.time() - trainer.fit_start_time, log['loss'])
+            if isinstance(log['loss'], list):
+                log["lr_scheduler_converged"] = self.perform_scheduling(trainer, time.time() - trainer.fit_start_time, log['loss'][-1])
+            else:
+                log["lr_scheduler_converged"] = self.perform_scheduling(trainer, time.time() - trainer.fit_start_time, log['loss'])
         else:
-            log["lr_scheduler_converged"]  = self.perform_scheduling(trainer, epoch, log['loss'])
+            if isinstance(log['loss'], list):
+                log["lr_scheduler_converged"]  = self.perform_scheduling(trainer, epoch, log['loss'][-1])
+            else:
+                log["lr_scheduler_converged"] = self.perform_scheduling(trainer, epoch, log['loss'])
         return False
     
     def perform_scheduling(self, trainer, epoch, metric, **kwargs):

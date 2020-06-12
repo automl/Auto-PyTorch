@@ -309,6 +309,7 @@ class OptimizationAlgorithm(SubPipelineNode):
         except Exception as e:
             raise RuntimeError("Error parsing results. Check results.json and output for more details. An empty results.json is usually caused by a misconfiguration of AutoNet.")
 
+
         if (len(incumbent_trajectory['config_ids']) == 0):
             return dict()
         

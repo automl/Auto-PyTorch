@@ -118,13 +118,12 @@ class CrossValidation(SubPipelineNode):
 
         # aggregate logs
         logger.info("Aggregate the results across the splits")
-        df = pd.DataFrame(infos)
-        info = dict(df.mean())
         additional_results = self.process_additional_results(additional_results=additional_results, all_sub_pipeline_kwargs=all_sub_pipeline_kwargs,
             X=X, Y=Y, logger=logger)
+        #TODO save results accross folds
         loss = loss / num_cv_splits + loss_penalty
         logger.debug("Send additional results %s to master" % str(additional_results))
-        return dict({'loss': loss, 'info': info}, **additional_results)
+        return dict({'loss': loss, 'info': infos}, **additional_results)
 
     def predict(self, pipeline_config, X):
        

@@ -69,6 +69,9 @@ class MetricSelector(PipelineNode):
 
 
 def default_minimize_transform(value):
+
+    if isinstance(value, list):
+        value = value[-1]
     return 1 - value
 
 def no_transform(value):

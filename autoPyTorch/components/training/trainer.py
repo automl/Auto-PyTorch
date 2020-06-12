@@ -100,7 +100,10 @@ class Trainer(object):
     def final_eval(self, opt_metric_name, logs, train_loader, valid_loader, best_over_epochs, refit):
         # select log
         if best_over_epochs:
-            final_log = min(logs, key=lambda log: self.metrics[0].loss_transform(log[opt_metric_name]))
+            if isinstance(logs[opt_metric_name], list):
+                final_log = min(logs, key=lambda log: self.metrics[0].loss_transform(log[opt_metric_name][-1]))
+            else:
+                final_log = min(logs, key=lambda log: self.metrics[0].loss_transform(log[opt_metric_name]))
         else:
             final_log = None
             for t in self.training_techniques:
@@ -120,12 +123,18 @@ class Trainer(object):
 
                 for i, metric in enumerate(self.metrics):
                     if valid_metric_results:
-                        final_log['val_' + metric.name] = valid_metric_results[i]
+                        if isinstance(final_log['val_' + metric.name], list):
+                            final_log['val_' + metric.name][-1] = valid_metric_results[i]
+                        else:
+                            final_log['val_' + metric.name] = valid_metric_results[i]
 
                 # TODO: What to do with the additional in case of snapshot ensembling
                 if self.eval_additional_logs_on_snapshot and not refit:
                         for additional_log in self.log_functions:
-                            final_log[additional_log.name] = additional_log(self.model, None)
+                            if isinstance(final_log[additional_log.name], list):
+                                final_log[additional_log.name][-1] = additional_log(self.model, None)
+                            else:
+                                final_log[additional_log.name] = additional_log(self.model, None)
 
             else:
                 self.model.load_snapshot()
@@ -135,10 +144,16 @@ class Trainer(object):
 
                 for i, metric in enumerate(self.metrics):
                     if valid_metric_results:
-                        final_log['val_' + metric.name] = valid_metric_results[i]
+                        if isinstance(final_log['val_' + metric.name], list):
+                            final_log['val_' + metric.name][-1] = valid_metric_results[i]
+                        else:
+                            final_log['val_' + metric.name] = valid_metric_results[i]
                 if self.eval_additional_logs_on_snapshot and not refit:
                         for additional_log in self.log_functions:
-                            final_log[additional_log.name] = additional_log(self.model, None)
+                            if isinstance(final_log[additional_log.name], list):
+                                final_log[additional_log.name][-1] = additional_log(self.model, None)
+                            else:
+                                final_log[additional_log.name] = additional_log(self.model, None)
         return final_log
 
     def train(self, epoch, train_loader):

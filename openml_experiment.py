@@ -7,6 +7,9 @@ from autoPyTorch import (
     HyperparameterSearchSpaceUpdates,
 )
 
+import autoPyTorch.pipeline.nodes as autonet_nodes
+from autoPyTorch.components.metrics.additional_logs import test_result
+
 import openml
 
 
@@ -152,7 +155,6 @@ parser.add_argument(
     type=int,
 )
 
-
 args = parser.parse_args()
 search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -240,7 +242,6 @@ result_directory = os.path.join(
 
 os.makedirs(result_directory, exist_ok=True)
 
-
 task = openml.tasks.get_task(task_id=args.task_id)
 dataset = task.get_dataset()
 X, y, categorical_indicator, _ = dataset.get_data(
@@ -260,7 +261,6 @@ autonet = AutoNetClassification(
     categorical_features=categorical_indicator,
     min_workers=args.nr_workers,
     dataset_name=dataset.name,
-
     working_dir=result_directory,
     batch_loss_computation_techniques=[args.example_augmentation],
     use_lookahead=[args.use_lookahead],
@@ -269,6 +269,13 @@ autonet = AutoNetClassification(
     use_adversarial_training=[args.use_adversarial_training],
     hyperparameter_search_space_updates=search_space_updates,
     result_logger_dir=result_directory,
+    additional_logs=[test_result.__name__],
+)
+
+autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function(
+    name= test_result.__name__,
+    log_function=test_result(autonet, X_test, Y_test),
+    loss_transform=False,
 )
 
 # Get the current configuration as dict
