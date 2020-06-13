@@ -155,6 +155,12 @@ parser.add_argument(
     default=64,
     type=int,
 )
+parser.add_argument(
+    '--num_threads',
+    help='Number of threads to use for the experiment.',
+    default=1,
+    type=int,
+)
 
 args = parser.parse_args()
 search_space_updates = HyperparameterSearchSpaceUpdates()
@@ -257,7 +263,7 @@ X_test, Y_test = X[ind_test], y[ind_test]
 run_id = re.sub(r"\D+\d+(\d|\])*$", "", args.run_id)
 
 autonet = AutoNetClassification(
-   '/home/fr/fr_fr/fr_rj50/new_runs/Auto-PyTorch/no_regularization',
+   'no_regularization',
     random_seed=args.random_seed,
     run_id=run_id,
     task_id=args.array_id,
@@ -272,6 +278,7 @@ autonet = AutoNetClassification(
     use_adversarial_training=[args.use_adversarial_training],
     hyperparameter_search_space_updates=search_space_updates,
     result_logger_dir=result_directory,
+    torch_num_threads=args.num_threads,
     additional_logs=[test_result.__name__],
 )
 
