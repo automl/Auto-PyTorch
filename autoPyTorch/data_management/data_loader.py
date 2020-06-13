@@ -5,8 +5,6 @@ import requests
 from io import BytesIO
 from torchvision import transforms, utils
 
-
-
 class DataLoader():
     def __init__(self):
         pass
@@ -45,3 +43,35 @@ class DataLoader():
                     missing = math.floor(max_images/len(class_wnids)) - images 
                     if missing > 0:
                         print('Wnid', wnid, 'needs', missing, 'more images.')
+
+
+class DataPrefetchLoader():
+    def __init__(self, loader):
+        self.loader = iter(loader)
+        self.stream = torch.cuda.Stream()
+        self.preload()
+
+    def preload(self):
+        try:
+            self.next_data, self.next_target = next(self.loader)
+        except StopIteration:
+            self.next_data = None
+            self.next_target = None
+            return
+        with torch.cuda.stream(self.stream):
+            self.next_data = self.next_data.cuda(non_blocking=True)
+            self.next_target = self.next_target.cuda(non_blocking=True)
+                    
+    def __next__(self):
+        torch.cuda.current_stream().wait_stream(self.stream)
+        data, targets = self.next_data, self.next_target
+        if data is None:
+            raise StopIteration
+        self.preload()
+        return data, targets
+    
+    def __iter__(self):
+        return self
+    
+    def __len__(self): 
+        return len(self.dataloader)
