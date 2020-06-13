@@ -76,6 +76,7 @@ class AutoNetImageData(AutoNet):
         from autoPyTorch.components.networks.image import DenseNet, ResNet, MobileNet
         from autoPyTorch.components.networks.image.densenet_flexible import DenseNetFlexible
         from autoPyTorch.components.networks.image.resnet152 import ResNet152
+        from autoPyTorch.components.networks.image.resnet9 import ResNet9
         from autoPyTorch.components.networks.image.darts.model import DARTSImageNet
 
         from autoPyTorch.components.optimizer.optimizer import AdamOptimizer, AdamWOptimizer, SgdOptimizer, RMSpropOptimizer
@@ -93,8 +94,9 @@ class AutoNetImageData(AutoNet):
         net_selector.add_network('resnet152', ResNet152)
         net_selector.add_network('darts', DARTSImageNet)
         net_selector.add_network('mobilenet', MobileNet)
-        net_selector._apply_search_space_update('resnet:nr_main_blocks', [2, 4], log=False)
-        net_selector._apply_search_space_update('resnet:widen_factor_1', [0.5, 8], log=True)
+        net_selector.add_network('resnet9', ResNet9)
+        # net_selector._apply_search_space_update('resnet:nr_main_blocks', [2, 4], log=False)
+        # net_selector._apply_search_space_update('resnet:widen_factor_1', [0.5, 8], log=True)
 
         opt_selector = pipeline[OptimizerSelector.get_name()]
         opt_selector.add_optimizer('adam', AdamOptimizer)
