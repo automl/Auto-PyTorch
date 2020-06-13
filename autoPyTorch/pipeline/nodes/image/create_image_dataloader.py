@@ -58,14 +58,20 @@ class CreateImageDataLoader(CreateDataLoader):
                 drop_last=False,
                 pin_memory=True,
                 num_workers=pipeline_config['dataloader_worker'])
-
+        
+        if pipeline_config['prefetch']:
+            train_loader = DataPrefetchLoader(train_loader)
+            if valid_loader is not None:
+                valid_loader = DataPrefetchLoader(valid_loader)
+        
         return {'train_loader': train_loader, 'valid_loader': valid_loader, 'batch_size': hyperparameter_config['batch_size']}
 
     def get_pipeline_config_options(self):
         options = [
             ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory', info="Directory default datasets will be downloaded to."),
             ConfigOption("dataloader_worker", default=1, type=int),
-            ConfigOption("dataloader_cache_size_mb", default=0, type=int)
+            ConfigOption("dataloader_cache_size_mb", default=0, type=int),
+            ConfigOption("prefetch", default=True, type=bool)
         ]
         return options
 
@@ -83,14 +89,15 @@ class CreateImageDataLoader(CreateDataLoader):
             except:
                 y_placeholder = torch.zeros(len(X))
             predict_dataset = ImageFilelist(X, y_placeholder, transform=predict_transform)
-
+        
         predict_loader = DataLoader(
             dataset=predict_dataset,
             batch_size=int(batch_size),
             shuffle=False,
             pin_memory=True,
             num_workers=pipeline_config['dataloader_worker'])
-
+        if pipeline_config['prefetch']:
+            predict_loader = DataPrefetchLoader(predict_loader)
         return {'predict_loader': predict_loader}
 
 
