@@ -49,3 +49,6 @@ tests.ipynb
 
 # venv
 env/
+
+#data-cifar
+cifar-10-batches-py/

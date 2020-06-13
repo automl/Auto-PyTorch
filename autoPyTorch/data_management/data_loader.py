@@ -4,6 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 from torchvision import transforms, utils
+import torch
 
 class DataLoader():
     def __init__(self):

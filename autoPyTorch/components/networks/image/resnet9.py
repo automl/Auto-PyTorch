@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from autoPyTorch.components.networks.base_net import BaseImageNet
 from autoPyTorch.components.networks.image.utils.utils import initialize_weights
 
+
 class Flatten(nn.Module):
     def __init__(self):
         super(Flatten, self).__init__()
@@ -99,8 +100,14 @@ class Residual(nn.Module):
 
 class ResNet9(BaseImageNet):
     def __init__(self, config, in_features, out_features, final_activation, batch_norm=nn.BatchNorm2d, weight=0.125, pool=nn.MaxPool2d(2), prep_block=conv_bn_self):
-        super(ResNet9, self).__init__()
-        conv_bn = config['conv_bn']
+        super(ResNet9, self).__init__(config, in_features, out_features, final_activation)
+        if config['conv_bn'] == 'conv_bn_pool_act':
+            conv_bn = conv_bn_pool_act
+        if config['conv_bn'] == 'conv_pool_bn_act':
+            conv_bn = conv_pool_bn_act
+        if config['conv_bn'] == 'conv_bn_act_pool':
+            conv_bn = conv_bn_act_pool
+
         activation = nn.ReLU
         channels = {'prep': 64, 'layer1': 128, 'layer2': 256, 'layer3': 512}
         self.model = nn.Sequential()
@@ -132,13 +139,7 @@ class ResNet9(BaseImageNet):
         
 
     def forward(self, x):
-        x = self.prep(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-
-        x = self.pool(x)
-
+        x = self.model(x)
         x = self.flatten(x)
         x = self.linear(x)
         x = self.mul(x)

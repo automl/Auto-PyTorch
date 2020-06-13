@@ -14,6 +14,7 @@ from autoPyTorch.utils.config.config_option import ConfigOption
 import torch
 import scipy.sparse
 from torch.utils.data import DataLoader, TensorDataset, Dataset
+from autoPyTorch.data_management.data_loader import DataPrefetchLoader
 from autoPyTorch.data_management.image_loader import ImageFilelist, XYDataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import datasets, models, transforms
@@ -71,7 +72,7 @@ class CreateImageDataLoader(CreateDataLoader):
             ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory', info="Directory default datasets will be downloaded to."),
             ConfigOption("dataloader_worker", default=1, type=int),
             ConfigOption("dataloader_cache_size_mb", default=0, type=int),
-            ConfigOption("prefetch", default=True, type=bool)
+            ConfigOption("prefetch", default=False, type=bool)
         ]
         return options
 
