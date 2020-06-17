@@ -74,6 +74,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         res = None
 
         config_space = self.pipeline.get_hyperparameter_search_space(**pipeline_config)
+        
         config_space, constants = remove_constant_hyperparameter(config_space)
         config_space.seed(pipeline_config['random_seed'])
 

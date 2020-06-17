@@ -265,7 +265,7 @@ class SchedulerCosineAnnealingLR(AutoNetLearningRateSchedulerBase):
     @staticmethod
     def get_config_space(
             T_max=(10,500),
-            eta_min=(1e-8, 1e-8)
+            eta_min=(1e-8, 1e-7)
     ):
         cs = CS.ConfigurationSpace()
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)

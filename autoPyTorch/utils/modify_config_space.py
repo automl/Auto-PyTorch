@@ -12,9 +12,11 @@ def remove_constant_hyperparameter(cs):
             constants[hyper.name] = value
         else:
             hyperparameter_to_add.append(copy.copy(hyper))
+    
 
     for name in constants:
-        truncate_hyperparameter(cs, cs.get_hyperparameter(name))
+        hp = cs.get_hyperparameter(name)
+        truncate_hyperparameter(cs, hp)
 
     cs._hyperparameter_idx = dict()
     cs._idx_to_hyperparameter = dict()
