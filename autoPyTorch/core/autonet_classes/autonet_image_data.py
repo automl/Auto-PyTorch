@@ -97,7 +97,7 @@ class AutoNetImageData(AutoNet):
         net_selector.add_network('resnet9', ResNet9)
         # net_selector._apply_search_space_update('resnet:nr_main_blocks', [2, 4], log=False)
         # net_selector._apply_search_space_update('resnet:widen_factor_1', [0.5, 8], log=True)
-
+        
         opt_selector = pipeline[OptimizerSelector.get_name()]
         opt_selector.add_optimizer('adam', AdamOptimizer)
         opt_selector.add_optimizer('adamw', AdamWOptimizer)

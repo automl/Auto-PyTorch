@@ -135,6 +135,7 @@ class ResNet9(BaseImageNet):
         self.flatten = Flatten()
         self.linear =  nn.Linear(channels['layer3'], 10, bias=False)
         self.mul = Mul(weight)
+        self.layers = nn.Sequential(self.model)
     
         
 
