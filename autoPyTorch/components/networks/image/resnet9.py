@@ -50,7 +50,7 @@ class conv_bn_act_pool(nn.Module):
         return out
 
 class conv_bn_pool_act(nn.Module):
-    def __init__(self, c_in, c_out, batch_norm, activation, pool, kernel_size=3):
+    def __init__(self, c_in, c_out, batch_norm, pool, activation=nn.ReLU, kernel_size=3):
         super(conv_bn_pool_act, self).__init__()
         self.conv_bn = conv_bn_self(c_in, c_out, batch_norm, kernel_size)
         self.pool = pool

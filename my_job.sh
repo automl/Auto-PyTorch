@@ -5,7 +5,7 @@
 #SBATCH -c 1 # number of cores
 #SBATCH -o results/log/%x.%N.%j.out # STDOUT  (the folder log has to be created prior to running or this won't work)
 #SBATCH -e results/log/%x.%N.%j.err # STDERR  (the folder log has to be created prior to running or this won't work)
-#SBATCH -J apt # sets sthe job name. If not specified, the file name will be used as job name
+#SBATCH -J apt # sets the job name. If not specified, the file name will be used as job name
 #SBATCH --mail-type=END,FAIL # (recive mails about end and timeouts/crashes of your job)
 # Print some information about the job to STDOUT
 echo "Workingdir: $PWD";
