@@ -52,3 +52,5 @@ env/
 
 #data-cifar
 cifar-10-batches-py/
+*.ipynb
+fast*
