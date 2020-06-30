@@ -57,7 +57,7 @@ class ModuleWorkerNoTimeLimit(Worker):
             import pynisher
 
             limit_train = pynisher.enforce_limits(mem_in_mb=self.pipeline_config['memory_limit_mb'], wall_time_in_s=int(budget * 4))(self.optimize_pipeline)
-            result = limit_train(config, budget, config_id, start_time)
+            result = limit_train(config, budget, config_id, random.getstate())
 
             if (limit_train.exit_status == pynisher.TimeoutException):
                 raise Exception("Time limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
