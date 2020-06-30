@@ -1,8 +1,10 @@
 {
-	"num_rounds" : 10000,
-	"num_leaves" : 128,
+	"num_rounds" : 13000,
+	"num_leaves" : 200,
 	"two_round" : "True",
-	"min_data_in_leaf" : 3,
+	"min_data_in_leaf" : 1,
+	"lambda_l1": 0.01,
+	"lambda_l2": 0.5,
 	"feature_fraction" : 0.9,
 	"boosting_type" : "gbdt",
 	"learning_rate" : 0.03,

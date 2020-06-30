@@ -154,7 +154,6 @@ def get_ensemble_config():
     return ensemble_config
 
 if __name__ == "__main__":
-    # Test: python3 -W ignore test_ensemble.py --run_id 9999 --task_id 1 --num_workers 1 --dataset_id 4 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --num_threads 4 --test true
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("--run_id", type=int, help="An id for the run.")
     parser.add_argument("--task_id", type=int)
@@ -229,10 +228,8 @@ if __name__ == "__main__":
 
     print(autonet.get_current_autonet_config())
 
-    # Fit
     fit_results = autonet.fit(X_train, y_train, **autonet.get_current_autonet_config())
     
-    # Score
     score = autonet.score(X_test, y_test) if y_test is not None else None
 
     print("Test score:", score)

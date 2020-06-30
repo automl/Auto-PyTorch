@@ -22,7 +22,7 @@ then
 fi
 
 # Array jobs
-python3 -W ignore test_ensemble.py --run_id $1 --task_id $SLURM_ARRAY_TASK_ID --num_workers 3 --dataset_id $2 --seed $3 --ensemble_setting ensemble --portfolio_type greedy --num_threads 2 --test false
+python3 -W ignore examples/ensemble/test_ensemble.py --run_id $1 --task_id $SLURM_ARRAY_TASK_ID --num_workers 3 --dataset_id $2 --seed $3 --ensemble_setting ensemble --portfolio_type greedy --num_threads 2 --test false
 
 # Done
 echo "DONE";
