@@ -28,6 +28,7 @@ class Imputation(PipelineNode):
         X = X[:, ~all_nan]
         dataset_info.categorical_features = [dataset_info.categorical_features[i] for i, is_nan in enumerate(all_nan) if not is_nan]
 
+        
         strategy = hyperparameter_config['strategy']
         fill_value = int(np.nanmax(X)) + 1 if not dataset_info.is_sparse else 0
         numerical_imputer = SimpleImputer(strategy=strategy, copy=False)

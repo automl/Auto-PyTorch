@@ -30,4 +30,4 @@ echo "Finished at $(date)";
 
 
 # DEBUGGING:
-# python3 optimizers/run_main_exp.py --run_id 1 --task_id 1 --num_workers 1 --dataset_id 4 --ressource_type cpu --seed 55 --search_space lcbench --ensemble_setting ensemble --portfolio_type greedy --optimizer bohb --test true
+#python3 -W ignore examples/ensemble/test_ensemble.py --run_id 999 --task_id 1 --num_workers 1 --dataset_id 0 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --num_threads 2 --test true

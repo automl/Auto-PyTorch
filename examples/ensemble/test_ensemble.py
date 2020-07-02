@@ -129,7 +129,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'over_sampling_methods': ['none'],
             'preprocessors': ['none', 'truncated_svd'],
             'random_seed': seed,
-            'refit_validation_split': 0.33,
+            'refit_validation_split': 0.2,
             'result_logger_dir': logdir,
             'run_id': run_id,
             'run_worker_on_master_node': True,
@@ -140,7 +140,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'under_sampling_methods': ['none'],
             'use_pynisher': True,
             'use_tensorboard_logger': False,
-            'validation_split': 0.33,
+            'validation_split': 0.2,
             'working_dir': '.'
             }
     return autonet_config
@@ -148,7 +148,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
 def get_ensemble_config():
     ensemble_config = {
             "ensemble_size":50,
-            "ensemble_only_consider_n_best":30,
+            "ensemble_only_consider_n_best":20,
             "ensemble_sorted_initialization_n_best":0
             }
     return ensemble_config
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
     # Get autonet config
     min_budget=10 if args.test=="false" else 1
-    max_budget=50 if args.test=="false" else 4
+    max_budget=50 if args.test=="false" else 2
     max_runtime = 10*60*60 if args.test=="false" else 30
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 

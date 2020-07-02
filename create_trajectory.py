@@ -32,7 +32,7 @@ class EnsembleTrajectorySimulator():
 
         self.ensemble_selection = EnsembleSelection(**ensemble_config)
 
-    def read_runfiles(self, shuffle=True, val_split=0.33):
+    def read_runfiles(self, shuffle=False, val_split=0.33):
 
         self.ensemble_identifiers = []
         self.ensemble_predictions = []
@@ -45,6 +45,7 @@ class EnsembleTrajectorySimulator():
 
             if shuffle:
                 sorting_labels_inv = inv_perm(np.argsort(self.labels))
+                full_labels = self.labels
 
             if val_split is not None and val_split>0:
                 indices = np.arange(len(self.labels))
@@ -61,9 +62,9 @@ class EnsembleTrajectorySimulator():
                     predictions = np.array(np.load(f, allow_pickle=True))
                     
                     if shuffle:
-                        label_inds = np.arange(len(self.labels))
+                        label_inds = np.arange(len(full_labels))
                         np.random.shuffle(label_inds)
-                        labels_temp = self.labels[label_inds]
+                        labels_temp = full_labels[label_inds]
                         sorting_pred_labels = np.argsort(labels_temp)
                         predictions = predictions[sorting_pred_labels][sorting_labels_inv]
                     
@@ -209,7 +210,7 @@ def get_bohb_rundirs(rundir):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument("--rundir", type=str, default="/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs")
+    parser.add_argument("--rundir", type=str, default="/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/")
     parser.add_argument("--run_id", type=int)
     parser.add_argument("--test", type=str, default="false")
     args = parser.parse_args()

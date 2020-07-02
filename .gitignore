@@ -37,7 +37,7 @@ dist/
 *meta_logs/
 runs.log
 runs.log.lock
-logs/
+logs*
 
 # ensemble data
 predictions_for_ensemble.npy
