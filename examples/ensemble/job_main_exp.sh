@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p bosch_cpu-cascadelake                        # partition (queue) (test_cpu-ivy, all_cpu-cascadelake, bosch_cpu-cascadelake)
-#SBATCH -t 2-01:00                                      # time (D-HH:MM)
+#SBATCH -t 0-04:00                                      # time (D-HH:MM)
 #SBATCH -N 1                                            # number of nodes
 #SBATCH -c 2                                            # number of cores
 #SBATCH -a 1-3                                          # array size

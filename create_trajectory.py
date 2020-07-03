@@ -210,7 +210,7 @@ def get_bohb_rundirs(rundir):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument("--rundir", type=str, default="/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/")
+    parser.add_argument("--rundir", type=str, default="/home/zimmerl/Auto-PyTorch_releases/Auto-PyTorch/logs")
     parser.add_argument("--run_id", type=int)
     parser.add_argument("--test", type=str, default="false")
     args = parser.parse_args()
@@ -221,7 +221,7 @@ if __name__=="__main__":
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
 
     ensemble_config = {"ensemble_size" : 50,
-                       "only_consider_n_best" : 10,
+                       "only_consider_n_best" : 20,
                        "sorted_initialization_n_best" : 0,
                        #"only_consider_n_best_percent" : 0,
                        "metric" : autonet_accuracy}

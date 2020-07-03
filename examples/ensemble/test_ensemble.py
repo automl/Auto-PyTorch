@@ -183,7 +183,7 @@ if __name__ == "__main__":
     # Get autonet config
     min_budget=10 if args.test=="false" else 1
     max_budget=50 if args.test=="false" else 2
-    max_runtime = 10*60*60 if args.test=="false" else 30
+    max_runtime = 4*60*60 if args.test=="false" else 30
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 
                                                 max_runtime=max_runtime,
