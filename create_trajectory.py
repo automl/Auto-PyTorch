@@ -221,7 +221,7 @@ if __name__=="__main__":
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
 
     ensemble_config = {"ensemble_size" : 50,
-                       "only_consider_n_best" : 20,
+                       "only_consider_n_best" : 10,
                        "sorted_initialization_n_best" : 0,
                        #"only_consider_n_best_percent" : 0,
                        "metric" : autonet_accuracy}

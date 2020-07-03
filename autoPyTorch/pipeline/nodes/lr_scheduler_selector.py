@@ -19,13 +19,17 @@ class LearningrateSchedulerSelector(PipelineNode):
 
         self.lr_scheduler = dict()
         self.lr_scheduler_settings = dict()
+        self.num_evals = 0
 
-    def fit(self, hyperparameter_config, optimizer, training_techniques):
+    def fit(self, hyperparameter_config, pipeline_config, optimizer, training_techniques):
         config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         lr_scheduler_type = self.lr_scheduler[config["lr_scheduler"]]
         lr_scheduler_config = ConfigWrapper(config["lr_scheduler"], config)
         lr_scheduler_settings = self.lr_scheduler_settings[config["lr_scheduler"]]
+        if lr_scheduler_type=="cosine_annealing" and pipeline_config["algorithm"]=="portfolio_bohb" and self.num_evals<=16:
+            config["cosine_annealing:T_max"] = 50
+            self.num_evals += 1
         lr_scheduling = LrScheduling(training_components={"lr_scheduler": lr_scheduler_type(optimizer, lr_scheduler_config)},
                                      **lr_scheduler_settings)
         return {'training_techniques': [lr_scheduling] + training_techniques}
