@@ -32,7 +32,9 @@ class PortfolioBOHB_CG(BOHB_CG):
 
         # return a portfolio member first
         if len(self.initial_configs) > 0 and True:
-            c = self.initial_configs.pop()
+            c = self.initial_configs[0]
+            if budget==50: #TODO: not hardcode
+                c = self.initial_configs.pop(0)
             c["LearningrateSchedulerSelector:cosine_annealing:T_max"] = int(budget)
             return (c, {'portfolio_member': True})
 
