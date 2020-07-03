@@ -63,8 +63,8 @@ class SchedulerStepLR(AutoNetLearningRateSchedulerBase):
     
     @staticmethod
     def get_config_space(
-        step_size=(1, 10),
-        gamma=(0.001, 0.9)
+        step_size=(1, 100),
+        gamma=(0.001, 0.99)
     ):
         cs = CS.ConfigurationSpace()
         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'step_size', step_size)
@@ -286,12 +286,12 @@ class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
     
     @staticmethod
     def get_config_space(
-        T_max=(1, 20),
+        T_max=(1, 100),
         T_mult=(1.0, 2.0)
     ):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max, log=True)
+        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult, log=False)
         return cs
 
 

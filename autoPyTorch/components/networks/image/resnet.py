@@ -253,7 +253,7 @@ class ResNet(BaseImageNet):
         return x
 
     @staticmethod
-    def get_config_space(   nr_main_blocks=[1, 8], nr_residual_blocks=([1, 16], True), initial_filters=([8, 32], True), widen_factor=([0.5, 4], True), 
+    def get_config_space(   nr_main_blocks=[2, 4], nr_residual_blocks=([1, 16], True), initial_filters=([8, 32], True), widen_factor=([0.5, 8], True), 
                             res_branches=([1, 5], False), filters_size=[3, 3], **kwargs):
                             
         import ConfigSpace as CS
