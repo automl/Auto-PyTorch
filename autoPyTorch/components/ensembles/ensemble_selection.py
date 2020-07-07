@@ -179,8 +179,10 @@ class EnsembleSelection(AbstractEnsemble):
             self._fit(bag, labels)
 
     def predict(self, predictions):
-        if len(predictions) < len(self.weights_):
-            weights = (weight for  weight in self.weights_ if weight > 0)
+        if len(predictions) != len(self.weights_):
+            raise ValueError("Number of model predictions not the same as model weights")
+        #if len(predictions) < len(self.weights_):
+        #    weights = (weight for  weight in self.weights_ if weight > 0)
         else:
             weights = self.weights_
 

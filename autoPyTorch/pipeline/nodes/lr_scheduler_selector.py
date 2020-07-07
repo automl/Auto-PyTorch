@@ -29,7 +29,7 @@ class LearningrateSchedulerSelector(PipelineNode):
         lr_scheduler_settings = self.lr_scheduler_settings[config["lr_scheduler"]]
         if lr_scheduler_type=="cosine_annealing" and pipeline_config["algorithm"]=="portfolio_bohb" and self.num_evals<=16:
             config["cosine_annealing:T_max"] = 50
-            self.num_evals += 1
+            #self.num_evals += 1
         lr_scheduling = LrScheduling(training_components={"lr_scheduler": lr_scheduler_type(optimizer, lr_scheduler_config)},
                                      **lr_scheduler_settings)
         return {'training_techniques': [lr_scheduling] + training_techniques}
