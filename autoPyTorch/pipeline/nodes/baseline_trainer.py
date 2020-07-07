@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import scipy.sparse
 import logging
+import collections
 
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
@@ -25,23 +26,29 @@ def get_dimensions(a):
 class BaselineTrainer(PipelineNode):
 
     #TODO: Order
-    models = {"random_forest" : baselines.RFBaseline, 
+    models = collections.OrderedDict({
+            "random_forest" : baselines.RFBaseline, 
             "extra_trees" : baselines.ExtraTreesBaseline,
             "lgb" : baselines.LGBBaseline,
             "catboost" : baselines.CatboostBaseline,
-            "knn" : baselines.KNNBaseline}
+            "rotation_forest" : baselines.RotationForestBaseline,
+            "knn" : baselines.KNNBaseline})
 
-    identifiers = {"lgb": (-5, 0, 0, 0.0),
-                   "random_forest": (-4, 0, 0, 0.0),
-                   "catboost": (-3, 0, 0, 0.0),
-                   "extra_trees": (-2, 0, 0, 0.0),
-                   "knn": (-1, 0, 0, 0.0)}
+    identifiers = {
+            "random_forest": (-6, 0, 0, 0.0),
+            "extra_trees": (-5, 0, 0, 0.0),
+            "lgb": (-4, 0, 0, 0.0),
+            "catboost": (-3, 0, 0, 0.0),
+            "rotation_forest": (-2, 0, 0, 0.0),
+            "knn": (-1, 0, 0, 0.0)}
 
-    identifiers_ens = {-5: baselines.LGBBaseline,
-                       -4: baselines.RFBaseline,
-                       -3: baselines.CatboostBaseline,
-                       -2: baselines.ExtraTreesBaseline,
-                       -1: baselines.KNNBaseline}
+    identifiers_ens = {
+            -6: baselines.RFBaseline,
+            -5: baselines.ExtraTreesBaseline,
+            -4: baselines.LGBBaseline,
+            -3: baselines.CatboostBaseline,
+            -2: baselines.RotationForestBaseline,
+            -1: baselines.KNNBaseline}
 
     def __init__(self):
         super(BaselineTrainer, self).__init__()

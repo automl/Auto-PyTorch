@@ -8,6 +8,7 @@ from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from lightgbm import LGBMClassifier
 from catboost import Pool, CatBoostClassifier
 
+from autoPyTorch.components.baselines.rotation_forest import RotationForestClassifier
 from autoPyTorch.components.baselines.base_baseline import BaseBaseline
 
 
@@ -272,6 +273,61 @@ class ExtraTreesBaseline(BaseBaseline):
             self.model.n_estimators = final_n_estimators
             self.model.fit(X_train, y_train)
 
+
+        pred_val_probas = self.model.predict_proba(X_val)
+
+        pred_train = self.model.predict(X_train)
+        pred_val = self.model.predict(X_val)
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
+        results["val_acc"] = metrics.accuracy_score(y_val, pred_val)
+        results["val_balanced_acc"] = metrics.balanced_accuracy_score(y_val, pred_val)
+        results["val_preds"] = pred_val_probas.tolist()
+        results["labels"] = y_val.tolist()
+
+        return results
+
+    def score(self, X_test, y_test):
+        results = dict()
+
+        y_pred = self.predict(X_test)
+
+        results["test_acc"] = metrics.accuracy_score(y_test, y_pred)
+        results["test_balanced_acc"] = metrics.balanced_accuracy_score(y_test, y_pred)
+
+        return results
+
+    def predict(self, X_test, predict_proba=False):
+        X_test = X_test[:, ~self.all_nan]
+        X_test = np.nan_to_num(X_test)
+        if predict_proba:
+            return self.model.predict_proba(X_test)
+        y_pred = self.model.predict(X_test)
+        return y_pred
+
+
+class RotationForestBaseline(BaseBaseline):
+
+    def __init__(self):
+        super(RotationForestBaseline, self).__init__(name="rotation_forest")
+
+    def fit(self, X_train, y_train, X_val, y_val):
+        results = dict()
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+        X_val = X_val[:, ~self.all_nan]
+
+        X_train = np.nan_to_num(X_train)
+        X_val = np.nan_to_num(X_val)
+
+        self.config["warm_start"] = False
+        self.num_classes = len(np.unique(y_train))
+
+        self.model = RotationForestClassifier(**self.config)
+
+        self.model.fit(X_train, y_train)
 
         pred_val_probas = self.model.predict_proba(X_val)
 

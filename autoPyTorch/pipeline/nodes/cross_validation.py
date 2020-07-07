@@ -194,7 +194,7 @@ class CrossValidation(SubPipelineNode):
         
         # no cv, split train data
         if pipeline_config['cross_validator'] == "none" or budget_too_low_for_cv:
-            logger.info("[AutoNet] No validation set given and either no cross validator given or budget too low for CV." + 
+            logger.debug("[AutoNet] No validation set given and either no cross validator given or budget too low for CV." + 
                              " Continue by splitting " + str(val_split) + " of training data.")
             indices = self.shuffle_indices(np.array(list(range(dataset_info.x_shape[0]))), pipeline_config['shuffle'], pipeline_config["random_seed"])
             split = int(len(indices) * (1-val_split))
