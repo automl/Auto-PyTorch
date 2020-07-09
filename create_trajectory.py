@@ -326,8 +326,8 @@ if __name__=="__main__":
         simulator.save_trajectory(save_file=os.path.join(bohb_rundir, "ensemble_trajectory.json"))
         simulator.save_trajectory(save_file=os.path.join(bohb_rundir, "ensemble_trajectory_test.json"), test=True)
 
-        incumbent_score_all_time, _ = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=False)
-        incumbent_score_all_time_val, _ = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=True)
+        incumbent_score_all_time, incumbent_ind_all_time = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=False)
+        incumbent_score_all_time_val, incumbent_ind_val_all_time = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=True)
         incumbent_score_val, incumbent_ind_val = simulator.get_incumbent_at_timestep(timestep=3600, use_val=True)
         
         score_at_3600, _ = simulator.get_score_at_timestep(timestep=3600)
@@ -352,9 +352,12 @@ if __name__=="__main__":
 
     combined_score = simulator.predict_with_weights(list(ident_weight_dict.keys()), list(ident_weight_dict.values()))
 
-    print(identifier_weight_dicts)
-
+    weight_dict = {ident:weight for (ident, weight) in zip(simulator.model_identifiers[incumbent_ind_val_all_time], simulator.model_weights[incumbent_ind_val_all_time])}
+    #print(simulator.model_identifiers[incumbent_ind_val_all_time])
+    #print(simulator.model_weights[incumbent_ind_val_all_time])
     print(weight_dict)
+
+    print("All time incumbent val ind / score:", incumbent_ind_val_all_time, "/", incumbent_score_all_time_val)
 
     print("Incumbent ind / score:", incumbent_ind_val, "/", incumbent_score_val)
 
