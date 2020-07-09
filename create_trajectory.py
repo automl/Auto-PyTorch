@@ -156,7 +156,7 @@ class EnsembleTrajectorySimulator():
         else:
             test_performance = 0
 
-        if len(self.ensemble_pred_dir_test)>0:
+        if len(self.ensemble_pred_dir_test)>0 and len(self.ensemble_predictions_enstest)>0:
             enstest_preds = self.ensemble_selection.predict(self.ensemble_predictions_enstest[0:cutoff_ind])
             if len(enstest_preds.shape)==3:
                 enstest_preds = enstest_preds[0]
@@ -171,21 +171,41 @@ class EnsembleTrajectorySimulator():
 
         return self.ensemble_selection.get_validation_performance(), test_performance, enstest_performance, model_identifiers, model_weights
 
-    def simulate_trajectory(self):
+    def restart_trajectory_with_reg(self, timelimit):
+        print("==> Restarting ensemble selection with timelimit %f" %timelimit)
+        self.ensemble_config["only_consider_n_best"] = 2
+        self.ensemble_selection = EnsembleSelection(**ensemble_config)
+
+        self.simulate_trajectory(timelimit=timelimit, allow_restart=False)
+
+    def simulate_trajectory(self, timelimit=np.inf, allow_restart=True):
         self.trajectory = []
         self.test_trajectory = []
         self.enstest_trajectory = []
         self.model_identifiers = []
         self.model_weights = []
+        self.ensemble_loss = []
+
         for ind, t in enumerate(self.timesteps):
+            if t>timelimit:
+                break
             print("==> Building ensemble at %i -th timestep %f" %(ind, t))
             ensemble_performance, test_performance, enstest_performance, model_identifiers, model_weights = self.get_ensemble_performance(t)
             print("==> Performance:", ensemble_performance, "/", test_performance, "/", enstest_performance)
+            if abs(ensemble_performance) == 100 and ind<20 and allow_restart:
+                self.restart_trajectory_with_reg(timelimit=np.inf)
+                break
+            #if len(self.enstest_trajectory)>0 and (enstest_performance < 0.9 * np.max(self.enstest_trajectory)) and allow_restart: # dropcheck
+            #    self.restart_trajectory_with_reg(timelimit=t)
+            #    break
+            self.ensemble_loss.append(ensemble_performance)
             self.trajectory.append((t, ensemble_performance))
             self.test_trajectory.append((t, test_performance))
             self.enstest_trajectory.append((t, enstest_performance))
             self.model_identifiers.append(model_identifiers)
             self.model_weights.append(model_weights)
+            if t>timelimit:
+                break
             #print(self.trajectory[-1])
 
     def predict_with_weights(self, identifiers, weights):
@@ -268,7 +288,7 @@ if __name__=="__main__":
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
 
     ensemble_config = {"ensemble_size" : 35, #35
-                       "only_consider_n_best" : 10, #10
+                       "only_consider_n_best" : 10, #10 #2
                        "sorted_initialization_n_best" : 1,
                        #"only_consider_n_best_percent" : 0,
                        "metric" : autonet_accuracy}
@@ -322,7 +342,7 @@ if __name__=="__main__":
         for ident, weight in zip(identifiers, weights):
             ident_weight_dict[ident] = weight
         identifier_weight_dicts.append(ident_weight_dict)
-        
+
     all_identifiers = simulator.model_identifiers[-1]
     weight_dict = {ident:0 for ident in all_identifiers}
 
@@ -336,11 +356,11 @@ if __name__=="__main__":
 
     print(weight_dict)
 
-    print("Combined score / true score:", combined_score, "/", incumbent_score_val)
+    print("Incumbent ind / score:", incumbent_ind_val, "/", incumbent_score_val)
 
-    results = {"all_time_incumbent":incumbent_score_all_time,
-            "all_time_incumbent_val":incumbent_score_all_time_val,
-            "3600_without_val": score_at_3600,
+    results = {#"all_time_incumbent":incumbent_score_all_time,
+            #"all_time_incumbent_val":incumbent_score_all_time_val,
+            #"3600_without_val": score_at_3600,
             "3600_incumbent_val":incumbent_score_val}
             #"3600_incumbent_val":combined_score}
 

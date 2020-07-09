@@ -31,7 +31,7 @@ class BaselineTrainer(PipelineNode):
             "extra_trees" : baselines.ExtraTreesBaseline,
             "lgb" : baselines.LGBBaseline,
             "catboost" : baselines.CatboostBaseline,
-            "rotation_forest" : baselines.RotationForestBaseline,
+            #"rotation_forest" : baselines.RotationForestBaseline,
             "knn" : baselines.KNNBaseline})
 
     identifiers = {
@@ -39,7 +39,7 @@ class BaselineTrainer(PipelineNode):
             "extra_trees": (-5, 0, 0, 0.0),
             "lgb": (-4, 0, 0, 0.0),
             "catboost": (-3, 0, 0, 0.0),
-            "rotation_forest": (-2, 0, 0, 0.0),
+            #"rotation_forest": (-2, 0, 0, 0.0),
             "knn": (-1, 0, 0, 0.0)}
 
     identifiers_ens = {
@@ -47,7 +47,7 @@ class BaselineTrainer(PipelineNode):
             -5: baselines.ExtraTreesBaseline,
             -4: baselines.LGBBaseline,
             -3: baselines.CatboostBaseline,
-            -2: baselines.RotationForestBaseline,
+            #-2: baselines.RotationForestBaseline,
             -1: baselines.KNNBaseline}
 
     def __init__(self):
