@@ -145,7 +145,7 @@ class EnsembleTrajectorySimulator():
 
         self.simulate_trajectory(timelimit=timelimit, allow_restart=False)
 
-    def simulate_trajectory(self, timelimit=np.inf, allow_restart=True):
+    def simulate_trajectory(self, timelimit=np.inf, allow_restart=False):
         self.trajectory = []
         self.test_trajectory = []
         self.enstest_trajectory = []

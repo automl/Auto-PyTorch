@@ -147,8 +147,8 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
 
 def get_ensemble_config():
     ensemble_config = {
-            "ensemble_size":50,
-            "ensemble_only_consider_n_best":20,
+            "ensemble_size":40,
+            "ensemble_only_consider_n_best":10,
             "ensemble_sorted_initialization_n_best":0
             }
     return ensemble_config
