@@ -1,6 +1,7 @@
 import numpy as np
 
 import pickle
+import logging
 from sklearn import metrics
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
@@ -89,6 +90,41 @@ class LGBBaseline(BaseBaseline):
         
         return results
 
+    def refit(self, X_train, y_train):
+        # neither self.model.best_iteration_ nor self.model._best_iteration seems to work for lgb
+        best_iter = int(np.where(self.model.evals_result_['valid_0']['multi_logloss']==self.model._best_score["valid_0"]["multi_logloss"])[0]+1)
+        self.config["num_rounds"] = best_iter
+        logging.info("==> Refitting with %i iterations" %best_iter)
+        
+        results = dict()
+
+        self.num_classes = len(np.unique(y_train))
+        self.config["num_class"] = self.num_classes
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+
+        X_train = np.nan_to_num(X_train)
+
+        del self.config["early_stopping_rounds"]
+
+        categoricals = [ind for ind in range(X_train.shape[1]) if isinstance(X_train[0,ind], str)]
+        X_train, X_val, self.encode_dicts = encode_categoricals(X_train, X_val=None, encode_dicts=None)
+
+        self.model = LGBMClassifier(**self.config)
+        self.model.fit(X_train, y_train)
+
+        pred_train = self.model.predict_proba(X_train)
+
+        # This fixes a bug
+        if self.num_classes==2:
+            pred_train = pred_train.transpose()[0:len(y_train)]
+
+        pred_train = np.argmax(pred_train, axis=1)
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
+        return results
+
     def score(self, X_test, y_test):
         results = dict()
 
@@ -161,6 +197,37 @@ class CatboostBaseline(BaseBaseline):
 
         return results
 
+    def refit(self, X_train, y_train):
+        best_iter = self.model.best_iteration_
+        self.config["iterations"] = best_iter
+        logging.info("==> Refitting with %i iterations" %best_iter)
+        
+        results = dict()
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+        X_train = np.nan_to_num(X_train)
+
+        categoricals = [ind for ind in range(X_train.shape[1]) if isinstance(X_train[0,ind], str)]
+
+        early_stopping = 0
+
+        X_train_pooled = Pool(data=X_train, label=y_train, cat_features=categoricals)
+
+        self.model = CatBoostClassifier(**self.config)
+        self.model.fit(X_train_pooled, use_best_model=False)
+
+        pred_train = self.model.predict_proba(X_train)
+
+        try:
+            pred_train = np.argmax(pred_train, axis=1)
+        except:
+            print("==> No probabilities provided in predictions")
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
+        return results
+
     def score(self, X_test, y_test):
         results = dict()
 
@@ -222,6 +289,35 @@ class RFBaseline(BaseBaseline):
         results["val_preds"] = pred_val_probas.tolist()
         results["labels"] = y_val.tolist()
 
+        return results
+
+    def refit(self, X_train, y_train):
+        results = dict()
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+
+        X_train = np.nan_to_num(X_train)
+
+        self.config["warm_start"] = False
+        self.num_classes = len(np.unique(y_train))
+        if self.num_classes>2:
+            print("==> Using warmstarting for multiclass")
+            final_n_estimators = self.config["n_estimators"]
+            self.config["n_estimators"] = 8
+            self.config["warm_start"] = True
+
+        self.model = RandomForestClassifier(**self.config)
+
+        self.model.fit(X_train, y_train)
+        if self.config["warm_start"]:
+            self.model.n_estimators = final_n_estimators
+            self.model.fit(X_train, y_train)
+
+        pred_train = self.model.predict(X_train)
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
         return results
     
     def score(self, X_test, y_test):
@@ -288,6 +384,35 @@ class ExtraTreesBaseline(BaseBaseline):
 
         return results
 
+    def refit(self, X_train, y_train):
+        results = dict()
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+
+        X_train = np.nan_to_num(X_train)
+
+        self.config["warm_start"] = False
+        self.num_classes = len(np.unique(y_train))
+        if self.num_classes>2:
+            print("==> Using warmstarting for multiclass")
+            final_n_estimators = self.config["n_estimators"]
+            self.config["n_estimators"] = 8
+            self.config["warm_start"] = True
+
+        self.model = ExtraTreesClassifier(**self.config)
+
+        self.model.fit(X_train, y_train)
+        if self.config["warm_start"]:
+            self.model.n_estimators = final_n_estimators
+            self.model.fit(X_train, y_train)
+
+        pred_train = self.model.predict(X_train)
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
+        return results
+
     def score(self, X_test, y_test):
         results = dict()
 
@@ -341,6 +466,27 @@ class RotationForestBaseline(BaseBaseline):
         results["val_preds"] = pred_val_probas.tolist()
         results["labels"] = y_val.tolist()
 
+        return results
+
+    def refit(self, X_train, y_train):
+        results = dict()
+        
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+
+        X_train = np.nan_to_num(X_train)
+
+        self.config["warm_start"] = False
+        self.num_classes = len(np.unique(y_train))
+
+        self.model = RotationForestClassifier(**self.config)
+
+        self.model.fit(X_train, y_train)
+
+        pred_train = self.model.predict(X_train)
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
         return results
 
     def score(self, X_test, y_test):
@@ -398,6 +544,28 @@ class KNNBaseline(BaseBaseline):
         results["val_preds"] = pred_val_probas.tolist()
         results["labels"] = y_val.tolist()
 
+        return results
+
+    def refit(self, X_train, y_train):
+        results = dict()
+
+        self.all_nan = np.all(np.isnan(X_train), axis=0)
+        X_train = X_train[:, ~self.all_nan]
+
+        self.categoricals = np.array([isinstance(X_train[0,ind], str) for ind in range(X_train.shape[1])])
+        X_train = X_train[:, ~self.categoricals]
+
+        X_train = np.nan_to_num(X_train)
+
+        self.num_classes = len(np.unique(y_train))
+
+        self.model = KNeighborsClassifier(**self.config)
+        self.model.fit(X_train, y_train)
+
+        pred_train = self.model.predict(X_train)
+
+        results["train_acc"] = metrics.accuracy_score(y_train, pred_train)
+        results["train_balanced_acc"] = metrics.balanced_accuracy_score(y_train, pred_train)
         return results
 
     def score(self, X_test, y_test):
