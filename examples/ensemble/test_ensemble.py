@@ -129,7 +129,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'over_sampling_methods': ['none'],
             'preprocessors': ['none', 'truncated_svd'],
             'random_seed': seed,
-            'refit_validation_split': 0.2,
+            'refit_validation_split': 0.33,
             'result_logger_dir': logdir,
             'run_id': run_id,
             'run_worker_on_master_node': True,
@@ -140,7 +140,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'under_sampling_methods': ['none'],
             'use_pynisher': True,
             'use_tensorboard_logger': False,
-            'validation_split': 0.2,
+            'validation_split': 0.33,
             'working_dir': '.'
             }
     return autonet_config
