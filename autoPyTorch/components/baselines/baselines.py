@@ -92,7 +92,8 @@ class LGBBaseline(BaseBaseline):
 
     def refit(self, X_train, y_train):
         # neither self.model.best_iteration_ nor self.model._best_iteration seems to work for lgb
-        best_iter = int(np.where(self.model.evals_result_['valid_0']['multi_logloss']==self.model._best_score["valid_0"]["multi_logloss"])[0]+1)
+        loss_key = 'multi_logloss' if 'multi_logloss' in self.model.evals_result_['valid_0'].keys() else list(self.model.evals_result_['valid_0'].keys())[0]
+        best_iter = int(np.where(self.model.evals_result_['valid_0'][loss_key]==self.model._best_score["valid_0"][loss_key])[0]+1)
         self.config["num_rounds"] = best_iter
         logging.info("==> Refitting with %i iterations" %best_iter)
         
@@ -198,7 +199,7 @@ class CatboostBaseline(BaseBaseline):
         return results
 
     def refit(self, X_train, y_train):
-        best_iter = self.model.best_iteration_
+        best_iter = self.model.best_iteration_ + 1 # appearently 0 based
         self.config["iterations"] = best_iter
         logging.info("==> Refitting with %i iterations" %best_iter)
         
