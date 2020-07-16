@@ -6,6 +6,7 @@ import numpy as np
 import scipy.sparse
 import logging
 import collections
+import time
 
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
@@ -68,8 +69,16 @@ class BaselineTrainer(PipelineNode):
             return {"baseline_id": None, "baseline_predictions_for_ensemble": None}
 
         # Fit
+        start_time = time.time()
         fit_output = baseline_model.fit(X[train_indices], Y[train_indices], X[valid_indices], Y[valid_indices])
         baseline_preds = np.array(fit_output["val_preds"])
+        end_time = time.time()
+
+        # Refit
+        training_time = end_time-start_time
+        refit_limit = pipeline_config["max_runtime"]/5
+        if training_time < refit_limit:
+            baseline_model.refit(X, Y)
 
         # Test data
         if self.X_test is not None:
