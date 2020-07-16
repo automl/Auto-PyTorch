@@ -78,7 +78,10 @@ class BaselineTrainer(PipelineNode):
         training_time = end_time-start_time
         refit_limit = pipeline_config["max_runtime"]/5
         if training_time < refit_limit:
-            baseline_model.refit(X, Y)
+            try:
+                baseline_model.refit(X, Y)
+            except Exception as e:
+                logging.info("Could not refit baseline model %s due to exception " %baseline_name, e)
 
         # Test data
         if self.X_test is not None:
