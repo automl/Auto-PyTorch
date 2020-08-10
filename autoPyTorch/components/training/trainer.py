@@ -142,6 +142,7 @@ class Trainer(object):
                 if valid_loader is not None and self.eval_valid_on_snapshot:
                     valid_metric_results = self.evaluate(valid_loader)
 
+                #TODO fix failing when eval_after_every_epoch is false
                 for i, metric in enumerate(self.metrics):
                     if valid_metric_results:
                         if isinstance(final_log['val_' + metric.name], list):

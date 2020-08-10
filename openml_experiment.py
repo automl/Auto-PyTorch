@@ -39,6 +39,12 @@ parser.add_argument(
     type=int,
 )
 parser.add_argument(
+    '--learning_rate',
+    help='Learning rate for the optimizer',
+    default=0.001,
+    type=float,
+)
+parser.add_argument(
     '--use_swa',
     help='If stochastic weight averaging should be used.',
     type=str2bool,
@@ -228,16 +234,51 @@ search_space_updates.append(
     log=False,
 )
 
-search_space_updates.append(
+"""search_space_updates.append(
     node_name="OptimizerSelector",
     hyperparameter="sgd:use_weight_decay",
     value_range=[args.use_weight_decay],
     log=False,
-)
+)"""
 search_space_updates.append(
     node_name="OptimizerSelector",
     hyperparameter="adamw:use_weight_decay",
     value_range=[args.use_weight_decay],
+    log=False,
+)
+
+search_space_updates.append(
+    node_name="OptimizerSelector",
+    hyperparameter="adamw:learning_rate",
+    value_range=[args.learning_rate],
+    log=False,
+)
+
+search_space_updates.append(
+    node_name="InitializationSelector",
+    hyperparameter="initializer:initialize_bias",
+    value_range=['Yes'],
+    log=False,
+)
+
+search_space_updates.append(
+    node_name="LearningrateSchedulerSelector",
+    hyperparameter="cosine_annealing:T_max",
+    value_range=[20],
+    log=False,
+)
+
+search_space_updates.append(
+    node_name="LearningrateSchedulerSelector",
+    hyperparameter="cosine_annealing:T_mult",
+    value_range=[2],
+    log=False,
+)
+
+search_space_updates.append(
+    node_name="NetworkSelector",
+    hyperparameter="shapedresnet:activation",
+    value_range=['relu'],
     log=False,
 )
 
@@ -247,7 +288,9 @@ result_directory = os.path.join(
     f'{args.task_id}',
 )
 
-os.makedirs(result_directory, exist_ok=True)
+#TODO run it only for the master worker maybe ?
+if args.array_id == 1:
+    os.makedirs(result_directory, exist_ok=True)
 
 task = openml.tasks.get_task(task_id=args.task_id)
 dataset = task.get_dataset()
@@ -279,6 +322,7 @@ autonet = AutoNetClassification(
     hyperparameter_search_space_updates=search_space_updates,
     result_logger_dir=result_directory,
     torch_num_threads=args.num_threads,
+    cuda=False,
     additional_logs=[test_result.__name__],
 )
 

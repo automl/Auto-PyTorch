@@ -279,7 +279,9 @@ class OptimizationAlgorithm(SubPipelineNode):
             Master -- An optimization algorithm.
         """
         optimization_algorithm = self.algorithms[pipeline_config["algorithm"]]
+        #TODO Added change with min_points_in_model for bohb only. Should be fixed for hpband or it will break
         kwargs = {"configspace": config_space, "run_id": run_id,
+                  "min_points_in_model": 2,
                   "eta": pipeline_config["eta"], "min_budget": pipeline_config["min_budget"], "max_budget": pipeline_config["max_budget"],
                   "host": ns_host, "nameserver": ns_host, "nameserver_port": ns_port,
                   "result_logger": combined_logger(*loggers),
@@ -287,7 +289,9 @@ class OptimizationAlgorithm(SubPipelineNode):
                   "working_directory": pipeline_config["working_dir"],
                   "previous_result": previous_result}
         hb = optimization_algorithm(**kwargs)
+        hb.config_generator.min_points_in_model = 2
         return hb
+
 
 
     def parse_results(self, pipeline_config):
