@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
+import random
 import re
+import time
 
 from autoPyTorch import (
     AutoNetClassification,
@@ -12,7 +14,8 @@ import autoPyTorch.pipeline.nodes as autonet_nodes
 from autoPyTorch.components.metrics.additional_logs import test_result
 
 import openml
-
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -41,7 +44,7 @@ parser.add_argument(
 parser.add_argument(
     '--learning_rate',
     help='Learning rate for the optimizer',
-    default=0.001,
+    default=0.01,
     type=float,
 )
 parser.add_argument(
@@ -152,7 +155,7 @@ parser.add_argument(
 parser.add_argument(
     '--task_id',
     help='Task id so that the dataset can be retrieved from OpenML.',
-    default=3,
+    default=233088,
     type=int,
 )
 parser.add_argument(
@@ -170,7 +173,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 search_space_updates = HyperparameterSearchSpaceUpdates()
-
 # Fixed architecture space
 search_space_updates.append(
     node_name="NetworkSelector",
@@ -202,7 +204,6 @@ search_space_updates.append(
     value_range=[128],
     log=False,
 )
-
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:use_dropout",
@@ -233,48 +234,36 @@ search_space_updates.append(
     value_range=[args.use_skip_connection],
     log=False,
 )
-
-"""search_space_updates.append(
-    node_name="OptimizerSelector",
-    hyperparameter="sgd:use_weight_decay",
-    value_range=[args.use_weight_decay],
-    log=False,
-)"""
 search_space_updates.append(
     node_name="OptimizerSelector",
     hyperparameter="adamw:use_weight_decay",
     value_range=[args.use_weight_decay],
     log=False,
 )
-
 search_space_updates.append(
     node_name="OptimizerSelector",
     hyperparameter="adamw:learning_rate",
     value_range=[args.learning_rate],
     log=False,
 )
-
 search_space_updates.append(
     node_name="InitializationSelector",
     hyperparameter="initializer:initialize_bias",
     value_range=['Yes'],
     log=False,
 )
-
 search_space_updates.append(
     node_name="LearningrateSchedulerSelector",
     hyperparameter="cosine_annealing:T_max",
     value_range=[20],
     log=False,
 )
-
 search_space_updates.append(
     node_name="LearningrateSchedulerSelector",
     hyperparameter="cosine_annealing:T_mult",
     value_range=[2],
     log=False,
 )
-
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:activation",
@@ -288,7 +277,6 @@ result_directory = os.path.join(
     f'{args.task_id}',
 )
 
-#TODO run it only for the master worker maybe ?
 if args.array_id == 1:
     os.makedirs(result_directory, exist_ok=True)
 
@@ -298,67 +286,114 @@ X, y, categorical_indicator, _ = dataset.get_data(
     dataset_format='array',
     target=dataset.default_target_attribute,
 )
+run_id = args.run_id
+random.seed(args.random_seed)
+different_seeds = set()
+while len(different_seeds) < 10:
+    seed_candidate = random.randint(1, 100)
+    if seed_candidate not in different_seeds:
+        different_seeds.add(seed_candidate)
 
-ind_train, ind_test = task.get_train_test_split_indices()
-X_train, Y_train = X[ind_train], y[ind_train]
-X_test, Y_test = X[ind_test], y[ind_test]
+train_curves = []
+validation_curves = []
+test_curves = []
+test_accuracies = []
 
-run_id = re.sub(r"\D+\d+(\d|\])*$", "", args.run_id)
+for seed in different_seeds:
+    seed_exp_dir = os.path.join(result_directory, f'{seed}')
+    os.makedirs(seed_exp_dir, exist_ok=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=seed,
+        stratify=y,
+    )
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train,
+        y_train,
+        test_size=0.25,
+        random_state=seed,
+        stratify=y_train,
+    )
+    autonet = AutoNetClassification(
+       '/home/kadraa/autopytorch_experiments/presets/no_regularization_fixed',
+        random_seed=seed,
+        run_id=f'{run_id}{seed}',
+        task_id=args.array_id,
+        categorical_features=categorical_indicator,
+        min_workers=args.nr_workers,
+        dataset_name=dataset.name,
+        working_dir=seed_exp_dir,
+        batch_loss_computation_techniques=[args.example_augmentation],
+        use_lookahead=[args.use_lookahead],
+        use_swa=[args.use_swa],
+        use_se=[args.use_se],
+        use_adversarial_training=[args.use_adversarial_training],
+        hyperparameter_search_space_updates=search_space_updates,
+        result_logger_dir=seed_exp_dir,
+        torch_num_threads=args.num_threads,
+        cuda=False,
+        additional_logs=[test_result.__name__],
+    )
 
-autonet = AutoNetClassification(
-   'no_regularization',
-    random_seed=args.random_seed,
-    run_id=run_id,
-    task_id=args.array_id,
-    categorical_features=categorical_indicator,
-    min_workers=args.nr_workers,
-    dataset_name=dataset.name,
-    working_dir=result_directory,
-    batch_loss_computation_techniques=[args.example_augmentation],
-    use_lookahead=[args.use_lookahead],
-    use_swa=[args.use_swa],
-    use_se=[args.use_se],
-    use_adversarial_training=[args.use_adversarial_training],
-    hyperparameter_search_space_updates=search_space_updates,
-    result_logger_dir=result_directory,
-    torch_num_threads=args.num_threads,
-    cuda=False,
-    additional_logs=[test_result.__name__],
-)
+    autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function(
+        name= test_result.__name__,
+        log_function=test_result(autonet, X_test, y_test),
+        loss_transform=False,
+    )
 
-autonet.pipeline[autonet_nodes.LogFunctionsSelector.get_name()].add_log_function(
-    name= test_result.__name__,
-    log_function=test_result(autonet, X_test, Y_test),
-    loss_transform=False,
-)
+    # Get the current configuration as dict
+    current_configuration = autonet.get_current_autonet_config()
+    print(current_configuration)
+    # Get the ConfigSpace object with all hyperparameters, conditions, default values and default ranges
+    hyperparameter_search_space = autonet.get_hyperparameter_search_space()
+    print("Hyperparameter search space:")
+    print(hyperparameter_search_space)
+    # Print all possible configuration options
+    autonet.print_help()
 
-# Get the current configuration as dict
-current_configuration = autonet.get_current_autonet_config()
+    results_fit = autonet.fit(
+        X_train=X_train,
+        Y_train=y_train,
+        X_valid=X_val,
+        Y_valid=y_val,
+        refit=False,
+    )
+    time.sleep(30)
+    info = results_fit['info']
+    train_curve = info[0]['train_balanced_accuracy']
+    validation_curve = info[0]['val_balanced_accuracy']
+    test_curve = info[0]['test_result']
+    test_accuracy = test_curve[-1]
 
-# Get the ConfigSpace object with all hyperparameters, conditions, default values and default ranges
-hyperparameter_search_space = autonet.get_hyperparameter_search_space()
-print("Hyperparameter search space:")
-print(hyperparameter_search_space)
-# Print all possible configuration options
-autonet.print_help()
+    train_curves.append(train_curve)
+    validation_curves.append(validation_curve)
+    test_curves.append(test_curve)
+    test_accuracies.append(test_accuracy)
 
-results_fit = autonet.fit(
-    X_train=X_train,
-    Y_train=Y_train,
-    refit=True,
-)
+train_mean_curve = np.mean(train_curves, 0)
+train_max_bound = np.max(train_curves, 0)
+train_min_bound = np.min(train_curves, 0)
 
-# Save fit results as json
-with open(os.path.join(result_directory, 'results_fit.json'), "w") as file:
-    json.dump(results_fit, file)
+validation_mean_curve = np.mean(validation_curves, 0)
+test_mean_curve = np.mean(test_curves, 0)
+test_max_bound = np.max(test_curves, 0)
+test_min_bound = np.min(test_curves, 0)
 
-# See how the random configuration performs (often it just predicts 0)
-score = autonet.score(X_test=X_test, Y_test=Y_test)
-pred = autonet.predict(X=X_test)
+mean_accuracy = np.mean(test_accuracies)
+accuracy_std = np.std(test_accuracies)
+run_results = dict()
+run_results['mean_test_bal_acc'] = mean_accuracy
+run_results['std_test_bal_acc'] = accuracy_std
 
-print("Model prediction:", pred[0:10])
-print("Accuracy score", score)
+curves = dict()
+curves['train_curves'] = train_curves
+curves['test_curves'] = test_curves
+curves['validation_curves'] = validation_curves
 
-# Save fit results as json
-with open(os.path.join(result_directory, 'test_score.txt'), "w") as file:
-    json.dump(score, file)
+with open(os.path.join(result_directory, 'run_results.txt'), "w") as file:
+    json.dump(run_results, file)
+
+with open(os.path.join(result_directory, 'curves.txt'), "w") as file:
+    json.dump(curves, file)
