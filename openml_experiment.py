@@ -255,7 +255,7 @@ search_space_updates.append(
 search_space_updates.append(
     node_name="LearningrateSchedulerSelector",
     hyperparameter="cosine_annealing:T_max",
-    value_range=[20],
+    value_range=[15],
     log=False,
 )
 search_space_updates.append(
@@ -317,7 +317,7 @@ for seed in different_seeds:
         stratify=y_train,
     )
     autonet = AutoNetClassification(
-       '/home/kadraa/autopytorch_experiments/presets/no_regularization_fixed',
+       'no_regularization',
         random_seed=seed,
         run_id=f'{run_id}{seed}',
         task_id=args.array_id,

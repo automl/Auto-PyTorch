@@ -36,6 +36,7 @@ class Trainer(object):
 
         if self.lookahead:
             self.optimizer = Lookahead(optimizer, config=lookahead_config)
+            self.optimizer.to(device)
         # Stochastic Weight Averaging activated
         if self.swa:
             self.optimizer = SWA(
@@ -119,7 +120,7 @@ class Trainer(object):
                 valid_metric_results = None
 
                 if valid_loader is not None and self.eval_valid_on_snapshot:
-                    valid_metric_results = self.evaluate_se(valid_loader, self.model_snapshots)
+                    valid_metric_results = self.evaluate(valid_loader, self.model_snapshots)
 
                 for i, metric in enumerate(self.metrics):
                     if valid_metric_results:
@@ -217,54 +218,45 @@ class Trainer(object):
         return self.compute_metrics(outputs_data, targets_data), loss_sum / N, False
 
 
-    def evaluate(self, test_loader):
+    def evaluate(self, test_loader, model_snapshots=None):
+
+        # put into evaluate
         self.model.eval()
+        if model_snapshots is not None:
+            for model_snapshot in model_snapshots:
+                model_snapshot.eval()
 
         outputs_data = list()
         targets_data = list()
 
         with torch.no_grad():
             for _, (data, targets) in enumerate(test_loader):
-    
+
+                outputs = list()
+
                 data = data.to(self.device)
                 data = Variable(data)
-                outputs = self.model(data)
+                output = self.model(data)
+
+                outputs.append(output)
+
+                if model_snapshots is not None:
+                    for model_snapshot in model_snapshots:
+                        output = model_snapshot(data)
+                        outputs.append(output)
+
+                    outputs = torch.stack(outputs)
+                    outputs = outputs.mean(dim=0)
+                else:
+                    outputs = output
 
                 outputs_data.append(outputs.data.cpu().detach().numpy())
                 targets_data.append(targets.data.cpu().detach().numpy())
 
         self.model.train()
-        return self.compute_metrics(outputs_data, targets_data)
-
-    def evaluate_se(self, test_loader, model_snapshots):
-        for model in model_snapshots:
-            model.eval()
-        
-        outputs_data = list()
-        targets_data = list()
-
-        with torch.no_grad():
-            for _, (data, targets) in enumerate(test_loader):
-
-                data = data.cpu()
-                data = Variable(data)
-                
-                outputs = list()
-                for model in model_snapshots:
-                    output = model(data)
-                    outputs.append(output)
-
-                outputs = torch.stack(outputs)
-                outputs = outputs.mean(dim=0)
-                
-                outputs_data.append(outputs.data.cpu().detach().numpy())
-                targets_data.append(targets.data.cpu().detach().numpy())
-
-        for model in model_snapshots:
-            model.train()
 
         return self.compute_metrics(outputs_data, targets_data)
-    
+
     def compute_metrics(self, outputs_data, targets_data):
         outputs_data = np.vstack(outputs_data)
         targets_data = np.vstack(targets_data)

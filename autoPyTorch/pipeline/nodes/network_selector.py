@@ -83,17 +83,34 @@ class NetworkSelector(PipelineNode):
 
         possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_swa", pipeline_config["use_swa"]))
-        look_ahead = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_lookahead", pipeline_config["use_lookahead"]))
+        use_swa = cs.add_hyperparameter(
+            ConfigSpace.CategoricalHyperparameter(
+                "use_swa",
+                pipeline_config["use_swa"],
+            )
+        )
+        look_ahead = cs.add_hyperparameter(
+            ConfigSpace.CategoricalHyperparameter(
+                "use_lookahead",
+                pipeline_config["use_lookahead"],
+            )
+        )
         
-        use_se = cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("use_se", pipeline_config["use_se"]))
+        use_se = cs.add_hyperparameter(
+            ConfigSpace.CategoricalHyperparameter(
+                "use_se",
+                pipeline_config["use_se"],
+            )
+        )
 
         if True in pipeline_config["use_se"]:
-            se_lastk = ConfigSpace.UniformIntegerHyperparameter('se_lastk', 2, 20, default_value=6, log=False)
-            cs.add_hyperparameter(se_lastk) #Limited to at most 20 models in ensemble
+            # Note, this is not easy to be considered as a hyperparameter.
+            # When used with cyclic learning rates, it depends on the number
+            # of restarts.
+            se_lastk = ConfigSpace.Constant('se_lastk', 3)
+            cs.add_hyperparameter(se_lastk)
             cond = ConfigSpace.EqualsCondition(se_lastk, use_se, True)
             cs.add_condition(cond)
-            
 
         if True in pipeline_config["use_lookahead"]:
             cs.add_configuration_space(
@@ -102,6 +119,13 @@ class NetworkSelector(PipelineNode):
                 delimiter=ConfigWrapper.delimiter,
                 parent_hyperparameter={'parent': look_ahead, 'value': True}
             )
+
+        if (True in pipeline_config["use_se"]) and (True in pipeline_config["use_swa"]):
+            forbidden_clause = ConfigSpace.ForbiddenAndConjunction(
+                ConfigSpace.ForbiddenEqualsClause(use_swa, True),
+                ConfigSpace.ForbiddenEqualsClause(use_se, True)
+            )
+            cs.add_forbidden_clause(forbidden_clause)
         
         network_list = list()
         for network_name, network_type in self.networks.items():

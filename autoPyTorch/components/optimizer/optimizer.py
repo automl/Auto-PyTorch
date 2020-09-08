@@ -248,9 +248,6 @@ class Lookahead(Optimizer):
         self._la_step = 0  # counter for inner optimizer
         self.la_alpha = config["la_alpha"]
         self.la_alpha = torch.tensor(self.la_alpha)
-        cuda_available = torch.cuda.is_available()
-        if cuda_available:
-            self.la_alpha = self.la_alpha.cuda()
         self._total_la_steps = config["la_steps"]
         # TODO possibly incorporate different momentum options when using SGD
         pullback_momentum = "none"
@@ -265,13 +262,9 @@ class Lookahead(Optimizer):
             for p in group['params']:
                 param_state = self.state[p]
                 param_state['cached_params'] = torch.zeros_like(p.data)
-                if cuda_available:
-                    param_state['cached_params'] = param_state['cached_params'].cuda()
                 param_state['cached_params'].copy_(p.data)
                 if self.pullback_momentum == "pullback":
                     param_state['cached_mom'] = torch.zeros_like(p.data)
-                    if cuda_available:
-                        param_state['cached_mom'] = param_state['cached_mom'].cuda()
 
     def __getstate__(self):
         return {
@@ -343,6 +336,17 @@ class Lookahead(Optimizer):
 
         return loss
 
+    def to(self, device):
+
+        self.la_alpha.to(device)
+        for group in self.optimizer.param_groups:
+            for p in group['params']:
+                param_state = self.state[p]
+                param_state['cached_params'] = param_state['cached_params'].to(device)
+                param_state['cached_params'].copy_(p.data)
+                if self.pullback_momentum == "pullback":
+                    param_state['cached_mom'] = param_state['cached_mom'].to(device)
+
     @staticmethod
     def get_config_space(
             la_steps=((5, 10), False),
@@ -353,4 +357,3 @@ class Lookahead(Optimizer):
         add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'la_alpha', la_alpha)
 
         return cs
-

@@ -158,16 +158,72 @@ class TrainNode(PipelineNode):
         while True:
             # prepare epoch
             trainer.on_epoch_start(log=log, epoch=epoch)
-            
+            # TODO add swa for iterations also
+            if use_swa or use_se:
+                # check if the learning rate scheduler is cyclical
+                if scheduler_cyclical:
+                    # delay with one epoch for the
+                    # snapshot since the optimizer has
+                    # not yet updated the weights.
+                    if lr_scheduler.restarted_at + 1 == epoch and epoch != 1:
+
+                        snapshot_method = 'swa' if use_swa else 'se'
+                        print(f"{counter}-th {snapshot_method} update triggered")
+
+                        if use_swa:
+                            trainer.optimizer.update_swa()
+                        elif use_se:
+                            # Save the model to snapshots and also update the trainer
+                            # Put the model on cpu after deepcopying it
+                            model_copy = deepcopy(trainer.model)
+                            model_copy.cpu()
+                            model_snapshots.append(model_copy)
+                            if len(model_snapshots) > se_lastk:
+                                model_snapshots = model_snapshots[1:]
+                            trainer.update_model_snapshots(model_snapshots)
+                        counter += 1
+                else:
+                    if epoch >= consumed_budget:
+                        # TODO refactor the code into one function
+                        snapshot_method = 'swa' if use_swa else 'se'
+                        print(f"{counter}-th {snapshot_method} update triggered")
+                        if use_swa:
+                            trainer.optimizer.update_swa()
+                        elif use_se:
+                            # Save the model to snapshots and also update the trainer
+                            # Put the model on cpu after deepcopying it
+                            model_copy = deepcopy(trainer.model)
+                            model_copy.cpu()
+                            model_snapshots.append(model_copy)
+                            if len(model_snapshots) > se_lastk:
+                                model_snapshots = model_snapshots[1:]
+                            trainer.update_model_snapshots(model_snapshots)
+                        counter += 1
+
             # training
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
 
+            if epoch == budget:
+                print(f"{counter}-th {snapshot_method} update triggered")
+                if use_swa:
+                    trainer.optimizer.update_swa()
+                    trainer.optimizer.swap_swa_sgd()
+                elif use_se:
+                    # Save the model to snapshots and also update the trainer
+                    # Put the model on cpu after deepcopying it
+                    model_copy = deepcopy(trainer.model)
+                    model_copy.cpu()
+                    model_snapshots.append(model_copy)
+                    if len(model_snapshots) > se_lastk:
+                        model_snapshots = model_snapshots[1:]
+                    trainer.update_model_snapshots(model_snapshots)
+                    self.ensemble_models = model_snapshots
+
+                counter += 1
+
+
             if valid_loader is not None and trainer.eval_valid_each_epoch:
-                # Evaluate should change it's call if using snapshot ensembling
-                if use_se:
-                    valid_metric_results = trainer.evaluate_se(valid_loader, model_snapshots)
-                else:
-                    valid_metric_results = trainer.evaluate(valid_loader)
+                valid_metric_results = trainer.evaluate(valid_loader, None if len(model_snapshots) == 0 else model_snapshots)
 
             # evaluate
             if 'loss' in log:
@@ -197,63 +253,6 @@ class TrainNode(PipelineNode):
             # wrap up epoch
             stop_training = trainer.on_epoch_end(log=log, epoch=epoch) or stop_training
 
-
-            if use_se:
-                # check if the learning rate scheduler is cyclical
-                if scheduler_cyclical:
-                    # delay with one epoch for the
-                    # snapshot since the optimizer has
-                    # not yet updated the weights.
-                    if lr_scheduler.restarted_at + 1 == epoch:
-                        print(f"{counter}-th SE update triggered")
-                        print(f"Scheduler :{type(lr_scheduler)}")
-                        counter += 1
-                        # Save the model to snapshots and also update the trainer
-                        # Put the model on cpu after deepcopying it
-                        model_copy = deepcopy(trainer.model)
-                        model_copy.cpu()
-                        model_snapshots.append(model_copy)
-                        if len(model_snapshots) > se_lastk:
-                            model_snapshots = model_snapshots[1:]                        
-                        trainer.update_model_snapshots(model_snapshots)
-                else:
-                    if epoch >= consumed_budget:
-                        print(f"{counter}-th SE update triggered")
-                        print(f"Scheduler :{type(lr_scheduler)}")
-                        counter += 1
-                        # Save the model to snapshots and also update the trainer
-                        # Put the model on cpu after deepcopying it
-                        model_copy = deepcopy(trainer.model)
-                        model_copy.cpu()
-                        model_snapshots.append(model_copy)
-                        if len(model_snapshots) > se_lastk:
-                            model_snapshots = model_snapshots[1:]
-                        trainer.update_model_snapshots(model_snapshots)
-
-            # TODO add swa for iterations also
-            if use_swa:
-                # check if the learning rate scheduler is cyclical
-                if scheduler_cyclical:
-                    if epoch >= consumed_budget:
-                        # delay with one epoch for the
-                        # snapshot since the optimizer has
-                        # not yet updated the weights.
-                        if lr_scheduler.restarted_at + 1 == epoch:
-                            print(f"{counter}-th swa update triggered")
-                            print(f"Scheduler :{type(lr_scheduler)}")
-                            for param_group in optimizer.param_groups:
-                                print(f"Learning rate {param_group['lr']}")
-                            counter += 1
-                            trainer.optimizer.update_swa()
-                else:
-                    if epoch >= consumed_budget:
-                        print(f"{counter}-th swa update triggered")
-                        print(f"Scheduler :{type(lr_scheduler)}")
-                        for param_group in optimizer.param_groups:
-                            print(f"Learning rate {param_group['lr']}")
-                        counter += 1
-                        trainer.optimizer.update_swa()
-
             # handle logs
             logs.append(log)
             log = {key: value for key, value in log.items() if not isinstance(value, np.ndarray)}
@@ -266,13 +265,6 @@ class TrainNode(PipelineNode):
             
             epoch += 1
             torch.cuda.empty_cache()
-
-        if use_swa:
-            trainer.optimizer.swap_swa_sgd()
-
-        # Check if it was a refit for SE, then store the ensemble
-        if use_se and refit:
-            self.ensemble_models = model_snapshots
 
         # wrap up
         loss, final_log = self.wrap_up_training(trainer=trainer, logs=logs, epoch=epoch,
@@ -298,15 +290,14 @@ class TrainNode(PipelineNode):
             torch.set_num_threads(pipeline_config["torch_num_threads"])
 
         device = Trainer.get_device(pipeline_config)
-        
-        if True in pipeline_config["use_se"]:
-            if len(self.ensemble_models) > 0:
-                Y = predict_se(self.ensemble_models, predict_loader)
-            else:
-                print('Since snapshot ensembling is used, ensemble models are only stored if refit is called with final config')
-                raise('Cannot predict error!')
+        # snapshot ensembling is activated
+        if len(self.ensemble_models) > 0:
+            if len(self.ensemble_models) == 1:
+                print('Snapshot ensembling is used, but there is only one model in ensemble')
+            Y = predict(self.ensemble_models, predict_loader, device, se=True)
         else:
             Y = predict(network, predict_loader, device)
+
         return {'Y': Y.detach().cpu().numpy()}
     
     def add_training_technique(self, name, training_technique):
@@ -420,45 +411,39 @@ class TrainNode(PipelineNode):
         return loss, final_log
 
 
-def predict(network, test_loader, device, move_network=True):
+def predict(network, test_loader, device, move_network=True, se=False):
     """ predict batchwise """
-    # Build DataLoader
+
     if move_network:
-        network = network.to(device)
+        if se:
+            # there are multiple models with the different
+            # weight snapshots when snapshot ensembling is
+            # used.
+            for model_snapshot in network:
+                model_snapshot.to(device)
+                model_snapshot.eval()
+        else:
+            network = network.to(device)
+            network.eval()
 
     # Batch prediction
-    network.eval()
     Y_batch_preds = list()
-    
+
     for i, (X_batch, Y_batch) in enumerate(test_loader):
         # Predict on batch
         X_batch = Variable(X_batch).to(device)
-        batch_size = X_batch.size(0)
+        if se:
+            Y_batch_pred = list()
+            for model_snapshot in network:
+                # append the prediction of each model snapshot
+                # to the list of predicted values
+                Y_batch_pred.append(model_snapshot(X_batch).detach().cpu())
+            Y_batch_pred = torch.stack(Y_batch_pred)
+            # averaged prediction value of all model snapshots
+            Y_batch_pred = Y_batch_pred.mean(dim=0)
+        else:
+            Y_batch_pred = network(X_batch).detach().cpu()
 
-        Y_batch_pred = network(X_batch).detach().cpu()
         Y_batch_preds.append(Y_batch_pred)
-    
-    return torch.cat(Y_batch_preds, 0)
-
-def predict_se(model_snapshots, test_loader):
-    """ predict batchwise """
-    # Build DataLoader
-    for model in model_snapshots:
-        model.eval()
-
-    Y_batch_preds = list()
-    
-    for i, (X_batch, Y_batch) in enumerate(test_loader):
-        # Predict on batch
-        X_batch = Variable(X_batch).cpu()
-        batch_size = X_batch.size(0)
-
-        Y_batch_pred = list()
-        for model in model_snapshots:
-            Y_batch_pred.append(model(X_batch).detach())
-        
-        Y_batch_pred = torch.stack(Y_batch_pred)
-        
-        Y_batch_preds.append(Y_batch_pred.mean(dim=0))
     
     return torch.cat(Y_batch_preds, 0)
