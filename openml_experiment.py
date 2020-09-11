@@ -19,15 +19,18 @@ from sklearn.model_selection import train_test_split
 
 def str2bool(v):
     if isinstance(v, bool):
-        return v
+        return (v, )
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
+        return (True, )
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
+        return (False, )
+    elif v.lower() == 'conditional':
+        return (True, False)
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError('No valid value given.')
 
 
+# training settings
 parser = argparse.ArgumentParser(description='Configuration for the experiment')
 parser.add_argument(
     '--run_id',
@@ -46,93 +49,6 @@ parser.add_argument(
     help='Learning rate for the optimizer',
     default=0.01,
     type=float,
-)
-parser.add_argument(
-    '--use_swa',
-    help='If stochastic weight averaging should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_se',
-    help='If snapshot ensembling should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_lookahead',
-    help='If the lookahead optimizing technique should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_weight_decay',
-    help='If weight decay regularization should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_batch_normalization',
-    help='If batch normalization regularization should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_skip_connection',
-    help='If skip connections should be used. Turns the network into a residual network.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_dropout',
-    help='If dropout regularization should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_shake_drop',
-    help='If shake drop regularization should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_shake_shake',
-    help='If shake shake regularization should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--use_adversarial_training',
-    help='If adversarial training should be used.',
-    type=str2bool,
-    nargs='?',
-    const=True,
-    default=False,
-)
-parser.add_argument(
-    '--example_augmentation',
-    help='If methods that augment examples should be used',
-    type=str,
-    choices=['mixup', 'cutout', 'cutmix', 'standard'],
-    default='standard',
 )
 parser.add_argument(
     '--random_seed',
@@ -155,13 +71,7 @@ parser.add_argument(
 parser.add_argument(
     '--task_id',
     help='Task id so that the dataset can be retrieved from OpenML.',
-    default=233088,
-    type=int,
-)
-parser.add_argument(
-    '--nr_units',
-    help='Number of units per layer. To be used in the fixed architecture.',
-    default=64,
+    default=233089,
     type=int,
 )
 parser.add_argument(
@@ -171,9 +81,103 @@ parser.add_argument(
     type=int,
 )
 
+# Regularization method settings
+parser.add_argument(
+    '--use_swa',
+    help='If stochastic weight averaging should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_se',
+    help='If snapshot ensembling should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_lookahead',
+    help='If the lookahead optimizing technique should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_weight_decay',
+    help='If weight decay regularization should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_batch_normalization',
+    help='If batch normalization regularization should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_skip_connection',
+    help='If skip connections should be used. Turns the network into a residual network.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--use_dropout',
+    help='If dropout regularization should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--mb_choice',
+    help='Multibranch network regularization. Only active when skip_connection is active.',
+    type=str,
+    choices=['none', 'shake-shake', 'shake-drop', 'all'],
+    default='none',
+)
+parser.add_argument(
+    '--use_adversarial_training',
+    help='If adversarial training should be used.',
+    type=str2bool,
+    nargs='?',
+    const=(True, ),
+    default=(False, ),
+)
+parser.add_argument(
+    '--example_augmentation',
+    help='If methods that augment examples should be used',
+    type=str,
+    choices=['mixup', 'cutout', 'cutmix', 'standard', 'all'],
+    default='standard',
+)
+
+# network settings
+parser.add_argument(
+    '--nr_units',
+    help='Number of units per layer. To be used in the fixed architecture.',
+    default=64,
+    type=int,
+)
+
 args = parser.parse_args()
 search_space_updates = HyperparameterSearchSpaceUpdates()
+
+example_augmentation_choices = ['mixup', 'cutout', 'cutmix', 'standard']  if args.example_augmentation == 'all' else [args.example_augmentation]
+multibranch_choices = ['none', 'shake-shake', 'shake-drop'] if args.mb_choice == 'all' else [args.mb_choice]
+
 # Fixed architecture space
+
+# Applying all of the hyperparameter updates as given.
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:max_units",
@@ -184,7 +188,6 @@ search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:resnet_shape",
     value_range=["brick"],
-    log=False,
 )
 search_space_updates.append(
     node_name="NetworkSelector",
@@ -207,38 +210,27 @@ search_space_updates.append(
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:use_dropout",
-    value_range=[args.use_dropout],
-    log=False,
+    value_range=[*args.use_dropout],
 )
 search_space_updates.append(
     node_name="NetworkSelector",
-    hyperparameter="shapedresnet:use_shake_shake",
-    value_range=[args.use_shake_shake],
-    log=False,
-)
-search_space_updates.append(
-    node_name="NetworkSelector",
-    hyperparameter="shapedresnet:use_shake_drop",
-    value_range=[args.use_shake_drop],
-    log=False,
+    hyperparameter="shapedresnet:multibranch_choices",
+    value_range=multibranch_choices,
 )
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:use_batch_normalization",
-    value_range=[args.use_batch_normalization],
-    log=False,
+    value_range=[*args.use_batch_normalization],
 )
 search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:use_skip_connection",
-    value_range=[args.use_skip_connection],
-    log=False,
+    value_range=[*args.use_skip_connection],
 )
 search_space_updates.append(
     node_name="OptimizerSelector",
     hyperparameter="adamw:use_weight_decay",
-    value_range=[args.use_weight_decay],
-    log=False,
+    value_range=[*args.use_weight_decay],
 )
 search_space_updates.append(
     node_name="OptimizerSelector",
@@ -250,7 +242,6 @@ search_space_updates.append(
     node_name="InitializationSelector",
     hyperparameter="initializer:initialize_bias",
     value_range=['Yes'],
-    log=False,
 )
 search_space_updates.append(
     node_name="LearningrateSchedulerSelector",
@@ -268,7 +259,6 @@ search_space_updates.append(
     node_name="NetworkSelector",
     hyperparameter="shapedresnet:activation",
     value_range=['relu'],
-    log=False,
 )
 
 result_directory = os.path.join(
@@ -325,11 +315,11 @@ for seed in different_seeds:
         min_workers=args.nr_workers,
         dataset_name=dataset.name,
         working_dir=seed_exp_dir,
-        batch_loss_computation_techniques=[args.example_augmentation],
-        use_lookahead=[args.use_lookahead],
-        use_swa=[args.use_swa],
-        use_se=[args.use_se],
-        use_adversarial_training=[args.use_adversarial_training],
+        batch_loss_computation_techniques=example_augmentation_choices,
+        use_lookahead=[*args.use_lookahead],
+        use_swa=[*args.use_swa],
+        use_se=[*args.use_se],
+        use_adversarial_training=[*args.use_adversarial_training],
         hyperparameter_search_space_updates=search_space_updates,
         result_logger_dir=seed_exp_dir,
         torch_num_threads=args.num_threads,

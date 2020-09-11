@@ -144,7 +144,7 @@ class ResBlock(nn.Module):
         self.num_blocks = self.config["blocks_per_group"] * self.config["num_groups"]
         self.layers = self._build_block(in_features, out_features)
 
-        if config["use_shake_shake"]:
+        if config["multi_branch_regularization"] == 'shake-shake':
             self.shake_shake_layers = self._build_block(in_features, out_features)
         
 
@@ -180,7 +180,7 @@ class ResBlock(nn.Module):
             x = self.start_norm(x)
             residual = self.shortcut(x)
         
-        if self.config["use_shake_shake"]:
+        if self.config["multi_branch_regularization"] == "shake-shake":
             x1 = self.layers(x)
             x2 = self.shake_shake_layers(x)
             alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
@@ -188,12 +188,12 @@ class ResBlock(nn.Module):
         else:
             x = self.layers(x)
         
-        if self.config["use_shake_drop"]:
+        if self.config["multi_branch_regularization"] == "shake-drop":
             alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
             bl = shake_drop_get_bl(self.block_index, 1 - self.config["max_shake_drop_probability"], self.num_blocks, self.training, x.is_cuda)
             x = shake_drop(x, alpha, beta, bl)
 
-        if self.config["use_skip_connection"] or self.config["use_shake_shake"] or self.config["use_shake_drop"]:
+        if self.config["use_skip_connection"]:
             x = x + residual
 
         return x

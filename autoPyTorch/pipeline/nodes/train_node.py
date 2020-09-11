@@ -204,22 +204,23 @@ class TrainNode(PipelineNode):
             optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader)
 
             if epoch == budget:
-                print(f"{counter}-th {snapshot_method} update triggered")
-                if use_swa:
-                    trainer.optimizer.update_swa()
-                    trainer.optimizer.swap_swa_sgd()
-                elif use_se:
-                    # Save the model to snapshots and also update the trainer
-                    # Put the model on cpu after deepcopying it
-                    model_copy = deepcopy(trainer.model)
-                    model_copy.cpu()
-                    model_snapshots.append(model_copy)
-                    if len(model_snapshots) > se_lastk:
-                        model_snapshots = model_snapshots[1:]
-                    trainer.update_model_snapshots(model_snapshots)
-                    self.ensemble_models = model_snapshots
+                if use_swa or use_se:
+                    print(f"{counter}-th {snapshot_method} update triggered")
+                    if use_swa:
+                        trainer.optimizer.update_swa()
+                        trainer.optimizer.swap_swa_sgd()
+                    elif use_se:
+                        # Save the model to snapshots and also update the trainer
+                        # Put the model on cpu after deepcopying it
+                        model_copy = deepcopy(trainer.model)
+                        model_copy.cpu()
+                        model_snapshots.append(model_copy)
+                        if len(model_snapshots) > se_lastk:
+                            model_snapshots = model_snapshots[1:]
+                        trainer.update_model_snapshots(model_snapshots)
+                        self.ensemble_models = model_snapshots
 
-                counter += 1
+                    counter += 1
 
 
             if valid_loader is not None and trainer.eval_valid_each_epoch:

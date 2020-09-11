@@ -23,7 +23,7 @@ class CutOut(BaseBatchLossComputationTechnique):
         # Draw a uniform sample of indices which denotes what to turn off 
         indices = self.rand_indices(x.size(), self.patch_ratio)
 
-        x[:, indices] = 0.0
+        x[:, indices.long()] = 0.0
         lam = 1
         y_a = y
         y_b = y
