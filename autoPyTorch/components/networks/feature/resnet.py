@@ -144,8 +144,11 @@ class ResBlock(nn.Module):
         self.num_blocks = self.config["blocks_per_group"] * self.config["num_groups"]
         self.layers = self._build_block(in_features, out_features)
 
-        if config["multi_branch_regularization"] == 'shake-shake':
-            self.shake_shake_layers = self._build_block(in_features, out_features)
+        # check if the option is in the config
+        # which means the skip connection is activated
+        if "multi_branch_regularization" in config:
+            if config["multi_branch_regularization"] == 'shake-shake':
+                self.shake_shake_layers = self._build_block(in_features, out_features)
         
 
     # each bloack consists of two linear layers with batch norm and activation
@@ -179,19 +182,21 @@ class ResBlock(nn.Module):
             # if in_features != out_features -> result = W_shortcut(A(BN(x))) + W_2(~D(A(BN(W_1(A(BN(x))))))
             x = self.start_norm(x)
             residual = self.shortcut(x)
-        
-        if self.config["multi_branch_regularization"] == "shake-shake":
-            x1 = self.layers(x)
-            x2 = self.shake_shake_layers(x)
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            x = shake_shake(x1, x2, alpha, beta)
+
+        if "multi_branch_regularization" in self.config:
+            if self.config["multi_branch_regularization"] == "shake-shake":
+                x1 = self.layers(x)
+                x2 = self.shake_shake_layers(x)
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                x = shake_shake(x1, x2, alpha, beta)
         else:
             x = self.layers(x)
-        
-        if self.config["multi_branch_regularization"] == "shake-drop":
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            bl = shake_drop_get_bl(self.block_index, 1 - self.config["max_shake_drop_probability"], self.num_blocks, self.training, x.is_cuda)
-            x = shake_drop(x, alpha, beta, bl)
+
+        if "multi_branch_regularization" in self.config:
+            if self.config["multi_branch_regularization"] == "shake-drop":
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                bl = shake_drop_get_bl(self.block_index, 1 - self.config["max_shake_drop_probability"], self.num_blocks, self.training, x.is_cuda)
+                x = shake_drop(x, alpha, beta, bl)
 
         if self.config["use_skip_connection"]:
             x = x + residual
