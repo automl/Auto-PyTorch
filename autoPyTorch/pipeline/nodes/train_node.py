@@ -205,6 +205,10 @@ class TrainNode(PipelineNode):
 
             if epoch == budget:
                 if use_swa or use_se:
+                    # Only adding the snapshot_method declaration here
+                    # since the other snapshots might not be triggered
+                    # with a low budget
+                    snapshot_method = 'swa' if use_swa else 'se'
                     print(f"{counter}-th {snapshot_method} update triggered")
                     if use_swa:
                         trainer.optimizer.update_swa()

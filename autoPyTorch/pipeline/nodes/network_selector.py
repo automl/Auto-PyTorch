@@ -87,6 +87,7 @@ class NetworkSelector(PipelineNode):
             ConfigSpace.CategoricalHyperparameter(
                 "use_swa",
                 pipeline_config["use_swa"],
+                default_value=False,
             )
         )
         look_ahead = cs.add_hyperparameter(
@@ -100,6 +101,7 @@ class NetworkSelector(PipelineNode):
             ConfigSpace.CategoricalHyperparameter(
                 "use_se",
                 pipeline_config["use_se"],
+                default_value=False,
             )
         )
 
