@@ -335,7 +335,7 @@ class TrainNode(PipelineNode):
             technique = self.batch_loss_computation_techniques[name]
 
             technique_cs = technique.get_hyperparameter_search_space(
-                **self._get_search_space_updates(prefix=("batch_loss_computation_technique", name)))
+                **self._get_search_space_updates(prefix=(name)))
             cs.add_configuration_space(prefix=name, configuration_space=technique_cs,
                 delimiter=ConfigWrapper.delimiter, parent_hyperparameter={'parent': hp_batch_loss_computation, 'value': name})
 

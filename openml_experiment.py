@@ -8,9 +8,9 @@ from autoPyTorch import (
     AutoNetClassification,
     HyperparameterSearchSpaceUpdates,
 )
-
 import autoPyTorch.pipeline.nodes as autonet_nodes
 from autoPyTorch.components.metrics.additional_logs import test_result
+from utilities import return_best_config
 
 import openml
 import numpy as np
@@ -70,7 +70,7 @@ parser.add_argument(
 parser.add_argument(
     '--task_id',
     help='Task id so that the dataset can be retrieved from OpenML.',
-    default=233089,
+    default=233088,
     type=int,
 )
 parser.add_argument(
@@ -78,6 +78,19 @@ parser.add_argument(
     help='Number of threads to use for the experiment.',
     default=1,
     type=int,
+)
+parser.add_argument(
+    '--run_type',
+    help='If this is a run for hyperparameter optimization or to obtain the final accuracy.',
+    type=str,
+    choices=['hpo_run', 'final_run'],
+    default='final_run',
+)
+parser.add_argument(
+    '--model_name',
+    help='Name of the model if final run is chosen and there is a specific hp configuration for all tasks.',
+    default='plain_network',
+    type=str,
 )
 
 # Regularization method settings
@@ -143,13 +156,6 @@ parser.add_argument(
     type=str,
     choices=['none', 'shake-shake', 'shake-drop', 'all'],
     default='none',
-)
-parser.add_argument(
-    '--run_type',
-    help='If this is a run for hyperparameter optimization or to obtain the final accuracy.',
-    type=str,
-    choices=['hpo_run', 'final_run'],
-    default='final_run',
 )
 parser.add_argument(
     '--use_adversarial_training',
@@ -298,6 +304,25 @@ test_accuracies = []
 
 run_preset = 'no_regularization' if args.run_type == 'final_run' else 'hpo_run_fixed_space'
 
+invalid_arguments_for_hpo_ss_updates = [
+    'strategy',
+    'normalization_strategy',
+    'preprocessor',
+    'target_size_strategy',
+    'over_sampling_method',
+    'under_sampling_method',
+    'embedding',
+    'network',
+    'initialization_method',
+    'optimizer',
+    'lr_scheduler',
+    'loss_module',
+]
+
+use_lookahead = [*args.use_lookahead]
+use_swa = [*args.use_swa]
+use_se = [*args.use_se]
+
 if args.run_type == 'final_run':
     for seed in different_seeds:
         seed_exp_dir = os.path.join(result_directory, f'{seed}')
@@ -316,6 +341,68 @@ if args.run_type == 'final_run':
             random_state=seed,
             stratify=y_train,
         )
+
+        model_name = args.model_name
+        hpo_dir = os.path.join(
+            result_directory,
+            'hpo_run',
+            f'{args.random_seed}',
+        )
+
+        # checking if hpo has been performed before and we have
+        # the best found hyperparameter configuration before.
+        if os.path.exists(hpo_dir) and os.path.isdir(hpo_dir):
+
+            best_config = return_best_config(
+                result_directory,
+                840,
+                args.random_seed,
+            )
+            print(f'Best configuration loaded for task with id: {args.task_id}')
+            print(best_config)
+
+            new_hpo_search_space = HyperparameterSearchSpaceUpdates()
+            for hyperparameter in best_config:
+                parts = hyperparameter.split(':', 1)
+                hyperparameter_node_name = parts[0]
+                hyperparameter_name = parts[1]
+                hyperparameter_value = best_config[hyperparameter]
+
+                # Not pretty but overwrite
+                if hyperparameter_name == 'batch_loss_computation_technique':
+                    example_augmentation_choices = [hyperparameter_value]
+                    continue
+                elif hyperparameter_name == 'use_lookahead':
+                    use_lookahead = [hyperparameter_value]
+                    continue
+                elif hyperparameter_name == 'use_swa':
+                    use_swa = [hyperparameter_value]
+                    continue
+                elif hyperparameter_name == 'use_se':
+                    use_se = [hyperparameter_value]
+                    continue
+
+                if hyperparameter_name in invalid_arguments_for_hpo_ss_updates:
+                    continue
+
+                if hyperparameter_name == 'shapedresnet:multi_branch_regularization':
+                    new_hpo_search_space.append(
+                        node_name="NetworkSelector",
+                        hyperparameter="shapedresnet:multibranch_choices",
+                        value_range=[hyperparameter_value],
+                    )
+                    continue
+
+                new_hpo_search_space.append(
+                    node_name=hyperparameter_node_name,
+                    hyperparameter=hyperparameter_name,
+                    value_range=[hyperparameter_value],
+                )
+
+            # switch search spaces
+            search_space_updates = new_hpo_search_space
+
+
         autonet = AutoNetClassification(
             run_preset,
             random_seed=seed,
@@ -326,9 +413,9 @@ if args.run_type == 'final_run':
             dataset_name=dataset.name,
             working_dir=seed_exp_dir,
             batch_loss_computation_techniques=example_augmentation_choices,
-            use_lookahead=[*args.use_lookahead],
-            use_swa=[*args.use_swa],
-            use_se=[*args.use_se],
+            use_lookahead=use_lookahead,
+            use_swa=use_swa,
+            use_se=use_se,
             use_adversarial_training=[*args.use_adversarial_training],
             hyperparameter_search_space_updates=search_space_updates,
             result_logger_dir=seed_exp_dir,
@@ -397,6 +484,7 @@ if args.run_type == 'final_run':
 
     with open(os.path.join(result_directory, 'curves.txt'), "w") as file:
         json.dump(curves, file)
+
 elif args.run_type == 'hpo_run':
 
     seed_exp_dir = os.path.join(result_directory, args.run_type, f'{args.random_seed}')

@@ -18,6 +18,29 @@ __version__ = "0.0.1"
 __license__ = "BSD"
 
 
+@staticmethod
+def get_boolean_variable_status_from_config(variable_config):
+    variable_status = 'deactivated'
+    if isinstance(variable_config, tuple):
+        # multiple values are given
+        if isinstance(variable_config[0], list):
+            # set by the searchspace update
+            predefined_values = variable_config[0]
+            if len(predefined_values) > 1:
+                variable_status = 'conditional'
+            else:
+                if predefined_values[0]:
+                    variable_status = 'active'
+        else:
+            variable_status = 'conditional'
+    else:
+        if isinstance(variable_config, bool):
+            if variable_config:
+                variable_status = 'active'
+
+    return variable_status
+
+
 class AutoNetOptimizerBase(object):
     def __new__(cls, params, config):
         return cls._get_optimizer(cls, params, config)
@@ -54,26 +77,16 @@ class AdamOptimizer(AutoNetOptimizerBase):
             'use_weight_decay',
             use_weight_decay
         )
-        validate_if_activated = False
-        if isinstance(use_weight_decay, tuple):
-            if isinstance(use_weight_decay[0], list):
-                value_to_check = use_weight_decay[0]
+        weight_decay_status = get_boolean_variable_status_from_config(use_weight_decay)
 
-            else:
-                value_to_check = use_weight_decay
-                validate_if_activated = True
-        else:
-            if isinstance(use_weight_decay, bool):
-                value_to_check = use_weight_decay
-
-        if True in value_to_check:
+        if weight_decay_status == 'active' or weight_decay_status == 'conditional':
             weight_decay_value = add_hyperparameter(
                 cs,
                 CSH.UniformFloatHyperparameter,
                 'weight_decay',
                 weight_decay
             )
-            if validate_if_activated:
+            if weight_decay_status == 'conditional':
                 cs.add_condition(CS.EqualsCondition(weight_decay_value, weight_decay_activation, True))
 
         return cs

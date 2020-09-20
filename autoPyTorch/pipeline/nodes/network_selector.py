@@ -87,10 +87,9 @@ class NetworkSelector(PipelineNode):
             ConfigSpace.CategoricalHyperparameter(
                 "use_swa",
                 pipeline_config["use_swa"],
-                default_value=False,
             )
         )
-        look_ahead = cs.add_hyperparameter(
+        lookahead = cs.add_hyperparameter(
             ConfigSpace.CategoricalHyperparameter(
                 "use_lookahead",
                 pipeline_config["use_lookahead"],
@@ -101,7 +100,6 @@ class NetworkSelector(PipelineNode):
             ConfigSpace.CategoricalHyperparameter(
                 "use_se",
                 pipeline_config["use_se"],
-                default_value=False,
             )
         )
 
@@ -113,13 +111,17 @@ class NetworkSelector(PipelineNode):
             cs.add_hyperparameter(se_lastk)
             cond = ConfigSpace.EqualsCondition(se_lastk, use_se, True)
             cs.add_condition(cond)
-
         if True in pipeline_config["use_lookahead"]:
+            lookahead_cs = Lookahead.get_config_space(
+                **self._get_search_space_updates(
+                    prefix='lookahead',
+                )
+            )
             cs.add_configuration_space(
                 prefix='lookahead',
-                configuration_space=Lookahead.get_config_space(),
+                configuration_space=lookahead_cs,
                 delimiter=ConfigWrapper.delimiter,
-                parent_hyperparameter={'parent': look_ahead, 'value': True}
+                parent_hyperparameter={'parent': lookahead, 'value': True}
             )
 
         if (True in pipeline_config["use_se"]) and (True in pipeline_config["use_swa"]):
@@ -138,7 +140,7 @@ class NetworkSelector(PipelineNode):
                 **self._get_search_space_updates(prefix=network_name))
             cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter,
                                        parent_hyperparameter={'parent': selector, 'value': network_name})
-        self._check_search_space_updates((possible_networks, "*"))
+        self._check_search_space_updates((possible_networks, "*"), ('lookahead', "*"))
 
         return cs
 
