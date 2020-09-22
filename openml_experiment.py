@@ -291,6 +291,7 @@ X, y, categorical_indicator, _ = dataset.get_data(
 )
 run_id = args.run_id
 random.seed(args.random_seed)
+
 different_seeds = set()
 while len(different_seeds) < 10:
     seed_candidate = random.randint(1, 100)
@@ -322,25 +323,20 @@ invalid_arguments_for_hpo_ss_updates = [
 use_lookahead = [*args.use_lookahead]
 use_swa = [*args.use_swa]
 use_se = [*args.use_se]
+use_adversarial_training = [*args.use_adversarial_training]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=args.random_seed,
+    stratify=y,
+)
 
 if args.run_type == 'final_run':
-    for seed in different_seeds:
+    for seed in [args.random_seed]:
         seed_exp_dir = os.path.join(result_directory, f'{seed}')
         os.makedirs(seed_exp_dir, exist_ok=True)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=0.2,
-            random_state=seed,
-            stratify=y,
-        )
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_train,
-            y_train,
-            test_size=0.25,
-            random_state=seed,
-            stratify=y_train,
-        )
 
         model_name = args.model_name
         hpo_dir = os.path.join(
@@ -381,6 +377,9 @@ if args.run_type == 'final_run':
                 elif hyperparameter_name == 'use_se':
                     use_se = [hyperparameter_value]
                     continue
+                elif hyperparameter_name == 'use_adversarial_training':
+                    use_adversarial_training = [hyperparameter_value]
+                    continue
 
                 if hyperparameter_name in invalid_arguments_for_hpo_ss_updates:
                     continue
@@ -402,6 +401,8 @@ if args.run_type == 'final_run':
             # switch search spaces
             search_space_updates = new_hpo_search_space
 
+        else:
+            print("No hpo run for the current network. Continuing without loading a hp configuration")
 
         autonet = AutoNetClassification(
             run_preset,
@@ -416,7 +417,7 @@ if args.run_type == 'final_run':
             use_lookahead=use_lookahead,
             use_swa=use_swa,
             use_se=use_se,
-            use_adversarial_training=[*args.use_adversarial_training],
+            use_adversarial_training=use_adversarial_training,
             hyperparameter_search_space_updates=search_space_updates,
             result_logger_dir=seed_exp_dir,
             torch_num_threads=args.num_threads,
@@ -443,19 +444,15 @@ if args.run_type == 'final_run':
         results_fit = autonet.fit(
             X_train=X_train,
             Y_train=y_train,
-            X_valid=X_val,
-            Y_valid=y_val,
             refit=False,
         )
         time.sleep(30)
         info = results_fit['info']
         train_curve = info[0]['train_balanced_accuracy']
-        validation_curve = info[0]['val_balanced_accuracy']
         test_curve = info[0]['test_result']
         test_accuracy = test_curve[-1]
 
         train_curves.append(train_curve)
-        validation_curves.append(validation_curve)
         test_curves.append(test_curve)
         test_accuracies.append(test_accuracy)
 
@@ -463,10 +460,16 @@ if args.run_type == 'final_run':
     train_max_bound = np.max(train_curves, 0)
     train_min_bound = np.min(train_curves, 0)
 
-    validation_mean_curve = np.mean(validation_curves, 0)
     test_mean_curve = np.mean(test_curves, 0)
     test_max_bound = np.max(test_curves, 0)
     test_min_bound = np.min(test_curves, 0)
+
+    curves = dict()
+    curves['train_curves'] = train_curves
+    curves['test_curves'] = test_curves
+
+    with open(os.path.join(result_directory, 'curves.txt'), "w") as file:
+        json.dump(curves, file)
 
     mean_accuracy = np.mean(test_accuracies)
     accuracy_std = np.std(test_accuracies)
@@ -474,28 +477,14 @@ if args.run_type == 'final_run':
     run_results['mean_test_bal_acc'] = mean_accuracy
     run_results['std_test_bal_acc'] = accuracy_std
 
-    curves = dict()
-    curves['train_curves'] = train_curves
-    curves['test_curves'] = test_curves
-    curves['validation_curves'] = validation_curves
-
     with open(os.path.join(result_directory, 'run_results.txt'), "w") as file:
         json.dump(run_results, file)
-
-    with open(os.path.join(result_directory, 'curves.txt'), "w") as file:
-        json.dump(curves, file)
 
 elif args.run_type == 'hpo_run':
 
     seed_exp_dir = os.path.join(result_directory, args.run_type, f'{args.random_seed}')
     os.makedirs(seed_exp_dir, exist_ok=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=args.random_seed,
-        stratify=y,
-    )
+
     X_train, X_val, y_train, y_val = train_test_split(
         X_train,
         y_train,
