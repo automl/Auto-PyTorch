@@ -16,6 +16,7 @@ from autoPyTorch import AutoNetClassification, AutoNetEnsemble
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch.components.metrics.additional_logs import *
 from autoPyTorch.utils.ensemble import test_predictions_for_ensemble
+import examples.ensemble.create_trajectory as traj
 
 def seed_everything(seed):
     random.seed(seed)
@@ -97,7 +98,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'budget_type': 'epochs',
             'categorical_features': None,
             #'cross_validator': 'stratified_k_fold',
-            #'cross_validator_args': dict({"n_splits":5}),
+            #'cross_validator_args': dict({"n_splits":10}),
             'cross_validator': 'none',
             'cuda': False,
             'dataset_name': None,
@@ -153,6 +154,7 @@ def get_ensemble_config():
             }
     return ensemble_config
 
+# python3 -W ignore examples/ensemble/test_ensemble.py --run_id 999 --task_id 1 --num_workers 1 --dataset_id 3 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --test true
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("--run_id", type=int, help="An id for the run.")
@@ -183,7 +185,7 @@ if __name__ == "__main__":
     # Get autonet config
     min_budget=10 if args.test=="false" else 1
     max_budget=50 if args.test=="false" else 2
-    max_runtime = 2*60*60 if args.test=="false" else 5*60
+    max_runtime = 2*60*60 if args.test=="false" else 2*60
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 
                                                 max_runtime=max_runtime,
@@ -242,3 +244,21 @@ if __name__ == "__main__":
 
     with open(logdir + "/results_dump.json", "w") as f:
         json.dump(results, f)
+
+    # Create trajectory
+    ensemble_config = traj.get_ensemble_config()
+
+    simulator = traj.EnsembleTrajectorySimulator(ensemble_pred_dir=logdir, ensemble_config=ensemble_config, seed=1)
+    simulator.simulate_trajectory()
+    simulator.save_trajectory(save_file=os.path.join(logdir, "ensemble_trajectory.json"))
+    simulator.save_trajectory(save_file=os.path.join(logdir, "ensemble_trajectory_test.json"), test=True)
+
+    #incumbent_score_all_time, incumbent_ind_all_time = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=False)
+    #incumbent_score_all_time_val, incumbent_ind_val_all_time = simulator.get_incumbent_at_timestep(timestep=np.inf, use_val=True)
+    incumbent_score_val, incumbent_ind_val = simulator.get_incumbent_at_timestep(timestep=3600, use_val=True)
+
+    incumbent_preds = simulator.test_preds[incumbent_ind_val]
+
+    print("Success:", incumbent_score_val)
+
+    embed()
