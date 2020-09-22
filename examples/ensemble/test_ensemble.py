@@ -16,7 +16,8 @@ from autoPyTorch import AutoNetClassification, AutoNetEnsemble
 from autoPyTorch.pipeline.nodes import LogFunctionsSelector
 from autoPyTorch.components.metrics.additional_logs import *
 from autoPyTorch.utils.ensemble import test_predictions_for_ensemble
-import examples.ensemble.create_trajectory as traj
+#import examples.ensemble.create_trajectory as traj
+import autoPyTorch.utils.create_trajectory as traj
 
 def seed_everything(seed):
     random.seed(seed)
@@ -185,7 +186,7 @@ if __name__ == "__main__":
     # Get autonet config
     min_budget=10 if args.test=="false" else 1
     max_budget=50 if args.test=="false" else 2
-    max_runtime = 2*60*60 if args.test=="false" else 2*60
+    max_runtime = 2*60*60 if args.test=="false" else 1*60
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 
                                                 max_runtime=max_runtime,
@@ -230,8 +231,9 @@ if __name__ == "__main__":
 
     print(autonet.get_current_autonet_config())
 
-    fit_results = autonet.fit(X_train, y_train, **autonet.get_current_autonet_config())
+    fit_results = autonet.fit(X_train, y_train, **autonet.get_current_autonet_config(), refit=False)
     
+    """
     score = autonet.score(X_test, y_test) if y_test is not None else None
 
     print("Test score:", score)
@@ -244,6 +246,8 @@ if __name__ == "__main__":
 
     with open(logdir + "/results_dump.json", "w") as f:
         json.dump(results, f)
+
+    """
 
     # Create trajectory
     ensemble_config = traj.get_ensemble_config()
@@ -260,5 +264,3 @@ if __name__ == "__main__":
     incumbent_preds = simulator.test_preds[incumbent_ind_val]
 
     print("Success:", incumbent_score_val)
-
-    embed()

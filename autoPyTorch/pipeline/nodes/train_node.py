@@ -268,6 +268,7 @@ class TrainNode(PipelineNode):
 
         # Save for ensembles
         if self.pipeline_config["save_models"]:
+            self.hyperparameter_config_id = self.hyperparameter_config_id if self.hyperparameter_config_id is not None else (0,1,0)
             identifier = self.hyperparameter_config_id + (self.budget,)
             save_dir = os.path.join(self.pipeline_config["result_logger_dir"], "models", str(identifier) + ".torch")
             os.makedirs(os.path.dirname(save_dir), exist_ok=True)

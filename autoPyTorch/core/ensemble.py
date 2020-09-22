@@ -78,22 +78,35 @@ class AutoNetEnsemble(AutoNet):
             ensemble = self.fit_result["ensemble"]
         if (autonet_config is None or ensemble_configs is None or ensemble is None):
             raise ValueError("You have to specify ensemble and autonet config in order to be able to refit")
-        
+ 
         identifiers = ensemble.get_selected_model_identifiers()
         self.trained_autonets = dict()
 
         autonet_config["save_models"] = False
 
-        for identifier in identifiers:
-            config_id = tuple(identifier[:3])
-            budget = identifier[3]
-            hyperparameter_config = ensemble_configs[config_id]
-            autonet = self.autonet_type(pipeline=self.pipeline)
-            autonet.refit(X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid,
-                hyperparameter_config=hyperparameter_config, autonet_config=autonet_config, budget=budget)
-            self.trained_autonets[tuple(identifier)] = autonet
-            self.trained_autonet = autonet
-            break
+        """
+        for config_id, hyperparameter_config in ensemble_configs:
+            if "model" in hyperparameter_config.keys() and hyperparameter_config["model"]=="baseline":
+                print("cont.....")
+                continue
+            else:
+                autonet = self.autonet_type(pipeline=self.pipeline)
+                autonet.refit(X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid,
+                    hyperparameter_config=hyperparameter_config, autonet_config=autonet_config, budget=budget)
+                self.trained_autonets[tuple(identifier)] = autonet
+                self.trained_autonet = autonet
+                break
+        """
+
+        configspace = self.get_hyperparameter_search_space()
+
+        hyperparameter_config = configspace.sample_configuration().get_dictionary()
+
+        autonet = self.autonet_type(pipeline=self.pipeline)
+        autonet.refit(X_train=X_train, Y_train=Y_train, X_valid=X_valid, Y_valid=Y_valid,
+                hyperparameter_config=hyperparameter_config, autonet_config=autonet_config, budget=1)
+        self.trained_autonets[(0,0,0,0)] = autonet
+        self.trained_autonet = autonet
     
     # OVERRIDE
     def predict(self, X, return_probabilities=False, return_metric=False):
