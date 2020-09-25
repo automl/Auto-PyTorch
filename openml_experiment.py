@@ -16,6 +16,8 @@ from utilities import return_best_config
 import openml
 import numpy as np
 from sklearn.model_selection import train_test_split
+import torch
+
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -281,7 +283,6 @@ search_space_updates.append(
     value_range=['relu'],
 )
 
-
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(args.random_seed)
@@ -305,7 +306,6 @@ X, y, categorical_indicator, _ = dataset.get_data(
 
 run_id = args.run_id
 
-
 different_seeds = set()
 while len(different_seeds) < 10:
     seed_candidate = random.randint(1, 100)
@@ -317,7 +317,7 @@ validation_curves = []
 test_curves = []
 test_accuracies = []
 
-run_preset = 'no_regularization' if args.run_type == 'final_run' else 'hpo_run_fixed_space'
+run_preset = '/home/fr/fr_fr/fr_ak1206/experiments/presets/regularization_fixed_arch' if args.run_type == 'final_run' else '/home/fr/fr_fr/fr_ak1206/experiments/presets/hpo_regularization_fixed_arch'
 
 invalid_arguments_for_hpo_ss_updates = [
     'strategy',
@@ -348,6 +348,11 @@ split_types = {
     'split_5': 1 / 32,
 }
 
+number_configs_model = {
+    'cocktail': 840,
+    'weight_decay': 40,
+    'dropout': 80,
+}
 
 X_train, X_test, y_train, y_test = train_test_split(
     X,
@@ -399,10 +404,10 @@ if args.run_type == 'final_run':
         # checking if hpo has been performed before and we have
         # the best found hyperparameter configuration before.
         if os.path.exists(hpo_dir) and os.path.isdir(hpo_dir):
-
+            
             best_config = return_best_config(
                 result_directory,
-                840,
+                number_configs_model[model_name],
                 args.random_seed,
             )
             print(f'Best configuration loaded for task with id: {args.task_id}')
