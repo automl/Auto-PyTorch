@@ -3,6 +3,7 @@ import json
 import os
 import random
 import time
+import torch
 
 from autoPyTorch import (
     AutoNetClassification,
@@ -91,6 +92,13 @@ parser.add_argument(
     help='Name of the model if final run is chosen and there is a specific hp configuration for all tasks.',
     default='plain_network',
     type=str,
+)
+parser.add_argument(
+    '--split_type',
+    help='If we are going to use a subset of the original dataset.',
+    type=str,
+    choices=['no_split', 'split_1', 'split_2', 'split_3', 'split_4', 'split_5'],
+    default='no_split',
 )
 
 # Regularization method settings
@@ -189,7 +197,6 @@ multibranch_choices = ['none', 'shake-shake', 'shake-drop'] if args.mb_choice ==
 
 # Fixed architecture space
 
-
 # Applying all of the hyperparameter updates as given.
 search_space_updates.append(
     node_name="NetworkSelector",
@@ -274,6 +281,12 @@ search_space_updates.append(
     value_range=['relu'],
 )
 
+
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(args.random_seed)
+random.seed(args.random_seed)
+
 result_directory = os.path.join(
     args.working_dir,
     f'{args.nr_units}',
@@ -289,8 +302,9 @@ X, y, categorical_indicator, _ = dataset.get_data(
     dataset_format='array',
     target=dataset.default_target_attribute,
 )
+
 run_id = args.run_id
-random.seed(args.random_seed)
+
 
 different_seeds = set()
 while len(different_seeds) < 10:
@@ -318,12 +332,22 @@ invalid_arguments_for_hpo_ss_updates = [
     'optimizer',
     'lr_scheduler',
     'loss_module',
+    'se_lastk',
 ]
 
 use_lookahead = [*args.use_lookahead]
 use_swa = [*args.use_swa]
 use_se = [*args.use_se]
 use_adversarial_training = [*args.use_adversarial_training]
+
+split_types = {
+    'split_1': 1 / 2,
+    'split_2': 1 / 4,
+    'split_3': 1 / 8,
+    'split_4': 1 / 16,
+    'split_5': 1 / 32,
+}
+
 
 X_train, X_test, y_train, y_test = train_test_split(
     X,
@@ -333,17 +357,44 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y,
 )
 
+if args.split_type != 'no_split':
+    _, X_train, _, y_train = train_test_split(
+        X_train,
+        y_train,
+        test_size=split_types[args.split_type],
+        random_state=args.random_seed,
+        stratify=y_train,
+    )
+
+print(f'Before splitting into train and validation, train size: {X_train.shape}')
+
 if args.run_type == 'final_run':
+
     for seed in [args.random_seed]:
-        seed_exp_dir = os.path.join(result_directory, f'{seed}')
+        print(f"Training size now : {X_train.shape}")
+        if args.split_type == 'no_split':
+            seed_exp_dir = os.path.join(result_directory, f'{seed}')
+        else:
+            seed_exp_dir = os.path.join(result_directory, f'{args.split_type}', f'{seed}')
+
         os.makedirs(seed_exp_dir, exist_ok=True)
 
         model_name = args.model_name
-        hpo_dir = os.path.join(
-            result_directory,
-            'hpo_run',
-            f'{args.random_seed}',
-        )
+
+        if args.split_type == 'no_split':
+            hpo_dir = os.path.join(
+                result_directory,
+                'hpo_run',
+                f'{args.random_seed}',
+            )
+        else:
+            hpo_dir = os.path.join(
+                result_directory,
+                'hpo_run',
+                f'{args.split_type}',
+                f'{args.random_seed}',
+            )
+
 
         # checking if hpo has been performed before and we have
         # the best found hyperparameter configuration before.
@@ -482,7 +533,11 @@ if args.run_type == 'final_run':
 
 elif args.run_type == 'hpo_run':
 
-    seed_exp_dir = os.path.join(result_directory, args.run_type, f'{args.random_seed}')
+    if args.split_type == 'no_split':
+        seed_exp_dir = os.path.join(result_directory, args.run_type, f'{args.random_seed}')
+    else:
+        seed_exp_dir = os.path.join(result_directory, args.run_type, f'{args.split_type}', f'{args.random_seed}')
+
     os.makedirs(seed_exp_dir, exist_ok=True)
 
     X_train, X_val, y_train, y_val = train_test_split(
@@ -529,7 +584,7 @@ elif args.run_type == 'hpo_run':
     print(hyperparameter_search_space)
     # Print all possible configuration options
     autonet.print_help()
-
+    print(f'After splitting into train and validation, train size: {X_train.shape}, validation size: {X_val.shape}')
     results_fit = autonet.fit(
         X_train=X_train,
         Y_train=y_train,
