@@ -15,6 +15,8 @@ from utilities import return_best_config
 import openml
 import numpy as np
 from sklearn.model_selection import train_test_split
+import torch
+
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -274,6 +276,11 @@ search_space_updates.append(
     value_range=['relu'],
 )
 
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(args.random_seed)
+random.seed(args.random_seed)
+
 result_directory = os.path.join(
     args.working_dir,
     f'{args.nr_units}',
@@ -290,7 +297,6 @@ X, y, categorical_indicator, _ = dataset.get_data(
     target=dataset.default_target_attribute,
 )
 run_id = args.run_id
-random.seed(args.random_seed)
 
 different_seeds = set()
 while len(different_seeds) < 10:
@@ -303,7 +309,7 @@ validation_curves = []
 test_curves = []
 test_accuracies = []
 
-run_preset = 'no_regularization' if args.run_type == 'final_run' else 'hpo_run_fixed_space'
+run_preset = '/home/fr/fr_fr/fr_ak1206/experiments/presets/regularization_fixed_arch' if args.run_type == 'final_run' else '/home/fr/fr_fr/fr_ak1206/experiments/presets/hpo_regularization_fixed_arch'
 
 invalid_arguments_for_hpo_ss_updates = [
     'strategy',
@@ -318,12 +324,19 @@ invalid_arguments_for_hpo_ss_updates = [
     'optimizer',
     'lr_scheduler',
     'loss_module',
+    'se_lastk',
 ]
 
 use_lookahead = [*args.use_lookahead]
 use_swa = [*args.use_swa]
 use_se = [*args.use_se]
 use_adversarial_training = [*args.use_adversarial_training]
+
+number_configs_model = {
+    'cocktail': 840,
+    'weight_decay': 40,
+    'dropout': 80,
+}
 
 X_train, X_test, y_train, y_test = train_test_split(
     X,
@@ -332,7 +345,6 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=args.random_seed,
     stratify=y,
 )
-
 if args.run_type == 'final_run':
     for seed in [args.random_seed]:
         seed_exp_dir = os.path.join(result_directory, f'{seed}')
@@ -348,10 +360,10 @@ if args.run_type == 'final_run':
         # checking if hpo has been performed before and we have
         # the best found hyperparameter configuration before.
         if os.path.exists(hpo_dir) and os.path.isdir(hpo_dir):
-
+            
             best_config = return_best_config(
                 result_directory,
-                840,
+                number_configs_model[model_name],
                 args.random_seed,
             )
             print(f'Best configuration loaded for task with id: {args.task_id}')
