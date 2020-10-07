@@ -352,6 +352,12 @@ number_configs_model = {
     'cocktail': 840,
     'weight_decay': 40,
     'dropout': 80,
+    'cutout': 80,
+    'cutmix': 80,
+    'mixup': 40,
+    'shake_drop': 40,
+    'lookahead': 80,
+    'top3': 120,
 }
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -408,6 +414,7 @@ if args.run_type == 'final_run':
             best_config = return_best_config(
                 result_directory,
                 number_configs_model[model_name],
+                args.split_type,
                 args.random_seed,
             )
             print(f'Best configuration loaded for task with id: {args.task_id}')

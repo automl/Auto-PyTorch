@@ -5,14 +5,23 @@ import os
 def return_best_config(
         result_path: str,
         number_of_configs: int,
+        split_type: str = 'no_split',
         seed: int = 11,
 ):
 
-    result_folder = os.path.join(
-        result_path,
-        'hpo_run',
-        f'{seed}',
-    )
+    if split_type == 'no_split':
+        result_folder = os.path.join(
+            result_path,
+            'hpo_run',
+            f'{seed}',
+        )
+    else:
+        result_folder = os.path.join(
+            result_path,
+            'hpo_run',
+            split_type,
+            f'{seed}',
+        )
 
     best_test_accuracy = 0
     best_config_id = None
