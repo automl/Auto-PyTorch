@@ -317,7 +317,7 @@ validation_curves = []
 test_curves = []
 test_accuracies = []
 
-run_preset = '/home/fr/fr_fr/fr_ak1206/experiments/presets/regularization_fixed_arch' if args.run_type == 'final_run' else '/home/fr/fr_fr/fr_ak1206/experiments/presets/hpo_regularization_fixed_arch'
+run_preset = 'no_regularization' if args.run_type == 'final_run' else 'hpo_run_fixed_space'
 
 invalid_arguments_for_hpo_ss_updates = [
     'strategy',
@@ -408,6 +408,7 @@ if args.run_type == 'final_run':
             best_config = return_best_config(
                 result_directory,
                 number_configs_model[model_name],
+                args.split_type,
                 args.random_seed,
             )
             print(f'Best configuration loaded for task with id: {args.task_id}')

@@ -83,6 +83,7 @@ class NetworkSelector(PipelineNode):
 
         possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
         selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", possible_networks))
+
         use_swa = cs.add_hyperparameter(
             ConfigSpace.CategoricalHyperparameter(
                 "use_swa",
@@ -111,6 +112,7 @@ class NetworkSelector(PipelineNode):
             cs.add_hyperparameter(se_lastk)
             cond = ConfigSpace.EqualsCondition(se_lastk, use_se, True)
             cs.add_condition(cond)
+
         if True in pipeline_config["use_lookahead"]:
             lookahead_cs = Lookahead.get_config_space(
                 **self._get_search_space_updates(
@@ -124,13 +126,13 @@ class NetworkSelector(PipelineNode):
                 parent_hyperparameter={'parent': lookahead, 'value': True}
             )
 
-        if (True in pipeline_config["use_se"]) and (True in pipeline_config["use_swa"]):
+        """if (True in pipeline_config["use_se"]) and (True in pipeline_config["use_swa"]):
             forbidden_clause = ConfigSpace.ForbiddenAndConjunction(
                 ConfigSpace.ForbiddenEqualsClause(use_swa, True),
                 ConfigSpace.ForbiddenEqualsClause(use_se, True)
             )
             cs.add_forbidden_clause(forbidden_clause)
-        
+        """
         network_list = list()
         for network_name, network_type in self.networks.items():
             if (network_name not in possible_networks):

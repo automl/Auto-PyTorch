@@ -95,7 +95,7 @@ class TrainNode(PipelineNode):
         # check if use_se is active or not
         use_se = network_selector_config["use_se"]
 
-        if use_se:
+        """if use_se:
             # If use_se is true at the same time with use_swa 
             if use_swa:
                 use_swa = False
@@ -110,6 +110,11 @@ class TrainNode(PipelineNode):
             
             se_lastk = network_selector_config["se_lastk"]
             print('lastk: ', se_lastk)
+        else:
+            se_lastk = False"""
+
+        if use_se:
+            se_lastk = network_selector_config["se_lastk"]
         else:
             se_lastk = False
         
@@ -160,19 +165,27 @@ class TrainNode(PipelineNode):
             trainer.on_epoch_start(log=log, epoch=epoch)
             # TODO add swa for iterations also
             if use_swa or use_se:
+                # Determine the name of the activated method
+                # or combination of methods
+                if use_swa:
+                    if use_se:
+                        snapshot_method = 'combined se and snapshot'
+                    else:
+                        snapshot_method = 'swa'
+                else:
+                    snapshot_method = 'se'
+
                 # check if the learning rate scheduler is cyclical
                 if scheduler_cyclical:
                     # delay with one epoch for the
                     # snapshot since the optimizer has
                     # not yet updated the weights.
                     if lr_scheduler.restarted_at + 1 == epoch and epoch != 1:
-
-                        snapshot_method = 'swa' if use_swa else 'se'
                         print(f"{counter}-th {snapshot_method} update triggered")
 
                         if use_swa:
                             trainer.optimizer.update_swa()
-                        elif use_se:
+                        if use_se:
                             # Save the model to snapshots and also update the trainer
                             # Put the model on cpu after deepcopying it
                             model_copy = deepcopy(trainer.model)
@@ -185,11 +198,10 @@ class TrainNode(PipelineNode):
                 else:
                     if epoch >= consumed_budget:
                         # TODO refactor the code into one function
-                        snapshot_method = 'swa' if use_swa else 'se'
                         print(f"{counter}-th {snapshot_method} update triggered")
                         if use_swa:
                             trainer.optimizer.update_swa()
-                        elif use_se:
+                        if use_se:
                             # Save the model to snapshots and also update the trainer
                             # Put the model on cpu after deepcopying it
                             model_copy = deepcopy(trainer.model)
@@ -208,12 +220,23 @@ class TrainNode(PipelineNode):
                     # Only adding the snapshot_method declaration here
                     # since the other snapshots might not be triggered
                     # with a low budget
-                    snapshot_method = 'swa' if use_swa else 'se'
+
+                    # Determine the name of the activated method
+                    # or combination of methods
+                    if use_swa:
+                        if use_se:
+                            snapshot_method = 'combined se and snapshot'
+                        else:
+                            snapshot_method = 'swa'
+                    else:
+                        snapshot_method = 'se'
+
                     print(f"{counter}-th {snapshot_method} update triggered")
+
                     if use_swa:
                         trainer.optimizer.update_swa()
                         trainer.optimizer.swap_swa_sgd()
-                    elif use_se:
+                    if use_se:
                         # Save the model to snapshots and also update the trainer
                         # Put the model on cpu after deepcopying it
                         model_copy = deepcopy(trainer.model)
