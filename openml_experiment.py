@@ -348,6 +348,8 @@ split_types = {
     'split_5': 1 / 32,
 }
 
+# Number of configurations for each regularization method
+# Depends on the number of hyperparameters, 40 * D
 number_configs_model = {
     'cocktail': 840,
     'weight_decay': 40,
@@ -383,10 +385,11 @@ if args.run_type == 'final_run':
 
     for seed in [args.random_seed]:
         print(f"Training size now : {X_train.shape}")
+        refit_dir = os.path.join(result_directory, 'refit_run')
         if args.split_type == 'no_split':
-            seed_exp_dir = os.path.join(result_directory, f'{seed}')
+            seed_exp_dir = os.path.join(refit_dir, f'{seed}')
         else:
-            seed_exp_dir = os.path.join(result_directory, f'{args.split_type}', f'{seed}')
+            seed_exp_dir = os.path.join(refit_dir, f'{args.split_type}', f'{seed}')
 
         os.makedirs(seed_exp_dir, exist_ok=True)
 
@@ -396,14 +399,14 @@ if args.run_type == 'final_run':
             hpo_dir = os.path.join(
                 result_directory,
                 'hpo_run',
-                f'{args.random_seed}',
+                f'{seed}',
             )
         else:
             hpo_dir = os.path.join(
                 result_directory,
                 'hpo_run',
                 f'{args.split_type}',
-                f'{args.random_seed}',
+                f'{seed}',
             )
 
 
@@ -531,7 +534,7 @@ if args.run_type == 'final_run':
     curves['train_curves'] = train_curves
     curves['test_curves'] = test_curves
 
-    with open(os.path.join(result_directory, 'curves.txt'), "w") as file:
+    with open(os.path.join(seed_exp_dir, 'curves.txt'), "w") as file:
         json.dump(curves, file)
 
     mean_accuracy = np.mean(test_accuracies)
@@ -540,7 +543,7 @@ if args.run_type == 'final_run':
     run_results['mean_test_bal_acc'] = mean_accuracy
     run_results['std_test_bal_acc'] = accuracy_std
 
-    with open(os.path.join(result_directory, 'run_results.txt'), "w") as file:
+    with open(os.path.join(seed_exp_dir, 'run_results.txt'), "w") as file:
         json.dump(run_results, file)
 
 elif args.run_type == 'hpo_run':
