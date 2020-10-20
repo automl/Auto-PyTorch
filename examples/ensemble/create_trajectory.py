@@ -219,7 +219,7 @@ def minimize_trf(value):
 def get_ensemble_config():
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
 
-    ensemble_config = {"ensemble_size" : 35,
+    ensemble_config = {"ensemble_size" : 1,
                        "only_consider_n_best" : 10,
                        "sorted_initialization_n_best" : 1,
                        "metric" : autonet_accuracy}
