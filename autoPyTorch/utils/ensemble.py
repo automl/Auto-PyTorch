@@ -85,9 +85,9 @@ def combine_predictions(data, pipeline_kwargs, X, Y):
     unique = uuid.uuid4()
     tempfile.gettempdir()
     with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_predictions_%s.npy" % unique), "wb") as f:
-        np.save(f, sorted_predictions)
+        np.save(f, sorted_predictions, allow_pickle=True)
     with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique), "wb") as f:
-        np.save(f, Y[sorted_indices])
+        np.save(f, Y[sorted_indices], allow_pickle=True)
     host, port = pipeline_kwargs[0]["pipeline_config"]["ensemble_server_credentials"]
     return host, port, unique
 
@@ -102,9 +102,9 @@ def combine_test_predictions(data, pipeline_kwargs, X, Y):
     unique = uuid.uuid4()
     tempfile.gettempdir()
     with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_predictions_%s.npy" % unique), "wb") as f:
-        np.save(f, np.stack(predictions))
+        np.save(f, np.stack(predictions), allow_pickle=True)
     with open(os.path.join(tempfile.gettempdir(), "autonet_ensemble_labels_%s.npy" % unique), "wb") as f:
-        np.save(f, labels[0])
+        np.save(f, labels[0], allow_pickle=True)
     host, port = pipeline_kwargs[0]["pipeline_config"]["ensemble_server_credentials"]
     return host, port, unique
 
@@ -222,7 +222,7 @@ class ensemble_logger(object):
                 if not self.labels_written:
                     loop.run_until_complete(self.save_remote_data(host, port, "labels", unique, f))
                     self.labels_written = True
-                np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
+                np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object), allow_pickle=True)
                 loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
             del job.result["predictions_for_ensemble"]
 
@@ -233,7 +233,7 @@ class ensemble_logger(object):
                 with open(self.file_name, "ab") as f:
                     if not self.labels_written:
                         raise RuntimeError("Baseline predictions found but no labels logged yet.")
-                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object))
+                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object), allow_pickle=True)
                     loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["baseline_predictions_for_ensemble"]
 
@@ -243,7 +243,7 @@ class ensemble_logger(object):
                     if not self.test_labels_written:
                          loop.run_until_complete(self.save_remote_data(host, port, "labels", unique, f))
                          self.test_labels_written = True
-                    np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object))
+                    np.save(f, np.array([job.id, job.kwargs['budget'], job.timestamps], dtype=object), allow_pickle=True)
                     loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["test_predictions_for_ensemble"]
 
@@ -253,7 +253,7 @@ class ensemble_logger(object):
                 with open(self.test_file_name, "ab") as f:
                     if not self.test_labels_written:
                          raise RuntimeError("Baseline test predictions found but no labels logged yet.")
-                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object))
+                    np.save(f, np.array([baseline_id, 0., job.timestamps], dtype=object), allow_pickle=True)
                     loop.run_until_complete(self.save_remote_data(host, port, "predictions", unique, f))
                 del job.result["baseline_test_predictions_for_ensemble"]
         loop.close()
