@@ -4,11 +4,26 @@ import time
 import argparse
 import numpy as np
 
-from autoPyTorch.components.metrics import accuracy
+from sklearn.preprocessing import OneHotEncoder as OHE
+
+from autoPyTorch.components.metrics import accuracy, cross_entropy, auc_metric
 from autoPyTorch.pipeline.nodes.metric_selector import AutoNetMetric, undo_ohe, default_minimize_transform
 from autoPyTorch.components.ensembles.ensemble_selection import EnsembleSelection
 from hpbandster.core.result import logged_results_to_HBS_result
 
+
+def transform_to_probabilities(labels):
+    if labels == []:
+        return []
+    classes = sorted(np.unique(labels))
+
+    encoded = np.zeros((len(labels),len(classes)))
+
+    for ind, lab in enumerate(labels):
+        encoded[ind][lab] = 1
+
+    return encoded
+    
 
 class EnsembleTrajectorySimulator():
 
@@ -93,6 +108,13 @@ class EnsembleTrajectorySimulator():
         print("==> Found %i val preds" %len(self.ensemble_predictions))
         print("==> Found %i test preds" %len(self.ensemble_predictions_test))
         print("==> Found %i timestamps" %len(self.ensemble_timestamps))
+
+        
+        if len(np.array(self.labels).shape) < len(self.ensemble_predictions[0].shape):
+            self.labels = transform_to_probabilities(self.labels)
+            self.labels_ensemble_val = transform_to_probabilities(self.labels_ensemble_val)
+            if self.test_labels is not None:
+                self.test_labels = transform_to_probabilities(self.test_labels)
 
     def transform_timestamps(self, add_time):
         transformed_timestamps = [t["finished"]+add_time for t in self.ensemble_timestamps]
@@ -216,13 +238,22 @@ def get_bohb_rundirs(rundir):
 def minimize_trf(value):
         return -1*value
 
-def get_ensemble_config():
+def no_transform(value):
+    return value
+
+def get_ensemble_config(metric_name="accuracy"):
     autonet_accuracy = AutoNetMetric(name="accuracy", metric=accuracy, loss_transform=minimize_trf, ohe_transform=undo_ohe)
+    autonet_cross_entropy = AutoNetMetric(name="cross_entropy", metric=cross_entropy, loss_transform=minimize_trf, ohe_transform=no_transform)
+    autonet_auc = AutoNetMetric(name="auc", metric=auc_metric, loss_transform=no_transform, ohe_transform=no_transform)
+
+    METRIC_DICT = {"accuracy": autonet_accuracy,
+            "cross_entropy": autonet_cross_entropy,
+            "auc_metric": autonet_auc}
 
     ensemble_config = {"ensemble_size" : 35,
                        "only_consider_n_best" : 10,
                        "sorted_initialization_n_best" : 1,
-                       "metric" : autonet_accuracy}
+                       "metric" : METRIC_DICT[metric_name]}
     return ensemble_config
 
 

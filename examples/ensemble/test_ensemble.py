@@ -126,7 +126,7 @@ def get_autonet_config_lcbench(min_budget, max_budget, max_runtime, run_id, task
             'networks': ['shapedmlpnet', 'shapedresnet'],
             'normalization_strategies': ['standardize'],
             'num_iterations': 300,
-            'optimize_metric': 'accuracy',
+            'optimize_metric': 'cross_entropy',
             'optimizer': ['sgd', 'adam'],
             'over_sampling_methods': ['none'],
             'preprocessors': ['none', 'truncated_svd'],
@@ -155,7 +155,7 @@ def get_ensemble_config():
             }
     return ensemble_config
 
-# python3 -W ignore examples/ensemble/test_ensemble.py --run_id 999 --task_id 1 --num_workers 1 --dataset_id 3 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --test true
+# python3 -W ignore examples/ensemble/test_ensemble.py --run_id 999 --task_id 1 --num_workers 1 --dataset_id 4 --seed 1 --ensemble_setting ensemble --portfolio_type greedy --test true
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("--run_id", type=int, help="An id for the run.")
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # Get autonet config
     min_budget=10 if args.test=="false" else 1
     max_budget=50 if args.test=="false" else 2
-    max_runtime = 2*60*60 if args.test=="false" else 1*60
+    max_runtime = 2*60*60 if args.test=="false" else 2*30
     autonet_config = get_autonet_config_lcbench(min_budget=min_budget,
                                                 max_budget=max_budget, 
                                                 max_runtime=max_runtime,
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     """
 
     # Create trajectory
-    ensemble_config = traj.get_ensemble_config()
+    ensemble_config = traj.get_ensemble_config(metric_name="cross_entropy")
 
     simulator = traj.EnsembleTrajectorySimulator(ensemble_pred_dir=logdir, ensemble_config=ensemble_config, seed=1)
     simulator.simulate_trajectory()
