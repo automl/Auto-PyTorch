@@ -18,9 +18,9 @@ autonet = AutoNetImageClassification(config_preset="tiny_cs", result_logger_dir=
 res = autonet.fit(X_train=X_train,
                   Y_train=Y_train,
                   images_shape=[3, 32, 32],
-                  min_budget=200,
-                  max_budget=400,
-                  max_runtime=600,
+                  min_budget=600,
+                  max_budget=900,
+                  max_runtime=1800,
                   save_checkpoints=True,
                   images_root_folders=[os.path.abspath("../../datasets/example_images")])
 
