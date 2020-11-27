@@ -113,11 +113,6 @@ class AutoNetImageData(AutoNet):
         lr_selector.add_lr_scheduler('exponential',      SchedulerExponentialLR)
         lr_selector.add_lr_scheduler('none', SchedulerNone)
         
-        lr_selector._apply_search_space_update('step:step_size', [1, 100], log=True)
-        lr_selector._apply_search_space_update('step:gamma', [0.001, 0.99], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_max', [1, 100], log=True)
-        lr_selector._apply_search_space_update('cosine_annealing_with_restarts:T_mult', [1., 2.], log=False)
-        
         train_node = pipeline[SimpleTrainNode.get_name()]
         #train_node.add_training_technique("early_stopping", EarlyStopping)
         train_node.add_batch_loss_computation_technique("mixup", Mixup)
