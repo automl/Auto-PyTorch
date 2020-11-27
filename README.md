@@ -35,7 +35,7 @@ $ python setup.py install
 
 ## Examples
 
-Code for the [paper](https://arxiv.org/abs/2006.13799) is available under 'examples/ensemble'.
+Code for the [paper](https://arxiv.org/abs/2006.13799) is available under `examples/ensemble`.
 
 For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
