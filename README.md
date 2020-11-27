@@ -147,7 +147,7 @@ along with this program (see LICENSE file).
 
 ## Reference
 
-```
+```bibtex
 @incollection{mendoza-automlbook18a,
   author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
   title     = {Towards Automatically-Tuned Deep Neural Networks},
