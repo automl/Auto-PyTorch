@@ -5,6 +5,8 @@ Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 This a very early pre-alpha version of our upcoming Auto-PyTorch.
 So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
 
+The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799).
+
 ## Installation
 
 Clone repository
@@ -32,6 +34,8 @@ $ python setup.py install
 
 
 ## Examples
+
+Code for the [paper](https://arxiv.org/abs/2006.13799) is available under 'examples/ensemble'.
 
 For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
