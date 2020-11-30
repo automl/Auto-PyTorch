@@ -79,7 +79,7 @@ class ConvNet(BaseImageNet):
         num_layers = CSH.UniformIntegerHyperparameter('num_layers', lower=2, upper=5)
         cs.add_hyperparameter(num_layers)
         cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('conv_init_filters', lower=16, upper=64))
-        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('conv_kernel_size', lower=2, upper=5))
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('conv_kernel_size', lower=1, upper=5))
         cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('conv_kernel_stride', lower=1, upper=3))
         cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('conv_kernel_padding', lower=2, upper=3))
         cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('pool_size', lower=2, upper=3))
