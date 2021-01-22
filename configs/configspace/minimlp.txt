@@ -1,2 +1,0 @@
-NetworkSelector mlpnet:num_layers [2,4]
-CreateDataLoader batch_size [5,10]

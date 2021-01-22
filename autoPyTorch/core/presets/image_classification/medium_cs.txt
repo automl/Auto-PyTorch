@@ -1,4 +1,0 @@
-lr_scheduler=[cosine_annealing, step]
-networks=[resnet, mobilenet]
-batch_loss_computation_techniques=[standard, mixup]
-optimizer=[adamw, sgd]

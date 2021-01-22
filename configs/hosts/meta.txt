@@ -1,3 +1,0 @@
-network_interface_name=eth0
-result_dir=benchmark_results_cluster
-working_dir=working_dir

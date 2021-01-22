@@ -1,3 +1,0 @@
-datasets/automl/newsgroups/newsgroups_public.info
-datasets/automl/dorothea/dorothea_public.info
-datasets/automl/tania/tania_public.info
