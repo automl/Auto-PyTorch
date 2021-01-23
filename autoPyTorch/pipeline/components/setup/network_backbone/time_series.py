@@ -12,7 +12,9 @@ import torch
 from torch import nn
 from torch.nn.utils import weight_norm
 
-from autoPyTorch.pipeline.components.setup.network.backbone.base_backbone import BaseBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (
+    NetworkBackboneComponent,
+)
 
 
 # Code inspired by https://github.com/hfawaz/InceptionTime
@@ -124,7 +126,7 @@ class _InceptionTime(nn.Module):
         return x
 
 
-class InceptionTimeBackbone(BaseBackbone):
+class InceptionTimeBackbone(NetworkBackboneComponent):
     supported_tasks = {"time_series_classification", "time_series_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
@@ -138,6 +140,9 @@ class InceptionTimeBackbone(BaseBackbone):
         return {
             'shortname': 'InceptionTimeBackbone',
             'name': 'InceptionTimeBackbone',
+            'handles_tabular': False,
+            'handles_image': False,
+            'handles_time_series': True,
         }
 
     @staticmethod
@@ -254,7 +259,7 @@ class _TemporalConvNet(nn.Module):
         return x
 
 
-class TCNBackbone(BaseBackbone):
+class TCNBackbone(NetworkBackboneComponent):
     supported_tasks = {"time_series_classification", "time_series_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
@@ -274,6 +279,9 @@ class TCNBackbone(BaseBackbone):
         return {
             "shortname": "TCNBackbone",
             "name": "TCNBackbone",
+            'handles_tabular': False,
+            'handles_image': False,
+            'handles_time_series': True,
         }
 
     @staticmethod

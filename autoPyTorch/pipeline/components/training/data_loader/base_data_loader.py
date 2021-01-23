@@ -259,12 +259,4 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.train_data_loader.__class__.__name__
-        info = vars(self)
-        # Remove unwanted info
-        info.pop('train_data_loader', None)
-        info.pop('val_data_loader', None)
-        info.pop('test_data_loader', None)
-        info.pop('vision_datasets', None)
-        info.pop('random_state', None)
-        string += " (" + str(info) + ")"
         return string

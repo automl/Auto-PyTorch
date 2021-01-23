@@ -1,5 +1,6 @@
-from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
+
+from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
@@ -7,11 +8,11 @@ import torch
 from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
+from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.utils.common import FitRequirement
 
 
-class BaseNetworkComponent(autoPyTorchSetupComponent):
+class NetworkComponent(autoPyTorchTrainingComponent):
     """
     Provide an abstract interface for networks
     in Auto-Pytorch
@@ -23,15 +24,18 @@ class BaseNetworkComponent(autoPyTorchSetupComponent):
             random_state: Optional[np.random.RandomState] = None,
             device: Optional[torch.device] = None
     ) -> None:
-        super(BaseNetworkComponent, self).__init__()
+        super(NetworkComponent, self).__init__()
         self.network = network
         self.random_state = random_state
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
-        self.add_fit_requirements([FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
-                                   FitRequirement('input_shape', (tuple,), user_defined=True, dataset_property=True),
-                                   ])
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu") if device is None else device
+        self.add_fit_requirements([
+            FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
+        ])
+        self.final_activation = None
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchSetupComponent:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         """
         Fits a component by using an input dictionary with pre-requisites
 
@@ -46,26 +50,17 @@ class BaseNetworkComponent(autoPyTorchSetupComponent):
         # information to fit this stage
         self.check_requirements(X, y)
 
-        output_shape = (X['dataset_properties']['num_classes'],) if \
-            STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in \
-            CLASSIFICATION_TASKS else X['dataset_properties']['output_shape']
-        input_shape = X['X_train'].shape[1:]
-        self.network = self.build_network(input_shape=input_shape,
-                                          output_shape=output_shape)
+        self.network = torch.nn.Sequential(X['network_backbone'], X['network_head'])
 
         # Properly set the network training device
         self.to(self.device)
 
-        return self
+        if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
+            self.final_activation = nn.Softmax(dim=1)
 
-    @abstractmethod
-    def build_network(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> torch.nn.Module:
-        """
-        This method returns a pytorch network, that is dynamically built using
-        a self.config that is network specific, and contains the additional
-        configuration hyperparameters to build a domain specific network
-        """
-        raise NotImplementedError()
+        self.is_fitted_ = True
+
+        return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -121,16 +116,22 @@ class BaseNetworkComponent(autoPyTorchSetupComponent):
             X_batch = torch.autograd.Variable(X_batch).float().to(self.device)
 
             Y_batch_pred = self.network(X_batch).detach().cpu()
+            if self.final_activation is not None:
+                Y_batch_pred = self.final_activation(Y_batch_pred)
             Y_batch_preds.append(Y_batch_pred)
 
         return torch.cat(Y_batch_preds, 0).cpu().numpy()
+
+    @staticmethod
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+                                        ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+        return cs
 
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.network.__class__.__name__
         info = vars(self)
         # Remove unwanted info
-        info.pop('network', None)
-        info.pop('random_state', None)
         string += " (" + str(info) + ")"
         return string

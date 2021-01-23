@@ -131,14 +131,4 @@ class ImageAugmenter(BaseImageAugmenter):
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.__class__.__name__
-        info = vars(self)
-        augmenters = list()
-        for augmenter in info['augmenter']:
-            augmenters.append(augmenter.name)
-        info['augmenters'] = augmenters
-        # Remove unwanted info
-        info.pop('random_state', None)
-        info.pop('available_augmenters', None)
-        info.pop('augmenter', None)
-        string += " (" + str(info) + ")"
         return string

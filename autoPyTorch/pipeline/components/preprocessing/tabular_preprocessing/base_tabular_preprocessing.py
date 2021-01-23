@@ -34,12 +34,4 @@ class autoPyTorchTabularPreprocessingComponent(autoPyTorchPreprocessingComponent
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.__class__.__name__
-        info = vars(self)
-        # Remove unwanted info
-        info.pop('early_preprocessor', None)
-        info.pop('column_transformer', None)
-        info.pop('random_state', None)
-        info.pop('_fit_requirements', None)
-        if len(info.keys()) != 0:
-            string += " (" + str(info) + ")"
         return string

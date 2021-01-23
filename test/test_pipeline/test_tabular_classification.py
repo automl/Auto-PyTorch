@@ -35,7 +35,7 @@ class TestTabularClassification:
         assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
 
         # Make sure a network was fit
-        assert isinstance(pipeline.named_steps['network'].choice.get_network(), torch.nn.Module)
+        assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
     def test_pipeline_predict(self, fit_dictionary):
         """This test makes sure that the pipeline is able to fit
@@ -144,6 +144,8 @@ class TestTabularClassification:
 
         # Make sure that fitting a network adds a "network" to X
         assert 'network' in pipeline.named_steps.keys()
+        fit_dictionary['network_backbone'] = torch.nn.Linear(3, 4)
+        fit_dictionary['network_head'] = torch.nn.Linear(4, 1)
         X = pipeline.named_steps['network'].fit(
             fit_dictionary,
             None
@@ -175,7 +177,8 @@ class TestTabularClassification:
         assert 'optimizer' in X
 
     def test_get_fit_requirements(self, fit_dictionary):
-        dataset_properties = {'numerical_columns': [], 'categorical_columns': []}
+        dataset_properties = {'numerical_columns': [], 'categorical_columns': [],
+                              'task_type': 'tabular_classification'}
         pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties)
         fit_requirements = pipeline.get_fit_requirements()
 

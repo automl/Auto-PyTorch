@@ -3,14 +3,9 @@ import unittest.mock
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
-import numpy as np
-
 from sklearn.base import clone
 
-import torch
-
 import autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice as lr_components
-import autoPyTorch.pipeline.components.setup.network.base_network_choice as network_components
 import \
     autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice as network_initializer_components  # noqa: E501
 import autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice as optimizer_components
@@ -18,9 +13,8 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice im
     BaseLRComponent,
     SchedulerChoice
 )
-from autoPyTorch.pipeline.components.setup.network.base_network_choice import (
-    BaseNetworkComponent,
-    NetworkChoice
+from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import (
+    NetworkHeadChoice,
 )
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
     BaseNetworkInitializerComponent,
@@ -49,22 +43,6 @@ class DummyLR(BaseLRComponent):
 
 
 class DummyOptimizer(BaseOptimizerComponent):
-    def __init__(self, random_state=None):
-        pass
-
-    @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
-        return cs
-
-    def get_properties(dataset_properties=None):
-        return {
-            'shortname': 'Dummy',
-            'name': 'Dummy',
-        }
-
-
-class DummyNet(BaseNetworkComponent):
     def __init__(self, random_state=None):
         pass
 
@@ -268,8 +246,8 @@ class OptimizerTest(unittest.TestCase):
         self.assertIn('DummyOptimizer', str(cs))
 
 
-class NetworkTest(unittest.TestCase):
-    def test_every_network_is_valid(self):
+class NetworkHeadTest(unittest.TestCase):
+    def test_every_networkHead_is_valid(self):
         """
         Makes sure that every network is a valid estimator.
         That is, we can fully create an object via get/set params.
@@ -277,18 +255,18 @@ class NetworkTest(unittest.TestCase):
         This also test that we can properly initialize each one
         of them
         """
-        network_choice = NetworkChoice(dataset_properties={})
+        networkHead_choice = NetworkHeadChoice(dataset_properties={'task_type': 'tabular_classification'})
 
         # Make sure all components are returned
-        self.assertEqual(len(network_choice.get_components().keys()), 1)
+        self.assertEqual(len(networkHead_choice.get_components().keys()), 2)
 
         # For every network in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, network in network_choice.get_components().items():
-            config = network.get_hyperparameter_search_space().sample_configuration()
-            estimator = network(**config)
+        for name, networkHead in networkHead_choice.get_components().items():
+            config = networkHead.get_hyperparameter_search_space().sample_configuration()
+            estimator = networkHead(**config)
             estimator_clone = clone(estimator)
             estimator_clone_params = estimator_clone.get_params()
 
@@ -309,45 +287,17 @@ class NetworkTest(unittest.TestCase):
                 param2 = params_set[name]
                 self.assertEqual(param1, param2)
 
-    def test_backbone_head_net(self):
-        network_choice = NetworkChoice(dataset_properties={})
-        task_types = {"image_classification": ((1, 3, 64, 64), (5,)),
-                      "image_regression": ((1, 3, 64, 64), (1,)),
-                      "time_series_classification": ((1, 32, 6), (5,)),
-                      "time_series_regression": ((1, 32, 6), (1,)),
-                      "tabular_classification": ((1, 100,), (5,)),
-                      "tabular_regression": ((1, 100), (1,))}
-
-        device = torch.device("cpu")
-        for task_type, (input_shape, output_shape) in task_types.items():
-            cs = network_choice.get_hyperparameter_search_space(dataset_properties={"task_type": task_type},
-                                                                include=["BackboneHeadNet"])
-            # test 10 random configurations
-            for i in range(10):
-                config = cs.sample_configuration()
-                network_choice.set_hyperparameters(config)
-                network_choice.fit(X={"X_train": np.zeros(input_shape),
-                                      "y_train": np.zeros(output_shape),
-                                      'dataset_properties': {"task_type": task_type,
-                                                             'input_shape': input_shape[1:],
-                                                             "output_shape": output_shape,
-                                                             "num_classes": output_shape[0]}}, y=None)
-                self.assertNotEqual(network_choice.choice.network, None)
-                network_choice.choice.to(device)
-                dummy_input = torch.randn((2, *input_shape[1:]), dtype=torch.float)
-                output = network_choice.choice.network(dummy_input)
-                self.assertEqual(output.shape[1:], output_shape)
-
     def test_get_set_config_space(self):
-        """Make sure that we can setup a valid choice in the network
+        """Make sure that we can setup a valid choice in the networkHead
         choice"""
-        network_choice = NetworkChoice(dataset_properties={})
-        cs = network_choice.get_hyperparameter_search_space()
+        networkHead_choice = NetworkHeadChoice(dataset_properties={'task_type': 'tabular_classification'})
+        cs = networkHead_choice.get_hyperparameter_search_space(
+            dataset_properties={"task_type": 'tabular_classification'})
 
         # Make sure that all hyperparameters are part of the search space
         self.assertListEqual(
             sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(network_choice.get_components().keys()))
+            ['fully_connected']
         )
 
         # Make sure we can properly set some random configs
@@ -357,10 +307,10 @@ class NetworkTest(unittest.TestCase):
         for i in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
-            network_choice.set_hyperparameters(config)
+            networkHead_choice.set_hyperparameters(config)
 
-            self.assertEqual(network_choice.choice.__class__,
-                             network_choice.get_components()[config_dict['__choice__']])
+            self.assertEqual(networkHead_choice.choice.__class__,
+                             networkHead_choice.get_components()[config_dict['__choice__']])
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -371,21 +321,10 @@ class NetworkTest(unittest.TestCase):
 
                 key = key.replace(selected_choice + ':', '')
                 # In the case of MLP, parameters are dynamic, so they exist in config
-                parameters = vars(network_choice.choice)
-                parameters.update(vars(network_choice.choice)['config'])
+                parameters = vars(networkHead_choice.choice)
+                parameters.update(vars(networkHead_choice.choice)['config'])
                 self.assertIn(key, parameters)
                 self.assertEqual(value, parameters[key])
-
-    def test_network_add(self):
-        """Makes sure that a component can be added to the CS"""
-        # No third party components to start with
-        self.assertEqual(len(network_components._addons.components), 0)
-
-        # Then make sure the scheduler can be added and query'ed
-        network_components.add_network(DummyNet)
-        self.assertEqual(len(network_components._addons.components), 1)
-        cs = NetworkChoice(dataset_properties={}).get_hyperparameter_search_space()
-        self.assertIn('DummyNet', str(cs))
 
 
 class NetworkInitializerTest(unittest.TestCase):
