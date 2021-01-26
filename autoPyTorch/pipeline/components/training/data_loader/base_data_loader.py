@@ -251,7 +251,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
                                         ) -> ConfigurationSpace:
         batch_size = UniformIntegerHyperparameter(
-            "batch_size", 32, 320, default_value=64)
+            "batch_size", 16, 512, default_value=64)
         cs = ConfigurationSpace()
         cs.add_hyperparameters([batch_size])
         return cs

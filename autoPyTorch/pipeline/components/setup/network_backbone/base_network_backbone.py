@@ -4,9 +4,7 @@ from typing import Any, Dict, Set, Tuple
 import torch
 from torch import nn
 
-from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
