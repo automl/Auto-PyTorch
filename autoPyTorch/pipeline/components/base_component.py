@@ -93,10 +93,12 @@ class ThirdPartyComponents(object):
 class autoPyTorchComponent(BaseEstimator):
 
     _required_properties: Optional[List[str]] = None
+    _node_name: Optional[str] = None
 
     def __init__(self) -> None:
         super().__init__()
         self._fit_requirements: List[FitRequirement] = list()
+        self._cs_updates = dict()
 
     @classmethod
     def get_required_properties(cls) -> Optional[List[str]]:
@@ -252,3 +254,53 @@ class autoPyTorchComponent(BaseEstimator):
         """Representation of the current Component"""
         name = self.get_properties()['name']
         return "autoPyTorch.pipeline %s" % name
+
+    def _apply_search_space_update(self, name, new_value_range, default_value, log=False):
+        """Allows the user to update a hyperparameter
+
+        Arguments:
+            name {string} -- name of hyperparameter
+            new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
+            log {bool} -- is hyperparameter logscale
+        """
+
+        if (len(new_value_range) == 0):
+            raise ValueError("The new value range needs at least one value")
+        self._cs_updates[name] = tuple([new_value_range, default_value, log])
+
+    @staticmethod
+    def _check_search_space_updates(search_space_update):
+        """Check if the given search space updates are valid.
+
+        Arguments:
+
+        Raises:
+            ValueError: The given search space updates are not valid.
+        """
+
+
+        # Check given hyperparameter updates and raise exception if invalid hyperparameter update is given.
+        for key in self._get_search_space_updates().keys():
+            if key not in exploded_allowed_hps and \
+                    ConfigWrapper.delimiter.join(
+                        key.split(ConfigWrapper.delimiter)[:-1] + ["*"]) not in exploded_allowed_hps:
+                raise ValueError("Invalid search space update given: %s" % key)
+
+    def _get_search_space_updates(self, prefix=None):
+        """Get the search space updates with the given prefix
+
+        Keyword Arguments:
+            prefix {str} -- Only return search space updates with given prefix (default: {None})
+
+        Returns:
+            dict -- Mapping of search space updates. Keys don't contain the prefix.
+        """
+        if prefix is None:
+            return self._cs_updates
+        result = dict()
+
+        # iterate over all search space updates of this node and filter the ones out, that have the given prefix
+        for key in self._cs_updates.keys():
+            if key.startswith(prefix):
+                result[key[len(prefix):]] = self._cs_updates[key]
+        return result

@@ -37,18 +37,27 @@ class RandomAffine(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None,
+        use_augmenter=([True, False], True),
+        scale_offset=([0, 0.4], 0.2),
+        translate_percent_offset=([0, 0.4], 0.2),
+        shear=([0, 45], 30),
+        rotate=([0, 360], 45)
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        scale_offset = UniformFloatHyperparameter('scale_offset', lower=0, upper=0.4, default_value=0.2)
+        scale_offset = UniformFloatHyperparameter('scale_offset', lower=scale_offset[0][0], upper=scale_offset[0][1],
+                                                  default_value=scale_offset[1])
 
-        translate_percent_offset = UniformFloatHyperparameter('translate_percent_offset', lower=0, upper=0.4,
-                                                              default_value=0.2)
-        shear = UniformIntegerHyperparameter('shear', lower=0, upper=45, default_value=30)
+        translate_percent_offset = UniformFloatHyperparameter('translate_percent_offset',
+                                                              lower=translate_percent_offset[0][0],
+                                                              upper=translate_percent_offset[0][1],
+                                                              default_value=translate_percent_offset[1])
+        shear = UniformIntegerHyperparameter('shear', lower=shear[0][0], upper=shear[0][1], default_value=shear[1])
         rotate = UniformIntegerHyperparameter('rotate', lower=0, upper=360, default_value=45)
 
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)
+        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0],
+                                                  default_value=use_augmenter[1])
 
         cs.add_hyperparameters([scale_offset, translate_percent_offset])
         cs.add_hyperparameters([shear, rotate, use_augmenter])

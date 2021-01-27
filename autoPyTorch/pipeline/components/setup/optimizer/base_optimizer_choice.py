@@ -152,7 +152,7 @@ class OptimizerChoice(autoPyTorchChoice):
         cs.add_hyperparameter(optimizer)
         for name in available_optimizers:
             optimizer_configuration_space = available_optimizers[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties, **self._get_search_space_updates(prefix=name))
             parent_hyperparameter = {'parent': optimizer, 'value': name}
             cs.add_configuration_space(
                 name,

@@ -74,22 +74,26 @@ class AdamWOptimizer(BaseOptimizerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        lr=[(1e-5, 1e-1), 1e-2, True],
+                                        beta1=[(0.85, 0.999), 0.9],
+                                        beta2=[(0.9, 0.9999), 0.9],
+                                        weight_decay=[(0.0, 0.1), 0.0]
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 
         # The learning rate for the model
-        lr = UniformFloatHyperparameter('lr', lower=1e-5, upper=1e-1,
-                                        default_value=1e-2, log=True)
+        lr = UniformFloatHyperparameter('lr', lower=lr[0][0], upper=lr[0][1],
+                                        default_value=lr[1], log=lr[2])
 
-        beta1 = UniformFloatHyperparameter('beta1', lower=0.85, upper=0.999,
-                                           default_value=0.9)
+        beta1 = UniformFloatHyperparameter('beta1', lower=beta1[0][0], upper=beta1[0][1],
+                                           default_value=beta1[1])
 
-        beta2 = UniformFloatHyperparameter('beta2', lower=0.9, upper=0.9999,
-                                           default_value=0.9)
+        beta2 = UniformFloatHyperparameter('beta2', lower=beta2[0][0], upper=beta2[0][1],
+                                           default_value=beta2[1])
 
-        weight_decay = UniformFloatHyperparameter('weight_decay', lower=0.0, upper=0.1,
-                                                  default_value=0.0)
+        weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
+                                                  default_value=weight_decay[1])
 
         cs.add_hyperparameters([lr, beta1, beta2, weight_decay])
 

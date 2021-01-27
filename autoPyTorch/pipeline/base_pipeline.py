@@ -21,6 +21,7 @@ from autoPyTorch.pipeline.create_searchspace_util import (
     get_match_array
 )
 from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class BasePipeline(Pipeline):
@@ -59,7 +60,8 @@ class BasePipeline(Pipeline):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         self.init_params = init_params if init_params is not None else {}
@@ -67,6 +69,7 @@ class BasePipeline(Pipeline):
             dataset_properties is not None else {}
         self.include = include if include is not None else {}
         self.exclude = exclude if exclude is not None else {}
+        self.search_space_updates = search_space_updates
 
         if steps is None:
             self.steps = self._get_pipeline_steps(dataset_properties)
@@ -281,6 +284,11 @@ class BasePipeline(Pipeline):
                 raise ValueError('Invalid key in exclude: %s; should be one '
                                  'of %s' % (key, keys))
 
+        if self.search_space_updates is not None and isinstance(self.search_space_updates,
+                                                                HyperparameterSearchSpaceUpdates):
+            self._check_search_space_updates()
+            self.search_space_updates.apply(pipeline=pipeline)
+
         matches = get_match_array(
             pipeline, dataset_properties, include=include, exclude=exclude)
 
@@ -304,7 +312,7 @@ class BasePipeline(Pipeline):
             if not is_choice:
                 cs.add_configuration_space(
                     node_name,
-                    node.get_hyperparameter_search_space(dataset_properties),
+                    node.get_hyperparameter_search_space(dataset_properties, **node._get_search_space_updates()),
                 )
             # If the node is a choice, we have to figure out which of its
             #  choices are actually legal choices
@@ -328,6 +336,37 @@ class BasePipeline(Pipeline):
                 exclude=exclude)
 
         return cs
+
+    def _check_search_space_updates(self):
+        for update in self.search_space_updates.updates:
+            if update.node_name not in self.named_steps.keys():
+                raise ValueError("Unknown node name. Expected update node name to be in {} "
+                                 "got {}".format(self.named_steps.keys(), update.node_name))
+            node = self.named_steps[update.node_name]
+            if hasattr(node, 'get_components'):
+                components = node.get_components()
+                split_hyperparameter = update.hyperparameter.split(':')
+                if split_hyperparameter[0] not in components.keys():
+                    raise ValueError("Unknown hyperparameter for choice {}. "
+                                     "Expected update hyperparameter "
+                                     "to be in {} got {}".format(node.__class__.__name__,
+                                                                 components.keys(), update.node_name))
+                else:
+                    component = components[split_hyperparameter[0]]
+                    if split_hyperparameter[1] not in component.get_hyperparameter_search_space():
+                        raise ValueError("Unknown hyperparameter for component {}. "
+                                         "Expected update hyperparameter "
+                                         "to be in {} got {}".format(node.__class__.__name__,
+                                                                     component.get_hyperparameter_search_space().
+                                                                     get_hyperparameter_names(),
+                                                                     split_hyperparameter[1]))
+            else:
+                if update.hyperparameter not in node.get_hyperparameter_search_space():
+                    raise ValueError("Unknown hyperparameter for component {}. "
+                                     "Expected update hyperparameter "
+                                     "to be in {} got {}".format(node.__class__.__name__,
+                                                                 node.get_hyperparameter_search_space().
+                                                                 get_hyperparameter_names(), update.hyperparameter))
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]
                             ) -> List[Tuple[str, autoPyTorchChoice]]:

@@ -25,6 +25,7 @@ import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
 
@@ -111,6 +112,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             ta: typing.Optional[typing.Callable] = None,
             logger_port: int = None,
             all_supported_metrics: bool = True,
+            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
@@ -163,6 +165,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.resampling_strategy = dm.resampling_strategy
         self.resampling_strategy_args = dm.resampling_strategy_args
+
+        self.search_space_updates = search_space_updates
 
     def run_wrapper(
             self,
@@ -267,7 +271,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             budget_type=self.budget_type,
             pipeline_config=self.pipeline_config,
             logger_port=self.logger_port,
-            all_supported_metrics=self.all_supported_metrics
+            all_supported_metrics=self.all_supported_metrics,
+            search_space_updates=self.search_space_updates
         )
 
         info: typing.Optional[typing.List[RunValue]]

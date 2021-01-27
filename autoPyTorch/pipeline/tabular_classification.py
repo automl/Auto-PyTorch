@@ -29,6 +29,7 @@ from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader im
 from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
     TrainerChoice
 )
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
@@ -63,11 +64,12 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
-            random_state, init_params)
+            random_state, init_params, search_space_updates)
 
     def fit_transformer(
         self,

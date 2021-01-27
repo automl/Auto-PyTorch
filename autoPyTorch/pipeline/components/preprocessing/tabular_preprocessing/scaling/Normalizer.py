@@ -37,9 +37,11 @@ class Normalizer(BaseScaler):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
+                                        norm=(["mean_abs", "mean_squared", "max"], "mean_squared")
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        norm = CategoricalHyperparameter("norm", ["mean_abs", "mean_squared", "max"], default_value="mean_squared")
+        norm = CategoricalHyperparameter("norm", norm[0], default_value=norm[1])
         cs.add_hyperparameter(norm)
         return cs
 

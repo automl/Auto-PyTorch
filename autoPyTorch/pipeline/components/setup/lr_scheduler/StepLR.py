@@ -68,12 +68,14 @@ class StepLR(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        gamma=([0.001, 0.9], 0.1),
+                                        step_size=([1, 10], 5)
                                         ) -> ConfigurationSpace:
         gamma = UniformFloatHyperparameter(
-            "gamma", 0.001, 0.9, default_value=0.1)
+            "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])
         step_size = UniformIntegerHyperparameter(
-            "step_size", 1, 10, default_value=5)
+            "step_size", step_size[0][0], step_size[0][1], default_value=step_size[1])
         cs = ConfigurationSpace()
         cs.add_hyperparameters([gamma, step_size])
         return cs

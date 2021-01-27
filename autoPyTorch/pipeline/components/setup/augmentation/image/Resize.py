@@ -35,7 +35,8 @@ class Resize(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None
+            dataset_properties: Optional[Dict[str, str]] = None,
+            use_augmenter = ([True, False], True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)
