@@ -27,7 +27,8 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 # Test
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (CrossValTypes.k_fold_cross_validation,
+@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
+                                                 CrossValTypes.k_fold_cross_validation,
                                                  ))
 def test_classification(openml_id, resampling_strategy, backend):
 

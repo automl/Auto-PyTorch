@@ -1,21 +1,8 @@
-import os
-import sys
-
 import pytest
 
 import torch
 
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
-
-
-# Disable
-def blockPrint():
-    sys.stdout = open(os.devnull, 'w')
-
-
-# Restore
-def enablePrint():
-    sys.stdout = sys.__stdout__
 
 
 @pytest.fixture(params=['MLPBackbone', 'ResNetBackbone', 'ShapedMLPBackbone', 'ShapedResNetBackbone'])
