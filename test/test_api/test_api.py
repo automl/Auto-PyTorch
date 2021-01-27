@@ -27,8 +27,8 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 # Test
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation, ))
+@pytest.mark.parametrize('resampling_strategy', (CrossValTypes.k_fold_cross_validation,
+                                                 ))
 def test_classification(openml_id, resampling_strategy, backend):
 
     # Get the data and check that contents of data-manager make sense
@@ -54,7 +54,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         dataset=datamanager,
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=30,
+        func_eval_time_limit=50,
         traditional_per_total_budget=0
     )
 
