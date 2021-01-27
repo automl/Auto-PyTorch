@@ -77,13 +77,16 @@ class ReduceLROnPlateau(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        mode=(['min', 'max'], 'min'),
+                                        patience=([5, 20], 10),
+                                        factor=([0.01, 0.9], 0.1)
                                         ) -> ConfigurationSpace:
-        mode = CategoricalHyperparameter('mode', ['min', 'max'])
+        mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
         patience = UniformIntegerHyperparameter(
-            "patience", 5, 20, default_value=10)
+            "patience", patience[0][0], patience[0][1], default_value=patience[1])
         factor = UniformFloatHyperparameter(
-            "factor", 0.01, 0.9, default_value=0.1)
+            "factor", factor[0][0], factor[0][1], default_value=factor[1])
         cs = ConfigurationSpace()
         cs.add_hyperparameters([mode, patience, factor])
         return cs

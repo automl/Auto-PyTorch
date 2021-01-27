@@ -86,15 +86,19 @@ class CyclicLR(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        base_lr=([1e-6, 1e-1], 0.01),
+                                        mode=(['triangular', 'triangular2', 'exp_range'], 'triangular'),
+                                        step_size_up=([1000, 4000], 2000),
+                                        max_lr=([1e-3, 1e-1], 0.1)
                                         ) -> ConfigurationSpace:
         base_lr = UniformFloatHyperparameter(
-            "base_lr", 1e-6, 1e-1, default_value=0.01)
-        mode = CategoricalHyperparameter('mode', ['triangular', 'triangular2', 'exp_range'])
+            "base_lr", base_lr[0][0], base_lr[0][1], default_value=base_lr[1])
+        mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
         step_size_up = UniformIntegerHyperparameter(
-            "step_size_up", 1000, 4000, default_value=2000)
+            "step_size_up", step_size_up[0][0], step_size_up[0][1], default_value=step_size_up[1])
         max_lr = UniformFloatHyperparameter(
-            "max_lr", 1e-3, 1e-1, default_value=0.1)
+            "max_lr", max_lr[0][0], max_lr[0][1], default_value=max_lr[1])
         cs = ConfigurationSpace()
         cs.add_hyperparameters([base_lr, mode, step_size_up, max_lr])
         return cs

@@ -16,8 +16,7 @@ from smac.tae.dask_runner import DaskParallelRunner
 from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
-# TODO: Enable when merged Ensemble
-# from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
+from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
@@ -27,6 +26,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import get_named_client_logger
 from autoPyTorch.utils.stopwatch import StopWatch
 
@@ -101,10 +101,9 @@ class AutoMLSMBO(object):
                  smac_scenario_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  get_smac_object_callback: typing.Optional[typing.Callable] = None,
                  all_supported_metrics: bool = True,
-                 # TODO: Re-enable when ensemble merged
-                 # ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
-                 ensemble_callback: typing.Any = None,
+                 ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
+                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -194,6 +193,8 @@ class AutoMLSMBO(object):
 
         self.ensemble_callback = ensemble_callback
 
+        self.search_space_updates = search_space_updates
+
         dataset_name_ = "" if dataset_name is None else dataset_name
         if logger_port is None:
             self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -254,7 +255,8 @@ class AutoMLSMBO(object):
             ta=func,
             logger_port=self.logger_port,
             all_supported_metrics=self.all_supported_metrics,
-            pipeline_config=self.pipeline_config
+            pipeline_config=self.pipeline_config,
+            search_space_updates=self.search_space_updates
         )
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Created TA")

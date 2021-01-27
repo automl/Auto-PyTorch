@@ -86,7 +86,7 @@ class ScalerChoice(autoPyTorchChoice):
         # add only child hyperparameters of early_preprocessor choices
         for name in preprocessor.choices:
             preprocessor_configuration_space = available_preprocessors[name].\
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties, **self._get_search_space_updates(prefix=name))
             parent_hyperparameter = {'parent': preprocessor, 'value': name}
             cs.add_configuration_space(name, preprocessor_configuration_space,
                                        parent_hyperparameter=parent_hyperparameter)

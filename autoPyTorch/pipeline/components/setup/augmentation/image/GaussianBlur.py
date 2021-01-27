@@ -30,13 +30,16 @@ class GaussianBlur(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None,
+        use_augmenter=([True, False], True),
+        sigma_min=([0, 3], 0),
+        sigma_offset=([0, 3], 0.5),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)
-        sigma_min = UniformFloatHyperparameter('sigma_min', lower=0, upper=3, default_value=0)
-        sigma_offset = UniformFloatHyperparameter('sigma_offset', lower=0, upper=3, default_value=0.5)
+        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0], default_value=use_augmenter[1])
+        sigma_min = UniformFloatHyperparameter('sigma_min', lower=sigma_min[0][0], upper=sigma_min[0][1], default_value=0)
+        sigma_offset = UniformFloatHyperparameter('sigma_offset', lower=sigma_offset[0][0], upper=sigma_offset[0][1], default_value=0.5)
         cs.add_hyperparameters([use_augmenter, sigma_min, sigma_offset])
 
         # only add hyperparameters to configuration space if we are using the augmenter

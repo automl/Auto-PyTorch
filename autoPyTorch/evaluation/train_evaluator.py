@@ -20,6 +20,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
 from autoPyTorch.evaluation.utils import subsampler
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 __all__ = ['TrainEvaluator', 'eval_function']
 
@@ -48,7 +49,8 @@ class TrainEvaluator(AbstractEvaluator):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
-                 all_supported_metrics: bool = True) -> None:
+                 all_supported_metrics: bool = True,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
         super().__init__(
             backend=backend,
             queue=queue,
@@ -65,7 +67,8 @@ class TrainEvaluator(AbstractEvaluator):
             budget_type=budget_type,
             logger_port=logger_port,
             all_supported_metrics=all_supported_metrics,
-            pipeline_config=pipeline_config
+            pipeline_config=pipeline_config,
+            search_space_updates=search_space_updates
         )
 
         self.splits = self.datamanager.splits
@@ -320,6 +323,7 @@ def eval_function(
         init_params: Optional[Dict[str, Any]] = None,
         logger_port: Optional[int] = None,
         all_supported_metrics: bool = True,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         instance: str = None,
 ) -> None:
     evaluator = TrainEvaluator(
@@ -338,6 +342,7 @@ def eval_function(
         budget_type=budget_type,
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config
+        pipeline_config=pipeline_config,
+        search_space_updates=search_space_updates
     )
     evaluator.fit_predict_and_loss()

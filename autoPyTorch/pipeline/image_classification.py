@@ -13,6 +13,7 @@ from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise
 )
 from autoPyTorch.pipeline.components.setup.augmentation.image.ImageAugmenter import ImageAugmenter
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 # from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
 # from autoPyTorch.pipeline.components.setup.network.base_network_choice import NetworkChoice
 # from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
@@ -53,11 +54,12 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
-            random_state, init_params)
+            random_state, init_params, search_space_updates)
 
     def fit_transformer(
         self,

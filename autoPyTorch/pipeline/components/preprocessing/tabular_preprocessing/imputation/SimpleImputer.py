@@ -57,20 +57,23 @@ class SimpleImputer(BaseImputer):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
+                                        numerical_strategy=(["mean", "median", "most_frequent", "constant_zero"], "mean"),
+                                        categorical_strategy=(["most_frequent", "constant_!missing!"], "most_frequent")
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         assert dataset_properties is not None, "To create hyperparameter search space" \
                                                ", dataset_properties should not be None"
         if len(dataset_properties['numerical_columns']) != 0:
             numerical_strategy = CategoricalHyperparameter("numerical_strategy",
-                                                           ["mean", "median", "most_frequent", "constant_zero"],
-                                                           default_value="mean")
+                                                           numerical_strategy[0],
+                                                           default_value=numerical_strategy[1])
             cs.add_hyperparameter(numerical_strategy)
 
         if len(dataset_properties['categorical_columns']) != 0:
             categorical_strategy = CategoricalHyperparameter("categorical_strategy",
-                                                             ["most_frequent", "constant_!missing!"],
-                                                             default_value="most_frequent")
+                                                             categorical_strategy[0],
+                                                             default_value=categorical_strategy[1])
             cs.add_hyperparameter(categorical_strategy)
         return cs
 
