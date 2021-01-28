@@ -13,6 +13,7 @@ class DummyComponent(autoPyTorchComponent):
         self.a = a
         self.b = b
         self.fitted = False
+        self._cs_updates = {}
 
     def get_hyperparameter_search_space(self, dataset_properties=None):
         cs = CS.ConfigurationSpace()
