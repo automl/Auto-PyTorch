@@ -277,5 +277,5 @@ class autoPyTorchChoice(object):
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in self._cs_updates.keys():
             if key.startswith(prefix):
-                result[key[len(prefix)+1:]] = self._cs_updates[key]
+                result[key[len(prefix) + 1:]] = self._cs_updates[key]
         return result
