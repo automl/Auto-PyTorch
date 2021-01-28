@@ -1,5 +1,11 @@
 import numpy as np
 
+from ConfigSpace.hyperparameters import (
+    UniformFloatHyperparameter,
+    UniformIntegerHyperparameter,
+    CategoricalHyperparameter
+)
+
 import pytest
 
 import torch
@@ -186,3 +192,20 @@ class TestTabularClassification:
         assert isinstance(fit_requirements, list)
         for requirement in fit_requirements:
             assert isinstance(requirement, FitRequirement)
+
+    def test_apply_search_space_updates(self, fit_dictionary, search_space_updates):
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2]}
+        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                 search_space_updates=search_space_updates)
+        config_space = pipeline.get_hyperparameter_search_space()
+        for update in search_space_updates.updates:
+            assert update.node_name + ':' + update.hyperparameter in config_space
+            hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter)
+            assert update.default_value == hyperparameter.default_value
+            if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
+                assert update.value_range[0] == hyperparameter.lower
+                assert update.value_range[1] == hyperparameter.upper
+                if hasattr(update, 'log'):
+                    assert update.log == hyperparameter.log
+            elif isinstance(hyperparameter, CategoricalHyperparameter):
+                assert all(update.value_range == hyperparameter.choices)

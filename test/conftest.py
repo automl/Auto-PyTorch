@@ -14,6 +14,7 @@ from sklearn.datasets import fetch_openml, make_classification
 
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
@@ -23,7 +24,6 @@ def slugify(text):
 
 @pytest.fixture(scope="function")
 def backend(request):
-
     test_dir = os.path.dirname(__file__)
     tmp = slugify(os.path.join(
         test_dir, '.tmp__%s__%s' % (request.module.__name__, request.node.name)))
@@ -57,7 +57,9 @@ def backend(request):
                             break
                         except OSError:
                             time.sleep(1)
+
         return session_run_at_end
+
     request.addfinalizer(get_finalizer(tmp, output))
 
     return backend
@@ -74,7 +76,6 @@ def output_dir(request):
 
 
 def _dir_fixture(dir_type, request):
-
     test_dir = os.path.dirname(__file__)
     dir = os.path.join(
         test_dir, '.%s__%s__%s' % (dir_type, request.module.__name__, request.node.name)
@@ -135,7 +136,9 @@ def dask_client(request):
             client.shutdown()
             client.close()
             del client
+
         return session_run_at_end
+
     request.addfinalizer(get_finalizer(client.scheduler_info()['address']))
 
     return client
@@ -312,3 +315,17 @@ def dataset_traditional_classifier_num_categorical():
     y = y.astype(np.int)
     X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
     return X, y
+
+
+@pytest.fixture
+def search_space_updates():
+    updates = HyperparameterSearchSpaceUpdates()
+    updates.append(node_name="data_loader",
+                   hyperparameter="batch_size",
+                   value_range=[16, 512],
+                   default_value=32)
+    updates.append(node_name="lr_scheduler",
+                   hyperparameter="CosineAnnealingLR:T_max",
+                   value_range=[50, 60],
+                   default_value=55)
+    return updates
