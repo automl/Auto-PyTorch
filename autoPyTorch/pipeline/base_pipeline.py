@@ -284,10 +284,12 @@ class BasePipeline(Pipeline):
                 raise ValueError('Invalid key in exclude: %s; should be one '
                                  'of %s' % (key, keys))
 
+        has_updates = False
         if self.search_space_updates is not None and isinstance(self.search_space_updates,
                                                                 HyperparameterSearchSpaceUpdates):
             self._check_search_space_updates(include=include,
                                              exclude=exclude)
+            has_updates = True
             self.search_space_updates.apply(pipeline=pipeline)
 
         matches = get_match_array(
@@ -306,13 +308,14 @@ class BasePipeline(Pipeline):
         for node_idx, n_ in enumerate(pipeline):
             node_name, node = n_
 
+            is_choice = isinstance(node, autoPyTorchChoice)
+
             # if the node isn't a choice we can add it immediately because it
             #  must be active (if it wasn't, np.sum(matches) would be zero
-            if not isinstance(node, autoPyTorchChoice):
+            if not is_choice:
                 cs.add_configuration_space(
                     node_name,
-                    node.get_hyperparameter_search_space(dataset_properties,
-                                                         **node._get_search_space_updates(prefix=node_name)),
+                    node.get_hyperparameter_search_space(dataset_properties, **node._get_search_space_updates()),
                 )
             # If the node is a choice, we have to figure out which of its
             #  choices are actually legal choices

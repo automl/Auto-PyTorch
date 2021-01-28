@@ -65,6 +65,7 @@ def base_pipeline():
         ('DummyComponent1', DummyComponent(a=10, b='red')),
         ('DummyChoice', DummyChoice(base_pipeline.dataset_properties))
     ]
+    base_pipeline.search_space_updates = None
     return base_pipeline
 
 
