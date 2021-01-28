@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -36,7 +36,7 @@ class Resize(BaseImageAugmenter):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, str]] = None,
-            use_augmenter = ([True, False], True),
+            use_augmenter: Tuple[Tuple, bool] = ((True, False), True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)

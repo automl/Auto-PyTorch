@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -58,8 +58,12 @@ class SimpleImputer(BaseImputer):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
-                                        numerical_strategy=(["mean", "median", "most_frequent", "constant_zero"], "mean"),
-                                        categorical_strategy=(["most_frequent", "constant_!missing!"], "most_frequent")
+                                        numerical_strategy: Tuple[Tuple, str] = (("mean", "median",
+                                                                                  "most_frequent", "constant_zero"),
+                                                                                 "mean"),
+                                        categorical_strategy: Tuple[Tuple, str] = (("most_frequent",
+                                                                                    "constant_!missing!"),
+                                                                                   "most_frequent")
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         assert dataset_properties is not None, "To create hyperparameter search space" \

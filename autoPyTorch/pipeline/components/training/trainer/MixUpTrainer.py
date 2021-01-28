@@ -62,7 +62,7 @@ class MixUpTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        alpha=((0, 1), 0.2)
+                                        alpha: typing.Tuple[typing.Tuple[float, float], float] = ((0, 1), 0.2)
                                         ) -> ConfigurationSpace:
         alpha = UniformFloatHyperparameter(
             "alpha", alpha[0][0], alpha[0][1], default_value=alpha[1])

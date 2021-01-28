@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -78,9 +78,9 @@ class ReduceLROnPlateau(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        mode=(['min', 'max'], 'min'),
-                                        patience=([5, 20], 10),
-                                        factor=([0.01, 0.9], 0.1)
+                                        mode: Tuple[Tuple, str] = (('min', 'max'), 'min'),
+                                        patience: Tuple[Tuple, int] = ((5, 20), 10),
+                                        factor: Tuple[Tuple[float, float], float] = ((0.01, 0.9), 0.1)
                                         ) -> ConfigurationSpace:
         mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
         patience = UniformIntegerHyperparameter(

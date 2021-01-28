@@ -53,15 +53,15 @@ class BasePipeline(Pipeline):
     __metaclass__ = ABCMeta
 
     def __init__(
-        self,
-        config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
-        include: Optional[Dict[str, Any]] = None,
-        exclude: Optional[Dict[str, Any]] = None,
-        random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            self,
+            config: Optional[Configuration] = None,
+            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+            dataset_properties: Optional[Dict[str, Any]] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            random_state: Optional[np.random.RandomState] = None,
+            init_params: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         self.init_params = init_params if init_params is not None else {}
@@ -141,9 +141,9 @@ class BasePipeline(Pipeline):
         return self.named_steps['network'].predict(loader)
 
     def set_hyperparameters(
-        self,
-        configuration: Configuration,
-        init_params: Optional[Dict] = None
+            self,
+            configuration: Configuration,
+            init_params: Optional[Dict] = None
     ) -> 'Pipeline':
         """Method to set the hyperparameter configuration of the pipeline.
 
@@ -253,12 +253,12 @@ class BasePipeline(Pipeline):
         return string
 
     def _get_base_search_space(
-        self,
-        cs: ConfigurationSpace,
-        dataset_properties: Dict[str, Any],
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        pipeline: List[Tuple[str, autoPyTorchChoice]]
+            self,
+            cs: ConfigurationSpace,
+            dataset_properties: Dict[str, Any],
+            include: Optional[Dict[str, Any]],
+            exclude: Optional[Dict[str, Any]],
+            pipeline: List[Tuple[str, autoPyTorchChoice]]
     ) -> ConfigurationSpace:
         if include is None:
             if self.include is None:
@@ -306,14 +306,13 @@ class BasePipeline(Pipeline):
         for node_idx, n_ in enumerate(pipeline):
             node_name, node = n_
 
-            is_choice = isinstance(node, autoPyTorchChoice)
-
             # if the node isn't a choice we can add it immediately because it
             #  must be active (if it wasn't, np.sum(matches) would be zero
-            if not is_choice:
+            if not isinstance(node, autoPyTorchChoice):
                 cs.add_configuration_space(
                     node_name,
-                    node.get_hyperparameter_search_space(dataset_properties, **node._get_search_space_updates()),
+                    node.get_hyperparameter_search_space(dataset_properties,
+                                                         **node._get_search_space_updates(prefix=node_name)),
                 )
             # If the node is a choice, we have to figure out which of its
             #  choices are actually legal choices
@@ -338,7 +337,9 @@ class BasePipeline(Pipeline):
 
         return cs
 
-    def _check_search_space_updates(self, include, exclude):
+    def _check_search_space_updates(self, include: Optional[Dict[str, Any]],
+                                    exclude: Optional[Dict[str, Any]]) -> None:
+        assert self.search_space_updates is not None
         for update in self.search_space_updates.updates:
             if update.node_name not in self.named_steps.keys():
                 raise ValueError("Unknown node name. Expected update node name to be in {} "
@@ -379,8 +380,8 @@ class BasePipeline(Pipeline):
             else:
                 if update.hyperparameter not in node.get_hyperparameter_search_space():
                     if any([update.hyperparameter in name for name in
-                                node.get_hyperparameter_search_space().get_hyperparameter_names()]):
-                            continue
+                            node.get_hyperparameter_search_space().get_hyperparameter_names()]):
+                        continue
                     raise ValueError("Unknown hyperparameter for component {}. "
                                      "Expected update hyperparameter "
                                      "to be in {} got {}".format(node.__class__.__name__,

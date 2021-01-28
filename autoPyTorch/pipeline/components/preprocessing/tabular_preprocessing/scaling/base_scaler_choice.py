@@ -57,17 +57,17 @@ class ScalerChoice(autoPyTorchChoice):
 
         dataset_properties = {**self.dataset_properties, **dataset_properties}
 
-        available_preprocessors = self.get_available_components(dataset_properties=dataset_properties,
-                                                                include=include,
-                                                                exclude=exclude)
+        available_scalers = self.get_available_components(dataset_properties=dataset_properties,
+                                                          include=include,
+                                                          exclude=exclude)
 
-        if len(available_preprocessors) == 0:
+        if len(available_scalers) == 0:
             raise ValueError("no scalers found, please add a scaler")
 
         if default is None:
             defaults = ['StandardScaler', 'Normalizer', 'MinMaxScaler', 'NoScaler']
             for default_ in defaults:
-                if default_ in available_preprocessors:
+                if default_ in available_scalers:
                     default = default_
                     break
 
@@ -79,16 +79,17 @@ class ScalerChoice(autoPyTorchChoice):
                                                          default_value=default)
         else:
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         list(available_preprocessors.keys()),
+                                                         list(available_scalers.keys()),
                                                          default_value=default)
         cs.add_hyperparameter(preprocessor)
 
         # add only child hyperparameters of early_preprocessor choices
         for name in preprocessor.choices:
-            preprocessor_configuration_space = available_preprocessors[name].\
-                get_hyperparameter_search_space(dataset_properties, **self._get_search_space_updates(prefix=name))
+            updates = self._get_search_space_updates(prefix=name)
+            config_space = available_scalers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
+                                                                                   **updates)
             parent_hyperparameter = {'parent': preprocessor, 'value': name}
-            cs.add_configuration_space(name, preprocessor_configuration_space,
+            cs.add_configuration_space(name, config_space,
                                        parent_hyperparameter=parent_hyperparameter)
 
         self.configuration_space = cs
@@ -105,5 +106,6 @@ class ScalerChoice(autoPyTorchChoice):
 
         """
         super()._check_dataset_properties(dataset_properties)
-        assert 'numerical_columns' in dataset_properties.keys() and 'categorical_columns' in dataset_properties.keys(),\
+        assert 'numerical_columns' in dataset_properties.keys() and \
+               'categorical_columns' in dataset_properties.keys(), \
             "Dataset properties must contain information about the type of columns"

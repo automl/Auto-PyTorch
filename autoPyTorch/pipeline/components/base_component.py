@@ -4,7 +4,7 @@ import pkgutil
 import sys
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -91,14 +91,12 @@ class ThirdPartyComponents(object):
 
 
 class autoPyTorchComponent(BaseEstimator):
-
     _required_properties: Optional[List[str]] = None
-    _node_name: Optional[str] = None
 
     def __init__(self) -> None:
         super().__init__()
         self._fit_requirements: List[FitRequirement] = list()
-        self._cs_updates = dict()
+        self._cs_updates: Dict[str, Tuple] = dict()
 
     @classmethod
     def get_required_properties(cls) -> Optional[List[str]]:
@@ -255,7 +253,8 @@ class autoPyTorchComponent(BaseEstimator):
         name = self.get_properties()['name']
         return "autoPyTorch.pipeline %s" % name
 
-    def _apply_search_space_update(self, name, new_value_range, default_value, log=False):
+    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
+                                   default_value: Union[int, float, str], log: bool = False) -> None:
         """Allows the user to update a hyperparameter
 
         Arguments:
@@ -264,29 +263,11 @@ class autoPyTorchComponent(BaseEstimator):
             log {bool} -- is hyperparameter logscale
         """
 
-        if (len(new_value_range) == 0):
+        if len(new_value_range) == 0:
             raise ValueError("The new value range needs at least one value")
         self._cs_updates[name] = tuple([new_value_range, default_value, log])
 
-    @staticmethod
-    def _check_search_space_updates(search_space_update):
-        """Check if the given search space updates are valid.
-
-        Arguments:
-
-        Raises:
-            ValueError: The given search space updates are not valid.
-        """
-
-
-        # Check given hyperparameter updates and raise exception if invalid hyperparameter update is given.
-        for key in self._get_search_space_updates().keys():
-            if key not in exploded_allowed_hps and \
-                    ConfigWrapper.delimiter.join(
-                        key.split(ConfigWrapper.delimiter)[:-1] + ["*"]) not in exploded_allowed_hps:
-                raise ValueError("Invalid search space update given: %s" % key)
-
-    def _get_search_space_updates(self, prefix=None):
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
@@ -297,7 +278,7 @@ class autoPyTorchComponent(BaseEstimator):
         """
         if prefix is None:
             return self._cs_updates
-        result = dict()
+        result: Dict[str, Tuple] = dict()
 
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in self._cs_updates.keys():

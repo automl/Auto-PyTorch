@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -249,7 +249,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        batch_size=[(32, 320), 64]
+                                        batch_size: Tuple[Tuple, int] = ((32, 320), 64)
                                         ) -> ConfigurationSpace:
         batch_size = UniformIntegerHyperparameter(
             "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])

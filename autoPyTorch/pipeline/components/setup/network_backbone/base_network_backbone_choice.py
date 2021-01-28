@@ -17,7 +17,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbon
     NetworkBackboneComponent,
 )
 
-
 directory = os.path.split(__file__)[0]
 _backbones = find_components(__package__,
                              directory,
@@ -47,10 +46,10 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         return components
 
     def get_available_components(
-        self,
-        dataset_properties: Optional[Dict[str, str]] = None,
-        include: List[str] = None,
-        exclude: List[str] = None,
+            self,
+            dataset_properties: Optional[Dict[str, str]] = None,
+            include: List[str] = None,
+            exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -116,11 +115,11 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         return components_dict
 
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, str]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, str]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -167,13 +166,13 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         )
         cs.add_hyperparameter(backbone)
         for name in available_backbones:
-            backbone_configuration_space = available_backbones[name]. \
-                get_hyperparameter_search_space(dataset_properties,
-                                                **self._get_search_space_updates(prefix=name))
+            updates = self._get_search_space_updates(prefix=name)
+            config_space = available_backbones[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
+                                                                                     **updates)
             parent_hyperparameter = {'parent': backbone, 'value': name}
             cs.add_configuration_space(
                 name,
-                backbone_configuration_space,
+                config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
 

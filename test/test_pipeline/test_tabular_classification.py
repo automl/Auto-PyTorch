@@ -1,10 +1,10 @@
-import numpy as np
-
 from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
-    CategoricalHyperparameter
 )
+
+import numpy as np
 
 import pytest
 

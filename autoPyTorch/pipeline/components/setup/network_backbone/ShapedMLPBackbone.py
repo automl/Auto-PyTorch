@@ -79,14 +79,15 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups=((1, 15), 5),
-                                        max_dropout=((0, 1), 0.5),
-                                        use_dropout=((True, False), False),
-                                        max_units=((10, 1024), 200),
-                                        mlp_shape=(('funnel', 'long_funnel',
-                                                    'diamond', 'hexagon',
-                                                    'brick', 'triangle', 'stairs'), 'funnel'),
-                                        activation=(list(_activations.keys()), list(_activations.keys())[0])
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        max_dropout: Tuple[Tuple, float] = ((0, 1), 0.5),
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        mlp_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
+                                                                         'diamond', 'hexagon',
+                                                                         'brick', 'triangle', 'stairs'), 'funnel'),
+                                        activation: Tuple[Tuple, str] = (
+                                        tuple(_activations.keys()), list(_activations.keys())[0])
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

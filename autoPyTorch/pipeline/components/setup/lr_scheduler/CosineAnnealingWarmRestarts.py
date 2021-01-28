@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
@@ -68,8 +68,8 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        T_0=([1, 20], 1),
-                                        T_mult=([1.0, 2.0], 1.0)
+                                        T_0: Tuple[Tuple[int, int], int] = ((1, 20), 1),
+                                        T_mult: Tuple[Tuple[float, float], float] = ((1.0, 2.0), 1.0)
                                         ) -> ConfigurationSpace:
         T_0 = UniformIntegerHyperparameter(
             "T_0", T_0[0][0], T_0[0][1], default_value=T_0[1])

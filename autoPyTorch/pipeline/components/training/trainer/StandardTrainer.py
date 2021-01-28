@@ -39,7 +39,8 @@ class StandardTrainer(BaseTrainerComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
+                                        **kwargs: typing.Any
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs

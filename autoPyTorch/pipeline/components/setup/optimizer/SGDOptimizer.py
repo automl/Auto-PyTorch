@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -71,9 +71,9 @@ class SGDOptimizer(BaseOptimizerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        lr=[(1e-5, 1e-1), 1e-2, True],
-                                        weight_decay=[(0.0, 0.1), 0.0],
-                                        momentum=[(0.0, 0.99), 0.0],
+                                        lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
+                                        weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0),
+                                        momentum: Tuple[Tuple, float] = ((0.0, 0.99), 0.0),
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

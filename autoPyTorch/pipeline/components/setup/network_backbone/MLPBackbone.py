@@ -74,11 +74,11 @@ class MLPBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups=((1, 15), 5),
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
                                         dropout: bool = True,
-                                        use_dropout=((True, False), False),
-                                        num_units=((10, 1024), 200),
-                                        dropout_=((0, 0.8), 0.5)
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        dropout_: Tuple[Tuple, float] = ((0, 0.8), 0.5)
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

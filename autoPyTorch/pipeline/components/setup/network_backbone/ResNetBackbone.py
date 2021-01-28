@@ -97,14 +97,14 @@ class ResNetBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups=((1, 15), 5),
-                                        use_dropout=((True, False), False),
-                                        num_units=((10, 1024), 200),
-                                        blocks_per_group=((1,4), 2),
-                                        dropout=((0, 0.8), 0.5),
-                                        use_shake_shake=((True, False), True),
-                                        use_shake_drop=((True, False), True),
-                                        max_shake_drop_probability=((0, 1), 0.5)
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
+                                        dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
+                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
+                                        max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -122,8 +122,7 @@ class ResNetBackbone(NetworkBackboneComponent):
 
         # We can have dropout in the network for
         # better generalization
-        use_dropout = CategoricalHyperparameter(
-                "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        use_dropout = CategoricalHyperparameter("use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
         cs.add_hyperparameters([use_dropout])
 
         use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],

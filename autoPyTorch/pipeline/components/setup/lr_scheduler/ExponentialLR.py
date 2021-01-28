@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -63,7 +63,7 @@ class ExponentialLR(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        gamma=([0.7, 0.9999], 0.9)
+                                        gamma: Tuple[Tuple, float] = ((0.7, 0.9999), 0.9)
                                         ) -> ConfigurationSpace:
         gamma = UniformFloatHyperparameter(
             "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])

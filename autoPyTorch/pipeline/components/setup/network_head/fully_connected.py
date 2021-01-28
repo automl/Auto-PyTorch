@@ -53,9 +53,10 @@ class FullyConnectedHead(NetworkHeadComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None,
-                                        num_layers=((1, 4), 2),
-                                        units_layer=((64, 512), 128),
-                                        activation=(list(_activations.keys()), list(_activations.keys())[0])
+                                        num_layers: Tuple[Tuple, int] = ((1, 4), 2),
+                                        units_layer: Tuple[Tuple, int] = ((64, 512), 128),
+                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
+                                                                         list(_activations.keys())[0])
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

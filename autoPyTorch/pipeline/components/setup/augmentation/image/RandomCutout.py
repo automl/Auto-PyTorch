@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -32,8 +32,8 @@ class RandomCutout(BaseImageAugmenter):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, str]] = None,
-            use_augmenter=([True, False], True),
-            p=([0.2, 1], 0.5)
+            use_augmenter: Tuple[Tuple, bool] = ((True, False), True),
+            p: Tuple[Tuple, float] = ((0.2, 1.0), 0.5)
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         p = UniformFloatHyperparameter('p', lower=p[0][0], upper=p[0][1], default_value=p[1])

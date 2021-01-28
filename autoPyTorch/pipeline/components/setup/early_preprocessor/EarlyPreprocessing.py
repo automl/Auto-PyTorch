@@ -47,7 +47,8 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None,
+        **kwargs: Any
     ) -> ConfigurationSpace:
         return ConfigurationSpace()
 

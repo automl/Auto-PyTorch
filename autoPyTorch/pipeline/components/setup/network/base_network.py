@@ -123,7 +123,8 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         return torch.cat(Y_batch_preds, 0).cpu().numpy()
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        **kwargs: Any
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs

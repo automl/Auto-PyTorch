@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -38,11 +38,11 @@ class RandomAffine(BaseImageAugmenter):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        use_augmenter=([True, False], True),
-        scale_offset=([0, 0.4], 0.2),
-        translate_percent_offset=([0, 0.4], 0.2),
-        shear=([0, 45], 30),
-        rotate=([0, 360], 45)
+        use_augmenter: Tuple[Tuple, bool] = ((True, False), True),
+        scale_offset: Tuple[Tuple, float] = ((0, 0.4), 0.2),
+        translate_percent_offset: Tuple[Tuple, float] = ((0, 0.4), 0.2),
+        shear: Tuple[Tuple, int] = ((0, 45), 30),
+        rotate: Tuple[Tuple, int] = ((0, 360), 45)
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

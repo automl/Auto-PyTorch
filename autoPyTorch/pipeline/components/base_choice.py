@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -49,7 +49,7 @@ class autoPyTorchChoice(object):
         # self.set_hyperparameters(self.configuration)
         self.choice: Optional[autoPyTorchComponent] = None
 
-        self._cs_updates = {}
+        self._cs_updates: Dict[str, Tuple] = dict()
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         if self.choice is not None:
@@ -247,7 +247,8 @@ class autoPyTorchChoice(object):
         """
         assert isinstance(dataset_properties, dict), "dataset_properties must be a dictionary"
 
-    def _apply_search_space_update(self, name, new_value_range, default_value, log=False):
+    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
+                                   default_value: Union[int, float, str], log: bool = False) -> None:
         """Allows the user to update a hyperparameter
 
         Arguments:
@@ -256,11 +257,11 @@ class autoPyTorchChoice(object):
             log {bool} -- is hyperparameter logscale
         """
 
-        if (len(new_value_range) == 0):
+        if len(new_value_range) == 0:
             raise ValueError("The new value range needs at least one value")
         self._cs_updates[name] = tuple([new_value_range, default_value, log])
 
-    def _get_search_space_updates(self, prefix=None):
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
@@ -271,10 +272,10 @@ class autoPyTorchChoice(object):
         """
         if prefix is None:
             return self._cs_updates
-        result = dict()
+        result: Dict[str, Tuple] = dict()
 
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in self._cs_updates.keys():
             if key.startswith(prefix):
-                result[key[len(prefix)+1:]] = self._cs_updates[key]
+                result[key[len(prefix):]] = self._cs_updates[key]
         return result

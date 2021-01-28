@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -87,10 +87,11 @@ class CyclicLR(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        base_lr=([1e-6, 1e-1], 0.01),
-                                        mode=(['triangular', 'triangular2', 'exp_range'], 'triangular'),
-                                        step_size_up=([1000, 4000], 2000),
-                                        max_lr=([1e-3, 1e-1], 0.1)
+                                        base_lr: Tuple[Tuple, float] = ((1e-6, 1e-1), 0.01),
+                                        mode: Tuple[Tuple, str] = (('triangular', 'triangular2', 'exp_range'),
+                                                                   'triangular'),
+                                        step_size_up: Tuple[Tuple, int] = ((1000, 4000), 2000),
+                                        max_lr: Tuple[Tuple, float] = ((1e-3, 1e-1), 0.1)
                                         ) -> ConfigurationSpace:
         base_lr = UniformFloatHyperparameter(
             "base_lr", base_lr[0][0], base_lr[0][1], default_value=base_lr[1])

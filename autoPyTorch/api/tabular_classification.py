@@ -11,6 +11,7 @@ from autoPyTorch.pipeline.tabular_classification import TabularClassificationPip
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
+
 class TabularClassificationTask(BaseTask):
     """
     Tabular Classification API to the pipelines.

@@ -82,18 +82,19 @@ class ShapedResNetBackbone(ResNetBackbone):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups=((1, 15), 5),
-                                        use_dropout=((True, False), False),
-                                        max_units=((10, 1024), 200),
-                                        blocks_per_group=((1,4), 2),
-                                        max_dropout=((0, 0.8), 0.5),
-                                        use_shake_shake=((True, False), True),
-                                        use_shake_drop=((True, False), True),
-                                        max_shake_drop_probability=((0, 1), 0.5),
-                                        resnet_shape=(['funnel', 'long_funnel',
-                                                       'diamond', 'hexagon',
-                                                       'brick', 'triangle', 'stairs'], 'funnel'),
-                                        activation=(list(_activations.keys()), list(_activations.keys())[0])
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
+                                        max_dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
+                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
+                                        max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5),
+                                        resnet_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
+                                                                            'diamond', 'hexagon',
+                                                                            'brick', 'triangle', 'stairs'), 'funnel'),
+                                        activation: Tuple[Tuple, str] = (
+                                        tuple(_activations.keys()), list(_activations.keys())[0])
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
