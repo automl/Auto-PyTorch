@@ -254,6 +254,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             num_run = config.config_id + self.initial_num_run
 
+        self.logger.debug("Search space updates: {}".format(self.search_space_updates))
         obj_kwargs = dict(
             queue=queue,
             config=config,

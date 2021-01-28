@@ -33,9 +33,9 @@ class FullyConnectedHead(NetworkHeadComponent):
         in_features = np.prod(input_shape).item()
         for i in range(1, self.config["num_layers"]):
             layers.append(nn.Linear(in_features=in_features,
-                                    out_features=self.config[f"layer_{i}_units"]))
+                                    out_features=self.config[f"units_layer_{i}"]))
             layers.append(_activations[self.config["activation"]]())
-            in_features = self.config[f"layer_{i}_units"]
+            in_features = self.config[f"units_layer_{i}"]
         out_features = np.prod(output_shape).item()
         layers.append(nn.Linear(in_features=in_features,
                                 out_features=out_features))
@@ -53,27 +53,32 @@ class FullyConnectedHead(NetworkHeadComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None,
-                                        min_num_layers: int = 1,
-                                        max_num_layers: int = 4,
-                                        min_num_units: int = 64,
-                                        max_num_units: int = 512) -> ConfigurationSpace:
+                                        num_layers=((1, 4), 2),
+                                        units_layer=((64, 512), 128),
+                                        activation=(list(_activations.keys()), list(_activations.keys())[0])
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
+        min_num_layers, max_num_layers = num_layers[0]
         num_layers_hp = UniformIntegerHyperparameter("num_layers",
                                                      lower=min_num_layers,
-                                                     upper=max_num_layers)
+                                                     upper=max_num_layers,
+                                                     )
 
-        activation_hp = CategoricalHyperparameter("activation",
-                                                  choices=list(_activations.keys()))
+        activation_hp = CategoricalHyperparameter(
+            "activation", choices=activation[0],
+            default_value=activation[1]
+        )
 
         cs.add_hyperparameters([num_layers_hp, activation_hp])
         cs.add_condition(CS.GreaterThanCondition(activation_hp, num_layers_hp, 1))
 
         for i in range(1, max_num_layers):
 
-            num_units_hp = UniformIntegerHyperparameter(f"layer_{i}_units",
-                                                        lower=min_num_units,
-                                                        upper=max_num_units)
+            num_units_hp = UniformIntegerHyperparameter(f"units_layer_{i}",
+                                                        lower=units_layer[0][0],
+                                                        upper=units_layer[0][1],
+                                                        default_value=units_layer[1])
             cs.add_hyperparameter(num_units_hp)
             if i >= min_num_layers:
                 cs.add_condition(CS.GreaterThanCondition(num_units_hp, num_layers_hp, i))

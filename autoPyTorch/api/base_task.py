@@ -256,7 +256,8 @@ class BaseTask:
                 info=self._get_required_dataset_properties(dataset))
             return get_configuration_space(info=dataset.get_dataset_properties(dataset_requirements),
                                            include=self.include_components,
-                                           exclude=self.exclude_components)
+                                           exclude=self.exclude_components,
+                                           search_space_updates=self.search_space_updates)
         raise Exception("No search space initialised and no dataset passed. "
                         "Can't create default search space without the dataset")
 
@@ -820,7 +821,8 @@ class BaseTask:
                 pipeline_config={**self.pipeline_options, **budget_config},
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
-                start_num_run=num_run
+                start_num_run=num_run,
+                search_space_updates=self.search_space_updates
             )
             try:
                 self.run_history, self.trajectory, budget_type = \

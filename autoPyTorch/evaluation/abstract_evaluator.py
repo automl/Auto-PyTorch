@@ -328,6 +328,7 @@ class AbstractEvaluator(object):
         self.pipelines: Optional[List[BaseEstimator]] = None
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(self.fit_dictionary))
+        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
     def _get_pipeline(self) -> BaseEstimator:
         assert self.pipeline_class is not None, "Can't return pipeline, pipeline_class not initialised"

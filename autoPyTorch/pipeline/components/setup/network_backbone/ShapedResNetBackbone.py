@@ -82,27 +82,26 @@ class ShapedResNetBackbone(ResNetBackbone):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        min_num_gropus: int = 1,
-                                        max_num_groups: int = 9,
-                                        min_blocks_per_groups: int = 1,
-                                        max_blocks_per_groups: int = 4,
-                                        min_num_units: int = 10,
-                                        max_num_units: int = 1024,
+                                        num_groups=((1, 15), 5),
+                                        use_dropout=((True, False), False),
+                                        max_units=((10, 1024), 200),
+                                        blocks_per_group=((1,4), 2),
+                                        max_dropout=((0, 0.8), 0.5),
+                                        use_shake_shake=((True, False), True),
+                                        use_shake_drop=((True, False), True),
+                                        max_shake_drop_probability=((0, 1), 0.5),
+                                        resnet_shape=(['funnel', 'long_funnel',
+                                                       'diamond', 'hexagon',
+                                                       'brick', 'triangle', 'stairs'], 'funnel'),
+                                        activation=(list(_activations.keys()), list(_activations.keys())[0])
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # Support for different shapes
         resnet_shape = CategoricalHyperparameter(
             'resnet_shape',
-            choices=[
-                'funnel',
-                'long_funnel',
-                'diamond',
-                'hexagon',
-                'brick',
-                'triangle',
-                'stairs'
-            ]
+            choices=resnet_shape[0],
+            default_value=resnet_shape[1]
         )
         cs.add_hyperparameter(resnet_shape)
 
@@ -110,33 +109,35 @@ class ShapedResNetBackbone(ResNetBackbone):
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
         num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=5)
+            "num_groups", lower=num_groups[0][0], upper=num_groups[0][1], default_value=num_groups[1])
 
         blocks_per_group = UniformIntegerHyperparameter(
-            "blocks_per_group", lower=min_blocks_per_groups, upper=max_blocks_per_groups)
+            "blocks_per_group", lower=blocks_per_group[0][0],
+            upper=blocks_per_group[0][1],
+            default_value=blocks_per_group[1])
 
         activation = CategoricalHyperparameter(
-            "activation", choices=list(_activations.keys())
+            "activation", choices=activation[0],
+            default_value=activation[1]
         )
-
+        (min_num_units, max_num_units), default_units = max_units
         output_dim = UniformIntegerHyperparameter(
             "output_dim",
             lower=min_num_units,
-            upper=max_num_units
+            upper=max_num_units,
+            default_value=default_units
         )
 
         cs.add_hyperparameters([num_groups, blocks_per_group, activation, output_dim])
 
-        # We can have dropout in the network for
-        # better generalization
-        use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=[True, False])
-        cs.add_hyperparameters([use_dropout])
-
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=[True, False])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=[True, False])
+        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
+                                                    default_value=use_shake_shake[1])
+        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
+                                                   default_value=use_shake_drop[1])
         shake_drop_prob = UniformFloatHyperparameter(
-            "max_shake_drop_probability", lower=0.0, upper=1.0)
+            "max_shake_drop_probability",
+            lower=max_shake_drop_probability[0][0],
+            upper=max_shake_drop_probability[0][1])
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 
@@ -144,12 +145,15 @@ class ShapedResNetBackbone(ResNetBackbone):
             "max_units",
             lower=min_num_units,
             upper=max_num_units,
+            default_value=default_units
         )
         cs.add_hyperparameters([max_units])
 
-        max_dropout = UniformFloatHyperparameter(
-            "max_dropout", lower=0.0, upper=1.0
-        )
+        use_dropout = CategoricalHyperparameter(
+            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
+                                                 default_value=max_dropout[1])
+        cs.add_hyperparameters([use_dropout])
         cs.add_hyperparameters([max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 

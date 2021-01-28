@@ -194,13 +194,19 @@ class TestTabularClassification:
             assert isinstance(requirement, FitRequirement)
 
     def test_apply_search_space_updates(self, fit_dictionary, search_space_updates):
-        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2]}
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
+                              'task_type': 'tabular_classification'}
         pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
                                                  search_space_updates=search_space_updates)
         config_space = pipeline.get_hyperparameter_search_space()
         for update in search_space_updates.updates:
-            assert update.node_name + ':' + update.hyperparameter in config_space
-            hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter)
+            try:
+                assert update.node_name + ':' + update.hyperparameter in config_space
+                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter)
+            except AssertionError:
+                assert any(update.node_name + ':' + update.hyperparameter in name
+                           for name in config_space.get_hyperparameter_names())
+                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
             assert update.default_value == hyperparameter.default_value
             if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
                 assert update.value_range[0] == hyperparameter.lower

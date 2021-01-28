@@ -166,7 +166,9 @@ class NetworkHeadChoice(autoPyTorchChoice):
         cs.add_hyperparameter(head)
         for name in available_heads:
             head_configuration_space = available_heads[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties,
+                                                **self._get_search_space_updates(prefix=name)
+                                                )
             parent_hyperparameter = {'parent': head, 'value': name}
             cs.add_configuration_space(
                 name,

@@ -328,4 +328,8 @@ def search_space_updates():
                    hyperparameter="CosineAnnealingLR:T_max",
                    value_range=[50, 60],
                    default_value=55)
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:dropout',
+                   value_range=[0, 0.5],
+                   default_value=0.2)
     return updates

@@ -74,11 +74,11 @@ class MLPBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        min_mlp_layers: int = 1,
-                                        max_mlp_layers: int = 15,
+                                        num_groups=((1, 15), 5),
                                         dropout: bool = True,
-                                        min_num_units: int = 10,
-                                        max_num_units: int = 1024,
+                                        use_dropout=((True, False), False),
+                                        num_units=((10, 1024), 200),
+                                        dropout_=((0, 0.8), 0.5)
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -86,8 +86,9 @@ class MLPBackbone(NetworkBackboneComponent):
         # The number of hidden layers the network will have.
         # Layer blocks are meant to have the same architecture, differing only
         # by the number of units
+        min_mlp_layers, max_mlp_layers = num_groups[0]
         num_groups = UniformIntegerHyperparameter(
-            "num_groups", min_mlp_layers, max_mlp_layers, default_value=5)
+            "num_groups", min_mlp_layers, max_mlp_layers, default_value=num_groups[1])
 
         activation = CategoricalHyperparameter(
             "activation", choices=list(_activations.keys())
@@ -98,14 +99,14 @@ class MLPBackbone(NetworkBackboneComponent):
         # better generalization
         if dropout:
             use_dropout = CategoricalHyperparameter(
-                "use_dropout", choices=[True, False], default_value=False)
+                "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
             cs.add_hyperparameters([use_dropout])
 
         for i in range(1, max_mlp_layers + 1):
             n_units_hp = UniformIntegerHyperparameter("num_units_%d" % i,
-                                                      lower=min_num_units,
-                                                      upper=max_num_units,
-                                                      default_value=200)
+                                                      lower=num_units[0][0],
+                                                      upper=num_units[0][1],
+                                                      default_value=num_units[1])
             cs.add_hyperparameter(n_units_hp)
 
             if i > min_mlp_layers:
@@ -120,9 +121,9 @@ class MLPBackbone(NetworkBackboneComponent):
             if dropout:
                 dropout_hp = UniformFloatHyperparameter(
                     "dropout_%d" % i,
-                    lower=0.0,
-                    upper=0.8,
-                    default_value=0.5
+                    lower=dropout_[0][0],
+                    upper=dropout_[0][1],
+                    default_value=dropout_[1]
                 )
                 cs.add_hyperparameter(dropout_hp)
                 dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)

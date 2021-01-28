@@ -80,6 +80,7 @@ class TrainEvaluator(AbstractEvaluator):
         self.pipelines: List[Optional[BaseEstimator]] = [None] * self.num_folds
         self.indices: List[Optional[Tuple[Union[np.ndarray, List], Union[np.ndarray, List]]]] = [None] * self.num_folds
 
+        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
         self.keep_models = keep_models
 
     def fit_predict_and_loss(self) -> None:

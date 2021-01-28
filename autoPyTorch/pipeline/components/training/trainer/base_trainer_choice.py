@@ -143,7 +143,8 @@ class TrainerChoice(autoPyTorchChoice):
         cs.add_hyperparameter(trainer)
         for name in available_trainers:
             trainer_configuration_space = available_trainers[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties,
+                                                **self._get_search_space_updates(prefix=name))
             parent_hyperparameter = {'parent': trainer, 'value': name}
             cs.add_configuration_space(
                 name,

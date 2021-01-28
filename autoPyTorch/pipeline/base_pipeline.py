@@ -286,7 +286,8 @@ class BasePipeline(Pipeline):
 
         if self.search_space_updates is not None and isinstance(self.search_space_updates,
                                                                 HyperparameterSearchSpaceUpdates):
-            self._check_search_space_updates()
+            self._check_search_space_updates(include=include,
+                                             exclude=exclude)
             self.search_space_updates.apply(pipeline=pipeline)
 
         matches = get_match_array(
@@ -337,15 +338,24 @@ class BasePipeline(Pipeline):
 
         return cs
 
-    def _check_search_space_updates(self):
+    def _check_search_space_updates(self, include, exclude):
         for update in self.search_space_updates.updates:
             if update.node_name not in self.named_steps.keys():
                 raise ValueError("Unknown node name. Expected update node name to be in {} "
                                  "got {}".format(self.named_steps.keys(), update.node_name))
             node = self.named_steps[update.node_name]
             if hasattr(node, 'get_components'):
-                components = node.get_components()
                 split_hyperparameter = update.hyperparameter.split(':')
+
+                if include is not None and update.node_name in include.keys():
+                    if split_hyperparameter[0] not in include[update.node_name]:
+                        raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
+
+                if exclude is not None and update.node_name in exclude.keys():
+                    if split_hyperparameter[0] in exclude[update.node_name]:
+                        raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
+
+                components = node.get_components()
                 if split_hyperparameter[0] not in components.keys():
                     raise ValueError("Unknown hyperparameter for choice {}. "
                                      "Expected update hyperparameter "
@@ -354,6 +364,12 @@ class BasePipeline(Pipeline):
                 else:
                     component = components[split_hyperparameter[0]]
                     if split_hyperparameter[1] not in component.get_hyperparameter_search_space():
+                        # Check if update hyperparameter is in names of
+                        # hyperparameters of the search space
+                        # Example 'num_units' in 'num_units_1', 'num_units_2'
+                        if any([split_hyperparameter[1] in name for name in
+                                component.get_hyperparameter_search_space().get_hyperparameter_names()]):
+                            continue
                         raise ValueError("Unknown hyperparameter for component {}. "
                                          "Expected update hyperparameter "
                                          "to be in {} got {}".format(node.__class__.__name__,
@@ -362,6 +378,9 @@ class BasePipeline(Pipeline):
                                                                      split_hyperparameter[1]))
             else:
                 if update.hyperparameter not in node.get_hyperparameter_search_space():
+                    if any([update.hyperparameter in name for name in
+                                node.get_hyperparameter_search_space().get_hyperparameter_names()]):
+                            continue
                     raise ValueError("Unknown hyperparameter for component {}. "
                                      "Expected update hyperparameter "
                                      "to be in {} got {}".format(node.__class__.__name__,

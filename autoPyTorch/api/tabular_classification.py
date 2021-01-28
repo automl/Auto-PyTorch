@@ -9,7 +9,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.backend import Backend
-
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 class TabularClassificationTask(BaseTask):
     """
@@ -52,6 +52,7 @@ class TabularClassificationTask(BaseTask):
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
         backend: Optional[Backend] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             seed=seed,
@@ -67,6 +68,7 @@ class TabularClassificationTask(BaseTask):
             include_components=include_components,
             exclude_components=exclude_components,
             backend=backend,
+            search_space_updates=search_space_updates
         )
         self.task_type = TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION]
 
