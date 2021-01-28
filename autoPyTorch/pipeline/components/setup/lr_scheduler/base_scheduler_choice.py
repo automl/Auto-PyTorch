@@ -158,7 +158,8 @@ class SchedulerChoice(autoPyTorchChoice):
         cs.add_hyperparameter(scheduler)
         for name in available_schedulers:
             scheduler_configuration_space = available_schedulers[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties,
+                                                **self._get_search_space_updates(prefix=name))
             parent_hyperparameter = {'parent': scheduler, 'value': name}
             cs.add_configuration_space(
                 name,
