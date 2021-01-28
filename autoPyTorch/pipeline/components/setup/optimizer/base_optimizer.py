@@ -42,8 +42,5 @@ class BaseOptimizerComponent(autoPyTorchSetupComponent):
         """ Allow a nice understanding of what components where used """
         string = self.optimizer.__class__.__name__
         info = vars(self)
-        # Remove unwanted info
-        info.pop('optimizer', None)
-        info.pop('random_state', None)
         string += " (" + str(info) + ")"
         return string

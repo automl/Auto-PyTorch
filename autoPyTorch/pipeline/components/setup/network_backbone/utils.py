@@ -10,6 +10,28 @@ __version__ = "0.0.1"
 __license__ = "BSD"
 
 
+_activations = {
+    "relu": torch.nn.ReLU,
+    "tanh": torch.nn.Tanh,
+    "sigmoid": torch.nn.Sigmoid
+}
+
+
+def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ...]
+                     ) -> typing.Tuple[int, ...]:
+    """
+    Run a dummy forward pass to get the output shape of the backbone.
+    Can and should be overridden by subclasses that know the output shape
+    without running a dummy forward pass.
+    :param input_shape: shape of the input
+    :return: output_shape
+    """
+    placeholder = torch.randn((2, *input_shape), dtype=torch.float)
+    with torch.no_grad():
+        output = network(placeholder)
+    return tuple(output.shape[1:])
+
+
 class ShakeShakeFunction(Function):
     @staticmethod
     def forward(

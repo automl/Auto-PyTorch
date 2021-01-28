@@ -28,7 +28,8 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
 @pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation, ))
+                                                 CrossValTypes.k_fold_cross_validation,
+                                                 ))
 def test_classification(openml_id, resampling_strategy, backend):
 
     # Get the data and check that contents of data-manager make sense
@@ -54,7 +55,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         dataset=datamanager,
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=30,
+        func_eval_time_limit=50,
         traditional_per_total_budget=0
     )
 
@@ -107,7 +108,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
-        assert isinstance(model.named_steps['network'].choice.get_network(), torch.nn.Module)
+        assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
@@ -118,7 +119,7 @@ def test_classification(openml_id, resampling_strategy, backend):
             estimator.seed, run_key.config_id, run_key.budget)
         assert isinstance(model, VotingClassifier)
         assert len(model.estimators_) == 3
-        assert isinstance(model.estimators_[0].named_steps['network'].choice.get_network(),
+        assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
                           torch.nn.Module)
     else:
         pytest.fail(resampling_strategy)

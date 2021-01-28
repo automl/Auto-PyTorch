@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -8,7 +8,9 @@ import numpy as np
 
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network.head.base_head import BaseHead
+from autoPyTorch.pipeline.components.setup.network_head.base_network_head import (
+    NetworkHeadComponent,
+)
 
 _activations: Dict[str, nn.Module] = {
     "relu": nn.ReLU,
@@ -17,7 +19,7 @@ _activations: Dict[str, nn.Module] = {
 }
 
 
-class FullyConnectedHead(BaseHead):
+class FullyConnectedHead(NetworkHeadComponent):
     """
     Standard head consisting of a number of fully connected layers.
     Flattens any input in a array of shape [B, prod(input_shape)].
@@ -40,10 +42,13 @@ class FullyConnectedHead(BaseHead):
         return nn.Sequential(*layers)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'FullyConnectedHead',
             'name': 'FullyConnectedHead',
+            'handles_tabular': True,
+            'handles_image': False,
+            'handles_time_series': False,
         }
 
     @staticmethod

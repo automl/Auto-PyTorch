@@ -141,10 +141,4 @@ class BaseModelComponent(autoPyTorchSetupComponent):
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.model.__class__.__name__
-        info = vars(self)
-        # Remove unwanted info
-        info.pop('model', None)
-        info.pop('random_state', None)
-        info.pop('fit_output', None)
-        string += " (" + str(info) + ")"
         return string

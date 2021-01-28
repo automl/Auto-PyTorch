@@ -20,7 +20,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputat
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
-from autoPyTorch.pipeline.components.setup.network.base_network_choice import NetworkChoice
+from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
     NetworkInitializerChoice
 )
@@ -237,7 +239,9 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("scaler", ScalerChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
             ("preprocessing", EarlyPreprocessing()),
-            ("network", NetworkChoice(default_dataset_properties)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties)),
+            ("network", NetworkComponent(default_dataset_properties)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties)),
             ("optimizer", OptimizerChoice(default_dataset_properties)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties)),

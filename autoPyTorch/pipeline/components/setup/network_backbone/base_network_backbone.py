@@ -10,7 +10,7 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 
 
-class BaseBackbone(autoPyTorchComponent):
+class NetworkBackboneComponent(autoPyTorchComponent):
     """
     Backbone base class
     """
@@ -26,7 +26,23 @@ class BaseBackbone(autoPyTorchComponent):
         """
         Not used. Just for API compatibility.
         """
+        input_shape = X['X_train'].shape[1:]
+
+        self.backbone = self.build_backbone(
+            input_shape=input_shape,
+        )
         return self
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adds the scheduler into the fit dictionary 'X' and returns it.
+        Args:
+            X (Dict[str, Any]): 'X' dictionary
+        Returns:
+            (Dict[str, Any]): the updated 'X' dictionary
+        """
+        X.update({'network_backbone': self.backbone})
+        return X
 
     @abstractmethod
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:

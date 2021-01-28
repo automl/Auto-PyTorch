@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -7,7 +7,9 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntege
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network.head.base_head import BaseHead
+from autoPyTorch.pipeline.components.setup.network_head.base_network_head import (
+    NetworkHeadComponent,
+)
 
 _activations: Dict[str, nn.Module] = {
     "relu": nn.ReLU,
@@ -49,7 +51,7 @@ class _FullyConvolutional2DHead(nn.Module):
         return self.head(x).view(B, -1)
 
 
-class FullyConvolutional2DHead(BaseHead):
+class FullyConvolutional2DHead(NetworkHeadComponent):
     """
     Head consisting of a number of 2d convolutional connected layers.
     Applies a global pooling operation in the end.
@@ -66,10 +68,13 @@ class FullyConvolutional2DHead(BaseHead):
                                                        for i in range(1, self.config["num_layers"])])
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'FullyConvolutionalHead',
             'name': 'FullyConvolutionalHead',
+            'handles_tabular': False,
+            'handles_image': True,
+            'handles_time_series': False,
         }
 
     @staticmethod

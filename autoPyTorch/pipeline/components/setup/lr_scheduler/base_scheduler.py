@@ -40,9 +40,4 @@ class BaseLRComponent(autoPyTorchSetupComponent):
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.scheduler.__class__.__name__
-        info = vars(self)
-        # Remove unwanted info
-        info.pop('scheduler', None)
-        info.pop('random_state', None)
-        string += " (" + str(info) + ")"
         return string

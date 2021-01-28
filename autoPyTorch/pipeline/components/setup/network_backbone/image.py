@@ -15,7 +15,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from autoPyTorch.pipeline.components.setup.network.backbone.base_backbone import BaseBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 
 _activations: Dict[str, nn.Module] = {
     "relu": nn.ReLU,
@@ -24,7 +24,7 @@ _activations: Dict[str, nn.Module] = {
 }
 
 
-class ConvNetImageBackbone(BaseBackbone):
+class ConvNetImageBackbone(NetworkBackboneComponent):
     supported_tasks = {"image_classification", "image_regression"}
 
     def __init__(self, **kwargs: Any):
@@ -71,6 +71,9 @@ class ConvNetImageBackbone(BaseBackbone):
         return {
             'shortname': 'ConvNetImageBackbone',
             'name': 'ConvNetImageBackbone',
+            'handles_tabular': False,
+            'handles_image': True,
+            'handles_time_series': False,
         }
 
     @staticmethod
@@ -173,7 +176,7 @@ class _Transition(nn.Sequential):
         self.add_module('pool', nn.AvgPool2d(kernel_size=pool_size, stride=pool_size))
 
 
-class DenseNetBackbone(BaseBackbone):
+class DenseNetBackbone(NetworkBackboneComponent):
     supported_tasks = {"image_classification", "image_regression"}
 
     def __init__(self, **kwargs: Any):
@@ -238,6 +241,9 @@ class DenseNetBackbone(BaseBackbone):
         return {
             'shortname': 'DenseNetBackbone',
             'name': 'DenseNetBackbone',
+            'handles_tabular': False,
+            'handles_image': True,
+            'handles_time_series': False,
         }
 
     @staticmethod
