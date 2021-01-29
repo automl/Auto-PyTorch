@@ -180,9 +180,13 @@ class BaseTask:
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
-        if search_space_updates is not None and \
-                isinstance(search_space_updates, HyperparameterSearchSpaceUpdates):
-            self.search_space_updates = search_space_updates
+        self.search_space_updates = search_space_updates
+        if search_space_updates is not None:
+            assert isinstance(self.search_space_updates,
+                              HyperparameterSearchSpaceUpdates), "Expected search space updates to be of instance" \
+                                                                 " HyperparameterSearchSpaceUpdates got {}".format(
+                type(self.search_space_updates)
+            )
 
     @abstractmethod
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
