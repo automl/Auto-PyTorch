@@ -53,15 +53,15 @@ class BasePipeline(Pipeline):
     __metaclass__ = ABCMeta
 
     def __init__(
-            self,
-            config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        config: Optional[Configuration] = None,
+        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        dataset_properties: Optional[Dict[str, Any]] = None,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        random_state: Optional[np.random.RandomState] = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         self.init_params = init_params if init_params is not None else {}
@@ -141,9 +141,9 @@ class BasePipeline(Pipeline):
         return self.named_steps['network'].predict(loader)
 
     def set_hyperparameters(
-            self,
-            configuration: Configuration,
-            init_params: Optional[Dict] = None
+        self,
+        configuration: Configuration,
+        init_params: Optional[Dict] = None
     ) -> 'Pipeline':
         """Method to set the hyperparameter configuration of the pipeline.
 
@@ -253,12 +253,12 @@ class BasePipeline(Pipeline):
         return string
 
     def _get_base_search_space(
-            self,
-            cs: ConfigurationSpace,
-            dataset_properties: Dict[str, Any],
-            include: Optional[Dict[str, Any]],
-            exclude: Optional[Dict[str, Any]],
-            pipeline: List[Tuple[str, autoPyTorchChoice]]
+        self,
+        cs: ConfigurationSpace,
+        dataset_properties: Dict[str, Any],
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]],
+        pipeline: List[Tuple[str, autoPyTorchChoice]]
     ) -> ConfigurationSpace:
         if include is None:
             if self.include is None:
@@ -284,8 +284,7 @@ class BasePipeline(Pipeline):
                 raise ValueError('Invalid key in exclude: %s; should be one '
                                  'of %s' % (key, keys))
 
-        if self.search_space_updates is not None and isinstance(self.search_space_updates,
-                                                                HyperparameterSearchSpaceUpdates):
+        if self.search_space_updates is not None:
             self._check_search_space_updates(include=include,
                                              exclude=exclude)
             self.search_space_updates.apply(pipeline=pipeline)

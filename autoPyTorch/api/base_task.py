@@ -180,7 +180,9 @@ class BaseTask:
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
-        self.search_space_updates = search_space_updates
+        if search_space_updates is not None and \
+                isinstance(search_space_updates, HyperparameterSearchSpaceUpdates):
+            self.search_space_updates = search_space_updates
 
     @abstractmethod
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
