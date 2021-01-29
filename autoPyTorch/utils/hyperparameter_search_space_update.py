@@ -41,10 +41,12 @@ class HyperparameterSearchSpaceUpdates():
 
     def save_as_file(self, path: str) -> None:
         with open(path, "w") as f:
-            for update in self.updates:
-                print(update.node_name, update.hyperparameter, str(update.value_range),  # noqa
-                      str(update.default_value) + (" log" if update.log else ""),
-                      file=f)
+            with open(path, "w") as f:
+                for update in self.updates:
+                    print(update.node_name, update.hyperparameter,  # noqa: T001
+                          str(update.value_range), "'{}'".format(update.default_value)
+                          if isinstance(update.default_value, str) else update.default_value,
+                          (" log" if update.log else ""), file=f)
 
 
 def parse_hyperparameter_search_space_updates(updates_file: Optional[str]
@@ -57,8 +59,9 @@ def parse_hyperparameter_search_space_updates(updates_file: Optional[str]
             if line.strip() == "":
                 continue
             line = line.split()  # type: ignore[assignment]
-            node, hyperparameter, value_range, default_value = line[0], line[1], ast.literal_eval(line[2]), line[3]
-            assert isinstance(value_range, list)
-            log = len(line) == 5 and "log" == line[4]
+            node, hyperparameter, value_range = line[0], line[1], ast.literal_eval(line[2] + line[3])
+            default_value = ast.literal_eval(line[4])
+            assert isinstance(value_range, (tuple, list))
+            log = len(line) == 6 and "log" == line[5]
             result.append(HyperparameterSearchSpaceUpdate(node, hyperparameter, value_range, default_value, log))
     return HyperparameterSearchSpaceUpdates(result)

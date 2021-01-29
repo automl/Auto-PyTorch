@@ -280,8 +280,9 @@ class autoPyTorchComponent(BaseEstimator):
             return self._cs_updates
         result: Dict[str, Tuple] = dict()
 
-        # iterate over all search space updates of this node and filter the ones out, that have the given prefix
+        # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
             if key.startswith(prefix):
+                # different for autopytorch component as the hyperparameter
                 result[key[len(prefix):]] = self._cs_updates[key]
         return result

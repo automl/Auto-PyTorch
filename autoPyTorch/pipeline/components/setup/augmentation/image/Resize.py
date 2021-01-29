@@ -39,7 +39,8 @@ class Resize(BaseImageAugmenter):
             use_augmenter: Tuple[Tuple, bool] = ((True, False), True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)
+        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0],
+                                                  default_value=use_augmenter[1])
         cs.add_hyperparameters([use_augmenter])
 
         return cs

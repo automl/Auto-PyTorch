@@ -46,10 +46,10 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         return components
 
     def get_available_components(
-            self,
-            dataset_properties: Optional[Dict[str, str]] = None,
-            include: List[str] = None,
-            exclude: List[str] = None,
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        include: List[str] = None,
+        exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -115,11 +115,11 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         return components_dict
 
     def get_hyperparameter_search_space(
-            self,
-            dataset_properties: Optional[Dict[str, str]] = None,
-            default: Optional[str] = None,
-            include: Optional[List[str]] = None,
-            exclude: Optional[List[str]] = None,
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        default: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
