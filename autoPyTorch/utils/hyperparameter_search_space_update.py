@@ -22,10 +22,16 @@ class HyperparameterSearchSpaceUpdate():
                                             default_value=self.default_value)
          for node in pipeline if node[0] == self.node_name]
 
+    def __str__(self) -> str:
+        return "{}, {}, {}, {}, {}".format(self.node_name, self.hyperparameter, str(self.value_range),
+                                           self.default_value if isinstance(self.default_value,
+                                                                            str) else self.default_value,
+                                           (" log" if self.log else ""))
+
 
 class HyperparameterSearchSpaceUpdates():
-    def __init__(self, updates: List[HyperparameterSearchSpaceUpdate] = []) -> None:
-        self.updates = updates
+    def __init__(self, updates: Optional[List[HyperparameterSearchSpaceUpdate]] = None) -> None:
+        self.updates = updates if updates is not None else []
 
     def apply(self, pipeline: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]) -> None:
         for update in self.updates:
