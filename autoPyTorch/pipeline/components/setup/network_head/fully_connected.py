@@ -64,6 +64,7 @@ class FullyConnectedHead(NetworkHeadComponent):
         num_layers_hp = UniformIntegerHyperparameter("num_layers",
                                                      lower=min_num_layers,
                                                      upper=max_num_layers,
+                                                     default_value=num_layers[1]
                                                      )
 
         activation_hp = CategoricalHyperparameter(

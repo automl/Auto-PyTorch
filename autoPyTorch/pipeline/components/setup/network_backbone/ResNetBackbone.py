@@ -100,6 +100,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
+                                                                         list(_activations.keys())[0]),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
                                         use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
@@ -116,7 +118,8 @@ class ResNetBackbone(NetworkBackboneComponent):
             "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=num_groups[1])
 
         activation = CategoricalHyperparameter(
-            "activation", choices=list(_activations.keys())
+            "activation", choices=activation[0],
+            default_value=activation[1]
         )
         cs.add_hyperparameters([num_groups, activation])
 
@@ -132,13 +135,14 @@ class ResNetBackbone(NetworkBackboneComponent):
         shake_drop_prob = UniformFloatHyperparameter(
             "max_shake_drop_probability",
             lower=max_shake_drop_probability[0][0],
-            upper=max_shake_drop_probability[0][1])
+            upper=max_shake_drop_probability[0][1],
+            default_value=max_shake_drop_probability[1])
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
-        (min_blocks_per_group, max_blocks_per_group), default_blocks_per_group = blocks_per_group
+        (min_blocks_per_group, max_blocks_per_group), default_blocks_per_group = blocks_per_group[:2]
         for i in range(0, max_num_groups + 1):
 
             n_units = UniformIntegerHyperparameter(

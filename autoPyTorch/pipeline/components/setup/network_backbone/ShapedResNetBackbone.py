@@ -81,7 +81,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,  # type: ignore[override]
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         max_units: Tuple[Tuple, int] = ((10, 1024), 200),
@@ -94,7 +94,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                             'diamond', 'hexagon',
                                                                             'brick', 'triangle', 'stairs'), 'funnel'),
                                         activation: Tuple[Tuple, str] = (
-                                        tuple(_activations.keys()), list(_activations.keys())[0])
+                                        tuple(_activations.keys()), list(_activations.keys())[0]),
+                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -121,12 +122,12 @@ class ShapedResNetBackbone(ResNetBackbone):
             "activation", choices=activation[0],
             default_value=activation[1]
         )
-        (min_num_units, max_num_units), default_units = max_units
+        (min_num_units, max_num_units), default_units = max_units[:2]
         output_dim = UniformIntegerHyperparameter(
             "output_dim",
-            lower=min_num_units,
-            upper=max_num_units,
-            default_value=default_units
+            lower=output_dim[0][0],
+            upper=output_dim[0][1],
+            default_value=output_dim[1]
         )
 
         cs.add_hyperparameters([num_groups, blocks_per_group, activation, output_dim])
@@ -138,7 +139,8 @@ class ShapedResNetBackbone(ResNetBackbone):
         shake_drop_prob = UniformFloatHyperparameter(
             "max_shake_drop_probability",
             lower=max_shake_drop_probability[0][0],
-            upper=max_shake_drop_probability[0][1])
+            upper=max_shake_drop_probability[0][1],
+            default_value=max_shake_drop_probability[1])
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 

@@ -83,6 +83,7 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
                                         max_dropout: Tuple[Tuple, float] = ((0, 1), 0.5),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         max_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
                                         mlp_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
                                                                          'diamond', 'hexagon',
                                                                          'brick', 'triangle', 'stairs'), 'funnel'),
@@ -105,7 +106,7 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
             "activation", choices=activation[0],
             default_value=activation[1]
         )
-        (min_num_units, max_num_units), default_units = max_units
+        (min_num_units, max_num_units), default_units = max_units[:2]
         max_units = UniformIntegerHyperparameter(
             "max_units",
             lower=min_num_units,
@@ -115,9 +116,9 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
         output_dim = UniformIntegerHyperparameter(
             "output_dim",
-            lower=min_num_units,
-            upper=max_num_units,
-            default_value=default_units
+            lower=output_dim[0][0],
+            upper=output_dim[0][1],
+            default_value=output_dim[1]
         )
 
         cs.add_hyperparameters([num_groups, activation, mlp_shape, max_units, output_dim])

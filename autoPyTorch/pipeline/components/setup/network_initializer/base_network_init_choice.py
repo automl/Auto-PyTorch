@@ -17,7 +17,6 @@ from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init
     BaseNetworkInitializerComponent
 )
 
-
 directory = os.path.split(__file__)[0]
 _initializers = find_components(__package__,
                                 directory,
@@ -47,10 +46,10 @@ class NetworkInitializerChoice(autoPyTorchChoice):
         return components
 
     def get_available_components(
-        self,
-        dataset_properties: Optional[Dict[str, str]] = None,
-        include: List[str] = None,
-        exclude: List[str] = None,
+            self,
+            dataset_properties: Optional[Dict[str, str]] = None,
+            include: List[str] = None,
+            exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -103,11 +102,11 @@ class NetworkInitializerChoice(autoPyTorchChoice):
         return components_dict
 
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, str]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, str]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -128,34 +127,35 @@ class NetworkInitializerChoice(autoPyTorchChoice):
             dataset_properties = {}
 
         # Compile a list of legal preprocessors for this problem
-        available_initializers = self.get_available_components(
+        initializers = self.get_available_components(
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        if len(available_initializers) == 0:
+        if len(initializers) == 0:
             raise ValueError("No initializers found")
 
         if default is None:
             defaults = ['XavierInit',
                         ]
             for default_ in defaults:
-                if default_ in available_initializers:
+                if default_ in initializers:
                     default = default_
                     break
 
         initializer = CSH.CategoricalHyperparameter(
             '__choice__',
-            list(available_initializers.keys()),
+            list(initializers.keys()),
             default_value=default
         )
         cs.add_hyperparameter(initializer)
-        for name in available_initializers:
-            initializer_configuration_space = available_initializers[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+        for name in initializers:
+            updates = self._get_search_space_updates(prefix=name)
+            config_space = initializers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
+                                                                              **updates)
             parent_hyperparameter = {'parent': initializer, 'value': name}
             cs.add_configuration_space(
                 name,
-                initializer_configuration_space,
+                config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
 

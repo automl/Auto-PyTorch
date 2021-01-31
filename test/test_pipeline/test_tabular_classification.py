@@ -24,6 +24,26 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
                                             'fit_dictionary_categorical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
 class TestTabularClassification:
+    def _assert_pipeline_search_space(self, pipeline, search_space_updates):
+        config_space = pipeline.get_hyperparameter_search_space()
+        for update in search_space_updates.updates:
+            try:
+                assert update.node_name + ':' + update.hyperparameter in config_space
+                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter)
+            except AssertionError:
+                assert any(update.node_name + ':' + update.hyperparameter in name
+                           for name in config_space.get_hyperparameter_names()), \
+                    "Can't find hyperparameter: {}".format(update.hyperparameter)
+                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
+            assert update.default_value == hyperparameter.default_value
+            if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
+                assert update.value_range[0] == hyperparameter.lower
+                assert update.value_range[1] == hyperparameter.upper
+                if hasattr(update, 'log'):
+                    assert update.log == hyperparameter.log
+            elif isinstance(hyperparameter, CategoricalHyperparameter):
+                assert update.value_range == hyperparameter.choices
+
     def test_pipeline_fit(self, fit_dictionary):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
@@ -203,23 +223,7 @@ class TestTabularClassification:
                               'task_type': 'tabular_classification'}
         pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
                                                  search_space_updates=search_space_updates)
-        config_space = pipeline.get_hyperparameter_search_space()
-        for update in search_space_updates.updates:
-            try:
-                assert update.node_name + ':' + update.hyperparameter in config_space
-                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter)
-            except AssertionError:
-                assert any(update.node_name + ':' + update.hyperparameter in name
-                           for name in config_space.get_hyperparameter_names())
-                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
-            assert update.default_value == hyperparameter.default_value
-            if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
-                assert update.value_range[0] == hyperparameter.lower
-                assert update.value_range[1] == hyperparameter.upper
-                if hasattr(update, 'log'):
-                    assert update.log == hyperparameter.log
-            elif isinstance(hyperparameter, CategoricalHyperparameter):
-                assert update.value_range == hyperparameter.choices
+        self._assert_pipeline_search_space(pipeline, search_space_updates)
 
     def test_read_and_update_search_space(self, fit_dictionary, search_space_updates):
         import tempfile
@@ -248,3 +252,35 @@ class TestTabularClassification:
             assert isinstance(e, ValueError)
             assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
                             r'hyperparameter to be in \[.*?\] got .+', e.args[0])
+
+    def test_set_range_search_space_updates(self, fit_dictionary):
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
+                              'task_type': 'tabular_classification'}
+        config_dict = TabularClassificationPipeline(dataset_properties=dataset_properties). \
+            get_hyperparameter_search_space()._hyperparameters
+        updates = HyperparameterSearchSpaceUpdates()
+        for i, (name, hyperparameter) in enumerate(config_dict.items()):
+            if '__choice__' in name:
+                continue
+            name = name.split(':')
+            hyperparameter_name = ':'.join(name[1:])
+            if '_' in hyperparameter_name:
+                if any(l_.isnumeric() for l_ in hyperparameter_name.split('_')[-1]) and 'network' in name[0]:
+                    hyperparameter_name = '_'.join(hyperparameter_name.split('_')[:-1])
+            if isinstance(hyperparameter, CategoricalHyperparameter):
+                value_range = (hyperparameter.choices[0],)
+                default_value = hyperparameter.choices[0]
+            else:
+                value_range = (0, 1)
+                default_value = 1
+            updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
+                           value_range=value_range, default_value=default_value)
+        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                 search_space_updates=updates)
+
+        try:
+            self._assert_pipeline_search_space(pipeline, updates)
+        except AssertionError as e:
+            # As we are setting num_layers to 1 for fully connected
+            # head, units_layer does not exist in the configspace
+            assert 'fully_connected:units_layer' in e.args[0]

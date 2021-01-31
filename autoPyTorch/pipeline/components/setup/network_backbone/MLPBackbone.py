@@ -75,10 +75,11 @@ class MLPBackbone(NetworkBackboneComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
-                                        dropout: bool = True,
+                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
+                                                                         list(_activations.keys())[0]),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         num_units: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        dropout_: Tuple[Tuple, float] = ((0, 0.8), 0.5)
+                                        dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5)
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -91,16 +92,16 @@ class MLPBackbone(NetworkBackboneComponent):
             "num_groups", min_mlp_layers, max_mlp_layers, default_value=num_groups[1])
 
         activation = CategoricalHyperparameter(
-            "activation", choices=list(_activations.keys())
+            "activation", choices=activation[0],
+            default_value=activation[1]
         )
         cs.add_hyperparameters([num_groups, activation])
 
         # We can have dropout in the network for
         # better generalization
-        if dropout:
-            use_dropout = CategoricalHyperparameter(
-                "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
-            cs.add_hyperparameters([use_dropout])
+        use_dropout = CategoricalHyperparameter(
+            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        cs.add_hyperparameters([use_dropout])
 
         for i in range(1, max_mlp_layers + 1):
             n_units_hp = UniformIntegerHyperparameter("num_units_%d" % i,
@@ -118,20 +119,19 @@ class MLPBackbone(NetworkBackboneComponent):
                     )
                 )
 
-            if dropout:
-                dropout_hp = UniformFloatHyperparameter(
-                    "dropout_%d" % i,
-                    lower=dropout_[0][0],
-                    upper=dropout_[0][1],
-                    default_value=dropout_[1]
-                )
-                cs.add_hyperparameter(dropout_hp)
-                dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
+            dropout_hp = UniformFloatHyperparameter(
+                "dropout_%d" % i,
+                lower=dropout[0][0],
+                upper=dropout[0][1],
+                default_value=dropout[1]
+            )
+            cs.add_hyperparameter(dropout_hp)
+            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
 
-                if i > min_mlp_layers:
-                    dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
-                    cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-                else:
-                    cs.add_condition(dropout_condition_1)
+            if i > min_mlp_layers:
+                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
+                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
+            else:
+                cs.add_condition(dropout_condition_1)
 
         return cs

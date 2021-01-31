@@ -161,7 +161,12 @@ class BasePipeline(Pipeline):
         for node_idx, n_ in enumerate(self.steps):
             node_name, node = n_
 
-            sub_configuration_space = node.get_hyperparameter_search_space(self.dataset_properties)
+            updates: Dict[str, Any] = {}
+            if not isinstance(node, autoPyTorchChoice):
+                updates = node._get_search_space_updates()
+
+            sub_configuration_space = node.get_hyperparameter_search_space(self.dataset_properties,
+                                                                           **updates)
             sub_config_dict = {}
             for param in configuration:
                 if param.startswith('%s:' % node_name):
@@ -364,7 +369,7 @@ class BasePipeline(Pipeline):
                     raise ValueError("Unknown hyperparameter for choice {}. "
                                      "Expected update hyperparameter "
                                      "to be in {} got {}".format(node.__class__.__name__,
-                                                                 components.keys(), update.node_name))
+                                                                 components.keys(), split_hyperparameter[0]))
                 else:
                     component = components[split_hyperparameter[0]]
                     if split_hyperparameter[1] not in component. \
