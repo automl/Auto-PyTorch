@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Set, Tuple
+from typing import Any, Dict, Tuple
 
 import torch.nn as nn
 
@@ -21,7 +21,7 @@ class NetworkHeadComponent(autoPyTorchComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
-        Fits the head component
+        Builds the head component and assigns it to self.head
 
         Args:
             X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
@@ -55,11 +55,11 @@ class NetworkHeadComponent(autoPyTorchComponent):
     @abstractmethod
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
         """
-        Builds the head module and assigns it to self.head
+        Builds the head module and returns it
 
         Args:
-            input_shape (Tuple[int, ...]): shape of the input (usually the shape of the backbone output)
-            output_shape (Tuple[int, ...]): shape of the output
+            input_shape (Tuple[int, ...]): shape of the input to the head (usually the shape of the backbone output)
+            output_shape (Tuple[int, ...]): shape of the output of the head
 
         Returns:
             nn.Module: head module
