@@ -1,10 +1,11 @@
 from typing import Any, Dict, Optional, Tuple
 
-import torch
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
+
+import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (

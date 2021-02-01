@@ -16,6 +16,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbon
     NetworkBackboneComponent,
 )
 
+
 # _Chomp1d, _TemporalBlock and _TemporalConvNet copied from
 # https://github.com/locuslab/TCN/blob/master/TCN/tcn.py, Carnegie Mellon University Locus Labs
 # Paper: https://arxiv.org/pdf/1803.01271.pdf

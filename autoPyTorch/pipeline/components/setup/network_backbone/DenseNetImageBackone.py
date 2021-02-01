@@ -3,13 +3,14 @@ from collections import OrderedDict
 from typing import Any, Dict, Optional, Tuple
 
 import ConfigSpace as CS
-import torch
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter
 )
+
+import torch
 from torch import nn
 from torch.nn import functional as F
 
