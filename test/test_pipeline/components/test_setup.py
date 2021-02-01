@@ -13,6 +13,7 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice im
     BaseLRComponent,
     SchedulerChoice
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import (
     NetworkHeadChoice,
 )
@@ -244,6 +245,36 @@ class OptimizerTest(unittest.TestCase):
         self.assertEqual(len(optimizer_components._addons.components), 1)
         cs = OptimizerChoice(dataset_properties={}).get_hyperparameter_search_space()
         self.assertIn('DummyOptimizer', str(cs))
+
+
+class NetworkBackboneTest(unittest.TestCase):
+    def test_every_backbone_is_valid(self):
+        backbone_choice = NetworkBackboneChoice(dataset_properties={"task_type": "tabular_classification"})
+
+        self.assertEqual(len(backbone_choice.get_components().keys()), 8)
+
+        for name, backbone in backbone_choice.get_components().items():
+            config = backbone.get_hyperparameter_search_space().sample_configuration()
+            estimator = backbone(**config)
+            estimator_clone = clone(estimator)
+            estimator_clone_params = estimator_clone.get_params()
+
+            # Make sure all keys are copied properly
+            for k, v in estimator.get_params().items():
+                self.assertIn(k, estimator_clone_params)
+
+            # Make sure the params getter of estimator are honored
+            klass = estimator.__class__
+            new_object_params = estimator.get_params(deep=False)
+            for name, param in new_object_params.items():
+                new_object_params[name] = clone(param, safe=False)
+            new_object = klass(**new_object_params)
+            params_set = new_object.get_params(deep=False)
+
+            for name in new_object_params:
+                param1 = new_object_params[name]
+                param2 = params_set[name]
+                self.assertEqual(param1, param2)
 
 
 class NetworkHeadTest(unittest.TestCase):
