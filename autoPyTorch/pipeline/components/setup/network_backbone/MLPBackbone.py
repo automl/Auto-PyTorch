@@ -28,7 +28,6 @@ class MLPBackbone(NetworkBackboneComponent):
         - Using or not dropout
         - Specifying the number of units per layers
     """
-    supported_tasks = {"tabular_classification", "tabular_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         layers = list()  # type: List[nn.Module]

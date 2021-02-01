@@ -26,9 +26,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
 class ResNetBackbone(NetworkBackboneComponent):
     """
     Implementation of a Residual Network backbone
-
     """
-    supported_tasks = {"tabular_classification", "tabular_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
         layers = list()  # type: List[nn.Module]
