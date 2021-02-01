@@ -56,7 +56,6 @@ class FullyConvolutional2DHead(NetworkHeadComponent):
     Head consisting of a number of 2d convolutional connected layers.
     Applies a global pooling operation in the end.
     """
-    supported_tasks = {"image_classification", "image_regression"}
 
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
         return _FullyConvolutional2DHead(input_shape=input_shape,
@@ -70,8 +69,8 @@ class FullyConvolutional2DHead(NetworkHeadComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
-            'shortname': 'FullyConvolutionalHead',
-            'name': 'FullyConvolutionalHead',
+            'shortname': 'FullyConvolutional2DHead',
+            'name': 'FullyConvolutional2DHead',
             'handles_tabular': False,
             'handles_image': True,
             'handles_time_series': False,

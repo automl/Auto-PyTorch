@@ -21,12 +21,9 @@ _activations: Dict[str, nn.Module] = {
 
 class FullyConnectedHead(NetworkHeadComponent):
     """
-    Standard head consisting of a number of fully connected layers.
+    Head consisting of a number of fully connected layers.
     Flattens any input in a array of shape [B, prod(input_shape)].
     """
-    supported_tasks = {"tabular_classification", "tabular_regression",
-                       "image_classification", "image_regression",
-                       "time_series_classification", "time_series_regression"}
 
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
         layers = [nn.Flatten()]
@@ -47,8 +44,8 @@ class FullyConnectedHead(NetworkHeadComponent):
             'shortname': 'FullyConnectedHead',
             'name': 'FullyConnectedHead',
             'handles_tabular': True,
-            'handles_image': False,
-            'handles_time_series': False,
+            'handles_image': True,
+            'handles_time_series': True,
         }
 
     @staticmethod

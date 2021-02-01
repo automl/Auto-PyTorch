@@ -10,9 +10,8 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_out
 
 class NetworkHeadComponent(autoPyTorchComponent):
     """
-    Head base class
+    Base class for network heads. Holds the head module and the config which was used to create it.
     """
-    supported_tasks: Set = set()
 
     def __init__(self,
                  **kwargs: Any):
@@ -22,7 +21,13 @@ class NetworkHeadComponent(autoPyTorchComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
-        Not used. Just for API compatibility.
+        Fits the head component
+
+        Args:
+            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
+            y (Any): not used. To comply with sklearn API
+        Returns:
+            Self
         """
         input_shape = X['X_train'].shape[1:]
         output_shape = (X['dataset_properties']['num_classes'],) if \
@@ -37,7 +42,8 @@ class NetworkHeadComponent(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Adds the scheduler into the fit dictionary 'X' and returns it.
+        Adds the network head into the fit dictionary 'X' and returns it.
+
         Args:
             X (Dict[str, Any]): 'X' dictionary
         Returns:
@@ -49,12 +55,14 @@ class NetworkHeadComponent(autoPyTorchComponent):
     @abstractmethod
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
         """
-
         Builds the head module and assigns it to self.head
 
-        :param input_shape: shape of the input (usually the shape of the backbone output)
-        :param output_shape: shape of the output
-        :return: the head module
+        Args:
+            input_shape (Tuple[int, ...]): shape of the input (usually the shape of the backbone output)
+            output_shape (Tuple[int, ...]): shape of the output
+
+        Returns:
+            nn.Module: head module
         """
         raise NotImplementedError()
 
@@ -62,6 +70,11 @@ class NetworkHeadComponent(autoPyTorchComponent):
     def get_name(cls) -> str:
         """
         Get the name of the head
-        :return: name of the head
+
+        Args:
+            None
+
+        Returns:
+            str: Name of the head
         """
         return cls.get_properties()["shortname"]
