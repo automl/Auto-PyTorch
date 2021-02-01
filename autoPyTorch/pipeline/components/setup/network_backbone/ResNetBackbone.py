@@ -97,51 +97,65 @@ class ResNetBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        min_num_gropus: int = 1,
-                                        max_num_groups: int = 9,
-                                        min_blocks_per_groups: int = 1,
-                                        max_blocks_per_groups: int = 4,
-                                        min_num_units: int = 10,
-                                        max_num_units: int = 1024,
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
+                                                                         list(_activations.keys())[0]),
+                                        blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
+                                        dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
+                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
+                                        max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # The number of groups that will compose the resnet. That is,
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
+        min_num_gropus, max_num_groups = num_groups[0]
         num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=5)
+            "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=num_groups[1])
 
         activation = CategoricalHyperparameter(
-            "activation", choices=list(_activations.keys())
+            "activation", choices=activation[0],
+            default_value=activation[1]
         )
         cs.add_hyperparameters([num_groups, activation])
 
         # We can have dropout in the network for
         # better generalization
-        use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=[True, False])
+        use_dropout = CategoricalHyperparameter("use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
         cs.add_hyperparameters([use_dropout])
 
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=[True, False])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=[True, False])
+        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
+                                                    default_value=use_shake_shake[1])
+        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
+                                                   default_value=use_shake_drop[1])
         shake_drop_prob = UniformFloatHyperparameter(
-            "max_shake_drop_probability", lower=0.0, upper=1.0)
+            "max_shake_drop_probability",
+            lower=max_shake_drop_probability[0][0],
+            upper=max_shake_drop_probability[0][1],
+            default_value=max_shake_drop_probability[1])
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
+        (min_blocks_per_group, max_blocks_per_group), default_blocks_per_group = blocks_per_group[:2]
         for i in range(0, max_num_groups + 1):
 
             n_units = UniformIntegerHyperparameter(
                 "num_units_%d" % i,
-                lower=min_num_units,
-                upper=max_num_units,
+                lower=num_units[0][0],
+                upper=num_units[0][1],
+                default_value=num_units[1]
             )
             blocks_per_group = UniformIntegerHyperparameter(
-                "blocks_per_group_%d" % i, lower=min_blocks_per_groups,
-                upper=max_blocks_per_groups)
+                "blocks_per_group_%d" % i,
+                lower=min_blocks_per_group,
+                upper=max_blocks_per_group,
+                default_value=default_blocks_per_group)
 
             cs.add_hyperparameters([n_units, blocks_per_group])
 
@@ -150,7 +164,10 @@ class ResNetBackbone(NetworkBackboneComponent):
                 cs.add_condition(CS.GreaterThanCondition(blocks_per_group, num_groups, i - 1))
 
             this_dropout = UniformFloatHyperparameter(
-                "dropout_%d" % i, lower=0.0, upper=1.0
+                "dropout_%d" % i,
+                lower=dropout[0][0],
+                upper=dropout[0][1],
+                default_value=dropout[1]
             )
             cs.add_hyperparameters([this_dropout])
 

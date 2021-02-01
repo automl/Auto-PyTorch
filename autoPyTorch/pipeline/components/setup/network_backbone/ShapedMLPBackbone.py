@@ -79,10 +79,16 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        min_num_gropus: int = 1,
-                                        max_num_groups: int = 15,
-                                        min_num_units: int = 10,
-                                        max_num_units: int = 1024,
+                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        max_dropout: Tuple[Tuple, float] = ((0, 1), 0.5),
+                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        mlp_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
+                                                                         'diamond', 'hexagon',
+                                                                         'brick', 'triangle', 'stairs'), 'funnel'),
+                                        activation: Tuple[Tuple, str] = (
+                                        tuple(_activations.keys()), list(_activations.keys())[0])
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -91,27 +97,28 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
         num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=5)
+            "num_groups", lower=num_groups[0][0], upper=num_groups[0][1], default_value=num_groups[1])
 
-        mlp_shape = CategoricalHyperparameter('mlp_shape', choices=[
-            'funnel', 'long_funnel', 'diamond', 'hexagon', 'brick', 'triangle', 'stairs'
-        ])
+        mlp_shape = CategoricalHyperparameter('mlp_shape', choices=mlp_shape[0],
+                                              default_value=mlp_shape[1])
 
         activation = CategoricalHyperparameter(
-            "activation", choices=list(_activations.keys())
+            "activation", choices=activation[0],
+            default_value=activation[1]
         )
-
+        (min_num_units, max_num_units), default_units = max_units[:2]
         max_units = UniformIntegerHyperparameter(
             "max_units",
             lower=min_num_units,
             upper=max_num_units,
-            default_value=200,
+            default_value=default_units,
         )
 
         output_dim = UniformIntegerHyperparameter(
             "output_dim",
-            lower=min_num_units,
-            upper=max_num_units
+            lower=output_dim[0][0],
+            upper=output_dim[0][1],
+            default_value=output_dim[1]
         )
 
         cs.add_hyperparameters([num_groups, activation, mlp_shape, max_units, output_dim])
@@ -119,8 +126,9 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
         # We can have dropout in the network for
         # better generalization
         use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=[True, False])
-        max_dropout = UniformFloatHyperparameter("max_dropout", lower=0.0, upper=1.0)
+            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
+                                                 default_value=max_dropout[1])
         cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 

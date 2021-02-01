@@ -4,7 +4,7 @@ import pkgutil
 import sys
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -91,12 +91,12 @@ class ThirdPartyComponents(object):
 
 
 class autoPyTorchComponent(BaseEstimator):
-
     _required_properties: Optional[List[str]] = None
 
     def __init__(self) -> None:
         super().__init__()
         self._fit_requirements: List[FitRequirement] = list()
+        self._cs_updates: Dict[str, Tuple] = dict()
 
     @classmethod
     def get_required_properties(cls) -> Optional[List[str]]:
@@ -252,3 +252,37 @@ class autoPyTorchComponent(BaseEstimator):
         """Representation of the current Component"""
         name = self.get_properties()['name']
         return "autoPyTorch.pipeline %s" % name
+
+    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
+                                   default_value: Union[int, float, str], log: bool = False) -> None:
+        """Allows the user to update a hyperparameter
+
+        Arguments:
+            name {string} -- name of hyperparameter
+            new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
+            log {bool} -- is hyperparameter logscale
+        """
+
+        if len(new_value_range) == 0:
+            raise ValueError("The new value range needs at least one value")
+        self._cs_updates[name] = tuple([new_value_range, default_value, log])
+
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
+        """Get the search space updates with the given prefix
+
+        Keyword Arguments:
+            prefix {str} -- Only return search space updates with given prefix (default: {None})
+
+        Returns:
+            dict -- Mapping of search space updates. Keys don't contain the prefix.
+        """
+        if prefix is None:
+            return self._cs_updates
+        result: Dict[str, Tuple] = dict()
+
+        # iterate over all search space updates of this node and keep the ones that have the given prefix
+        for key in self._cs_updates.keys():
+            if key.startswith(prefix):
+                # different for autopytorch component as the hyperparameter
+                result[key[len(prefix):]] = self._cs_updates[key]
+        return result

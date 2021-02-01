@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -29,7 +29,6 @@ class Normalizer(BaseScaler):
         self.norm = norm
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseScaler:
-
         self.check_requirements(X, y)
 
         map_norm = dict({"mean_abs": "l1", "mean_squared": "l2", "max": "max"})
@@ -37,9 +36,12 @@ class Normalizer(BaseScaler):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
+                                        norm: Tuple[Tuple, str] = (("mean_abs", "mean_squared", "max"),
+                                                                   "mean_squared")
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        norm = CategoricalHyperparameter("norm", ["mean_abs", "mean_squared", "max"], default_value="mean_squared")
+        norm = CategoricalHyperparameter("norm", norm[0], default_value=norm[1])
         cs.add_hyperparameter(norm)
         return cs
 

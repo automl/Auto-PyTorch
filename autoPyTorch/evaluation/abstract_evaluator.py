@@ -42,6 +42,7 @@ from autoPyTorch.pipeline.components.training.metrics.utils import (
     get_metrics,
 )
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
@@ -200,7 +201,9 @@ class AbstractEvaluator(object):
                  disable_file_output: Union[bool, List[str]] = False,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
-                 all_supported_metrics: bool = True) -> None:
+                 all_supported_metrics: bool = True,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 ) -> None:
 
         self.starttime = time.time()
 
@@ -218,6 +221,7 @@ class AbstractEvaluator(object):
 
         self.include = include
         self.exclude = exclude
+        self.search_space_updates = search_space_updates
 
         self.X_train, self.y_train = self.datamanager.train_tensors
 
@@ -324,6 +328,7 @@ class AbstractEvaluator(object):
         self.pipelines: Optional[List[BaseEstimator]] = None
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(self.fit_dictionary))
+        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
     def _get_pipeline(self) -> BaseEstimator:
         assert self.pipeline_class is not None, "Can't return pipeline, pipeline_class not initialised"
@@ -337,7 +342,8 @@ class AbstractEvaluator(object):
                                            random_state=np.random.RandomState(self.seed),
                                            include=self.include,
                                            exclude=self.exclude,
-                                           init_params=self._init_params)
+                                           init_params=self._init_params,
+                                           search_space_updates=self.search_space_updates)
         elif isinstance(self.configuration, str):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,

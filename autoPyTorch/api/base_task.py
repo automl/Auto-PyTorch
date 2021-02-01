@@ -46,6 +46,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.backend import Backend, create
 from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import (
     PicklableClientLogger,
     get_named_client_logger,
@@ -135,6 +136,7 @@ class BaseTask:
             include_components: Optional[Dict] = None,
             exclude_components: Optional[Dict] = None,
             backend: Optional[Backend] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ) -> None:
         self.seed = seed
         self.n_jobs = n_jobs
@@ -177,6 +179,13 @@ class BaseTask:
         self.resampling_strategy = None  # type: Optional[Union[CrossValTypes, HoldoutValTypes]]
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
+
+        self.search_space_updates = search_space_updates
+        if search_space_updates is not None:
+            if not isinstance(self.search_space_updates,
+                              HyperparameterSearchSpaceUpdates):
+                raise ValueError("Expected search space updates to be of instance"
+                                 " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
 
     @abstractmethod
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
@@ -252,7 +261,8 @@ class BaseTask:
                 info=self._get_required_dataset_properties(dataset))
             return get_configuration_space(info=dataset.get_dataset_properties(dataset_requirements),
                                            include=self.include_components,
-                                           exclude=self.exclude_components)
+                                           exclude=self.exclude_components,
+                                           search_space_updates=self.search_space_updates)
         raise Exception("No search space initialised and no dataset passed. "
                         "Can't create default search space without the dataset")
 
@@ -816,7 +826,8 @@ class BaseTask:
                 pipeline_config={**self.pipeline_options, **budget_config},
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
-                start_num_run=num_run
+                start_num_run=num_run,
+                search_space_updates=self.search_space_updates
             )
             try:
                 self.run_history, self.trajectory, budget_type = \

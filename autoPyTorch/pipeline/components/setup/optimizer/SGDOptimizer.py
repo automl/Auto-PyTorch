@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -71,19 +71,22 @@ class SGDOptimizer(BaseOptimizerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
+                                        weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0),
+                                        momentum: Tuple[Tuple, float] = ((0.0, 0.99), 0.0),
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 
         # The learning rate for the model
-        lr = UniformFloatHyperparameter('lr', lower=1e-5, upper=1e-1,
-                                        default_value=1e-2, log=True)
+        lr = UniformFloatHyperparameter('lr', lower=lr[0][0], upper=lr[0][1],
+                                        default_value=lr[1], log=lr[2])
 
-        weight_decay = UniformFloatHyperparameter('weight_decay', lower=0.0, upper=0.1,
-                                                  default_value=0.0)
+        weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
+                                                  default_value=weight_decay[1])
 
-        momentum = UniformFloatHyperparameter('momentum', lower=0.0, upper=0.99,
-                                              default_value=0.0)
+        momentum = UniformFloatHyperparameter('momentum', lower=momentum[0][0], upper=momentum[0][1],
+                                              default_value=momentum[1])
 
         cs.add_hyperparameters([lr, weight_decay, momentum])
 

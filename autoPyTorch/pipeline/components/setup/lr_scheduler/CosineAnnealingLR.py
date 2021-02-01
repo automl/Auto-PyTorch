@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -61,10 +61,11 @@ class CosineAnnealingLR(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        T_max: Tuple[Tuple[int, int], int] = ((10, 500), 200)
                                         ) -> ConfigurationSpace:
         T_max = UniformIntegerHyperparameter(
-            "T_max", 10, 500, default_value=200)
+            "T_max", T_max[0][0], T_max[0][1], default_value=T_max[1])
         cs = ConfigurationSpace()
         cs.add_hyperparameters([T_max])
         return cs

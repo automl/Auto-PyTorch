@@ -17,7 +17,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbon
     NetworkBackboneComponent,
 )
 
-
 directory = os.path.split(__file__)[0]
 _backbones = find_components(__package__,
                              directory,
@@ -167,12 +166,13 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         )
         cs.add_hyperparameter(backbone)
         for name in available_backbones:
-            backbone_configuration_space = available_backbones[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+            updates = self._get_search_space_updates(prefix=name)
+            config_space = available_backbones[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
+                                                                                     **updates)
             parent_hyperparameter = {'parent': backbone, 'value': name}
             cs.add_configuration_space(
                 name,
-                backbone_configuration_space,
+                config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
 

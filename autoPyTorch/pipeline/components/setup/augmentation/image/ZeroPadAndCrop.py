@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -41,11 +41,13 @@ class ZeroPadAndCrop(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None,
+        percent: Tuple[Tuple, float] = ((0, 0.5), 0.1)
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        percent = UniformFloatHyperparameter('percent', lower=0, upper=0.5, default_value=0.1)
+        percent = UniformFloatHyperparameter('percent', lower=percent[0][0], upper=percent[0][1],
+                                             default_value=percent[1])
         cs.add_hyperparameters([percent])
         return cs
 

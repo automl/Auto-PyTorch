@@ -13,6 +13,7 @@ class DummyComponent(autoPyTorchComponent):
         self.a = a
         self.b = b
         self.fitted = False
+        self._cs_updates = {}
 
     def get_hyperparameter_search_space(self, dataset_properties=None):
         cs = CS.ConfigurationSpace()
@@ -65,6 +66,7 @@ def base_pipeline():
         ('DummyComponent1', DummyComponent(a=10, b='red')),
         ('DummyChoice', DummyChoice(base_pipeline.dataset_properties))
     ]
+    base_pipeline.search_space_updates = None
     return base_pipeline
 
 

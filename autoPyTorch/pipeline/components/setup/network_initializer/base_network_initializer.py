@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -73,18 +73,14 @@ class BaseNetworkInitializerComponent(autoPyTorchSetupComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        min_mlp_layers: int = 1,
-                                        max_mlp_layers: int = 15,
-                                        dropout: bool = True,
-                                        min_num_units: int = 10,
-                                        max_num_units: int = 1024,
+                                        bias_strategy: Tuple[Tuple, str] = (('Zero', 'Normal'), 'Normal')
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 
         # The strategy for bias initializations
         bias_strategy = CategoricalHyperparameter(
-            "bias_strategy", choices=['Zero', 'Normal'])
+            "bias_strategy", choices=bias_strategy[0], default_value=bias_strategy[1])
         cs.add_hyperparameters([bias_strategy])
         return cs
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -29,12 +29,16 @@ class GaussianNoise(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None,
+        use_augmenter: Tuple[Tuple[bool, bool], bool] = ((True, False), True),
+        sigma_offset: Tuple[Tuple[float, float], float] = ((0.0, 3.0), 0.3)
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        sigma_offset = UniformFloatHyperparameter('sigma_offset', lower=0, upper=3, default_value=0.3)
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=[True, False], default_value=True)
+        sigma_offset = UniformFloatHyperparameter('sigma_offset', lower=sigma_offset[0][0], upper=sigma_offset[0][1],
+                                                  default_value=sigma_offset[1])
+        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0],
+                                                  default_value=use_augmenter[1])
         cs.add_hyperparameters([use_augmenter, sigma_offset])
         # only add hyperparameters to configuration space if we are using the augmenter
         cs.add_condition(CS.EqualsCondition(sigma_offset, use_augmenter, True))

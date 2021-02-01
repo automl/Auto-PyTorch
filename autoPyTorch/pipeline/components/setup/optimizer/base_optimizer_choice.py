@@ -125,11 +125,11 @@ class OptimizerChoice(autoPyTorchChoice):
             dataset_properties = {}
 
         # Compile a list of legal preprocessors for this problem
-        available_optimizers = self.get_available_components(
+        available_optimizer = self.get_available_components(
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        if len(available_optimizers) == 0:
+        if len(available_optimizer) == 0:
             raise ValueError("No Optimizer found")
 
         if default is None:
@@ -140,23 +140,24 @@ class OptimizerChoice(autoPyTorchChoice):
                 'RMSpropOptimizer'
             ]
             for default_ in defaults:
-                if default_ in available_optimizers:
+                if default_ in available_optimizer:
                     default = default_
                     break
 
         optimizer = CSH.CategoricalHyperparameter(
             '__choice__',
-            list(available_optimizers.keys()),
+            list(available_optimizer.keys()),
             default_value=default
         )
         cs.add_hyperparameter(optimizer)
-        for name in available_optimizers:
-            optimizer_configuration_space = available_optimizers[name]. \
-                get_hyperparameter_search_space(dataset_properties)
+        for name in available_optimizer:
+            updates = self._get_search_space_updates(prefix=name)
+            config_space = available_optimizer[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
+                                                                                     **updates)
             parent_hyperparameter = {'parent': optimizer, 'value': name}
             cs.add_configuration_space(
                 name,
-                optimizer_configuration_space,
+                config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
 
