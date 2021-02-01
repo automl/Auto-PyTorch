@@ -115,7 +115,7 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
         cs.add_hyperparameter(UniformIntegerHyperparameter('conv_kernel_padding',
                                                            lower=min_padding,
                                                            upper=max_padding,
-                                                           default_padding=padding[1]))
+                                                           default_value=padding[1]))
 
         min_pool_size, max_pool_size = pool_size[0]
         cs.add_hyperparameter(UniformIntegerHyperparameter('pool_size',
