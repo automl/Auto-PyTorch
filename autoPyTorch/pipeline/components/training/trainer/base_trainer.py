@@ -118,7 +118,7 @@ class RunSummary(object):
             [self.performance_tracker[loss_type][e] for e in range(1, len(
                 self.performance_tracker[loss_type]) + 1
             )]
-        )
+        ) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
         if 'train_loss' not in self.performance_tracker:

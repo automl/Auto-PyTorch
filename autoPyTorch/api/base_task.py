@@ -216,7 +216,7 @@ class BaseTask:
         then sets them to the current pipeline
         configuration.
         Args:
-            **pipeline_config_kwargs: Valid config options include "job_id",
+            **pipeline_config_kwargs: Valid config options include "num_run",
             "device", "budget_type", "epochs", "runtime", "torch_num_threads",
             "early_stopping", "use_tensorboard_logger", "use_pynisher",
             "metrics_during_training"
@@ -923,7 +923,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'job_id': 0
+                                  'num_run': 0
                                   })
         X.update({**self.pipeline_options, **budget_config})
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
@@ -996,7 +996,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'job_id': 0
+                                  'num_run': 0
                                   })
         X.update({**self.pipeline_options, **budget_config})
 
