@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 import functools
 import json
-import logging.handlers
+import logging
 import math
 import multiprocessing
 import time
@@ -94,7 +94,6 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             backend: Backend,
             seed: int,
             metric: autoPyTorchMetric,
-            logger: PicklableClientLogger,
             cost_for_crash: float,
             abort_on_first_run_crash: bool,
             pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
@@ -145,8 +144,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.init_params = init_params
         self.pipeline_config = pipeline_config
         self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
-        self.logger = logger
-        self.logger_port = logger_port if logger_port is not None else logging.handlers.DEFAULT_TCP_LOGGING_PORT
+        self.logger_port = logger_port
+        if self.logger_port is None:
+            self.logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
+        else:
+            self.logger = get_named_client_logger(
+                name="TAE",
+                port=self.logger_port,
+            )
         self.all_supported_metrics = all_supported_metrics
 
         if memory_limit is not None:
@@ -241,8 +246,16 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         if self.init_params is not None:
             init_params.update(self.init_params)
 
+        if self.logger_port is None:
+            logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
+        else:
+            logger = get_named_client_logger(
+                name="pynisher",
+                port=self.logger_port,
+            )
+
         pynisher_arguments = dict(
-            logger=get_named_client_logger(name="pynisher", port=self.logger_port),
+            logger=logger,
             # Pynisher expects seconds as a time indicator
             wall_time_in_s=int(cutoff) if cutoff is not None else None,
             mem_in_mb=self.memory_limit,

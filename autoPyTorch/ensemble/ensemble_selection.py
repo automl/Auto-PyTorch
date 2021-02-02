@@ -189,7 +189,7 @@ class EnsembleSelection(AbstractEnsemble):
 
     def get_models_with_weights(
         self,
-        models: BasePipeline
+        models: Dict[Any, BasePipeline]
     ) -> List[Tuple[float, BasePipeline]]:
         output = []
         for i, weight in enumerate(self.weights_):

@@ -246,7 +246,6 @@ class AutoMLSMBO(object):
             backend=copy.deepcopy(self.backend),
             seed=seed,
             initial_num_run=num_run,
-            logger=self.logger,
             include=self.include if self.include is not None else dict(),
             exclude=self.exclude if self.exclude is not None else dict(),
             metric=self.metric,

@@ -325,8 +325,6 @@ class TrainerChoice(autoPyTorchChoice):
             if self.choice.on_epoch_end(X=X, epoch=epoch):
                 break
 
-            self.logger.debug(self.run_summary.repr_last_epoch())
-
             # Reached max epoch on next iter, don't even go there
             if budget_tracker.is_max_epoch_reached(epoch + 1):
                 break
@@ -351,7 +349,6 @@ class TrainerChoice(autoPyTorchChoice):
                 val_metrics=val_metrics,
                 test_metrics=test_metrics,
             )
-            self.logger.debug(self.run_summary.repr_last_epoch())
             self.save_model_for_ensemble()
 
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
