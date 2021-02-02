@@ -32,6 +32,10 @@ class TestNetworks:
         assert backbone == config.get('network_backbone:__choice__', None)
         assert head == config.get('network_head:__choice__', None)
         pipeline.set_hyperparameters(config)
+
+        # Need more epochs to make sure validation performance is met
+        fit_dictionary['epochs'] = 100
+
         pipeline.fit(fit_dictionary)
 
         # To make sure we fitted the model, there should be a
@@ -44,9 +48,10 @@ class TestNetworks:
         assert run_summary.total_parameter_count > 0
         assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
 
-        # Commented out the next line as some pipelines are not
-        # achieving this accuracy with default configuration and 10 epochs
-        # To be added once we fix the search space
-        # assert run_summary.performance_tracker['val_metrics'][fit_dictionary['epochs']]['accuracy'] >= 0.8
+        # Make sure default pipeline achieves a good score for dummy datasets
+        assert run_summary.performance_tracker[
+            'val_metrics'
+        ][fit_dictionary['epochs']]['accuracy'] >= 0.8, run_summary.performance_tracker['val_metrics']
+
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
