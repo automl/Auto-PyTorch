@@ -14,6 +14,7 @@ import \
     autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice as network_initializer_components  # noqa: E501
 import autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice as optimizer_components
 from autoPyTorch import constants
+from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import (
     BaseLRComponent,
     SchedulerChoice
@@ -86,20 +87,34 @@ class DummyBackbone(NetworkBackboneComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return {"name": "DummyBackbone",
-                "shortname": "DummyBackbone"}
+                "shortname": "DummyBackbone",
+                "handles_tabular": True,
+                "handles_image": True,
+                "handles_time_series": True}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         return nn.Identity()
+
+    @staticmethod
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None) -> ConfigurationSpace:
+        return ConfigurationSpace()
 
 
 class DummyHead(NetworkHeadComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return {"name": "DummyHead",
-                "shortname": "DummyHead"}
+                "shortname": "DummyHead",
+                "handles_tabular": True,
+                "handles_image": True,
+                "handles_time_series": True}
 
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
         return nn.Identity()
+
+    @staticmethod
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None) -> ConfigurationSpace:
+        return ConfigurationSpace()
 
 
 class SchedulerTest(unittest.TestCase):
@@ -280,20 +295,6 @@ class NetworkBackboneTest(unittest.TestCase):
 
         self.assertEqual(len(backbone_choice.get_components().keys()), 8)
 
-    @unittest.skip(reason="ThirdPartyComponents needs to be changed")
-    def test_add_network_backbone(self):
-        """Makes sure that a component can be added to the CS"""
-        # No third party components to start with
-        self.assertEqual(len(base_network_backbone_choice._addons.components), 0)
-
-        # Then make sure the backbone can be added
-        base_network_backbone_choice.add_backbone(DummyBackbone)
-        self.assertEqual(len(base_network_backbone_choice._addons.components), 1)
-
-        cs = NetworkBackboneChoice(dataset_properties={}). \
-            get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
-        self.assertIn("DummyBackbone", str(cs))
-
     def test_dummy_forward_backward_pass(self):
         network_backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
@@ -386,26 +387,28 @@ class NetworkBackboneTest(unittest.TestCase):
                     self.assertIn(key, parameters)
                     self.assertEqual(value, parameters[key])
 
+    def test_add_network_backbone(self):
+        """Makes sure that a component can be added to the CS"""
+        # No third party components to start with
+        self.assertEqual(len(base_network_backbone_choice._addons.components), 0)
+
+        # Then make sure the backbone can be added
+        base_network_backbone_choice.add_backbone(DummyBackbone)
+        self.assertEqual(len(base_network_backbone_choice._addons.components), 1)
+
+        cs = NetworkBackboneChoice(dataset_properties={}). \
+            get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
+        self.assertIn("DummyBackbone", str(cs))
+
+        # clear addons
+        base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
+
 
 class NetworkHeadTest(unittest.TestCase):
     def test_all_heads_available(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
 
         self.assertEqual(len(network_head_choice.get_components().keys()), 2)
-
-    @unittest.skip(reason="ThirdPartyComponents needs to be changed")
-    def test_add_network_head(self):
-        """Makes sure that a component can be added to the CS"""
-        # No third party components to start with
-        self.assertEqual(len(base_network_head_choice._addons.components), 0)
-
-        # Then make sure the head can be added
-        base_network_head_choice.add_head(DummyHead)
-        self.assertEqual(len(base_network_head_choice._addons.components), 1)
-
-        cs = NetworkHeadChoice(dataset_properties={}). \
-            get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
-        self.assertIn("DummyHead", str(cs))
 
     def test_dummy_forward_backward_pass(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
@@ -509,6 +512,22 @@ class NetworkHeadTest(unittest.TestCase):
                     parameters.update(vars(network_head_choice.choice)['config'])
                     self.assertIn(key, parameters)
                     self.assertEqual(value, parameters[key])
+
+    def test_add_network_head(self):
+        """Makes sure that a component can be added to the CS"""
+        # No third party components to start with
+        self.assertEqual(len(base_network_head_choice._addons.components), 0)
+
+        # Then make sure the head can be added
+        base_network_head_choice.add_head(DummyHead)
+        self.assertEqual(len(base_network_head_choice._addons.components), 1)
+
+        cs = NetworkHeadChoice(dataset_properties={}). \
+            get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
+        self.assertIn("DummyHead", str(cs))
+
+        # clear addons
+        base_network_head_choice._addons = ThirdPartyComponents(NetworkHeadComponent)
 
 
 class NetworkInitializerTest(unittest.TestCase):

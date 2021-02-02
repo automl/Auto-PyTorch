@@ -12,6 +12,7 @@ class NetworkHeadComponent(autoPyTorchComponent):
     """
     Base class for network heads. Holds the head module and the config which was used to create it.
     """
+    _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 
     def __init__(self,
                  **kwargs: Any):
