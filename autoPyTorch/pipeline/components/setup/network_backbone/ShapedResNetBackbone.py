@@ -21,7 +21,6 @@ class ShapedResNetBackbone(ResNetBackbone):
     """
     Implementation of a Residual Network builder with support
     for shaped number of units per group.
-
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> None:

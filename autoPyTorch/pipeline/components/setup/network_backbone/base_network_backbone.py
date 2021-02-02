@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Set, Tuple
+from typing import Any, Dict, Tuple
 
 import torch
 from torch import nn
@@ -12,9 +12,9 @@ from autoPyTorch.pipeline.components.base_component import (
 
 class NetworkBackboneComponent(autoPyTorchComponent):
     """
-    Backbone base class
+    Base class for network backbones. Holds the backbone module and the config which was used to create it.
     """
-    supported_tasks: Set = set()
+    _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 
     def __init__(self,
                  **kwargs: Any):
@@ -24,8 +24,15 @@ class NetworkBackboneComponent(autoPyTorchComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
-        Not used. Just for API compatibility.
+        Builds the backbone component and assigns it to self.backbone
+
+        Args:
+            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
+            y (Any): not used. To comply with sklearn API
+        Returns:
+            Self
         """
+
         input_shape = X['X_train'].shape[1:]
 
         self.backbone = self.build_backbone(
@@ -35,7 +42,8 @@ class NetworkBackboneComponent(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Adds the scheduler into the fit dictionary 'X' and returns it.
+        Adds the network head into the fit dictionary 'X' and returns it.
+
         Args:
             X (Dict[str, Any]): 'X' dictionary
         Returns:
@@ -47,11 +55,13 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     @abstractmethod
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         """
+        Builds the backbone module and returns it
 
-        Builds the backbone module and assigns it to self.backbone
+        Args:
+            input_shape (Tuple[int, ...]): shape of the input to the backbone
 
-        :param input_shape: shape of the input
-        :return: the backbone module
+        Returns:
+            nn.Module: backbone module
         """
         raise NotImplementedError()
 
@@ -61,8 +71,11 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         Can and should be overridden by subclasses that know the output shape
         without running a dummy forward pass.
 
-        :param input_shape: shape of the input
-        :return: output_shape
+        Args:
+            input_shape (Tuple[int, ...]): shape of the input
+
+        Returns:
+            output_shape (Tuple[int, ...]): shape of the backbone output
         """
         placeholder = torch.randn((2, *input_shape), dtype=torch.float)
         with torch.no_grad():
@@ -73,6 +86,11 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     def get_name(cls) -> str:
         """
         Get the name of the backbone
-        :return: name of the backbone
+
+        Args:
+            None
+
+        Returns:
+            str: Name of the backbone
         """
         return cls.get_properties()["shortname"]

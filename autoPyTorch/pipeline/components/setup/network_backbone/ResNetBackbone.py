@@ -11,9 +11,7 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (
-    NetworkBackboneComponent,
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
     shake_drop,
@@ -26,9 +24,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
 class ResNetBackbone(NetworkBackboneComponent):
     """
     Implementation of a Residual Network backbone
-
     """
-    supported_tasks = {"tabular_classification", "tabular_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
         layers = list()  # type: List[nn.Module]
