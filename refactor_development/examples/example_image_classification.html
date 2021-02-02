@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Classification &#8212; AutoPyTorch 0.0.3 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/auto-sklearn"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.0.3</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../index.html">Start</a></li>
+                <li><a href="../releases.html">Releases</a></li>
+                <li><a href="../installation.html">Installation</a></li>
+                <li><a href="../manual.html">Manual</a></li>
+                <li><a href="index.html">Examples</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Image Classification</a></li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-example-image-classification-py"><span class="std std-ref">here</span></a>
+to download the full example code or to run this example in your browser via Binder</p>
+</div>
+<div class="sphx-glr-example-title section" id="image-classification">
+<span id="sphx-glr-examples-example-image-classification-py"></span><h1>Image Classification<a class="headerlink" href="#image-classification" title="Permalink to this headline">¶</a></h1>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
+
+0it [00:00, ?it/s]
+  0%|          | 0/26421880 [00:01&lt;?, ?it/s]
+  1%|          | 221184/26421880 [00:01&lt;00:11, 2185785.49it/s]
+  2%|1         | 475136/26421880 [00:01&lt;00:11, 2241424.35it/s]
+  3%|2         | 770048/26421880 [00:02&lt;00:10, 2413156.61it/s]
+  4%|4         | 1064960/26421880 [00:02&lt;00:09, 2540728.51it/s]
+  5%|4         | 1310720/26421880 [00:02&lt;00:10, 2510059.53it/s]
+  6%|5         | 1581056/26421880 [00:02&lt;00:09, 2551027.69it/s]
+  7%|7         | 1851392/26421880 [00:02&lt;00:09, 2568438.48it/s]
+  8%|7         | 2097152/26421880 [00:02&lt;00:09, 2529124.91it/s]
+  9%|8         | 2367488/26421880 [00:02&lt;00:09, 2557085.10it/s]
+ 10%|9         | 2629632/26421880 [00:02&lt;00:09, 2559058.60it/s]
+ 11%|#1        | 2924544/26421880 [00:02&lt;00:08, 2628151.03it/s]
+ 12%|#2        | 3194880/26421880 [00:03&lt;00:08, 2628942.78it/s]
+ 13%|#3        | 3481600/26421880 [00:03&lt;00:08, 2688323.84it/s]
+ 14%|#4        | 3751936/26421880 [00:03&lt;00:09, 2501172.50it/s]
+ 15%|#5        | 4005888/26421880 [00:03&lt;00:09, 2483919.42it/s]
+ 16%|#6        | 4259840/26421880 [00:03&lt;00:08, 2474738.28it/s]
+ 17%|#7        | 4513792/26421880 [00:03&lt;00:08, 2480530.13it/s]
+ 18%|#8        | 4800512/26421880 [00:03&lt;00:08, 2583038.79it/s]
+ 19%|#9        | 5095424/26421880 [00:03&lt;00:08, 2665150.06it/s]
+ 20%|##        | 5390336/26421880 [00:03&lt;00:07, 2723496.56it/s]
+ 21%|##1       | 5668864/26421880 [00:03&lt;00:07, 2693719.29it/s]
+ 23%|##2       | 5947392/26421880 [00:04&lt;00:07, 2711087.19it/s]
+ 24%|##3       | 6225920/26421880 [00:04&lt;00:07, 2661027.15it/s]
+ 25%|##4       | 6496256/26421880 [00:04&lt;00:07, 2594166.58it/s]
+ 26%|##5       | 6758400/26421880 [00:04&lt;00:07, 2578688.66it/s]
+ 27%|##6       | 7020544/26421880 [00:04&lt;00:08, 2391063.37it/s]
+ 28%|##7       | 7266304/26421880 [00:04&lt;00:08, 2384240.82it/s]
+ 29%|##8       | 7561216/26421880 [00:04&lt;00:07, 2510452.38it/s]
+ 30%|##9       | 7823360/26421880 [00:04&lt;00:07, 2438584.14it/s]
+ 31%|###       | 8118272/26421880 [00:04&lt;00:07, 2571344.27it/s]
+ 32%|###1      | 8380416/26421880 [00:05&lt;00:07, 2476699.33it/s]
+ 33%|###2      | 8642560/26421880 [00:05&lt;00:07, 2498054.25it/s]
+ 34%|###3      | 8937472/26421880 [00:05&lt;00:06, 2598059.66it/s]
+ 35%|###4      | 9224192/26421880 [00:05&lt;00:06, 2651000.09it/s]
+ 36%|###5      | 9494528/26421880 [00:05&lt;00:06, 2635980.82it/s]
+ 37%|###6      | 9764864/26421880 [00:05&lt;00:06, 2641746.89it/s]
+ 38%|###7      | 10035200/26421880 [00:05&lt;00:06, 2658755.83it/s]
+ 39%|###9      | 10338304/26421880 [00:05&lt;00:05, 2744311.61it/s]
+ 40%|####      | 10616832/26421880 [00:05&lt;00:05, 2658065.85it/s]
+ 41%|####1     | 10887168/26421880 [00:05&lt;00:05, 2621475.01it/s]
+ 42%|####2     | 11157504/26421880 [00:06&lt;00:05, 2577398.17it/s]
+ 43%|####3     | 11452416/26421880 [00:06&lt;00:05, 2665373.40it/s]
+ 44%|####4     | 11739136/26421880 [00:06&lt;00:05, 2708677.84it/s]
+ 46%|####5     | 12025856/26421880 [00:06&lt;00:05, 2715829.41it/s]
+ 47%|####6     | 12337152/26421880 [00:06&lt;00:05, 2793730.85it/s]
+ 48%|####7     | 12640256/26421880 [00:06&lt;00:04, 2828485.56it/s]
+ 49%|####8     | 12926976/26421880 [00:06&lt;00:04, 2729330.02it/s]
+ 50%|#####     | 13213696/26421880 [00:06&lt;00:04, 2765015.75it/s]
+ 51%|#####1    | 13500416/26421880 [00:06&lt;00:04, 2786319.91it/s]
+ 52%|#####2    | 13795328/26421880 [00:07&lt;00:04, 2833200.77it/s]
+ 53%|#####3    | 14123008/26421880 [00:07&lt;00:04, 2926363.39it/s]
+ 55%|#####4    | 14417920/26421880 [00:07&lt;00:04, 2887509.50it/s]
+ 56%|#####5    | 14712832/26421880 [00:07&lt;00:04, 2875966.31it/s]
+ 57%|#####6    | 15015936/26421880 [00:07&lt;00:03, 2911894.10it/s]
+ 58%|#####7    | 15310848/26421880 [00:07&lt;00:03, 2907847.34it/s]
+ 59%|#####9    | 15605760/26421880 [00:07&lt;00:03, 2780572.62it/s]
+ 60%|######    | 15892480/26421880 [00:07&lt;00:03, 2763800.98it/s]
+ 61%|######1   | 16203776/26421880 [00:07&lt;00:03, 2855752.65it/s]
+ 62%|######2   | 16498688/26421880 [00:07&lt;00:03, 2785757.08it/s]
+ 64%|######3   | 16793600/26421880 [00:08&lt;00:03, 2822739.84it/s]
+ 65%|######4   | 17080320/26421880 [00:08&lt;00:03, 2703617.18it/s]
+ 66%|######5   | 17367040/26421880 [00:08&lt;00:03, 2731741.89it/s]
+ 67%|######6   | 17670144/26421880 [00:08&lt;00:03, 2775613.12it/s]
+ 68%|######7   | 17956864/26421880 [00:08&lt;00:03, 2694363.16it/s]
+ 69%|######9   | 18251776/26421880 [00:08&lt;00:02, 2763899.42it/s]
+ 70%|#######   | 18546688/26421880 [00:08&lt;00:02, 2803940.41it/s]
+ 71%|#######1  | 18833408/26421880 [00:08&lt;00:02, 2777824.59it/s]
+ 72%|#######2  | 19136512/26421880 [00:08&lt;00:02, 2841705.60it/s]
+ 74%|#######3  | 19423232/26421880 [00:09&lt;00:02, 2820496.21it/s]
+ 75%|#######4  | 19750912/26421880 [00:09&lt;00:02, 2941404.58it/s]
+ 76%|#######5  | 20054016/26421880 [00:09&lt;00:02, 2807600.32it/s]
+ 77%|#######6  | 20340736/26421880 [00:09&lt;00:02, 2804012.40it/s]
+ 78%|#######8  | 20652032/26421880 [00:09&lt;00:02, 2880500.87it/s]
+ 79%|#######9  | 20946944/26421880 [00:09&lt;00:02, 2659050.69it/s]
+ 80%|########  | 21225472/26421880 [00:09&lt;00:01, 2628918.37it/s]
+ 81%|########1 | 21495808/26421880 [00:09&lt;00:02, 2410211.15it/s]
+ 83%|########2 | 21880832/26421880 [00:09&lt;00:01, 2603050.19it/s]
+ 84%|########3 | 22192128/26421880 [00:10&lt;00:01, 2669610.00it/s]
+ 85%|########5 | 22470656/26421880 [00:10&lt;00:01, 2620294.25it/s]
+ 86%|########6 | 22749184/26421880 [00:10&lt;00:01, 2600655.73it/s]
+ 87%|########7 | 23035904/26421880 [00:10&lt;00:01, 2671494.29it/s]
+ 88%|########8 | 23339008/26421880 [00:10&lt;00:01, 2758890.63it/s]
+ 89%|########9 | 23625728/26421880 [00:10&lt;00:01, 2754402.66it/s]
+ 91%|######### | 23912448/26421880 [00:10&lt;00:00, 2782094.01it/s]
+ 92%|#########1| 24199168/26421880 [00:10&lt;00:00, 2717840.87it/s]
+ 93%|#########2| 24477696/26421880 [00:10&lt;00:00, 2683388.03it/s]
+ 94%|#########3| 24748032/26421880 [00:10&lt;00:00, 2661986.68it/s]
+ 95%|#########4| 25018368/26421880 [00:11&lt;00:00, 2515565.64it/s]
+ 96%|#########5| 25296896/26421880 [00:11&lt;00:00, 2581616.81it/s]
+ 97%|#########6| 25575424/26421880 [00:11&lt;00:00, 2627233.24it/s]
+ 98%|#########7| 25845760/26421880 [00:11&lt;00:00, 2137277.03it/s]
+ 99%|#########9| 26181632/26421880 [00:11&lt;00:00, 2397145.14it/s]Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
+Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz
+
+
+0it [00:00, ?it/s][A
+
+ 56%|#####5    | 16384/29515 [00:00&lt;00:00, 163539.15it/s][AExtracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
+Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz
+
+
+
+0it [00:00, ?it/s][A[A
+
+
+  2%|2         | 106496/4422102 [00:00&lt;00:04, 1046598.20it/s][A[A
+
+
+  9%|8         | 385024/4422102 [00:00&lt;00:03, 1286010.69it/s][A[A
+
+
+ 13%|#2        | 557056/4422102 [00:00&lt;00:02, 1373799.20it/s][A[A
+
+
+ 18%|#7        | 794624/4422102 [00:00&lt;00:02, 1533043.75it/s][A[A
+
+
+ 22%|##1       | 958464/4422102 [00:00&lt;00:02, 1562554.15it/s][A[A
+
+
+ 27%|##6       | 1179648/4422102 [00:00&lt;00:01, 1707872.86it/s][A[A
+
+
+ 32%|###2      | 1417216/4422102 [00:00&lt;00:01, 1854194.99it/s][A[A
+
+
+ 36%|###6      | 1613824/4422102 [00:00&lt;00:01, 1877460.20it/s][A[A
+
+
+ 44%|####3     | 1933312/4422102 [00:00&lt;00:01, 2139184.59it/s][A[A
+
+
+ 49%|####8     | 2162688/4422102 [00:01&lt;00:01, 2174094.84it/s][A[A
+
+
+ 57%|#####6    | 2506752/4422102 [00:01&lt;00:00, 2434340.85it/s][A[A
+
+
+ 63%|######2   | 2768896/4422102 [00:01&lt;00:00, 2378590.38it/s][A[A
+
+
+ 69%|######8   | 3039232/4422102 [00:01&lt;00:00, 2417858.81it/s][A[A
+
+
+ 74%|#######4  | 3293184/4422102 [00:01&lt;00:00, 2380465.82it/s][A[A
+
+
+ 81%|########  | 3579904/4422102 [00:01&lt;00:00, 2498008.30it/s][A[A
+
+
+ 87%|########6 | 3842048/4422102 [00:01&lt;00:00, 2253555.61it/s][A[A
+
+
+ 93%|#########2| 4112384/4422102 [00:01&lt;00:00, 2270514.10it/s][A[A
+
+
+ 99%|#########9| 4390912/4422102 [00:01&lt;00:00, 2396580.88it/s][A[AExtracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
+Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
+
+
+
+
+0it [00:00, ?it/s][A[A[AExtracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
+Processing...
+/home/chico/anaconda3/envs/autopytorch/lib/python3.8/site-packages/torchvision-0.8.2-py3.8-linux-x86_64.egg/torchvision/datasets/mnist.py:480: UserWarning: The given NumPy array is not writeable, and PyTorch does not support non-writeable tensors. This means you can write to the underlying (supposedly non-writeable) NumPy array using the tensor. You may want to copy the array to protect its data or make it writeable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at  /pytorch/torch/csrc/utils/tensor_numpy.cpp:141.)
+  return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
+Done!
+
+32768it [00:02, 14010.29it/s]
+
+4423680it [00:02, 1980493.44it/s]
+
+8192it [00:00, 41734.22it/s]
+Pipeline CS:
+ ________________________________________
+Configuration space object:
+  Hyperparameters:
+    image_augmenter:GaussianBlur:sigma_min, Type: UniformFloat, Range: [0.0, 3.0], Default: 0.0
+    image_augmenter:GaussianBlur:sigma_offset, Type: UniformFloat, Range: [0.0, 3.0], Default: 0.5
+    image_augmenter:GaussianBlur:use_augmenter, Type: Categorical, Choices: {True, False}, Default: True
+    image_augmenter:GaussianNoise:sigma_offset, Type: UniformFloat, Range: [0.0, 3.0], Default: 0.3
+    image_augmenter:GaussianNoise:use_augmenter, Type: Categorical, Choices: {True, False}, Default: True
+    image_augmenter:RandomAffine:rotate, Type: UniformInteger, Range: [0, 360], Default: 45
+    image_augmenter:RandomAffine:scale_offset, Type: UniformFloat, Range: [0.0, 0.4], Default: 0.2
+    image_augmenter:RandomAffine:shear, Type: UniformInteger, Range: [0, 45], Default: 30
+    image_augmenter:RandomAffine:translate_percent_offset, Type: UniformFloat, Range: [0.0, 0.4], Default: 0.2
+    image_augmenter:RandomAffine:use_augmenter, Type: Categorical, Choices: {True, False}, Default: True
+    image_augmenter:RandomCutout:p, Type: UniformFloat, Range: [0.2, 1.0], Default: 0.5
+    image_augmenter:RandomCutout:use_augmenter, Type: Categorical, Choices: {True, False}, Default: True
+    image_augmenter:Resize:use_augmenter, Type: Categorical, Choices: {True, False}, Default: True
+    image_augmenter:ZeroPadAndCrop:percent, Type: UniformFloat, Range: [0.0, 0.5], Default: 0.1
+    normalizer:__choice__, Type: Categorical, Choices: {ImageNormalizer, NoNormalizer}, Default: ImageNormalizer
+  Conditions:
+    image_augmenter:GaussianBlur:sigma_min | image_augmenter:GaussianBlur:use_augmenter == True
+    image_augmenter:GaussianBlur:sigma_offset | image_augmenter:GaussianBlur:use_augmenter == True
+    image_augmenter:GaussianNoise:sigma_offset | image_augmenter:GaussianNoise:use_augmenter == True
+    image_augmenter:RandomAffine:rotate | image_augmenter:RandomAffine:use_augmenter == True
+    image_augmenter:RandomAffine:scale_offset | image_augmenter:RandomAffine:use_augmenter == True
+    image_augmenter:RandomAffine:shear | image_augmenter:RandomAffine:use_augmenter == True
+    image_augmenter:RandomAffine:translate_percent_offset | image_augmenter:RandomAffine:use_augmenter == True
+    image_augmenter:RandomCutout:p | image_augmenter:RandomCutout:use_augmenter == True
+
+Pipeline Random Config:
+ ________________________________________
+Configuration:
+  image_augmenter:GaussianBlur:sigma_min, Value: 0.1103648293022863
+  image_augmenter:GaussianBlur:sigma_offset, Value: 0.5165816612805371
+  image_augmenter:GaussianBlur:use_augmenter, Value: True
+  image_augmenter:GaussianNoise:sigma_offset, Value: 1.5301992081510831
+  image_augmenter:GaussianNoise:use_augmenter, Value: True
+  image_augmenter:RandomAffine:use_augmenter, Value: False
+  image_augmenter:RandomCutout:p, Value: 0.8495232175370184
+  image_augmenter:RandomCutout:use_augmenter, Value: True
+  image_augmenter:Resize:use_augmenter, Value: False
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.1503278659071614
+  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
+
+Fitting the pipeline...
+________________________________________
+        ImageClassificationPipeline
+________________________________________
+0-) normalizer:
+        NoNormalizer
+
+1-) preprocessing:
+        EarlyPreprocessing
+
+2-) image_augmenter:
+        ImageAugmenter
+
+________________________________________
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
+
+<span class="kn">import</span> <span class="nn">torchvision.datasets</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.image_classification</span> <span class="kn">import</span> <span class="n">ImageClassificationPipeline</span>
+
+<span class="c1"># Get the training data for tabular classification</span>
+<span class="n">trainset</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">FashionMNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;../datasets/&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">trainset</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="c1"># Create a proof of concept pipeline!</span>
+<span class="n">dataset_properties</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">ImageClassificationPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">)</span>
+
+<span class="c1"># Train and test split</span>
+<span class="n">train_indices</span><span class="p">,</span> <span class="n">val_indices</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Configuration space</span>
+<span class="n">pipeline_cs</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_hyperparameter_search_space</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pipeline CS:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">pipeline_cs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">pipeline_cs</span><span class="o">.</span><span class="n">sample_configuration</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pipeline Random Config:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">set_hyperparameters</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="c1"># Fit the pipeline</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fitting the pipeline...&quot;</span><span class="p">)</span>
+
+<span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                    <span class="n">is_small_preprocess</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">dataset_properties</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]),</span>
+                                            <span class="n">std</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]),</span>
+                                            <span class="n">num_classes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                            <span class="n">num_features</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                            <span class="n">image_height</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                            <span class="n">image_width</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                            <span class="n">is_small_preprocess</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                    <span class="n">train_indices</span><span class="o">=</span><span class="n">train_indices</span><span class="p">,</span>
+                    <span class="n">val_indices</span><span class="o">=</span><span class="n">val_indices</span><span class="p">,</span>
+                    <span class="p">)</span>
+             <span class="p">)</span>
+
+<span class="c1"># Showcase some components of the pipeline</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  15.446 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-image-classification-py">
+<div class="binder-badge docutils container">
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_image_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/3a985c2d5cf88bfc51ae65d16b30f86c/example_image_classification.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_image_classification.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/a39c0378d911b81ecec47ff0a116e6bf/example_image_classification.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_image_classification.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="../_sources/examples/example_image_classification.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
