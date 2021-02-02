@@ -10,9 +10,7 @@ from ConfigSpace.hyperparameters import (
 
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (
-    NetworkBackboneComponent,
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
     get_shaped_neuron_counts,
@@ -21,10 +19,9 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
 
 class ShapedMLPBackbone(NetworkBackboneComponent):
     """
-        Implementation of a Shaped MLP -- an MLP with the number of units
-        arranged so that a given shape is honored
+    Implementation of a Shaped MLP -- an MLP with the number of units
+    arranged so that a given shape is honored
     """
-    supported_tasks = {"tabular_classification", "tabular_regression"}
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         layers = list()  # type: List[nn.Module]
