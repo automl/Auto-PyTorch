@@ -51,12 +51,10 @@ if __name__ == '__main__':
     ############################################################################
     # Data Loading
     # ============
-    X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X,
-        y,
-        random_state=1,
-    )
+    X_train, X_test, y_train, y_test = get_data_to_train()
+    datamanager = TabularDataset(
+        X=X_train, Y=y_train,
+        X_test=X_test, Y_test=y_test)
 
     ############################################################################
     # Build and fit a classifier
@@ -66,13 +64,10 @@ if __name__ == '__main__':
         search_space_updates=get_search_space_updates()
     )
     api.search(
-        X_train=X_train,
-        y_train=y_train,
-        X_test=X_test.copy(),
-        y_test=y_test.copy(),
+        dataset=datamanager,
         optimize_metric='accuracy',
         total_walltime_limit=500,
-        func_eval_time_limit=50
+        func_eval_time_limit=150
     )
 
     ############################################################################
