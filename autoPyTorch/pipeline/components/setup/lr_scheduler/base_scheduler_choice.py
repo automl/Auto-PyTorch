@@ -138,13 +138,14 @@ class SchedulerChoice(autoPyTorchChoice):
             raise ValueError("No scheduler found")
 
         if default is None:
-            defaults = ['no_LRScheduler',
-                        'LambdaLR',
-                        'StepLR',
-                        'ExponentialLR',
-                        'CosineAnnealingLR',
-                        'ReduceLROnPlateau'
-                        ]
+            defaults = [
+                'ReduceLROnPlateau',
+                'CosineAnnealingLR',
+                'no_LRScheduler',
+                'LambdaLR',
+                'StepLR',
+                'ExponentialLR',
+            ]
             for default_ in defaults:
                 if default_ in available_schedulers:
                     default = default_

@@ -258,7 +258,7 @@ class TrainEvaluator(AbstractEvaluator):
         X = {'train_indices': train_indices,
              'val_indices': test_indices,
              'split_id': fold,
-             'job_id': self.num_run,
+             'num_run': self.num_run,
              **self.fit_dictionary}  # fit dictionary
         y = None
         fit_and_suppress_warnings(self.logger, pipeline, X, y)

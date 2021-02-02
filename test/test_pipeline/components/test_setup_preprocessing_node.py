@@ -46,7 +46,7 @@ class TabularPreprocessingTest(unittest.TestCase):
                  val_indices=[6, 7, 8, 9],
                  dataset_properties=dataset_properties,
                  # Training configuration
-                 job_id='test',
+                 num_run=15,
                  device='cpu',
                  budget_type='epochs',
                  epochs=10,
@@ -82,7 +82,7 @@ class TabularPreprocessingTest(unittest.TestCase):
                  val_indices=[6, 7, 8, 9],
                  dataset_properties=dataset_properties,
                  # Training configuration
-                 job_id='test',
+                 num_run=16,
                  device='cpu',
                  budget_type='epochs',
                  epochs=10,

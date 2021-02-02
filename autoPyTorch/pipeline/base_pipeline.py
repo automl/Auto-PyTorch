@@ -480,7 +480,7 @@ class BasePipeline(Pipeline):
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
         return {
-            'job_id': '1',
+            'num_run': 0,
             'device': 'cpu',
             'budget_type': 'epochs',
             'epochs': 5,
