@@ -8,9 +8,7 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (
-    NetworkBackboneComponent,
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 
 
 # Code inspired by https://github.com/hfawaz/InceptionTime

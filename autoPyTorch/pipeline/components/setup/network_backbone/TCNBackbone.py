@@ -12,9 +12,7 @@ import torch
 from torch import nn
 from torch.nn.utils import weight_norm
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import (
-    NetworkBackboneComponent,
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 
 
 # _Chomp1d, _TemporalBlock and _TemporalConvNet copied from

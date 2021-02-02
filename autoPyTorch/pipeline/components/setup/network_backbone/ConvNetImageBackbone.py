@@ -10,12 +10,7 @@ from ConfigSpace.hyperparameters import (
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
-
-_activations: Dict[str, nn.Module] = {
-    "relu": nn.ReLU,
-    "tanh": nn.Tanh,
-    "sigmoid": nn.Sigmoid
-}
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
 
 
 class ConvNetImageBackbone(NetworkBackboneComponent):

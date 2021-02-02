@@ -8,15 +8,8 @@ import numpy as np
 
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head import (
-    NetworkHeadComponent,
-)
-
-_activations: Dict[str, nn.Module] = {
-    "relu": nn.ReLU,
-    "tanh": nn.Tanh,
-    "sigmoid": nn.Sigmoid
-}
+from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
+from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 
 
 class FullyConnectedHead(NetworkHeadComponent):
