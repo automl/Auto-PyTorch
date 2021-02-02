@@ -1,6 +1,7 @@
 import collections
 import logging.handlers
 import os
+import tempfile
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
 
@@ -66,7 +67,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.writer = None  # type: Optional[SummaryWriter]
         self._fit_requirements: Optional[List[FitRequirement]] = [
             FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
-            FitRequirement("job_id", (str,), user_defined=False, dataset_property=False),
+            FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
             FitRequirement(
                 "optimizer", (Optimizer,), user_defined=False, dataset_property=False),
             FitRequirement("train_data_loader",
@@ -75,6 +76,7 @@ class TrainerChoice(autoPyTorchChoice):
             FitRequirement("val_data_loader",
                            (torch.utils.data.DataLoader,),
                            user_defined=False, dataset_property=False)]
+        self.checkpoint_dir = None  # type: Optional[str]
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
@@ -185,7 +187,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         # Setup the logger
         self.logger = get_named_client_logger(
-            name=X['job_id'],
+            name=X['num_run'],
             # Log to a user provided port else to the default logging port
             port=X['logger_port'
                    ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
@@ -369,8 +371,29 @@ class TrainerChoice(autoPyTorchChoice):
             bool: If true, training should be stopped
         """
         assert self.run_summary is not None
-        epochs_since_best = self.run_summary.get_best_epoch() - self.run_summary.get_last_epoch()
+
+        # Allow to disable early stopping
+        if X['early_stopping'] is None or X['early_stopping'] < 0:
+            return False
+
+        # Store the best weights seen so far:
+        if self.checkpoint_dir is None:
+            self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
+
+        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
+
+        # Save the checkpoint if there is a new best epoch
+        best_path = os.path.join(self.checkpoint_dir, 'best.pth')
+        if epochs_since_best == 0:
+            torch.save(X['network'].state_dict(), best_path)
+
         if epochs_since_best > X['early_stopping']:
+            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+            # We will stop the training. Load the last best performing weights
+            X['network'].load_state_dict(torch.load(best_path))
+
+            # Let the tempfile module clean the temp dir
+            self.checkpoint_dir = None
             return True
 
         return False
@@ -458,8 +481,8 @@ class TrainerChoice(autoPyTorchChoice):
                     X['budget_type']
                 ))
 
-        if 'job_id' not in X:
-            raise ValueError('To fit a trainer, expected fit dictionary to have a job_id')
+        if 'num_run' not in X:
+            raise ValueError('To fit a trainer, expected fit dictionary to have a num_run')
 
         for config_option in ["torch_num_threads", 'device']:
             if config_option not in X:

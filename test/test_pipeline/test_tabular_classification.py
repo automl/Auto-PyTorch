@@ -157,7 +157,7 @@ class TestTabularClassification:
         """Makes sure that when a key is removed from X, correct error is outputted"""
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
-        for key in ['job_id', 'device', 'split_id', 'use_pynisher', 'torch_num_threads',
+        for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads',
                     'dataset_properties', ]:
             fit_dictionary_copy = fit_dictionary.copy()
             fit_dictionary_copy.pop(key)
