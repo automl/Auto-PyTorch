@@ -6,8 +6,15 @@ Tabular Classification
 The following example shows how to fit a sample classification model
 with AutoPyTorch
 """
+import os
+import tempfile as tmp
 import typing
 import warnings
+
+os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)

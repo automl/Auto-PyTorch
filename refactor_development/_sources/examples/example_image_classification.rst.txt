@@ -34,63 +34,50 @@ Image Classification
  .. code-block:: none
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
-    0it [00:00, ?it/s]      0%|          | 0/26421880 [00:01<?, ?it/s]      1%|          | 221184/26421880 [00:01<00:11, 2185785.49it/s]      2%|1         | 475136/26421880 [00:01<00:11, 2241424.35it/s]      3%|2         | 770048/26421880 [00:02<00:10, 2413156.61it/s]      4%|4         | 1064960/26421880 [00:02<00:09, 2540728.51it/s]      5%|4         | 1310720/26421880 [00:02<00:10, 2510059.53it/s]      6%|5         | 1581056/26421880 [00:02<00:09, 2551027.69it/s]      7%|7         | 1851392/26421880 [00:02<00:09, 2568438.48it/s]      8%|7         | 2097152/26421880 [00:02<00:09, 2529124.91it/s]      9%|8         | 2367488/26421880 [00:02<00:09, 2557085.10it/s]     10%|9         | 2629632/26421880 [00:02<00:09, 2559058.60it/s]     11%|#1        | 2924544/26421880 [00:02<00:08, 2628151.03it/s]     12%|#2        | 3194880/26421880 [00:03<00:08, 2628942.78it/s]     13%|#3        | 3481600/26421880 [00:03<00:08, 2688323.84it/s]     14%|#4        | 3751936/26421880 [00:03<00:09, 2501172.50it/s]     15%|#5        | 4005888/26421880 [00:03<00:09, 2483919.42it/s]     16%|#6        | 4259840/26421880 [00:03<00:08, 2474738.28it/s]     17%|#7        | 4513792/26421880 [00:03<00:08, 2480530.13it/s]     18%|#8        | 4800512/26421880 [00:03<00:08, 2583038.79it/s]     19%|#9        | 5095424/26421880 [00:03<00:08, 2665150.06it/s]     20%|##        | 5390336/26421880 [00:03<00:07, 2723496.56it/s]     21%|##1       | 5668864/26421880 [00:03<00:07, 2693719.29it/s]     23%|##2       | 5947392/26421880 [00:04<00:07, 2711087.19it/s]     24%|##3       | 6225920/26421880 [00:04<00:07, 2661027.15it/s]     25%|##4       | 6496256/26421880 [00:04<00:07, 2594166.58it/s]     26%|##5       | 6758400/26421880 [00:04<00:07, 2578688.66it/s]     27%|##6       | 7020544/26421880 [00:04<00:08, 2391063.37it/s]     28%|##7       | 7266304/26421880 [00:04<00:08, 2384240.82it/s]     29%|##8       | 7561216/26421880 [00:04<00:07, 2510452.38it/s]     30%|##9       | 7823360/26421880 [00:04<00:07, 2438584.14it/s]     31%|###       | 8118272/26421880 [00:04<00:07, 2571344.27it/s]     32%|###1      | 8380416/26421880 [00:05<00:07, 2476699.33it/s]     33%|###2      | 8642560/26421880 [00:05<00:07, 2498054.25it/s]     34%|###3      | 8937472/26421880 [00:05<00:06, 2598059.66it/s]     35%|###4      | 9224192/26421880 [00:05<00:06, 2651000.09it/s]     36%|###5      | 9494528/26421880 [00:05<00:06, 2635980.82it/s]     37%|###6      | 9764864/26421880 [00:05<00:06, 2641746.89it/s]     38%|###7      | 10035200/26421880 [00:05<00:06, 2658755.83it/s]     39%|###9      | 10338304/26421880 [00:05<00:05, 2744311.61it/s]     40%|####      | 10616832/26421880 [00:05<00:05, 2658065.85it/s]     41%|####1     | 10887168/26421880 [00:05<00:05, 2621475.01it/s]     42%|####2     | 11157504/26421880 [00:06<00:05, 2577398.17it/s]     43%|####3     | 11452416/26421880 [00:06<00:05, 2665373.40it/s]     44%|####4     | 11739136/26421880 [00:06<00:05, 2708677.84it/s]     46%|####5     | 12025856/26421880 [00:06<00:05, 2715829.41it/s]     47%|####6     | 12337152/26421880 [00:06<00:05, 2793730.85it/s]     48%|####7     | 12640256/26421880 [00:06<00:04, 2828485.56it/s]     49%|####8     | 12926976/26421880 [00:06<00:04, 2729330.02it/s]     50%|#####     | 13213696/26421880 [00:06<00:04, 2765015.75it/s]     51%|#####1    | 13500416/26421880 [00:06<00:04, 2786319.91it/s]     52%|#####2    | 13795328/26421880 [00:07<00:04, 2833200.77it/s]     53%|#####3    | 14123008/26421880 [00:07<00:04, 2926363.39it/s]     55%|#####4    | 14417920/26421880 [00:07<00:04, 2887509.50it/s]     56%|#####5    | 14712832/26421880 [00:07<00:04, 2875966.31it/s]     57%|#####6    | 15015936/26421880 [00:07<00:03, 2911894.10it/s]     58%|#####7    | 15310848/26421880 [00:07<00:03, 2907847.34it/s]     59%|#####9    | 15605760/26421880 [00:07<00:03, 2780572.62it/s]     60%|######    | 15892480/26421880 [00:07<00:03, 2763800.98it/s]     61%|######1   | 16203776/26421880 [00:07<00:03, 2855752.65it/s]     62%|######2   | 16498688/26421880 [00:07<00:03, 2785757.08it/s]     64%|######3   | 16793600/26421880 [00:08<00:03, 2822739.84it/s]     65%|######4   | 17080320/26421880 [00:08<00:03, 2703617.18it/s]     66%|######5   | 17367040/26421880 [00:08<00:03, 2731741.89it/s]     67%|######6   | 17670144/26421880 [00:08<00:03, 2775613.12it/s]     68%|######7   | 17956864/26421880 [00:08<00:03, 2694363.16it/s]     69%|######9   | 18251776/26421880 [00:08<00:02, 2763899.42it/s]     70%|#######   | 18546688/26421880 [00:08<00:02, 2803940.41it/s]     71%|#######1  | 18833408/26421880 [00:08<00:02, 2777824.59it/s]     72%|#######2  | 19136512/26421880 [00:08<00:02, 2841705.60it/s]     74%|#######3  | 19423232/26421880 [00:09<00:02, 2820496.21it/s]     75%|#######4  | 19750912/26421880 [00:09<00:02, 2941404.58it/s]     76%|#######5  | 20054016/26421880 [00:09<00:02, 2807600.32it/s]     77%|#######6  | 20340736/26421880 [00:09<00:02, 2804012.40it/s]     78%|#######8  | 20652032/26421880 [00:09<00:02, 2880500.87it/s]     79%|#######9  | 20946944/26421880 [00:09<00:02, 2659050.69it/s]     80%|########  | 21225472/26421880 [00:09<00:01, 2628918.37it/s]     81%|########1 | 21495808/26421880 [00:09<00:02, 2410211.15it/s]     83%|########2 | 21880832/26421880 [00:09<00:01, 2603050.19it/s]     84%|########3 | 22192128/26421880 [00:10<00:01, 2669610.00it/s]     85%|########5 | 22470656/26421880 [00:10<00:01, 2620294.25it/s]     86%|########6 | 22749184/26421880 [00:10<00:01, 2600655.73it/s]     87%|########7 | 23035904/26421880 [00:10<00:01, 2671494.29it/s]     88%|########8 | 23339008/26421880 [00:10<00:01, 2758890.63it/s]     89%|########9 | 23625728/26421880 [00:10<00:01, 2754402.66it/s]     91%|######### | 23912448/26421880 [00:10<00:00, 2782094.01it/s]     92%|#########1| 24199168/26421880 [00:10<00:00, 2717840.87it/s]     93%|#########2| 24477696/26421880 [00:10<00:00, 2683388.03it/s]     94%|#########3| 24748032/26421880 [00:10<00:00, 2661986.68it/s]     95%|#########4| 25018368/26421880 [00:11<00:00, 2515565.64it/s]     96%|#########5| 25296896/26421880 [00:11<00:00, 2581616.81it/s]     97%|#########6| 25575424/26421880 [00:11<00:00, 2627233.24it/s]     98%|#########7| 25845760/26421880 [00:11<00:00, 2137277.03it/s]     99%|#########9| 26181632/26421880 [00:11<00:00, 2397145.14it/s]Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
+    0it [00:00, ?it/s]      0%|          | 0/26421880 [00:00<?, ?it/s]      0%|          | 16384/26421880 [00:00<03:16, 134469.86it/s]      0%|          | 49152/26421880 [00:00<02:03, 212776.49it/s]      0%|          | 106496/26421880 [00:00<01:19, 329530.61it/s]      1%|          | 204800/26421880 [00:00<00:51, 510156.12it/s]      2%|1         | 425984/26421880 [00:00<00:26, 973222.79it/s]      3%|3         | 860160/26421880 [00:01<00:13, 1844497.86it/s]      7%|6         | 1728512/26421880 [00:01<00:06, 3553326.40it/s]     13%|#3        | 3473408/26421880 [00:01<00:03, 6949625.43it/s]     25%|##4       | 6545408/26421880 [00:01<00:01, 12607984.86it/s]     36%|###6      | 9641984/26421880 [00:01<00:01, 16518887.24it/s]     48%|####7     | 12673024/26421880 [00:01<00:00, 19033966.99it/s]     60%|#####9    | 15802368/26421880 [00:01<00:00, 21023738.86it/s]     72%|#######1  | 18939904/26421880 [00:01<00:00, 22417619.23it/s]     84%|########3 | 22077440/26421880 [00:02<00:00, 23376824.13it/s]     95%|#########5| 25206784/26421880 [00:02<00:00, 25438124.25it/s]Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz
 
     0it [00:00, ?it/s][A
-     56%|#####5    | 16384/29515 [00:00<00:00, 163539.15it/s][AExtracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
+      0%|          | 0/29515 [00:00<?, ?it/s][A
+     56%|#####5    | 16384/29515 [00:00<00:00, 136995.09it/s][AExtracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz
 
 
     0it [00:00, ?it/s][A[A
 
-      2%|2         | 106496/4422102 [00:00<00:04, 1046598.20it/s][A[A
+      0%|          | 0/4422102 [00:00<?, ?it/s][A[A
 
-      9%|8         | 385024/4422102 [00:00<00:03, 1286010.69it/s][A[A
+      0%|          | 16384/4422102 [00:00<00:32, 136501.46it/s][A[A
 
-     13%|#2        | 557056/4422102 [00:00<00:02, 1373799.20it/s][A[A
+      1%|1         | 49152/4422102 [00:00<00:20, 216426.47it/s][A[A
 
-     18%|#7        | 794624/4422102 [00:00<00:02, 1533043.75it/s][A[A
+      2%|2         | 106496/4422102 [00:00<00:12, 335259.57it/s][A[A
 
-     22%|##1       | 958464/4422102 [00:00<00:02, 1562554.15it/s][A[A
+      5%|5         | 229376/4422102 [00:00<00:06, 602281.89it/s][A[A
 
-     27%|##6       | 1179648/4422102 [00:00<00:01, 1707872.86it/s][A[A
+     11%|#         | 466944/4422102 [00:00<00:03, 1094300.58it/s][A[A
 
-     32%|###2      | 1417216/4422102 [00:00<00:01, 1854194.99it/s][A[A
+     21%|##1       | 950272/4422102 [00:00<00:01, 2083417.28it/s][A[A
 
-     36%|###6      | 1613824/4422102 [00:00<00:01, 1877460.20it/s][A[A
+     43%|####3     | 1916928/4422102 [00:01<00:00, 4023502.50it/s][A[A
 
-     44%|####3     | 1933312/4422102 [00:00<00:01, 2139184.59it/s][A[A
-
-     49%|####8     | 2162688/4422102 [00:01<00:01, 2174094.84it/s][A[A
-
-     57%|#####6    | 2506752/4422102 [00:01<00:00, 2434340.85it/s][A[A
-
-     63%|######2   | 2768896/4422102 [00:01<00:00, 2378590.38it/s][A[A
-
-     69%|######8   | 3039232/4422102 [00:01<00:00, 2417858.81it/s][A[A
-
-     74%|#######4  | 3293184/4422102 [00:01<00:00, 2380465.82it/s][A[A
-
-     81%|########  | 3579904/4422102 [00:01<00:00, 2498008.30it/s][A[A
-
-     87%|########6 | 3842048/4422102 [00:01<00:00, 2253555.61it/s][A[A
-
-     93%|#########2| 4112384/4422102 [00:01<00:00, 2270514.10it/s][A[A
-
-     99%|#########9| 4390912/4422102 [00:01<00:00, 2396580.88it/s][A[AExtracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
+     87%|########6 | 3833856/4422102 [00:01<00:00, 7807962.71it/s][A[AExtracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
 
 
 
-    0it [00:00, ?it/s][A[A[AExtracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
+    0it [00:00, ?it/s][A[A[A
+
+
+      0%|          | 0/5148 [00:00<?, ?it/s][A[A[AExtracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
     Processing...
-    /home/chico/anaconda3/envs/autopytorch/lib/python3.8/site-packages/torchvision-0.8.2-py3.8-linux-x86_64.egg/torchvision/datasets/mnist.py:480: UserWarning: The given NumPy array is not writeable, and PyTorch does not support non-writeable tensors. This means you can write to the underlying (supposedly non-writeable) NumPy array using the tensor. You may want to copy the array to protect its data or make it writeable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at  /pytorch/torch/csrc/utils/tensor_numpy.cpp:141.)
+    /opt/hostedtoolcache/Python/3.8.7/x64/lib/python3.8/site-packages/torchvision/datasets/mnist.py:480: UserWarning: The given NumPy array is not writeable, and PyTorch does not support non-writeable tensors. This means you can write to the underlying (supposedly non-writeable) NumPy array using the tensor. You may want to copy the array to protect its data or make it writeable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at  /pytorch/torch/csrc/utils/tensor_numpy.cpp:141.)
       return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
     Done!
-    32768it [00:02, 14010.29it/s]                            
-    4423680it [00:02, 1980493.44it/s]                             
-    8192it [00:00, 41734.22it/s]
+    26427392it [00:05, 4494304.72it/s]                               
+    32768it [00:02, 14867.34it/s]                            
+    4423680it [00:01, 2433868.57it/s]                             
+    8192it [00:00, 16635.08it/s]            
     Pipeline CS:
      ________________________________________ 
     Configuration space object:
@@ -123,16 +110,19 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:sigma_min, Value: 0.1103648293022863
-      image_augmenter:GaussianBlur:sigma_offset, Value: 0.5165816612805371
+      image_augmenter:GaussianBlur:sigma_min, Value: 2.350950794886195
+      image_augmenter:GaussianBlur:sigma_offset, Value: 1.453518149148989
       image_augmenter:GaussianBlur:use_augmenter, Value: True
-      image_augmenter:GaussianNoise:sigma_offset, Value: 1.5301992081510831
+      image_augmenter:GaussianNoise:sigma_offset, Value: 1.8565203097310323
       image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:use_augmenter, Value: False
-      image_augmenter:RandomCutout:p, Value: 0.8495232175370184
-      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:RandomAffine:rotate, Value: 119
+      image_augmenter:RandomAffine:scale_offset, Value: 0.19332356052827865
+      image_augmenter:RandomAffine:shear, Value: 34
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.22936203629521212
+      image_augmenter:RandomAffine:use_augmenter, Value: True
+      image_augmenter:RandomCutout:use_augmenter, Value: False
       image_augmenter:Resize:use_augmenter, Value: False
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.1503278659071614
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.4881025169886864
       normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
@@ -212,7 +202,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  15.446 seconds)
+   **Total running time of the script:** ( 0 minutes  10.812 seconds)
 
 
 .. _sphx_glr_download_examples_example_image_classification.py:

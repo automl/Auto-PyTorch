@@ -28,7 +28,7 @@
 
   </head><body>
   
-  <a href="https://github.com/automl/auto-sklearn"
+  <a href="https://github.com/automl/Auto-PyTorch"
      class="visible-desktop hidden-xs"><img
     id="gh-banner"
     style="position: absolute; top: 50px; right: 0; border: 0;"
@@ -122,14 +122,15 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f97053148e0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f6bb408e9d0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:StepLR:gamma, Value: 0.1
-  lr_scheduler:StepLR:step_size, Value: 5
-  lr_scheduler:__choice__, Value: &#39;StepLR&#39;
+  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
+  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
+  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
+  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
   network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
   network_backbone:ShapedMLPBackbone:max_units, Value: 200
   network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
@@ -150,14 +151,15 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0010313987731933594, budget=0), TrajEntry(train_perf=0.1578947368421053, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018229484558105469, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:StepLR:gamma, Value: 0.1
-  lr_scheduler:StepLR:step_size, Value: 5
-  lr_scheduler:__choice__, Value: &#39;StepLR&#39;
+  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
+  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
+  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
+  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
   network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
   network_backbone:ShapedMLPBackbone:max_units, Value: 200
   network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
@@ -178,166 +180,22 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.527918815612793, wallclock_time=6.851950645446777, budget=5.555555555555555), TrajEntry(train_perf=0.26900584795321636, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 88
-  encoder:__choice__, Value: &#39;OrdinalEncoder&#39;
-  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 60
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 2
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.6988598780039358
-  network_backbone:ShapedResNetBackbone:max_units, Value: 340
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 8
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 67
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;hexagon&#39;
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: False
-  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;sigmoid&#39;
-  network_head:fully_connected:num_layers, Value: 3
-  network_head:fully_connected:units_layer_1, Value: 404
-  network_head:fully_connected:units_layer_2, Value: 424
-  network_init:NoInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;NoInit&#39;
-  optimizer:AdamWOptimizer:beta1, Value: 0.9864642264455687
-  optimizer:AdamWOptimizer:beta2, Value: 0.925726706012968
-  optimizer:AdamWOptimizer:lr, Value: 0.00472956096933744
-  optimizer:AdamWOptimizer:weight_decay, Value: 0.0991396888765991
-  optimizer:__choice__, Value: &#39;AdamWOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=11, ta_time_used=72.02549409866333, wallclock_time=92.26111507415771, budget=16.666666666666664), TrajEntry(train_perf=0.33333333333333337, incumbent_id=3, incumbent=Configuration:
-  data_loader:batch_size, Value: 135
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;constant_zero&#39;
-  lr_scheduler:CyclicLR:base_lr, Value: 0.08249895802465014
-  lr_scheduler:CyclicLR:max_lr, Value: 0.09370676030839499
-  lr_scheduler:CyclicLR:mode, Value: &#39;triangular&#39;
-  lr_scheduler:CyclicLR:step_size_up, Value: 3800
-  lr_scheduler:__choice__, Value: &#39;CyclicLR&#39;
-  network_backbone:ResNetBackbone:activation, Value: &#39;tanh&#39;
-  network_backbone:ResNetBackbone:blocks_per_group_0, Value: 1
-  network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
-  network_backbone:ResNetBackbone:dropout_0, Value: 0.20935374834296705
-  network_backbone:ResNetBackbone:dropout_1, Value: 0.19755478459226283
-  network_backbone:ResNetBackbone:max_shake_drop_probability, Value: 0.3791258945555226
-  network_backbone:ResNetBackbone:num_groups, Value: 1
-  network_backbone:ResNetBackbone:num_units_0, Value: 948
-  network_backbone:ResNetBackbone:num_units_1, Value: 1010
-  network_backbone:ResNetBackbone:use_dropout, Value: True
-  network_backbone:ResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ResNetBackbone:use_shake_shake, Value: False
-  network_backbone:__choice__, Value: &#39;ResNetBackbone&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;tanh&#39;
-  network_head:fully_connected:num_layers, Value: 4
-  network_head:fully_connected:units_layer_1, Value: 287
-  network_head:fully_connected:units_layer_2, Value: 364
-  network_head:fully_connected:units_layer_3, Value: 255
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamWOptimizer:beta1, Value: 0.8630477973077559
-  optimizer:AdamWOptimizer:beta2, Value: 0.9661603157343931
-  optimizer:AdamWOptimizer:lr, Value: 0.00016143508899455294
-  optimizer:AdamWOptimizer:weight_decay, Value: 0.06789669953270579
-  optimizer:__choice__, Value: &#39;AdamWOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=13, ta_time_used=100.23880362510681, wallclock_time=125.71432065963745, budget=50.0), TrajEntry(train_perf=0.216374269005848, incumbent_id=4, incumbent=Configuration:
-  data_loader:batch_size, Value: 286
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingWarmRestarts:T_0, Value: 12
-  lr_scheduler:CosineAnnealingWarmRestarts:T_mult, Value: 1.71105703353488
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingWarmRestarts&#39;
-  network_backbone:ResNetBackbone:activation, Value: &#39;tanh&#39;
-  network_backbone:ResNetBackbone:blocks_per_group_0, Value: 4
-  network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
-  network_backbone:ResNetBackbone:blocks_per_group_2, Value: 3
-  network_backbone:ResNetBackbone:blocks_per_group_3, Value: 1
-  network_backbone:ResNetBackbone:dropout_0, Value: 0.12464385622609614
-  network_backbone:ResNetBackbone:dropout_1, Value: 0.4665176299874101
-  network_backbone:ResNetBackbone:dropout_2, Value: 0.25276424832263683
-  network_backbone:ResNetBackbone:dropout_3, Value: 0.3886459362049137
-  network_backbone:ResNetBackbone:max_shake_drop_probability, Value: 0.9657400108329964
-  network_backbone:ResNetBackbone:num_groups, Value: 3
-  network_backbone:ResNetBackbone:num_units_0, Value: 383
-  network_backbone:ResNetBackbone:num_units_1, Value: 417
-  network_backbone:ResNetBackbone:num_units_2, Value: 587
-  network_backbone:ResNetBackbone:num_units_3, Value: 73
-  network_backbone:ResNetBackbone:use_dropout, Value: True
-  network_backbone:ResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ResNetBackbone:use_shake_shake, Value: True
-  network_backbone:__choice__, Value: &#39;ResNetBackbone&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;tanh&#39;
-  network_head:fully_connected:num_layers, Value: 3
-  network_head:fully_connected:units_layer_1, Value: 245
-  network_head:fully_connected:units_layer_2, Value: 265
-  network_init:NoInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;NoInit&#39;
-  optimizer:SGDOptimizer:lr, Value: 0.012860150440444792
-  optimizer:SGDOptimizer:momentum, Value: 0.7937519085991944
-  optimizer:SGDOptimizer:weight_decay, Value: 0.02382508284304612
-  optimizer:__choice__, Value: &#39;SGDOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=17, ta_time_used=133.6396985054016, wallclock_time=171.20140504837036, budget=50.0), TrajEntry(train_perf=0.14619883040935677, incumbent_id=5, incumbent=Configuration:
-  data_loader:batch_size, Value: 119
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;most_frequent&#39;
-  lr_scheduler:StepLR:gamma, Value: 0.8880523040674049
-  lr_scheduler:StepLR:step_size, Value: 7
-  lr_scheduler:__choice__, Value: &#39;StepLR&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 14
-  network_backbone:MLPBackbone:num_units_1, Value: 898
-  network_backbone:MLPBackbone:num_units_10, Value: 219
-  network_backbone:MLPBackbone:num_units_11, Value: 248
-  network_backbone:MLPBackbone:num_units_12, Value: 583
-  network_backbone:MLPBackbone:num_units_13, Value: 980
-  network_backbone:MLPBackbone:num_units_14, Value: 972
-  network_backbone:MLPBackbone:num_units_2, Value: 158
-  network_backbone:MLPBackbone:num_units_3, Value: 541
-  network_backbone:MLPBackbone:num_units_4, Value: 57
-  network_backbone:MLPBackbone:num_units_5, Value: 172
-  network_backbone:MLPBackbone:num_units_6, Value: 410
-  network_backbone:MLPBackbone:num_units_7, Value: 14
-  network_backbone:MLPBackbone:num_units_8, Value: 979
-  network_backbone:MLPBackbone:num_units_9, Value: 945
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 291
-  network_init:KaimingInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;KaimingInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9124430403929086
-  optimizer:AdamOptimizer:beta2, Value: 0.9350223511904089
-  optimizer:AdamOptimizer:lr, Value: 0.00032074767271281934
-  optimizer:AdamOptimizer:weight_decay, Value: 0.025468088674378386
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:Normalizer:norm, Value: &#39;mean_abs&#39;
-  scaler:__choice__, Value: &#39;Normalizer&#39;
-  trainer:MixUpTrainer:alpha, Value: 0.6159171814467289
-  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=37, ta_time_used=275.9191119670868, wallclock_time=362.1131603717804, budget=50.0)]
+, ta_runs=1, ta_time_used=7.783486366271973, wallclock_time=9.27663254737854, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8670520231213873}
 </pre></div>
 </div>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">typing</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
+<span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;JOBLIB_TEMP_FOLDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OPENBLAS_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MKL_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
@@ -423,7 +281,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  58.725 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  26.113 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>

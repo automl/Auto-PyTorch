@@ -28,7 +28,7 @@
 
   </head><body>
   
-  <a href="https://github.com/automl/auto-sklearn"
+  <a href="https://github.com/automl/Auto-PyTorch"
      class="visible-desktop hidden-xs"><img
     id="gh-banner"
     style="position: absolute; top: 50px; right: 0; border: 0;"
@@ -328,7 +328,7 @@
 <span class="sd">        then sets them to the current pipeline</span>
 <span class="sd">        configuration.</span>
 <span class="sd">        Args:</span>
-<span class="sd">            **pipeline_config_kwargs: Valid config options include &quot;job_id&quot;,</span>
+<span class="sd">            **pipeline_config_kwargs: Valid config options include &quot;num_run&quot;,</span>
 <span class="sd">            &quot;device&quot;, &quot;budget_type&quot;, &quot;epochs&quot;, &quot;runtime&quot;, &quot;torch_num_threads&quot;,</span>
 <span class="sd">            &quot;early_stopping&quot;, &quot;use_tensorboard_logger&quot;, &quot;use_pynisher&quot;,</span>
 <span class="sd">            &quot;metrics_during_training&quot;</span>
@@ -1035,7 +1035,7 @@
                                   <span class="s1">&#39;train_indices&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_id</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                                   <span class="s1">&#39;val_indices&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_id</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
                                   <span class="s1">&#39;split_id&#39;</span><span class="p">:</span> <span class="n">split_id</span><span class="p">,</span>
-                                  <span class="s1">&#39;job_id&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                                  <span class="s1">&#39;num_run&#39;</span><span class="p">:</span> <span class="mi">0</span>
                                   <span class="p">})</span>
         <span class="n">X</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pipeline_options</span><span class="p">,</span> <span class="o">**</span><span class="n">budget_config</span><span class="p">})</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">models_</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1108,7 +1108,7 @@
                                   <span class="s1">&#39;train_indices&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_id</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
                                   <span class="s1">&#39;val_indices&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_id</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
                                   <span class="s1">&#39;split_id&#39;</span><span class="p">:</span> <span class="n">split_id</span><span class="p">,</span>
-                                  <span class="s1">&#39;job_id&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                                  <span class="s1">&#39;num_run&#39;</span><span class="p">:</span> <span class="mi">0</span>
                                   <span class="p">})</span>
         <span class="n">X</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">pipeline_options</span><span class="p">,</span> <span class="o">**</span><span class="n">budget_config</span><span class="p">})</span>
 
