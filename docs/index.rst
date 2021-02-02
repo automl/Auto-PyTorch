@@ -73,6 +73,6 @@ which is marked with `Needs contributer`.
     by opening a `github issue <https://github
     .com/automl/Auto-PyTorch/issues>`_ before starting to work.
 
-When developing new features, please create a new branch from the development
+When developing new features, please create a new branch from the refactor_development
 branch. When to submitting a pull request, make sure that all tests are
 still passing.
