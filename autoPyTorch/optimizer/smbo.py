@@ -112,7 +112,7 @@ class AutoMLSMBO(object):
         tasks in Dask.
 
         Args:
-            config_space (ConfigSpace.ConfigurationSpac):
+            config_space (ConfigSpace.ConfigurationSpace):
                 The configuration space of the whole process
             dataset_name (str):
                 The name of the dataset, used to identify the current job

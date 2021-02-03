@@ -9,6 +9,33 @@ import scipy.sparse
 
 import torch
 from torch.utils.data.dataloader import default_collate
+from typing import NamedTuple
+
+
+class ConstantKeys:
+    # to avoid typo
+    NUM_SPLITS, VAL_SHARE = 'num_splits', 'val_share'
+    STRATIFY, STRATIFIED = 'stratify', 'stratified'
+
+
+class BaseNamedTuple():
+    def __getitem__(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise AttributeError(f"DatasetProperties does not have the attribute name {key}")
+
+    def keys(self):
+        return self._asdict().keys()
+    
+    def values(self):
+        return self._asdict().values()
+
+    def items(self):
+        return self._asdict().items()
+    
+    def _asdict(self):
+        raise NotImplementedError
 
 
 class FitRequirement(NamedTuple):

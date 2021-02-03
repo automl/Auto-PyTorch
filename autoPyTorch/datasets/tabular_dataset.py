@@ -40,6 +40,7 @@ class Value2Index(object):
 
     def __getitem__(self, item: Any) -> int:
         if pd.isna(item):
+            # SHUHEI MEMO: Why do we add the location for nan?
             return 0
         else:
             return self.values[item] + 1
@@ -97,6 +98,7 @@ class TabularDataset(BaseDataset):
             # the below function will simply return Pandas DataFrame.
             Y = check_array(Y, ensure_2d=False)
 
+        # SHUHEI MEMO: num_features overlaps with input_shape in BaseDataset
         self.categorical_columns, self.numerical_columns, self.categories, self.num_features = \
             self.infer_dataset_properties(X)
 
@@ -150,6 +152,12 @@ class TabularDataset(BaseDataset):
                 asserting that the data contains a single column
 
         Returns:
+            data (pd.DataFrame): Converted data
+            data_types (List[DataTypes]): Datatypes of each column
+            nan_mask (Union[np.ndarray]): locations of nan in data
+            itovs (List[Optional[list]]): The table value in the location (col, row) 
+            vtois (List[Optional[Value2Index]]): The index of the value in the specified column
+
             Tuple[pd.DataFrame, List[DataTypes],
                  Union[np.ndarray],
                  List[Optional[list]],
@@ -157,6 +165,7 @@ class TabularDataset(BaseDataset):
         """
         single_column = False
         if isinstance(data, np.ndarray):
+            # SHUHEI MEMO: When does ',' not in str(data.dtype) happen?
             if len(data.shape) == 1 and ',' not in str(data.dtype):
                 single_column = True
                 data = data[:, None]
@@ -176,6 +185,7 @@ class TabularDataset(BaseDataset):
         data_types = []
         nan_mask = data.isna().to_numpy()
         for col_index, dtype in enumerate(data.dtypes):
+            # SHUHEI MEMO: dtype.kind (https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html)
             if dtype.kind == 'f':
                 data_types.append(DataTypes.Float)
             elif dtype.kind in ('i', 'u', 'b'):
@@ -188,10 +198,12 @@ class TabularDataset(BaseDataset):
                 data_types.append(DataTypes.Categorical)
             else:
                 raise ValueError(f"The dtype in column {col_index} is {dtype} which is not supported.")
+        # SHUHEI MEMO: index to value, value to index
         itovs: List[Optional[List[Any]]] = []
         vtois: List[Optional[Value2Index]] = []
         for col_index, (_, col) in enumerate(data.iteritems()):
             if data_types[col_index] != DataTypes.Float:
+                # SHUHEI MEMO: Since we are taking a set, no replacement, but why is it fine?
                 non_na_values = [v for v in set(col) if not pd.isna(v)]
                 non_na_values.sort()
                 itovs.append([np.nan] + non_na_values)
@@ -214,6 +226,11 @@ class TabularDataset(BaseDataset):
             X: input training data
 
         Returns:
+            categorical_columns (List[int]): The list of indices specifying categorical columns
+            numerical_columns (List[int]): The list of indices specifying numerical columns
+            categories (List[object]): The list of choices of each category
+            num_features (int): The number of columns or features in a given tabular data
+
             (Tuple[List[int], List[int], List[object], int]):
         """
         categorical_columns = []
@@ -223,7 +240,8 @@ class TabularDataset(BaseDataset):
                 categorical_columns.append(i)
             else:
                 numerical_columns.append(i)
-        categories = [np.unique(X.iloc[:, a]).tolist() for a in categorical_columns]
+        # SHUHEI MEMO: Why don't we make it dict?
+        categories = [np.unique(X.iloc[:, col_idx]).tolist() for col_idx in categorical_columns]
         num_features = X.shape[1]
 
         return categorical_columns, numerical_columns, categories, num_features

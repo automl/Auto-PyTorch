@@ -26,7 +26,7 @@ class DataFrameTest(unittest.TestCase):
         self.assertEqual(ds.vtois[0][np.nan], 0)
         self.assertEqual(ds.vtois[0][pd._libs.NaT], 0)
         self.assertEqual(ds.vtois[0][pd._libs.missing.NAType()], 0)
-        self.assertTrue((ds.nan_mask == np.array([[0, 0, 0], [0, 0, 1]], dtype=np.bool)).all())
+        self.assertTrue((ds.nan_mask == np.array([[0, 0, 0], [0, 0, 1]], dtype=np.bool8)).all())
 
 
 class NumpyArrayTest(unittest.TestCase):
@@ -41,7 +41,7 @@ class NumpyArrayTest(unittest.TestCase):
         self.assertEqual(ds.vtois[0][np.nan], 0)
         self.assertEqual(ds.vtois[0][pd._libs.NaT], 0)
         self.assertEqual(ds.vtois[0][pd._libs.missing.NAType()], 0)
-        self.assertTrue((ds.nan_mask == np.array([[0, 0, 0], [0, 1, 0]], dtype=np.bool)).all())
+        self.assertTrue((ds.nan_mask == np.array([[0, 0, 0], [0, 1, 0]], dtype=np.bool8)).all())
 
 
 def get_data_to_train() -> typing.Dict[str, typing.Any]:

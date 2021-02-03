@@ -13,6 +13,11 @@ from sklearn.model_selection import (
 )
 
 from typing_extensions import Protocol
+from autoPyTorch.utils.common import ConstantKeys
+
+
+NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
+STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
 
 
 # Use callback protocol as workaround, since callable with function fields count 'self' as argument
@@ -25,8 +30,10 @@ class CROSS_VAL_FN(Protocol):
 
 
 class HOLDOUT_FN(Protocol):
-    def __call__(self, val_share: float, indices: np.ndarray, stratify: Optional[Any]
-                 ) -> Tuple[np.ndarray, np.ndarray]:
+    def __call__(self,
+                 val_share: float,
+                 indices: np.ndarray,
+                 stratify: Optional[Any]) -> Tuple[np.ndarray, np.ndarray]:
         ...
 
 
@@ -47,47 +54,31 @@ RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
 
 DEFAULT_RESAMPLING_PARAMETERS = {
     HoldoutValTypes.holdout_validation: {
-        'val_share': 0.33,
+        VAL_SHARE: 0.33,
     },
     HoldoutValTypes.stratified_holdout_validation: {
-        'val_share': 0.33,
+        VAL_SHARE: 0.33,
     },
     CrossValTypes.k_fold_cross_validation: {
-        'num_splits': 3,
+        NUM_SPLITS: 3,
     },
     CrossValTypes.stratified_k_fold_cross_validation: {
-        'num_splits': 3,
+        NUM_SPLITS: 3,
     },
     CrossValTypes.shuffle_split_cross_validation: {
-        'num_splits': 3,
+        NUM_SPLITS: 3,
     },
     CrossValTypes.time_series_cross_validation: {
-        'num_splits': 3,
+        NUM_SPLITS: 3,
     },
 }  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
 
 
-def get_cross_validators(*cross_val_types: CrossValTypes) -> Dict[str, CROSS_VAL_FN]:
-    cross_validators = {}  # type: Dict[str, CROSS_VAL_FN]
-    for cross_val_type in cross_val_types:
-        cross_val_fn = globals()[cross_val_type.name]
-        cross_validators[cross_val_type.name] = cross_val_fn
-    return cross_validators
-
-
-def get_holdout_validators(*holdout_val_types: HoldoutValTypes) -> Dict[str, HOLDOUT_FN]:
-    holdout_validators = {}  # type: Dict[str, HOLDOUT_FN]
-    for holdout_val_type in holdout_val_types:
-        holdout_val_fn = globals()[holdout_val_type.name]
-        holdout_validators[holdout_val_type.name] = holdout_val_fn
-    return holdout_validators
-
-
 def is_stratified(val_type: Union[str, CrossValTypes, HoldoutValTypes]) -> bool:
     if isinstance(val_type, str):
-        return val_type.lower().startswith("stratified")
+        return val_type.lower().startswith(STRATIFIED)
     else:
-        return val_type.name.lower().startswith("stratified")
+        return val_type.name.lower().startswith(STRATIFIED)
 
 
 def holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) -> Tuple[np.ndarray, np.ndarray]:
@@ -97,7 +88,7 @@ def holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) -> 
 
 def stratified_holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) \
         -> Tuple[np.ndarray, np.ndarray]:
-    train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs["stratify"])
+    train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs[STRATIFY])
     return train, val
 
 
@@ -111,14 +102,14 @@ def shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwarg
 def stratified_shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
         -> List[Tuple[np.ndarray, np.ndarray]]:
     cv = StratifiedShuffleSplit(n_splits=num_splits)
-    splits = list(cv.split(indices, kwargs["stratify"]))
+    splits = list(cv.split(indices, kwargs[STRATIFY]))
     return splits
 
 
 def stratified_k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
         -> List[Tuple[np.ndarray, np.ndarray]]:
     cv = StratifiedKFold(n_splits=num_splits)
-    splits = list(cv.split(indices, kwargs["stratify"]))
+    splits = list(cv.split(indices, kwargs[STRATIFY]))
     return splits
 
 
@@ -151,3 +142,25 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
     cv = TimeSeriesSplit(n_splits=num_splits)
     splits = list(cv.split(indices))
     return splits
+
+
+# Dict of each function in this file
+cross_val_fns = {cross_val_type.name: globals()[cross_val_type.name] for cross_val_type in CrossValTypes}
+holdout_val_fns = {holdout_val_type.name: globals()[holdout_val_type.name] for holdout_val_type in HoldoutValTypes}
+
+
+def get_cross_validators(*cross_val_types: Tuple[CrossValTypes]) -> Dict[str, CROSS_VAL_FN]:
+    cross_validators = {
+        cross_val_type.name: cross_val_fns[cross_val_type.name]
+        for cross_val_type in cross_val_types    
+    }
+    return cross_validators
+
+
+def get_holdout_validators(*holdout_val_types: Tuple[HoldoutValTypes]) -> Dict[str, HOLDOUT_FN]:
+    holdout_validators = {
+        holdout_val_type.name: holdout_val_fns[holdout_val_type.name]
+        for holdout_val_type in holdout_val_types
+    }
+    return holdout_validators
+

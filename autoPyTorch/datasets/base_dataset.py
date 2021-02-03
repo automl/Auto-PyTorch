@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import NamedTuple
 
 import numpy as np
 
@@ -19,11 +20,13 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     get_cross_validators,
     get_holdout_validators,
-    is_stratified,
+    is_stratified
 )
-from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
+from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
-BASE_DATASET_INPUT = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+BASE_DATASET_TYPE = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
+STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
 
 
 def check_valid_data(data: Any) -> None:
@@ -32,12 +35,28 @@ def check_valid_data(data: Any) -> None:
             'The specified Data for Dataset does either not have a __getitem__ or a __len__ attribute.')
 
 
-def type_check(train_tensors: BASE_DATASET_INPUT, val_tensors: Optional[BASE_DATASET_INPUT] = None) -> None:
+def type_check(train_tensors: BASE_DATASET_TYPE, val_tensors: Optional[BASE_DATASET_TYPE] = None) -> None:
     for i in range(len(train_tensors)):
         check_valid_data(train_tensors[i])
     if val_tensors is not None:
         for i in range(len(val_tensors)):
             check_valid_data(val_tensors[i])
+
+
+class _DatasetSpecificProperties(
+    BaseNamedTuple,
+    NamedTuple(
+        '_DatasetSpecificProperties',
+        [
+            ('task_type', Optional[str]),
+            ('output_type', str),
+            ('issparse', bool),
+            ('input_shape', Tuple[int]),
+            ('output_shape', Tuple[int]),
+            ('num_classes', Optional[int])
+        ],
+    )):
+    pass
 
 
 class TransformSubset(Subset):
@@ -60,10 +79,10 @@ class TransformSubset(Subset):
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
-        train_tensors: BASE_DATASET_INPUT,
+        train_tensors: BASE_DATASET_TYPE,
         dataset_name: Optional[str] = None,
-        val_tensors: Optional[BASE_DATASET_INPUT] = None,
-        test_tensors: Optional[BASE_DATASET_INPUT] = None,
+        val_tensors: Optional[BASE_DATASET_TYPE] = None,
+        test_tensors: Optional[BASE_DATASET_TYPE] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
@@ -74,19 +93,19 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         Base class for datasets used in AutoPyTorch
         Args:
-            train_tensors (A tuple of objects that have a __len__ and a __getitem__ attribute):
-                training data
+            train_tensors (A tuple of objects that have __len__ and __getitem__ attribute):
+                training data (A tuple of training features and labels)
             dataset_name (str): name of the dataset, used as experiment name.
-            val_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
-                validation data
-            test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
-                test data
+            val_tensors (An optional tuple of objects that have __len__ and __getitem__ attribute):
+                validation data (A tuple of validation features and labels)
+            test_tensors (An optional tuple of objects that have __len__ and __getitem__ attribute):
+                test data (A tuple of test features and labels)
             resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
-            resampling_strategy_args (Optional[Dict[str, Any]]): arguments
-                required for the chosen resampling strategy. If None, uses
-                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            resampling_strategy_args (Optional[Dict[str, Any]]): 
+                arguments required for the chosen resampling strategy. 
+                If None, uses the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
             shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
@@ -116,7 +135,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.num_classes: Optional[int] = None
         if len(train_tensors) == 2 and train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
-            self.output_shape: int = train_tensors[1].shape[1] if train_tensors[1].shape == 2 else 1
+            # SHUHEI MEMO: What do you wanna do here? shape is always tuple, right?
+            """Old: train_tensors[1].shape[1] if train_tensors[1].shape == 2 else 1"""
+            self.output_shape: int = train_tensors[1].shape[1] if len(train_tensors[1].shape) == 2 else 1
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
@@ -219,9 +240,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         splits = []
         if isinstance(self.resampling_strategy, HoldoutValTypes):
             val_share = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
-                'val_share', None)
+                VAL_SHARE, None)
             if self.resampling_strategy_args is not None:
-                val_share = self.resampling_strategy_args.get('val_share', val_share)
+                val_share = self.resampling_strategy_args.get(VAL_SHARE, val_share)
             splits.append(
                 self.create_holdout_val_split(
                     holdout_val_type=self.resampling_strategy,
@@ -230,9 +251,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             )
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
-                'num_splits', None)
+                NUM_SPLITS, None)
             if self.resampling_strategy_args is not None:
-                num_splits = self.resampling_strategy_args.get('num_splits', num_splits)
+                num_splits = self.resampling_strategy_args.get(NUM_SPLITS, num_splits)
             # Create the split if it was not created before
             splits.extend(
                 self.create_cross_val_splits(
@@ -271,7 +292,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         kwargs = {}
         if is_stratified(cross_val_type):
             # we need additional information about the data for stratification
-            kwargs["stratify"] = self.train_tensors[-1]
+            kwargs[STRATIFY] = self.train_tensors[-1]
         splits = self.cross_validators[cross_val_type.name](
             num_splits, self._get_indices(), **kwargs)
         return splits
@@ -306,7 +327,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         kwargs = {}
         if is_stratified(holdout_val_type):
             # we need additional information about the data for stratification
-            kwargs["stratify"] = self.train_tensors[-1]
+            kwargs[STRATIFY] = self.train_tensors[-1]
+        # SHUHEI MEMO: What is this function?
         train, val = self.holdout_validators[holdout_val_type.name](val_share, self._get_indices(), **kwargs)
         return train, val
 
@@ -327,7 +349,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return (TransformSubset(self, self.splits[split_id][0], train=True),
                 TransformSubset(self, self.splits[split_id][1], train=False))
 
-    def replace_data(self, X_train: BASE_DATASET_INPUT, X_test: Optional[BASE_DATASET_INPUT]) -> 'BaseDataset':
+    def replace_data(self, X_train: BASE_DATASET_TYPE, X_test: Optional[BASE_DATASET_TYPE]) -> 'BaseDataset':
         """
         To speed up the training of small dataset, early pre-processing of the data
         can be made on the fly by the pipeline.
@@ -362,12 +384,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             dataset_properties[dataset_requirement.name] = getattr(self, dataset_requirement.name)
 
         # Add task type, output type and issparse to dataset properties as
-        # they are not a dataset requirement in the pipeline
-        dataset_properties.update({'task_type': self.task_type,
-                                   'output_type': self.output_type,
-                                   'issparse': self.issparse,
-                                   'input_shape': self.input_shape,
-                                   'output_shape': self.output_shape,
-                                   'num_classes': self.num_classes,
-                                   })
+        # they are not dataset requirements in the pipeline
+        dataset_specific_properties = _DatasetSpecificProperties(task_type=self.task_type,
+                                                                 output_type=self.output_type,
+                                                                 issparse=self.issparse,
+                                                                 input_shape=self.input_shape,
+                                                                 output_shape=self.output_shape,
+                                                                 num_classes=self.num_classes)
+        dataset_properties.update(**dataset_specific_properties._asdict())
         return dataset_properties
