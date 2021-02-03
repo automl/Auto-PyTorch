@@ -134,7 +134,7 @@ class HoldOutFuncs(Protocol):
     def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldoutValTypes]) \
         -> Dict[str, Callable[[float, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]:
         holdout_validators = {
-            holdout_val_type.name: getattr(HOLDOUT_FN, holdout_val_type.name)
+            holdout_val_type.name: getattr(cls, holdout_val_type.name)
             for holdout_val_type in holdout_val_types
         }
         return holdout_validators
