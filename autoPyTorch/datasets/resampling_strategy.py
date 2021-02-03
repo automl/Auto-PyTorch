@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 
 import numpy as np
 
@@ -20,8 +20,30 @@ NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
 STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
 
 
+class CrossValTypes(IntEnum):
+    stratified_k_fold_cross_validation = 1
+    k_fold_cross_validation = 2
+    stratified_shuffle_split_cross_validation = 3
+    shuffle_split_cross_validation = 4
+    time_series_cross_validation = 5
+
+    def is_stratified(self) -> bool:
+        stratified = [self.stratified_k_fold_cross_validation,
+                      self.stratified_shuffle_split_cross_validation]
+        return getattr(self, self.name) in stratified
+
+
+class HoldoutValTypes(IntEnum):
+    holdout_validation = 6
+    stratified_holdout_validation = 7
+
+    def is_stratified(self) -> bool:
+        stratified = [self.stratified_holdout_validation]
+        return getattr(self, self.name) in stratified
+
+
 # Use callback protocol as workaround, since callable with function fields count 'self' as argument
-class CROSS_VAL_FN(Protocol):
+class CrossValFuncs(Protocol):
     def __call__(self,
                  num_splits: int,
                  indices: np.ndarray,
@@ -80,8 +102,17 @@ class CROSS_VAL_FN(Protocol):
         splits = list(cv.split(indices))
         return splits
 
+    @classmethod
+    def get_cross_validators(cls, *cross_val_types: Tuple[CrossValTypes]) \
+        -> Dict[str, Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]:
+        cross_validators = {
+            cross_val_type.name: getattr(cls, cross_val_type.name)
+            for cross_val_type in cross_val_types
+        }
+        return cross_validators
 
-class HOLDOUT_FN(Protocol):
+
+class HoldOutFuncs(Protocol):
     def __call__(self,
                  val_share: float,
                  indices: np.ndarray,
@@ -98,28 +129,15 @@ class HOLDOUT_FN(Protocol):
             -> Tuple[np.ndarray, np.ndarray]:
         train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs[STRATIFY])
         return train, val
-
-
-class CrossValTypes(IntEnum):
-    stratified_k_fold_cross_validation = 1
-    k_fold_cross_validation = 2
-    stratified_shuffle_split_cross_validation = 3
-    shuffle_split_cross_validation = 4
-    time_series_cross_validation = 5
-
-    def is_stratified(self) -> bool:
-        stratified = [self.stratified_k_fold_cross_validation,
-                      self.stratified_shuffle_split_cross_validation]
-        return getattr(self, self.name) in stratified
-
-
-class HoldoutValTypes(IntEnum):
-    holdout_validation = 6
-    stratified_holdout_validation = 7
-
-    def is_stratified(self) -> bool:
-        stratified = [self.stratified_holdout_validation]
-        return getattr(self, self.name) in stratified
+    
+    @classmethod
+    def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldoutValTypes]) \
+        -> Dict[str, Callable[[float, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]:
+        holdout_validators = {
+            holdout_val_type.name: getattr(HOLDOUT_FN, holdout_val_type.name)
+            for holdout_val_type in holdout_val_types
+        }
+        return holdout_validators
 
 
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
@@ -144,21 +162,3 @@ DEFAULT_RESAMPLING_PARAMETERS = {
         NUM_SPLITS: 3,
     },
 }  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
-
-
-"""TODO: implant into each class"""
-def get_cross_validators(*cross_val_types: Tuple[CrossValTypes]) -> Dict[str, CROSS_VAL_FN]:
-    cross_validators = {
-        cross_val_type.name: getattr(CROSS_VAL_FN, cross_val_type.name)
-        for cross_val_type in cross_val_types
-    }
-    return cross_validators
-
-
-def get_holdout_validators(*holdout_val_types: Tuple[HoldoutValTypes]) -> Dict[str, HOLDOUT_FN]:
-    holdout_validators = {
-        holdout_val_type.name: getattr(HOLDOUT_FN, holdout_val_type.name)
-        for holdout_val_type in holdout_val_types
-    }
-    return holdout_validators
-

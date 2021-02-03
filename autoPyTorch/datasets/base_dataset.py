@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, cast
 from typing import NamedTuple
 
 import numpy as np
@@ -13,13 +13,11 @@ from torch.utils.data import Dataset, Subset
 import torchvision
 
 from autoPyTorch.datasets.resampling_strategy import (
-    CROSS_VAL_FN,
+    CrossValFuncs,
     CrossValTypes,
-    DEFAULT_RESAMPLING_PARAMETERS,
-    HOLDOUT_FN,
+    HoldOutFuncs,
     HoldoutValTypes,
-    get_cross_validators,
-    get_holdout_validators
+    DEFAULT_RESAMPLING_PARAMETERS
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
@@ -122,8 +120,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors = train_tensors
         self.val_tensors = val_tensors
         self.test_tensors = test_tensors
-        self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
-        self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
+
+        # Dict[str, Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]
+        self.cross_validators = {}
+        self.holdout_validators  = {}
+
         self.rand = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
@@ -142,13 +143,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.is_small_preprocess = True
 
         # Make sure cross validation splits are created once
-        self.cross_validators = get_cross_validators(
+        self.cross_validators = CrossValFuncs.get_cross_validators(
             CrossValTypes.stratified_k_fold_cross_validation,
             CrossValTypes.k_fold_cross_validation,
             CrossValTypes.shuffle_split_cross_validation,
             CrossValTypes.stratified_shuffle_split_cross_validation
         )
-        self.holdout_validators = get_holdout_validators(
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
             HoldoutValTypes.holdout_validation,
             HoldoutValTypes.stratified_holdout_validation
         )
