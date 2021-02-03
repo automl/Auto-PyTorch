@@ -26,7 +26,59 @@ class CROSS_VAL_FN(Protocol):
                  num_splits: int,
                  indices: np.ndarray,
                  stratify: Optional[Any]) -> List[Tuple[np.ndarray, np.ndarray]]:
-        ...
+        pass
+    
+    @staticmethod
+    def shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
+            -> List[Tuple[np.ndarray, np.ndarray]]:
+        cv = ShuffleSplit(n_splits=num_splits)
+        splits = list(cv.split(indices))
+        return splits
+
+    @staticmethod
+    def stratified_shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
+            -> List[Tuple[np.ndarray, np.ndarray]]:
+        cv = StratifiedShuffleSplit(n_splits=num_splits)
+        splits = list(cv.split(indices, kwargs[STRATIFY]))
+        return splits
+
+    @staticmethod
+    def stratified_k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
+            -> List[Tuple[np.ndarray, np.ndarray]]:
+        cv = StratifiedKFold(n_splits=num_splits)
+        splits = list(cv.split(indices, kwargs[STRATIFY]))
+        return splits
+
+    @staticmethod
+    def k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Standard k fold cross validation.
+
+        :param indices: array of indices to be split
+        :param num_splits: number of cross validation splits
+        :return: list of tuples of training and validation indices
+        """
+        cv = KFold(n_splits=num_splits)
+        splits = list(cv.split(indices))
+        return splits
+
+    @staticmethod
+    def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
+            -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns train and validation indices respecting the temporal ordering of the data.
+        Dummy example: [0, 1, 2, 3] with 3 folds yields
+            [0] [1]
+            [0, 1] [2]
+            [0, 1, 2] [3]
+
+        :param indices: array of indices to be split
+        :param num_splits: number of cross validation splits
+        :return: list of tuples of training and validation indices
+        """
+        cv = TimeSeriesSplit(n_splits=num_splits)
+        splits = list(cv.split(indices))
+        return splits
 
 
 class HOLDOUT_FN(Protocol):
@@ -34,7 +86,18 @@ class HOLDOUT_FN(Protocol):
                  val_share: float,
                  indices: np.ndarray,
                  stratify: Optional[Any]) -> Tuple[np.ndarray, np.ndarray]:
-        ...
+        pass
+
+    @staticmethod
+    def holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) -> Tuple[np.ndarray, np.ndarray]:
+        train, val = train_test_split(indices, test_size=val_share, shuffle=False)
+        return train, val
+
+    @staticmethod
+    def stratified_holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) \
+            -> Tuple[np.ndarray, np.ndarray]:
+        train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs[STRATIFY])
+        return train, val
 
 
 class CrossValTypes(IntEnum):
@@ -81,85 +144,17 @@ def is_stratified(val_type: Union[str, CrossValTypes, HoldoutValTypes]) -> bool:
         return val_type.name.lower().startswith(STRATIFIED)
 
 
-def holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) -> Tuple[np.ndarray, np.ndarray]:
-    train, val = train_test_split(indices, test_size=val_share, shuffle=False)
-    return train, val
-
-
-def stratified_holdout_validation(val_share: float, indices: np.ndarray, **kwargs: Any) \
-        -> Tuple[np.ndarray, np.ndarray]:
-    train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs[STRATIFY])
-    return train, val
-
-
-def shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
-        -> List[Tuple[np.ndarray, np.ndarray]]:
-    cv = ShuffleSplit(n_splits=num_splits)
-    splits = list(cv.split(indices))
-    return splits
-
-
-def stratified_shuffle_split_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
-        -> List[Tuple[np.ndarray, np.ndarray]]:
-    cv = StratifiedShuffleSplit(n_splits=num_splits)
-    splits = list(cv.split(indices, kwargs[STRATIFY]))
-    return splits
-
-
-def stratified_k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
-        -> List[Tuple[np.ndarray, np.ndarray]]:
-    cv = StratifiedKFold(n_splits=num_splits)
-    splits = list(cv.split(indices, kwargs[STRATIFY]))
-    return splits
-
-
-def k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) -> List[Tuple[np.ndarray, np.ndarray]]:
-    """
-    Standard k fold cross validation.
-
-    :param indices: array of indices to be split
-    :param num_splits: number of cross validation splits
-    :return: list of tuples of training and validation indices
-    """
-    cv = KFold(n_splits=num_splits)
-    splits = list(cv.split(indices))
-    return splits
-
-
-def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
-        -> List[Tuple[np.ndarray, np.ndarray]]:
-    """
-    Returns train and validation indices respecting the temporal ordering of the data.
-    Dummy example: [0, 1, 2, 3] with 3 folds yields
-        [0] [1]
-        [0, 1] [2]
-        [0, 1, 2] [3]
-
-    :param indices: array of indices to be split
-    :param num_splits: number of cross validation splits
-    :return: list of tuples of training and validation indices
-    """
-    cv = TimeSeriesSplit(n_splits=num_splits)
-    splits = list(cv.split(indices))
-    return splits
-
-
-# Dict of each function in this file
-cross_val_fns = {cross_val_type.name: globals()[cross_val_type.name] for cross_val_type in CrossValTypes}
-holdout_val_fns = {holdout_val_type.name: globals()[holdout_val_type.name] for holdout_val_type in HoldoutValTypes}
-
-
 def get_cross_validators(*cross_val_types: Tuple[CrossValTypes]) -> Dict[str, CROSS_VAL_FN]:
     cross_validators = {
-        cross_val_type.name: cross_val_fns[cross_val_type.name]
-        for cross_val_type in cross_val_types    
+        cross_val_type.name: getattr(CROSS_VAL_FN, cross_val_type.name)
+        for cross_val_type in cross_val_types
     }
     return cross_validators
 
 
 def get_holdout_validators(*holdout_val_types: Tuple[HoldoutValTypes]) -> Dict[str, HOLDOUT_FN]:
     holdout_validators = {
-        holdout_val_type.name: holdout_val_fns[holdout_val_type.name]
+        holdout_val_type.name: getattr(HOLDOUT_FN, holdout_val_type.name)
         for holdout_val_type in holdout_val_types
     }
     return holdout_validators

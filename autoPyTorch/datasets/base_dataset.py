@@ -171,9 +171,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         a dataloader can yield this dataset with the desired transformations
 
         Args:
-            transform (torchvision.transforms.Compose): The transformations proposed
-                by the current pipeline
-            train (bool): Whether to update the train or validation transform
+            transform (torchvision.transforms.Compose): 
+                The transformations proposed by the current pipeline
+            train (bool):
+                Whether to update the train or validation transform
 
         Returns:
             self: A copy of the update pipeline
