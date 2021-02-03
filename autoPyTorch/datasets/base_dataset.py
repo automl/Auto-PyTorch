@@ -19,8 +19,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HOLDOUT_FN,
     HoldoutValTypes,
     get_cross_validators,
-    get_holdout_validators,
-    is_stratified
+    get_holdout_validators
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
@@ -291,7 +290,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not isinstance(cross_val_type, CrossValTypes):
             raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
         kwargs = {}
-        if is_stratified(cross_val_type):
+        if cross_val_type.is_stratified():
             # we need additional information about the data for stratification
             kwargs[STRATIFY] = self.train_tensors[-1]
         splits = self.cross_validators[cross_val_type.name](
@@ -326,7 +325,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
         kwargs = {}
-        if is_stratified(holdout_val_type):
+        if holdout_val_type.is_stratified():
             # we need additional information about the data for stratification
             kwargs[STRATIFY] = self.train_tensors[-1]
         # SHUHEI MEMO: What is this function?

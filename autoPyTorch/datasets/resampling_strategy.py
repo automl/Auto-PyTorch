@@ -107,10 +107,19 @@ class CrossValTypes(IntEnum):
     shuffle_split_cross_validation = 4
     time_series_cross_validation = 5
 
+    def is_stratified(self) -> bool:
+        stratified = [self.stratified_k_fold_cross_validation,
+                      self.stratified_shuffle_split_cross_validation]
+        return getattr(self, self.name) in stratified
+
 
 class HoldoutValTypes(IntEnum):
     holdout_validation = 6
     stratified_holdout_validation = 7
+
+    def is_stratified(self) -> bool:
+        stratified = [self.stratified_holdout_validation]
+        return getattr(self, self.name) in stratified
 
 
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
@@ -137,13 +146,7 @@ DEFAULT_RESAMPLING_PARAMETERS = {
 }  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
 
 
-def is_stratified(val_type: Union[str, CrossValTypes, HoldoutValTypes]) -> bool:
-    if isinstance(val_type, str):
-        return val_type.lower().startswith(STRATIFIED)
-    else:
-        return val_type.name.lower().startswith(STRATIFIED)
-
-
+"""TODO: implant into each class"""
 def get_cross_validators(*cross_val_types: Tuple[CrossValTypes]) -> Dict[str, CROSS_VAL_FN]:
     cross_validators = {
         cross_val_type.name: getattr(CROSS_VAL_FN, cross_val_type.name)
