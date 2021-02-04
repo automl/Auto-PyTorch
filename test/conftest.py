@@ -10,7 +10,7 @@ import numpy as np
 
 import pytest
 
-from sklearn.datasets import fetch_openml, make_classification
+from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
@@ -144,27 +144,56 @@ def dask_client(request):
     return client
 
 
-# Dataset fixture to test different scenarios on a scalable way
-# Please refer to https://docs.pytest.org/en/stable/fixture.html for details
-# on what fixtures are
 @pytest.fixture
-def fit_dictionary(request):
-    return request.getfixturevalue(request.param)
+def fit_dictionary_tabular(request, backend):
+    if request.param == "classification_numerical_only":
+        X, y = make_classification(
+            n_samples=200,
+            n_features=4,
+            n_informative=3,
+            n_redundant=1,
+            n_repeated=0,
+            n_classes=2,
+            n_clusters_per_class=2,
+            shuffle=True,
+            random_state=0
+        )
 
+    elif request.param == "classification_categorical_only":
+        X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+        categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
+        X = X[categorical_columns]
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
 
-@pytest.fixture
-def fit_dictionary_numerical_only(backend):
-    X, y = make_classification(
-        n_samples=200,
-        n_features=4,
-        n_informative=3,
-        n_redundant=1,
-        n_repeated=0,
-        n_classes=2,
-        n_clusters_per_class=2,
-        shuffle=True,
-        random_state=0
-    )
+    elif request.param == "classification_numerical_and_categorical":
+        X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
+
+    elif request.param == "regression_numerical_only":
+        X, y = make_regression(n_samples=200,
+                               n_features=4,
+                               n_informative=3,
+                               n_targets=1,
+                               shuffle=True,
+                               random_state=0)
+
+    elif request.param == "regression_categorical_only":
+        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
+        X = X[categorical_columns]
+        X = X.iloc[0:200]
+        y = np.log(y.iloc[0:200])
+
+    elif request.param == "regression_numerical_and_categorical":
+        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        X = X.iloc[0:200]
+        y = np.log(y.iloc[0:200])
+
+    else:
+        raise ValueError("Unsupported indirect fixture {}".format(request.param))
+
     datamanager = TabularDataset(
         X=X, Y=y,
         X_test=X, Y_test=y,
@@ -177,87 +206,6 @@ def fit_dictionary_numerical_only(backend):
             'categorical_columns': datamanager.categorical_columns}
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-    fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
-        'dataset_properties': dataset_properties,
-        'num_run': np.random.randint(50),
-        'device': 'cpu',
-        'budget_type': 'epochs',
-        'epochs': 1,
-        'torch_num_threads': 1,
-        'early_stopping': 20,
-        'working_dir': '/tmp',
-        'use_tensorboard_logger': True,
-        'use_pynisher': False,
-        'metrics_during_training': True,
-        'split_id': 0,
-        'backend': backend,
-    }
-    backend.save_datamanager(datamanager)
-    return fit_dictionary
-
-
-@pytest.fixture
-def fit_dictionary_categorical_only(backend):
-    X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
-    X = X[categorical_columns]
-    X = X.iloc[0:200]
-    y = y.iloc[0:200]
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        X_test=X, Y_test=y,
-    )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
-
-    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-    fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
-        'dataset_properties': dataset_properties,
-        'num_run': np.random.randint(50),
-        'device': 'cpu',
-        'budget_type': 'epochs',
-        'epochs': 1,
-        'torch_num_threads': 1,
-        'early_stopping': 20,
-        'working_dir': '/tmp',
-        'use_tensorboard_logger': True,
-        'use_pynisher': False,
-        'metrics_during_training': True,
-        'split_id': 0,
-        'backend': backend,
-    }
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        X_test=X, Y_test=y,
-    )
-    backend.save_datamanager(datamanager)
-    return fit_dictionary
-
-
-@pytest.fixture
-def fit_dictionary_num_and_categorical(backend):
-    X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    X = X.iloc[0:200]
-    y = y.iloc[0:200]
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        X_test=X, Y_test=y,
-    )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
-
-    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-
     fit_dictionary = {
         'X_train': X,
         'y_train': y,

@@ -33,7 +33,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BudgetTracker,
     RunSummary,
 )
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
 trainer_directory = os.path.split(__file__)[0]
@@ -56,6 +56,7 @@ class TrainerChoice(autoPyTorchChoice):
     epoch happens, that is, how batches of data are fed and used to train the network.
 
     """
+
     def __init__(self,
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[np.random.RandomState] = None
@@ -97,11 +98,11 @@ class TrainerChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, str]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, str]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -189,8 +190,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.logger = get_named_client_logger(
             name=X['num_run'],
             # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            port=X['logger_port'] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
 
         fit_function = self._fit
@@ -267,7 +267,7 @@ class TrainerChoice(autoPyTorchChoice):
                                         name=additional_losses),
             budget_tracker=budget_tracker,
             optimizer=X['optimizer'],
-            device=self.get_device(X),
+            device=get_device_from_fit_dictionary(X),
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']]
@@ -489,21 +489,6 @@ class TrainerChoice(autoPyTorchChoice):
                 raise ValueError("To fit a trainer, expected fit dictionary to have a {}".format(
                     config_option
                 ))
-
-    def get_device(self, X: Dict[str, Any]) -> torch.device:
-        """
-        Returns the device to do torch operations
-
-        Args:
-            X (Dict[str, Any]): A fit dictionary to control how the pipeline
-                is fitted
-
-        Returns:
-            torch.device: the device in which to compute operations. Cuda/cpu
-        """
-        if not torch.cuda.is_available():
-            return torch.device('cpu')
-        return torch.device(X['device'])
 
     @staticmethod
     def count_parameters(model: torch.nn.Module) -> Tuple[int, int]:

@@ -243,7 +243,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("preprocessing", EarlyPreprocessing()),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent(default_dataset_properties)),
+            ("network", NetworkComponent()),
             ("network_init", NetworkInitializerChoice(default_dataset_properties)),
             ("optimizer", OptimizerChoice(default_dataset_properties)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties)),

@@ -4,11 +4,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 import torch
-from torch.autograd import Variable
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
+from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.logging_ import PicklableClientLogger
@@ -253,8 +253,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             loss, outputs = self.train_step(data, targets)
 
             # save for metric evaluation
-            outputs_data.append(outputs.detach())
-            targets_data.append(targets.detach())
+            outputs_data.append(outputs.detach().cpu())
+            targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
@@ -286,10 +286,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        targets = targets.long().to(self.device)
+        if self.task_type in REGRESSION_TASKS:
+            targets = targets.float().to(self.device)
+        else:
+            targets = targets.long().to(self.device)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
-        data = Variable(data)
 
         # training
         self.optimizer.zero_grad()
@@ -338,8 +340,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 loss_sum += loss.item() * batch_size
                 N += batch_size
 
-                outputs_data.append(outputs.detach())
-                targets_data.append(targets.detach())
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
                 if writer:
                     writer.add_scalar(
@@ -354,8 +356,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
                         ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
-        outputs_data = torch.cat(outputs_data, dim=0)
-        targets_data = torch.cat(targets_data, dim=0)
+        outputs_data = torch.cat(outputs_data, dim=0).numpy()
+        targets_data = torch.cat(targets_data, dim=0).numpy()
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,

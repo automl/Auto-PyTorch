@@ -59,25 +59,25 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     """
 
     def __init__(
-        self,
-        config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
-        include: Optional[Dict[str, Any]] = None,
-        exclude: Optional[Dict[str, Any]] = None,
-        random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            self,
+            config: Optional[Configuration] = None,
+            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+            dataset_properties: Optional[Dict[str, Any]] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            random_state: Optional[np.random.RandomState] = None,
+            init_params: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
     def fit_transformer(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        fit_params: Optional[Dict[str, Any]] = None
+            self,
+            X: np.ndarray,
+            y: np.ndarray,
+            fit_params: Optional[Dict[str, Any]] = None
     ) -> Tuple[np.ndarray, Optional[Dict[str, Any]]]:
         """Fits the pipeline given a training (X,y) pair
 
@@ -102,16 +102,16 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         return X, fit_params
 
     def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
-        """score.
+        """Scores the fitted estimator on (X, y)
 
-                Args:
-                    X (np.ndarray): input to the pipeline, from which to guess targets
-                    batch_size (Optional[int]): batch_size controls whether the pipeline
-                        will be called on small chunks of the data. Useful when calling the
-                        predict method on the whole array X results in a MemoryError.
-                Returns:
-                    np.ndarray: coefficient of determination R^2 of the prediction
-                """
+        Args:
+            X (np.ndarray): input to the pipeline, from which to guess targets
+            batch_size (Optional[int]): batch_size controls whether the pipeline
+                will be called on small chunks of the data. Useful when calling the
+                predict method on the whole array X results in a MemoryError.
+        Returns:
+            np.ndarray: coefficient of determination R^2 of the prediction
+        """
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, ['r2'])
         y_pred = self.predict(X, batch_size=batch_size)
@@ -195,7 +195,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
             ("preprocessing", EarlyPreprocessing()),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent(default_dataset_properties)),
+            ("network", NetworkComponent()),
             ("network_init", NetworkInitializerChoice(default_dataset_properties)),
             ("optimizer", OptimizerChoice(default_dataset_properties)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
@@ -211,4 +211,4 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         Returns:
             str: name of the pipeline type
         """
-        return "tabular_regresser"
+        return "tabular_regressor"

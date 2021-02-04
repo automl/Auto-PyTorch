@@ -14,16 +14,17 @@ import pytest
 import torch
 
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
-from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
+from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
     parse_hyperparameter_search_space_updates
 
 
-@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
-                                                    'classification_numerical_only',
-                                                    'classification_numerical_and_categorical'], indirect=True)
-class TestTabularClassification:
+@pytest.mark.parametrize("fit_dictionary_tabular", ["regression_numerical_only",
+                                                    # "regression_categorical_only",
+                                                    # "regression_numerical_and_categorical"
+                                                    ], indirect=True)
+class TestTabularRegression:
     def _assert_pipeline_search_space(self, pipeline, search_space_updates):
         config_space = pipeline.get_hyperparameter_search_space()
         for update in search_space_updates.updates:
@@ -48,22 +49,23 @@ class TestTabularClassification:
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
 
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
+
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
         pipeline.fit(fit_dictionary_tabular)
 
         # To make sure we fitted the model, there should be a
-        # run summary object with accuracy
+        # run summary object with r2
         run_summary = pipeline.named_steps['trainer'].run_summary
         assert run_summary is not None
 
         # Make sure that performance was properly captured
         assert run_summary.performance_tracker['train_loss'][1] > 0
         assert run_summary.total_parameter_count > 0
-        assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
+        assert 'r2' in run_summary.performance_tracker['train_metrics'][1]
 
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
@@ -71,7 +73,7 @@ class TestTabularClassification:
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
         cs = pipeline.get_hyperparameter_search_space()
@@ -83,36 +85,17 @@ class TestTabularClassification:
         prediction = pipeline.predict(
             fit_dictionary_tabular['backend'].load_datamanager().test_tensors[0])
         assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == (200, 2)
-
-    def test_pipeline_predict_proba(self, fit_dictionary_tabular):
-        """This test makes sure that the pipeline is able to fit
-        given random combinations of hyperparameters across the pipeline
-        And then predict using predict probability
-        """
-        pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
-
-        cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
-        pipeline.set_hyperparameters(config)
-
-        pipeline.fit(fit_dictionary_tabular)
-
-        prediction = pipeline.predict_proba(
-            fit_dictionary_tabular['backend'].load_datamanager().test_tensors[0])
-        assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == (200, 2)
+        assert prediction.shape == (200, 1)
 
     def test_pipeline_transform(self, fit_dictionary_tabular):
         """
         In the context of autopytorch, transform expands a fit dictionary with
         components that where previously fit. We can use this as a nice way to make sure
         that fit properly work.
-        This code is added in light of components not properly added to the fit dicitonary
+        This code is added in light of components not properly added to the fit dictionary
         """
 
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -148,16 +131,17 @@ class TestTabularClassification:
 
         fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
         pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
-        for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads', 'dataset_properties']:
+        for key in ['job_id', 'device', 'split_id', 'use_pynisher', 'torch_num_threads',
+                    'dataset_properties', ]:
             fit_dictionary_tabular_copy = fit_dictionary_tabular.copy()
             fit_dictionary_tabular_copy.pop(key)
             with pytest.raises(ValueError, match=r"To fit .+?, expected fit dictionary to have"):
@@ -166,7 +150,7 @@ class TestTabularClassification:
     def test_network_optimizer_lr_handshake(self, fit_dictionary_tabular):
         """Fitting a network should put the network in the X"""
         # Create the pipeline to check. A random config should be sufficient
-        pipeline = TabularClassificationPipeline(
+        pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -208,8 +192,8 @@ class TestTabularClassification:
 
     def test_get_fit_requirements(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [], 'categorical_columns': [],
-                              'task_type': 'tabular_classification'}
-        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties)
+                              'task_type': 'tabular_regression'}
+        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties)
         fit_requirements = pipeline.get_fit_requirements()
 
         # check if fit requirements is a list of FitRequirement named tuples
@@ -219,9 +203,9 @@ class TestTabularClassification:
 
     def test_apply_search_space_updates(self, fit_dictionary_tabular, search_space_updates):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
-                              'task_type': 'tabular_classification'}
-        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
-                                                 search_space_updates=search_space_updates)
+                              'task_type': 'tabular_regression'}
+        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                             search_space_updates=search_space_updates)
         self._assert_pipeline_search_space(pipeline, search_space_updates)
 
     def test_read_and_update_search_space(self, fit_dictionary_tabular, search_space_updates):
@@ -236,17 +220,17 @@ class TestTabularClassification:
         file_search_space_updates = parse_hyperparameter_search_space_updates(updates_file=path)
         assert isinstance(file_search_space_updates, HyperparameterSearchSpaceUpdates)
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
-                              'task_type': 'tabular_classification'}
-        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
-                                                 search_space_updates=file_search_space_updates)
+                              'task_type': 'tabular_regression'}
+        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                             search_space_updates=file_search_space_updates)
         assert file_search_space_updates == pipeline.search_space_updates
 
     def test_error_search_space_updates(self, fit_dictionary_tabular, error_search_space_updates):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
-                              'task_type': 'tabular_classification'}
+                              'task_type': 'tabular_regression'}
         try:
-            _ = TabularClassificationPipeline(dataset_properties=dataset_properties,
-                                              search_space_updates=error_search_space_updates)
+            _ = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                          search_space_updates=error_search_space_updates)
         except Exception as e:
             assert isinstance(e, ValueError)
             assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
@@ -254,8 +238,8 @@ class TestTabularClassification:
 
     def test_set_range_search_space_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
-                              'task_type': 'tabular_classification'}
-        config_dict = TabularClassificationPipeline(dataset_properties=dataset_properties). \
+                              'task_type': 'tabular_regression'}
+        config_dict = TabularRegressionPipeline(dataset_properties=dataset_properties). \
             get_hyperparameter_search_space()._hyperparameters
         updates = HyperparameterSearchSpaceUpdates()
         for i, (name, hyperparameter) in enumerate(config_dict.items()):
@@ -274,8 +258,8 @@ class TestTabularClassification:
                 default_value = 1
             updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
                            value_range=value_range, default_value=default_value)
-        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
-                                                 search_space_updates=updates)
+        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                             search_space_updates=updates)
 
         try:
             self._assert_pipeline_search_space(pipeline, updates)
