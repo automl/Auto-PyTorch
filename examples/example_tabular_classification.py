@@ -2,9 +2,19 @@
 ======================
 Tabular Classification
 ======================
+
+The following example shows how to fit a sample classification model
+with AutoPyTorch
 """
+import os
+import tempfile as tmp
 import typing
 import warnings
+
+os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -59,17 +69,31 @@ def get_search_space_updates():
 
 
 if __name__ == '__main__':
-    # Get data to train
+    ############################################################################
+    # Data Loading
+    # ============
     X_train, X_test, y_train, y_test = get_data_to_train()
-
-    # Create a datamanager for this toy problem
     datamanager = TabularDataset(
         X=X_train, Y=y_train,
         X_test=X_test, Y_test=y_test)
 
-    api = TabularClassificationTask(delete_tmp_folder_after_terminate=False,
-                                    search_space_updates=get_search_space_updates())
-    api.search(dataset=datamanager, optimize_metric='accuracy', total_walltime_limit=500, func_eval_time_limit=150)
+    ############################################################################
+    # Build and fit a classifier
+    # ==========================
+    api = TabularClassificationTask(
+        delete_tmp_folder_after_terminate=False,
+        search_space_updates=get_search_space_updates()
+    )
+    api.search(
+        dataset=datamanager,
+        optimize_metric='accuracy',
+        total_walltime_limit=500,
+        func_eval_time_limit=150
+    )
+
+    ############################################################################
+    # Print the final ensemble performance
+    # ====================================
     print(api.run_history, api.trajectory)
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)

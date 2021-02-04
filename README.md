@@ -2,33 +2,36 @@
 
 Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
-This an alpha version of Auto-PyTorch.
-So far, Auto-PyTorch supports tabular data (classification, regression), image data (classification) and time-series data (TODO).
+This an alpha version of Auto-PyTorch with improved API.
+So far, Auto-PyTorch supports tabular data (classification, regression).
+We plan to enable image data and time-series data.
+
+
+Find the documentation [here](https://automl.github.io/Auto-PyTorch/refactor_development)
 
 
 ## Installation
 
 ### Pip
-```sh
-$ pip install autoPyTorch
-```
 
-### Manually
-```sh
-$ cd install/path
-$ git clone https://github.com/automl/Auto-PyTorch.git
-$ cd Auto-PyTorch
-$ cat requirements.txt | xargs -n 1 -L 1 pip install
-$ python setup.py install
-```
+We recommend using Anaconda for developing as follows:
 
+```sh
+# Following commands assume the user is in a cloned directory of Auto-Pytorch
+conda create -n autopytorch python=3.8
+conda activate autopytorch
+conda install gxx_linux-64 gcc_linux-64 swig
+cat requirements.txt | xargs -n 1 -L 1 pip install
+python setup.py install
+
+```
 
 ## Contributing
 
 If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
 
 ```sh
-$ git checkout development
+$ git checkout refactor_development
 ```
 
 

@@ -210,7 +210,7 @@ def fit_dictionary_tabular(request, backend):
         'X_train': X,
         'y_train': y,
         'dataset_properties': dataset_properties,
-        'job_id': 'example_tabular_classification_1',
+        'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
         'epochs': 1,
