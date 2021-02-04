@@ -19,24 +19,36 @@ class ConstantKeys:
 
 
 class BaseNamedTuple():
+    """
+    A class that expands the NamedTuple package.
+    This class allows NamedTuple to be used like a dict
+    by inheriting this class.
+    Therefore, self must be NamedTuple class.
+    """
     def __getitem__(self, key):
-        try:
+        if hasattr(self, key):
             return getattr(self, key)
-        except AttributeError:
-            raise AttributeError(f"DatasetProperties does not have the attribute name {key}")
+        else:
+            raise AttributeError(f"NamedTuple does not have the attribute name {key}")
+    
+    def pkg_check(self):
+        if hasattr(self, "_asdict"):
+            return True
+        else:
+            raise AttributeError(f"The child class of BaseNamedTuple must inherit NamedTuple class.")
 
     def keys(self):
+        self.pkg_check()
         return self._asdict().keys()
     
     def values(self):
+        self.pkg_check()
         return self._asdict().values()
 
     def items(self):
+        self.pkg_check()
         return self._asdict().items()
     
-    def _asdict(self):
-        raise NotImplementedError
-
 
 class FitRequirement(NamedTuple):
     """
