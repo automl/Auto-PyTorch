@@ -15,16 +15,16 @@ def head(request):
     return request.param
 
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
-                                            'fit_dictionary_categorical_only',
-                                            'fit_dictionary_num_and_categorical'], indirect=True)
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
+                                                    'classification_categorical_only',
+                                                    'classification_numerical_and_categorical'], indirect=True)
 class TestNetworks:
-    def test_pipeline_fit(self, fit_dictionary, backbone, head):
+    def test_pipeline_fit(self, fit_dictionary_tabular, backbone, head):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
 
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary['dataset_properties'],
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'network_backbone': [backbone], 'network_head': [head]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
@@ -32,7 +32,7 @@ class TestNetworks:
         assert backbone == config.get('network_backbone:__choice__', None)
         assert head == config.get('network_head:__choice__', None)
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary)
+        pipeline.fit(fit_dictionary_tabular)
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy

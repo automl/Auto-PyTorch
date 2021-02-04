@@ -133,3 +133,20 @@ def hash_array_or_matrix(X: Union[np.ndarray, pd.DataFrame]) -> str:
 
     hash = m.hexdigest()
     return hash
+
+
+def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
+    """
+    Get a torch device object by checking if the fit dictionary specifies a device. If not, or if no GPU is available
+    return a CPU device.
+
+    Args:
+        X (Dict[str, Any]): A fit dictionary to control how the pipeline is fitted
+
+    Returns:
+        torch.device: Device to be used for training/inference
+    """
+    if not torch.cuda.is_available():
+        return torch.device("cpu")
+
+    return torch.device(X.get("device", "cpu"))

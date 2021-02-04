@@ -9,7 +9,7 @@ from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 
 
 class NetworkComponent(autoPyTorchTrainingComponent):
@@ -20,15 +20,11 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
     def __init__(
             self,
-            network: Optional[torch.nn.Module] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            device: Optional[torch.device] = None
+            random_state: Optional[np.random.RandomState] = None
     ) -> None:
         super(NetworkComponent, self).__init__()
-        self.network = network
         self.random_state = random_state
-        self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu") if device is None else device
+        self.device = None
         self.add_fit_requirements([
             FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
@@ -53,6 +49,9 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         self.network = torch.nn.Sequential(X['network_backbone'], X['network_head'])
 
         # Properly set the network training device
+        if self.device is None:
+            self.device = get_device_from_fit_dictionary(X)
+
         self.to(self.device)
 
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
@@ -113,12 +112,14 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
-            X_batch = torch.autograd.Variable(X_batch).float().to(self.device)
+            X_batch = X_batch.float().to(self.device)
 
-            Y_batch_pred = self.network(X_batch).detach().cpu()
-            if self.final_activation is not None:
-                Y_batch_pred = self.final_activation(Y_batch_pred)
-            Y_batch_preds.append(Y_batch_pred)
+            with torch.no_grad():
+                Y_batch_pred = self.network(X_batch)
+                if self.final_activation is not None:
+                    Y_batch_pred = self.final_activation(Y_batch_pred)
+
+            Y_batch_preds.append(Y_batch_pred.cpu())
 
         return torch.cat(Y_batch_preds, 0).cpu().numpy()
 
