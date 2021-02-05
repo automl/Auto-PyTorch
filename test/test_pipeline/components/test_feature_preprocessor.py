@@ -5,19 +5,19 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.fast_ica import FastICA
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.kernel_pca import \
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FastICA import FastICA
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.KernelPCA import \
     KernelPCA
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.kernel_sinks import \
-    RandomKitchenSinks
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    NoFeaturePreprocessor import NoFeaturePreprocessor
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.Nystroem import Nystroem
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
-    no_feature_preprocessor import NoFeaturePreprocessor
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.nystroem import Nystroem
+    PolynomialFeatures import PolynomialFeatures
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
-    polynomial_features import PolynomialFeatures
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
-    power_transformer import PowerTransformer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.truncated_svd import \
+    PowerTransformer import PowerTransformer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    RandomKitchenSinks import RandomKitchenSinks
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.TruncatedSVD import \
     TruncatedSVD
 
 

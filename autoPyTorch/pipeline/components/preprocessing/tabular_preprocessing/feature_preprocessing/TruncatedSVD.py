@@ -39,17 +39,19 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
         dataset_properties: Optional[Dict[str, str]] = None,
         target_dim: Tuple[Tuple, int] = ((10, 256), 128),
     ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
 
         if dataset_properties is not None:
             n_features = len(dataset_properties['numerical_columns'])
-            if 0 < n_features < target_dim[0][0]:
+            if n_features <= 1:
+                return cs
+            if n_features < target_dim[0][0]:
                 target_dim = ((1, n_features - 1), n_features - 1)
             elif len(dataset_properties["numerical_columns"]) < target_dim[0][1]:
                 target_dim = ((target_dim[0][0], n_features - 1),
                               n_features - 1)
         target_dim = UniformIntegerHyperparameter("target_dim", lower=target_dim[0][0],
                                                   upper=target_dim[0][1], default_value=target_dim[1])
-        cs = ConfigurationSpace()
         cs.add_hyperparameters([target_dim])
 
         return cs

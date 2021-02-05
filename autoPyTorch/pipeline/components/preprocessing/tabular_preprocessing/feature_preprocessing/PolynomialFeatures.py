@@ -43,14 +43,14 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
         degree: Tuple[Tuple, int] = ((2, 3), 2),
-        intersection_only: Tuple[Tuple, bool] = ((True, False), False),
+        interaction_only: Tuple[Tuple, bool] = ((True, False), False),
         include_bias: Tuple[Tuple, bool] = ((True, False), False)
     ) -> ConfigurationSpace:
 
         degree = UniformIntegerHyperparameter("degree", lower=degree[0][0], upper=degree[0][1], default_value=degree[1])
         interaction_only = CategoricalHyperparameter("interaction_only",
-                                                     choices=intersection_only[0],
-                                                     default_value=intersection_only[1])
+                                                     choices=interaction_only[0],
+                                                     default_value=interaction_only[1])
         include_bias = CategoricalHyperparameter("include_bias",
                                                  choices=include_bias[0],
                                                  default_value=include_bias[1])
