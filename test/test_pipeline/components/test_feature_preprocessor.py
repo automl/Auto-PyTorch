@@ -34,7 +34,7 @@ class TestFeaturePreprocessors():
     def test_feature_preprocessor(self, fit_dictionary, preprocessor):
         configuration = preprocessor.\
             get_hyperparameter_search_space(dataset_properties=fit_dictionary["dataset_properties"]) \
-            .sample_configuration().get_dictionary()
+            .get_default_configuration().get_dictionary()
         preprocessor = preprocessor.set_params(**configuration)
         preprocessor.fit(fit_dictionary)
         X = preprocessor.transform(fit_dictionary)
