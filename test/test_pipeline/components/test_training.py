@@ -139,7 +139,9 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
             device=self.device,
             metrics_during_training=True,
             scheduler=None,
-            task_type=self.task_type
+            task_type=self.task_type,
+            output_type=self.output_type,
+            labels=self.y
         )
 
         prev_loss, prev_metrics = trainer.evaluate(self.loader, epoch=1, writer=None)
@@ -173,7 +175,9 @@ class StandartTrainerTest(BaseTraining, unittest.TestCase):
             optimizer=self.optimizer,
             device=self.device,
             metrics_during_training=True,
-            task_type=self.task_type
+            task_type=self.task_type,
+            output_type=self.output_type,
+            labels=self.y
         )
 
         # Train the model
@@ -205,7 +209,9 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
             optimizer=self.optimizer,
             device=self.device,
             metrics_during_training=True,
-            task_type=self.task_type
+            task_type=self.task_type,
+            output_type=self.output_type,
+            labels=self.y
         )
 
         # Train the model
@@ -264,7 +270,7 @@ class TrainerTest(unittest.TestCase):
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the trainer
         choice"""
-        trainer_choice = TrainerChoice(dataset_properties={})
+        trainer_choice = TrainerChoice(dataset_properties={'task_type': 'tabular_classification'})
         cs = trainer_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the serach space

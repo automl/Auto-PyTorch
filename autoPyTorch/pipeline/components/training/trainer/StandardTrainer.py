@@ -1,13 +1,27 @@
 import typing
 
 from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 import numpy as np
 
+from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 
 
 class StandardTrainer(BaseTrainerComponent):
+    def __init__(self, weighted_loss: bool = False,
+                 random_state: typing.Optional[np.random.RandomState] = None):
+        """
+        This class handles the training of a network for a single given epoch.
+
+        Args:
+            weighted_loss (bool): whether to use weighted loss
+
+        """
+        super().__init__(random_state=random_state)
+        self.weighted_loss = weighted_loss
+
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
         """
@@ -40,7 +54,13 @@ class StandardTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        **kwargs: typing.Any
+                                        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True)
                                         ) -> ConfigurationSpace:
+        weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
+                                                  default_value=weighted_loss[1])
         cs = ConfigurationSpace()
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
+                cs.add_hyperparameters([weighted_loss])
+
         return cs

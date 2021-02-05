@@ -5,7 +5,7 @@ from sklearn.datasets import make_classification
 
 import torch
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.constants import STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
 
@@ -40,7 +40,7 @@ class BaseTraining(unittest.TestCase):
         layers.append(torch.nn.Sigmoid())
         layers.append(torch.nn.Linear(4, 2))
         self.model = torch.nn.Sequential(*layers)
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01)
         self.device = torch.device('cpu')
         self.logger = logging.getLogger('test')
@@ -51,9 +51,13 @@ class BaseTraining(unittest.TestCase):
             max_epochs=self.epochs,
         )
         self.task_type = STRING_TO_TASK_TYPES[self.dataset_properties['task_type']]
+        self.output_type = STRING_TO_OUTPUT_TYPES[self.dataset_properties['output_type']]
 
     def _overfit_model(self):
         self.model.train()
+        # initialise the criterion as it is
+        # not being done in __init__
+        self.criterion = self.criterion()
         for epoch in range(self.epochs):
             total_loss = 0
             for x, y in self.loader:
