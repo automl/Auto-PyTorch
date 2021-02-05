@@ -1,24 +1,9 @@
 # Auto-PyTorch
 
-Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
-This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
+Source code for ICML submission 2867. 
+Our implementation of regularization cocktails is based on a fork of AutoPyTorch and this fork is part of the submission to ensure full reproducibility.
 
-## Installation
-
-Clone repository
-
-```sh
-$ cd install/path
-$ git clone https://github.com/automl/Auto-PyTorch.git
-$ cd Auto-PyTorch
-```
-If you want to contribute to this repository switch to our current develop branch
-
-```sh
-$ git checkout develop
-```
 
 Install pytorch: 
 https://pytorch.org/
@@ -33,7 +18,6 @@ $ python setup.py install
 
 ## Examples
 
-For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
 In a nutshell:
 
@@ -140,27 +124,3 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 You should have received a copy of the Apache license 2.0
 along with this program (see LICENSE file).
-
-## Reference
-
-```
-@incollection{mendoza-automlbook18a,
-  author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
-  title     = {Towards Automatically-Tuned Deep Neural Networks},
-  year      = {2018},
-  month     = dec,
-  editor    = {Hutter, Frank and Kotthoff, Lars and Vanschoren, Joaquin},
-  booktitle = {AutoML: Methods, Sytems, Challenges},
-  publisher = {Springer},
-  chapter   = {7},
-  pages     = {141--156},
-  note      = {To appear.},
-}
-```
-
-**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
-
-
-## Contact
-
-Auto-PyTorch is developed by the [AutoML Group of the University of Freiburg](http://www.automl.org/).
