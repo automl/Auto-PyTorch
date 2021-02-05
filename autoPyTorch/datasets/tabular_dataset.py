@@ -104,7 +104,6 @@ class TabularDataset(BaseDataset):
         # rather to have a performance through time on the test data
         if X_test is not None:
             X_test, self._test_data_types, _, _, _ = self.interpret_columns(X_test)
-
             # Some quality checks on the data
             if self.data_types != self._test_data_types:
                 raise ValueError(f"The train data inferred types {self.data_types} are "
@@ -225,5 +224,16 @@ class TabularDataset(BaseDataset):
                 numerical_columns.append(i)
         categories = [np.unique(X.iloc[:, a]).tolist() for a in categorical_columns]
         num_features = X.shape[1]
-
         return categorical_columns, numerical_columns, categories, num_features
+
+    def get_required_dataset_info(self) -> Dict[str, Any]:
+        """
+        Returns a dictionary containing required dataset properties to instantiate a pipeline,
+        """
+        info = super().get_required_dataset_info()
+        info.update({
+            'numerical_columns': self.numerical_columns,
+            'categorical_columns': self.categorical_columns,
+            'task_type': self.task_type
+        })
+        return info
