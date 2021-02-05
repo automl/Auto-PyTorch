@@ -18,13 +18,11 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValParameters,
     HoldOutFuncs,
     HoldoutValTypes,
-    HoldOutParameters,
-    DEFAULT_RESAMPLING_PARAMETERS
+    HoldOutParameters
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
 BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
-NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
 SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
 
 
@@ -40,15 +38,6 @@ def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDataset
     if val_tensors is not None:
         for i in range(len(val_tensors)):
             check_valid_data(val_tensors[i])
-
-
-class _DatasetSpecificProperties(BaseNamedTuple, NamedTuple):
-    task_type: Optional[str]
-    output_type: str
-    issparse: bool
-    input_shape: Tuple[int]
-    output_shape: Tuple[int]
-    num_classes: Optional[int]
 
 
 class TransformSubset(Subset):
@@ -68,6 +57,16 @@ class TransformSubset(Subset):
         return self.dataset.__getitem__(self.indices[idx], self.train)
 
 
+class _DatasetSpecificProperties(BaseNamedTuple, NamedTuple):
+    """TODO: doc-string"""
+    task_type: Optional[str]
+    output_type: str
+    issparse: bool
+    input_shape: Tuple[int]
+    output_shape: Tuple[int]
+    num_classes: Optional[int]
+
+
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
@@ -75,10 +74,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetType] = None,
         test_tensors: Optional[BaseDatasetType] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        splitting_type: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        splitting_params: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
-        seed: Optional[int] = 42,
+        random_state: Optional[int] = 42,
         train_transforms: Optional[torchvision.transforms.Compose] = None,
         val_transforms: Optional[torchvision.transforms.Compose] = None,
     ):
@@ -109,75 +108,55 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        if dataset_name is not None:
-            self.dataset_name = dataset_name
-        else:
-            self.dataset_name = hash_array_or_matrix(train_tensors[0])
+
+        self.dataset_name = dataset_name if dataset_name is not None \
+            else hash_array_or_matrix(train_tensors[0])
+
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
-        self.train_tensors = train_tensors
-        self.val_tensors = val_tensors
-        self.test_tensors = test_tensors
 
-        self.cross_validators: Dict[str, SplitFunc] = {}
-        self.holdout_validators: Dict[str, SplitFunc]  = {}
-
-        self.seed = seed
-        self.random_state = np.random.RandomState(seed=self.seed)
-        self.shuffle = shuffle
+        self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
+        self.train_transform, self.val_transform = train_transforms, val_transforms
 
         """SHUHEI TODO: move to HoldOut- and CrossVal- Parameters"""
-        self.process_resampling_strategy(resampling_strategy, resampling_strategy_args)
+        # Dict[str, SplitFunc]
+        self.cross_validators = CrossValFuncs.get_cross_validators(*[cv_type for cv_type in CrossValTypes])
+        self.holdout_validators = CrossValFuncs.get_cross_validators(*[hv_type for hv_type in HoldoutValTypes])
+
+        self.splitting_type, self.splitting_params = splitting_type, splitting_params
+        self.convert_splitting_prams_to_namedtuple()
+        self.splits = self.get_splits()
+
+        self.random_state = random_state
+        self.rng = np.random.RandomState(seed=self.random_state)
+        self.shuffle = shuffle
 
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = train_tensors[0].shape[1:]
         self.num_classes: Optional[int] = None
+
         if len(train_tensors) == 2 and train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
-            # SHUHEI MEMO: What do you wanna do here? shape is always tuple, right?
-            """Old: train_tensors[1].shape[1] if train_tensors[1].shape == 2 else 1"""
             self.output_shape: int = train_tensors[1].shape[1] if len(train_tensors[1].shape) == 2 else 1
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
-
-        # Make sure cross validation splits are created once
-        self.cross_validators = CrossValFuncs.get_cross_validators(
-            CrossValTypes.stratified_k_fold_cross_validation,
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation,
-            CrossValTypes.stratified_shuffle_split_cross_validation
-        )
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation,
-            HoldoutValTypes.stratified_holdout_validation
-        )
-        self.splits = self.get_splits_from_resampling_strategy()
-
-        # We also need to be able to transform the data, be it for pre-processing
-        # or for augmentation
-        self.train_transform = train_transforms
-        self.val_transform = val_transforms
     
-    def process_resampling_strategy(self,resampling_strategy, resampling_strategy_args):
-        """TODO: think about the indices and stratify and typing"""
-        if isinstance(resampling_strategy, HoldoutValTypes):
-            if isinstance(resampling_strategy_args, HoldOutParameters):
-                self.resampling_strategy_args = resampling_strategy_args
-            else:
-                self.resampling_strategy_args = HoldOutParameters(**resampling_strategy_args) \
-                    if isinstance(resampling_strategy_args, dict) else HoldOutParameters()
+    def convert_splitting_prams_to_namedtuple(self):
+        if not isinstance(self.splitting_params, dict) and self.splitting_params is not None:
+            raise TypeError(f"splitting_params must be dict or None, but got {type(self.splitting_params)}")
 
-        elif isinstance(resampling_strategy, CrossValTypes):
-            if isinstance(resampling_strategy_args, CrossValParameters):
-                self.resampling_strategy_args = resampling_strategy_args
-            else:
-                self.resampling_strategy_args = CrossValParameters(**resampling_strategy_args) \
-                    if isinstance(resampling_strategy_args, dict) else CrossValParameters()
+        self.splitting_params = {} if self.splitting_params is None else self.splitting_params
 
+        if isinstance(self.splitting_type, HoldoutValTypes):
+            self.splitting_params = HoldOutParameters(**self.splitting_params,
+                                                      random_state=self.random_state)
+        elif isinstance(self.splitting_type, CrossValTypes):
+            self.splitting_params = CrossValParameters(**self.splitting_params,
+                                                       random_state=self.random_state)
         else:
-            raise ValueError(f"resampling_strategy {resampling_strategy} is not supported.")
+            raise ValueError(f"splitting_type {self.splitting_type} is not supported.")
 
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
@@ -245,13 +224,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return self.train_tensors[0].shape[0]
 
     def _get_indices(self) -> np.ndarray:
-        if self.shuffle:
-            indices = self.random_state.permutation(len(self))
-        else:
-            indices = np.arange(len(self))
-        return indices
+        return self.rng.permutation(len(self)) if self.shuffle \
+            else np.arange(len(self))
 
-    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
+    def get_splits(self) -> List[Tuple[List[int], List[int]]]:
         """
         Creates a set of splits based on a resampling strategy provided
 
@@ -259,104 +235,31 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
         """
         splits = []
-        if isinstance(self.resampling_strategy, HoldoutValTypes):
-            val_share = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
-                VAL_SHARE, None)
-            if self.resampling_strategy_args is not None:
-                val_share = self.resampling_strategy_args.get(VAL_SHARE, val_share)
+        """TODO: unite the type of ValParameters"""
+        stratify = self.train_tensors[-1] if self.splitting_type.is_stratified() else None
+
+        if isinstance(self.splitting_type, CrossValTypes):
+            splits.extend(
+                self.cross_validators[self.splitting_type.name](cv_params=self.splitting_params,
+                                                                indices=self._get_indices(),
+                                                                stratify=stratify)
+            )
+        elif isinstance(self.splitting_type, HoldoutValTypes):
+            if self.val_tensors is not None:
+                """SHUHEI TODO: What does statement mean? Check from the codes"""
+                raise ValueError(
+                    '`val_ratio` was specified, but the Dataset was a given a pre-defined split at initialization already.')
 
             splits.append(
-                self.create_holdout_val_split(
-                    holdout_val_type=self.resampling_strategy,
-                    val_share=val_share,
-                )
+                self.holdout_validators[self.splitting_type.name](holdout_params=self.splitting_params,
+                                                                  indices=self._get_indices(),
+                                                                  stratify=stratify)
             )
-        elif isinstance(self.resampling_strategy, CrossValTypes):
-            num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
-                NUM_SPLITS, None)
-            if self.resampling_strategy_args is not None:
-                num_splits = self.resampling_strategy_args.get(NUM_SPLITS, num_splits)
-            # Create the split if it was not created before
-            splits.extend(
-                self.create_cross_val_splits(
-                    cross_val_type=self.resampling_strategy,
-                    num_splits=cast(int, num_splits),
-                )
-            )
-        else:
-            raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
+        
         return splits
 
     ############################
     """TODO: check above here"""
-    def create_cross_val_splits(
-        self,
-        cross_val_type: CrossValTypes,
-        num_splits: int
-    ) -> List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]:
-        """
-        This function creates the cross validation split for the given task.
-
-        It is done once per dataset to have comparable results among pipelines
-        Args:
-            cross_val_type (CrossValTypes):
-            num_splits (int): number of splits to be created
-
-        Returns:
-            (List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]):
-                list containing 'num_splits' splits.
-        """
-        # Create just the split once
-        # This is gonna be called multiple times, because the current dataset
-        # is being used for multiple pipelines. That is, to be efficient with memory
-        # we dump the dataset to memory and read it on a need basis. So this function
-        # should be robust against multiple calls, and it does so by remembering the splits
-        if not isinstance(cross_val_type, CrossValTypes):
-            raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
-
-        stratify = self.train_tensors[-1] if cross_val_type.is_stratified() else None
-
-        splits = self.cross_validators[cross_val_type.name](
-            num_splits, self._get_indices(), stratify=stratify, random_state=self.seed)
-        return splits
-
-    def create_holdout_val_split(
-        self,
-        holdout_val_type: HoldoutValTypes,
-        val_share: float,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        This function creates the holdout split for the given task.
-
-        It is done once per dataset to have comparable results among pipelines
-        Args:
-            holdout_val_type (HoldoutValTypes):
-            val_share (float): share of the validation data
-
-        Returns:
-            (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
-        """
-        if holdout_val_type is None:
-            raise ValueError('`val_share` was specified, but `holdout_val_type` was not specified.')
-
-        if self.val_tensors is not None:
-            """SHUHEI TODO: What does statement mean? Check from the codes"""
-            raise ValueError(
-                '`val_share` was specified, but the Dataset was a given a pre-defined split at initialization already.')
-
-        if not 0 <= val_share <= 1:
-            raise ValueError(f"`val_share` must be between 0 and 1, but got {val_share}.")
-
-        if not isinstance(holdout_val_type, HoldoutValTypes):
-            raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
-        
-        stratify = self.train_tensors[-1] if holdout_val_type.is_stratified() else None
-
-        train, val = self.holdout_validators[holdout_val_type.name](
-            val_share, self._get_indices(), stratify=stratify, random_state=self.seed)
-
-        return train, val
-
     def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.

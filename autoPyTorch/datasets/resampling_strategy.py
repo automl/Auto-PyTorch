@@ -22,15 +22,12 @@ SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]
 
 class CrossValParameters(BaseNamedTuple, NamedTuple):
     n_splits: int = 3
-    indices: np.ndarray = None
-    stratify: Optional[np.ndarray] = None
     random_state: Optional[int] = 42
 
 
+"""TODO: Unite either holdout or holdoutval"""
 class HoldOutParameters(BaseNamedTuple, NamedTuple):
     val_ratio: int = 0.33
-    indices: np.ndarray = None
-    stratify: Optional[np.ndarray] = None
     random_state: Optional[int] = 42
 
 
@@ -63,40 +60,49 @@ def not_implemented_stratify(stratify: np.ndarray)-> None:
 
 class CrossValFuncs():
     @staticmethod
-    def shuffle_split_cross_validation(cv_params: Union[Dict[str, Any], CrossValParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def input_warning(cv_params: CrossValParameters):
+        if type(cv_params.n_splits) is not int:
+            raise TypeError("n_splits for cross validation must be integer.") 
+        
+
+    @staticmethod
+    def shuffle_split_cross_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        cv_params: Union[Dict[str, Any], CrossValParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
 
         cv_params = CrossValParameters(**cv_params) if isinstance(cv_params, dict) else cv_params
+        CrossValFuncs.input_warning(cv_params)
 
         cv = ShuffleSplit(n_splits=cv_params.n_splits, random_state=cv_params.random_state)
-        splits = list(cv.split(cv_params.indices))
+        splits = list(cv.split(indices))
         return splits
 
     @staticmethod
-    def stratified_shuffle_split_cross_validation(cv_params: Union[Dict[str, Any], CrossValParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def stratified_shuffle_split_cross_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        cv_params: Union[Dict[str, Any], CrossValParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
         
         cv_params = CrossValParameters(**cv_params) if isinstance(cv_params, dict) else cv_params
-        not_implemented_stratify(cv_params.stratify)
+        CrossValFuncs.input_warning(cv_params)
+        not_implemented_stratify(stratify)
 
         cv = StratifiedShuffleSplit(n_splits=cv_params.n_splits, random_state=cv_params.random_state)
-        splits = list(cv.split(cv_params.indices, cv_params.stratify))
+        splits = list(cv.split(indices, stratify))
         return splits
 
     @staticmethod
-    def stratified_k_fold_cross_validation(cv_params: Union[Dict[str, Any], CrossValParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def stratified_k_fold_cross_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        cv_params: Union[Dict[str, Any], CrossValParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
 
         cv_params = CrossValParameters(**cv_params) if isinstance(cv_params, dict) else cv_params
-        not_implemented_stratify(cv_params.stratify)
+        CrossValFuncs.input_warning(cv_params)
+        not_implemented_stratify(stratify)
 
         cv = StratifiedKFold(n_splits=cv_params.n_splits, random_state=cv_params.random_state)
-        splits = list(cv.split(cv_params.indices, cv_params.stratify))
+        splits = list(cv.split(indices, stratify))
         return splits
 
     @staticmethod
-    def k_fold_cross_validation(cv_params: Union[Dict[str, Any], CrossValParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def k_fold_cross_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        cv_params: Union[Dict[str, Any], CrossValParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
         """
         Standard k fold cross validation.
 
@@ -105,14 +111,15 @@ class CrossValFuncs():
         :return: list of tuples of training and validation indices
         """
         cv_params = CrossValParameters(**cv_params) if isinstance(cv_params, dict) else cv_params
+        CrossValFuncs.input_warning(cv_params)
 
         cv = KFold(n_splits=cv_params.n_splits, random_state=cv_params.random_state)
-        splits = list(cv.split(cv_params.indices))
+        splits = list(cv.split(indices))
         return splits
 
     @staticmethod
-    def time_series_cross_validation(cv_params: Union[Dict[str, Any], CrossValParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def time_series_cross_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        cv_params: Union[Dict[str, Any], CrossValParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
         """
         Returns train and validation indices respecting the temporal ordering of the data.
         Dummy example: [0, 1, 2, 3] with 3 folds yields
@@ -125,9 +132,10 @@ class CrossValFuncs():
         :return: list of tuples of training and validation indices
         """
         cv_params = CrossValParameters(**cv_params) if isinstance(cv_params, dict) else cv_params
+        CrossValFuncs.input_warning(cv_params)
         
         cv = TimeSeriesSplit(n_splits=cv_params.n_splits)
-        splits = list(cv.split(cv_params.indices))
+        splits = list(cv.split(indices))
         return splits
 
     @classmethod
@@ -143,21 +151,28 @@ class CrossValFuncs():
 
 class HoldOutFuncs():
     @staticmethod
-    def holdout_validation(holdout_params: Union[Dict[str, Any], HoldOutParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def input_warning(holdout_params: HoldOutParameters):
+        if not 0 < holdout_params.val_ratio < 1:
+            raise ValueError(f"val_ratio must be in (0, 1), but got {holdout_params.val_ratio}.")
 
-        train, val = train_test_split(holdout_params.indices, test_size=holdout_params.val_ratio,
+    @staticmethod
+    def holdout_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        holdout_params: Union[Dict[str, Any], HoldOutParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
+
+        HoldOutFuncs.input_warning(holdout_params)
+        train, val = train_test_split(indices, test_size=holdout_params.val_ratio,
                                       shuffle=False, random_state=holdout_params.random_state)
         return train, val
 
     @staticmethod
-    def stratified_holdout_validation(holdout_params: Union[Dict[str, Any], HoldOutParameters]) \
-            -> List[Tuple[np.ndarray, np.ndarray]]:
+    def stratified_holdout_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
+        holdout_params: Union[Dict[str, Any], HoldOutParameters])-> List[Tuple[np.ndarray, np.ndarray]]:
         
+        HoldOutFuncs.input_warning(holdout_params)
         not_implemented_stratify(stratify)
 
-        train, val = train_test_split(holdout_params.indices, test_size=holdout_params.val_ratio, shuffle=True,
-                                      stratify=holdout_params.stratify, random_state=holdout_params.random_state)
+        train, val = train_test_split(indices, test_size=holdout_params.val_ratio, shuffle=True,
+                                      stratify=stratify, random_state=holdout_params.random_state)
         return train, val
 
     @classmethod
