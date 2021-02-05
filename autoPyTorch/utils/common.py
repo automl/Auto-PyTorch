@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union, NamedTuple
 
 import numpy as np
 
@@ -9,13 +9,11 @@ import scipy.sparse
 
 import torch
 from torch.utils.data.dataloader import default_collate
-from typing import NamedTuple
 
 
 class ConstantKeys:
     # to avoid typo
     NUM_SPLITS, VAL_SHARE = 'num_splits', 'val_share'
-    STRATIFY, STRATIFIED = 'stratify', 'stratified'
 
 
 class BaseNamedTuple():
@@ -48,7 +46,7 @@ class BaseNamedTuple():
     def items(self):
         self.pkg_check()
         return self._asdict().items()
-    
+
 
 class FitRequirement(NamedTuple):
     """

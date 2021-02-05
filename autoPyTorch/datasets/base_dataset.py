@@ -15,15 +15,16 @@ import torchvision
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValFuncs,
     CrossValTypes,
+    CrossValParameters,
     HoldOutFuncs,
     HoldoutValTypes,
+    HoldOutParameters,
     DEFAULT_RESAMPLING_PARAMETERS
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
 BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
-STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
 SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
 
 
@@ -41,20 +42,13 @@ def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDataset
             check_valid_data(val_tensors[i])
 
 
-class _DatasetSpecificProperties(
-    BaseNamedTuple,
-    NamedTuple(
-        '_DatasetSpecificProperties',
-        [
-            ('task_type', Optional[str]),
-            ('output_type', str),
-            ('issparse', bool),
-            ('input_shape', Tuple[int]),
-            ('output_shape', Tuple[int]),
-            ('num_classes', Optional[int])
-        ],
-    )):
-    pass
+class _DatasetSpecificProperties(BaseNamedTuple, NamedTuple):
+    task_type: Optional[str]
+    output_type: str
+    issparse: bool
+    input_shape: Tuple[int]
+    output_shape: Tuple[int]
+    num_classes: Optional[int]
 
 
 class TransformSubset(Subset):
@@ -98,6 +92,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data (A tuple of validation features and labels)
             test_tensors (An optional tuple of objects that have __len__ and __getitem__ attribute):
                 test data (A tuple of test features and labels)
+            
+            TODO: resampling_strategy, resampling_strategy_args
             resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
@@ -105,6 +101,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 arguments required for the chosen resampling strategy. 
                 If None, uses the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
+
             shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
@@ -125,10 +122,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.cross_validators: Dict[str, SplitFunc] = {}
         self.holdout_validators: Dict[str, SplitFunc]  = {}
 
-        self.random_state = np.random.RandomState(seed=seed)
+        self.seed = seed
+        self.random_state = np.random.RandomState(seed=self.seed)
         self.shuffle = shuffle
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
+
+        """SHUHEI TODO: move to HoldOut- and CrossVal- Parameters"""
+        self.process_resampling_strategy(resampling_strategy, resampling_strategy_args)
+
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = train_tensors[0].shape[1:]
@@ -159,6 +159,26 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # or for augmentation
         self.train_transform = train_transforms
         self.val_transform = val_transforms
+    
+    def process_resampling_strategy(self,resampling_strategy, resampling_strategy_args):
+        """TODO: think about the indices and stratify and typing"""
+        if isinstance(resampling_strategy, HoldoutValTypes):
+            if isinstance(resampling_strategy_args, HoldOutParameters):
+                self.resampling_strategy_args = resampling_strategy_args
+            else:
+                self.resampling_strategy_args = HoldOutParameters(**resampling_strategy_args) \
+                    if isinstance(resampling_strategy_args, dict) else HoldOutParameters()
+
+        elif isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(resampling_strategy_args, CrossValParameters):
+                self.resampling_strategy_args = resampling_strategy_args
+            else:
+                self.resampling_strategy_args = CrossValParameters(**resampling_strategy_args) \
+                    if isinstance(resampling_strategy_args, dict) else CrossValParameters()
+
+        else:
+            raise ValueError(f"resampling_strategy {resampling_strategy} is not supported.")
+
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
                          train: bool = True,
@@ -244,6 +264,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 VAL_SHARE, None)
             if self.resampling_strategy_args is not None:
                 val_share = self.resampling_strategy_args.get(VAL_SHARE, val_share)
+
             splits.append(
                 self.create_holdout_val_split(
                     holdout_val_type=self.resampling_strategy,
@@ -266,6 +287,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
         return splits
 
+    ############################
+    """TODO: check above here"""
     def create_cross_val_splits(
         self,
         cross_val_type: CrossValTypes,
@@ -290,12 +313,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # should be robust against multiple calls, and it does so by remembering the splits
         if not isinstance(cross_val_type, CrossValTypes):
             raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
-        kwargs = {}
-        if cross_val_type.is_stratified():
-            # we need additional information about the data for stratification
-            kwargs[STRATIFY] = self.train_tensors[-1]
+
+        stratify = self.train_tensors[-1] if cross_val_type.is_stratified() else None
+
         splits = self.cross_validators[cross_val_type.name](
-            num_splits, self._get_indices(), **kwargs)
+            num_splits, self._get_indices(), stratify=stratify, random_state=self.seed)
         return splits
 
     def create_holdout_val_split(
@@ -327,13 +349,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
+        
+        stratify = self.train_tensors[-1] if holdout_val_type.is_stratified() else None
 
-        kwargs = {}
-        if holdout_val_type.is_stratified():
-            # we need additional information about the data for stratification
-            kwargs[STRATIFY] = self.train_tensors[-1]
-        # SHUHEI MEMO: What is this function?
-        train, val = self.holdout_validators[holdout_val_type.name](val_share, self._get_indices(), **kwargs)
+        train, val = self.holdout_validators[holdout_val_type.name](
+            val_share, self._get_indices(), stratify=stratify, random_state=self.seed)
+
         return train, val
 
     def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
