@@ -22,7 +22,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
-    HoldoutValTypes,
+    HoldOutTypes,
 )
 
 
@@ -54,8 +54,8 @@ class TabularDataset(BaseDataset):
             Y (Union[np.ndarray, pd.Series]): training data targets.
             X_test (Optional[Union[np.ndarray, pd.DataFrame]]):  input testing data.
             Y_test (Optional[Union[np.ndarray, pd.DataFrame]]): testing data targets
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
-                (default=HoldoutValTypes.holdout_validation):
+            resampling_strategy (Union[CrossValTypes, HoldOutTypes]),
+                (default=HoldOutTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
@@ -76,7 +76,7 @@ class TabularDataset(BaseDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,

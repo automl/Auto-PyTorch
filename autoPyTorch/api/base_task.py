@@ -33,7 +33,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldOutTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
@@ -176,7 +176,7 @@ class BaseTask:
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
         # Store the resampling strategy from the dataset, to load models as needed
-        self.resampling_strategy = None  # type: Optional[Union[CrossValTypes, HoldoutValTypes]]
+        self.resampling_strategy = None  # type: Optional[Union[CrossValTypes, HoldOutTypes]]
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
@@ -398,14 +398,14 @@ class BaseTask:
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
-    def _load_models(self, resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]]
+    def _load_models(self, resampling_strategy: Optional[Union[CrossValTypes, HoldOutTypes]]
                      ) -> bool:
 
         """
         Loads the models saved in the temporary directory
         during the smac run and the final ensemble created
         Args:
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]): resampling strategy used to split the data
+            resampling_strategy (Union[CrossValTypes, HoldOutTypes]): resampling strategy used to split the data
                 and to validate the performance of a candidate pipeline
 
         Returns:
@@ -1033,7 +1033,7 @@ class BaseTask:
         assert self.ensemble_ is not None, "Load models should error out if no ensemble"
         self.ensemble_ = cast(Union[SingleBest, EnsembleSelection], self.ensemble_)
 
-        if isinstance(self.resampling_strategy, HoldoutValTypes):
+        if isinstance(self.resampling_strategy, HoldOutTypes):
             models = self.models_
         elif isinstance(self.resampling_strategy, CrossValTypes):
             models = self.cv_models_

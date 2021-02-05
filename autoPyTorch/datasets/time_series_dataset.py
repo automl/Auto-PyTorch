@@ -7,7 +7,7 @@ import torchvision.transforms
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
-    HoldoutValTypes,
+    HoldOutTypes,
     CrossValFuncs,
     HoldOutFuncs
 )
@@ -24,7 +24,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                  n_steps: int,
                  train: TIME_SERIES_FORECASTING_INPUT,
                  val: Optional[TIME_SERIES_FORECASTING_INPUT] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = False,
                  seed: Optional[int] = 42,
@@ -61,7 +61,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                          val_transforms=val_transforms,
                          )
         self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.holdout_validation)
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldOutTypes.holdout_validation)
 
 
 def _check_time_series_forecasting_inputs(target_variables: Tuple[int],
@@ -124,8 +124,8 @@ class TimeSeriesClassificationDataset(BaseDataset):
             CrossValTypes.stratified_shuffle_split_cross_validation
         )
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation,
-            HoldoutValTypes.stratified_holdout_validation
+            HoldOutTypes.holdout_validation,
+            HoldOutTypes.stratified_holdout_validation
         )
 
 
@@ -140,7 +140,7 @@ class TimeSeriesRegressionDataset(BaseDataset):
             CrossValTypes.shuffle_split_cross_validation
         )
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation
+            HoldOutTypes.holdout_validation
         )
 
 

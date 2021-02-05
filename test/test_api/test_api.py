@@ -15,7 +15,7 @@ import torch
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
-    HoldoutValTypes,
+    HoldOutTypes,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 
@@ -27,7 +27,7 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 # Test
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
+@pytest.mark.parametrize('resampling_strategy', (HoldOutTypes.holdout_validation,
                                                  CrossValTypes.k_fold_cross_validation,
                                                  ))
 def test_classification(openml_id, resampling_strategy, backend):
@@ -46,7 +46,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         dataset_name=str(openml_id),
     )
     assert datamanager.task_type == 'tabular_classification'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 3
+    expected_num_splits = 1 if resampling_strategy == HoldOutTypes.holdout_validation else 3
     assert len(datamanager.splits) == expected_num_splits
 
     # Search for a good configuration
@@ -102,7 +102,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         if os.path.exists(run_key_model_run_dir):
             break
 
-    if resampling_strategy == HoldoutValTypes.holdout_validation:
+    if resampling_strategy == HoldOutTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
                                   f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file

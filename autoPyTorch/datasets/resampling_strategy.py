@@ -12,8 +12,6 @@ from sklearn.model_selection import (
     train_test_split
 )
 
-from typing_extensions import Protocol
-"""TODO: remove constantkeys"""
 from autoPyTorch.utils.common import BaseNamedTuple
 
 
@@ -25,7 +23,6 @@ class CrossValParameters(BaseNamedTuple, NamedTuple):
     random_state: Optional[int] = 42
 
 
-"""TODO: Unite either holdout or holdoutval"""
 class HoldOutParameters(BaseNamedTuple, NamedTuple):
     val_ratio: int = 0.33
     random_state: Optional[int] = 42
@@ -44,7 +41,7 @@ class CrossValTypes(IntEnum):
         return getattr(self, self.name) in stratified
 
 
-class HoldoutValTypes(IntEnum):
+class HoldOutTypes(IntEnum):
     holdout_validation = 6
     stratified_holdout_validation = 7
 
@@ -162,7 +159,7 @@ class HoldOutFuncs():
         HoldOutFuncs.input_warning(holdout_params)
         train, val = train_test_split(indices, test_size=holdout_params.val_ratio,
                                       shuffle=False, random_state=holdout_params.random_state)
-        return train, val
+        return [(train, val)]
 
     @staticmethod
     def stratified_holdout_validation(indices: np.ndarray, stratify: Optional[np.ndarray], 
@@ -173,10 +170,10 @@ class HoldOutFuncs():
 
         train, val = train_test_split(indices, test_size=holdout_params.val_ratio, shuffle=True,
                                       stratify=stratify, random_state=holdout_params.random_state)
-        return train, val
+        return [(train, val)]
 
     @classmethod
-    def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldoutValTypes])-> Dict[str, SplitFunc]:
+    def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldOutTypes])-> Dict[str, SplitFunc]:
 
         holdout_validators = {
             holdout_val_type.name: getattr(cls, holdout_val_type.name)
@@ -194,13 +191,13 @@ autoPyTorch/datasets/tabular_dataset.py
 autoPyTorch/optimizer/smbo.py
 
 
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
+RESAMPLING_STRATEGIES = [CrossValTypes, HoldOutTypes]
 
 DEFAULT_RESAMPLING_PARAMETERS = {
-    HoldoutValTypes.holdout_validation: {
+    HoldOutTypes.holdout_validation: {
         VAL_SHARE: 0.33,
     },
-    HoldoutValTypes.stratified_holdout_validation: {
+    HoldOutTypes.stratified_holdout_validation: {
         VAL_SHARE: 0.33,
     },
     CrossValTypes.k_fold_cross_validation: {
@@ -215,5 +212,5 @@ DEFAULT_RESAMPLING_PARAMETERS = {
     CrossValTypes.time_series_cross_validation: {
         NUM_SPLITS: 3,
     },
-}  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
+}  # type: Dict[Union[HoldOutTypes, CrossValTypes], Dict[str, Any]]
 """

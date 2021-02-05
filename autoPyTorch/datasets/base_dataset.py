@@ -17,7 +17,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     CrossValParameters,
     HoldOutFuncs,
-    HoldoutValTypes,
+    HoldOutTypes,
     HoldOutParameters
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple
@@ -27,17 +27,17 @@ SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]
 
 
 def check_valid_data(data: Any) -> None:
-    if not (hasattr(data, '__getitem__') and hasattr(data, '__len__')):
+    if not all(hasattr(data, attr) for attr in ['__getitem__', '__len__']):
         raise ValueError(
-            'The specified Data for Dataset does either not have a __getitem__ or a __len__ attribute.')
+            'The specified Data for Dataset must have both __getitem__ and __len__ attribute.')
 
 
 def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDatasetType] = None) -> None:
-    for i in range(len(train_tensors)):
-        check_valid_data(train_tensors[i])
+    for train_tensor in train_tensors:
+        check_valid_data(train_tensor)
     if val_tensors is not None:
-        for i in range(len(val_tensors)):
-            check_valid_data(val_tensors[i])
+        for val_tensor in val_tensors:
+            check_valid_data(val_tensor)
 
 
 class TransformSubset(Subset):
@@ -74,7 +74,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetType] = None,
         test_tensors: Optional[BaseDatasetType] = None,
-        splitting_type: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
         splitting_params: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         random_state: Optional[int] = 42,
@@ -93,8 +93,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 test data (A tuple of test features and labels)
             
             TODO: resampling_strategy, resampling_strategy_args
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
-                (default=HoldoutValTypes.holdout_validation):
+            resampling_strategy (Union[CrossValTypes, HoldOutTypes]),
+                (default=HoldOutTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): 
                 arguments required for the chosen resampling strategy. 
@@ -118,14 +118,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.train_transform, self.val_transform = train_transforms, val_transforms
 
-        self.random_state = random_state
+        self.random_state, self.shuffle = random_state, shuffle
         self.rng = np.random.RandomState(seed=self.random_state)
-        self.shuffle = shuffle
 
         """SHUHEI TODO: move to HoldOut- and CrossVal- Parameters"""
         # Dict[str, SplitFunc]
-        self.cross_validators = CrossValFuncs.get_cross_validators(*[cv_type for cv_type in CrossValTypes])
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(*[hv_type for hv_type in HoldoutValTypes])
+        self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldOutTypes)
 
         self.splitting_type, self.splitting_params = splitting_type, splitting_params
         self.convert_splitting_prams_to_namedtuple()
@@ -149,7 +148,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         self.splitting_params = {} if self.splitting_params is None else self.splitting_params
 
-        if isinstance(self.splitting_type, HoldoutValTypes):
+        if isinstance(self.splitting_type, HoldOutTypes):
             self.splitting_params = HoldOutParameters(**self.splitting_params,
                                                       random_state=self.random_state)
         elif isinstance(self.splitting_type, CrossValTypes):
@@ -160,8 +159,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
-                         train: bool = True,
-                         ) -> 'BaseDataset':
+                         train: bool = True) -> 'BaseDataset':
         """
         During the pipeline execution, the pipeline object might propose transformations
         as a product of the current pipeline configuration being tested.
@@ -201,10 +199,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             A transformed single point prediction
         """
 
-        if hasattr(self.train_tensors[0], 'loc'):
-            X = self.train_tensors[0].iloc[[index]]
-        else:
-            X = self.train_tensors[0][index]
+        X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
+            else self.train_tensors[0][index]
 
         if self.train_transform is not None and train:
             X = self.train_transform(X)
@@ -212,11 +208,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             X = self.val_transform(X)
 
         # In case of prediction, the targets are not provided
-        Y = self.train_tensors[1]
-        if Y is not None:
-            Y = Y[index]
-        else:
-            Y = None
+        Y = self.train_tensors[1][index] if self.train_tensors[1] is not None \
+            else None
 
         return X, Y
 
@@ -234,32 +227,20 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         Returns
             (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
         """
-        splits = []
-        """TODO: unite the type of ValParameters"""
+
         stratify = self.train_tensors[-1] if self.splitting_type.is_stratified() else None
 
+        """TODO: Think about the usage of validation data. It is not used now."""
         if isinstance(self.splitting_type, CrossValTypes):
-            splits.extend(
-                self.cross_validators[self.splitting_type.name](cv_params=self.splitting_params,
-                                                                indices=self._get_indices(),
-                                                                stratify=stratify)
-            )
-        elif isinstance(self.splitting_type, HoldoutValTypes):
-            if self.val_tensors is not None:
-                """SHUHEI TODO: What does statement mean? Check from the codes"""
-                raise ValueError(
-                    '`val_ratio` was specified, but the Dataset was a given a pre-defined split at initialization already.')
-
-            splits.append(
-                self.holdout_validators[self.splitting_type.name](holdout_params=self.splitting_params,
-                                                                  indices=self._get_indices(),
-                                                                  stratify=stratify)
-            )
-        
+            splits = self.cross_validators[self.splitting_type.name](cv_params=self.splitting_params,
+                                                                     indices=self._get_indices(),
+                                                                     stratify=stratify)
+        elif isinstance(self.splitting_type, HoldOutTypes):
+            splits = self.holdout_validators[self.splitting_type.name](holdout_params=self.splitting_params,
+                                                                       indices=self._get_indices(),
+                                                                       stratify=stratify)
         return splits
 
-    ############################
-    """TODO: check above here"""
     def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
@@ -274,17 +255,16 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
-        """SHUHEi TODO: Check later"""
         return (TransformSubset(self, self.splits[split_id][0], train=True),
                 TransformSubset(self, self.splits[split_id][1], train=False))
 
-    """SHUHEI TODO: check if the default X_test should be X_test = None?"""
     def replace_data(self, X_train: BaseDatasetType, X_test: Optional[BaseDatasetType]) -> 'BaseDataset':
         """
         To speed up the training of small dataset, early pre-processing of the data
         can be made on the fly by the pipeline.
 
         In this case, we replace the original train/test tensors by this pre-processed version
+        TODO: X_test is None => training is True? or validation step?
 
         Args:
             X_train (np.ndarray): the pre-processed (imputation/encoding/...) train data
@@ -294,7 +274,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self
         """
         self.train_tensors = (X_train, self.train_tensors[1])
-        """SHUHEI TODO: check here, what happens when self.test_tensors is None"""
         if X_test is not None and self.test_tensors is not None:
             self.test_tensors = (X_test, self.test_tensors[1])
         return self

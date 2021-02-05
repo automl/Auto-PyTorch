@@ -20,7 +20,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
-    HoldoutValTypes,
+    HoldOutTypes,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -93,7 +93,7 @@ class AutoMLSMBO(object):
                  pipeline_config: typing.Dict[str, typing.Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: typing.Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: typing.Union[HoldOutTypes, CrossValTypes] = HoldOutTypes.holdout_validation,
                  resampling_strategy_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  include: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
