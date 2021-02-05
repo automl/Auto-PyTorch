@@ -125,7 +125,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.cross_validators: Dict[str, SplitFunc] = {}
         self.holdout_validators: Dict[str, SplitFunc]  = {}
 
-        self.rand = np.random.RandomState(seed=seed)
+        self.random_state = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -226,7 +226,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
     def _get_indices(self) -> np.ndarray:
         if self.shuffle:
-            indices = self.rand.permutation(len(self))
+            indices = self.random_state.permutation(len(self))
         else:
             indices = np.arange(len(self))
         return indices
