@@ -21,9 +21,10 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
 
-BASE_DATASET_TYPE = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
 STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
+SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
 
 
 def check_valid_data(data: Any) -> None:
@@ -32,7 +33,7 @@ def check_valid_data(data: Any) -> None:
             'The specified Data for Dataset does either not have a __getitem__ or a __len__ attribute.')
 
 
-def type_check(train_tensors: BASE_DATASET_TYPE, val_tensors: Optional[BASE_DATASET_TYPE] = None) -> None:
+def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDatasetType] = None) -> None:
     for i in range(len(train_tensors)):
         check_valid_data(train_tensors[i])
     if val_tensors is not None:
@@ -76,10 +77,10 @@ class TransformSubset(Subset):
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
-        train_tensors: BASE_DATASET_TYPE,
+        train_tensors: BaseDatasetType,
         dataset_name: Optional[str] = None,
-        val_tensors: Optional[BASE_DATASET_TYPE] = None,
-        test_tensors: Optional[BASE_DATASET_TYPE] = None,
+        val_tensors: Optional[BaseDatasetType] = None,
+        test_tensors: Optional[BaseDatasetType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
@@ -121,9 +122,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.val_tensors = val_tensors
         self.test_tensors = test_tensors
 
-        # Dict[str, Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]
-        self.cross_validators = {}
-        self.holdout_validators  = {}
+        self.cross_validators: Dict[str, SplitFunc] = {}
+        self.holdout_validators: Dict[str, SplitFunc]  = {}
 
         self.rand = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
@@ -315,16 +315,19 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
         """
         if holdout_val_type is None:
-            raise ValueError(
-                '`val_share` specified, but `holdout_val_type` not specified.'
-            )
+            raise ValueError('`val_share` was specified, but `holdout_val_type` was not specified.')
+
         if self.val_tensors is not None:
+            """SHUHEI TODO: What does statement mean? Check from the codes"""
             raise ValueError(
-                '`val_share` specified, but the Dataset was a given a pre-defined split at initialization already.')
-        if val_share < 0 or val_share > 1:
-            raise ValueError(f"`val_share` must be between 0 and 1, got {val_share}.")
+                '`val_share` was specified, but the Dataset was a given a pre-defined split at initialization already.')
+
+        if not 0 <= val_share <= 1:
+            raise ValueError(f"`val_share` must be between 0 and 1, but got {val_share}.")
+
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
+
         kwargs = {}
         if holdout_val_type.is_stratified():
             # we need additional information about the data for stratification
@@ -347,10 +350,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
+        """SHUHEi TODO: Check later"""
         return (TransformSubset(self, self.splits[split_id][0], train=True),
                 TransformSubset(self, self.splits[split_id][1], train=False))
 
-    def replace_data(self, X_train: BASE_DATASET_TYPE, X_test: Optional[BASE_DATASET_TYPE]) -> 'BaseDataset':
+    """SHUHEI TODO: check if the default X_test should be X_test = None?"""
+    def replace_data(self, X_train: BaseDatasetType, X_test: Optional[BaseDatasetType]) -> 'BaseDataset':
         """
         To speed up the training of small dataset, early pre-processing of the data
         can be made on the fly by the pipeline.
@@ -365,6 +370,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self
         """
         self.train_tensors = (X_train, self.train_tensors[1])
+        """SHUHEI TODO: check here, what happens when self.test_tensors is None"""
         if X_test is not None and self.test_tensors is not None:
             self.test_tensors = (X_test, self.test_tensors[1])
         return self
@@ -378,9 +384,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 contain.
 
         Returns:
-
+            dataset_properties (Dict[str, Any]):
+                Dict of the dataset properties.
         """
         dataset_properties = dict()
+        # SHUHEI TODO: check dataset_requirements, FitRequirement
         for dataset_requirement in dataset_requirements:
             dataset_properties[dataset_requirement.name] = getattr(self, dataset_requirement.name)
 

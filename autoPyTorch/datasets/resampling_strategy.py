@@ -18,6 +18,7 @@ from autoPyTorch.utils.common import ConstantKeys
 
 NUM_SPLITS, VAL_SHARE = ConstantKeys.NUM_SPLITS, ConstantKeys.VAL_SHARE
 STRATIFY, STRATIFIED = ConstantKeys.STRATIFY, ConstantKeys.STRATIFIED
+SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
 
 
 class CrossValTypes(IntEnum):
@@ -104,7 +105,7 @@ class CrossValFuncs(Protocol):
 
     @classmethod
     def get_cross_validators(cls, *cross_val_types: Tuple[CrossValTypes]) \
-        -> Dict[str, Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]:
+        -> Dict[str, SplitFunc]:
         cross_validators = {
             cross_val_type.name: getattr(cls, cross_val_type.name)
             for cross_val_type in cross_val_types
@@ -131,8 +132,7 @@ class HoldOutFuncs(Protocol):
         return train, val
     
     @classmethod
-    def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldoutValTypes]) \
-        -> Dict[str, Callable[[float, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]]:
+    def get_holdout_validators(cls, *holdout_val_types: Tuple[HoldoutValTypes])-> Dict[str, SplitFunc]:
         holdout_validators = {
             holdout_val_type.name: getattr(cls, holdout_val_type.name)
             for holdout_val_type in holdout_val_types
