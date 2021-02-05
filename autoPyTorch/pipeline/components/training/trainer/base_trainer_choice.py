@@ -495,6 +495,10 @@ class TrainerChoice(autoPyTorchChoice):
                     config_option
                 ))
 
+        # For early stopping, we need to know the patience
+        if 'early_stopping' not in X:
+            raise ValueError('To fit a Trainer, expected fit dictionary to have early_stopping')
+
     def get_device(self, X: Dict[str, Any]) -> torch.device:
         """
         Returns the device to do torch operations

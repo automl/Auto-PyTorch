@@ -170,11 +170,7 @@ def fit_dictionary_numerical_only(backend):
         X_test=X, Y_test=y,
     )
 
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
@@ -209,11 +205,7 @@ def fit_dictionary_categorical_only(backend):
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
@@ -250,11 +242,7 @@ def fit_dictionary_num_and_categorical(backend):
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
 

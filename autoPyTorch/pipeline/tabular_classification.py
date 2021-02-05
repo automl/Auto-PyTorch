@@ -16,6 +16,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import (
     EncoderChoice
 )
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    base_feature_preprocessor_choice import FeatureProprocessorChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
@@ -59,25 +61,25 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     """
 
     def __init__(
-        self,
-        config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
-        include: Optional[Dict[str, Any]] = None,
-        exclude: Optional[Dict[str, Any]] = None,
-        random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            self,
+            config: Optional[Configuration] = None,
+            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+            dataset_properties: Optional[Dict[str, Any]] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            random_state: Optional[np.random.RandomState] = None,
+            init_params: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
     def fit_transformer(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        fit_params: Optional[Dict[str, Any]] = None
+            self,
+            X: np.ndarray,
+            y: np.ndarray,
+            fit_params: Optional[Dict[str, Any]] = None
     ) -> Tuple[np.ndarray, Optional[Dict[str, Any]]]:
         """Fits the pipeline given a training (X,y) pair
 
@@ -239,6 +241,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("imputer", SimpleImputer()),
             ("encoder", EncoderChoice(default_dataset_properties)),
             ("scaler", ScalerChoice(default_dataset_properties)),
+            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
             ("preprocessing", EarlyPreprocessing()),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
