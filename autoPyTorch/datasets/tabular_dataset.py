@@ -116,10 +116,11 @@ class TabularDataset(BaseDataset):
                     Y_test, assert_single_column=True)
                 Y_test = check_array(Y_test, ensure_2d=False)
 
+        """TODO: rename the variable names"""
         super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test), shuffle=shuffle,
-                         resampling_strategy=resampling_strategy,
-                         resampling_strategy_args=resampling_strategy_args,
-                         seed=seed, train_transforms=train_transforms,
+                         splitting_type=resampling_strategy,
+                         splitting_params=resampling_strategy_args,
+                         random_state=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)
         if self.output_type is not None:

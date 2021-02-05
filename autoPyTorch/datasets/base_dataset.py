@@ -20,7 +20,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     HoldOutParameters
 )
-from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple, ConstantKeys
+from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix, BaseNamedTuple
 
 BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
@@ -118,18 +118,18 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.train_transform, self.val_transform = train_transforms, val_transforms
 
+        self.random_state = random_state
+        self.rng = np.random.RandomState(seed=self.random_state)
+        self.shuffle = shuffle
+
         """SHUHEI TODO: move to HoldOut- and CrossVal- Parameters"""
         # Dict[str, SplitFunc]
         self.cross_validators = CrossValFuncs.get_cross_validators(*[cv_type for cv_type in CrossValTypes])
-        self.holdout_validators = CrossValFuncs.get_cross_validators(*[hv_type for hv_type in HoldoutValTypes])
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(*[hv_type for hv_type in HoldoutValTypes])
 
         self.splitting_type, self.splitting_params = splitting_type, splitting_params
         self.convert_splitting_prams_to_namedtuple()
         self.splits = self.get_splits()
-
-        self.random_state = random_state
-        self.rng = np.random.RandomState(seed=self.random_state)
-        self.shuffle = shuffle
 
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])

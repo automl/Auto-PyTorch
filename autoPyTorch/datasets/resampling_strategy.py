@@ -14,7 +14,7 @@ from sklearn.model_selection import (
 
 from typing_extensions import Protocol
 """TODO: remove constantkeys"""
-from autoPyTorch.utils.common import ConstantKeys, BaseNamedTuple
+from autoPyTorch.utils.common import BaseNamedTuple
 
 
 SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]

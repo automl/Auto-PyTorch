@@ -11,11 +11,6 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
-class ConstantKeys:
-    # to avoid typo
-    NUM_SPLITS, VAL_SHARE = 'num_splits', 'val_share'
-
-
 class BaseNamedTuple():
     """
     A class that expands the NamedTuple package.
