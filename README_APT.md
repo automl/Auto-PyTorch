@@ -1,7 +1,7 @@
 # Regularization Cocktail
 
 
-** Source code for ICML submission 2867. **
+**Source code for ICML submission 2867.**
 **Our implementation of regularization cocktails is based on a fork of AutoPyTorch and this fork is part of the submission to ensure full reproducibility.**
 Install pytorch: 
 https://pytorch.org/
