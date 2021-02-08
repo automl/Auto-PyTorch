@@ -70,8 +70,13 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             X_train = X['X_train']
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
-        self.preprocessor.fit(X_train)
 
+        try:
+            self.preprocessor.fit(X_train)
+        except ValueError as e:
+            if 'array must not contain infs or NaNs' in e.args[0]:
+                raise ValueError("Bug in scikit-learn: "
+                                 "https://github.com/scikit-learn/scikit-learn/pull/2738")
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

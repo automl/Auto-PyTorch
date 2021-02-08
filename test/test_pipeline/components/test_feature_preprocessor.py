@@ -52,6 +52,10 @@ class TestFeaturePreprocessors():
         column_transformer = make_column_transformer((sklearn_preprocessor,
                                                       X['dataset_properties']['numerical_columns']),
                                                      remainder='passthrough')
-        column_transformer.fit(X['X_train'])
+        try:
+            column_transformer.fit(X['X_train'])
+        except ValueError as e:
+            assert 'array must not contain infs or NaNs' in e.args[0] and isinstance(preprocessor, FastICA), \
+                "Bug in scikit-learn: https://github.com/scikit-learn/scikit-learn/pull/2738"
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)

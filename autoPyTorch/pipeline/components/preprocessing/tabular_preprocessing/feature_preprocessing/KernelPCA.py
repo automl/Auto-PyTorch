@@ -41,11 +41,6 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
             n_components=self.n_components, kernel=self.kernel,
             degree=self.degree, gamma=self.gamma, coef0=self.coef0,
             remove_zero_eig=True, random_state=self.random_state)
-        #
-        # # Raise an informative error message, equation is based ~line 249 in
-        # # KernelPCA.py in scikit-learn
-        # if len(self.preprocessor.alphas_ / self.preprocessor.lambdas_) == 0:
-        #     raise ValueError('KernelPCA removed all features!')
 
         return self
 
