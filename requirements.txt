@@ -1,6 +1,7 @@
 pandas
 torch
 torchvision
+tensorboard
 scikit-learn>=0.22.0,<0.23
 numpy
 scipy
