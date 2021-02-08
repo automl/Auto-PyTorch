@@ -5,7 +5,6 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FastICA import FastICA
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.KernelPCA import \
     KernelPCA
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -22,7 +21,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 
 
 @pytest.fixture(params=[TruncatedSVD(), PolynomialFeatures(), PowerTransformer(),
-                        Nystroem(), FastICA(), KernelPCA(), RandomKitchenSinks(), TruncatedSVD()])
+                        Nystroem(), KernelPCA(), RandomKitchenSinks(), TruncatedSVD()])
 def preprocessor(request):
     return request.param
 
