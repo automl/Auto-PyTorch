@@ -156,8 +156,8 @@ def fit_dictionary(request):
 def fit_dictionary_numerical_only(backend):
     X, y = make_classification(
         n_samples=200,
-        n_features=8,
-        n_informative=4,
+        n_features=10,
+        n_informative=6,
         n_redundant=4,
         n_repeated=0,
         n_classes=2,

@@ -45,9 +45,9 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
             n_features = len(dataset_properties['numerical_columns'])
             if n_features <= 1:
                 return cs
-            if n_features < target_dim[0][0]:
+            if n_features <= target_dim[0][0]:
                 target_dim = ((1, n_features - 1), n_features - 1)
-            elif len(dataset_properties["numerical_columns"]) < target_dim[0][1]:
+            elif n_features < target_dim[0][1]:
                 target_dim = ((target_dim[0][0], n_features - 1),
                               n_features - 1)
         target_dim = UniformIntegerHyperparameter("target_dim", lower=target_dim[0][0],

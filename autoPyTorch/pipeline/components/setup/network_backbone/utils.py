@@ -50,7 +50,7 @@ class ShakeShakeFunction(Function):
     def backward(ctx: typing.Any,
                  grad_output: torch.Tensor
                  ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        x1, x2, alpha, beta = ctx.saved_variables
+        x1, x2, alpha, beta = ctx.saved_tensors
         grad_x1 = grad_x2 = grad_alpha = grad_beta = None
 
         if ctx.needs_input_grad[0]:
@@ -81,7 +81,7 @@ class ShakeDropFunction(Function):
     def backward(ctx: typing.Any,
                  grad_output: torch.Tensor
                  ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        x, alpha, beta, bl = ctx.saved_variables
+        x, alpha, beta, bl = ctx.saved_tensors
         grad_x = grad_alpha = grad_beta = grad_bl = None
 
         if ctx.needs_input_grad[0]:
