@@ -10,7 +10,7 @@ import numpy as np
 class LearnedEntityEmbedding(nn.Module):
     """ Parent class for MlpNet, ResNet, ... Can use entity embedding for categorical features"""
 
-    def __init__(self, config, in_features, num_numerical_features):
+    def __init__(self, config, num_input_features, num_numerical_features):
         """
         Initialize the BaseFeatureNet.
         Arguments:
@@ -24,6 +24,7 @@ class LearnedEntityEmbedding(nn.Module):
         # self.num_numerical = len([f for f in one_hot_encoder.categorical_features if not f])
         # self.num_input_features = [len(c) for c in one_hot_encoder.categories_]
         self.num_numerical = num_numerical_features
+        self.num_input_features = num_input_features
         self.embed_features = [num_in >= config["min_unique_values_for_embedding"] for num_in in
                                self.num_input_features]
         self.num_output_dimensions = [config["dimension_reduction_" + str(i)] * num_in for i, num_in in
@@ -34,7 +35,7 @@ class LearnedEntityEmbedding(nn.Module):
                                       zip(self.num_output_dimensions, self.embed_features, self.num_input_features)]
         self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
 
-        self.ee_layers = self._create_ee_layers(in_features)
+        self.ee_layers = self._create_ee_layers()
 
     def forward(self, x):
         # pass the columns of each categorical feature through entity embedding layer
@@ -58,7 +59,7 @@ class LearnedEntityEmbedding(nn.Module):
         concat_seq.append(x[:, last_concat:])
         return torch.cat(concat_seq, dim=1)
 
-    def _create_ee_layers(self, in_features):
+    def _create_ee_layers(self):
         # entity embeding layers are Linear Layers
         layers = nn.ModuleList()
         for i, (num_in, embed, num_out) in enumerate(
