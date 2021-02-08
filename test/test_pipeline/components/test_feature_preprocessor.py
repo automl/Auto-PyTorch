@@ -55,7 +55,9 @@ class TestFeaturePreprocessors():
         try:
             column_transformer.fit(X['X_train'])
         except ValueError as e:
-            assert 'array must not contain infs or NaNs' in e.args[0] and isinstance(preprocessor, FastICA), \
-                "Bug in scikit-learn: https://github.com/scikit-learn/scikit-learn/pull/2738"
+            assert 'array must not contain infs or NaNs' in e.args[0] and isinstance(preprocessor, FastICA)
+
+            pytest.skip("Bug in scikit-learn implementation of FastICA"
+                        ": https://github.com/scikit-learn/scikit-learn/pull/2738")
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)

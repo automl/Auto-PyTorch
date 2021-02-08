@@ -75,7 +75,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             self.preprocessor.fit(X_train)
         except ValueError as e:
             if 'array must not contain infs or NaNs' in e.args[0]:
-                raise ValueError("Bug in scikit-learn: "
+                raise ValueError("Bug in scikit-learn's FastICA: "
                                  "https://github.com/scikit-learn/scikit-learn/pull/2738")
         return self
 
