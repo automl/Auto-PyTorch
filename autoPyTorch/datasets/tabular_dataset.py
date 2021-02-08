@@ -204,8 +204,7 @@ class TabularDataset(BaseDataset):
 
         return data, data_types, nan_mask, itovs, vtois
 
-    def infer_dataset_properties(self, X: Any) \
-            -> Tuple[List[int], List[int], List[object], int]:
+    def infer_dataset_properties(self, X: Any) -> Tuple[List[int], List[int], List[object], int]:
         """
         Infers the properties of the dataset like
         categorical_columns, numerical_columns, categories, num_features

@@ -60,17 +60,17 @@ class TransformSubset(Subset):
 
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
-            self,
-            train_tensors: BASE_DATASET_INPUT,
-            dataset_name: Optional[str] = None,
-            val_tensors: Optional[BASE_DATASET_INPUT] = None,
-            test_tensors: Optional[BASE_DATASET_INPUT] = None,
-            resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-            resampling_strategy_args: Optional[Dict[str, Any]] = None,
-            shuffle: Optional[bool] = True,
-            seed: Optional[int] = 42,
-            train_transforms: Optional[torchvision.transforms.Compose] = None,
-            val_transforms: Optional[torchvision.transforms.Compose] = None,
+        self,
+        train_tensors: BASE_DATASET_INPUT,
+        dataset_name: Optional[str] = None,
+        val_tensors: Optional[BASE_DATASET_INPUT] = None,
+        test_tensors: Optional[BASE_DATASET_INPUT] = None,
+        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        shuffle: Optional[bool] = True,
+        seed: Optional[int] = 42,
+        train_transforms: Optional[torchvision.transforms.Compose] = None,
+        val_transforms: Optional[torchvision.transforms.Compose] = None,
     ):
         """
         Base class for datasets used in AutoPyTorch
@@ -246,9 +246,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return splits
 
     def create_cross_val_splits(
-            self,
-            cross_val_type: CrossValTypes,
-            num_splits: int
+        self,
+        cross_val_type: CrossValTypes,
+        num_splits: int
     ) -> List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]:
         """
         This function creates the cross validation split for the given task.
@@ -278,9 +278,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return splits
 
     def create_holdout_val_split(
-            self,
-            holdout_val_type: HoldoutValTypes,
-            val_share: float,
+        self,
+        holdout_val_type: HoldoutValTypes,
+        val_share: float,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         This function creates the holdout split for the given task.
