@@ -122,21 +122,24 @@ class BaseTask:
     """
 
     def __init__(
-            self,
-            seed: int = 1,
-            n_jobs: int = 1,
-            logging_config: Optional[Dict] = None,
-            ensemble_size: int = 50,
-            ensemble_nbest: int = 50,
-            max_models_on_disc: int = 50,
-            temporary_directory: Optional[str] = None,
-            output_directory: Optional[str] = None,
-            delete_tmp_folder_after_terminate: bool = True,
-            delete_output_folder_after_terminate: bool = True,
-            include_components: Optional[Dict] = None,
-            exclude_components: Optional[Dict] = None,
-            backend: Optional[Backend] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        seed: int = 1,
+        n_jobs: int = 1,
+        logging_config: Optional[Dict] = None,
+        ensemble_size: int = 50,
+        ensemble_nbest: int = 50,
+        max_models_on_disc: int = 50,
+        temporary_directory: Optional[str] = None,
+        output_directory: Optional[str] = None,
+        delete_tmp_folder_after_terminate: bool = True,
+        delete_output_folder_after_terminate: bool = True,
+        include_components: Optional[Dict] = None,
+        exclude_components: Optional[Dict] = None,
+        backend: Optional[Backend] = None,
+        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+        task_type: Optional[str] = None
     ) -> None:
         self.seed = seed
         self.n_jobs = n_jobs
@@ -157,6 +160,7 @@ class BaseTask:
                 delete_tmp_folder_after_terminate=delete_tmp_folder_after_terminate,
                 delete_output_folder_after_terminate=delete_output_folder_after_terminate,
             )
+        self.task_type = task_type
         self._stopwatch = StopWatch()
 
         self.pipeline_options = replace_string_bool_to_bool(json.load(open(
@@ -164,7 +168,6 @@ class BaseTask:
 
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
-        self.task_type: Optional[str] = None
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: Optional[RunHistory] = None
@@ -176,7 +179,8 @@ class BaseTask:
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
         # Store the resampling strategy from the dataset, to load models as needed
-        self.resampling_strategy = None  # type: Optional[Union[CrossValTypes, HoldoutValTypes]]
+        self.resampling_strategy = resampling_strategy
+        self.resampling_strategy_args = resampling_strategy_args
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
@@ -398,20 +402,16 @@ class BaseTask:
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
-    def _load_models(self, resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]]
-                     ) -> bool:
+    def _load_models(self) -> bool:
 
         """
         Loads the models saved in the temporary directory
         during the smac run and the final ensemble created
-        Args:
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]): resampling strategy used to split the data
-                and to validate the performance of a candidate pipeline
 
         Returns:
             None
         """
-        if resampling_strategy is None:
+        if self.resampling_strategy is None:
             raise ValueError("Resampling strategy is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
@@ -422,10 +422,10 @@ class BaseTask:
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
             self.models_ = self._backend.load_models_by_identifiers(identifiers)
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(self.resampling_strategy, CrossValTypes):
                 self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
 
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(self.resampling_strategy, CrossValTypes):
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
@@ -610,10 +610,10 @@ class BaseTask:
                     )
         return num_run
 
-    def search(
+    def _search(
             self,
-            dataset: BaseDataset,
             optimize_metric: str,
+            dataset: BaseDataset,
             budget_type: Optional[str] = None,
             budget: Optional[float] = None,
             total_walltime_limit: int = 100,
@@ -638,6 +638,7 @@ class BaseTask:
                 The argument that will provide the dataset splits. It is
                 a subclass of the  base dataset object which can
                 generate the splits based on different restrictions.
+                Providing X_train, y_train and dataset together is not supported.
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline.
             budget_type (Optional[str]):
@@ -692,6 +693,7 @@ class BaseTask:
             self
 
         """
+
         if self.task_type != dataset.task_type:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
@@ -705,7 +707,6 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
-        self.resampling_strategy = dataset.resampling_strategy
         self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
@@ -869,7 +870,7 @@ class BaseTask:
 
         if load_models:
             self._logger.info("Loading models...")
-            self._load_models(dataset.resampling_strategy)
+            self._load_models()
             self._logger.info("Finished loading models...")
 
         # Clean up the logger
@@ -927,7 +928,7 @@ class BaseTask:
                                   })
         X.update({**self.pipeline_options, **budget_config})
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
-            self._load_models(dataset.resampling_strategy)
+            self._load_models()
 
         # Refit is not applicable when ensemble_size is set to zero.
         if self.ensemble_ is None:
@@ -1025,7 +1026,7 @@ class BaseTask:
         if self._logger is None:
             self._logger = self._get_logger("Predict-Logger")
 
-        if self.ensemble_ is None and not self._load_models(self.resampling_strategy):
+        if self.ensemble_ is None and not self._load_models():
             raise ValueError("No ensemble found. Either fit has not yet "
                              "been called or no ensemble was fitted")
 
@@ -1084,9 +1085,6 @@ class BaseTask:
         Returns:
             Dict[str, float]: Value of the evaluation metric calculated on the test set.
         """
-        if isinstance(y_test, pd.Series):
-            y_test = y_test.to_numpy(dtype=np.float)
-
         if self._metric is None:
             raise ValueError("No metric found. Either fit/search has not been called yet "
                              "or AutoPyTorch failed to infer a metric from the dataset ")

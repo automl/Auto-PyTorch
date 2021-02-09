@@ -7,8 +7,8 @@ The following example shows how to fit a sample classification model
 with AutoPyTorch
 """
 import os
+import pickle
 import tempfile as tmp
-import typing
 import warnings
 
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
@@ -25,25 +25,6 @@ import sklearn.model_selection
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-
-
-# Get the training data for tabular classification
-def get_data_to_train() -> typing.Tuple[typing.Any, typing.Any, typing.Any, typing.Any]:
-    """
-    This function returns a fit dictionary that within itself, contains all
-    the information to fit a pipeline
-    """
-
-    # Get the training data for tabular classification
-    # Move to Australian to showcase numerical vs categorical
-    X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X,
-        y,
-        random_state=1,
-    )
-
-    return X_train, X_test, y_train, y_test
 
 
 def get_search_space_updates():
@@ -72,10 +53,12 @@ if __name__ == '__main__':
     ############################################################################
     # Data Loading
     # ============
-    X_train, X_test, y_train, y_test = get_data_to_train()
-    datamanager = TabularDataset(
-        X=X_train, Y=y_train,
-        X_test=X_test, Y_test=y_test)
+    X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X,
+        y,
+        random_state=1,
+    )
 
     ############################################################################
     # Build and fit a classifier
@@ -85,11 +68,17 @@ if __name__ == '__main__':
         search_space_updates=get_search_space_updates()
     )
     api.search(
-        dataset=datamanager,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
         optimize_metric='accuracy',
         total_walltime_limit=500,
-        func_eval_time_limit=150
+        func_eval_time_limit=50
     )
+
+    with open('estimator.pickle', 'wb') as handle:
+        pickle.dump(api, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     ############################################################################
     # Print the final ensemble performance

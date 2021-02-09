@@ -209,7 +209,7 @@ class TestSimpleImputer(unittest.TestCase):
         )
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(data[test_indices])
-        assert_array_equal(transformed.astype(str), np.array([['!missing!', 8, 9],
+        assert_array_equal(transformed.astype(str), np.array([['-1', 8, 9],
                                                              [7.0, '0', 9],
                                                              [4.0, '0', '0']], dtype=str))
 
