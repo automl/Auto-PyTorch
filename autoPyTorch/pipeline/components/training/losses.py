@@ -47,7 +47,7 @@ def get_supported_losses(task: int, output_type: int) -> Dict[str, Type[Loss]]:
     return supported_losses
 
 
-def get_loss_instance(dataset_properties: Dict[str, Any], name: Optional[str] = None) -> Loss:
+def get_loss_instance(dataset_properties: Dict[str, Any], name: Optional[str] = None) -> Type[Loss]:
     assert 'task_type' in dataset_properties, \
         "Expected dataset_properties to have task_type got {}".format(dataset_properties.keys())
     assert 'output_type' in dataset_properties, \
@@ -68,4 +68,4 @@ def get_loss_instance(dataset_properties: Dict[str, Any], name: Optional[str] = 
     else:
         loss = get_default(task)
 
-    return loss()
+    return loss

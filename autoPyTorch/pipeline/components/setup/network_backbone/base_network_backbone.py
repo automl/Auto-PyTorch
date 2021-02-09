@@ -1,5 +1,11 @@
 from abc import abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
+
+import numpy as np
+
+import pandas as pd
+
+from scipy.sparse import csr_matrix
 
 import torch
 from torch import nn
@@ -8,6 +14,7 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
+from autoPyTorch.utils.common import FitRequirement
 
 
 class NetworkBackboneComponent(autoPyTorchComponent):
@@ -19,8 +26,15 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     def __init__(self,
                  **kwargs: Any):
         super().__init__()
+        self.add_fit_requirements([
+            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                           dataset_property=False),
+            FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False)])
         self.backbone: nn.Module = None
         self.config = kwargs
+        self.input_shape: Optional[Iterable] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
@@ -32,8 +46,17 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         Returns:
             Self
         """
+        self.check_requirements(X, y)
+        X_train = X['X_train']
 
-        input_shape = X['X_train'].shape[1:]
+        if X["dataset_properties"]["is_small_preprocess"]:
+            input_shape = X_train.shape[1:]
+        else:
+            # get input shape by transforming first two elements of the training set
+            column_transformer = X['tabular_transformer'].preprocessor
+            input_shape = column_transformer.transform(X_train[:1]).shape[1:]
+
+        self.input_shape = input_shape
 
         self.backbone = self.build_backbone(
             input_shape=input_shape,
@@ -42,13 +65,15 @@ class NetworkBackboneComponent(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Adds the network head into the fit dictionary 'X' and returns it.
-
+        Adds the network backbone into the fit dictionary 'X' and returns it.
+        Also, updates the input shape as from this point only the shape of
+        the transformed dataset is used
         Args:
             X (Dict[str, Any]): 'X' dictionary
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
+        X['dataset_properties'].update({'input_shape': self.input_shape})
         X.update({'network_backbone': self.backbone})
         return X
 

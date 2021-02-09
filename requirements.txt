@@ -1,9 +1,8 @@
 pandas
 torch
 torchvision
+tensorboard
 scikit-learn>=0.22.0,<0.23
-torchvision
-pytorch-lightning
 numpy
 scipy
 lockfile
@@ -16,4 +15,4 @@ dask
 distributed>=2.2.0
 catboost
 lightgbm
-
+flaky
