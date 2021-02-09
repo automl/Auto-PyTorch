@@ -36,9 +36,10 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f6bb408e9d0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f1bb4637490> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
+      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
       imputer:categorical_strategy, Value: 'most_frequent'
       imputer:numerical_strategy, Value: 'mean'
       lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
@@ -65,9 +66,10 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018229484558105469, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0025849342346191406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
+      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
       imputer:categorical_strategy, Value: 'most_frequent'
       imputer:numerical_strategy, Value: 'mean'
       lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
@@ -94,8 +96,8 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=7.783486366271973, wallclock_time=9.27663254737854, budget=5.555555555555555)]
-    {'accuracy': 0.8670520231213873}
+    , ta_runs=1, ta_time_used=8.814017295837402, wallclock_time=10.166006088256836, budget=5.555555555555555)]
+    {'accuracy': 0.8959537572254336}
 
 
 
@@ -202,7 +204,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  26.113 seconds)
+   **Total running time of the script:** ( 9 minutes  33.319 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_classification.py:
