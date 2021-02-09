@@ -11,7 +11,7 @@ import numpy as np
 import sklearn.kernel_approximation
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 
 
@@ -34,11 +34,19 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        n_components: Tuple[Tuple, int, bool] = ((10, 2000), 100, True),
+        n_components: Tuple[Tuple, float, bool] = ((0.5, 0.9), 0.5, True),
         gamma: Tuple[Tuple, float, bool] = ((3.0517578125e-05, 8), 1.0, True),
         degree: Tuple[Tuple, int] = ((2, 5), 3),
         coef0: Tuple[Tuple, float] = ((-1, 1), 0)
     ) -> ConfigurationSpace:
+
+        if dataset_properties is not None:
+            n_features = len(dataset_properties['numerical_columns'])
+            n_components = ((int(n_components[0][0] * n_features), int(n_components[0][1] * n_features)),
+                            int(n_components[1] * n_features), n_components[2])
+        else:
+            n_components = ((10, 2000), 100, True)
+
         n_components = UniformIntegerHyperparameter(
             "n_components", lower=n_components[0][0], upper=n_components[0][1],
             default_value=n_components[1], log=n_components[2])

@@ -18,7 +18,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 
 
 class Nystroem(autoPyTorchFeaturePreprocessingComponent):
-    def __init__(self, n_components: int = 100,
+    def __init__(self, n_components: int = 10,
                  kernel: str = 'rbf', degree: int = 3,
                  gamma: float = 0.01, coef0: float = 0.0,
                  random_state: Optional[Union[int, np.random.RandomState]] = None
@@ -43,12 +43,20 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        n_components: Tuple[Tuple, int, bool] = ((10, 2000), 100, True),
+        n_components: Tuple[Tuple, float, bool] = ((0.5, 0.9), 0.5, True),
         kernel: Tuple[Tuple, str] = (('poly', 'rbf', 'sigmoid', 'cosine'), 'rbf'),
         gamma: Tuple[Tuple, float, bool] = ((3.0517578125e-05, 8), 0.01, True),
         degree: Tuple[Tuple, int] = ((2, 5), 3),
         coef0: Tuple[Tuple, float] = ((-1, 1), 0)
     ) -> ConfigurationSpace:
+
+        if dataset_properties is not None:
+            n_features = len(dataset_properties['numerical_columns'])
+            n_components = ((int(n_components[0][0] * n_features), int(n_components[0][1] * n_features)),
+                            int(n_components[1] * n_features), n_components[2])
+        else:
+            n_components = ((10, 2000), 100, True)
+
         n_components = UniformIntegerHyperparameter(
             "n_components", lower=n_components[0][0], upper=n_components[0][1],
             default_value=n_components[1], log=n_components[2])

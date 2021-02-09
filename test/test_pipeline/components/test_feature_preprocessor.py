@@ -5,32 +5,27 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.KernelPCA import \
-    KernelPCA
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     NoFeaturePreprocessor import NoFeaturePreprocessor
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.Nystroem import Nystroem
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
-    PolynomialFeatures import PolynomialFeatures
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
-    PowerTransformer import PowerTransformer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    RandomKitchenSinks import RandomKitchenSinks
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.TruncatedSVD import \
-    TruncatedSVD
+    base_feature_preprocessor_choice import FeatureProprocessorChoice
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
-@pytest.fixture(params=[TruncatedSVD(), PolynomialFeatures(), PowerTransformer(),
-                        Nystroem(), KernelPCA(), RandomKitchenSinks()])
+@pytest.fixture(params=['TruncatedSVD', 'PolynomialFeatures', 'PowerTransformer',
+                        'Nystroem', 'KernelPCA', 'RandomKitchenSinks'])
 def preprocessor(request):
     return request.param
 
 
 @pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
-class TestFeaturePreprocessors():
+class TestFeaturePreprocessors:
 
     def test_feature_preprocessor(self, fit_dictionary, preprocessor):
+        preprocessor = FeatureProprocessorChoice(
+            dataset_properties=fit_dictionary['dataset_properties']
+        ).get_components()[preprocessor]()
         configuration = preprocessor.\
             get_hyperparameter_search_space(dataset_properties=fit_dictionary["dataset_properties"]) \
             .get_default_configuration().get_dictionary()
@@ -55,3 +50,27 @@ class TestFeaturePreprocessors():
 
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)
+
+    def test_pipeline_fit_include(self, fit_dictionary, preprocessor):
+        """
+        This test ensures that a tabular classification
+        pipeline can be fit with all preprocessors
+        in the include
+        """
+
+        fit_dictionary['epochs'] = 1
+
+        pipeline = TabularClassificationPipeline(
+            dataset_properties=fit_dictionary['dataset_properties'],
+            include={'feature_preprocessor': [preprocessor]})
+        cs = pipeline.get_hyperparameter_search_space()
+        config = cs.sample_configuration()
+        pipeline.set_hyperparameters(config)
+        pipeline.fit(fit_dictionary)
+
+        # To make sure we fitted the model, there should be a
+        # run summary object with accuracy
+        run_summary = pipeline.named_steps['trainer'].run_summary
+        assert run_summary is not None
+
+        assert preprocessor == pipeline.named_steps['feature_preprocessor'].choice.__class__.__name__
