@@ -156,30 +156,29 @@ def fit_dictionary(request):
 def fit_dictionary_numerical_only(backend):
     X, y = make_classification(
         n_samples=200,
-        n_features=4,
-        n_informative=3,
-        n_redundant=1,
+        n_features=10,
+        n_informative=6,
+        n_redundant=4,
         n_repeated=0,
         n_classes=2,
         n_clusters_per_class=2,
         shuffle=True,
         random_state=0
     )
+    X = X.astype('float64')
     datamanager = TabularDataset(
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
 
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',
@@ -209,16 +208,14 @@ def fit_dictionary_categorical_only(backend):
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',
@@ -250,17 +247,15 @@ def fit_dictionary_num_and_categorical(backend):
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
 
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',

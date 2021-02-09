@@ -4,8 +4,6 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-import pandas as pd
-
 from smac.runhistory.runhistory import RunValue
 
 __all__ = [
@@ -14,12 +12,6 @@ __all__ = [
     'extract_learning_curve',
     'empty_queue'
 ]
-
-
-def subsampler(data: Union[np.ndarray, pd.DataFrame],
-               x: Union[np.ndarray, List[int]]
-               ) -> Union[np.ndarray, pd.DataFrame]:
-    return data[x] if isinstance(data, np.ndarray) else data.iloc[x]
 
 
 def read_queue(queue_: Queue) -> List[RunValue]:

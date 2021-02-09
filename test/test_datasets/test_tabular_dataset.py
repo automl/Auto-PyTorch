@@ -98,11 +98,7 @@ class TabularDatasetTest(unittest.TestCase):
         backend.save_datamanager(datamanager)
 
         datamanager = backend.load_datamanager()
-        info = {'task_type': datamanager.task_type,
-                'output_type': datamanager.output_type,
-                'issparse': datamanager.issparse,
-                'numerical_columns': datamanager.numerical_columns,
-                'categorical_columns': datamanager.categorical_columns}
+        info = datamanager.get_required_dataset_info()
         dataset_requirements = get_dataset_requirements(info)
 
         dataset_properties = datamanager.get_dataset_properties(dataset_requirements)

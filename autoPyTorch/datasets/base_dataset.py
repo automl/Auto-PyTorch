@@ -48,6 +48,7 @@ class TransformSubset(Subset):
 
     We achieve so by adding a train flag to the pytorch subset
     """
+
     def __init__(self, dataset: Dataset, indices: Sequence[int], train: bool) -> None:
         self.dataset = dataset
         self.indices = indices
@@ -371,3 +372,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                                    'num_classes': self.num_classes,
                                    })
         return dataset_properties
+
+    def get_required_dataset_info(self) -> Dict[str, Any]:
+        """
+        Returns a dictionary containing required dataset properties to instantiate a pipeline,
+        """
+        info = {'output_type': self.output_type,
+                'issparse': self.issparse}
+        return info
