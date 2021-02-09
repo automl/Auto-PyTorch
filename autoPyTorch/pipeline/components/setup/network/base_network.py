@@ -20,6 +20,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
     def __init__(
             self,
+            network: Optional[torch.nn.Module] = None,
             random_state: Optional[np.random.RandomState] = None
     ) -> None:
         super(NetworkComponent, self).__init__()

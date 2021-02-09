@@ -58,27 +58,25 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Examples
     """
 
-    def __init__(
-        self,
-        config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
-        include: Optional[Dict[str, Any]] = None,
-        exclude: Optional[Dict[str, Any]] = None,
-        random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-    ):
+    def __init__(self,
+                 config: Optional[Configuration] = None,
+                 steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 include: Optional[Dict[str, Any]] = None,
+                 exclude: Optional[Dict[str, Any]] = None,
+                 random_state: Optional[np.random.RandomState] = None,
+                 init_params: Optional[Dict[str, Any]] = None,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
-    def fit_transformer(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        fit_params: Optional[Dict[str, Any]] = None
-    ) -> Tuple[np.ndarray, Optional[Dict[str, Any]]]:
+    def fit_transformer(self,
+                        X: np.ndarray,
+                        y: np.ndarray,
+                        fit_params: Optional[Dict[str, Any]] = None
+                        ) -> Tuple[np.ndarray, Optional[Dict[str, Any]]]:
         """Fits the pipeline given a training (X,y) pair
 
         Args:
@@ -167,12 +165,11 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         return y
 
-    def _get_hyperparameter_search_space(
-            self,
-            dataset_properties: Dict[str, Any],
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-    ) -> ConfigurationSpace:
+    def _get_hyperparameter_search_space(self,
+                                         dataset_properties: Dict[str, Any],
+                                         include: Optional[Dict[str, Any]] = None,
+                                         exclude: Optional[Dict[str, Any]] = None,
+                                         ) -> ConfigurationSpace:
         """Create the hyperparameter configuration space.
 
         For the given steps, and the Choices within that steps,

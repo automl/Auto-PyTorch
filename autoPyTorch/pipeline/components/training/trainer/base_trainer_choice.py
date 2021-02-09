@@ -97,13 +97,11 @@ class TrainerChoice(autoPyTorchChoice):
         components.update(_addons.components)
         return components
 
-    def get_hyperparameter_search_space(
-            self,
-            dataset_properties: Optional[Dict[str, str]] = None,
-            default: Optional[str] = None,
-            include: Optional[List[str]] = None,
-            exclude: Optional[List[str]] = None,
-    ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(self,
+                                        dataset_properties: Optional[Dict[str, str]] = None,
+                                        default: Optional[str] = None,
+                                        include: Optional[List[str]] = None,
+                                        exclude: Optional[List[str]] = None) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
         Args:
