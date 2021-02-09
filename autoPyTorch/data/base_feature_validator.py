@@ -60,6 +60,7 @@ class BaseFeatureValidator(BaseEstimator):
 
         # Required for dataset properties
         self.num_features = None  # type: typing.Optional[int]
+        self.categories = []  # type: typing.List[typing.List[int]]
         self.categorical_columns: typing.List[int] = []
         self.numerical_columns: typing.List[int] = []
 
