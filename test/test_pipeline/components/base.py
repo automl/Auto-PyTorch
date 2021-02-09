@@ -1,69 +1,114 @@
 import logging
 import unittest
 
-from sklearn.datasets import make_classification
+from sklearn.datasets import make_classification, make_regression
 
 import torch
 
+from autoPyTorch import constants
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
+from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import StandardTrainer
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker, BaseTrainerComponent
 
 
 class BaseTraining(unittest.TestCase):
 
-    def setUp(self):
-        # Data
-        self.X, self.y = make_classification(
-            n_samples=5000,
-            n_features=4,
-            n_informative=3,
-            n_redundant=1,
-            n_repeated=0,
-            n_classes=2,
-            n_clusters_per_class=2,
-            shuffle=True,
-            random_state=0
-        )
-        self.X = torch.FloatTensor(self.X)
-        self.y = torch.LongTensor(self.y)
-        self.dataset = torch.utils.data.TensorDataset(self.X, self.y)
-        self.loader = torch.utils.data.DataLoader(self.dataset, batch_size=20)
-        self.dataset_properties = {
-            'task_type': 'tabular_classification',
-            'output_type': 'binary'
+    def prepare_trainer(self,
+                        trainer: BaseTrainerComponent,
+                        task_type: int):
+        if task_type in constants.CLASSIFICATION_TASKS:
+            X, y = make_classification(
+                n_samples=5000,
+                n_features=4,
+                n_informative=3,
+                n_redundant=1,
+                n_repeated=0,
+                n_classes=2,
+                n_clusters_per_class=2,
+                shuffle=True,
+                random_state=0
+            )
+            X = torch.tensor(X, dtype=torch.float)
+            y = torch.tensor(y, dtype=torch.long)
+            output_type = constants.BINARY
+            num_outputs = 2
+            criterion = torch.nn.CrossEntropyLoss()
+
+        elif task_type in constants.REGRESSION_TASKS:
+            X, y = make_regression(
+                n_samples=5000,
+                n_features=4,
+                n_informative=3,
+                n_targets=1,
+                shuffle=True,
+                random_state=0
+            )
+            X = torch.tensor(X, dtype=torch.float)
+            y = torch.tensor(y, dtype=torch.float)
+            # normalize targets for regression since NNs are better when predicting small outputs
+            y = ((y - y.mean()) / y.std()).unsqueeze(1)
+            output_type = constants.CONTINUOUS
+            num_outputs = 1
+            criterion = torch.nn.MSELoss()
+
+        else:
+            raise ValueError(f"task type {task_type} not supported for standard trainer test")
+
+        dataset = torch.utils.data.TensorDataset(X, y)
+        loader = torch.utils.data.DataLoader(dataset, batch_size=20)
+        dataset_properties = {
+            'task_type': constants.TASK_TYPES_TO_STRING[task_type],
+            'output_type': constants.OUTPUT_TYPES_TO_STRING[output_type]
         }
 
         # training requirements
-        layers = []
-        layers.append(torch.nn.Linear(4, 4))
-        layers.append(torch.nn.Sigmoid())
-        layers.append(torch.nn.Linear(4, 2))
-        self.model = torch.nn.Sequential(*layers)
-        self.criterion = torch.nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01)
-        self.device = torch.device('cpu')
-        self.logger = logging.getLogger('test')
-        self.metrics = get_metrics(self.dataset_properties)
-        self.epochs = 20
-        self.budget_tracker = BudgetTracker(
-            budget_type='epochs',
-            max_epochs=self.epochs,
+        model = torch.nn.Sequential(
+            torch.nn.Linear(4, 4),
+            torch.nn.Sigmoid(),
+            torch.nn.Linear(4, num_outputs)
         )
-        self.task_type = STRING_TO_TASK_TYPES[self.dataset_properties['task_type']]
 
-    def _overfit_model(self):
-        self.model.train()
-        for epoch in range(self.epochs):
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+        device = torch.device('cpu')
+        logger = logging.getLogger('StandardTrainer - test')
+        metrics = get_metrics(dataset_properties)
+        epochs = 1000
+        budget_tracker = BudgetTracker(
+            budget_type='epochs',
+            max_epochs=epochs,
+        )
+
+        trainer.prepare(
+            scheduler=None,
+            model=model,
+            metrics=metrics,
+            criterion=criterion,
+            budget_tracker=budget_tracker,
+            optimizer=optimizer,
+            device=device,
+            metrics_during_training=True,
+            task_type=task_type
+        )
+        return trainer, model, optimizer, loader, criterion, epochs, logger
+
+    def train_model(self,
+                    model: torch.nn.Module,
+                    optimizer: torch.optim.Optimizer,
+                    loader: torch.utils.data.DataLoader,
+                    criterion: torch.nn.Module,
+                    epochs: int):
+        model.train()
+        for epoch in range(epochs):
             total_loss = 0
-            for x, y in self.loader:
-                self.optimizer.zero_grad()
+            for X, y in loader:
+                optimizer.zero_grad()
                 # Forward pass
-                y_pred = self.model(self.X)
+                y_pred = model(X)
                 # Compute Loss
-                loss = self.criterion(y_pred.squeeze(), self.y)
+                loss = criterion(y_pred, y)
                 total_loss += loss
 
                 # Backward pass
                 loss.backward()
-                self.optimizer.step()
+                optimizer.step()

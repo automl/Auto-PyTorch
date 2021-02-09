@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 import sys
 import unittest
@@ -9,10 +10,13 @@ import numpy as np
 from sklearn.base import clone
 
 import torch
+from sklearn.datasets import make_classification, make_regression
 
+from autoPyTorch import constants
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
+from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import (
     MixUpTrainer
 )
@@ -20,12 +24,11 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
-    BaseTrainerComponent,
+    BaseTrainerComponent, BudgetTracker,
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
     TrainerChoice,
 )
-
 
 sys.path.append(os.path.dirname(__file__))
 from base import BaseTraining  # noqa (E402: module level import not at top of file)
@@ -64,8 +67,8 @@ class BaseDataLoaderTest(unittest.TestCase):
 
         # No input in fit dictionary
         with self.assertRaisesRegex(
-            ValueError,
-            'To fit a data loader, expected fit dictionary to have split_id.'
+                ValueError,
+                'To fit a data loader, expected fit dictionary to have split_id.'
         ):
             loader.fit(fit_dictionary)
 
@@ -129,95 +132,121 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
         Makes sure we properly evaluate data, returning a proper loss
         and metric
         """
-        trainer = BaseTrainerComponent()
-        trainer.prepare(
-            model=self.model,
-            metrics=self.metrics,
-            criterion=self.criterion,
-            budget_tracker=self.budget_tracker,
-            optimizer=self.optimizer,
-            device=self.device,
-            metrics_during_training=True,
-            scheduler=None,
-            task_type=self.task_type
-        )
+        (trainer,
+         model,
+         optimizer,
+         loader,
+         criterion,
+         epochs,
+         logger) = self.prepare_trainer(BaseTrainerComponent(),
+                                        constants.TABULAR_CLASSIFICATION)
 
-        prev_loss, prev_metrics = trainer.evaluate(self.loader, epoch=1, writer=None)
+        prev_loss, prev_metrics = trainer.evaluate(loader, epoch=1, writer=None)
         self.assertIn('accuracy', prev_metrics)
 
         # Fit the model
-        self._overfit_model()
+        self.train_model(model,
+                         optimizer,
+                         loader,
+                         criterion,
+                         epochs)
 
         # Loss and metrics should have improved after fit
         # And the prediction should be better than random
-        loss, metrics = trainer.evaluate(self.loader, epoch=1, writer=None)
+        loss, metrics = trainer.evaluate(loader, epoch=1, writer=None)
         self.assertGreater(prev_loss, loss)
         self.assertGreater(metrics['accuracy'], prev_metrics['accuracy'])
         self.assertGreater(metrics['accuracy'], 0.5)
 
 
-class StandartTrainerTest(BaseTraining, unittest.TestCase):
+class StandardTrainerTest(BaseTraining, unittest.TestCase):
 
-    def test_epoch_training(self):
-        """
-        Makes sure we are able to train a model and produce good
-        training performance
-        """
-        trainer = StandardTrainer()
-        trainer.prepare(
-            scheduler=None,
-            model=self.model,
-            metrics=self.metrics,
-            criterion=self.criterion,
-            budget_tracker=self.budget_tracker,
-            optimizer=self.optimizer,
-            device=self.device,
-            metrics_during_training=True,
-            task_type=self.task_type
-        )
+    def test_regression_epoch_training(self):
+        (trainer,
+         _,
+         _,
+         loader,
+         _,
+         epochs,
+         logger) = self.prepare_trainer(StandardTrainer(),
+                                        constants.TABULAR_REGRESSION)
+
+        # Train the model
+        counter = 0
+        r2 = 0
+        while r2 < 0.7:
+            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            counter += 1
+            r2 = metrics['r2']
+
+            if counter > epochs:
+                self.fail(f"Could not overfit a dummy regression under {epochs} epochs")
+
+    def test_classification_epoch_training(self):
+        (trainer,
+         _,
+         _,
+         loader,
+         _,
+         epochs,
+         logger) = self.prepare_trainer(StandardTrainer(),
+                                        constants.TABULAR_CLASSIFICATION)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(self.loader, epoch=1, logger=self.logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
-            if counter > 1000:
-                self.fail("Could not overfit a dummy binary classification under 1000 epochs")
+            if counter > epochs:
+                self.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
 class MixUpTrainerTest(BaseTraining, unittest.TestCase):
 
-    def test_epoch_training(self):
-        """
-        Makes sure we are able to train a model and produce good
-        training performance
-        """
-        trainer = MixUpTrainer(alpha=0.5)
-        trainer.prepare(
-            scheduler=None,
-            model=self.model,
-            metrics=self.metrics,
-            criterion=self.criterion,
-            budget_tracker=self.budget_tracker,
-            optimizer=self.optimizer,
-            device=self.device,
-            metrics_during_training=True,
-            task_type=self.task_type
-        )
+    def test_regression_epoch_training(self):
+        (trainer,
+         _,
+         _,
+         loader,
+         _,
+         epochs,
+         logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
+                                        constants.TABULAR_REGRESSION)
+
+        # Train the model
+        counter = 0
+        r2 = 0
+        while r2 < 0.7:
+            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            counter += 1
+            r2 = metrics['r2']
+
+            if counter > epochs:
+                self.fail(f"Could not overfit a dummy regression under {epochs} epochs")
+
+    def test_classification_epoch_training(self):
+        (trainer,
+         _,
+         _,
+         loader,
+         _,
+         epochs,
+         logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
+                                        constants.TABULAR_CLASSIFICATION)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(self.loader, epoch=1, logger=self.logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
-            if counter > 1000:
-                self.fail("Could not overfit a dummy binary classification under 1000 epochs")
+            if counter > epochs:
+                self.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
 class TrainerTest(unittest.TestCase):
