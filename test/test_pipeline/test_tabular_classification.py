@@ -80,10 +80,16 @@ class TestTabularClassification:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        prediction = pipeline.predict(
-            fit_dictionary_tabular['backend'].load_datamanager().test_tensors[0])
+        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
+        test_tensor = datamanager.test_tensors[0]
+
+        # we expect the output to have the same batch size as the test input,
+        # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
+        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["num_classes"])
+
+        prediction = pipeline.predict(test_tensor)
         assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == (200, 2)
+        assert prediction.shape == expected_output_shape
 
     def test_pipeline_predict_proba(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
@@ -99,10 +105,16 @@ class TestTabularClassification:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        prediction = pipeline.predict_proba(
-            fit_dictionary_tabular['backend'].load_datamanager().test_tensors[0])
+        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
+        test_tensor = datamanager.test_tensors[0]
+
+        # we expect the output to have the same batch size as the test input,
+        # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
+        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["num_classes"])
+
+        prediction = pipeline.predict_proba(test_tensor)
         assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == (200, 2)
+        assert prediction.shape == expected_output_shape
 
     def test_pipeline_transform(self, fit_dictionary_tabular):
         """

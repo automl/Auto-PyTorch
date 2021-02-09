@@ -82,10 +82,16 @@ class TestTabularRegression:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        prediction = pipeline.predict(
-            fit_dictionary_tabular['backend'].load_datamanager().test_tensors[0])
+        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
+        test_tensor = datamanager.test_tensors[0]
+
+        # we expect the output to have the same batch size as the test input,
+        # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
+        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+
+        prediction = pipeline.predict(test_tensor)
         assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == (200, 1)
+        assert prediction.shape == expected_output_shape
 
     def test_pipeline_transform(self, fit_dictionary_tabular):
         """
