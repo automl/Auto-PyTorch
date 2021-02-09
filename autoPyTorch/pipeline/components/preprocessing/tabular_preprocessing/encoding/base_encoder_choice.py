@@ -78,6 +78,9 @@ class EncoderChoice(autoPyTorchChoice):
         # add only no encoder to choice hyperparameters in case the dataset is only numerical
         if len(dataset_properties['categorical_columns']) == 0:
             default = 'NoEncoder'
+            if include is not None and default not in include:
+                raise ValueError("Provided {} in include, however, the dataset "
+                                 "is incompatible with it".format(include))
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                          ['NoEncoder'],
                                                          default_value=default)

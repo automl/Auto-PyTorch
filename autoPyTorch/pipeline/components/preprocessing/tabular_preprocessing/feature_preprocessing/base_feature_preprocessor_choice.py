@@ -21,17 +21,17 @@ _preprocessors = find_components(__package__,
 _addons = ThirdPartyComponents(autoPyTorchFeaturePreprocessingComponent)
 
 
-def add_encoder(encoder: autoPyTorchFeaturePreprocessingComponent) -> None:
-    _addons.add_component(encoder)
+def add_feature_preprocessor(feature_preprocessor: autoPyTorchFeaturePreprocessingComponent) -> None:
+    _addons.add_component(feature_preprocessor)
 
 
 class FeatureProprocessorChoice(autoPyTorchChoice):
     """
-    Allows for dynamically choosing encoding component at runtime
+    Allows for dynamically choosing feature_preprocessor component at runtime
     """
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
-        """Returns the available encoder components
+        """Returns the available feature_preprocessor components
 
         Args:
             None
@@ -85,8 +85,10 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
 
         # add only no feature preprocessor to choice hyperparameters in case the dataset is only categorical
         if len(dataset_properties['numerical_columns']) == 0:
-            # TODO: raise error
             default = 'NoFeaturePreprocessor'
+            if include is not None and default not in include:
+                raise ValueError("Provided {} in include, however, "
+                                 "the dataset is incompatible with it".format(include))
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                          ['NoFeaturePreprocessor'],
                                                          default_value=default)
