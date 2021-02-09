@@ -1,3 +1,5 @@
+import flaky
+
 import pytest
 
 import torch
@@ -15,6 +17,7 @@ def head(request):
     return request.param
 
 
+@flaky.flaky(max_runs=3)
 @pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
                                             'fit_dictionary_categorical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
