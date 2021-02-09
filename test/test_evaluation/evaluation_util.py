@@ -11,6 +11,7 @@ import sklearn.datasets
 import sklearn.model_selection
 from sklearn import preprocessing
 
+from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
@@ -139,9 +140,11 @@ def get_multiclass_classification_datamanager(resampling_strategy=HoldoutValType
     X_train = X_train[indices]
     Y_train = Y_train[indices]
 
+    validator = TabularInputValidator(is_classification=True).fit(X_train, Y_train)
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
+        validator=validator,
         resampling_strategy=resampling_strategy
     )
     return dataset
@@ -155,8 +158,10 @@ def get_abalone_datamanager(resampling_strategy=HoldoutValTypes.holdout_validati
         X, y, random_state=1
     )
 
+    validator = TabularInputValidator(is_classification=True).fit(X_train, y_train)
     dataset = TabularDataset(
         X=X_train, Y=y_train,
+        validator=validator,
         X_test=X_test, Y_test=y_test,
         resampling_strategy=resampling_strategy
     )
@@ -179,9 +184,11 @@ def get_binary_classification_datamanager(resampling_strategy=HoldoutValTypes.ho
     X_test = X_test[eliminate_class_two]
     Y_test = Y_test[eliminate_class_two]
 
+    validator = TabularInputValidator(is_classification=True).fit(X_train, Y_train)
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
+        validator=validator,
         resampling_strategy=resampling_strategy
     )
     return dataset
@@ -195,9 +202,11 @@ def get_regression_datamanager(resampling_strategy=HoldoutValTypes.holdout_valid
     X_train = X_train[indices]
     Y_train = Y_train[indices]
 
+    validator = TabularInputValidator(is_classification=True).fit(X_train, Y_train)
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
+        validator=validator,
         resampling_strategy=resampling_strategy
     )
     return dataset
@@ -221,9 +230,11 @@ def get_500_classes_datamanager(resampling_strategy=HoldoutValTypes.holdout_vali
                                                 shuffle=True,
                                                 random_state=1)
 
+    validator = TabularInputValidator(is_classification=True).fit(X, Y)
     dataset = TabularDataset(
         X=X[:700], Y=Y[:700],
         X_test=X[700:], Y_test=Y[710:],
+        validator=validator,
         resampling_strategy=resampling_strategy
     )
 

@@ -106,6 +106,52 @@ class BasePipeline(Pipeline):
 
         self._additional_run_info = {}  # type: Dict[str, str]
 
+    def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
+            **fit_params: Any) -> Pipeline:
+        """Fit the selected algorithm to the training data.
+        Arguments:
+            X (typing.Dict):
+            A fit dictionary so that contains information to fit a pipeline
+            TODO: Use fit_params support from 0.24 scikit learn version instead
+            y (None):
+            Used for Compatibility, but it has no funciton in out fit strategy
+            TODO: use actual y when moving to fit_params support
+        fit_params : dict
+            See the documentation of sklearn.pipeline.Pipeline for formatting
+            instructions.
+
+        Returns:
+            self :
+                returns an instance of self.
+
+        Raises:
+            NoModelException
+                NoModelException is raised if fit() is called without specifying
+                a classification algorithm first.
+        """
+        X, fit_params = self.fit_transformer(X, y, **fit_params)
+        self.fit_estimator(X, y, **fit_params)
+        return self
+
+    def fit_transformer(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
+                        fit_params: Optional[Dict] = None,
+                        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        if fit_params is None:
+            fit_params = {}
+        fit_params = {key.replace(":", "__"): value for key, value in
+                      fit_params.items()}
+        fit_params_steps = self._check_fit_params(**fit_params)
+        Xt = self._fit(X, y, **fit_params_steps)
+        return Xt, fit_params_steps[self.steps[-1][0]]
+
+    def fit_estimator(self, X: Dict[str, Any],
+                      y: Optional[np.ndarray], **fit_params: Any
+                      ) -> Pipeline:
+        fit_params = {key.replace(":", "__"): value for key, value in
+                      fit_params.items()}
+        self._final_estimator.fit(X, y, **fit_params)
+        return self
+
     def get_max_iter(self) -> int:
         if self.estimator_supports_iterative_fit():
             return self._final_estimator.get_max_iter()

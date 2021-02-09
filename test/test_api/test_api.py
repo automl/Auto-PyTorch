@@ -17,7 +17,6 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
 
 
 # Fixtures
@@ -39,32 +38,35 @@ def test_classification(openml_id, resampling_strategy, backend):
     )
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
-    datamanager = TabularDataset(
-        X=X_train, Y=y_train,
-        X_test=X_test, Y_test=y_test,
-        resampling_strategy=resampling_strategy,
-        dataset_name=str(openml_id),
-    )
-    assert datamanager.task_type == 'tabular_classification'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 3
-    assert len(datamanager.splits) == expected_num_splits
 
     # Search for a good configuration
-    estimator = TabularClassificationTask(backend=backend)
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+    )
+
     estimator.search(
-        dataset=datamanager,
+        X_train=X_train, y_train=y_train,
+        X_test=X_test, y_test=y_test,
         optimize_metric='accuracy',
         total_walltime_limit=150,
         func_eval_time_limit=50,
         traditional_per_total_budget=0
     )
 
+    # Internal dataset has expected settings
+    assert estimator.dataset.task_type == 'tabular_classification'
+    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 3
+    assert estimator.resampling_strategy == resampling_strategy
+    assert estimator.dataset.resampling_strategy == resampling_strategy
+    assert len(estimator.dataset.splits) == expected_num_splits
+
     # TODO: check for budget
 
     # Check for the created files
     tmp_dir = estimator._backend.temporary_directory
     loaded_datamanager = estimator._backend.load_datamanager()
-    assert len(loaded_datamanager.train_tensors) == len(datamanager.train_tensors)
+    assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
         'smac3-output/run_1/configspace.json',
@@ -86,7 +88,7 @@ def test_classification(openml_id, resampling_strategy, backend):
     # Check that smac was able to find proper models
     succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
     ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) > 1, estimator.run_history.data.items()
+    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.data.items()]
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc

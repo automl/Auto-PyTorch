@@ -28,7 +28,6 @@ class TestEncoders(unittest.TestCase):
         dataset_properties = {
             'categorical_columns': categorical_columns,
             'numerical_columns': numerical_columns,
-            'categories': [['female', 'male']]
         }
         X = {
             'X_train': data[train_indices],
@@ -69,7 +68,6 @@ class TestEncoders(unittest.TestCase):
         dataset_properties = {
             'categorical_columns': categorical_columns,
             'numerical_columns': numerical_columns,
-            'categories': [['female', 'male', 'unknown']]
         }
         X = {
             'X_train': data[train_indices],
@@ -110,7 +108,6 @@ class TestEncoders(unittest.TestCase):
         dataset_properties = {
             'categorical_columns': categorical_columns,
             'numerical_columns': numerical_columns,
-            'categories': [['female', 'male', 'unknown']]
         }
         X = {
             'X_train': data[train_indices],

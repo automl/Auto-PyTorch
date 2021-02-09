@@ -11,6 +11,16 @@ import torchvision
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import BaseDataLoaderComponent
 
 
+class ExpandTransform(object):
+    """Expand Dimensionality so tabular transformations see
+       a 2d Array
+    """
+    def __call__(self, data: np.ndarray) -> np.ndarray:
+        if len(data.shape) <= 1:
+            data = np.expand_dims(data, axis=0)
+        return data
+
+
 class ContractTransform(object):
     """Reverses the effect of ExpandTransform"""
     def __call__(self, data: np.ndarray) -> np.ndarray:
@@ -63,6 +73,7 @@ class FeatureDataLoader(BaseDataLoaderComponent):
         candidate_transformations = []  # type: List[Callable]
 
         if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
+            candidate_transformations.append((ExpandTransform()))
             candidate_transformations.extend(X['preprocess_transforms'])
             candidate_transformations.append((ContractTransform()))
 

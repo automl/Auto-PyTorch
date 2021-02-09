@@ -14,7 +14,7 @@ class BaseEncoder(autoPyTorchTabularPreprocessingComponent):
         super().__init__()
         self.add_fit_requirements([
             FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('categories', (List,), user_defined=True, dataset_property=True)])
+        ])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """

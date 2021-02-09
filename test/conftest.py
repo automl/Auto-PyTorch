@@ -12,6 +12,7 @@ import pytest
 
 from sklearn.datasets import fetch_openml, make_classification
 
+from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -166,8 +167,10 @@ def fit_dictionary_numerical_only(backend):
         random_state=0
     )
     X = X.astype('float64')
+    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
     datamanager = TabularDataset(
         X=X, Y=y,
+        validator=validator,
         X_test=X, Y_test=y,
     )
 
@@ -204,8 +207,10 @@ def fit_dictionary_categorical_only(backend):
     X = X[categorical_columns]
     X = X.iloc[0:200]
     y = y.iloc[0:200]
+    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
     datamanager = TabularDataset(
         X=X, Y=y,
+        validator=validator,
         X_test=X, Y_test=y,
     )
     info = datamanager.get_required_dataset_info()
@@ -230,10 +235,6 @@ def fit_dictionary_categorical_only(backend):
         'split_id': 0,
         'backend': backend,
     }
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        X_test=X, Y_test=y,
-    )
     backend.save_datamanager(datamanager)
     return fit_dictionary
 
@@ -243,8 +244,10 @@ def fit_dictionary_num_and_categorical(backend):
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     X = X.iloc[0:200]
     y = y.iloc[0:200]
+    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
     datamanager = TabularDataset(
         X=X, Y=y,
+        validator=validator,
         X_test=X, Y_test=y,
     )
     info = datamanager.get_required_dataset_info()
