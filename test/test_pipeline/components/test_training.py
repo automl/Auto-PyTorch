@@ -205,28 +205,6 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
 
 
 class MixUpTrainerTest(BaseTraining, unittest.TestCase):
-
-    def test_regression_epoch_training(self):
-        (trainer,
-         _,
-         _,
-         loader,
-         _,
-         epochs,
-         logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
-                                        constants.TABULAR_REGRESSION)
-
-        # Train the model
-        counter = 0
-        r2 = 0
-        while r2 < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
-            counter += 1
-            r2 = metrics['r2']
-
-            if counter > epochs:
-                self.fail(f"Could not overfit a dummy regression under {epochs} epochs")
-
     def test_classification_epoch_training(self):
         (trainer,
          _,
