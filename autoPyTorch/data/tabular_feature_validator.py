@@ -89,6 +89,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     key=functools.cmp_to_key(comparator)
                 )
 
+                self.categories = [
+                    # We fit an ordinal encoder, where all categorical
+                    # columns are shifted to the left
+                    list(range(len(cat)))
+                    for cat in self.encoder.transformers_[0][1].categories_
+                ]
+
             for i, type_ in enumerate(self.feat_type):
                 if 'numerical' in type_:
                     self.numerical_columns.append(i)

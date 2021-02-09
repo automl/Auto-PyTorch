@@ -7,7 +7,6 @@ The following example shows how to fit a sample classification model
 with AutoPyTorch
 """
 import os
-import pickle
 import tempfile as tmp
 import warnings
 
@@ -23,7 +22,6 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
@@ -76,9 +74,6 @@ if __name__ == '__main__':
         total_walltime_limit=500,
         func_eval_time_limit=50
     )
-
-    with open('estimator.pickle', 'wb') as handle:
-        pickle.dump(api, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     ############################################################################
     # Print the final ensemble performance

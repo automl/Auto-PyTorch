@@ -455,6 +455,9 @@ def test_unknown_encode_value():
     expected_row = [-1, -41, -3, -987.2]
     assert expected_row == x_t[0].tolist()
 
+    # Notice how there is only one column 'c' to encode
+    assert validator.categories == [list(range(2)) for i in range(1)]
+
 
 # Actual checks for the features
 @pytest.mark.parametrize(

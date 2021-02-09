@@ -178,8 +178,8 @@ def fit_dictionary_numerical_only(backend):
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
+        'X_train': datamanager.train_tensors[0],
+        'y_train': datamanager.train_tensors[1],
         'train_indices': datamanager.splits[0][0],
         'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
@@ -217,8 +217,8 @@ def fit_dictionary_categorical_only(backend):
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
+        'X_train': datamanager.train_tensors[0],
+        'y_train': datamanager.train_tensors[1],
         'train_indices': datamanager.splits[0][0],
         'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
@@ -255,8 +255,8 @@ def fit_dictionary_num_and_categorical(backend):
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
 
     fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
+        'X_train': datamanager.train_tensors[0],
+        'y_train': datamanager.train_tensors[1],
         'train_indices': datamanager.splits[0][0],
         'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
