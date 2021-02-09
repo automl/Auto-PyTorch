@@ -1,5 +1,4 @@
-from math import floor, ceil
-
+from math import ceil, floor
 from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
