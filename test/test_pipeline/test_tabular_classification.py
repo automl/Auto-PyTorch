@@ -51,7 +51,7 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
+        config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
         pipeline.fit(fit_dictionary)
 
@@ -75,7 +75,7 @@ class TestTabularClassification:
             dataset_properties=fit_dictionary['dataset_properties'])
 
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
+        config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
@@ -94,7 +94,7 @@ class TestTabularClassification:
             dataset_properties=fit_dictionary['dataset_properties'])
 
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
+        config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
@@ -115,7 +115,7 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
+        config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
