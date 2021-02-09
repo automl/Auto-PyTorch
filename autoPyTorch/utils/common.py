@@ -133,3 +133,9 @@ def hash_array_or_matrix(X: Union[np.ndarray, pd.DataFrame]) -> str:
 
     hash = m.hexdigest()
     return hash
+
+
+def subsampler(data: Union[np.ndarray, pd.DataFrame],
+               x: Union[np.ndarray, List[int]]
+               ) -> Union[np.ndarray, pd.DataFrame]:
+    return data[x] if isinstance(data, np.ndarray) else data.iloc[x]

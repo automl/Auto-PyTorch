@@ -51,7 +51,7 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
+        config = cs.get_default_configuration()
         pipeline.set_hyperparameters(config)
         pipeline.fit(fit_dictionary)
 
@@ -75,7 +75,7 @@ class TestTabularClassification:
             dataset_properties=fit_dictionary['dataset_properties'])
 
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
+        config = cs.get_default_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
@@ -94,7 +94,7 @@ class TestTabularClassification:
             dataset_properties=fit_dictionary['dataset_properties'])
 
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
+        config = cs.get_default_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
@@ -115,7 +115,7 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
+        config = cs.get_default_configuration()
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary)
@@ -146,11 +146,9 @@ class TestTabularClassification:
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
 
-        fit_dictionary['is_small_preprocess'] = is_small_preprocess
-
+        fit_dictionary['dataset_properties']['is_small_preprocess'] = is_small_preprocess
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'])
-
         pipeline.fit(fit_dictionary)
 
     def test_remove_key_check_requirements(self, fit_dictionary):

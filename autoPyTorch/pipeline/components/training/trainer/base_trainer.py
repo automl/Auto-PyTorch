@@ -264,7 +264,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         targets_data = list()
 
         for step, (data, targets) in enumerate(train_loader):
-
             if self.budget_tracker.is_max_time_reached():
                 logger.info("Stopping training as max time reached")
                 break

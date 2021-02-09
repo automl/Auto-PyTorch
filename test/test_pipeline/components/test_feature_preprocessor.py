@@ -21,7 +21,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 
 
 @pytest.fixture(params=[TruncatedSVD(), PolynomialFeatures(), PowerTransformer(),
-                        Nystroem(), KernelPCA(), RandomKitchenSinks(), TruncatedSVD()])
+                        Nystroem(), KernelPCA(), RandomKitchenSinks()])
 def preprocessor(request):
     return request.param
 

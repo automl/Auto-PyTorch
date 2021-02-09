@@ -177,6 +177,8 @@ def fit_dictionary_numerical_only(backend):
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',
@@ -212,6 +214,8 @@ def fit_dictionary_categorical_only(backend):
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',
@@ -250,6 +254,8 @@ def fit_dictionary_num_and_categorical(backend):
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',

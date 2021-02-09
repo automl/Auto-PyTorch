@@ -85,6 +85,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
 
         # add only no feature preprocessor to choice hyperparameters in case the dataset is only categorical
         if len(dataset_properties['numerical_columns']) == 0:
+            # TODO: raise error
             default = 'NoFeaturePreprocessor'
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                          ['NoFeaturePreprocessor'],
