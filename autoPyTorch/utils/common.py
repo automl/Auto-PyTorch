@@ -135,7 +135,7 @@ def hash_array_or_matrix(X: Union[np.ndarray, pd.DataFrame]) -> str:
     return hash
 
 
-def subsampler(data: Union[np.ndarray, pd.DataFrame],
+def subsampler(data: Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix],
                x: Union[np.ndarray, List[int]]
-               ) -> Union[np.ndarray, pd.DataFrame]:
-    return data[x] if isinstance(data, np.ndarray) else data.iloc[x]
+               ) -> Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix]:
+    return data[x] if isinstance(data, (np.ndarray, scipy.sparse.csr_matrix)) else data.iloc[x]

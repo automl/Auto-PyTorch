@@ -22,7 +22,7 @@ class NetworkHeadComponent(autoPyTorchComponent):
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('num_classes', (int,), user_defined=True, dataset_property=True),
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
-            FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('output_shape', (Iterable, int), user_defined=True, dataset_property=True),
         ])
         self.head: nn.Module = None
         self.config = kwargs
