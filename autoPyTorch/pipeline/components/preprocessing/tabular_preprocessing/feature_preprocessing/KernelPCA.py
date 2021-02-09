@@ -1,3 +1,5 @@
+from math import floor, ceil
+
 from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.conditions import EqualsCondition, InCondition
@@ -56,8 +58,8 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
 
         if dataset_properties is not None:
             n_features = len(dataset_properties['numerical_columns'])
-            n_components = ((int(n_components[0][0] * n_features), int(n_components[0][1] * n_features)),
-                            int(n_components[1] * n_features))
+            n_components = ((floor(n_components[0][0] * n_features), ceil(n_components[0][1] * n_features)),
+                            ceil(n_components[1] * n_features))
         else:
             n_components = ((10, 2000), 100)
 

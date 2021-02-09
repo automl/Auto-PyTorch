@@ -1,3 +1,5 @@
+from math import floor, ceil
+
 from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -43,8 +45,8 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
 
         if dataset_properties is not None:
             n_features = len(dataset_properties['numerical_columns'])
-            target_dim = ((int(target_dim[0][0] * n_features), int(target_dim[0][1] * n_features)),
-                          int(target_dim[1] * n_features))
+            target_dim = ((floor(target_dim[0][0] * n_features), ceil(target_dim[0][1] * n_features)),
+                          floor(target_dim[1] * n_features))
         else:
             target_dim = ((10, 256), 128)
         target_dim = UniformIntegerHyperparameter("target_dim", lower=target_dim[0][0],

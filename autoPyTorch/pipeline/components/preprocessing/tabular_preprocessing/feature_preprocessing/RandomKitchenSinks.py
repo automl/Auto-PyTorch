@@ -1,3 +1,5 @@
+from math import floor, ceil
+
 from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -42,8 +44,13 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
 
         if dataset_properties is not None:
             n_features = len(dataset_properties['numerical_columns'])
-            n_components = ((int(n_components[0][0] * n_features), int(n_components[0][1] * n_features)),
-                            int(n_components[1] * n_features), n_components[2])
+            # if numerical features are 1, set log to False
+            if n_features == 1:
+                log = False
+            else:
+                log = n_components[2]
+            n_components = ((floor(n_components[0][0] * n_features), ceil(n_components[0][1] * n_features)),
+                            ceil(n_components[1] * n_features), log)
         else:
             n_components = ((10, 2000), 100, True)
 
