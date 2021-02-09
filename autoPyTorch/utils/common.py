@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union, NamedTuple
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union
 
 import numpy as np
 
@@ -23,17 +23,17 @@ class BaseNamedTuple():
             return getattr(self, key)
         else:
             raise AttributeError(f"NamedTuple does not have the attribute name {key}")
-    
+
     def pkg_check(self):
         if hasattr(self, "_asdict"):
             return True
         else:
-            raise AttributeError(f"The child class of BaseNamedTuple must inherit NamedTuple class.")
+            raise AttributeError("The child class of BaseNamedTuple must inherit NamedTuple class.")
 
     def keys(self):
         self.pkg_check()
         return self._asdict().keys()
-    
+
     def values(self):
         self.pkg_check()
         return self._asdict().values()

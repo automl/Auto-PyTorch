@@ -1,6 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, cast
-from typing import NamedTuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Callable, NamedTuple
 
 import numpy as np
 
@@ -41,12 +40,20 @@ def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDataset
 
 
 class TransformSubset(Subset):
-    """
+    """The title of the class description
+    TODO:
+    ```previous doc-string. (I did not understand the meaning.)
     Because the BaseDataset contains all the data (train/val/test), the transformations
     have to be applied with some directions. That is, if yielding train data,
     we expect to apply train transformation (which have augmentations exclusively).
 
     We achieve so by adding a train flag to the pytorch subset
+    ```
+
+    Attributes:
+        dataset (torch.utils.data.Dataset): The description
+        indices (Sequence[int]): The description
+        train (bool): If training or Validation.
     """
     def __init__(self, dataset: Dataset, indices: Sequence[int], train: bool) -> None:
         self.dataset = dataset
@@ -81,8 +88,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         train_transforms: Optional[torchvision.transforms.Compose] = None,
         val_transforms: Optional[torchvision.transforms.Compose] = None,
     ):
-        """
-        Base class for datasets used in AutoPyTorch
+        """Base class for datasets used in AutoPyTorch
         Args:
             train_tensors (A tuple of objects that have __len__ and __getitem__ attribute):
                 training data (A tuple of training features and labels)
@@ -91,18 +97,15 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data (A tuple of validation features and labels)
             test_tensors (An optional tuple of objects that have __len__ and __getitem__ attribute):
                 test data (A tuple of test features and labels)
-            
-            TODO: resampling_strategy, resampling_strategy_args
-            resampling_strategy (Union[CrossValTypes, HoldOutTypes]),
+            splitting_type (Union[CrossValTypes, HoldOutTypes]),
                 (default=HoldOutTypes.holdout_validation):
                 strategy to split the training data.
-            resampling_strategy_args (Optional[Dict[str, Any]]): 
-                arguments required for the chosen resampling strategy. 
-                If None, uses the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            splitting_params (Optional[Dict[str, Any]]):
+                arguments required for the chosen splitting function.
+                If None, uses the default values provided in CrossValParameters and HoldOutParameters
                 in ```datasets/resampling_strategy.py```.
-
             shuffle:  Whether to shuffle the data before performing splits
-            seed (int), (default=1): seed to be used for reproducibility.
+            seed (int), (default=42): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the training data
             val_transforms (Optional[torchvision.transforms.Compose]):
@@ -121,13 +124,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.random_state, self.shuffle = random_state, shuffle
         self.rng = np.random.RandomState(seed=self.random_state)
 
-        """SHUHEI TODO: move to HoldOut- and CrossVal- Parameters"""
         # Dict[str, SplitFunc]
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldOutTypes)
 
         self.splitting_type, self.splitting_params = splitting_type, splitting_params
-        self.convert_splitting_prams_to_namedtuple()
+        self.convert_splitting_params_to_namedtuple()
         self.splits = self.get_splits()
 
         self.task_type: Optional[str] = None
@@ -141,8 +143,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
-    
-    def convert_splitting_prams_to_namedtuple(self):
+
+    def convert_splitting_params_to_namedtuple(self) -> None:
+        """convert splitting_params into CrossValParameters or HoldOutParameters"""
+
         if not isinstance(self.splitting_params, dict) and self.splitting_params is not None:
             raise TypeError(f"splitting_params must be dict or None, but got {type(self.splitting_params)}")
 
@@ -157,18 +161,17 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         else:
             raise ValueError(f"splitting_type {self.splitting_type} is not supported.")
 
-
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
                          train: bool = True) -> 'BaseDataset':
         """
         During the pipeline execution, the pipeline object might propose transformations
         as a product of the current pipeline configuration being tested.
 
-        This utility allows to return a self with the updated transformation, so that
+        This utility allows to return self with the updated transformation, so that
         a dataloader can yield this dataset with the desired transformations
 
         Args:
-            transform (torchvision.transforms.Compose): 
+            transform (torchvision.transforms.Compose):
                 The transformations proposed by the current pipeline
             train (bool):
                 Whether to update the train or validation transform
@@ -185,11 +188,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def __getitem__(self, index: int, train: bool = True) -> Tuple[np.ndarray, ...]:
         """
         The base dataset uses a Subset of the data. Nevertheless, the base dataset expect
-        both validation and test data to be present in the same dataset, which motivated the
-        need to dynamically give train/test data with the __getitem__ command.
+        both validation and test data to be present in the same dataset, which is motivated
+        by the need to dynamically give train/test data with the __getitem__ command.
 
         This method yields a datapoint of the whole data (after a Subset has selected a given
-        item, based on the resampling strategy) and applies a train/testing transformation, if any.
+        item, based on the splitting functions) and applies a train/testing transformation, if any.
 
         Args:
             index (int): what element to yield from all the train/test tensors
@@ -208,21 +211,18 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             X = self.val_transform(X)
 
         # In case of prediction, the targets are not provided
-        Y = self.train_tensors[1][index] if self.train_tensors[1] is not None \
-            else None
+        Y = self.train_tensors[1][index] if self.train_tensors[1] is not None else None
 
         return X, Y
 
-    def __len__(self) -> int:
-        return self.train_tensors[0].shape[0]
+    def __len__(self) -> int: return self.train_tensors[0].shape[0]
 
-    def _get_indices(self) -> np.ndarray:
-        return self.rng.permutation(len(self)) if self.shuffle \
-            else np.arange(len(self))
+    def _get_indices(self) -> np.ndarray: return self.rng.permutation(len(self)) if self.shuffle \
+        else np.arange(len(self))
 
     def get_splits(self) -> List[Tuple[List[int], List[int]]]:
         """
-        Creates a set of splits based on a resampling strategy provided
+        Creates a set of splits based on a provided splitting function
 
         Returns
             (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
@@ -274,8 +274,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self
         """
         self.train_tensors = (X_train, self.train_tensors[1])
-        if X_test is not None and self.test_tensors is not None:
-            self.test_tensors = (X_test, self.test_tensors[1])
+        self.test_tensors = (X_test, self.test_tensors[1]) if None not in [X_test, self.test_tensors] \
+            else self.test_tensors
+
         return self
 
     def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
@@ -297,10 +298,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         # Add task type, output type and issparse to dataset properties as
         # they are not dataset requirements in the pipeline
-        dataset_specific_properties = _DatasetSpecificProperties(task_type=self.task_type,
-                                                                 output_type=self.output_type,
-                                                                 issparse=self.issparse,
-                                                                 input_shape=self.input_shape,
+        dataset_specific_properties = _DatasetSpecificProperties(task_type=self.task_type, output_type=self.output_type,
+                                                                 issparse=self.issparse, input_shape=self.input_shape,
                                                                  output_shape=self.output_shape,
                                                                  num_classes=self.num_classes)
         dataset_properties.update(**dataset_specific_properties._asdict())
