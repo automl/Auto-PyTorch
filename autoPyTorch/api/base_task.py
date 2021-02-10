@@ -164,7 +164,7 @@ class BaseTask:
 
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
-        self.task_type: Optional[str] = None
+        self.task_type: str = ""
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: Optional[RunHistory] = None
@@ -1040,7 +1040,7 @@ class BaseTask:
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(_pipeline_predict)(
-                models[identifier], X_test, batch_size, self._logger, self.task_type
+                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type]
             )
             for identifier in self.ensemble_.get_selected_model_identifiers()
         )
