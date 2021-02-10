@@ -81,17 +81,16 @@ class TabularDataset(BaseDataset):
         # dataset.
         # TODO: Consider moving the validator to the pipeline itself when we
         # move to using the fit_params on scikit learn 0.24
-        self.validator = validator
-        if self.validator is None:
+        if validator is None:
             raise ValueError("A feature validator is required to build a tabular pipeline")
 
-        X, Y = self.validator.transform(X, Y)
+        X, Y = validator.transform(X, Y)
         if X_test is not None:
-            X_test, Y_test = self.validator.transform(X_test, Y_test)
-        self.categorical_columns = self.validator.feature_validator.categorical_columns
-        self.numerical_columns = self.validator.feature_validator.numerical_columns
-        self.num_features = self.validator.feature_validator.num_features
-        self.categories = self.validator.feature_validator.categories
+            X_test, Y_test = validator.transform(X_test, Y_test)
+        self.categorical_columns = validator.feature_validator.categorical_columns
+        self.numerical_columns = validator.feature_validator.numerical_columns
+        self.num_features = validator.feature_validator.num_features
+        self.categories = validator.feature_validator.categories
 
         super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test), shuffle=shuffle,
                          resampling_strategy=resampling_strategy,
@@ -122,8 +121,3 @@ class TabularDataset(BaseDataset):
             'task_type': self.task_type
         })
         return info
-
-    def __getstate__(self) -> Dict[str, Any]:
-        # Make pickable!
-        self.validator = None
-        return self.__dict__

@@ -1,3 +1,5 @@
+import os
+import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -86,10 +88,6 @@ class TabularClassificationTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
 
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(is_classification=True)
-
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TabularDataset):
             raise ValueError("Dataset is incompatible for the given task,: {}".format(
@@ -105,24 +103,25 @@ class TabularClassificationTask(BaseTask):
         return TabularClassificationPipeline(dataset_properties=dataset_properties)
 
     def search(
-            self,
-            optimize_metric: str,
-            X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            budget_type: Optional[str] = None,
-            budget: Optional[float] = None,
-            total_walltime_limit: int = 100,
-            func_eval_time_limit: int = 60,
-            traditional_per_total_budget: float = 0.1,
-            memory_limit: Optional[int] = 4096,
-            smac_scenario_args: Optional[Dict[str, Any]] = None,
-            get_smac_object_callback: Optional[Callable] = None,
-            all_supported_metrics: bool = True,
-            precision: int = 32,
-            disable_file_output: List = [],
-            load_models: bool = True,
+        self,
+        optimize_metric: str,
+        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        dataset_name: Optional[str] = None,
+        budget_type: Optional[str] = None,
+        budget: Optional[float] = None,
+        total_walltime_limit: int = 100,
+        func_eval_time_limit: int = 60,
+        traditional_per_total_budget: float = 0.1,
+        memory_limit: Optional[int] = 4096,
+        smac_scenario_args: Optional[Dict[str, Any]] = None,
+        get_smac_object_callback: Optional[Callable] = None,
+        all_supported_metrics: bool = True,
+        precision: int = 32,
+        disable_file_output: List = [],
+        load_models: bool = True,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -133,9 +132,8 @@ class TabularClassificationTask(BaseTask):
         Args:
             X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
                 A pair of features (X_train) and targets (y_train) used to fit a
-                pipeline. Additionally, a holdout of this paris (X_test, y_test) can
+                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
-                Providing X_train, y_train and dataset together is not supported.
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline.
             budget_type (Optional[str]):
@@ -189,6 +187,18 @@ class TabularClassificationTask(BaseTask):
             self
 
         """
+        if dataset_name is None:
+            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        # we have to create a logger for at this point for the validator
+        self._logger = self._get_logger(dataset_name)
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        self.InputValidator = TabularInputValidator(
+            is_classification=True,
+            logger_port=self._logger_port,
+        )
 
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
@@ -227,7 +237,7 @@ class TabularClassificationTask(BaseTask):
             n_jobs: int = 1
     ) -> np.ndarray:
         if self.InputValidator is None or not self.InputValidator._is_fitted:
-            raise ValueError("predict() is only supported after calling fit. Kindly call first "
+            raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")
 
         X_test = self.InputValidator.feature_validator.transform(X_test)
@@ -247,7 +257,7 @@ class TabularClassificationTask(BaseTask):
                       X_test: Union[np.ndarray, pd.DataFrame, List],
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
         if self.InputValidator is None or not self.InputValidator._is_fitted:
-            raise ValueError("predict() is only supported after calling fit. Kindly call first "
+            raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")
         X_test = self.InputValidator.feature_validator.transform(X_test)
         return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)

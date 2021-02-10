@@ -72,6 +72,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
                 # The column transformer reoders the feature types - we therefore need to change
                 # it as well
+                # This means columns are shifted to the right
                 def comparator(cmp1: str, cmp2: str) -> int:
                     if (
                         cmp1 == 'categorical' and cmp2 == 'categorical'

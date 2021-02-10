@@ -9,6 +9,7 @@ import tempfile
 import time
 import typing
 import unittest.mock
+import uuid
 import warnings
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Union, cast
@@ -707,7 +708,8 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
-        self._logger = self._get_logger(self.dataset_name)
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
         self._memory_limit = memory_limit
@@ -907,8 +909,11 @@ class BaseTask:
         Returns:
             self
         """
+        if self.dataset_name is None:
+            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
-        self._logger = self._get_logger(dataset.dataset_name)
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset_name)
 
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
@@ -974,7 +979,11 @@ class BaseTask:
         Returns:
             (BasePipeline): fitted pipeline
         """
-        self._logger = self._get_logger(dataset.dataset_name)
+        if self.dataset_name is None:
+            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset_name)
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(

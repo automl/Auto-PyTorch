@@ -39,7 +39,7 @@ class BaseFeatureValidator(BaseEstimator):
             Host a encoder object if the data requires transformation (for example,
             if provided a categorical column in a pandas DataFrame)
         enc_columns (typing.List[str])
-            List of columns that where encoded.
+            List of columns that were encoded.
     """
     def __init__(self,
                  logger: typing.Optional[typing.Union[PicklableClientLogger, logging.Logger
