@@ -156,7 +156,7 @@ class TabularDataset(BaseDataset):
             data (pd.DataFrame): Converted data
             data_types (List[DataTypes]): Datatypes of each column
             nan_mask (Union[np.ndarray]): locations of nan in data
-            itovs (List[Optional[list]]): The table value in the location (col, row) 
+            itovs (List[Optional[list]]): The table value in the location (col, row)
             vtois (List[Optional[Value2Index]]): The index of the value in the specified column
 
             Tuple[pd.DataFrame, List[DataTypes],

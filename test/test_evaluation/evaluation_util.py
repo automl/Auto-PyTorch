@@ -142,7 +142,7 @@ def get_multiclass_classification_datamanager(resampling_strategy=HoldOutTypes.h
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
-        resampling_strategy=resampling_strategy
+        splitting_type=resampling_strategy
     )
     return dataset
 
@@ -158,7 +158,7 @@ def get_abalone_datamanager(resampling_strategy=HoldOutTypes.holdout_validation)
     dataset = TabularDataset(
         X=X_train, Y=y_train,
         X_test=X_test, Y_test=y_test,
-        resampling_strategy=resampling_strategy
+        splitting_type=resampling_strategy
     )
     return dataset
 
@@ -198,7 +198,7 @@ def get_regression_datamanager(resampling_strategy=HoldOutTypes.holdout_validati
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
-        resampling_strategy=resampling_strategy
+        splitting_type=resampling_strategy
     )
     return dataset
 
@@ -224,7 +224,7 @@ def get_500_classes_datamanager(resampling_strategy=HoldOutTypes.holdout_validat
     dataset = TabularDataset(
         X=X[:700], Y=Y[:700],
         X_test=X[700:], Y_test=Y[710:],
-        resampling_strategy=resampling_strategy
+        splitting_type=resampling_strategy
     )
 
     return dataset
