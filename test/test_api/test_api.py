@@ -1,5 +1,6 @@
 import os
 import pickle
+import sys
 
 import numpy as np
 
@@ -161,11 +162,14 @@ def test_classification(openml_id, resampling_strategy, backend):
 
     # Check that we can pickle
     # Test pickle
-    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
+    # This can happen on python greater than 3.6
+    # as older python do not control the state of the logger
+    if sys.version_info > (3, 6):
+        dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
-    with open(dump_file, 'wb') as f:
-        pickle.dump(estimator, f)
+        with open(dump_file, 'wb') as f:
+            pickle.dump(estimator, f)
 
-    with open(dump_file, 'rb') as f:
-        restored_estimator = pickle.load(f)
-    restored_estimator.predict(X_test)
+        with open(dump_file, 'rb') as f:
+            restored_estimator = pickle.load(f)
+        restored_estimator.predict(X_test)
