@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import logging.handlers
 import typing
 
 import numpy as np
@@ -33,7 +34,7 @@ class BaseInputValidator(BaseEstimator):
     def __init__(
         self,
         is_classification: bool = False,
-        logger_port: typing.Optional[int] = None,
+        logger_port: typing.Optional[int] = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     ) -> None:
         raise NotImplementedError()
 

@@ -122,3 +122,8 @@ class TabularDataset(BaseDataset):
             'task_type': self.task_type
         })
         return info
+
+    def __getstate__(self) -> Dict[str, Any]:
+        # Make pickable!
+        self.validator = None
+        return self.__dict__
