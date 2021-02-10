@@ -182,7 +182,7 @@ def get_binary_classification_datamanager(resampling_strategy=HoldOutTypes.holdo
     dataset = TabularDataset(
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
-        resampling_strategy=resampling_strategy
+        splitting_type=resampling_strategy
     )
     return dataset
 
