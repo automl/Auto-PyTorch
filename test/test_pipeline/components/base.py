@@ -41,7 +41,7 @@ class BaseTraining(unittest.TestCase):
             y = torch.tensor(y, dtype=torch.long)
             output_type = BINARY
             num_outputs = 2
-            criterion = torch.nn.CrossEntropyLoss()
+            criterion = torch.nn.CrossEntropyLoss
 
         elif task_type in REGRESSION_TASKS:
             X, y = make_regression(
@@ -58,7 +58,7 @@ class BaseTraining(unittest.TestCase):
             y = ((y - y.mean()) / y.std()).unsqueeze(1)
             output_type = CONTINUOUS
             num_outputs = 1
-            criterion = torch.nn.MSELoss(reduction="sum")
+            criterion = torch.nn.MSELoss
 
         else:
             raise ValueError(f"task type {task_type} not supported for standard trainer test")
@@ -96,7 +96,9 @@ class BaseTraining(unittest.TestCase):
             optimizer=optimizer,
             device=device,
             metrics_during_training=True,
-            task_type=task_type
+            task_type=task_type,
+            output_type=output_type,
+            labels=y
         )
         return trainer, model, optimizer, loader, criterion, epochs, logger
 
@@ -107,6 +109,8 @@ class BaseTraining(unittest.TestCase):
                     criterion: torch.nn.Module,
                     epochs: int):
         model.train()
+
+        criterion = criterion() if not isinstance(criterion, torch.nn.Module) else criterion
         for epoch in range(epochs):
             for X, y in loader:
                 optimizer.zero_grad()

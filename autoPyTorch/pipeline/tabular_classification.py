@@ -105,8 +105,8 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         # Pre-process X
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
-        if self.dataset_properties['output_shape'] == 1:
-            proba = pred[:, :self.dataset_properties['num_classes']]
+        if isinstance(self.dataset_properties['output_shape'], int):
+            proba = pred[:, :self.dataset_properties['output_shape']]
             normalizer = proba.sum(axis=1)[:, np.newaxis]
             normalizer[normalizer == 0.0] = 1.0
             proba /= normalizer
@@ -117,7 +117,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             all_proba = []
 
             for k in range(self.dataset_properties['output_shape']):
-                proba_k = pred[:, k, :self.dataset_properties['num_classes'][k]]
+                proba_k = pred[:, k, :self.dataset_properties['output_shape'][k]]
                 normalizer = proba_k.sum(axis=1)[:, np.newaxis]
                 normalizer[normalizer == 0.0] = 1.0
                 proba_k /= normalizer

@@ -10,7 +10,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import BINARY, REGRESSION_TASKS
+from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -192,18 +192,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # Weights for the loss function
         weights = None
-        kwargs = {}
-        if self.weighted_loss:
-            weights = self.get_class_weights(output_type, labels)
-            if output_type == BINARY:
-                kwargs['pos_weight'] = weights
-            else:
-                kwargs['weight'] = weights
-
-        criterion = criterion(**kwargs) if weights is not None else criterion()
+        kwargs: Dict[str, Any] = {}
+        # if self.weighted_loss:
+        #     weights = self.get_class_weights(output_type, labels)
+        #     if output_type == BINARY:
+        #         kwargs['pos_weight'] = weights
+        #         pass
+        #     else:
+        #         kwargs['weight'] = weights
 
         # Setup the loss function
-        self.criterion = criterion
+        self.criterion = criterion(**kwargs) if weights is not None else criterion()
 
         # setup the model
         self.model = model.to(device)
@@ -390,7 +389,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         strategy = get_loss_weight_strategy(output_type)
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
-        weights = weights.type(torch.FloatTensor).to(self.device)
+        weights = weights.float().to(self.device)
         return weights
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,

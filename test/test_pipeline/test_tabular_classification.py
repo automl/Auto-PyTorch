@@ -88,14 +88,14 @@ class TestTabularClassification:
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
         expected_output_shape = (test_tensor.shape[0],
-                                 fit_dictionary_tabular_dummy["dataset_properties"]["num_classes"])
+                                 fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
 
         prediction = pipeline.predict(test_tensor)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
         # we should be able to get a decent score on this dummy data
-        accuracy = metrics.accuracy(datamanager.test_tensors[1], prediction)
+        accuracy = metrics.accuracy(datamanager.test_tensors[1], prediction.squeeze())
         assert accuracy >= 0.8
 
     def test_pipeline_predict(self, fit_dictionary_tabular):
@@ -114,8 +114,8 @@ class TestTabularClassification:
         test_tensor = datamanager.test_tensors[0]
 
         # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["num_classes"])
+        # and number of outputs per batch sample equal to the number of outputs
+        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
 
         prediction = pipeline.predict(test_tensor)
         assert isinstance(prediction, np.ndarray)
@@ -140,7 +140,7 @@ class TestTabularClassification:
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["num_classes"])
+        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
 
         prediction = pipeline.predict_proba(test_tensor)
         assert isinstance(prediction, np.ndarray)
