@@ -54,10 +54,10 @@ class TabularDataset(BaseDataset):
             Y (Union[np.ndarray, pd.Series]): training data targets.
             X_test (Optional[Union[np.ndarray, pd.DataFrame]]):  input testing data.
             Y_test (Optional[Union[np.ndarray, pd.DataFrame]]): testing data targets
-            resampling_strategy (Union[CrossValTypes, HoldOutTypes]),
+            splitting_type (Union[CrossValTypes, HoldOutTypes]),
                 (default=HoldOutTypes.holdout_validation):
                 strategy to split the training data.
-            resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+            splitting_params (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
@@ -76,8 +76,8 @@ class TabularDataset(BaseDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
-                 resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+                 splitting_params: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -118,8 +118,8 @@ class TabularDataset(BaseDataset):
 
         """TODO: rename the variable names"""
         super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test), shuffle=shuffle,
-                         splitting_type=resampling_strategy,
-                         splitting_params=resampling_strategy_args,
+                         splitting_type=splitting_type,
+                         splitting_params=splitting_params,
                          random_state=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)

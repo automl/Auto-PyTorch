@@ -42,7 +42,7 @@ def test_classification(openml_id, resampling_strategy, backend):
     datamanager = TabularDataset(
         X=X_train, Y=y_train,
         X_test=X_test, Y_test=y_test,
-        resampling_strategy=resampling_strategy,
+        splitting_type=resampling_strategy,
         dataset_name=str(openml_id),
     )
     assert datamanager.task_type == 'tabular_classification'

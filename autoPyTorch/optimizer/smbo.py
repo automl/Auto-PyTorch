@@ -19,8 +19,9 @@ from smac.utils.io.traj_logging import TrajEntry
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
-    DEFAULT_RESAMPLING_PARAMETERS,
+    CrossValParameters,
     HoldOutTypes,
+    HoldOutParameters
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -173,9 +174,14 @@ class AutoMLSMBO(object):
 
         # Evaluation
         self.resampling_strategy = resampling_strategy
+
         if resampling_strategy_args is None:
-            resampling_strategy_args = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy]
-        self.resampling_strategy_args = resampling_strategy_args
+            if isinstance(resampling_strategy, CrossValTypes):
+                self.resampling_strategy_args = CrossValParameters()
+            else:
+                self.resampling_strategy_args = HoldOutParameters()
+        else:
+            self.resampling_strategy_args = resampling_strategy_args
 
         # and a bunch of useful limits
         self.worst_possible_result = get_cost_of_crash(self.metric)

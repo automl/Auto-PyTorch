@@ -305,15 +305,15 @@ def dataset_traditional_classifier_categorical_only():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
     X = X[categorical_columns]
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int64)
     return X, y
 
 
 @pytest.fixture
 def dataset_traditional_classifier_num_categorical():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    y = y.astype(np.int)
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    y = y.astype(np.int64)
+    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int64)
     return X, y
 
 

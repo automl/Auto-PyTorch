@@ -163,8 +163,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             self._get_test_loss = False
 
-        self.resampling_strategy = dm.resampling_strategy
-        self.resampling_strategy_args = dm.resampling_strategy_args
+        self.resampling_strategy = dm.splitting_type
+        self.resampling_strategy_args = dm.splitting_params
 
         self.search_space_updates = search_space_updates
 

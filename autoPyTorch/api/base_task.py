@@ -705,7 +705,7 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
-        self.resampling_strategy = dataset.resampling_strategy
+        self.resampling_strategy = dataset.splitting_type
         self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
@@ -869,7 +869,7 @@ class BaseTask:
 
         if load_models:
             self._logger.info("Loading models...")
-            self._load_models(dataset.resampling_strategy)
+            self._load_models(dataset.splitting_type)
             self._logger.info("Finished loading models...")
 
         # Clean up the logger
@@ -927,7 +927,7 @@ class BaseTask:
                                   })
         X.update({**self.pipeline_options, **budget_config})
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
-            self._load_models(dataset.resampling_strategy)
+            self._load_models(dataset.splitting_type)
 
         # Refit is not applicable when ensemble_size is set to zero.
         if self.ensemble_ is None:
