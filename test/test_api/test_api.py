@@ -164,7 +164,7 @@ def test_classification(openml_id, resampling_strategy, backend):
     # Test pickle
     # This can happen on python greater than 3.6
     # as older python do not control the state of the logger
-    if sys.version_info > (3, 6):
+    if sys.version_info >= (3, 7):
         dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
         with open(dump_file, 'wb') as f:
