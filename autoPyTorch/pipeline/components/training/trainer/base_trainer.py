@@ -56,9 +56,9 @@ class BudgetTracker(object):
 
 class RunSummary(object):
     def __init__(
-        self,
-        total_parameter_count: float,
-        trainable_parameter_count: float,
+            self,
+            total_parameter_count: float,
+            trainable_parameter_count: float,
     ):
         """
         A useful object to track performance per epoch.
@@ -117,7 +117,7 @@ class RunSummary(object):
         return np.argmin(
             [self.performance_tracker[loss_type][e] for e in range(1, len(
                 self.performance_tracker[loss_type]) + 1
-            )]
+                                                                   )]
         ) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
@@ -167,16 +167,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.random_state = random_state
 
     def prepare(
-        self,
-        metrics: List[Any],
-        model: torch.nn.Module,
-        criterion: torch.nn.Module,
-        budget_tracker: BudgetTracker,
-        optimizer: Optimizer,
-        device: torch.device,
-        metrics_during_training: bool,
-        scheduler: _LRScheduler,
-        task_type: int
+            self,
+            metrics: List[Any],
+            model: torch.nn.Module,
+            criterion: torch.nn.Module,
+            budget_tracker: BudgetTracker,
+            optimizer: Optimizer,
+            device: torch.device,
+            metrics_during_training: bool,
+            scheduler: _LRScheduler,
+            task_type: int
     ) -> None:
 
         # Save the device to be used
@@ -272,6 +272,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return loss_sum / N, {}
 
+    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+        if self.task_type in REGRESSION_TASKS:
+            targets = targets.float().to(self.device)
+            # make sure that targets will have same shape as outputs (really important for mse loss for example)
+            if targets.ndim == 1:
+                targets = targets.unsqueeze(1)
+        else:
+            targets = targets.long().to(self.device)
+        return targets
+
     def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -286,10 +296,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        if self.task_type in REGRESSION_TASKS:
-            targets = targets.float().to(self.device)
-        else:
-            targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
 
@@ -331,11 +338,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         with torch.no_grad():
             for step, (data, targets) in enumerate(test_loader):
-
                 batch_size = data.shape[0]
+
                 data = data.float().to(self.device)
-                targets = targets.long().to(self.device)
+                targets = self.cast_targets(targets)
+
                 outputs = self.model(data)
+
                 loss = self.criterion(outputs, targets)
                 loss_sum += loss.item() * batch_size
                 N += batch_size
