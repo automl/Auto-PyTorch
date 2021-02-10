@@ -223,7 +223,7 @@ class TabularDataset(BaseDataset):
                 categorical_columns.append(i)
             else:
                 numerical_columns.append(i)
-        categories = [X.iloc[:, a].unique().tolist() for a in categorical_columns]
+        categories = [np.unique(X.iloc[:, a]).tolist() for a in categorical_columns]
         num_features = X.shape[1]
 
         return categorical_columns, numerical_columns, categories, num_features
