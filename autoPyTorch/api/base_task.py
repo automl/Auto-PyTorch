@@ -291,7 +291,7 @@ class BaseTask:
             output_dir=self._backend.temporary_directory,
         )
 
-        # As Auto-sklearn works with distributed process,
+        # As AutoPyTorch works with distributed process,
         # we implement a logger server that can receive tcp
         # pickled messages. They are unpickled and processed locally
         # under the above logging configuration setting
