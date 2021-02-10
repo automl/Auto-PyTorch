@@ -198,7 +198,7 @@ def get_tabular_data(task):
 
     return X, y
 
-  
+
 def get_fit_dictionary(X, y, backend):
     datamanager = TabularDataset(
         X=X, Y=y,

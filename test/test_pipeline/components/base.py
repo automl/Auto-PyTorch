@@ -6,7 +6,8 @@ from sklearn.datasets import make_classification, make_regression
 
 import torch
 
-from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES
+from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, OUTPUT_TYPES_TO_STRING, REGRESSION_TASKS, \
+    TASK_TYPES_TO_STRING
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import \
     TabularColumnTransformer
@@ -38,7 +39,7 @@ class BaseTraining(unittest.TestCase):
             )
             X = torch.tensor(X, dtype=torch.float)
             y = torch.tensor(y, dtype=torch.long)
-            output_type = constants.BINARY
+            output_type = BINARY
             num_outputs = 2
             criterion = torch.nn.CrossEntropyLoss()
 
@@ -55,7 +56,7 @@ class BaseTraining(unittest.TestCase):
             y = torch.tensor(y, dtype=torch.float)
             # normalize targets for regression since NNs are better when predicting small outputs
             y = ((y - y.mean()) / y.std()).unsqueeze(1)
-            output_type = constants.CONTINUOUS
+            output_type = CONTINUOUS
             num_outputs = 1
             criterion = torch.nn.MSELoss(reduction="sum")
 
@@ -65,8 +66,8 @@ class BaseTraining(unittest.TestCase):
         dataset = torch.utils.data.TensorDataset(X, y)
         loader = torch.utils.data.DataLoader(dataset, batch_size=20)
         dataset_properties = {
-            'task_type': constants.TASK_TYPES_TO_STRING[task_type],
-            'output_type': constants.OUTPUT_TYPES_TO_STRING[output_type]
+            'task_type': TASK_TYPES_TO_STRING[task_type],
+            'output_type': OUTPUT_TYPES_TO_STRING[output_type]
         }
 
         # training requirements

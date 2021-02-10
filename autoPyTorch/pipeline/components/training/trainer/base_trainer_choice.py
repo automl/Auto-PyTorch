@@ -498,7 +498,6 @@ class TrainerChoice(autoPyTorchChoice):
         if 'early_stopping' not in X:
             raise ValueError('To fit a Trainer, expected fit dictionary to have early_stopping')
 
-                              
     @staticmethod
     def count_parameters(model: torch.nn.Module) -> Tuple[int, int]:
         """
