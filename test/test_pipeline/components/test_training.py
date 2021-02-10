@@ -267,7 +267,7 @@ class TrainerTest(unittest.TestCase):
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the trainer
         choice"""
-        trainer_choice = TrainerChoice(dataset_properties={})
+        trainer_choice = TrainerChoice(dataset_properties={'task_type': 'tabular_classification'})
         cs = trainer_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the serach space

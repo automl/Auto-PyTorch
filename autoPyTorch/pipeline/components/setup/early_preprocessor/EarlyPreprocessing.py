@@ -31,7 +31,6 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
 
         transforms = get_preprocess_transforms(X)
-
         if X['dataset_properties']['is_small_preprocess']:
             if 'X_train' in X:
                 X_train = X['X_train']

@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_ta
     autoPyTorchTabularPreprocessingComponent
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.utils import get_tabular_preprocessers
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, subsampler
 
 
 class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
@@ -48,7 +48,6 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             "TabularColumnTransformer": an instance of self
         """
         self.check_requirements(X, y)
-
         numerical_pipeline = 'drop'
         categorical_pipeline = 'drop'
 
@@ -67,11 +66,11 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
         if 'X_train' in X:
-            X_train = X['X_train']
+            X_train = subsampler(X['X_train'], X['train_indices'])
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
-        self.preprocessor.fit(X_train)
 
+        self.preprocessor.fit(X_train)
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

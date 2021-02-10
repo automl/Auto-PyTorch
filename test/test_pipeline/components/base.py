@@ -1,13 +1,22 @@
 import logging
 import unittest
+from typing import Any, Dict, List, Optional, Tuple
 
 from sklearn.datasets import make_classification, make_regression
 
 import torch
 
-from autoPyTorch import constants
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES
+from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import \
+    TabularColumnTransformer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import \
+    EncoderChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
 class BaseTraining(unittest.TestCase):
@@ -15,7 +24,7 @@ class BaseTraining(unittest.TestCase):
     def prepare_trainer(self,
                         trainer: BaseTrainerComponent,
                         task_type: int):
-        if task_type in constants.CLASSIFICATION_TASKS:
+        if task_type in CLASSIFICATION_TASKS:
             X, y = make_classification(
                 n_samples=5000,
                 n_features=4,
@@ -33,7 +42,7 @@ class BaseTraining(unittest.TestCase):
             num_outputs = 2
             criterion = torch.nn.CrossEntropyLoss()
 
-        elif task_type in constants.REGRESSION_TASKS:
+        elif task_type in REGRESSION_TASKS:
             X, y = make_regression(
                 n_samples=5000,
                 n_features=4,
@@ -108,3 +117,29 @@ class BaseTraining(unittest.TestCase):
                 # Backward pass
                 loss.backward()
                 optimizer.step()
+
+
+class TabularPipeline(TabularClassificationPipeline):
+    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
+                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+        """
+        Defines what steps a pipeline should follow.
+        The step itself has choices given via autoPyTorchChoice.
+
+        Returns:
+            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
+                by the pipeline.
+        """
+        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
+
+        default_dataset_properties = {'target_type': 'tabular_classification'}
+        if dataset_properties is not None:
+            default_dataset_properties.update(dataset_properties)
+
+        steps.extend([
+            ("imputer", SimpleImputer()),
+            ("encoder", EncoderChoice(default_dataset_properties)),
+            ("scaler", ScalerChoice(default_dataset_properties)),
+            ("tabular_transformer", TabularColumnTransformer()),
+        ])
+        return steps

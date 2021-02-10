@@ -32,8 +32,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import (
-    convert_multioutput_multiclass_to_multilabel,
-    subsampler
+    convert_multioutput_multiclass_to_multilabel
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
@@ -42,6 +41,7 @@ from autoPyTorch.pipeline.components.training.metrics.utils import (
     get_metrics,
 )
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements

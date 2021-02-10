@@ -1,3 +1,5 @@
+import flaky
+
 import pytest
 
 import torch
@@ -15,6 +17,7 @@ def head(request):
     return request.param
 
 
+@flaky.flaky(max_runs=3)
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
                                                     'classification_categorical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)

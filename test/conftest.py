@@ -198,23 +198,21 @@ def get_tabular_data(task):
 
     return X, y
 
-
+  
 def get_fit_dictionary(X, y, backend):
     datamanager = TabularDataset(
         X=X, Y=y,
         X_test=X, Y_test=y,
     )
 
-    info = {'task_type': datamanager.task_type,
-            'output_type': datamanager.output_type,
-            'issparse': datamanager.issparse,
-            'numerical_columns': datamanager.numerical_columns,
-            'categorical_columns': datamanager.categorical_columns}
+    info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
     fit_dictionary = {
         'X_train': X,
         'y_train': y,
+        'train_indices': datamanager.splits[0][0],
+        'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
         'num_run': np.random.randint(50),
         'device': 'cpu',

@@ -150,3 +150,9 @@ def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
         return torch.device("cpu")
 
     return torch.device(X.get("device", "cpu"))
+
+  
+def subsampler(data: Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix],
+               x: Union[np.ndarray, List[int]]
+               ) -> Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix]:
+    return data[x] if isinstance(data, (np.ndarray, scipy.sparse.csr_matrix)) else data.iloc[x]

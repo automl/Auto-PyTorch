@@ -3,14 +3,17 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+import pandas as pd
+
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import BINARY, REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.utils.implementations import get_loss_weight_strategy
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
@@ -164,18 +167,21 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
         super().__init__()
         self.random_state = random_state
+        self.weighted_loss: bool = False
 
     def prepare(
-            self,
-            metrics: List[Any],
-            model: torch.nn.Module,
-            criterion: torch.nn.Module,
-            budget_tracker: BudgetTracker,
-            optimizer: Optimizer,
-            device: torch.device,
-            metrics_during_training: bool,
-            scheduler: _LRScheduler,
-            task_type: int
+        self,
+        metrics: List[Any],
+        model: torch.nn.Module,
+        criterion: torch.nn.Module,
+        budget_tracker: BudgetTracker,
+        optimizer: Optimizer,
+        device: torch.device,
+        metrics_during_training: bool,
+        scheduler: _LRScheduler,
+        task_type: int,
+        output_type: int,
+        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
     ) -> None:
 
         # Save the device to be used
@@ -184,8 +190,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # Setup the metrics
         self.metrics = metrics
 
+        # Weights for the loss function
+        weights = None
+        kwargs = {}
+        if self.weighted_loss:
+            weights = self.get_class_weights(output_type, labels)
+            if output_type == BINARY:
+                kwargs['pos_weight'] = weights
+            else:
+                kwargs['weight'] = weights
+
+        criterion = criterion(**kwargs) if weights is not None else criterion()
+
         # Setup the loss function
-        self.criterion = criterion.to(device)
+        self.criterion = criterion
 
         # setup the model
         self.model = model.to(device)
@@ -244,7 +262,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         targets_data = list()
 
         for step, (data, targets) in enumerate(train_loader):
-
             if self.budget_tracker.is_max_time_reached():
                 logger.info("Stopping training as max time reached")
                 break
@@ -367,6 +384,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         outputs_data = torch.cat(outputs_data, dim=0).numpy()
         targets_data = torch.cat(targets_data, dim=0).numpy()
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
+
+    def get_class_weights(self, output_type: int, labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
+                          ) -> np.ndarray:
+        strategy = get_loss_weight_strategy(output_type)
+        weights = strategy(y=labels)
+        weights = torch.from_numpy(weights)
+        weights = weights.type(torch.FloatTensor).to(self.device)
+        return weights
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:

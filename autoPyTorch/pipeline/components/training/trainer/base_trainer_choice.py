@@ -19,7 +19,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.constants import STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -97,11 +97,13 @@ class TrainerChoice(autoPyTorchChoice):
         components.update(_addons.components)
         return components
 
-    def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, str]] = None,
-                                        default: Optional[str] = None,
-                                        include: Optional[List[str]] = None,
-                                        exclude: Optional[List[str]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        default: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
         Args:
@@ -119,6 +121,8 @@ class TrainerChoice(autoPyTorchChoice):
 
         if dataset_properties is None:
             dataset_properties = {}
+
+        dataset_properties = {**self.dataset_properties, **dataset_properties}
 
         # Compile a list of legal trainers for this problem
         available_trainers = self.get_available_components(
@@ -268,7 +272,9 @@ class TrainerChoice(autoPyTorchChoice):
             device=get_device_from_fit_dictionary(X),
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
-            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']]
+            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
+            output_type=STRING_TO_OUTPUT_TYPES[X['dataset_properties']['output_type']],
+            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
@@ -488,6 +494,11 @@ class TrainerChoice(autoPyTorchChoice):
                     config_option
                 ))
 
+        # For early stopping, we need to know the patience
+        if 'early_stopping' not in X:
+            raise ValueError('To fit a Trainer, expected fit dictionary to have early_stopping')
+
+                              
     @staticmethod
     def count_parameters(model: torch.nn.Module) -> Tuple[int, int]:
         """
