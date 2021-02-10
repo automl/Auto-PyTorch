@@ -111,7 +111,7 @@ class BasePipeline(Pipeline):
         """Fit the selected algorithm to the training data.
         Arguments:
             X (typing.Dict):
-            A fit dictionary so that contains information to fit a pipeline
+            A fit dictionary that contains information to fit a pipeline
             TODO: Use fit_params support from 0.24 scikit learn version instead
             y (None):
             Used for Compatibility, but it has no funciton in out fit strategy
