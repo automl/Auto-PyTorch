@@ -135,7 +135,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = typing.cast(pd.DataFrame, X)
-            X = pd.DataFrame(X).infer_objects().convert_dtypes()
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
@@ -210,8 +209,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Then for Pandas, we do not support Nan in categorical columns
         if hasattr(X, "iloc"):
-            X = pd.DataFrame(X).infer_objects().convert_dtypes()
-
             # If entered here, we have a pandas dataframe
             X = typing.cast(pd.DataFrame, X)
 
