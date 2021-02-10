@@ -13,6 +13,7 @@ import pytest
 
 import torch
 
+from autoPyTorch import metrics
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
@@ -70,9 +71,38 @@ class TestTabularRegression:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
+    @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
+    def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
+        """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+        given the default configuration"""
+        pipeline = TabularRegressionPipeline(
+            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+        cs = pipeline.get_hyperparameter_search_space()
+        config = cs.get_default_configuration()
+        pipeline.set_hyperparameters(config)
+
+        pipeline.fit(fit_dictionary_tabular_dummy)
+
+        datamanager = fit_dictionary_tabular_dummy['backend'].load_datamanager()
+        test_tensor = datamanager.test_tensors[0]
+
+        # we expect the output to have the same batch size as the test input,
+        # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
+        expected_output_shape = (test_tensor.shape[0],
+                                 fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
+
+        prediction = pipeline.predict(test_tensor)
+        assert isinstance(prediction, np.ndarray)
+        assert prediction.shape == expected_output_shape
+
+        # we should be able to get a decent score on this dummy data
+        r2_score = metrics.r2(datamanager.test_tensors[1][:, np.newaxis], prediction)
+        assert r2_score >= 0.8
+
     def test_pipeline_predict(self, fit_dictionary_tabular):
-        """This test makes sure that the pipeline is able to fit
-        given random combinations of hyperparameters across the pipeline"""
+        """This test makes sure that the pipeline is able to predict
+        given a random configuration"""
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 

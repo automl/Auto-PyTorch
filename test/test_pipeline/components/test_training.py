@@ -1,5 +1,4 @@
 import copy
-import logging
 import os
 import sys
 import unittest
@@ -10,13 +9,11 @@ import numpy as np
 from sklearn.base import clone
 
 import torch
-from sklearn.datasets import make_classification, make_regression
 
 from autoPyTorch import constants
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
-from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import (
     MixUpTrainer
 )
@@ -24,8 +21,7 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
-    BaseTrainerComponent, BudgetTracker,
-)
+    BaseTrainerComponent, )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
     TrainerChoice,
 )

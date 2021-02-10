@@ -144,9 +144,8 @@ def dask_client(request):
     return client
 
 
-@pytest.fixture
-def fit_dictionary_tabular(request, backend):
-    if request.param == "classification_numerical_only":
+def get_tabular_data(task):
+    if task == "classification_numerical_only":
         X, y = make_classification(
             n_samples=200,
             n_features=4,
@@ -159,41 +158,48 @@ def fit_dictionary_tabular(request, backend):
             random_state=0
         )
 
-    elif request.param == "classification_categorical_only":
+    elif task == "classification_categorical_only":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
         X = X.iloc[0:200]
         y = y.iloc[0:200]
 
-    elif request.param == "classification_numerical_and_categorical":
+    elif task == "classification_numerical_and_categorical":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
         X = X.iloc[0:200]
         y = y.iloc[0:200]
 
-    elif request.param == "regression_numerical_only":
+    elif task == "regression_numerical_only":
         X, y = make_regression(n_samples=200,
                                n_features=4,
                                n_informative=3,
                                n_targets=1,
                                shuffle=True,
                                random_state=0)
+        y = (y - y.mean()) / y.std()
 
-    elif request.param == "regression_categorical_only":
+    elif task == "regression_categorical_only":
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
         X = X.iloc[0:200]
-        y = np.log(y.iloc[0:200])
+        y = y.iloc[0:200]
+        y = (y - y.mean()) / y.std()
 
-    elif request.param == "regression_numerical_and_categorical":
+    elif task == "regression_numerical_and_categorical":
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
         X = X.iloc[0:200]
-        y = np.log(y.iloc[0:200])
+        y = y.iloc[0:200]
+        y = (y - y.mean()) / y.std()
 
     else:
-        raise ValueError("Unsupported indirect fixture {}".format(request.param))
+        raise ValueError("Unsupported task {}".format(task))
 
+    return X, y
+
+
+def get_fit_dictionary(X, y, backend):
     datamanager = TabularDataset(
         X=X, Y=y,
         X_test=X, Y_test=y,
@@ -213,9 +219,9 @@ def fit_dictionary_tabular(request, backend):
         'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
-        'epochs': 1,
+        'epochs': 20,
         'torch_num_threads': 1,
-        'early_stopping': 20,
+        'early_stopping': 4,
         'working_dir': '/tmp',
         'use_tensorboard_logger': True,
         'use_pynisher': False,
@@ -225,6 +231,23 @@ def fit_dictionary_tabular(request, backend):
     }
     backend.save_datamanager(datamanager)
     return fit_dictionary
+
+
+@pytest.fixture
+def fit_dictionary_tabular_dummy(request, backend):
+    if request.param == "classification":
+        X, y = get_tabular_data("classification_numerical_only")
+    elif request.param == "regression":
+        X, y = get_tabular_data("regression_numerical_only")
+    else:
+        raise ValueError("Unsupported indirect fixture {}".format(request.param))
+    return get_fit_dictionary(X, y, backend)
+
+
+@pytest.fixture
+def fit_dictionary_tabular(request, backend):
+    X, y = get_tabular_data(request.param)
+    return get_fit_dictionary(X, y, backend)
 
 
 @pytest.fixture

@@ -6,10 +6,8 @@ from sklearn.datasets import make_classification, make_regression
 import torch
 
 from autoPyTorch import constants
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import StandardTrainer
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker, BaseTrainerComponent
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 
 
 class BaseTraining(unittest.TestCase):
@@ -50,7 +48,7 @@ class BaseTraining(unittest.TestCase):
             y = ((y - y.mean()) / y.std()).unsqueeze(1)
             output_type = constants.CONTINUOUS
             num_outputs = 1
-            criterion = torch.nn.MSELoss()
+            criterion = torch.nn.MSELoss(reduction="sum")
 
         else:
             raise ValueError(f"task type {task_type} not supported for standard trainer test")
@@ -100,14 +98,12 @@ class BaseTraining(unittest.TestCase):
                     epochs: int):
         model.train()
         for epoch in range(epochs):
-            total_loss = 0
             for X, y in loader:
                 optimizer.zero_grad()
                 # Forward pass
                 y_pred = model(X)
                 # Compute Loss
                 loss = criterion(y_pred, y)
-                total_loss += loss
 
                 # Backward pass
                 loss.backward()
