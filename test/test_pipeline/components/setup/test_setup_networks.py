@@ -17,21 +17,42 @@ def head(request):
     return request.param
 
 
+@pytest.fixture(params=['LearnedEntityEmbedding', 'NoEmbedding'])
+def embedding(request):
+    return request.param
+
+
 @flaky.flaky(max_runs=3)
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
                                                     'classification_categorical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)
 class TestNetworks:
+<<<<<<< HEAD
     def test_pipeline_fit(self, fit_dictionary_tabular, backbone, head):
+=======
+    def test_pipeline_fit(self, fit_dictionary, embedding, backbone, head):
+>>>>>>> ADD tests for network embedding
         """This test makes sure that the pipeline is able to fit
-        given random combinations of hyperparameters across the pipeline"""
+        every combination of network embedding, backbone, head"""
 
+        include = {'network_backbone': [backbone], 'network_head': [head], 'network_embedding': [embedding]}
+
+        if len(fit_dictionary['dataset_properties']
+               ['categorical_columns']) == 0 and embedding == 'LearnedEntityEmbedding':
+            pytest.skip("Learned Entity Embedding is not used with numerical only data")
         pipeline = TabularClassificationPipeline(
+<<<<<<< HEAD
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'network_backbone': [backbone], 'network_head': [head]})
+=======
+            dataset_properties=fit_dictionary['dataset_properties'],
+            include=include)
+
+>>>>>>> ADD tests for network embedding
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
 
+        assert embedding == config.get('network_embedding:__choice__', None)
         assert backbone == config.get('network_backbone:__choice__', None)
         assert head == config.get('network_head:__choice__', None)
         pipeline.set_hyperparameters(config)
