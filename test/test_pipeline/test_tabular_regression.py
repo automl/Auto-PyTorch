@@ -22,8 +22,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ["regression_numerical_only",
-                                                    # "regression_categorical_only",
-                                                    # "regression_numerical_and_categorical"
+                                                    "regression_categorical_only",
+                                                    "regression_numerical_and_categorical"
                                                     ], indirect=True)
 class TestTabularRegression:
     def _assert_pipeline_search_space(self, pipeline, search_space_updates):
@@ -49,7 +49,6 @@ class TestTabularRegression:
     def test_pipeline_fit(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
-
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
@@ -75,6 +74,8 @@ class TestTabularRegression:
     def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to achieve a decent score on dummy data
         given the default configuration"""
+        X = fit_dictionary_tabular_dummy['X_train'].copy()
+        y = fit_dictionary_tabular_dummy['y_train'].copy()
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
 
@@ -84,25 +85,23 @@ class TestTabularRegression:
 
         pipeline.fit(fit_dictionary_tabular_dummy)
 
-        datamanager = fit_dictionary_tabular_dummy['backend'].load_datamanager()
-        test_tensor = datamanager.test_tensors[0]
-
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0],
+        expected_output_shape = (X.shape[0],
                                  fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
 
-        prediction = pipeline.predict(test_tensor)
+        prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
         # we should be able to get a decent score on this dummy data
-        r2_score = metrics.r2(datamanager.test_tensors[1][:, np.newaxis], prediction)
+        r2_score = metrics.r2(y, prediction)
         assert r2_score >= 0.8
 
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
+        X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
@@ -112,14 +111,11 @@ class TestTabularRegression:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
-        test_tensor = datamanager.test_tensors[0]
-
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+        expected_output_shape = (X.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
 
-        prediction = pipeline.predict(test_tensor)
+        prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
@@ -137,11 +133,8 @@ class TestTabularRegression:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
-
         # We do not want to make the same early preprocessing operation to the fit dictionary
-        if 'X_train' in fit_dictionary_tabular:
-            fit_dictionary_tabular.pop('X_train')
+        pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 

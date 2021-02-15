@@ -35,7 +35,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 class TabularRegressionPipeline(RegressorMixin, BasePipeline):
-    """This class is a proof of concept to integrate AutoSklearn Components
+    """This class is a proof of concept to integrate AutoPyTorch Components
 
     It implements a pipeline, which includes as steps:
 

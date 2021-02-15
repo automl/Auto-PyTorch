@@ -73,7 +73,8 @@ def _pipeline_predict(pipeline: BasePipeline,
     with warnings.catch_warnings():
         warnings.showwarning = send_warnings_to_log
         if task in REGRESSION_TASKS:
-            prediction = pipeline.predict(X_, batch_size=batch_size)
+            # Voting regressor does not support batch size
+            prediction = pipeline.predict(X_)
         else:
             # Voting classifier predict proba does not support batch size
             prediction = pipeline.predict_proba(X_)
@@ -161,7 +162,7 @@ class BaseTask:
                 delete_tmp_folder_after_terminate=delete_tmp_folder_after_terminate,
                 delete_output_folder_after_terminate=delete_output_folder_after_terminate,
             )
-        self.task_type = task_type
+        self.task_type = task_type or ""
         self._stopwatch = StopWatch()
 
         self.pipeline_options = replace_string_bool_to_bool(json.load(open(
@@ -789,7 +790,7 @@ class BaseTask:
                 max_models_on_disc=self.max_models_on_disc,
                 seed=self.seed,
                 max_iterations=None,
-                read_at_most=np.inf,
+                read_at_most=sys.maxsize,
                 ensemble_memory_limit=self._memory_limit,
                 random_state=self.seed,
                 precision=precision,
@@ -1063,17 +1064,6 @@ class BaseTask:
                                      str(list(self.models_))))
 
         predictions = self.ensemble_.predict(all_predictions)
-
-        if self.task_type in REGRESSION_TASKS:
-            # Make sure prediction probabilities
-            # are within a valid range
-            # Individual models are checked in _pipeline_predict
-            if (
-                    (predictions >= 0).all() and (predictions <= 1).all()
-            ):
-                raise ValueError("For ensemble {}, prediction probability not within [0, 1]!".format(
-                    self.ensemble_)
-                )
 
         self._clean_logger()
 

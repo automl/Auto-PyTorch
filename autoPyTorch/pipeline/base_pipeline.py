@@ -164,8 +164,7 @@ class BasePipeline(Pipeline):
     def get_current_iter(self) -> int:
         return self._final_estimator.get_current_iter()
 
-    def predict(self, X: np.ndarray, batch_size: Optional[int] = None
-                ) -> np.ndarray:
+    def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
         Args:

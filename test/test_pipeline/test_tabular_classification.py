@@ -73,6 +73,8 @@ class TestTabularClassification:
     def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to achieve a decent score on dummy data
         given the default configuration"""
+        X = fit_dictionary_tabular_dummy['X_train'].copy()
+        y = fit_dictionary_tabular_dummy['y_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
 
@@ -82,20 +84,17 @@ class TestTabularClassification:
 
         pipeline.fit(fit_dictionary_tabular_dummy)
 
-        datamanager = fit_dictionary_tabular_dummy['backend'].load_datamanager()
-        test_tensor = datamanager.test_tensors[0]
-
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0],
+        expected_output_shape = (X.shape[0],
                                  fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
 
-        prediction = pipeline.predict(test_tensor)
+        prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
         # we should be able to get a decent score on this dummy data
-        accuracy = metrics.accuracy(datamanager.test_tensors[1], prediction.squeeze())
+        accuracy = metrics.accuracy(y, prediction.squeeze())
         assert accuracy >= 0.8
 
     def test_pipeline_predict(self, fit_dictionary_tabular):
@@ -155,8 +154,6 @@ class TestTabularClassification:
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-
-        pipeline.fit(fit_dictionary_tabular)
 
         # We do not want to make the same early preprocessing operation to the fit dictionary
         pipeline.fit(fit_dictionary_tabular.copy())

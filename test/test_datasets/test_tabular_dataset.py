@@ -3,11 +3,10 @@ import pytest
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
-                                            'fit_dictionary_categorical_only',
-                                            'fit_dictionary_num_and_categorical'], indirect=True)
-def test_get_dataset_properties(backend, fit_dictionary):
-
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
+                                                    'classification_categorical_only',
+                                                    'classification_numerical_and_categorical'], indirect=True)
+def test_get_dataset_properties(backend, fit_dictionary_tabular):
     # The fixture creates a datamanager by itself
     datamanager = backend.load_datamanager()
 
@@ -27,8 +26,7 @@ def test_get_dataset_properties(backend, fit_dictionary):
         'task_type',
         'output_type',
         'input_shape',
-        'output_shape',
-        'num_classes',
+        'output_shape'
     ]:
         assert expected in dataset_properties
 
@@ -37,6 +35,6 @@ def test_get_dataset_properties(backend, fit_dictionary):
         assert dataset_requirement.name in dataset_properties.keys()
         assert isinstance(dataset_properties[dataset_requirement.name], dataset_requirement.supported_types)
 
-    assert datamanager.train_tensors[0].shape == fit_dictionary['X_train'].shape
-    assert datamanager.train_tensors[1].shape == fit_dictionary['y_train'].shape
+    assert datamanager.train_tensors[0].shape == fit_dictionary_tabular['X_train'].shape
+    assert datamanager.train_tensors[1].shape == fit_dictionary_tabular['y_train'].shape
     assert datamanager.task_type == 'tabular_classification'

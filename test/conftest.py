@@ -8,6 +8,8 @@ import dask.distributed
 
 import numpy as np
 
+import pandas as pd
+
 import pytest
 
 from sklearn.datasets import fetch_openml, make_classification, make_regression
@@ -188,6 +190,15 @@ def get_tabular_data(task):
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
+
+        # fill nan values for now since they are not handled properly yet
+        for column in X.columns:
+            if X[column].dtype.name == "category":
+                X[column] = pd.Categorical(X[column],
+                                           categories=list(X[column].cat.categories) + ["missing"]).fillna("missing")
+            else:
+                X[column] = X[column].fillna(0)
+
         X = X.iloc[0:200]
         y = y.iloc[0:200]
         y = (y - y.mean()) / y.std()
@@ -195,6 +206,15 @@ def get_tabular_data(task):
 
     elif task == "regression_numerical_and_categorical":
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+
+        # fill nan values for now since they are not handled properly yet
+        for column in X.columns:
+            if X[column].dtype.name == "category":
+                X[column] = pd.Categorical(X[column],
+                                           categories=list(X[column].cat.categories) + ["missing"]).fillna("missing")
+            else:
+                X[column] = X[column].fillna(0)
+
         X = X.iloc[0:200]
         y = y.iloc[0:200]
         y = (y - y.mean()) / y.std()
@@ -226,9 +246,9 @@ def get_fit_dictionary(X, y, validator, backend):
         'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
-        'epochs': 20,
+        'epochs': 100,
         'torch_num_threads': 1,
-        'early_stopping': 4,
+        'early_stopping': 10,
         'working_dir': '/tmp',
         'use_tensorboard_logger': True,
         'use_pynisher': False,
