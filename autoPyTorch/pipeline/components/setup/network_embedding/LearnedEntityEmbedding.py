@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -15,16 +15,15 @@ from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedd
 
 
 class _LearnedEntityEmbedding(nn.Module):
-    """ Parent class for MlpNet, ResNet, ... Can use entity embedding for categorical features"""
+    """ Learned entity embedding module for categorical features"""
 
-    def __init__(self, config, num_input_features, num_numerical_features):
+    def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
         """
-        Initialize the BaseFeatureNet.
         Arguments:
-            config: The configuration sampled by the hyperparameter optimizer
-            # TODO: fix this
-            num_input_features: the number of features of the dataset
-            num_numerical_features: OneHot encoder, that is used to encode X
+            config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
+            num_input_features (np.ndarray): column wise information of number of output columns after transformation
+                for each categorical column and 0 for numerical columns
+            num_numerical_features (int): number of numerical features in X
         """
         super().__init__()
         self.config = config
@@ -51,7 +50,7 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.ee_layers = self._create_ee_layers()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # pass the columns of each categorical feature through entity embedding layer
         # before passing it through the model
         concat_seq = []
@@ -73,11 +72,11 @@ class _LearnedEntityEmbedding(nn.Module):
         concat_seq.append(x[:, last_concat:])
         return torch.cat(concat_seq, dim=1)
 
-    def _create_ee_layers(self):
+    def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers
         layers = nn.ModuleList()
-        for i, (num_in, embed, num_out) in enumerate(
-            zip(self.num_input_features, self.embed_features, self.num_output_dimensions)):
+        for i, (num_in, embed, num_out) in enumerate(zip(self.num_input_features, self.embed_features,
+                                                         self.num_output_dimensions)):
             if not embed:
                 continue
             layers.append(nn.Linear(num_in, num_out))
@@ -93,7 +92,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
         super().__init__(random_state=random_state)
         self.config = kwargs
 
-    def build_embedding(self, num_input_features, num_numerical_features) -> nn.Module:
+    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
         return _LearnedEntityEmbedding(config=self.config,
                                        num_input_features=num_input_features,
                                        num_numerical_features=num_numerical_features)
@@ -101,8 +100,8 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        min_unique_values_for_embedding=((3, 7), 5, True),
-        dimension_reduction=((0, 1), 0.5),
+        min_unique_values_for_embedding: Tuple[Tuple, int, bool] = ((3, 7), 5, True),
+        dimension_reduction: Tuple[Tuple, float] = ((0, 1), 0.5),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         min_hp = UniformIntegerHyperparameter("min_unique_values_for_embedding",

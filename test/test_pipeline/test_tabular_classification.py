@@ -20,7 +20,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
     parse_hyperparameter_search_space_updates
 
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_categorical_only',
+@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
+                                            'fit_dictionary_categorical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
 class TestTabularClassification:
     def _assert_pipeline_search_space(self, pipeline, search_space_updates):
@@ -33,7 +34,13 @@ class TestTabularClassification:
                 assert any(update.node_name + ':' + update.hyperparameter in name
                            for name in config_space.get_hyperparameter_names()), \
                     "Can't find hyperparameter: {}".format(update.hyperparameter)
-                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
+                # dimension reduction in embedding starts from 0
+                if 'embedding' in update.node_name:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_0')
+                else:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_1')
             assert update.default_value == hyperparameter.default_value
             if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
                 assert update.value_range[0] == hyperparameter.lower
@@ -169,6 +176,7 @@ class TestTabularClassification:
 
         # Make sure that fitting a network adds a "network" to X
         assert 'network' in pipeline.named_steps.keys()
+        fit_dictionary['network_embedding'] = torch.nn.Linear(3, 3)
         fit_dictionary['network_backbone'] = torch.nn.Linear(3, 4)
         fit_dictionary['network_head'] = torch.nn.Linear(4, 1)
         X = pipeline.named_steps['network'].fit(

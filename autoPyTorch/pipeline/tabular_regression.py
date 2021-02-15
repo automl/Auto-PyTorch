@@ -1,3 +1,4 @@
+import copy
 import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -93,10 +94,10 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         return r2
 
     def _get_hyperparameter_search_space(
-            self,
-            dataset_properties: Dict[str, Any],
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
+        self,
+        dataset_properties: Dict[str, Any],
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
     ) -> ConfigurationSpace:
         """Create the hyperparameter configuration space.
 
@@ -140,31 +141,32 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         # Here we add custom code, like this with this
         # is not a valid configuration
         # Learned Entity Embedding is only valid when encoder is one hot encoder
-        embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
-        encoders = cs.get_hyperparameter('encoder:__choice__').choices
-        default = cs.get_hyperparameter('network_embedding:__choice__').default_value
-        possible_default_embeddings = copy.copy(list(embeddings))
-        del possible_default_embeddings[possible_default_embeddings.index(default)]
         if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
-            for encoder in encoders:
-                if encoder == 'OneHotEncoder':
-                    continue
-                while True:
-                    try:
-                        cs.add_forbidden_clause(ForbiddenAndConjunction(
-                            ForbiddenEqualsClause(cs.get_hyperparameter(
-                                'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                            ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__')
-                                                  , encoder)
-                        ))
-                        break
-                    except ValueError:
-                        # change the default and try again
+            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
+            if 'LearnedEntityEmbedding' in embeddings:
+                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
+                possible_default_embeddings = copy.copy(list(embeddings))
+                del possible_default_embeddings[possible_default_embeddings.index(default)]
+
+                for encoder in encoders:
+                    if encoder == 'OneHotEncoder':
+                        continue
+                    while True:
                         try:
-                            default = possible_default_embeddings.pop()
-                        except IndexError:
-                            raise ValueError("Cannot find a legal default configuration")
-                        cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+                            cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(cs.get_hyperparameter(
+                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                            ))
+                            break
+                        except ValueError:
+                            # change the default and try again
+                            try:
+                                default = possible_default_embeddings.pop()
+                            except IndexError:
+                                raise ValueError("Cannot find a legal default configuration")
+                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
