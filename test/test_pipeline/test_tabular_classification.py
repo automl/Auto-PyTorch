@@ -20,8 +20,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
     parse_hyperparameter_search_space_updates
 
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
-                                            'fit_dictionary_categorical_only',
+@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_categorical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
 class TestTabularClassification:
     def _assert_pipeline_search_space(self, pipeline, search_space_updates):

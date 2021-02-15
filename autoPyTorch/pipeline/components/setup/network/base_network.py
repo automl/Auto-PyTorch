@@ -32,6 +32,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         self.add_fit_requirements([
             FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
         ])
         self.final_activation = None
 
@@ -50,7 +51,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         # information to fit this stage
         self.check_requirements(X, y)
 
-        self.network = torch.nn.Sequential(X['network_backbone'], X['network_head'])
+        self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
         # Properly set the network training device
         self.to(self.device)
