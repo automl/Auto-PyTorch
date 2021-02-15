@@ -1,4 +1,4 @@
-from test.test_pipeline.components.base import TabularPipeline
+from test.test_pipeline.components.preprocessing.base import TabularPipeline
 
 import numpy as np
 
