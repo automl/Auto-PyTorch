@@ -13,7 +13,6 @@ from hpbandster.optimizers import BOHB as BOHB
 from hpbandster.optimizers import RandomSearch as RS
 import numpy as np
 import openml
-import torch
 
 from data.loader import Loader
 from worker import XGBoostWorker, TabNetWorker
@@ -161,7 +160,7 @@ NS = hpns.NameServer(
     run_id=args.run_id,
     host=host,
     port=0,
-    working_directory=run_directory,
+    working_directory=args.working_directory,
 )
 ns_host, ns_port = NS.start()
 
