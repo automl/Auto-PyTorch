@@ -185,11 +185,6 @@ def add_forbidden(
                               product[idx - start_idx] + 1) for idx in
                         range(len(matches.shape)))
 
-                    # This prints the affected nodes
-                    # print [node_choice_names[i][product[i]]
-                    #        for i in range(len(product))], \
-                    #     np.sum(matches[slices])
-
                     if np.sum(matches[slices]) == 0:
                         constraint = tuple([(node_names[i],
                                              node_choice_names[i][product[i]])

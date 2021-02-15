@@ -19,7 +19,9 @@ class OrdinalEncoder(BaseEncoder):
 
         self.check_requirements(X, y)
 
-        self.preprocessor['categorical'] = OE(categories=X['dataset_properties']['categories'])
+        self.preprocessor['categorical'] = OE(handle_unknown='use_encoded_value',
+                                              unknown_value=-1,
+                                              )
         return self
 
     @staticmethod

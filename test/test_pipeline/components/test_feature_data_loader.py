@@ -40,4 +40,4 @@ class TestFeatureDataLoader(unittest.TestCase):
         self.assertIsInstance(compose, torchvision.transforms.Compose)
 
         # We expect the to tensor, the preproces transforms and the check_array
-        self.assertEqual(len(compose.transforms), 3)
+        self.assertEqual(len(compose.transforms), 4)
