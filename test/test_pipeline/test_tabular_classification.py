@@ -101,6 +101,7 @@ class TestTabularClassification:
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
+        X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
@@ -110,14 +111,11 @@ class TestTabularClassification:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
-        test_tensor = datamanager.test_tensors[0]
-
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of outputs
-        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+        expected_output_shape = (X.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
 
-        prediction = pipeline.predict(test_tensor)
+        prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
@@ -126,6 +124,7 @@ class TestTabularClassification:
         given random combinations of hyperparameters across the pipeline
         And then predict using predict probability
         """
+        X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
@@ -135,14 +134,11 @@ class TestTabularClassification:
 
         pipeline.fit(fit_dictionary_tabular)
 
-        datamanager = fit_dictionary_tabular['backend'].load_datamanager()
-        test_tensor = datamanager.test_tensors[0]
-
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (test_tensor.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+        expected_output_shape = (X.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
 
-        prediction = pipeline.predict_proba(test_tensor)
+        prediction = pipeline.predict_proba(X)
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
@@ -163,8 +159,7 @@ class TestTabularClassification:
         pipeline.fit(fit_dictionary_tabular)
 
         # We do not want to make the same early preprocessing operation to the fit dictionary
-        if 'X_train' in fit_dictionary_tabular:
-            fit_dictionary_tabular.pop('X_train')
+        pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 

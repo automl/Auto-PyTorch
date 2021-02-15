@@ -15,6 +15,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputat
 class SimpleImputer(BaseImputer):
     """
     Impute missing values for categorical columns with '!missing!'
+    (In case of numpy data, the constant value is set to -1, under
+    the assumption that categorical data is fit with an Ordinal Scaler)
     """
 
     def __init__(self,
@@ -41,7 +43,13 @@ class SimpleImputer(BaseImputer):
         if len(X['dataset_properties']['categorical_columns']) != 0:
             if self.categorical_strategy == 'constant_!missing!':
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy='constant',
-                                                                        fill_value='!missing!',
+                                                                        # Train data is numpy
+                                                                        # as of this point, where
+                                                                        # Ordinal Encoding is using
+                                                                        # for categorical. Only
+                                                                        # Numbers are allowed
+                                                                        # fill_value='!missing!',
+                                                                        fill_value=-1,
                                                                         copy=False)
             else:
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy=self.categorical_strategy,

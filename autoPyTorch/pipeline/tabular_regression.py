@@ -72,33 +72,6 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
-    def fit_transformer(self,
-                        X: np.ndarray,
-                        y: np.ndarray,
-                        fit_params: Optional[Dict[str, Any]] = None
-                        ) -> Tuple[np.ndarray, Optional[Dict[str, Any]]]:
-        """Fits the pipeline given a training (X,y) pair
-
-        Args:
-            X (np.ndarray): features from which to guess targets
-            y (np.ndarray): regression targets for this task
-            fit_params (Optional[Dict[str, Any]]]): handy communication dictionary,
-                so that inter-stages of the pipeline can share information
-
-        Returns:
-            np.ndarray: the transformed features
-            Optional[Dict[str, Any]]]: A dictionary to share fit informations
-                within the pipeline stages
-        """
-
-        if fit_params is None:
-            fit_params = {}
-
-        X, fit_params = super().fit_transformer(
-            X, y, fit_params=fit_params)
-
-        return X, fit_params
-
     def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Scores the fitted estimator on (X, y)
 

@@ -12,6 +12,7 @@ import pytest
 
 from sklearn.datasets import fetch_openml, make_classification, make_regression
 
+from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -157,6 +158,7 @@ def get_tabular_data(task):
             shuffle=True,
             random_state=0
         )
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "classification_categorical_only":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
@@ -164,11 +166,13 @@ def get_tabular_data(task):
         X = X[categorical_columns]
         X = X.iloc[0:200]
         y = y.iloc[0:200]
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "classification_numerical_and_categorical":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
         X = X.iloc[0:200]
         y = y.iloc[0:200]
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_only":
         X, y = make_regression(n_samples=200,
@@ -178,6 +182,7 @@ def get_tabular_data(task):
                                shuffle=True,
                                random_state=0)
         y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_categorical_only":
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
@@ -186,31 +191,35 @@ def get_tabular_data(task):
         X = X.iloc[0:200]
         y = y.iloc[0:200]
         y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_and_categorical":
         X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
         X = X.iloc[0:200]
         y = y.iloc[0:200]
         y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     else:
         raise ValueError("Unsupported task {}".format(task))
 
-    return X, y
+    return X, y, validator
 
 
-def get_fit_dictionary(X, y, backend):
+def get_fit_dictionary(X, y, validator, backend):
     datamanager = TabularDataset(
         X=X, Y=y,
+        validator=validator,
         X_test=X, Y_test=y,
     )
 
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
+
     fit_dictionary = {
-        'X_train': X,
-        'y_train': y,
+        'X_train': datamanager.train_tensors[0],
+        'y_train': datamanager.train_tensors[1],
         'train_indices': datamanager.splits[0][0],
         'val_indices': datamanager.splits[0][1],
         'dataset_properties': dataset_properties,
@@ -234,18 +243,18 @@ def get_fit_dictionary(X, y, backend):
 @pytest.fixture
 def fit_dictionary_tabular_dummy(request, backend):
     if request.param == "classification":
-        X, y = get_tabular_data("classification_numerical_only")
+        X, y, validator = get_tabular_data("classification_numerical_only")
     elif request.param == "regression":
-        X, y = get_tabular_data("regression_numerical_only")
+        X, y, validator = get_tabular_data("regression_numerical_only")
     else:
         raise ValueError("Unsupported indirect fixture {}".format(request.param))
-    return get_fit_dictionary(X, y, backend)
+    return get_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
 def fit_dictionary_tabular(request, backend):
-    X, y = get_tabular_data(request.param)
-    return get_fit_dictionary(X, y, backend)
+    X, y, validator = get_tabular_data(request.param)
+    return get_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
