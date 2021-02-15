@@ -14,13 +14,13 @@ from worker import XGBoostWorker, TabNetWorker
 
 
 parser = argparse.ArgumentParser(
-    description='XGBoost experiment.'
+    description='Baseline refit experiment.'
 )
 parser.add_argument(
     '--run_id',
     type=str,
     help='The run id of the optimization run.',
-    default='XGBoost',
+    default='Baseline',
 )
 parser.add_argument(
     '--working_directory',
@@ -46,7 +46,12 @@ parser.add_argument(
     help='Seed used for the experiment.',
     default=11,
 )
-
+parser.add_argument(
+    '--nr_threads',
+    type=int,
+    help='Number of threads for one worker.',
+    default=2,
+)
 args = parser.parse_args()
 
 np.random.seed(args.seed)
@@ -55,23 +60,6 @@ random.seed(args.seed)
 loader = Loader(task_id=args.task_id, val_fraction=0)
 nr_classes = int(openml.datasets.get_dataset(loader.get_dataset_id()).qualities['NumberOfClasses'])
 
-# TODO refactor dictionary to be different for xgboost and tabnet
-if nr_classes != 2:
-    param = {
-        'objective': 'multi:softmax',
-        'num_class': nr_classes + 1,
-        'disable_default_eval_metric': 1,
-        'seed': args.seed,
-        'nthread': 2,
-    }
-else:
-    param = {
-        'objective': 'binary:logistic',
-        'disable_default_eval_metric': 1,
-        'seed': args.seed,
-        'nthread': 2,
-    }
-
 worker_choices = {
     'tabnet': TabNetWorker,
     'xgboost': XGBoostWorker,
@@ -79,7 +67,18 @@ worker_choices = {
 
 model_worker = worker_choices[args.model]
 
-print(f'Experiment started with task id: {args.task_id}')
+if args.model == 'tabnet':
+    param = model_worker.get_parameters(
+        seed=args.seed,
+    )
+else:
+    param = model_worker.get_parameters(
+        nr_classes=nr_classes,
+        seed=args.seed,
+        nr_threads=args.nr_threads,
+    )
+
+print(f'Refit experiment started with task id: {args.task_id}')
 run_directory = os.path.join(
     args.working_directory,
     f'{args.task_id}',
@@ -98,8 +97,6 @@ worker = model_worker(
 result = hpres.logged_results_to_HBS_result(run_directory)
 all_runs = result.get_all_runs()
 id2conf = result.get_id2config_mapping()
-
-
 
 inc_id = result.get_incumbent_id()
 inc_runs = result.get_runs_by_id(inc_id)
