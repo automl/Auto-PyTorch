@@ -25,7 +25,7 @@ Tabular Classification
 The following example shows how to fit a sample classification model
 with AutoPyTorch
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-101
+.. GENERATED FROM PYTHON SOURCE LINES 9-85
 
 
 
@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f1bb4637490> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f8679d7a9d0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -66,7 +66,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0025849342346191406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018706321716308594, budget=0), TrajEntry(train_perf=0.14035087719298245, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -96,8 +96,8 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=8.814017295837402, wallclock_time=10.166006088256836, budget=5.555555555555555)]
-    {'accuracy': 0.8959537572254336}
+    , ta_runs=1, ta_time_used=5.345165252685547, wallclock_time=6.850844860076904, budget=5.555555555555555)]
+    {'accuracy': 0.8786127167630058}
 
 
 
@@ -110,7 +110,6 @@ with AutoPyTorch
 
     import os
     import tempfile as tmp
-    import typing
     import warnings
 
     os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
@@ -125,27 +124,7 @@ with AutoPyTorch
     import sklearn.model_selection
 
     from autoPyTorch.api.tabular_classification import TabularClassificationTask
-    from autoPyTorch.datasets.tabular_dataset import TabularDataset
     from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-
-
-    # Get the training data for tabular classification
-    def get_data_to_train() -> typing.Tuple[typing.Any, typing.Any, typing.Any, typing.Any]:
-        """
-        This function returns a fit dictionary that within itself, contains all
-        the information to fit a pipeline
-        """
-
-        # Get the training data for tabular classification
-        # Move to Australian to showcase numerical vs categorical
-        X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-            X,
-            y,
-            random_state=1,
-        )
-
-        return X_train, X_test, y_train, y_test
 
 
     def get_search_space_updates():
@@ -174,10 +153,12 @@ with AutoPyTorch
         ############################################################################
         # Data Loading
         # ============
-        X_train, X_test, y_train, y_test = get_data_to_train()
-        datamanager = TabularDataset(
-            X=X_train, Y=y_train,
-            X_test=X_test, Y_test=y_test)
+        X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+            X,
+            y,
+            random_state=1,
+        )
 
         ############################################################################
         # Build and fit a classifier
@@ -187,10 +168,13 @@ with AutoPyTorch
             search_space_updates=get_search_space_updates()
         )
         api.search(
-            dataset=datamanager,
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test.copy(),
+            y_test=y_test.copy(),
             optimize_metric='accuracy',
             total_walltime_limit=500,
-            func_eval_time_limit=150
+            func_eval_time_limit=50
         )
 
         ############################################################################
@@ -204,7 +188,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  33.319 seconds)
+   **Total running time of the script:** ( 9 minutes  10.874 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_classification.py:

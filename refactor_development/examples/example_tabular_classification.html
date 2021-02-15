@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f1bb4637490&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f8679d7a9d0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -152,7 +152,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0025849342346191406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018706321716308594, budget=0), TrajEntry(train_perf=0.14035087719298245, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -182,8 +182,8 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=8.814017295837402, wallclock_time=10.166006088256836, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8959537572254336}
+, ta_runs=1, ta_time_used=5.345165252685547, wallclock_time=6.850844860076904, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8786127167630058}
 </pre></div>
 </div>
 <div class="line-block">
@@ -191,7 +191,6 @@ with AutoPyTorch</p>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
-<span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;JOBLIB_TEMP_FOLDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()</span>
@@ -206,27 +205,7 @@ with AutoPyTorch</p>
 <span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
 
 <span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
-<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.tabular_dataset</span> <span class="kn">import</span> <span class="n">TabularDataset</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
-
-
-<span class="c1"># Get the training data for tabular classification</span>
-<span class="k">def</span> <span class="nf">get_data_to_train</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This function returns a fit dictionary that within itself, contains all</span>
-<span class="sd">    the information to fit a pipeline</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Get the training data for tabular classification</span>
-    <span class="c1"># Move to Australian to showcase numerical vs categorical</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-        <span class="n">X</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span>
 
 
 <span class="k">def</span> <span class="nf">get_search_space_updates</span><span class="p">():</span>
@@ -255,10 +234,12 @@ with AutoPyTorch</p>
     <span class="c1">############################################################################</span>
     <span class="c1"># Data Loading</span>
     <span class="c1"># ============</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">get_data_to_train</span><span class="p">()</span>
-    <span class="n">datamanager</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
-        <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
     <span class="c1"># Build and fit a classifier</span>
@@ -268,10 +249,13 @@ with AutoPyTorch</p>
         <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">dataset</span><span class="o">=</span><span class="n">datamanager</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
         <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">150</span>
+        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">50</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
@@ -283,7 +267,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  33.319 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  10.874 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -318,7 +302,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.0.<br/>
     </p>
   </div>
 </footer>
