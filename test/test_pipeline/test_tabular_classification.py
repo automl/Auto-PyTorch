@@ -21,9 +21,14 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
     parse_hyperparameter_search_space_updates
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
                                                     'classification_numerical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)
+=======
+@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_categorical_only',
+                                            'fit_dictionary_num_and_categorical'], indirect=True)
+>>>>>>> Working network embedding
 class TestTabularClassification:
     def _assert_pipeline_search_space(self, pipeline, search_space_updates):
         config_space = pipeline.get_hyperparameter_search_space()
