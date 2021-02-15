@@ -4,18 +4,14 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
+import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 
 
 class _NoEmbedding(nn.Module):
-    def __init__(self, num_input_features, num_numerical_features):
-        super().__init__()
-        self.n_feats = num_input_features
-        self.num_numerical = num_numerical_features
-
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
 
@@ -27,9 +23,8 @@ class NoEmbedding(NetworkEmbeddingComponent):
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
         super().__init__(random_state=random_state)
 
-    def build_embedding(self, num_input_features, num_numerical_features) -> nn.Module:
-        return _NoEmbedding(num_input_features=num_input_features,
-                            num_numerical_features=num_numerical_features)
+    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
+        return _NoEmbedding()
 
     @staticmethod
     def get_hyperparameter_search_space(
