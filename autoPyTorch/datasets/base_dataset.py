@@ -81,7 +81,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetType] = None,
         test_tensors: Optional[BaseDatasetType] = None,
-        splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+        splitting_type: Union[str, CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
         splitting_params: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         random_state: Optional[int] = 42,
@@ -128,7 +128,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldOutTypes)
 
-        self.splitting_type, self.splitting_params = splitting_type, splitting_params
+        cv_type, holdout_type = hasattr(CrossValTypes, splitting_type), hasattr(HoldOutTypes, splitting_type)
+        if not cv_type and not holdout_type:
+            raise NameError(f"Splitting type has no attribute {splitting_type}")
+
+        self.splitting_type,  = getattr(CrossValTypes, splitting_type) if cv_type \
+            else getattr(HoldOutTypes, splitting_type)
+        self.splitting_params = splitting_params
         self.convert_splitting_params_to_namedtuple()
         self.splits = self.get_splits()
 

@@ -24,7 +24,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                  n_steps: int,
                  train: TIME_SERIES_FORECASTING_INPUT,
                  val: Optional[TIME_SERIES_FORECASTING_INPUT] = None,
-                 splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+                 splitting_type: Union[str, CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
                  splitting_params: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = False,
                  seed: Optional[int] = 42,

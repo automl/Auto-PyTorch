@@ -175,7 +175,7 @@ class BaseTask:
         # By default try to use the TCP logging port or get a new port
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
-        # Store the resampling strategy from the dataset, to load models as needed
+        # Store the splitting type from the dataset, to load models as needed
         self.splitting_type = None  # type: Optional[Union[CrossValTypes, HoldOutTypes]]
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
@@ -405,14 +405,14 @@ class BaseTask:
         Loads the models saved in the temporary directory
         during the smac run and the final ensemble created
         Args:
-            splitting_type (Union[CrossValTypes, HoldOutTypes]): resampling strategy used to split the data
+            splitting_type (Union[CrossValTypes, HoldOutTypes]): splitting type used to split the data
                 and to validate the performance of a candidate pipeline
 
         Returns:
             None
         """
         if splitting_type is None:
-            raise ValueError("Resampling strategy is needed to determine what models to load")
+            raise ValueError("Splitting type is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
         # If no ensemble is loaded, try to get the best performing model

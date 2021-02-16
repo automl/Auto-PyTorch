@@ -79,7 +79,7 @@ def get_smac_object(
 
 
 class AutoMLSMBO(object):
-
+    """TODO: Why do we need splitting_type and splitting_params here as arguments? What happen if we put different type from BaseDataset?"""
     def __init__(self,
                  config_space: ConfigSpace.ConfigurationSpace,
                  dataset_name: str,
@@ -140,7 +140,7 @@ class AutoMLSMBO(object):
             splitting_type (str):
                 What strategy to use for performance validation
             splitting_params (typing.Optional[typing.Dict[str, typing.Any]]):
-                Arguments to the resampling strategy -- like number of folds
+                Arguments to the splitting type -- like number of folds
             include (typing.Optional[typing.Dict[str, typing.Any]] = None):
                 Optimal Configuration space modifiers
             exclude (typing.Optional[typing.Dict[str, typing.Any]] = None):

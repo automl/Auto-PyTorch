@@ -39,12 +39,12 @@ class ImageDataset(BaseDataset):
             validation data
         test (Union[Dataset, Tuple[Union[np.ndarray, List[str]], np.ndarray]]):
             testing data
-        splitting_type (Union[CrossValTypes, HoldOutTypes]),
+        splitting_type (Union[str, CrossValTypes, HoldOutTypes]),
             (default=HoldOutTypes.holdout_validation):
             strategy to split the training data.
         splitting_params (Optional[Dict[str, Any]]): arguments
-            required for the chosen resampling strategy. If None, uses
-            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            required for the chosen splitting type. If None, uses
+            the default values provided in the NamedTuple
             in ```datasets/train_val_split.py```.
         shuffle:  Whether to shuffle the data before performing splits
         seed (int), (default=1): seed to be used for reproducibility.
@@ -57,7 +57,7 @@ class ImageDataset(BaseDataset):
                  train: IMAGE_DATASET_INPUT,
                  val: Optional[IMAGE_DATASET_INPUT] = None,
                  test: Optional[IMAGE_DATASET_INPUT] = None,
-                 splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+                 splitting_type: Union[str, CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
                  splitting_params: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
