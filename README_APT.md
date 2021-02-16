@@ -5,6 +5,8 @@
 
 **Our implementation of regularization cocktails is based on a fork of AutoPyTorch and this fork is part of the submission to ensure full reproducibility.**
 
+**The code for the experiments with the baselines (auto-sklearn, TabNet and XGBoost) can be found under the baselines folder.**
+
 Install pytorch: 
 https://pytorch.org/
 
