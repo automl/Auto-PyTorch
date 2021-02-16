@@ -267,6 +267,22 @@ class XGBoostWorker(Worker):
                 upper=1000,
             )
         )
+        booster = cs.CategoricalHyperparameter(
+            'booster',
+            choices=['gbtree', 'dart'],
+        )
+        config_space.add_hyperparameter(
+            booster,
+        )
+        rate_drop = cs.UniformFloatHyperparameter(
+            'rate_drop',
+            1e-10,
+            1-(1e-10),
+            default_value=0.5,
+        )
+        config_space.add_hyperparameter(
+            rate_drop,
+        )
         config_space.add_hyperparameter(
             cs.UniformFloatHyperparameter(
                 'gamma',
@@ -326,6 +342,14 @@ class XGBoostWorker(Worker):
             )
         )
 
+        config_space.add_condition(
+            cs.EqualsCondition(
+                rate_drop,
+                booster,
+                'dart',
+            )
+        )
+
         return config_space
 
     @staticmethod
@@ -334,7 +358,29 @@ class XGBoostWorker(Worker):
             seed: int = 11,
             nr_threads: int = 1
     ) -> Dict[str, Union[int, str]]:
+        """Get the parameters of the method.
 
+        Get a dictionary based on the arguments given to the
+        function, which will be used to as the initial configuration
+        for the algorithm.
+
+        Parameters:
+        -----------
+        nr_classes: int
+            The number of classes in the dataset that will be used
+            to train the model.
+        seed: int
+            The seed that will be used for the model.
+        nr_threads: int
+            The number of parallel threads that will be used for
+            the model.
+
+        Returns:
+        --------
+        param: dict
+            A dictionary that will be used as a configuration for the
+            algorithm.
+        """
         param = {
             'disable_default_eval_metric': 1,
             'seed': seed,
@@ -767,7 +813,23 @@ class TabNetWorker(Worker):
     def get_parameters(
             seed: int = 11,
     ) -> Dict[str, Union[int, str]]:
+        """Get the parameters of the method.
 
+        Get a dictionary based on the arguments given to the
+        function, which will be used to as the initial configuration
+        for the algorithm.
+
+        Parameters:
+        -----------
+        seed: int
+            The seed that will be used for the model.
+
+        Returns:
+        --------
+        param: dict
+            A dictionary that will be used as a configuration for the
+            algorithm.
+        """
         param = {
             'seed': seed,
         }
