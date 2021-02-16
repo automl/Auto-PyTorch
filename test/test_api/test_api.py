@@ -319,7 +319,6 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
 
     y_pred = estimator.predict(X_test)
 
-    print(X_test.shape, y_pred.shape)
     assert np.shape(y_pred)[0] == np.shape(X_test)[0]
 
     score = estimator.score(y_pred, y_test)
