@@ -214,8 +214,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         X_train=X_train, y_train=y_train,
         X_test=X_test, y_test=y_test,
         optimize_metric='r2',
-        total_walltime_limit=150,
-        func_eval_time_limit=50,
+        total_walltime_limit=50,
+        func_eval_time_limit=10,
         traditional_per_total_budget=0
     )
 
@@ -319,6 +319,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
 
     y_pred = estimator.predict(X_test)
 
+    print(X_test.shape, y_pred.shape)
     assert np.shape(y_pred)[0] == np.shape(X_test)[0]
 
     score = estimator.score(y_pred, y_test)

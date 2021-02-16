@@ -3,6 +3,7 @@ from multiprocessing.queues import Queue
 from typing import List, Optional, Union
 
 import numpy as np
+from sklearn.ensemble import VotingRegressor
 
 from smac.runhistory.runhistory import RunValue
 
@@ -78,3 +79,23 @@ def convert_multioutput_multiclass_to_multilabel(probas: Union[List, np.ndarray]
                 multioutput_probas[:, i] = 0
         probas = multioutput_probas
     return probas
+
+
+class VotingRegressorWrapper(VotingRegressor):
+    """
+    Wrapper around the sklearn voting regressor that properly handles
+    """
+
+    def _predict(self, X):
+        # overriding the _predict function should be enough
+        predictions = []
+        for est in self.estimators_:
+            pred = est.predict(X)
+
+            if pred.ndim > 1 and pred.shape[1] > 1:
+                raise ValueError(f"Multi-output regression not yet supported with VotingRegressor. "
+                                 f"Issue is addressed here: https://github.com/scikit-learn/scikit-learn/issues/18289")
+
+            predictions.append(pred.ravel())
+
+        return np.asarray(predictions).T

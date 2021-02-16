@@ -32,7 +32,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import (
-    convert_multioutput_multiclass_to_multilabel
+    convert_multioutput_multiclass_to_multilabel, VotingRegressorWrapper
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
@@ -513,7 +513,7 @@ class AbstractEvaluator(object):
                     if self.task_type in CLASSIFICATION_TASKS:
                         pipelines = VotingClassifier(estimators=None, voting='soft', )
                     else:
-                        pipelines = VotingRegressor(estimators=None)
+                        pipelines = VotingRegressorWrapper(estimators=None)
                     pipelines.estimators_ = self.pipelines
                 else:
                     pipelines = None
