@@ -33,7 +33,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldOutTypes
+from autoPyTorch.datasets.train_val_split import CrossValTypes, HoldOutTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
@@ -176,7 +176,7 @@ class BaseTask:
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
         # Store the resampling strategy from the dataset, to load models as needed
-        self.resampling_strategy = None  # type: Optional[Union[CrossValTypes, HoldOutTypes]]
+        self.splitting_type = None  # type: Optional[Union[CrossValTypes, HoldOutTypes]]
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
@@ -398,20 +398,20 @@ class BaseTask:
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
-    def _load_models(self, resampling_strategy: Optional[Union[CrossValTypes, HoldOutTypes]]
+    def _load_models(self, splitting_type: Optional[Union[CrossValTypes, HoldOutTypes]]
                      ) -> bool:
 
         """
         Loads the models saved in the temporary directory
         during the smac run and the final ensemble created
         Args:
-            resampling_strategy (Union[CrossValTypes, HoldOutTypes]): resampling strategy used to split the data
+            splitting_type (Union[CrossValTypes, HoldOutTypes]): resampling strategy used to split the data
                 and to validate the performance of a candidate pipeline
 
         Returns:
             None
         """
-        if resampling_strategy is None:
+        if splitting_type is None:
             raise ValueError("Resampling strategy is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
@@ -422,10 +422,10 @@ class BaseTask:
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
             self.models_ = self._backend.load_models_by_identifiers(identifiers)
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(splitting_type, CrossValTypes):
                 self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
 
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(splitting_type, CrossValTypes):
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
@@ -705,7 +705,7 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
-        self.resampling_strategy = dataset.splitting_type
+        self.splitting_type = dataset.splitting_type
         self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
@@ -1025,7 +1025,7 @@ class BaseTask:
         if self._logger is None:
             self._logger = self._get_logger("Predict-Logger")
 
-        if self.ensemble_ is None and not self._load_models(self.resampling_strategy):
+        if self.ensemble_ is None and not self._load_models(self.splitting_type):
             raise ValueError("No ensemble found. Either fit has not yet "
                              "been called or no ensemble was fitted")
 
@@ -1033,9 +1033,9 @@ class BaseTask:
         assert self.ensemble_ is not None, "Load models should error out if no ensemble"
         self.ensemble_ = cast(Union[SingleBest, EnsembleSelection], self.ensemble_)
 
-        if isinstance(self.resampling_strategy, HoldOutTypes):
+        if isinstance(self.splitting_type, HoldOutTypes):
             models = self.models_
-        elif isinstance(self.resampling_strategy, CrossValTypes):
+        elif isinstance(self.splitting_type, CrossValTypes):
             models = self.cv_models_
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(

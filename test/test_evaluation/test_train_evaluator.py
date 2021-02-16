@@ -14,7 +14,7 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes
+from autoPyTorch.datasets.train_val_split import CrossValTypes
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.utils import read_queue
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -125,7 +125,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_cv(self, pipeline_mock):
-        D = get_binary_classification_datamanager(resampling_strategy=CrossValTypes.k_fold_cross_validation)
+        D = get_binary_classification_datamanager(splitting_type=CrossValTypes.k_fold_cross_validation)
 
         pipeline_mock.predict_proba.side_effect = \
             lambda X, batch_size=None: np.tile([0.6, 0.4], (len(X), 1))

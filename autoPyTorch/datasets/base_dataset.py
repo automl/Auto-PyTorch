@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, Subset
 
 import torchvision
 
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.train_val_split import (
     CrossValFuncs,
     CrossValTypes,
     CrossValParameters,
@@ -103,7 +103,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             splitting_params (Optional[Dict[str, Any]]):
                 arguments required for the chosen splitting function.
                 If None, uses the default values provided in CrossValParameters and HoldOutParameters
-                in ```datasets/resampling_strategy.py```.
+                in ```datasets/train_val_split.py```.
             shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=42): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):

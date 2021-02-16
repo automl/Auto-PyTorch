@@ -13,7 +13,7 @@ from sklearn.ensemble import VotingClassifier
 import torch
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.train_val_split import (
     CrossValTypes,
     HoldOutTypes,
 )
@@ -27,10 +27,9 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 # Test
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (HoldOutTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_classification(openml_id, resampling_strategy, backend):
+@pytest.mark.parametrize('splitting_type', (HoldOutTypes.holdout_validation,
+                                            CrossValTypes.k_fold_cross_validation))
+def test_classification(openml_id, splitting_type, backend):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
@@ -42,11 +41,11 @@ def test_classification(openml_id, resampling_strategy, backend):
     datamanager = TabularDataset(
         X=X_train, Y=y_train,
         X_test=X_test, Y_test=y_test,
-        splitting_type=resampling_strategy,
+        splitting_type=splitting_type,
         dataset_name=str(openml_id),
     )
     assert datamanager.task_type == 'tabular_classification'
-    expected_num_splits = 1 if resampling_strategy == HoldOutTypes.holdout_validation else 3
+    expected_num_splits = 1 if splitting_type == HoldOutTypes.holdout_validation else 3
     assert len(datamanager.splits) == expected_num_splits
 
     # Search for a good configuration
@@ -102,14 +101,14 @@ def test_classification(openml_id, resampling_strategy, backend):
         if os.path.exists(run_key_model_run_dir):
             break
 
-    if resampling_strategy == HoldOutTypes.holdout_validation:
+    if splitting_type == HoldOutTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
                                   f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
         assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
-    elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
+    elif splitting_type == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
@@ -122,7 +121,7 @@ def test_classification(openml_id, resampling_strategy, backend):
         assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
                           torch.nn.Module)
     else:
-        pytest.fail(resampling_strategy)
+        pytest.fail(splitting_type)
 
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,

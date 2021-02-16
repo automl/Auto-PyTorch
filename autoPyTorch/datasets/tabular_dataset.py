@@ -20,7 +20,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.train_val_split import (
     CrossValTypes,
     HoldOutTypes,
 )
@@ -60,7 +60,7 @@ class TabularDataset(BaseDataset):
             splitting_params (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-                in ```datasets/resampling_strategy.py```.
+                in ```datasets/train_val_split.py```.
             shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):

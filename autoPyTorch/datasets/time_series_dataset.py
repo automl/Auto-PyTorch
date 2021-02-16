@@ -5,7 +5,7 @@ import numpy as np
 import torchvision.transforms
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.train_val_split import (
     CrossValTypes,
     HoldOutTypes,
     CrossValFuncs,
@@ -24,8 +24,8 @@ class TimeSeriesForecastingDataset(BaseDataset):
                  n_steps: int,
                  train: TIME_SERIES_FORECASTING_INPUT,
                  val: Optional[TIME_SERIES_FORECASTING_INPUT] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
-                 resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+                 splitting_params: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = False,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -55,7 +55,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                                                           sequence_length=sequence_length,
                                                           n_steps=n_steps)
         super().__init__(train_tensors=train, val_tensors=val, shuffle=shuffle,
-                         resampling_strategy=resampling_strategy, resampling_strategy_args=resampling_strategy_args,
+                         splitting_type=splitting_type, splitting_params=splitting_params,
                          seed=seed,
                          train_transforms=train_transforms,
                          val_transforms=val_transforms,

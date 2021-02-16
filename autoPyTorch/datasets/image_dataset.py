@@ -21,7 +21,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.train_val_split import (
     CrossValTypes,
     HoldOutTypes,
 )
@@ -39,13 +39,13 @@ class ImageDataset(BaseDataset):
             validation data
         test (Union[Dataset, Tuple[Union[np.ndarray, List[str]], np.ndarray]]):
             testing data
-        resampling_strategy (Union[CrossValTypes, HoldOutTypes]),
+        splitting_type (Union[CrossValTypes, HoldOutTypes]),
             (default=HoldOutTypes.holdout_validation):
             strategy to split the training data.
-        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+        splitting_params (Optional[Dict[str, Any]]): arguments
             required for the chosen resampling strategy. If None, uses
             the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-            in ```datasets/resampling_strategy.py```.
+            in ```datasets/train_val_split.py```.
         shuffle:  Whether to shuffle the data before performing splits
         seed (int), (default=1): seed to be used for reproducibility.
         train_transforms (Optional[torchvision.transforms.Compose]):
@@ -57,8 +57,8 @@ class ImageDataset(BaseDataset):
                  train: IMAGE_DATASET_INPUT,
                  val: Optional[IMAGE_DATASET_INPUT] = None,
                  test: Optional[IMAGE_DATASET_INPUT] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
-                 resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 splitting_type: Union[CrossValTypes, HoldOutTypes] = HoldOutTypes.holdout_validation,
+                 splitting_params: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -73,11 +73,10 @@ class ImageDataset(BaseDataset):
         self.mean, self.std = _calc_mean_std(train=train)
 
         super().__init__(train_tensors=train, val_tensors=val, test_tensors=test, shuffle=shuffle,
-                         resampling_strategy=resampling_strategy, resampling_strategy_args=resampling_strategy_args,
+                         splitting_type=splitting_type, splitting_params=splitting_params,
                          seed=seed,
                          train_transforms=train_transforms,
-                         val_transforms=val_transforms,
-                         )
+                         val_transforms=val_transforms)
         if self.output_type is not None:
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.task_type = TASK_TYPES_TO_STRING[IMAGE_CLASSIFICATION]

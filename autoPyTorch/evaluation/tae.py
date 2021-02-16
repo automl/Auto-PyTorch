@@ -163,8 +163,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             self._get_test_loss = False
 
-        self.resampling_strategy = dm.splitting_type
-        self.resampling_strategy_args = dm.splitting_params
+        self.splitting_type = dm.splitting_type
+        self.splitting_params = dm.splitting_params
 
         self.search_space_updates = search_space_updates
 
@@ -382,7 +382,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         if (
                 info is not None
-                and self.resampling_strategy in ['holdout-iterative-fit', 'cv-iterative-fit']
+                and self.splitting_type in ['holdout-iterative-fit', 'cv-iterative-fit']
                 and status != StatusType.CRASHED
         ):
             learning_curve = extract_learning_curve(info)

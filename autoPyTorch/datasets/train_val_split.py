@@ -4,13 +4,6 @@
 
 TODO:
     * add doc-string for each class
-    * remove RESAMPLING_STRATEGIES and DEFAULT_RESAMPLING_PARAMETERS from all the files.
-        Currently, used in the followings:
-        autoPyTorch/datasets/base_dataset.py
-        autoPyTorch/datasets/image_dataset.py
-        autoPyTorch/datasets/resampling_strategy.py
-        autoPyTorch/datasets/tabular_dataset.py
-        autoPyTorch/optimizer/smbo.py
 """
 
 from enum import IntEnum
@@ -62,6 +55,11 @@ class CrossValTypes(IntEnum):
     and is not supposed to be instantiated.
 
     Examples: This class is supposed to be used as follows
+    >>> cv_type = CrossValTypes.k_fold_cross_validation
+    >>> print(cv_type.name)
+
+    k_fold_cross_validation
+
     >>> for cross_val_type in CrossValTypes:
             print(cross_val_type.name, cross_val_type.value)
 
