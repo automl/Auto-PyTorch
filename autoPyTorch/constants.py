@@ -1,3 +1,9 @@
+"""Constant numbers for this package
+
+TODO:
+    * Makes this file nicer
+"""
+
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3

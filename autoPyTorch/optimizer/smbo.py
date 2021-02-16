@@ -79,7 +79,9 @@ def get_smac_object(
 
 
 class AutoMLSMBO(object):
-    """TODO: Why do we need splitting_type and splitting_params here as arguments? What happen if we put different type from BaseDataset?"""
+    """TODO
+    Why do we need splitting_type and splitting_params here as arguments?
+    What happen if we put different type from BaseDataset?"""
     def __init__(self,
                  config_space: ConfigSpace.ConfigurationSpace,
                  dataset_name: str,
