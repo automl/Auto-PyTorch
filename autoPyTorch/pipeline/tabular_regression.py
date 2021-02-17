@@ -25,6 +25,7 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
     NetworkInitializerChoice
@@ -191,6 +192,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
             ("scaler", ScalerChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
             ("preprocessing", EarlyPreprocessing()),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties)),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
             ("network", NetworkComponent()),
