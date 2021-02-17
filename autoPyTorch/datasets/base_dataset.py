@@ -64,7 +64,7 @@ class TransformSubset(Subset):
         return self.dataset.__getitem__(self.indices[idx], self.train)
 
 
-class _DatasetSpecificProperties(BaseNamedTuple, NamedTuple):
+class _DatasetCommonProperties(BaseNamedTuple, NamedTuple):
     """TODO: doc-string"""
     task_type: Optional[str]
     output_type: str
@@ -304,9 +304,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         # Add task type, output type and issparse to dataset properties as
         # they are not dataset requirements in the pipeline
-        dataset_specific_properties = _DatasetSpecificProperties(task_type=self.task_type, output_type=self.output_type,
-                                                                 issparse=self.issparse, input_shape=self.input_shape,
-                                                                 output_shape=self.output_shape,
-                                                                 num_classes=self.num_classes)
-        dataset_properties.update(**dataset_specific_properties._asdict())
+        dataset_common_properties = _DatasetCommonProperties(task_type=self.task_type, output_type=self.output_type,
+                                                             issparse=self.issparse, input_shape=self.input_shape,
+                                                             output_shape=self.output_shape,
+                                                             num_classes=self.num_classes)
+        dataset_properties.update(**dataset_common_properties._asdict())
         return dataset_properties

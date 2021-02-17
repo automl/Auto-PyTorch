@@ -6,24 +6,13 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 from autoPyTorch.constants import (
     RegressionTypes,
-    ClassificationTypes
+    ClassificationTypes,
+    SupportedTaskTypes
 )
 
-from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
-from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
-from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
-"""TODO: now rewriting
-from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
-    IMAGE_TASKS,
-    REGRESSION_TASKS,
-    STRING_TO_TASK_TYPES,
-    TABULAR_TASKS,
-)
-"""
 
 __all__ = [
     'get_dataset_requirements',
@@ -38,24 +27,11 @@ class _PipeLineParameters(NamedTuple):
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
 
 
-"""TODO: consider better ways to refactor TaskDict, SupportedPipelines"""
-TaskDict = {'classifier': ClassificationTypes, 'regressor': RegressionTypes}
-SupportedPipelines = {
-    'regressor': {
-        RegressionTypes.tabular.name: TabularRegressionPipeline
-    },
-    'classifier': {
-        ClassificationTypes.tabular.name: TabularClassificationPipeline,
-        ClassificationTypes.image.name: ImageClassificationPipeline
-    }
-}
-
-
 def _check_supported_tasks(task_type: Union[RegressionTypes, ClassificationTypes]) -> None:
-    supported_tasks = TaskDict.values()
-
-    if not any(isinstance(task_type, supported_tasks) for supported_task in supported_tasks):
+    if not any(isinstance(task_type, supported_task_type) for supported_task_type in SupportedTaskTypes):
         raise TypeError(f"task_type must be supported class type, but got '{type(task_type)}'")
+    elif not task_type.is_supported():
+        raise TypeError(f"The given task_type '{task_type}' is not supported.")
 
 
 def _check_preprocessor(include: Dict[str, Any],
@@ -86,42 +62,11 @@ def _check_estimators(task_type: Union[RegressionTypes, ClassificationTypes],
                          'exclude_estimators.')
 
     if include_estimators is not None:
-        for task_name, task_class in TaskDict.items():
-            if isinstance(task_type, task_class):
-                include[task_name] = include_estimators
-
+        include[task_type.task_name] = include_estimators
     elif exclude_estimators is not None:
-        for task_name, task_class in TaskDict.items():
-            if isinstance(task_type, task_class):
-                exclude[task_name] = exclude_estimators
+        exclude[task_type.task_name] = exclude_estimators
 
     return include, exclude
-
-
-def _check_dataset_requirements(task_type: Union[RegressionTypes, ClassificationTypes],
-                                pipeline_params: Dict[str, Any]) -> List[FitRequirement]:
-
-    if not task_type.is_supported():
-        raise ValueError(f"The given task_type '{task_type}' is not supported.")
-
-    dataset_type = task_type.name
-    for task_name, task_class in TaskDict.items():
-        if isinstance(task_type, task_class):
-            pipeline = SupportedPipelines[task_name][dataset_type]
-            return pipeline(**pipeline_params).get_dataset_requirements()
-
-
-def _check_configspace(task_type: Union[RegressionTypes, ClassificationTypes],
-                       pipeline_params: Dict[str, Any]) -> ConfigurationSpace:
-
-    if not task_type.is_supported():
-        raise ValueError(f"The given task_type '{task_type}' is not supported.")
-
-    dataset_type = task_type.name
-    for task_name, task_class in TaskDict.items():
-        if isinstance(task_type, task_class):
-            pipeline = SupportedPipelines[task_name][dataset_type]
-            return pipeline(**pipeline_params).get_hyperparameter_search_space()
 
 
 def get_dataset_requirements(dataset_properties: 'DatasetProperties',  # temporal name
@@ -130,28 +75,23 @@ def get_dataset_requirements(dataset_properties: 'DatasetProperties',  # tempora
                              include_preprocessors: Optional[List[str]] = None,
                              exclude_preprocessors: Optional[List[str]] = None
                              ) -> List[FitRequirement]:
-    """TODO: make info NamedTuple"""
+    """TODO: make 'info' (older argument) NamedTuple"""
     """TODO: to be compatible with other files using get_dataset_requirements"""
+    """TODO: DatasetProperties can be merged in BaseDataset in my opinion."""
     include, exclude = dict(), dict()
-    task_type = dataset_properties.Task_type
+    task_type = dataset_properties.task_type
 
-    try:
-        _check_supported_tasks(task_type)
+    _check_supported_tasks(task_type)
 
-        include, exclude = _check_preprocessor(include, exclude,
-                                               include_preprocessors, exclude_preprocessors)
-        include, exclude = _check_estimators(task_type, include, exclude,
-                                             include_estimators, exclude_estimators)
+    include, exclude = _check_preprocessor(include, exclude,
+                                           include_preprocessors, exclude_preprocessors)
+    include, exclude = _check_estimators(task_type, include, exclude,
+                                         include_estimators, exclude_estimators)
 
-        pipeline_params = _PipeLineParameters(dataset_properties=dataset_properties._asdict(),
-                                              include=include, exclude=exclude)._asdict()
+    pipeline_params = _PipeLineParameters(dataset_properties=dataset_properties._asdict(),
+                                          include=include, exclude=exclude)._asdict()
 
-        return _check_dataset_requirements(task_type, pipeline_params)
-
-    except ValueError:
-        raise ValueError(f"Error occurred during getting the requirements of {task_type}")
-    except TypeError:
-        raise TypeError
+    return task_type.pipeline(**pipeline_params).get_dataset_requirements()
 
 
 def get_configuration_space(dataset_properties: 'DatasetProperties',  # temporal name
@@ -160,17 +100,12 @@ def get_configuration_space(dataset_properties: 'DatasetProperties',  # temporal
                             search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                             ) -> ConfigurationSpace:
 
-    task_type = dataset_properties.Task_type
+    task_type = dataset_properties.task_type
 
-    try:
-        _check_supported_tasks(task_type)
+    _check_supported_tasks(task_type)
 
-        pipeline_params = _PipeLineParameters(dataset_properties=dataset_properties._asdict(),
-                                              include=include, exclude=exclude,
-                                              search_space_updates=search_space_updates)._asdict()
-        _check_supported_tasks(task_type, pipeline_params)
+    pipeline_params = _PipeLineParameters(dataset_properties=dataset_properties._asdict(),
+                                          include=include, exclude=exclude,
+                                          search_space_updates=search_space_updates)._asdict()
 
-    except ValueError:
-        raise ValueError(f"Error occurred during getting the config space of {task_type}")
-    except TypeError:
-        raise TypeError
+    return task_type.pipeline(**pipeline_params).get_hyperparameter_search_space()

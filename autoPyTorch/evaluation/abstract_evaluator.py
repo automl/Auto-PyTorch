@@ -250,6 +250,7 @@ class AbstractEvaluator(object):
             raise ValueError('disable_file_output should be either a bool or a list')
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
+        """TODO: info -> NamedTuple"""
         info: Dict[str, Any] = {'task_type': self.datamanager.task_type,
                                 'output_type': self.datamanager.output_type,
                                 'issparse': self.issparse}
@@ -283,6 +284,7 @@ class AbstractEvaluator(object):
             self.predict_function = self._predict_proba
         if self.task_type in TABULAR_TASKS:
             assert isinstance(self.datamanager, TabularDataset)
+            """TODO: info -> namedtuple"""
             info.update({'numerical_columns': self.datamanager.numerical_columns,
                          'categorical_columns': self.datamanager.categorical_columns})
         self.dataset_properties = self.datamanager.get_dataset_properties(get_dataset_requirements(info))

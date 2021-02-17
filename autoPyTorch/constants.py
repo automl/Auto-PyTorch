@@ -2,33 +2,55 @@
 
 TODO:
     * Makes this file nicer
+    * transfer to proper locations e.g. create task directory?
 """
 
-from enum import IntEnum
+from enum import Enum
+from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
+from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 
 
-class RegressionTypes(IntEnum):
-    tabular = 1
-    image = 2
-    time_series = 3
-
-    def is_supported(self) -> bool:
-        supported_task_types = [self.tabular]
-        supported = [task_type.name for task_type in supported_task_types]
-        return self.name in supported
-
-
-class ClassificationTypes(IntEnum):
-    tabular = 1
-    image = 2
-    time_series = 3
+class RegressionTypes(Enum):
+    tabular = TabularRegressionPipeline
+    image = None
+    time_series = None
 
     def is_supported(self) -> bool:
-        supported_task_types = [self.tabular, self.image]
-        supported = [task_type.name for task_type in supported_task_types]
-        return self.name in supported
+        return self.value is not None
+
+    def task_name(self):
+        return 'regressor'
+
+    def dataset_type(self):
+        return self.name
+
+    def pipeline(self):
+        return self.value
 
 
+class ClassificationTypes(Enum):
+    tabular = TabularClassificationPipeline
+    image = ImageClassificationPipeline
+    time_series = None
+
+    def is_supported(self) -> bool:
+        return self.value is not None
+
+    def task_name(self):
+        return 'classifier'
+
+    def dataset_type(self):
+        return self.name
+
+    def pipeline(self):
+        return self.value
+
+
+SupportedTaskTypes = [RegressionTypes, ClassificationTypes]
+
+
+"""TODO: remove these variables
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3
@@ -58,6 +80,8 @@ STRING_TO_TASK_TYPES = \
      'image_regression': IMAGE_REGRESSION,
      'time_series_classification': TIMESERIES_CLASSIFICATION,
      'time_series_regression': TIMESERIES_REGRESSION}
+"""
+
 
 # Output types have been defined as in scikit-learn type_of_target
 # (https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html)
