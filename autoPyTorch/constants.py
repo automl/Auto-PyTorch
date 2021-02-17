@@ -4,6 +4,31 @@ TODO:
     * Makes this file nicer
 """
 
+from enum import IntEnum
+
+
+class RegressionTypes(IntEnum):
+    tabular = 1
+    image = 2
+    time_series = 3
+
+    def is_supported(self) -> bool:
+        supported_task_types = [self.tabular]
+        supported = [task_type.name for task_type in supported_task_types]
+        return self.name in supported
+
+
+class ClassificationTypes(IntEnum):
+    tabular = 1
+    image = 2
+    time_series = 3
+
+    def is_supported(self) -> bool:
+        supported_task_types = [self.tabular, self.image]
+        supported = [task_type.name for task_type in supported_task_types]
+        return self.name in supported
+
+
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3
