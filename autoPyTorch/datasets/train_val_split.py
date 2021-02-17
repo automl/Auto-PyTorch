@@ -26,6 +26,7 @@ from autoPyTorch.utils.common import BaseNamedTuple
 SplitFunc = Callable[[int, np.ndarray, Any], List[Tuple[np.ndarray, np.ndarray]]]
 
 
+"""TODO: Change to BaseDict"""
 class CrossValParameters(BaseNamedTuple, NamedTuple):
     """The parameters of cross validators
 
