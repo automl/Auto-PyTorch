@@ -11,6 +11,44 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
+class BaseDict(dict):
+    """The extension of dict
+
+    This class allows to call value (self[key]) by self.key.
+    The main intension is to make NamedTuple mutable.
+
+    Example:
+    class NewDict(BaseDict):
+    def __init__(self, a: int = 1, b: float = 2.0):
+        super().__init__(a=a, b=b)
+
+    >>> nd = NewDict()
+    >>> nd.a, nd.b
+        (1, 2.0)
+    >>> nd.c = 3
+    >>> nd["d"] = 4
+    >>> nd, nd.__dict__
+        ({'a': 1, 'b': 2.0, 'c': 3, 'd': 4}, {'a': 1, 'b': 2.0, 'c': 3, 'd': 4})    
+    """
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            self.__setattr__(key, value)
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        super().__setitem__(name, value)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key):
+        if hasattr(self, key):
+            return getattr(self, key)
+        else:
+            raise KeyError(key)
+
+
 class BaseNamedTuple():
     """
     A class that expands the NamedTuple package.
