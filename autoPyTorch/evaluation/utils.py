@@ -86,6 +86,7 @@ def convert_multioutput_multiclass_to_multilabel(probas: Union[List, np.ndarray]
 class VotingRegressorWrapper(VotingRegressor):
     """
     Wrapper around the sklearn voting regressor that properly handles
+    predictions with shape (B, 1)
     """
 
     def _predict(self, X: np.array) -> np.array:

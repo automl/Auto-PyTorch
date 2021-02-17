@@ -59,9 +59,9 @@ class BudgetTracker(object):
 
 class RunSummary(object):
     def __init__(
-            self,
-            total_parameter_count: float,
-            trainable_parameter_count: float,
+        self,
+        total_parameter_count: float,
+        trainable_parameter_count: float,
     ):
         """
         A useful object to track performance per epoch.
