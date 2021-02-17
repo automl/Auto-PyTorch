@@ -140,7 +140,6 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
             metrics_during_training=True,
             scheduler=None,
             task_type=self.task_type,
-            output_type=self.output_type,
             labels=self.y
         )
 
@@ -176,7 +175,6 @@ class StandartTrainerTest(BaseTraining, unittest.TestCase):
             device=self.device,
             metrics_during_training=True,
             task_type=self.task_type,
-            output_type=self.output_type,
             labels=self.y
         )
 
@@ -210,7 +208,6 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
             device=self.device,
             metrics_during_training=True,
             task_type=self.task_type,
-            output_type=self.output_type,
             labels=self.y
         )
 

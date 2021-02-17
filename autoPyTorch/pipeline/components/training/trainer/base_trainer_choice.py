@@ -19,14 +19,14 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES
+from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
     find_components,
 )
-from autoPyTorch.pipeline.components.training.losses import get_loss_instance
+from autoPyTorch.pipeline.components.training.losses import get_loss
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
@@ -266,15 +266,14 @@ class TrainerChoice(autoPyTorchChoice):
             model=X['network'],
             metrics=get_metrics(dataset_properties=X['dataset_properties'],
                                 names=additional_metrics),
-            criterion=get_loss_instance(X['dataset_properties'],
-                                        name=additional_losses),
+            criterion=get_loss(X['dataset_properties'],
+                               name=additional_losses),
             budget_tracker=budget_tracker,
             optimizer=X['optimizer'],
             device=self.get_device(X),
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            output_type=STRING_TO_OUTPUT_TYPES[X['dataset_properties']['output_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])

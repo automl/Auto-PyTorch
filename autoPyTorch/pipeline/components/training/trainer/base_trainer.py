@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 
@@ -11,7 +11,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import BINARY
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -175,14 +174,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self,
         metrics: List[Any],
         model: torch.nn.Module,
-        criterion: torch.nn.Module,
+        criterion: Type[torch.nn.Module],
         budget_tracker: BudgetTracker,
         optimizer: Optimizer,
         device: torch.device,
         metrics_during_training: bool,
         scheduler: _LRScheduler,
         task_type: int,
-        output_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
     ) -> None:
 
@@ -196,11 +194,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         weights = None
         kwargs = {}
         if self.weighted_loss:
-            weights = self.get_class_weights(output_type, labels)
-            if output_type == BINARY:
-                kwargs['pos_weight'] = weights
-            else:
-                kwargs['weight'] = weights
+            kwargs = self.get_class_weights(criterion, labels)
 
         criterion = criterion(**kwargs) if weights is not None else criterion()
 
@@ -376,13 +370,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         targets_data = torch.cat(targets_data, dim=0)
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
-    def get_class_weights(self, output_type: int, labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
-                          ) -> np.ndarray:
-        strategy = get_loss_weight_strategy(output_type)
+    def get_class_weights(self, criterion: Type[torch.nn.Module], labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
+                          ) -> Dict[str, np.ndarray]:
+        strategy = get_loss_weight_strategy(criterion)
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
         weights = weights.type(torch.FloatTensor).to(self.device)
-        return weights
+        if criterion.__name__ == 'BCEWithLogitsLoss':
+            return {'pos_weight': weights}
+        else:
+            return {'weight': weights}
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
