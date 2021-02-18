@@ -17,8 +17,11 @@ from autoPyTorch import metrics
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpaceUpdate,
+    HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
+)
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ["regression_numerical_only",
@@ -76,8 +79,18 @@ class TestTabularRegression:
         given the default configuration"""
         X = fit_dictionary_tabular_dummy['X_train'].copy()
         y = fit_dictionary_tabular_dummy['y_train'].copy()
+
+        # lower the learning rate of the optimizer until seeding properly works
+        # with the default learning rate of 0.01 regression sometimes does not converge
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
+            search_space_updates=HyperparameterSearchSpaceUpdates([
+                HyperparameterSearchSpaceUpdate("optimizer",
+                                                "AdamOptimizer:lr",
+                                                value_range=[0.0001, 0.001],
+                                                default_value=0.001)
+            ])
+        )
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
@@ -197,8 +210,8 @@ class TestTabularRegression:
         # Then fitting a optimizer should fail if no network:
         assert 'optimizer' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
         ):
             pipeline.named_steps['optimizer'].fit({'dataset_properties': {}}, None)
 
@@ -209,8 +222,8 @@ class TestTabularRegression:
         # Then fitting a optimizer should fail if no network:
         assert 'lr_scheduler' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
         ):
             pipeline.named_steps['lr_scheduler'].fit({'dataset_properties': {}}, None)
 
