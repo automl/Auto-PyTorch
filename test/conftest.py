@@ -367,7 +367,12 @@ def loss_cross_entropy_multiclass():
     predictions = torch.randn(4, 4, requires_grad=True)
     name = 'CrossEntropyLoss'
     targets = torch.empty(4, dtype=torch.long).random_(4)
-    labels = torch.empty(20, dtype=torch.long).random_(4)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(4)
+        if len(torch.unique(labels)) == 4:
+            break
+
     return dataset_properties, predictions, name, targets, labels
 
 
@@ -377,7 +382,11 @@ def loss_cross_entropy_binary():
     predictions = torch.randn(4, 2, requires_grad=True)
     name = 'CrossEntropyLoss'
     targets = torch.empty(4, dtype=torch.long).random_(2)
-    labels = torch.empty(20, dtype=torch.long).random_(2)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(2)
+        if len(torch.unique(labels)) == 2:
+            break
     return dataset_properties, predictions, name, targets, labels
 
 
@@ -387,7 +396,11 @@ def loss_bce():
     predictions = torch.empty(4).random_(2)
     name = 'BCEWithLogitsLoss'
     targets = torch.empty(4).random_(2)
-    labels = torch.empty(20, dtype=torch.long).random_(2)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(2)
+        if len(torch.unique(labels)) == 2:
+            break
     return dataset_properties, predictions, name, targets, labels
 
 

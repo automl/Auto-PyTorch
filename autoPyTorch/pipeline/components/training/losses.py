@@ -14,14 +14,14 @@ from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, MULT
 
 losses = dict(classification=dict(
     CrossEntropyLoss=dict(
-        module=CrossEntropyLoss, supported_output_types=(MULTICLASS, BINARY)),
+        module=CrossEntropyLoss, supported_output_types=[MULTICLASS, BINARY]),
     BCEWithLogitsLoss=dict(
-        module=BCEWithLogitsLoss, supported_output_types=(BINARY,))),
+        module=BCEWithLogitsLoss, supported_output_types=[BINARY])),
     regression=dict(
         MSELoss=dict(
-            module=MSELoss, supported_output_types=(CONTINUOUS,)),
+            module=MSELoss, supported_output_types=[CONTINUOUS]),
         L1Loss=dict(
-            module=L1Loss, supported_output_types=(CONTINUOUS,))))
+            module=L1Loss, supported_output_types=[CONTINUOUS])))
 
 default_losses = dict(classification=CrossEntropyLoss, regression=MSELoss)
 

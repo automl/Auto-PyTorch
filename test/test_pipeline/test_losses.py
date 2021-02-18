@@ -2,8 +2,9 @@ import pytest
 
 import torch
 from torch import nn
+from torch.nn.modules.loss import _Loss as Loss
 
-from autoPyTorch.pipeline.components.training.losses import get_loss
+from autoPyTorch.pipeline.components.training.losses import get_loss, losses
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
@@ -52,3 +53,16 @@ def test_losses(weighted, loss_details):
     loss = loss() if weights is None else loss(**kwargs)
     score = loss(predictions, targets)
     assert isinstance(score, torch.Tensor)
+    # Ensure it is a one element tensor
+    assert len(score.size()) == 0
+
+
+def test_loss_dict():
+    assert 'classification' in losses.keys()
+    assert 'regression' in losses.keys()
+    for task in losses.values():
+        for loss in task.values():
+            assert 'module' in loss.keys()
+            assert isinstance(loss['module'](), Loss)
+            assert 'supported_output_types' in loss.keys()
+            assert isinstance(loss['supported_output_types'], list)
