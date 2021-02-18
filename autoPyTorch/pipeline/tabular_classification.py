@@ -10,6 +10,7 @@ from sklearn.base import ClassifierMixin
 
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
@@ -60,16 +61,17 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Examples
     """
 
-    def __init__(self,
-                 config: Optional[Configuration] = None,
-                 steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-                 dataset_properties: Optional[Dict[str, Any]] = None,
-                 include: Optional[Dict[str, Any]] = None,
-                 exclude: Optional[Dict[str, Any]] = None,
-                 random_state: Optional[np.random.RandomState] = None,
-                 init_params: Optional[Dict[str, Any]] = None,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-                 ):
+    def __init__(
+            self,
+            config: Optional[Configuration] = None,
+            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+            dataset_properties: Optional[Dict[str, Any]] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            random_state: Optional[np.random.RandomState] = None,
+            init_params: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
@@ -224,6 +226,39 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("trainer", TrainerChoice(default_dataset_properties)),
         ])
         return steps
+
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        """
+        Returns a representation of the pipeline, so that it can be
+        consumed and formatted by the API.
+
+        It should be a representation that follows:
+        [{'PreProcessing': <>, 'Estimator': <>}]
+
+        Returns:
+            Dict: contains the pipeline representation in a short format
+        """
+        preprocessing = []
+        estimator = []
+        skip_steps = ['data_loader', 'trainer', 'lr_scheduler', 'optimizer', 'network_init',
+                      'preprocessing', 'tabular_transformer']
+        for step_name, step_component in self.steps:
+            if step_name in skip_steps:
+                continue
+            properties = {}
+            if isinstance(step_component, autoPyTorchChoice) and step_component.choice is not None:
+                properties = step_component.choice.get_properties()
+            elif isinstance(step_component, autoPyTorchComponent):
+                properties = step_component.get_properties()
+            if 'shortname' in properties:
+                if 'network' in step_name:
+                    estimator.append(properties['shortname'])
+                else:
+                    preprocessing.append(properties['shortname'])
+        return {
+            'Preprocessing': ','.join(preprocessing),
+            'Estimator': ','.join(estimator),
+        }
 
     def _get_estimator_hyperparameter_name(self) -> str:
         """

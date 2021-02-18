@@ -328,9 +328,11 @@ class AutoMLSMBO(object):
         if self.ensemble_callback is not None:
             smac.register_callback(self.ensemble_callback)
 
-        self.logger.info("initialised smac, running optimise")
+        self.logger.info("initialised SMBO, running SMBO.optimize()")
 
         smac.optimize()
+
+        self.logger.info("finished SMBO.optimize()")
 
         self.runhistory = smac.solver.runhistory
         self.trajectory = smac.solver.intensifier.traj_logger.trajectory

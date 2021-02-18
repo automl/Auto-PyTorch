@@ -15,7 +15,6 @@ from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
-from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 class BudgetTracker(object):
@@ -233,7 +232,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         return False
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
-                    logger: PicklableClientLogger, writer: Optional[SummaryWriter],
+                    writer: Optional[SummaryWriter],
                     ) -> Tuple[float, Dict[str, float]]:
         '''
             Trains the model for a single epoch.
