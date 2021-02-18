@@ -1,6 +1,8 @@
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
 import numpy as np
 
 import pandas as pd
@@ -13,7 +15,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -163,7 +165,8 @@ class RunSummary(object):
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
-    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
+    def __init__(self, weighted_loss: bool = False,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
@@ -171,8 +174,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             self.random_state = random_state
         super().__init__(random_state=self.random_state)
-
-        self.weighted_loss: bool = False
+        self.weighted_loss = weighted_loss
 
     def prepare(
         self,
@@ -424,3 +426,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             Callable: a lambda that contains the new criterion calculation recipe
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+                                        weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_swa: Tuple[Tuple, bool] = ((True, False), False)
+                                        ) -> ConfigurationSpace:
+        weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
+                                                  default_value=weighted_loss[1])
+        cs = ConfigurationSpace()
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
+                cs.add_hyperparameters([weighted_loss])
+
+        return cs
