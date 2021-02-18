@@ -1,0 +1,14 @@
+
+:orphan:
+
+.. _sphx_glr_examples_sg_execution_times:
+
+Computation times
+=================
+**09:22.090** total execution time for **examples** files:
+
++----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_example_tabular_classification.py` (``example_tabular_classification.py``) | 09:14.705 | 0.0 MB |
++----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_example_image_classification.py` (``example_image_classification.py``)     | 00:07.385 | 0.0 MB |
++----------------------------------------------------------------------------------------------------+-----------+--------+
