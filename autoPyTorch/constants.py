@@ -9,9 +9,34 @@ from enum import Enum
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
+import abc
+from typing import Union
 
 
-class RegressionTypes(Enum):
+SupportedPipelines = Union[ImageClassificationPipeline,
+                           TabularClassificationPipeline,
+                           TabularRegressionPipeline]
+
+
+class BaseTaskTypes(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def is_supported(self) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def task_name(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def dataset_type(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def pipeline(self) -> SupportedPipelines:
+        raise NotImplementedError
+
+
+class RegressionTypes(Enum, BaseTaskTypes):
     tabular = TabularRegressionPipeline
     image = None
     time_series = None
@@ -19,17 +44,20 @@ class RegressionTypes(Enum):
     def is_supported(self) -> bool:
         return self.value is not None
 
-    def task_name(self):
+    def task_name(self) -> str:
         return 'regressor'
 
-    def dataset_type(self):
+    def dataset_type(self) -> str:
         return self.name
 
-    def pipeline(self):
+    def pipeline(self) -> SupportedPipelines:
+        if not self.is_supported():
+            raise ValueError(f"{self.name} is not supported pipeline.")
+
         return self.value
 
 
-class ClassificationTypes(Enum):
+class ClassificationTypes(Enum, BaseTaskTypes):
     tabular = TabularClassificationPipeline
     image = ImageClassificationPipeline
     time_series = None
@@ -37,17 +65,20 @@ class ClassificationTypes(Enum):
     def is_supported(self) -> bool:
         return self.value is not None
 
-    def task_name(self):
+    def task_name(self) -> str:
         return 'classifier'
 
-    def dataset_type(self):
+    def dataset_type(self) -> str:
         return self.name
 
-    def pipeline(self):
+    def pipeline(self) -> SupportedPipelines:
+        if not self.is_supported():
+            raise ValueError(f"{self.name} is not supported pipeline.")
+
         return self.value
 
 
-SupportedTaskTypes = [RegressionTypes, ClassificationTypes]
+SupportedTaskTypes = (RegressionTypes, ClassificationTypes)
 
 
 """TODO: remove these variables
