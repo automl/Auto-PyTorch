@@ -3,7 +3,6 @@ from typing import Any, Dict, Iterable, Tuple
 
 import torch.nn as nn
 
-from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
@@ -20,7 +19,6 @@ class NetworkHeadComponent(autoPyTorchComponent):
         super().__init__()
         self.add_fit_requirements([
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('num_classes', (int,), user_defined=True, dataset_property=True),
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable, int), user_defined=True, dataset_property=True),
         ])
@@ -38,9 +36,7 @@ class NetworkHeadComponent(autoPyTorchComponent):
             Self
         """
         input_shape = X['dataset_properties']['input_shape']
-        output_shape = (X['dataset_properties']['num_classes'],) if \
-            STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in \
-            CLASSIFICATION_TASKS else X['dataset_properties']['output_shape']
+        output_shape = X['dataset_properties']['output_shape']
 
         self.head = self.build_head(
             input_shape=get_output_shape(X['network_backbone'], input_shape=input_shape),

@@ -36,7 +36,7 @@ class TabularPreprocessingTest(unittest.TestCase):
             'output_type': OUTPUT_TYPES_TO_STRING[MULTICLASS],
             'is_small_preprocess': True,
             'input_shape': (15,),
-            'num_classes': 2,
+            'output_shape': 2,
             'categories': [],
             'issparse': False
         }
@@ -72,7 +72,7 @@ class TabularPreprocessingTest(unittest.TestCase):
             'output_type': OUTPUT_TYPES_TO_STRING[MULTICLASS],
             'is_small_preprocess': False,
             'input_shape': (15,),
-            'num_classes': 2,
+            'output_shape': 2,
             'categories': [],
             'issparse': False
         }

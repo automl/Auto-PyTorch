@@ -12,7 +12,7 @@ import pandas as pd
 
 from sklearn.base import BaseEstimator
 from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import VotingClassifier, VotingRegressor
+from sklearn.ensemble import VotingClassifier
 
 from smac.tae import StatusType
 
@@ -32,6 +32,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import (
+    VotingRegressorWrapper,
     convert_multioutput_multiclass_to_multilabel
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -513,7 +514,7 @@ class AbstractEvaluator(object):
                     if self.task_type in CLASSIFICATION_TASKS:
                         pipelines = VotingClassifier(estimators=None, voting='soft', )
                     else:
-                        pipelines = VotingRegressor(estimators=None)
+                        pipelines = VotingRegressorWrapper(estimators=None)
                     pipelines.estimators_ = self.pipelines
                 else:
                     pipelines = None

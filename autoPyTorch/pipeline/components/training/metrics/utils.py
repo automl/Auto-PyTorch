@@ -20,8 +20,12 @@ def sanitize_array(array: np.ndarray) -> np.ndarray:
     :return:
     """
     a = np.ravel(array)
-    maxi = np.nanmax(a[np.isfinite(a)])
-    mini = np.nanmin(a[np.isfinite(a)])
+    finite = np.isfinite(a)
+    if np.any(finite):
+        maxi = np.nanmax(a[finite])
+        mini = np.nanmin(a[finite])
+    else:
+        maxi = mini = 0
     array[array == float('inf')] = maxi
     array[array == float('-inf')] = mini
     mid = (maxi + mini) / 2

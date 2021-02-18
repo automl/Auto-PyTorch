@@ -1,5 +1,4 @@
 import copy
-import random
 
 import numpy as np
 
@@ -518,7 +517,6 @@ def test_featurevalidator_new_data_after_fit(openml_id,
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':
             columns = X_test.columns.tolist()
-            random.shuffle(columns)
-            X_test = X_test[columns]
+            X_test = X_test[reversed(columns)]
             with pytest.raises(ValueError, match=r"Changing the column order of the features"):
                 transformed_X = validator.transform(X_test)

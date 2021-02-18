@@ -71,11 +71,13 @@ class MixUpTrainer(BaseTrainerComponent):
                                         ) -> ConfigurationSpace:
         alpha = UniformFloatHyperparameter(
             "alpha", alpha[0][0], alpha[0][1], default_value=alpha[1])
-        weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
-                                                  default_value=weighted_loss[1])
+
         cs = ConfigurationSpace()
         cs.add_hyperparameters([alpha])
         if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
-                cs.add_hyperparameters([weighted_loss])
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                weighted_loss = CategoricalHyperparameter("weighted_loss",
+                                                          choices=weighted_loss[0],
+                                                          default_value=weighted_loss[1])
+                cs.add_hyperparameter(weighted_loss)
         return cs
