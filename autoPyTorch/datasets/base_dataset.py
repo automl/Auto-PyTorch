@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, Subset
 
 import torchvision
 
+from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, STRING_TO_OUTPUT_TYPES
 from autoPyTorch.datasets.resampling_strategy import (
     CROSS_VAL_FN,
     CrossValTypes,
@@ -113,11 +114,15 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.resampling_strategy_args = resampling_strategy_args
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
-        self.input_shape: Tuple[int] = train_tensors[0].shape[1:]
-        self.num_classes: Optional[int] = None
-        if len(train_tensors) == 2 and train_tensors[1] is not None:
+        self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
+
+        if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
-            self.output_shape: int = train_tensors[1].shape[1] if train_tensors[1].shape == 2 else 1
+
+            if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
+                self.output_shape = len(np.unique(self.train_tensors[1]))
+            else:
+                self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
@@ -368,8 +373,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                                    'output_type': self.output_type,
                                    'issparse': self.issparse,
                                    'input_shape': self.input_shape,
-                                   'output_shape': self.output_shape,
-                                   'num_classes': self.num_classes,
+                                   'output_shape': self.output_shape
                                    })
         return dataset_properties
 

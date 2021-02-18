@@ -8,9 +8,11 @@ import dask.distributed
 
 import numpy as np
 
+import pandas as pd
+
 import pytest
 
-from sklearn.datasets import fetch_openml, make_classification
+from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
@@ -145,111 +147,92 @@ def dask_client(request):
     return client
 
 
-# Dataset fixture to test different scenarios on a scalable way
-# Please refer to https://docs.pytest.org/en/stable/fixture.html for details
-# on what fixtures are
-@pytest.fixture
-def fit_dictionary(request):
-    return request.getfixturevalue(request.param)
+def get_tabular_data(task):
+    if task == "classification_numerical_only":
+        X, y = make_classification(
+            n_samples=200,
+            n_features=4,
+            n_informative=3,
+            n_redundant=1,
+            n_repeated=0,
+            n_classes=2,
+            n_clusters_per_class=2,
+            shuffle=True,
+            random_state=0
+        )
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
+
+    elif task == "classification_categorical_only":
+        X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+        categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
+        X = X[categorical_columns]
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
+
+    elif task == "classification_numerical_and_categorical":
+        X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
+
+    elif task == "regression_numerical_only":
+        X, y = make_regression(n_samples=200,
+                               n_features=4,
+                               n_informative=3,
+                               n_targets=1,
+                               shuffle=True,
+                               random_state=0)
+        y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
+
+    elif task == "regression_categorical_only":
+        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
+        X = X[categorical_columns]
+
+        # fill nan values for now since they are not handled properly yet
+        for column in X.columns:
+            if X[column].dtype.name == "category":
+                X[column] = pd.Categorical(X[column],
+                                           categories=list(X[column].cat.categories) + ["missing"]).fillna("missing")
+            else:
+                X[column] = X[column].fillna(0)
+
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
+        y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
+
+    elif task == "regression_numerical_and_categorical":
+        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+
+        # fill nan values for now since they are not handled properly yet
+        for column in X.columns:
+            if X[column].dtype.name == "category":
+                X[column] = pd.Categorical(X[column],
+                                           categories=list(X[column].cat.categories) + ["missing"]).fillna("missing")
+            else:
+                X[column] = X[column].fillna(0)
+
+        X = X.iloc[0:200]
+        y = y.iloc[0:200]
+        y = (y - y.mean()) / y.std()
+        validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
+
+    else:
+        raise ValueError("Unsupported task {}".format(task))
+
+    return X, y, validator
 
 
-@pytest.fixture
-def fit_dictionary_numerical_only(backend):
-    X, y = make_classification(
-        n_samples=200,
-        n_features=10,
-        n_informative=6,
-        n_redundant=4,
-        n_repeated=0,
-        n_classes=2,
-        n_clusters_per_class=2,
-        shuffle=True,
-        random_state=0
-    )
-    X = X.astype('float64')
-    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
+def get_fit_dictionary(X, y, validator, backend):
     datamanager = TabularDataset(
         X=X, Y=y,
         validator=validator,
         X_test=X, Y_test=y,
     )
 
-    info = datamanager.get_required_dataset_info()
-
-    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-    fit_dictionary = {
-        'X_train': datamanager.train_tensors[0],
-        'y_train': datamanager.train_tensors[1],
-        'train_indices': datamanager.splits[0][0],
-        'val_indices': datamanager.splits[0][1],
-        'dataset_properties': dataset_properties,
-        'num_run': np.random.randint(50),
-        'device': 'cpu',
-        'budget_type': 'epochs',
-        'epochs': 1,
-        'torch_num_threads': 1,
-        'early_stopping': 20,
-        'working_dir': '/tmp',
-        'use_tensorboard_logger': True,
-        'use_pynisher': False,
-        'metrics_during_training': True,
-        'split_id': 0,
-        'backend': backend,
-    }
-    backend.save_datamanager(datamanager)
-    return fit_dictionary
-
-
-@pytest.fixture
-def fit_dictionary_categorical_only(backend):
-    X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
-    X = X[categorical_columns]
-    X = X.iloc[0:200]
-    y = y.iloc[0:200]
-    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        validator=validator,
-        X_test=X, Y_test=y,
-    )
-    info = datamanager.get_required_dataset_info()
-
-    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-    fit_dictionary = {
-        'X_train': datamanager.train_tensors[0],
-        'y_train': datamanager.train_tensors[1],
-        'train_indices': datamanager.splits[0][0],
-        'val_indices': datamanager.splits[0][1],
-        'dataset_properties': dataset_properties,
-        'num_run': np.random.randint(50),
-        'device': 'cpu',
-        'budget_type': 'epochs',
-        'epochs': 1,
-        'torch_num_threads': 1,
-        'early_stopping': 20,
-        'working_dir': '/tmp',
-        'use_tensorboard_logger': True,
-        'use_pynisher': False,
-        'metrics_during_training': True,
-        'split_id': 0,
-        'backend': backend,
-    }
-    backend.save_datamanager(datamanager)
-    return fit_dictionary
-
-
-@pytest.fixture
-def fit_dictionary_num_and_categorical(backend):
-    X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-    X = X.iloc[0:200]
-    y = y.iloc[0:200]
-    validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        validator=validator,
-        X_test=X, Y_test=y,
-    )
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
@@ -263,9 +246,9 @@ def fit_dictionary_num_and_categorical(backend):
         'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
-        'epochs': 1,
+        'epochs': 100,
         'torch_num_threads': 1,
-        'early_stopping': 20,
+        'early_stopping': 10,
         'working_dir': '/tmp',
         'use_tensorboard_logger': True,
         'use_pynisher': False,
@@ -275,6 +258,23 @@ def fit_dictionary_num_and_categorical(backend):
     }
     backend.save_datamanager(datamanager)
     return fit_dictionary
+
+
+@pytest.fixture
+def fit_dictionary_tabular_dummy(request, backend):
+    if request.param == "classification":
+        X, y, validator = get_tabular_data("classification_numerical_only")
+    elif request.param == "regression":
+        X, y, validator = get_tabular_data("regression_numerical_only")
+    else:
+        raise ValueError("Unsupported indirect fixture {}".format(request.param))
+    return get_fit_dictionary(X, y, validator, backend)
+
+
+@pytest.fixture
+def fit_dictionary_tabular(request, backend):
+    X, y, validator = get_tabular_data(request.param)
+    return get_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture

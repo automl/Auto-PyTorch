@@ -297,6 +297,7 @@ class TrainEvaluator(AbstractEvaluator):
                                                self.y_valid)
         else:
             valid_pred = None
+
         if self.X_test is not None:
             test_pred = self.predict_function(self.X_test, pipeline,
                                               self.y_train[train_indices])
