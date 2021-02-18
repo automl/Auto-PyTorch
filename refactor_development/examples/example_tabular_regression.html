@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tabular Classification &#8212; AutoPyTorch 0.0.3 documentation</title>
+    <title>Tabular Regression &#8212; AutoPyTorch 0.0.3 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
@@ -105,7 +105,7 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Tabular Classification</a></li>
+<li><a class="reference internal" href="#">Tabular Regression</a></li>
 </ul>
 
         </div>
@@ -114,19 +114,17 @@
       
   <div class="sphx-glr-download-link-note admonition note">
 <p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-example-tabular-classification-py"><span class="std std-ref">here</span></a>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-example-tabular-regression-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="tabular-classification">
-<span id="sphx-glr-examples-example-tabular-classification-py"></span><h1>Tabular Classification<a class="headerlink" href="#tabular-classification" title="Permalink to this headline">¶</a></h1>
+<div class="sphx-glr-example-title section" id="tabular-regression">
+<span id="sphx-glr-examples-example-tabular-regression-py"></span><h1>Tabular Regression<a class="headerlink" href="#tabular-regression" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fd25a7cde50&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fd258d6b850&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
   lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
   lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
@@ -151,13 +149,10 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:weight_decay, Value: 0.0
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015573501586914062, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016045570373535156, budget=0), TrajEntry(train_perf=0.00022481081457881302, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
   lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
   lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
@@ -182,10 +177,9 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:weight_decay, Value: 0.0
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.7913620471954346, wallclock_time=5.133898019790649, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8728323699421965}
+, ta_runs=1, ta_time_used=6.372622489929199, wallclock_time=9.338410377502441, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.9998769993075737}
 </pre></div>
 </div>
 <div class="line-block">
@@ -193,7 +187,12 @@ with AutoPyTorch</p>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
+<span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_regression</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_feature_validator</span> <span class="kn">import</span> <span class="n">TabularFeatureValidator</span>
 
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;JOBLIB_TEMP_FOLDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
@@ -203,10 +202,10 @@ with AutoPyTorch</p>
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">sklearn.datasets</span>
-<span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">model_selection</span><span class="p">,</span> <span class="n">preprocessing</span>
 
-<span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_regression</span> <span class="kn">import</span> <span class="n">TabularRegressionTask</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.tabular_dataset</span> <span class="kn">import</span> <span class="n">TabularDataset</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
 
 
@@ -236,49 +235,76 @@ with AutoPyTorch</p>
     <span class="c1">############################################################################</span>
     <span class="c1"># Data Loading</span>
     <span class="c1"># ============</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+
+    <span class="c1"># Get the training data for tabular regression</span>
+    <span class="c1"># X, y = datasets.fetch_openml(name=&quot;cholesterol&quot;, return_X_y=True)</span>
+
+    <span class="c1"># Use dummy data for now since there are problems with categorical columns</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_regression</span><span class="p">(</span>
+        <span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+        <span class="n">n_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">n_informative</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">n_targets</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
         <span class="n">X</span><span class="p">,</span>
         <span class="n">y</span><span class="p">,</span>
         <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="c1"># Scale the regression targets to have zero mean and unit variance.</span>
+    <span class="c1"># This is important for Neural Networks since predicting large target values would require very large weights.</span>
+    <span class="c1"># One can later rescale the network predictions like this: y_pred = y_pred_scaled * y_train_std + y_train_mean</span>
+    <span class="n">y_train_mean</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">y_train_std</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+    <span class="n">y_train_scaled</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_train</span> <span class="o">-</span> <span class="n">y_train_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">y_train_std</span>
+    <span class="n">y_test_scaled</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_test</span> <span class="o">-</span> <span class="n">y_train_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">y_train_std</span>
+
     <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier</span>
+    <span class="c1"># Build and fit a regressor</span>
     <span class="c1"># ==========================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularRegressionTask</span><span class="p">(</span>
         <span class="n">delete_tmp_folder_after_terminate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">()</span>
     <span class="p">)</span>
     <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
         <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train_scaled</span><span class="p">,</span>
         <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test_scaled</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;r2&#39;</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">50</span>
+        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">traditional_per_total_budget</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
     <span class="c1"># Print the final ensemble performance</span>
     <span class="c1"># ====================================</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">run_history</span><span class="p">,</span> <span class="n">api</span><span class="o">.</span><span class="n">trajectory</span><span class="p">)</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+    <span class="n">y_pred_scaled</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+    <span class="c1"># Rescale the Neural Network predictions into the original target range</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">y_pred_scaled</span> <span class="o">*</span> <span class="n">y_train_std</span> <span class="o">+</span> <span class="n">y_train_mean</span>
     <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  58.645 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-classification-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  27.763 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-regression-py">
 <div class="binder-badge docutils container">
-<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
 </div>
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/08a8d852a0652c3f1a4a72cc129ab783/example_tabular_classification.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_tabular_classification.py</span></code></a></p>
+<p><a class="reference download internal" download="" href="../_downloads/0baaec1666f007b22da0886cb1b9e240/example_tabular_regression.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_tabular_regression.py</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/c62547d844fd82c936bc377a1da9a504/example_tabular_classification.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_tabular_classification.ipynb</span></code></a></p>
+<p><a class="reference download internal" download="" href="../_downloads/306036486863b5329c4111d8adbaac63/example_tabular_regression.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_tabular_regression.ipynb</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
@@ -297,7 +323,7 @@ with AutoPyTorch</p>
         <br/>
         
 <div id="sourcelink">
-  <a href="../_sources/examples/example_tabular_classification.rst.txt"
+  <a href="../_sources/examples/example_tabular_regression.rst.txt"
      rel="nofollow">Source</a>
 </div>
       
