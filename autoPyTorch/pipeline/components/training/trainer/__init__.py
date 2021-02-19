@@ -14,7 +14,7 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -28,6 +28,7 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.training.losses import get_loss
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
+from autoPyTorch.pipeline.components.training.trainer.utils import update_model_state_dict_from_swa
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
     BudgetTracker,
@@ -275,6 +276,10 @@ class TrainerChoice(autoPyTorchChoice):
             y=y,
             **kwargs
         )
+        # Add snapshots to base network to enable
+        # predicting with snapshot ensemble
+        if self.choice.use_se:
+            X['network_snapshots'].extend(self.choice.model_snapshots)
 
         return cast(autoPyTorchComponent, self.choice)
 
@@ -426,6 +431,14 @@ class TrainerChoice(autoPyTorchChoice):
 
         if self.run_summary.is_empty():
             raise RuntimeError("Budget exhausted without finishing an epoch.")
+        if self.choice.use_swa:
+            # update batch norm statistics
+            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model)
+            # change model
+            update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
+            if self.choice.use_se:
+                for model in self.choice.model_snapshots:
+                    swa_utils.update_bn(X['train_data_loader'], model)
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):

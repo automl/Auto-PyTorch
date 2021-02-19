@@ -68,6 +68,7 @@ class StepLR(BaseLRComponent):
         return {
             'shortname': 'StepLR',
             'name': 'StepLR',
+            'cyclic': False
         }
 
     @staticmethod
