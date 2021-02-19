@@ -15,7 +15,7 @@ import numpy as np
 import pynisher
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -398,6 +398,11 @@ class TrainerChoice(autoPyTorchChoice):
             epoch += 1
 
             torch.cuda.empty_cache()
+
+        if self.choice.use_swa:
+            # change model
+            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model)
+            self.choice.model = self.choice.swa_model
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):

@@ -1,5 +1,13 @@
 import typing
 
+<<<<<<< HEAD
+=======
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import (
+    UniformFloatHyperparameter,
+)
+
+>>>>>>> Add cyclic property to lr scheduler and use_swa to trainer
 import numpy as np
 
 import torch

@@ -26,7 +26,8 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
-        X.update({'lr_scheduler': self.scheduler})
+        X.update({'lr_scheduler': self.scheduler,
+                  'is_cyclic_scheduler': self.get_properties()['cyclic']})
         return X
 
     def get_scheduler(self) -> _LRScheduler:

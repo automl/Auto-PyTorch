@@ -83,6 +83,7 @@ class CyclicLR(BaseLRComponent):
         return {
             'shortname': 'CyclicLR',
             'name': 'CyclicLR',
+            'cyclic': True
         }
 
     @staticmethod
