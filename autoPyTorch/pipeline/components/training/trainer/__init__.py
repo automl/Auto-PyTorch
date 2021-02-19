@@ -83,6 +83,68 @@ class TrainerChoice(autoPyTorchChoice):
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
 
+    def get_available_components(
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> Dict[str, autoPyTorchComponent]:
+        """
+        Wrapper over get components to incorporate include/exclude
+        user specification
+
+        Args:
+            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
+                list, and will exclusively use this components.
+            exclude: Optional[Dict[str, Any]]: which components to skip
+
+        Results:
+            Dict[str, autoPyTorchComponent]: A dictionary with valid components for this
+                choice object
+
+        """
+        if dataset_properties is None:
+            dataset_properties = {}
+
+        if include is not None and exclude is not None:
+            raise ValueError(
+                "The argument include and exclude cannot be used together.")
+
+        available_comp = self.get_components()
+
+        if include is not None:
+            for incl in include:
+                if incl not in available_comp:
+                    raise ValueError("Trying to include unknown component: "
+                                     "%s" % incl)
+
+        components_dict = collections.OrderedDict()
+        for name in available_comp:
+            if include is not None and name not in include:
+                continue
+            elif exclude is not None and name in exclude:
+                continue
+
+            # Allow training schemes exclusive for some task types
+            entry = available_comp[name]
+            task_type = dataset_properties['task_type']
+            properties = entry.get_properties()
+            if 'tabular' in task_type and not properties['handles_tabular']:
+                continue
+            elif 'image' in task_type and not properties['handles_image']:
+                continue
+            elif 'time_series' in task_type and not properties['handles_time_series']:
+                continue
+
+            if 'issparse' in dataset_properties:
+                if dataset_properties['issparse'] and \
+                        not available_comp[name].get_properties(dataset_properties)['handles_sparse']:
+                    continue
+            components_dict[name] = available_comp[name]
+
+        return components_dict
+
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available trainer components
 
