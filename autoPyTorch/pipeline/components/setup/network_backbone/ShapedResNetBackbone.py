@@ -63,8 +63,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         backbone = torch.nn.Sequential(*layers)
         self.backbone = backbone
         return backbone
@@ -82,6 +82,7 @@ class ShapedResNetBackbone(ResNetBackbone):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,  # type: ignore[override]
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_batch_norm: Tuple[Tuple, bool] = ((True, False), True),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         max_units: Tuple[Tuple, int] = ((10, 1024), 200),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
