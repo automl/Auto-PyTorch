@@ -1,5 +1,7 @@
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+import os
+import uuid
 
 import numpy as np
 
@@ -13,18 +15,18 @@ import torchvision
 
 from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, STRING_TO_OUTPUT_TYPES
 from autoPyTorch.datasets.resampling_strategy import (
-    CROSS_VAL_FN,
+    CrossValFunc,
+    CrossValFuncs,
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
-    HOLDOUT_FN,
-    HoldoutValTypes,
-    get_cross_validators,
-    get_holdout_validators,
-    is_stratified,
+    HoldOutFunc,
+    HoldOutFuncs,
+    HoldoutValTypes
 )
-from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
+from autoPyTorch.utils.common import FitRequirement
 
-BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+
+BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 
 
 def check_valid_data(data: Any) -> None:
@@ -33,7 +35,8 @@ def check_valid_data(data: Any) -> None:
             'The specified Data for Dataset must have both __getitem__ and __len__ attribute.')
 
 
-def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDatasetType] = None) -> None:
+def type_check(train_tensors: BaseDatasetInputType,
+               val_tensors: Optional[BaseDatasetInputType] = None) -> None:
     """To avoid unexpected behavior, we use loops over indices."""
     for i in range(len(train_tensors)):
         check_valid_data(train_tensors[i])
@@ -71,10 +74,10 @@ class TransformSubset(Subset):
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
-        train_tensors: BaseDatasetType,
+        train_tensors: BaseDatasetInputType,
         dataset_name: Optional[str] = None,
-        val_tensors: Optional[BaseDatasetType] = None,
-        test_tensors: Optional[BaseDatasetType] = None,
+        val_tensors: Optional[BaseDatasetInputType] = None,
+        test_tensors: Optional[BaseDatasetInputType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
@@ -106,21 +109,23 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = dataset_name if dataset_name is not None \
-            else hash_array_or_matrix(train_tensors[0])
+        self.dataset_name = dataset_name
+
+        if self.dataset_name is not None:
+            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
-        self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
-        self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
+        self.cross_validators: Dict[str, CrossValFunc] = {}
+        self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.rng = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
-        self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
+        self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:] 
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
@@ -134,8 +139,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.is_small_preprocess = True
 
         # Make sure cross validation splits are created once
-        self.cross_validators = get_cross_validators(*CrossValTypes)
-        self.holdout_validators = get_holdout_validators(*HoldoutValTypes)
+        self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
         self.splits = self.get_splits_from_resampling_strategy()
 
         # We also need to be able to transform the data, be it for pre-processing
@@ -263,7 +268,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not isinstance(cross_val_type, CrossValTypes):
             raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
         kwargs = {}
-        if is_stratified(cross_val_type):
+        if cross_val_type.is_stratified():
             # we need additional information about the data for stratification
             kwargs["stratify"] = self.train_tensors[-1]
         splits = self.cross_validators[cross_val_type.name](
@@ -298,7 +303,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
         kwargs = {}
-        if is_stratified(holdout_val_type):
+        if holdout_val_type.is_stratified():
             # we need additional information about the data for stratification
             kwargs["stratify"] = self.train_tensors[-1]
         train, val = self.holdout_validators[holdout_val_type.name](val_share, self._get_indices(), **kwargs)
@@ -321,7 +326,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return (TransformSubset(self, self.splits[split_id][0], train=True),
                 TransformSubset(self, self.splits[split_id][1], train=False))
 
-    def replace_data(self, X_train: BaseDatasetType, X_test: Optional[BaseDatasetType]) -> 'BaseDataset':
+    def replace_data(self, X_train: BaseDatasetInputType,
+                     X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':
         """
         To speed up the training of small dataset, early pre-processing of the data
         can be made on the fly by the pipeline.
