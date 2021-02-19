@@ -24,21 +24,22 @@ class CutOut:
             cutout_prob (float): The probability of occurrence of this regulatization
 
         """
-        super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
         self.patch_ratio = patch_ratio
         self.cutout_prob = cutout_prob
+        self.random_state = random_state
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
                               ) -> typing.Callable:
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        patch_ratio: typing.Tuple[typing.Tuple[float, float], float] = ((0.0, 1.0), 0.2),
-                                        cutout_prob: typing.Tuple[typing.Tuple[float, float], float] = ((0.0, 1.0), 0.2),
-                                        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: typing.Optional[typing.Dict] = None,
+        patch_ratio: typing.Tuple[typing.Tuple[float, float], float] = ((0.0, 1.0), 0.2),
+        cutout_prob: typing.Tuple[typing.Tuple[float, float], float] = ((0.0, 1.0), 0.2),
+        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True)
+    ) -> ConfigurationSpace:
         patch_ratio = UniformFloatHyperparameter(
             "patch_ratio", patch_ratio[0][0], patch_ratio[0][1], default_value=patch_ratio[1])
         cutout_prob = UniformFloatHyperparameter(
