@@ -50,11 +50,14 @@ class StandardTrainer(BaseTrainerComponent):
         return lambda criterion, pred: criterion(pred, y_a)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
+                       ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'StandardTrainer',
-            'name': 'Standard Trainer',
+            'name': 'StandardTrainer',
+            'handles_tabular': True,
+            'handles_image': True,
+            'handles_time_series': True,
         }
 
     @staticmethod
