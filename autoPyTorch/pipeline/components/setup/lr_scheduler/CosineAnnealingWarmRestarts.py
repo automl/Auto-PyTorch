@@ -64,6 +64,7 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         return {
             'shortname': 'CosineAnnealingWarmRestarts',
             'name': 'Cosine Annealing WarmRestarts',
+            'cyclic': True
         }
 
     @staticmethod

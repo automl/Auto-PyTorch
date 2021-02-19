@@ -162,7 +162,7 @@ class ResNetBackbone(NetworkBackboneComponent):
         # better generalization
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameters([use_dropout])
-        
+
         use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
         mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
         shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)

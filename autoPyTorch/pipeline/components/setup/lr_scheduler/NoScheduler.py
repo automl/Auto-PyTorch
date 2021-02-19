@@ -44,6 +44,7 @@ class NoScheduler(BaseLRComponent):
         return {
             'shortname': 'NoScheduler',
             'name': 'No LR Scheduling',
+            'cyclic': False
         }
 
     @staticmethod

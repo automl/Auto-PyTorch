@@ -59,7 +59,8 @@ class ExponentialLR(BaseLRComponent):
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
             'shortname': 'ExponentialLR',
-            'name': 'Exponential Learning Rate Scheduler',
+            'name': 'ExponentialLR',
+            'cyclic': False
         }
 
     @staticmethod
