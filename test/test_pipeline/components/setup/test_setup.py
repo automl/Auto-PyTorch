@@ -1,8 +1,9 @@
 import copy
-import unittest.mock
 from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
+
+import pytest
 
 from sklearn.base import clone
 
@@ -117,7 +118,7 @@ class DummyHead(NetworkHeadComponent):
         return ConfigurationSpace()
 
 
-class SchedulerTest(unittest.TestCase):
+class TestScheduler:
     def test_every_scheduler_is_valid(self):
         """
         Makes sure that every scheduler is a valid estimator.
@@ -129,7 +130,7 @@ class SchedulerTest(unittest.TestCase):
         scheduler_choice = SchedulerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        self.assertEqual(len(scheduler_choice.get_components().keys()), 7)
+        assert len(scheduler_choice.get_components().keys()) == 7
 
         # For every scheduler in the components, make sure
         # that it complies with the scikit learn estimator.
@@ -143,7 +144,7 @@ class SchedulerTest(unittest.TestCase):
 
             # Make sure all keys are copied properly
             for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+                assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
             klass = estimator.__class__
@@ -156,7 +157,7 @@ class SchedulerTest(unittest.TestCase):
             for name in new_object_params:
                 param1 = new_object_params[name]
                 param2 = params_set[name]
-                self.assertEqual(param1, param2)
+                assert param1 == param2
 
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the scheduler
@@ -165,10 +166,8 @@ class SchedulerTest(unittest.TestCase):
         cs = scheduler_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the serach space
-        self.assertListEqual(
-            sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(scheduler_choice.get_components().keys()))
-        )
+        assert sorted(cs.get_hyperparameter('__choice__').choices) == \
+               sorted(list(scheduler_choice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -179,8 +178,8 @@ class SchedulerTest(unittest.TestCase):
             config_dict = copy.deepcopy(config.get_dictionary())
             scheduler_choice.set_hyperparameters(config)
 
-            self.assertEqual(scheduler_choice.choice.__class__,
-                             scheduler_choice.get_components()[config_dict['__choice__']])
+            assert scheduler_choice.choice.__class__ == \
+                   scheduler_choice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -188,22 +187,22 @@ class SchedulerTest(unittest.TestCase):
                 # Remove the selected_choice string from the parameter
                 # so we can query in the object for it
                 key = key.replace(selected_choice + ':', '')
-                self.assertIn(key, vars(scheduler_choice.choice))
-                self.assertEqual(value, scheduler_choice.choice.__dict__[key])
+                assert key in vars(scheduler_choice.choice)
+                assert value == scheduler_choice.choice.__dict__[key]
 
     def test_scheduler_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        self.assertEqual(len(lr_components._addons.components), 0)
+        assert len(lr_components._addons.components) == 0
 
         # Then make sure the scheduler can be added and query'ed
         lr_components.add_scheduler(DummyLR)
-        self.assertEqual(len(lr_components._addons.components), 1)
+        assert len(lr_components._addons.components) == 1
         cs = SchedulerChoice(dataset_properties={}).get_hyperparameter_search_space()
-        self.assertIn('DummyLR', str(cs))
+        assert 'DummyLR' in str(cs)
 
 
-class OptimizerTest(unittest.TestCase):
+class OptimizerTest:
     def test_every_optimizer_is_valid(self):
         """
         Makes sure that every optimizer is a valid estimator.
@@ -215,7 +214,7 @@ class OptimizerTest(unittest.TestCase):
         optimizer_choice = OptimizerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        self.assertEqual(len(optimizer_choice.get_components().keys()), 4)
+        assert len(optimizer_choice.get_components().keys()) == 4
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
@@ -229,7 +228,7 @@ class OptimizerTest(unittest.TestCase):
 
             # Make sure all keys are copied properly
             for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+                assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
             klass = estimator.__class__
@@ -242,7 +241,7 @@ class OptimizerTest(unittest.TestCase):
             for name in new_object_params:
                 param1 = new_object_params[name]
                 param2 = params_set[name]
-                self.assertEqual(param1, param2)
+                assert param1 == param2
 
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the optimizer
@@ -251,10 +250,8 @@ class OptimizerTest(unittest.TestCase):
         cs = optimizer_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the serach space
-        self.assertListEqual(
-            sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(optimizer_choice.get_components().keys()))
-        )
+        assert sorted(cs.get_hyperparameter('__choice__').choices) == \
+               sorted(list(optimizer_choice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -265,8 +262,7 @@ class OptimizerTest(unittest.TestCase):
             config_dict = copy.deepcopy(config.get_dictionary())
             optimizer_choice.set_hyperparameters(config)
 
-            self.assertEqual(optimizer_choice.choice.__class__,
-                             optimizer_choice.get_components()[config_dict['__choice__']])
+            assert optimizer_choice.choice.__class__ == optimizer_choice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -274,61 +270,60 @@ class OptimizerTest(unittest.TestCase):
                 # Remove the selected_choice string from the parameter
                 # so we can query in the object for it
                 key = key.replace(selected_choice + ':', '')
-                self.assertIn(key, vars(optimizer_choice.choice))
-                self.assertEqual(value, optimizer_choice.choice.__dict__[key])
+                assert key == vars(optimizer_choice.choice)
+                assert value == optimizer_choice.choice.__dict__[key]
 
     def test_optimizer_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        self.assertEqual(len(optimizer_components._addons.components), 0)
+        assert len(optimizer_components._addons.components) == 0
 
         # Then make sure the optimizer can be added and query'ed
         optimizer_components.add_optimizer(DummyOptimizer)
-        self.assertEqual(len(optimizer_components._addons.components), 1)
+        assert len(optimizer_components._addons.components) == 1
         cs = OptimizerChoice(dataset_properties={}).get_hyperparameter_search_space()
-        self.assertIn('DummyOptimizer', str(cs))
+        assert 'DummyOptimizer' in str(cs)
 
 
-class NetworkBackboneTest(unittest.TestCase):
+class TestNetworkBackbone:
     def test_all_backbones_available(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        self.assertEqual(len(backbone_choice.get_components().keys()), 8)
+        assert len(backbone_choice.get_components().keys()) == 8
 
-    def test_dummy_forward_backward_pass(self):
+    @pytest.mark.parametrize('task_type_input_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64)),
+                                                       (constants.IMAGE_REGRESSION, (3, 64, 64)),
+                                                       (constants.TIMESERIES_CLASSIFICATION, (32, 6)),
+                                                       (constants.TIMESERIES_REGRESSION, (32, 6)),
+                                                       (constants.TABULAR_CLASSIFICATION, (100,)),
+                                                       (constants.TABULAR_REGRESSION, (100,))])
+    def test_dummy_forward_backward_pass(self, task_type_input_shape):
         network_backbone_choice = NetworkBackboneChoice(dataset_properties={})
-
-        task_types = {constants.IMAGE_CLASSIFICATION: (3, 64, 64),
-                      constants.IMAGE_REGRESSION: (3, 64, 64),
-                      constants.TIMESERIES_CLASSIFICATION: (32, 6),
-                      constants.TIMESERIES_REGRESSION: (32, 6),
-                      constants.TABULAR_CLASSIFICATION: (100,),
-                      constants.TABULAR_REGRESSION: (100,)}
 
         device = torch.device("cpu")
 
-        for task_type, input_shape in task_types.items():
-            dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
+        task_type, input_shape = task_type_input_shape
+        dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
 
-            cs = network_backbone_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
+        cs = network_backbone_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
 
-            # test 10 random configurations
-            for i in range(10):
-                config = cs.sample_configuration()
-                network_backbone_choice.set_hyperparameters(config)
-                backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
-                self.assertNotEqual(backbone, None)
-                backbone = backbone.to(device)
-                dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
-                output = backbone(dummy_input)
-                self.assertNotEqual(output.shape[1:], output)
-                loss = output.sum()
-                loss.backward()
+        # test 10 random configurations
+        for i in range(10):
+            config = cs.sample_configuration()
+            network_backbone_choice.set_hyperparameters(config)
+            backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
+            assert backbone is not None
+            backbone = backbone.to(device)
+            dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
+            output = backbone(dummy_input)
+            assert output.shape[1:] != output
+            loss = output.sum()
+            loss.backward()
 
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        self.assertEqual(len(backbone_choice.get_components().keys()), 8)
+        assert len(backbone_choice.get_components().keys()) == 8
 
         for name, backbone in backbone_choice.get_components().items():
             config = backbone.get_hyperparameter_search_space().sample_configuration()
@@ -338,7 +333,7 @@ class NetworkBackboneTest(unittest.TestCase):
 
             # Make sure all keys are copied properly
             for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+                assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
             klass = estimator.__class__
@@ -351,7 +346,7 @@ class NetworkBackboneTest(unittest.TestCase):
             for name in new_object_params:
                 param1 = new_object_params[name]
                 param2 = params_set[name]
-                self.assertEqual(param1, param2)
+                assert param1 == param2
 
     def test_get_set_config_space(self):
         """
@@ -371,12 +366,12 @@ class NetworkBackboneTest(unittest.TestCase):
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_backbone_choice.set_hyperparameters(config)
 
-                self.assertEqual(network_backbone_choice.choice.__class__,
-                                 network_backbone_choice.get_components()[config_dict['__choice__']])
+                assert network_backbone_choice.choice.__class__ == \
+                       network_backbone_choice.get_components()[config_dict['__choice__']]
 
                 # Then check the choice configuration
                 selected_choice = config_dict.pop('__choice__', None)
-                self.assertNotEqual(selected_choice, None)
+                assert selected_choice is not None
                 for key, value in config_dict.items():
                     # Remove the selected_choice string from the parameter
                     # so we can query in the object for it
@@ -384,63 +379,62 @@ class NetworkBackboneTest(unittest.TestCase):
                     # parameters are dynamic, so they exist in config
                     parameters = vars(network_backbone_choice.choice)
                     parameters.update(vars(network_backbone_choice.choice)['config'])
-                    self.assertIn(key, parameters)
-                    self.assertEqual(value, parameters[key])
+                    assert key in parameters
+                    assert value == parameters[key]
 
     def test_add_network_backbone(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        self.assertEqual(len(base_network_backbone_choice._addons.components), 0)
+        assert len(base_network_backbone_choice._addons.components) == 0
 
         # Then make sure the backbone can be added
         base_network_backbone_choice.add_backbone(DummyBackbone)
-        self.assertEqual(len(base_network_backbone_choice._addons.components), 1)
+        assert len(base_network_backbone_choice._addons.components) == 1
 
         cs = NetworkBackboneChoice(dataset_properties={}). \
             get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
-        self.assertIn("DummyBackbone", str(cs))
+        assert "DummyBackbone" in str(cs)
 
         # clear addons
         base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
 
 
-class NetworkHeadTest(unittest.TestCase):
+class TestNetworkHead:
     def test_all_heads_available(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
 
-        self.assertEqual(len(network_head_choice.get_components().keys()), 2)
+        assert len(network_head_choice.get_components().keys()) == 2
 
-    def test_dummy_forward_backward_pass(self):
+    @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
+                                                              (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),
+                                                              (constants.TIMESERIES_CLASSIFICATION, (32, 6), (5,)),
+                                                              (constants.TIMESERIES_REGRESSION, (32, 6), (1,)),
+                                                              (constants.TABULAR_CLASSIFICATION, (100,), (5,)),
+                                                              (constants.TABULAR_REGRESSION, (100,), (1,))])
+    def test_dummy_forward_backward_pass(self, task_type_input_output_shape):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
 
-        task_types = {constants.IMAGE_CLASSIFICATION: ((3, 64, 64), (5,)),
-                      constants.IMAGE_REGRESSION: ((3, 64, 64), (1,)),
-                      constants.TIMESERIES_CLASSIFICATION: ((32, 6), (5,)),
-                      constants.TIMESERIES_REGRESSION: ((32, 6), (1,)),
-                      constants.TABULAR_CLASSIFICATION: ((100,), (5,)),
-                      constants.TABULAR_REGRESSION: ((100,), (1,))}
-
+        task_type, input_shape, output_shape = task_type_input_output_shape
         device = torch.device("cpu")
 
-        for task_type, (input_shape, output_shape) in task_types.items():
-            dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
-            if task_type in constants.CLASSIFICATION_TASKS:
-                dataset_properties["num_classes"] = output_shape[0]
+        dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
+        if task_type in constants.CLASSIFICATION_TASKS:
+            dataset_properties["num_classes"] = output_shape[0]
 
-            cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
-            # test 10 random configurations
-            for i in range(10):
-                config = cs.sample_configuration()
-                network_head_choice.set_hyperparameters(config)
-                head = network_head_choice.choice.build_head(input_shape=input_shape,
-                                                             output_shape=output_shape)
-                self.assertNotEqual(head, None)
-                head = head.to(device)
-                dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
-                output = head(dummy_input)
-                self.assertEqual(output.shape[1:], output_shape)
-                loss = output.sum()
-                loss.backward()
+        cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
+        # test 10 random configurations
+        for i in range(10):
+            config = cs.sample_configuration()
+            network_head_choice.set_hyperparameters(config)
+            head = network_head_choice.choice.build_head(input_shape=input_shape,
+                                                         output_shape=output_shape)
+            assert head is not None
+            head = head.to(device)
+            dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
+            output = head(dummy_input)
+            assert output.shape[1:] == output_shape
+            loss = output.sum()
+            loss.backward()
 
     def test_every_head_is_valid(self):
         """
@@ -464,7 +458,7 @@ class NetworkHeadTest(unittest.TestCase):
 
             # Make sure all keys are copied properly
             for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+                assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
             klass = estimator.__class__
@@ -477,7 +471,7 @@ class NetworkHeadTest(unittest.TestCase):
             for name in new_object_params:
                 param1 = new_object_params[name]
                 param2 = params_set[name]
-                self.assertEqual(param1, param2)
+                assert param1 == param2
 
     def test_get_set_config_space(self):
         """
@@ -497,12 +491,12 @@ class NetworkHeadTest(unittest.TestCase):
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_head_choice.set_hyperparameters(config)
 
-                self.assertEqual(network_head_choice.choice.__class__,
-                                 network_head_choice.get_components()[config_dict['__choice__']])
+                assert network_head_choice.choice.__class__ == \
+                       network_head_choice.get_components()[config_dict['__choice__']]
 
                 # Then check the choice configuration
                 selected_choice = config_dict.pop('__choice__', None)
-                self.assertNotEqual(selected_choice, None)
+                assert selected_choice is not None
                 for key, value in config_dict.items():
                     # Remove the selected_choice string from the parameter
                     # so we can query in the object for it
@@ -510,27 +504,27 @@ class NetworkHeadTest(unittest.TestCase):
                     # parameters are dynamic, so they exist in config
                     parameters = vars(network_head_choice.choice)
                     parameters.update(vars(network_head_choice.choice)['config'])
-                    self.assertIn(key, parameters)
-                    self.assertEqual(value, parameters[key])
+                    assert key in parameters
+                    assert value == parameters[key]
 
     def test_add_network_head(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        self.assertEqual(len(base_network_head_choice._addons.components), 0)
+        assert len(base_network_head_choice._addons.components) == 0
 
         # Then make sure the head can be added
         base_network_head_choice.add_head(DummyHead)
-        self.assertEqual(len(base_network_head_choice._addons.components), 1)
+        assert len(base_network_head_choice._addons.components) == 1
 
         cs = NetworkHeadChoice(dataset_properties={}). \
             get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
-        self.assertIn("DummyHead", str(cs))
+        assert "DummyHead" in str(cs)
 
         # clear addons
         base_network_head_choice._addons = ThirdPartyComponents(NetworkHeadComponent)
 
 
-class NetworkInitializerTest(unittest.TestCase):
+class TestNetworkInitializer:
     def test_every_network_initializer_is_valid(self):
         """
         Makes sure that every network_initializer is a valid estimator.
@@ -542,7 +536,7 @@ class NetworkInitializerTest(unittest.TestCase):
         network_initializer_choice = NetworkInitializerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        self.assertEqual(len(network_initializer_choice.get_components().keys()), 5)
+        assert len(network_initializer_choice.get_components().keys()) == 5
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
@@ -556,7 +550,7 @@ class NetworkInitializerTest(unittest.TestCase):
 
             # Make sure all keys are copied properly
             for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+                assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
             klass = estimator.__class__
@@ -569,7 +563,7 @@ class NetworkInitializerTest(unittest.TestCase):
             for name in new_object_params:
                 param1 = new_object_params[name]
                 param2 = params_set[name]
-                self.assertEqual(param1, param2)
+                assert param1 == param2
 
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the network_initializer
@@ -578,10 +572,8 @@ class NetworkInitializerTest(unittest.TestCase):
         cs = network_initializer_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the serach space
-        self.assertListEqual(
-            sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(network_initializer_choice.get_components().keys()))
-        )
+        assert sorted(cs.get_hyperparameter('__choice__').choices) == \
+               sorted(list(network_initializer_choice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -592,8 +584,8 @@ class NetworkInitializerTest(unittest.TestCase):
             config_dict = copy.deepcopy(config.get_dictionary())
             network_initializer_choice.set_hyperparameters(config)
 
-            self.assertEqual(network_initializer_choice.choice.__class__,
-                             network_initializer_choice.get_components()[config_dict['__choice__']])
+            assert network_initializer_choice.choice.__class__ == \
+                   network_initializer_choice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -601,20 +593,16 @@ class NetworkInitializerTest(unittest.TestCase):
                 # Remove the selected_choice string from the parameter
                 # so we can query in the object for it
                 key = key.replace(selected_choice + ':', '')
-                self.assertIn(key, vars(network_initializer_choice.choice))
-                self.assertEqual(value, network_initializer_choice.choice.__dict__[key])
+                assert key in vars(network_initializer_choice.choice)
+                assert value == network_initializer_choice.choice.__dict__[key]
 
     def test_network_initializer_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        self.assertEqual(len(network_initializer_components._addons.components), 0)
+        assert len(network_initializer_components._addons.components) == 0
 
         # Then make sure the network_initializer can be added and query'ed
         network_initializer_components.add_network_initializer(DummyNetworkInitializer)
-        self.assertEqual(len(network_initializer_components._addons.components), 1)
+        assert len(network_initializer_components._addons.components) == 1
         cs = NetworkInitializerChoice(dataset_properties={}).get_hyperparameter_search_space()
-        self.assertIn('DummyNetworkInitializer', str(cs))
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert 'DummyNetworkInitializer' in str(cs)
