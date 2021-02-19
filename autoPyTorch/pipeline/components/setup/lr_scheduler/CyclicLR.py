@@ -85,7 +85,8 @@ class CyclicLR(BaseLRComponent):
                        ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'CyclicLR',
-            'name': 'Cyclic Learning Rate Scheduler',
+            'name': 'CyclicLR',
+            'cyclic': True
         }
 
     @staticmethod
