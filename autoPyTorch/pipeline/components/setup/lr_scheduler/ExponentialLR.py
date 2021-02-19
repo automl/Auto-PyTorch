@@ -59,6 +59,7 @@ class ExponentialLR(BaseLRComponent):
         return {
             'shortname': 'ExponentialLR',
             'name': 'ExponentialLR',
+            'cyclic': False
         }
 
     @staticmethod
