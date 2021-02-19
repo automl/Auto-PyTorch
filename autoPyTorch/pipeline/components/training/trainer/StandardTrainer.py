@@ -1,9 +1,14 @@
 import typing
 
 from ConfigSpace.configuration_space import ConfigurationSpace
+<<<<<<< HEAD
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
 )
+=======
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
+
+>>>>>>> swa working, se in progress
 import numpy as np
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
@@ -14,6 +19,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class StandardTrainer(BaseTrainerComponent):
     def __init__(self, weighted_loss: bool = False,
                  use_swa: bool = False,
+                 use_se: bool = False,
                  random_state: typing.Optional[np.random.RandomState] = None):
         """
         This class handles the training of a network for a single given epoch.
@@ -22,7 +28,10 @@ class StandardTrainer(BaseTrainerComponent):
             weighted_loss (bool): whether to use weighted loss
 
         """
-        super().__init__(random_state=random_state, weighted_loss=weighted_loss, use_swa=use_swa)
+        super().__init__(random_state=random_state,
+                         weighted_loss=weighted_loss,
+                         use_swa=use_swa,
+                         use_se=use_se)
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
@@ -63,7 +72,10 @@ class StandardTrainer(BaseTrainerComponent):
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
                                                                              value_range=(True, False),
                                                                              default_value=True),
-        use_swa: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
+        use_swa: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_swa",
+                                                                       value_range=(True, False),
+                                                                       default_value=True),
+        use_se: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_se",
                                                                        value_range=(True, False),
                                                                        default_value=True),
     ) -> ConfigurationSpace:
