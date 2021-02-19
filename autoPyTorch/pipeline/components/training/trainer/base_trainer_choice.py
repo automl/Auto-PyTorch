@@ -387,9 +387,13 @@ class TrainerChoice(autoPyTorchChoice):
                 torch.cuda.empty_cache()
 
         if self.choice.use_swa:
-            # change model
+            # update batch norm statistics
             swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model)
-            self.choice.model = self.choice.swa_model
+            # change model
+            X['network'].load_state_dict(self.choice.swa_model.state_dict())
+            if self.choice.use_se:
+                for model in self.choice.model_snapshots:
+                    swa_utils.update_bn(X['train_data_loader'], model)
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):

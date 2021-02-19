@@ -1,5 +1,14 @@
+from copy import deepcopy
+from queue import LifoQueue
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from ConfigSpace.conditions import EqualsCondition
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    Constant
+)
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
@@ -167,7 +176,9 @@ class RunSummary(object):
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def __init__(self, weighted_loss: bool = False,
-                 use_swa: bool = True,
+                 use_swa: bool = False,
+                 use_se: bool = False,
+                 se_lastk: int = 3,
                  random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
         if random_state is None:
             # A trainer components need a random state for
@@ -178,6 +189,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         super().__init__(random_state=self.random_state)
         self.weighted_loss = weighted_loss
         self.use_swa = use_swa
+        self.use_se = use_se
+        self.se_lastk = se_lastk
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
         ])
@@ -212,11 +225,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # setup the model
         self.model = model.to(device)
 
-        # in case we are using swa, maintain an averaged model
-        self._budget_threshold_swa = 0
+        # in case we are using swa, maintain an averaged model,
         if self.use_swa:
-            self._budget_threshold_swa = int(0.75*budget_tracker.max_epochs)
             self.swa_model = swa_utils.AveragedModel(self.model)
+
+        # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
+        self._budget_threshold: int = int(0.75 * budget_tracker.max_epochs)
+
+        # in case we are using se, initialise list to store model snapshots
+        if self.use_se:
+            self.model_snapshots: List[torch.nn.Module] = list()
 
         # setup the optimizers
         self.optimizer = optimizer
@@ -252,10 +270,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
                 if self.use_swa:
                     self.swa_model.update_parameters(self.model)
+                if self.use_se:
+                    model_copy = deepcopy(self.swa_model) if self.use_swa else deepcopy(self.model)
+                    model_copy.cpu()
+                    self.model_snapshots.append(model_copy)
+                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         else:
-            if epoch > self._budget_threshold_swa:
+            if epoch > self._budget_threshold:
                 if self.use_swa:
                     self.swa_model.update_parameters(self.model)
+                if self.use_se:
+                    model_copy = deepcopy(self.swa_model) if self.use_swa else deepcopy(self.model)
+                    model_copy.cpu()
+                    self.model_snapshots.append(model_copy)
+                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         return False
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
@@ -450,13 +478,23 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_swa: Tuple[Tuple, bool] = ((True, False), True)
+                                        use_swa: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_se: Tuple[Tuple, bool] = ((True, False), True),
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
         use_swa = CategoricalHyperparameter("use_swa", choices=use_swa[0], default_value=use_swa[1])
+        use_se = CategoricalHyperparameter("use_se", choices=use_se[0], default_value=use_se[1])
+
+        # Note, this is not easy to be considered as a hyperparameter.
+        # When used with cyclic learning rates, it depends on the number
+        # of restarts.
+        se_lastk = Constant('se_lastk', 3)
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([use_swa])
+        cs.add_hyperparameters([use_swa, use_se, se_lastk])
+        cond = EqualsCondition(se_lastk, use_se, True)
+        cs.add_condition(cond)
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
                 cs.add_hyperparameters([weighted_loss])
