@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -24,6 +24,9 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             random_state: Optional[np.random.RandomState] = None
     ) -> None:
         super(NetworkComponent, self).__init__()
+
+        self.network = network
+        self.network_snapshots: List[torch.nn.Module] = []
         self.random_state = random_state
         self.device = None
         self.add_fit_requirements([
@@ -66,7 +69,8 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         """
         The transform function updates the network in the X dictionary.
         """
-        X.update({'network': self.network})
+        X.update({'network': self.network,
+                  'network_snapshots': self.network_snapshots})
         return X
 
     def get_network(self) -> nn.Module:
@@ -105,24 +109,33 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         """
         Performs batched prediction given a loader object
         """
-        assert self.network is not None
-        self.network.eval()
+        if len(self.network_snapshots) == 0:
+            assert self.network is not None
+            return self._predict(network=self.network, loader=loader).cpu().numpy()
+        else:
+            # if there are network snapshots,
+            # take average of predictions of all snapshots
+            Y_snapshot_preds = list()
 
+            for network in self.network_snapshots:
+                Y_snapshot_preds.append(self._predict(network, loader))
+            Y_snapshot_preds = torch.stack(Y_snapshot_preds)
+            return Y_snapshot_preds.mean(dim=0).cpu().numpy()
+
+    def _predict(self, network: torch.nn.Module, loader: torch.utils.data.DataLoader) -> torch.Tensor:
+        network.eval()
         # Batch prediction
         Y_batch_preds = list()
 
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
             X_batch = X_batch.float().to(self.device)
+            Y_batch_pred = network(X_batch).detach().cpu()
+            if self.final_activation is not None:
+                Y_batch_pred = self.final_activation(Y_batch_pred)
+            Y_batch_preds.append(Y_batch_pred)
 
-            with torch.no_grad():
-                Y_batch_pred = self.network(X_batch)
-                if self.final_activation is not None:
-                    Y_batch_pred = self.final_activation(Y_batch_pred)
-
-            Y_batch_preds.append(Y_batch_pred.cpu())
-
-        return torch.cat(Y_batch_preds, 0).cpu().numpy()
+        return torch.cat(Y_batch_preds, 0)
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
