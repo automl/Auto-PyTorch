@@ -20,6 +20,7 @@ class StandardTrainer(BaseTrainerComponent):
     def __init__(self, weighted_loss: bool = False,
                  use_swa: bool = False,
                  use_se: bool = False,
+                 se_lastk: int = 3,
                  random_state: typing.Optional[np.random.RandomState] = None):
         """
         This class handles the training of a network for a single given epoch.
@@ -31,7 +32,8 @@ class StandardTrainer(BaseTrainerComponent):
         super().__init__(random_state=random_state,
                          weighted_loss=weighted_loss,
                          use_swa=use_swa,
-                         use_se=use_se)
+                         use_se=use_se,
+                         se_lastk=se_lastk)
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
