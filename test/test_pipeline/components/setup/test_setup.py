@@ -34,6 +34,7 @@ from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice impor
     BaseOptimizerComponent,
     OptimizerChoice
 )
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class DummyLR(BaseLRComponent):
@@ -301,6 +302,25 @@ class TestNetworkBackbone:
         network_backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
         device = torch.device("cpu")
+        # shorten search space as it causes out of memory errors in github actions
+        updates = HyperparameterSearchSpaceUpdates()
+        updates.append(node_name='network_backbone',
+                       hyperparameter='ConvNetImageBackbone:num_layers',
+                       value_range=[1, 3],
+                       default_value=2)
+        updates.append(node_name='network_backbone',
+                       hyperparameter='ConvNetImageBackbone:num_init_filters',
+                       value_range=[8, 16],
+                       default_value=8)
+        updates.append(node_name='network_backbone',
+                       hyperparameter='DenseNetImageBackone:num_layers',
+                       value_range=[4, 8],
+                       default_value=6)
+        updates.append(node_name='network_backbone',
+                       hyperparameter='DenseNetImageBackone:num_blocks',
+                       value_range=[1, 2],
+                       default_value=1)
+        updates.apply([('network_backbone', network_backbone_choice)])
 
         task_type, input_shape = task_type_input_shape
         dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
