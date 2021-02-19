@@ -28,6 +28,7 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.training.losses import get_loss_instance
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
+from autoPyTorch.pipeline.components.training.trainer.utils import update_model_state_dict_from_swa
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
     BudgetTracker,
@@ -274,6 +275,10 @@ class TrainerChoice(autoPyTorchChoice):
             y=y,
             **kwargs
         )
+        # Add snapshots to base network to enable
+        # predicting with snapshot ensemble
+        if self.choice.use_se:
+            X['network_snapshots'].extend(self.choice.model_snapshots)
 
         if X['use_pynisher']:
             # Normally the X[network] is a pointer to the object, so at the
@@ -403,7 +408,7 @@ class TrainerChoice(autoPyTorchChoice):
             # update batch norm statistics
             swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model)
             # change model
-            X['network'].load_state_dict(self.choice.swa_model.state_dict())
+            update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_se:
                 for model in self.choice.model_snapshots:
                     swa_utils.update_bn(X['train_data_loader'], model)
