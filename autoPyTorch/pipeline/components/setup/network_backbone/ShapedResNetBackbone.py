@@ -64,8 +64,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         backbone = torch.nn.Sequential(*layers)
         self.backbone = backbone
         return backbone
@@ -102,6 +102,10 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                            value_range=(True, False),
                                                                            default_value=False,
                                                                            ),
+        use_batch_norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_batch_norm",
+                                                                              value_range=(True, False),
+                                                                              default_value=False,
+                                                                              ),
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200),
@@ -138,6 +142,8 @@ class ShapedResNetBackbone(ResNetBackbone):
         add_hyperparameter(cs, blocks_per_group, UniformIntegerHyperparameter)
 
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        # activation controlled batch normalization
+        add_hyperparameter(cs, use_batch_norm, CategoricalHyperparameter)
         add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
 
         use_shake_shake = get_hyperparameter(use_shake_shake, CategoricalHyperparameter)
