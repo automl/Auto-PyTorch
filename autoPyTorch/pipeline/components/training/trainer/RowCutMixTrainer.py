@@ -1,3 +1,4 @@
+import random
 import typing
 
 import numpy as np
@@ -8,7 +9,8 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTr
 from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
 
-class MixUpTrainer(MixUp, BaseTrainerComponent):
+class RowCutMixTrainer(MixUp, BaseTrainerComponent):
+
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
         """
@@ -25,21 +27,37 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        lam = np.random.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
+        beta = 1.0
+        lam = np.random.beta(beta, beta)
         batch_size = X.size()[0]
         index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
-        mixed_x = lam * X + (1 - lam) * X[index, :]
+        r = np.random.rand(1)
+        if beta <= 0 or r > self.alpha:
+            return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
+
+        # The mixup component mixes up also on the batch dimension
+        # It is unlikely that the batch size is lower than the number of features, but
+        # be safe
+        size = min(X.shape[0], X.shape[1])
+        indices = torch.tensor(random.sample(range(1, size), max(1, np.int(size * lam))))
+
+        X[:, indices] = X[index, :][:, indices]
+
+        # Adjust lam
+        lam = 1 - ((len(indices)) / (X.size()[1]))
+
         y_a, y_b = y, y[index]
-        return mixed_x, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
+
+        return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
     def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+                       ) -> typing.Dict[str, str]:
         return {
-            'shortname': 'MixUpTrainer',
-            'name': 'MixUp Regularized Trainer',
+            'shortname': 'RowCutMixTrainer',
+            'name': 'MixUp Regularized with Cutoff Tabular Trainer',
             'handles_tabular': True,
-            'handles_image': True,
-            'handles_time_series': True,
+            'handles_image': False,
+            'handles_time_series': False,
         }
