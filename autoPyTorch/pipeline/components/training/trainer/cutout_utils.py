@@ -25,31 +25,31 @@ class CutOut:
             cutout_prob (float): The probability of occurrence of this regulatization
 
         """
-        super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
         self.patch_ratio = patch_ratio
         self.cutout_prob = cutout_prob
+        self.random_state = random_state
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
                               ) -> typing.Callable:
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                                            hyperparameter="weighted_loss",
-                                            value_range=(True, False),
-                                            default_value=True),
-                                        patch_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                                            hyperparameter="alpha",
-                                            value_range=(0, 1),
-                                            default_value=0.2),
-                                        cutout_prob: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                                            hyperparameter="alpha",
-                                            value_range=(0, 1),
-                                            default_value=0.2),
-                                        ) -> ConfigurationSpace:
-
+    def get_hyperparameter_search_space(
+            dataset_properties: typing.Optional[typing.Dict] = None,
+            weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="weighted_loss",
+                value_range=(True, False),
+                default_value=True),
+            patch_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="alpha",
+                value_range=(0, 1),
+                default_value=0.2),
+            cutout_prob: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="alpha",
+                value_range=(0, 1),
+                default_value=0.2),
+    ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 

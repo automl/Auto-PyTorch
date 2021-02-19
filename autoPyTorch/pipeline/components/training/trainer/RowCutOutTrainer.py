@@ -53,7 +53,7 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
 
     @staticmethod
     def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, str]:
+                       ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'RowCutOutTrainer',
             'name': 'RowCutOutTrainer',
