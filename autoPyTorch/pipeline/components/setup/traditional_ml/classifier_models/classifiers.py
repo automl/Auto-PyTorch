@@ -110,7 +110,7 @@ class LGBModel(BaseClassifier):
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
             'shortname': 'LGBMClassifier',
-            'name': 'LGBMClassifier',
+            'name': 'Light Gradient Boosting Machine Classifier',
         }
 
 
@@ -178,7 +178,7 @@ class CatboostModel(BaseClassifier):
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
             'shortname': 'CatBoostClassifier',
-            'name': 'CatBoostClassifier',
+            'name': 'Categorical Boosting Classifier',
         }
 
 
@@ -243,8 +243,8 @@ class RFModel(BaseClassifier):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
-            'shortname': 'RandomForestClassifier',
-            'name': 'RandomForestClassifier',
+            'shortname': 'RFClassifier',
+            'name': 'Random Forest Classifier',
         }
 
 
@@ -369,8 +369,8 @@ class KNNModel(BaseClassifier):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
-            'shortname': 'KNeighborsClassifier',
-            'name': 'KNeighborsClassifier',
+            'shortname': 'KNNClassifier',
+            'name': 'K Nearest Neighbors Classifier',
         }
 
 
@@ -424,5 +424,5 @@ class SVMModel(BaseClassifier):
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
             'shortname': 'SVC',
-            'name': 'SVC',
+            'name': 'Support Vector Classification',
         }
