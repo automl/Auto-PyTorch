@@ -313,11 +313,11 @@ class TestNetworkBackbone:
                        value_range=[8, 16],
                        default_value=8)
         updates.append(node_name='network_backbone',
-                       hyperparameter='DenseNetImageBackone:num_layers',
+                       hyperparameter='DenseNetImageBackbone:num_layers',
                        value_range=[4, 8],
                        default_value=6)
         updates.append(node_name='network_backbone',
-                       hyperparameter='DenseNetImageBackone:num_blocks',
+                       hyperparameter='DenseNetImageBackbone:num_blocks',
                        value_range=[1, 2],
                        default_value=1)
         updates.apply([('network_backbone', network_backbone_choice)])
