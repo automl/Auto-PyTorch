@@ -81,6 +81,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         return {
             'shortname': 'ReduceLROnPlateau',
             'name': 'ReduceLROnPlateau',
+            'cyclic': False
         }
 
     @staticmethod
