@@ -1,12 +1,10 @@
 import typing
 
 import numpy as np
-
 import torch
 
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class MixUpTrainer(MixUp, BaseTrainerComponent):
@@ -44,4 +42,3 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
             'handles_image': True,
             'handles_time_series': True,
         }
-

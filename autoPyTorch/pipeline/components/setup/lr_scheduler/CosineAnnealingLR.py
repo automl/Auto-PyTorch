@@ -59,6 +59,7 @@ class CosineAnnealingLR(BaseLRComponent):
         return {
             'shortname': 'CosineAnnealing',
             'name': 'Cosine Annealing',
+            'cyclic': False
         }
 
     @staticmethod

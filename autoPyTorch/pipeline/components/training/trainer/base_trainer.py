@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.utils import check_random_state
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -18,6 +18,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
@@ -166,6 +167,7 @@ class RunSummary(object):
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def __init__(self, weighted_loss: bool = False,
+                 use_swa: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
         if random_state is None:
             # A trainer components need a random state for
@@ -175,6 +177,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             self.random_state = random_state
         super().__init__(random_state=self.random_state)
         self.weighted_loss = weighted_loss
+        self.use_swa = use_swa
+        self.add_fit_requirements([
+            FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
+        ])
 
     def prepare(
         self,
@@ -206,6 +212,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # setup the model
         self.model = model.to(device)
 
+        # in case we are using swa, maintain an averaged model
+        self._budget_threshold_swa = 0
+        if self.use_swa:
+            self._budget_threshold_swa = int(0.75*budget_tracker.max_epochs)
+            self.swa_model = swa_utils.AveragedModel(self.model)
+
         # setup the optimizers
         self.optimizer = optimizer
 
@@ -236,6 +248,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         If returns True, the training is stopped
 
         """
+        if X['is_cyclic_scheduler']:
+            if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
+                if self.use_swa:
+                    self.swa_model.update_parameters(self.model)
+        else:
+            if epoch > self._budget_threshold_swa:
+                if self.use_swa:
+                    self.swa_model.update_parameters(self.model)
         return False
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
@@ -430,11 +450,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_swa: Tuple[Tuple, bool] = ((True, False), False)
+                                        use_swa: Tuple[Tuple, bool] = ((True, False), True)
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
+        use_swa = CategoricalHyperparameter("use_swa", choices=use_swa[0], default_value=use_swa[1])
         cs = ConfigurationSpace()
+        cs.add_hyperparameters([use_swa])
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
                 cs.add_hyperparameters([weighted_loss])
