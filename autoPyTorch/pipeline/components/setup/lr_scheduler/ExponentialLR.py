@@ -61,7 +61,8 @@ class ExponentialLR(BaseLRComponent):
                        ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ExponentialLR',
-            'name': 'Exponential Learning Rate Scheduler',
+            'name': 'ExponentialLR',
+            'cyclic': False
         }
 
     @staticmethod
