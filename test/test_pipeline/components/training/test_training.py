@@ -6,6 +6,8 @@ import unittest.mock
 
 import numpy as np
 
+import pytest
+
 from sklearn.base import clone
 
 import torch
@@ -14,9 +16,13 @@ from autoPyTorch import constants
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
+from autoPyTorch.pipeline.components.training.trainer.GridCutMixTrainer import GridCutMixTrainer
+from autoPyTorch.pipeline.components.training.trainer.GridCutOutTrainer import GridCutOutTrainer
 from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import (
     MixUpTrainer
 )
+from autoPyTorch.pipeline.components.training.trainer.RowCutMixTrainer import RowCutMixTrainer
+from autoPyTorch.pipeline.components.training.trainer.RowCutOutTrainer import RowCutOutTrainer
 from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
@@ -223,79 +229,140 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
                 self.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class TrainerTest(unittest.TestCase):
-    def test_every_trainer_is_valid(self):
-        """
-        Makes sure that every trainer is a valid estimator.
-        That is, we can fully create an object via get/set params.
+def test_every_trainer_is_valid():
+    """
+    Makes sure that every trainer is a valid estimator.
+    That is, we can fully create an object via get/set params.
 
-        This also test that we can properly initialize each one
-        of them
-        """
-        trainer_choice = TrainerChoice(dataset_properties={})
+    This also test that we can properly initialize each one
+    of them
+    """
+    trainer_choice = TrainerChoice(dataset_properties={})
 
-        # Make sure all components are returned
-        self.assertEqual(len(trainer_choice.get_components().keys()), 2)
+    # Make sure all components are returned
+    assert len(trainer_choice.get_components().keys()) == 6
 
-        # For every optimizer in the components, make sure
-        # that it complies with the scikit learn estimator.
-        # This is important because usually components are forked to workers,
-        # so the set/get params methods should recreate the same object
-        for name, trainer in trainer_choice.get_components().items():
-            config = trainer.get_hyperparameter_search_space().sample_configuration()
-            estimator = trainer(**config)
-            estimator_clone = clone(estimator)
-            estimator_clone_params = estimator_clone.get_params()
+    # For every optimizer in the components, make sure
+    # that it complies with the scikit learn estimator.
+    # This is important because usually components are forked to workers,
+    # so the set/get params methods should recreate the same object
+    for name, trainer in trainer_choice.get_components().items():
+        config = trainer.get_hyperparameter_search_space().sample_configuration()
+        estimator = trainer(**config)
+        estimator_clone = clone(estimator)
+        estimator_clone_params = estimator_clone.get_params()
 
-            # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
-                self.assertIn(k, estimator_clone_params)
+        # Make sure all keys are copied properly
+        for k, v in estimator.get_params().items():
+            assert k in estimator_clone_params
 
-            # Make sure the params getter of estimator are honored
-            klass = estimator.__class__
-            new_object_params = estimator.get_params(deep=False)
-            for name, param in new_object_params.items():
-                new_object_params[name] = clone(param, safe=False)
-            new_object = klass(**new_object_params)
-            params_set = new_object.get_params(deep=False)
+        # Make sure the params getter of estimator are honored
+        klass = estimator.__class__
+        new_object_params = estimator.get_params(deep=False)
+        for name, param in new_object_params.items():
+            new_object_params[name] = clone(param, safe=False)
+        new_object = klass(**new_object_params)
+        params_set = new_object.get_params(deep=False)
 
-            for name in new_object_params:
-                param1 = new_object_params[name]
-                param2 = params_set[name]
-                self.assertEqual(param1, param2)
+        for name in new_object_params:
+            param1 = new_object_params[name]
+            param2 = params_set[name]
+            assert param1 == param2
 
-    def test_get_set_config_space(self):
-        """Make sure that we can setup a valid choice in the trainer
-        choice"""
-        trainer_choice = TrainerChoice(dataset_properties={'task_type': 'tabular_classification'})
-        cs = trainer_choice.get_hyperparameter_search_space()
 
-        # Make sure that all hyperparameters are part of the serach space
-        self.assertListEqual(
-            sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(trainer_choice.get_components().keys()))
-        )
+@pytest.mark.parametrize("test_input,expected", [
+    ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer'])),
+    ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer'])),
+    ("time_series_classification", set([])),
+])
+def test_get_set_config_space(test_input, expected):
+    """Make sure that we can setup a valid choice in the trainer
+    choice"""
+    trainer_choice = TrainerChoice(dataset_properties={'task_type': test_input})
+    cs = trainer_choice.get_hyperparameter_search_space()
 
-        # Make sure we can properly set some random configs
-        # Whereas just one iteration will make sure the algorithm works,
-        # doing five iterations increase the confidence. We will be able to
-        # catch component specific crashes
-        for i in range(5):
-            config = cs.sample_configuration()
-            config_dict = copy.deepcopy(config.get_dictionary())
-            trainer_choice.set_hyperparameters(config)
+    # Make sure that all hyperparameters are part of the serach space
+    # Filtering out the ones not supported for the given task
+    always_expected_trainers = set(['StandardTrainer', 'MixUpTrainer'])
+    assert set(cs.get_hyperparameter('__choice__').choices) == always_expected_trainers | expected
 
-            self.assertEqual(trainer_choice.choice.__class__,
-                             trainer_choice.get_components()[config_dict['__choice__']])
+    # Make sure we can properly set some random configs
+    # Whereas just one iteration will make sure the algorithm works,
+    # doing five iterations increase the confidence. We will be able to
+    # catch component specific crashes
+    for i in range(5):
+        config = cs.sample_configuration()
+        config_dict = copy.deepcopy(config.get_dictionary())
+        trainer_choice.set_hyperparameters(config)
 
-            # Then check the choice configuration
-            selected_choice = config_dict.pop('__choice__', None)
-            for key, value in config_dict.items():
-                # Remove the selected_choice string from the parameter
-                # so we can query in the object for it
-                key = key.replace(selected_choice + ':', '')
-                self.assertIn(key, vars(trainer_choice.choice))
-                self.assertEqual(value, trainer_choice.choice.__dict__[key])
+        assert trainer_choice.choice.__class__ == trainer_choice.get_components(
+        )[config_dict['__choice__']]
+
+        # Then check the choice configuration
+        selected_choice = config_dict.pop('__choice__', None)
+        for key, value in config_dict.items():
+            # Remove the selected_choice string from the parameter
+            # so we can query in the object for it
+            key = key.replace(selected_choice + ':', '')
+            assert key in vars(trainer_choice.choice)
+            assert value == trainer_choice.choice.__dict__[key]
+
+
+@pytest.mark.parametrize("cutmix_prob", [1.0, 0.0])
+@pytest.mark.parametrize("regularizer,X", [
+    (GridCutMixTrainer, torch.from_numpy(np.full(shape=(2, 3, 10, 12), fill_value=255))),
+    (RowCutMixTrainer, torch.from_numpy(np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]))),
+])
+def test_mixup_regularizers(cutmix_prob, regularizer, X):
+    trainer = regularizer(cutmix_prob)
+
+    def criterion(a, b):
+        return (a == b).sum()
+
+    y = torch.from_numpy(np.array([[1], [0]]))
+    y_pred = torch.from_numpy(np.array([[1], [1]]))
+    X_new, target_dict = trainer.data_preparation(X, y)
+    loss_func = trainer.criterion_preparation(**target_dict)
+    if cutmix_prob == 0.0:
+        # we do not expect a change to the data
+        np.testing.assert_array_equal(X_new.numpy(), X.numpy())
+        assert target_dict['lam'] == 1
+        # No mixup but a plain criterion, which as seen above is
+        # a sum of matches, that is, a integer
+        assert isinstance(loss_func(criterion, y_pred).numpy().item(), int)
+    else:
+        # There has to be a change in the features
+        np.any(np.not_equal(X_new.numpy(), X.numpy()))
+        assert 0 < target_dict['lam'] < 1
+        # There has to be a mixup of loss function
+        # That's why the loss function returns a float
+
+
+@pytest.mark.parametrize("cutout_prob", [1.0, 0.0])
+@pytest.mark.parametrize("regularizer,X", [
+    (GridCutOutTrainer, torch.from_numpy(np.full(shape=(2, 3, 10, 12), fill_value=255))),
+    (RowCutOutTrainer, torch.from_numpy(np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]))),
+])
+def test_cutput_regularizers(cutout_prob, regularizer, X):
+    trainer = regularizer(cutout_prob=cutout_prob, patch_ratio=0.5)
+
+    y = torch.from_numpy(np.array([[1], [0]]))
+    X_new, target_dict = trainer.data_preparation(X, y)
+
+    # No mixing needed
+    assert target_dict['lam'] == 1
+    if cutout_prob == 0.0:
+        # we do not expect a change to the data
+        np.testing.assert_array_equal(X_new.numpy(), X.numpy())
+    else:
+        # There has to be a change in the features
+        if len(X.shape) > 2:
+            expected = 0.0
+        else:
+            expected = -1
+        # The original X does not have the expected value
+        # If a cutoff happened, then this value is gonna be there
+        assert expected in X_new
 
 
 if __name__ == '__main__':
