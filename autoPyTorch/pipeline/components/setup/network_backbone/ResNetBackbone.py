@@ -43,8 +43,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         layers.append(_activations[self.config["activation"]]())
         backbone = nn.Sequential(*layers)
         self.backbone = backbone
@@ -94,6 +94,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_batch_norm: Tuple[Tuple, bool] = ((True, False), True),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         num_units: Tuple[Tuple, int] = ((10, 1024), 200),
                                         activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
@@ -207,10 +208,18 @@ class ResBlock(nn.Module):
         # as well (start_norm)
         if in_features != out_features:
             self.shortcut = nn.Linear(in_features, out_features)
-            self.start_norm = nn.Sequential(
-                nn.BatchNorm1d(in_features),
+            initial_normalization = list()
+            if self.config['use_batch_norm']:
+                initial_normalization.append(
+                    nn.BatchNorm1d(in_features)
+                )
+            initial_normalization.append(
                 self.activation()
             )
+            self.start_norm = nn.Sequential(
+                *initial_normalization
+            )
+
 
         self.block_index = block_index
         self.num_blocks = blocks_per_group * self.config["num_groups"]
@@ -219,16 +228,18 @@ class ResBlock(nn.Module):
         if config["use_shake_shake"]:
             self.shake_shake_layers = self._build_block(in_features, out_features)
 
-    # each bloack consists of two linear layers with batch norm and activation
+    # each block consists of two linear layers with batch norm and activation
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
         layers = list()
 
         if self.start_norm is None:
-            layers.append(nn.BatchNorm1d(in_features))
+            if self.config['use_batch_norm']:
+                layers.append(nn.BatchNorm1d(in_features))
             layers.append(self.activation())
         layers.append(nn.Linear(in_features, out_features))
 
-        layers.append(nn.BatchNorm1d(out_features))
+        if self.config['use_batch_norm']:
+            layers.append(nn.BatchNorm1d(out_features))
         layers.append(self.activation())
 
         if self.config["use_dropout"]:
