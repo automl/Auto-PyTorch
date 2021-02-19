@@ -22,9 +22,9 @@ class MixUp:
             alpha (float): the mixup ratio
 
         """
-        super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
         self.alpha = alpha
+        self.random_state = random_state
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
                               ) -> typing.Callable:
