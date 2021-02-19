@@ -56,8 +56,9 @@ class CosineAnnealingLR(BaseLRComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
-            'shortname': 'CosineAnnealingWarmRestarts',
-            'name': 'Cosine Annealing WarmRestarts',
+            'shortname': 'CosineAnnealing',
+            'name': 'Cosine Annealing',
+            'cyclic': False
         }
 
     @staticmethod
