@@ -123,7 +123,10 @@ class ResNetBackbone(NetworkBackboneComponent):
         # We can have dropout in the network for
         # better generalization
         use_dropout = CategoricalHyperparameter("use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        use_batch_normalization = CategoricalHyperparameter(
+            "use_batch_norm", choices=use_batch_norm[0], default_value=use_batch_norm[1])
         cs.add_hyperparameters([use_dropout])
+        cs.add_hyperparameters([use_batch_normalization])
 
         use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
                                                     default_value=use_shake_shake[1])

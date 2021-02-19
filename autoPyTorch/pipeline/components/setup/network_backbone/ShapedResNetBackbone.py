@@ -154,8 +154,11 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         use_dropout = CategoricalHyperparameter(
             "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        use_batch_normalization = CategoricalHyperparameter(
+            "use_batch_norm", choices=use_batch_norm[0], default_value=use_batch_norm[1])
         max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
                                                  default_value=max_dropout[1])
+        cs.add_hyperparameters([use_batch_normalization])
         cs.add_hyperparameters([use_dropout])
         cs.add_hyperparameters([max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
