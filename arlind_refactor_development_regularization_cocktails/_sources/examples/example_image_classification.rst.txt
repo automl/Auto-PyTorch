@@ -77,20 +77,16 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:sigma_min, Value: 1.1413694246685973
-      image_augmenter:GaussianBlur:sigma_offset, Value: 2.8810590221674404
-      image_augmenter:GaussianBlur:use_augmenter, Value: True
-      image_augmenter:GaussianNoise:sigma_offset, Value: 2.005845628065172
-      image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:rotate, Value: 231
-      image_augmenter:RandomAffine:scale_offset, Value: 0.17926292838154143
-      image_augmenter:RandomAffine:shear, Value: 26
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.17682361693963383
+      image_augmenter:GaussianBlur:use_augmenter, Value: False
+      image_augmenter:GaussianNoise:use_augmenter, Value: False
+      image_augmenter:RandomAffine:rotate, Value: 120
+      image_augmenter:RandomAffine:scale_offset, Value: 0.24897419792701403
+      image_augmenter:RandomAffine:shear, Value: 2
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.14692216914486508
       image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:p, Value: 0.2215713757866075
-      image_augmenter:RandomCutout:use_augmenter, Value: True
-      image_augmenter:Resize:use_augmenter, Value: True
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.060627045936913204
+      image_augmenter:RandomCutout:use_augmenter, Value: False
+      image_augmenter:Resize:use_augmenter, Value: False
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.009921755776494956
       normalizer:__choice__, Value: 'ImageNormalizer'
 
     Fitting the pipeline...
@@ -170,7 +166,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.120 seconds)
+   **Total running time of the script:** ( 0 minutes  5.985 seconds)
 
 
 .. _sphx_glr_download_examples_example_image_classification.py:
