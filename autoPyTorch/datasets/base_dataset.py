@@ -27,7 +27,7 @@ BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 
 
 def check_valid_data(data: Any) -> None:
-    if not any(hasattr(data, attr) for attr in ['__getitem__', '__len__']):
+    if not all(hasattr(data, attr) for attr in ['__getitem__', '__len__']):
         raise ValueError(
             'The specified Data for Dataset must have both __getitem__ and __len__ attribute.')
 
