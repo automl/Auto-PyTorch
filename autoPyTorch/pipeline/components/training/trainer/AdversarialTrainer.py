@@ -4,7 +4,6 @@ from copy import deepcopy
 import numpy as np
 
 import torch
-from torch.autograd import Variable
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -76,8 +75,8 @@ class AdversarialTrainer(BaseTrainerComponent):
         original_data = data[0]
         adversarial_data = data[1]
 
-        original_data = Variable(original_data)
-        adversarial_data = Variable(adversarial_data)
+        original_data = torch.autograd.Variable(original_data)
+        adversarial_data = torch.autograd.Variable(adversarial_data)
 
         # training
         self.optimizer.zero_grad()
@@ -115,7 +114,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         data_copy = deepcopy(data)
         data_copy = data_copy.float().to(self.device)
         targets = targets.long().to(self.device)
-        data_copy = Variable(data_copy)
+        data_copy = torch.autograd.Variable(data_copy)
         data_copy.requires_grad = True
 
         outputs = self.model(data_copy)
