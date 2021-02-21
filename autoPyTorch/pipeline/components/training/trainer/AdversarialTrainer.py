@@ -1,22 +1,17 @@
 from copy import deepcopy
 import typing
-from typing import Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
-
 import numpy as np
-
 import torch
 from torch.autograd import Variable
-from torch.utils.tensorboard.writer import SummaryWriter
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
-from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 class AdversarialTrainer(BaseTrainerComponent):
@@ -57,9 +52,9 @@ class AdversarialTrainer(BaseTrainerComponent):
         # Initial implementation, consider the adversarial loss and the normal network loss
         # equally.
         return lambda criterion, pred, adversarial_pred: 0.5 * criterion(pred, y_a) + \
-                                                         0.5 * criterion(adversarial_pred, y_a)
+            0.5 * criterion(adversarial_pred, y_a)
 
-    def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
+    def train_step(self, data: np.ndarray, targets: np.ndarray) -> typing.Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
