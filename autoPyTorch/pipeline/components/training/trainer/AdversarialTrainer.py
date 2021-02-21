@@ -1,14 +1,16 @@
-from copy import deepcopy
 import typing
+from copy import deepcopy
+
+import numpy as np
+
+import torch
+from torch.autograd import Variable
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
-import numpy as np
-import torch
-from torch.autograd import Variable
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
@@ -97,16 +99,15 @@ class AdversarialTrainer(BaseTrainerComponent):
 
     def fgsm_attack(
             self,
-            data,
-            targets,
+            data: np.ndarray,
+            targets: np.ndarray,
     ) -> np.ndarray:
         """
         Generates the adversarial examples.
 
         Args:
             data (np.ndarray): input features to the network
-            targets (np.ndarray): ground truth to calculate loss.
-            eps: (float): magnitude of perturbation.
+            targets (np.ndarray): ground truth to calculate loss
 
         Returns:
             adv_data (np.ndarray): the adversarial examples.

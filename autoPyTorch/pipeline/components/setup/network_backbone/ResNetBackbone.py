@@ -242,7 +242,6 @@ class ResBlock(nn.Module):
                 *initial_normalization
             )
 
-
         self.block_index = block_index
         self.num_blocks = blocks_per_group * self.config["num_groups"]
         self.layers = self._build_block(in_features, out_features)
