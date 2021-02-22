@@ -45,9 +45,9 @@ class Lookahead(Optimizer):
         """
         self.optimizer = optimizer
         self._la_step = 0  # counter for inner optimizer
-        self.la_alpha = config["lookahead_optimizer:la_alpha"]
+        self.la_alpha = config[f"{self.__class__.__name__}:la_alpha"]
         self.la_alpha = torch.tensor(self.la_alpha)
-        self._total_la_steps = config["lookahead_optimizer:la_steps"]
+        self._total_la_steps = config[f"{self.__class__.__name__}:la_steps"]
         # TODO possibly incorporate different momentum options when using SGD
         pullback_momentum = "none"
         pullback_momentum = pullback_momentum.lower()
