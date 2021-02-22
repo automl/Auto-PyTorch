@@ -168,7 +168,7 @@ class ResNetBackbone(NetworkBackboneComponent):
         shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
         cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
-        #TODO check if shake_drop is as an option in mb_choice
+        # TODO check if shake_drop is as an option in mb_choice
         # Incomplete work
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
