@@ -1,5 +1,4 @@
-from typing import Any, Dict, Optional, Union
-
+from typing import Any, Dict, Optional, Tuple, Union
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,

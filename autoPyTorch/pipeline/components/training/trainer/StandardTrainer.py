@@ -1,14 +1,8 @@
 from typing import Callable, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-<<<<<<< HEAD
-from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
-)
-=======
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
->>>>>>> swa working, se in progress
 import numpy as np
 
 import torch
@@ -16,7 +10,6 @@ import torch
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class StandardTrainer(BaseTrainerComponent):
@@ -24,7 +17,9 @@ class StandardTrainer(BaseTrainerComponent):
                  use_swa: bool = False,
                  use_se: bool = False,
                  se_lastk: int = 3,
-                 random_state: typing.Optional[np.random.RandomState] = None):
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 **lookahead_config):
         """
         This class handles the training of a network for a single given epoch.
 
@@ -36,7 +31,9 @@ class StandardTrainer(BaseTrainerComponent):
                          weighted_loss=weighted_loss,
                          use_swa=use_swa,
                          use_se=use_se,
-                         se_lastk=se_lastk)
+                         se_lastk=se_lastk,
+                         use_lookahead_optimizer=use_lookahead_optimizer,
+                         **lookahead_config)
 
     def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
                          ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
@@ -62,8 +59,8 @@ class StandardTrainer(BaseTrainerComponent):
         return lambda criterion, pred: criterion(pred, y_a)
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                   ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'StandardTrainer',
             'name': 'StandardTrainer',
@@ -71,23 +68,3 @@ class StandardTrainer(BaseTrainerComponent):
             'handles_image': True,
             'handles_time_series': True,
         }
-
-    @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
-                                                                             value_range=(True, False),
-                                                                             default_value=True),
-        use_swa: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_swa",
-                                                                       value_range=(True, False),
-                                                                       default_value=True),
-        use_se: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_se",
-                                                                       value_range=(True, False),
-                                                                       default_value=True),
-    ) -> ConfigurationSpace:
-        cs = ConfigurationSpace()
-        if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[str(dataset_properties['task_type'])] in CLASSIFICATION_TASKS:
-                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
-
-        return cs

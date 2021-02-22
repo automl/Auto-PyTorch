@@ -1,6 +1,5 @@
-from copy import deepcopy
-from queue import LifoQueue
 import time
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ConfigSpace.conditions import EqualsCondition
@@ -9,9 +8,6 @@ from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     Constant
 )
-
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter
 import numpy as np
 
 import pandas as pd
@@ -29,6 +25,7 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepInt
 from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -209,7 +206,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  use_swa: bool = False,
                  use_se: bool = False,
                  se_lastk: int = 3,
-                 random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 **lookahead_config) -> None:
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
@@ -221,6 +220,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.use_swa = use_swa
         self.use_se = use_se
         self.se_lastk = se_lastk
+        self.use_lookahead_optimizer = use_lookahead_optimizer
+        self.lookahead_config = lookahead_config
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
         ])
@@ -261,13 +262,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             self.swa_model = swa_utils.AveragedModel(self.model)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
-        self._budget_threshold: int = int(0.75 * budget_tracker.max_epochs)
+        self._budget_threshold = 0
+        if self.use_swa or self.use_se:
+            assert budget_tracker.max_epochs is not None, "Can only use stochastic weight averaging or snapshot " \
+                                                          "ensemble when budget is epochs"
+            self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
 
         # in case we are using se, initialise list to store model snapshots
         if self.use_se:
             self.model_snapshots: List[torch.nn.Module] = list()
 
         # setup the optimizers
+        if self.use_lookahead_optimizer:
+            optimizer = Lookahead(optimizer=optimizer, config=self.lookahead_config)
         self.optimizer = optimizer
 
         # The budget tracker
@@ -534,6 +541,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
                                         use_swa: Tuple[Tuple, bool] = ((True, False), True),
                                         use_se: Tuple[Tuple, bool] = ((True, False), True),
+                                        se_lastk: Tuple[Tuple, int] = ((3,), 3),
+                                        use_lookahead_optimizer: Tuple[Tuple, bool] = ((True, False), True),
+                                        la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
+                                        la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
@@ -543,12 +554,26 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # Note, this is not easy to be considered as a hyperparameter.
         # When used with cyclic learning rates, it depends on the number
         # of restarts.
-        se_lastk = Constant('se_lastk', 3)
+        se_lastk = Constant('se_lastk', se_lastk[1])
+
+        use_lookahead_optimizer = CategoricalHyperparameter("use_lookahead_optimizer",
+                                                            choices=use_lookahead_optimizer[0],
+                                                            default_value=use_lookahead_optimizer[1])
+
+        config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                 la_alpha=la_alpha)
+        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
 
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([use_swa, use_se, se_lastk])
+        cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
+        cs.add_configuration_space(
+            'lookahead_optimizer',
+            config_space,
+            parent_hyperparameter=parent_hyperparameter
+        )
         cond = EqualsCondition(se_lastk, use_se, True)
         cs.add_condition(cond)
+
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
                 cs.add_hyperparameters([weighted_loss])
