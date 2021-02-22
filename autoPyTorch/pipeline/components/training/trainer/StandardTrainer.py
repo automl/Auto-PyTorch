@@ -12,7 +12,7 @@ class StandardTrainer(BaseTrainerComponent):
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
-                 **lookahead_config):
+                 **lookahead_config: Dict[str, Any]):
         """
         This class handles the training of a network for a single given epoch.
 

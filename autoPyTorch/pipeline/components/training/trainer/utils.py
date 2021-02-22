@@ -1,6 +1,6 @@
-from collections import defaultdict
 import re
-from typing import Dict, Tuple
+from collections import defaultdict
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -37,7 +37,7 @@ class Lookahead(Optimizer):
     Lookahead Optimizer: https://arxiv.org/abs/1907.08610
     """
 
-    def __init__(self, optimizer, config):
+    def __init__(self, optimizer: Optimizer, config: Dict[str, Any]) -> None:
         """optimizer: inner optimizer
         la_steps (int): number of lookahead steps
         la_alpha (float): linear interpolation factor. 1.0 recovers the inner optimizer.
@@ -54,7 +54,7 @@ class Lookahead(Optimizer):
         assert pullback_momentum in ["reset", "pullback", "none"]
         self.pullback_momentum = pullback_momentum
 
-        self.state = defaultdict(dict)
+        self.state: defaultdict = defaultdict(dict)
 
         # Cache the current optimizer parameters
         for group in optimizer.param_groups:
@@ -65,7 +65,7 @@ class Lookahead(Optimizer):
                 if self.pullback_momentum == "pullback":
                     param_state['cached_mom'] = torch.zeros_like(p.data)
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         return {
             'state': self.state,
             'optimizer': self.optimizer,
@@ -75,19 +75,19 @@ class Lookahead(Optimizer):
             'pullback_momentum': self.pullback_momentum
         }
 
-    def zero_grad(self):
+    def zero_grad(self) -> None:
         self.optimizer.zero_grad()
 
-    def get_la_step(self):
+    def get_la_step(self) -> int:
         return self._la_step
 
-    def state_dict(self):
+    def state_dict(self) -> Dict[str, Any]:
         return self.optimizer.state_dict()
 
-    def load_state_dict(self, state_dict):
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.optimizer.load_state_dict(state_dict)
 
-    def _backup_and_load_cache(self):
+    def _backup_and_load_cache(self) -> None:
         """Useful for performing evaluation on the slow weights (which typically generalize better)
         """
         for group in self.optimizer.param_groups:
@@ -97,7 +97,7 @@ class Lookahead(Optimizer):
                 param_state['backup_params'].copy_(p.data)
                 p.data.copy_(param_state['cached_params'])
 
-    def _clear_and_load_backup(self):
+    def _clear_and_load_backup(self) -> None:
         for group in self.optimizer.param_groups:
             for p in group['params']:
                 param_state = self.state[p]
@@ -105,10 +105,10 @@ class Lookahead(Optimizer):
                 del param_state['backup_params']
 
     @property
-    def param_groups(self):
+    def param_groups(self) -> List[Dict]:
         return self.optimizer.param_groups
 
-    def step(self, closure=None):
+    def step(self, closure: Optional[Callable] = None) -> torch.Tensor:
         """Performs a single Lookahead optimization step.
         Arguments:
             closure (callable, optional): A closure that reevaluates the model
@@ -135,7 +135,7 @@ class Lookahead(Optimizer):
 
         return loss
 
-    def to(self, device):
+    def to(self, device: str) -> None:
 
         self.la_alpha.to(device)
         for group in self.optimizer.param_groups:
@@ -150,7 +150,7 @@ class Lookahead(Optimizer):
     def get_hyperparameter_search_space(
         la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
         la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
-    ):
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         la_steps = UniformIntegerHyperparameter('la_steps', lower=la_steps[0][0],
                                                 upper=la_steps[0][1],

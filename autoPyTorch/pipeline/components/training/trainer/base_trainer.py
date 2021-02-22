@@ -20,8 +20,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -176,7 +176,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
-                 **lookahead_config) -> None:
+                 **lookahead_config: Dict[str, Any]) -> None:
         super().__init__()
         self.random_state = random_state
         self.weighted_loss = weighted_loss
