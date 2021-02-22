@@ -202,10 +202,24 @@ class RunSummary(object):
 
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
-
-    def __init__(self, weighted_loss: bool = False,
-                 use_swa: bool = False,
-                 use_se: bool = False,
+    """
+    Base class for training
+    Args:
+        weighted_loss (bool, default=True): In case for classification, whether to weight
+            the loss function according to the distribution of classes in the target
+        use_stochastic_weight_averaging (bool, default=True): whether to use stochastic
+            weight averaging
+        use_snapshot_ensemble (bool, default=True): whether to use snapshot
+            ensemble
+        se_lastk (int, default=3): Number of snapshots of the network to maintain
+        use_lookahead_optimizer (bool, default=True): whether to use lookahead
+            optimizer
+        random_state:
+        **lookahead_config:
+    """
+    def __init__(self, weighted_loss: bool = True,
+                 use_stochastic_weight_averaging: bool = True,
+                 use_snapshot_ensemble: bool = True,
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
@@ -218,10 +232,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             self.random_state = random_state
         super().__init__(random_state=self.random_state)
         self.weighted_loss = weighted_loss
-        self.use_swa = use_swa
-        self.use_se = use_se
+        self.use_stochastic_weight_averaging = use_stochastic_weight_averaging
+        self.use_snapshot_ensemble = use_snapshot_ensemble
         self.se_lastk = se_lastk
         self.use_lookahead_optimizer = use_lookahead_optimizer
+        # Add default values for the lookahead optimizer
+        if len(lookahead_config) == 0:
+            lookahead_config = {f'{Lookahead.__name__}:la_steps': 6,
+                                f'{Lookahead.__name__}:la_alpha': 0.6}
         self.lookahead_config = lookahead_config
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
@@ -259,18 +277,18 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.model = model.to(device)
 
         # in case we are using swa, maintain an averaged model,
-        if self.use_swa:
+        if self.use_stochastic_weight_averaging:
             self.swa_model = swa_utils.AveragedModel(self.model)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
         self._budget_threshold = 0
-        if self.use_swa or self.use_se:
+        if self.use_stochastic_weight_averaging or self.use_snapshot_ensemble:
             assert budget_tracker.max_epochs is not None, "Can only use stochastic weight averaging or snapshot " \
                                                           "ensemble when budget is epochs"
             self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
 
         # in case we are using se, initialise list to store model snapshots
-        if self.use_se:
+        if self.use_snapshot_ensemble:
             self.model_snapshots: List[torch.nn.Module] = list()
 
         # setup the optimizers
@@ -308,19 +326,21 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         if X['is_cyclic_scheduler']:
             if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
-                if self.use_swa:
+                if self.use_stochastic_weight_averaging:
                     self.swa_model.update_parameters(self.model)
-                if self.use_se:
-                    model_copy = deepcopy(self.swa_model) if self.use_swa else deepcopy(self.model)
+                if self.use_snapshot_ensemble:
+                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
+                        else deepcopy(self.model)
                     model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         else:
             if epoch > self._budget_threshold:
-                if self.use_swa:
+                if self.use_stochastic_weight_averaging:
                     self.swa_model.update_parameters(self.model)
-                if self.use_se:
-                    model_copy = deepcopy(self.swa_model) if self.use_swa else deepcopy(self.model)
+                if self.use_snapshot_ensemble:
+                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
+                        else deepcopy(self.model)
                     model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
@@ -540,8 +560,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_swa: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_se: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_stochastic_weight_averaging: Tuple[Tuple, bool] = ((True, False), True),
+                                        use_snapshot_ensemble: Tuple[Tuple, bool] = ((True, False), True),
                                         se_lastk: Tuple[Tuple, int] = ((3,), 3),
                                         use_lookahead_optimizer: Tuple[Tuple, bool] = ((True, False), True),
                                         la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
@@ -549,8 +569,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
-        use_swa = CategoricalHyperparameter("use_swa", choices=use_swa[0], default_value=use_swa[1])
-        use_se = CategoricalHyperparameter("use_se", choices=use_se[0], default_value=use_se[1])
+        use_swa = CategoricalHyperparameter("use_stochastic_weight_averaging",
+                                            choices=use_stochastic_weight_averaging[0],
+                                            default_value=use_stochastic_weight_averaging[1])
+        use_se = CategoricalHyperparameter("use_snapshot_ensemble",
+                                           choices=use_snapshot_ensemble[0],
+                                           default_value=use_snapshot_ensemble[1])
 
         # Note, this is not easy to be considered as a hyperparameter.
         # When used with cyclic learning rates, it depends on the number

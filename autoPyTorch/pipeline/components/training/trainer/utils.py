@@ -11,6 +11,8 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch.optim.optimizer import Optimizer
 
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+
 
 def update_model_state_dict_from_swa(model: torch.nn.Module, swa_state_dict: Dict) -> None:
     """
@@ -41,7 +43,6 @@ class Lookahead(Optimizer):
         """optimizer: inner optimizer
         la_steps (int): number of lookahead steps
         la_alpha (float): linear interpolation factor. 1.0 recovers the inner optimizer.
-        pullback_momentum (str): change to inner optimizer momentum on interpolation update
         """
         self.optimizer = optimizer
         self._la_step = 0  # counter for inner optimizer
@@ -148,18 +149,20 @@ class Lookahead(Optimizer):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
-        la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
+            la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="la_steps",
+                value_range=(5, 10),
+                default_value=6,
+                log=False),
+            la_alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="la_alpha",
+                value_range=(0.5, 0.8),
+                default_value=0.6,
+                log=False),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        la_steps = UniformIntegerHyperparameter('la_steps', lower=la_steps[0][0],
-                                                upper=la_steps[0][1],
-                                                default_value=la_steps[1],
-                                                log=la_steps[2])
-        la_alpha = UniformFloatHyperparameter('la_alpha', lower=la_alpha[0][0],
-                                              upper=la_alpha[0][1],
-                                              default_value=la_alpha[1],
-                                              log=la_alpha[2])
-        cs.add_hyperparameters([la_steps, la_alpha])
+
+        add_hyperparameter(cs, la_steps, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, la_alpha, UniformFloatHyperparameter)
 
         return cs
