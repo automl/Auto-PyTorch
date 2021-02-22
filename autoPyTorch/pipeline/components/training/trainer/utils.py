@@ -41,7 +41,6 @@ class Lookahead(Optimizer):
         """optimizer: inner optimizer
         la_steps (int): number of lookahead steps
         la_alpha (float): linear interpolation factor. 1.0 recovers the inner optimizer.
-        pullback_momentum (str): change to inner optimizer momentum on interpolation update
         """
         self.optimizer = optimizer
         self._la_step = 0  # counter for inner optimizer
