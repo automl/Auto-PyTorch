@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -112,7 +113,7 @@ class RMSpropOptimizer(BaseOptimizerComponent):
         cs.add_hyperparameters([use_weight_decay, weight_decay])
 
         cs.add_condition(
-            ConfigurationSpace.EqualsCondition(
+            CS.EqualsCondition(
                 weight_decay,
                 use_weight_decay,
                 True,
