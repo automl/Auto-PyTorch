@@ -37,6 +37,7 @@ def test_get_name_error():
 
 @pytest.mark.parametrize('weighted', [True, False])
 def test_losses(weighted):
+    torch.manual_seed(1)
     list_properties = [{'task_type': 'tabular_classification', 'output_type': 'multiclass'},
                        {'task_type': 'tabular_classification', 'output_type': 'binary'},
                        {'task_type': 'tabular_regression', 'output_type': 'continuous'}]
