@@ -513,7 +513,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         cs = ConfigurationSpace()
         cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
         cs.add_configuration_space(
-            'lookahead_optimizer',
+            Lookahead.__name__,
             config_space,
             parent_hyperparameter=parent_hyperparameter
         )
