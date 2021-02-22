@@ -1,17 +1,24 @@
-from typing import Callable, Union
+from typing import Any, Callable, Dict, Type, Union
 
 import numpy as np
 
 import torch
 
-from autoPyTorch.constants import BINARY
 
-
-def get_loss_weight_strategy(output_type: int) -> Callable:
-    if output_type == BINARY:
+def get_loss_weight_strategy(loss: Type[torch.nn.Module]) -> Callable:
+    """
+    Utility function that returns strategy for the given loss
+    Args:
+        loss (Type[torch.nn.Module]): type of the loss function
+    Returns:
+        (Callable): Relevant Callable strategy
+    """
+    if loss.__name__ in LossWeightStrategyWeightedBinary.get_properties()['supported_losses']:
         return LossWeightStrategyWeightedBinary()
-    else:
+    elif loss.__name__ in LossWeightStrategyWeighted.get_properties()['supported_losses']:
         return LossWeightStrategyWeighted()
+    else:
+        raise ValueError("No strategy currently supports the given loss, {}".format(loss.__name__))
 
 
 class LossWeightStrategyWeighted():
@@ -34,6 +41,10 @@ class LossWeightStrategyWeighted():
 
         return weights
 
+    @staticmethod
+    def get_properties() -> Dict[str, Any]:
+        return {'supported_losses': ['CrossEntropyLoss']}
+
 
 class LossWeightStrategyWeightedBinary():
     def __call__(self, y: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
@@ -46,3 +57,7 @@ class LossWeightStrategyWeightedBinary():
         weights = counts_zero / np.maximum(counts_one, 1)
 
         return np.array(weights)
+
+    @staticmethod
+    def get_properties() -> Dict[str, Any]:
+        return {'supported_losses': ['BCEWithLogitsLoss']}
