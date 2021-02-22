@@ -61,7 +61,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         X_train=X_train, y_train=y_train,
         X_test=X_test, y_test=y_test,
         optimize_metric='accuracy',
-        total_walltime_limit=150,
+        total_walltime_limit=160,
         func_eval_time_limit=50,
         traditional_per_total_budget=0
     )
