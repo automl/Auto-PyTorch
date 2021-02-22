@@ -1,6 +1,7 @@
 import os
 import pickle
 import sys
+from test.utils import DisplayablePath
 
 import numpy as np
 
@@ -53,7 +54,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         X_train=X_train, y_train=y_train,
         X_test=X_test, y_test=y_test,
         optimize_metric='accuracy',
-        total_walltime_limit=150,
+        total_walltime_limit=160,
         func_eval_time_limit=50,
         traditional_per_total_budget=0
     )
@@ -120,7 +121,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             run_key_model_run_dir,
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), model_file
+        assert os.path.exists(model_file), f"{model_file} {DisplayablePath.make_tree(os.path.dirname(model_file))}"
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
         assert isinstance(model, VotingClassifier)
