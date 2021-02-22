@@ -388,7 +388,7 @@ class TestTabularClassification:
         assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
-        assert isinstance(pipeline.named_steps['trainer'].optimizer, Lookahead)
+        assert isinstance(pipeline.named_steps['trainer'].choice.optimizer, Lookahead)
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
