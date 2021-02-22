@@ -279,7 +279,7 @@ class TrainerChoice(autoPyTorchChoice):
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
         self.choice = cast(autoPyTorchComponent, self.choice)
-        if self.choice.use_se:
+        if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
 
         if X['use_pynisher']:
@@ -413,12 +413,12 @@ class TrainerChoice(autoPyTorchChoice):
             if 'cuda' in X['device']:
                 torch.cuda.empty_cache()
 
-        if self.choice.use_swa:
+        if self.choice.use_stochastic_weight_averaging:
             # update batch norm statistics
             swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model.double())
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
-            if self.choice.use_se:
+            if self.choice.use_snapshot_ensemble:
                 for model in self.choice.model_snapshots:
                     swa_utils.update_bn(X['train_data_loader'], model.double())
 
