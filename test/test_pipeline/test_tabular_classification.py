@@ -11,6 +11,8 @@ import numpy as np
 
 import pytest
 
+from pytest_mock import mocker  # noqa F401
+
 import torch
 
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
@@ -279,3 +281,27 @@ class TestTabularClassification:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
+
+    def test_swa_se(self, fit_dictionary, mocker):  # noqa F811
+        fit_dictionary['epochs'] = 10
+        pipeline = TabularClassificationPipeline(
+            dataset_properties=fit_dictionary['dataset_properties'],
+            include={'lr_scheduler': ['CosineAnnealingWarmRestarts']})
+        cs = pipeline.get_hyperparameter_search_space()
+        config = cs.get_default_configuration()
+        pipeline.set_hyperparameters(config)
+
+        pipeline.fit(fit_dictionary.copy())
+        X = pipeline.transform(fit_dictionary.copy())
+        assert 'is_cyclic_scheduler' in X and X['is_cyclic_scheduler']
+
+        trainer = config.get('trainer:__choice__')
+        assert 'network_snapshots' in X and \
+               len(X['network_snapshots']) == config.get(f'trainer:{trainer}:se_lastk')
+
+        mocker.patch("autoPyTorch.pipeline.components.setup.network.base_network.NetworkComponent._predict",
+                     return_value=torch.Tensor([1]))
+        # Assert that predict gives no error when swa and se are on
+        assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
+        # As SE is True, _predict should be called 3 times
+        assert pipeline.named_steps['network']._predict.call_count == 3

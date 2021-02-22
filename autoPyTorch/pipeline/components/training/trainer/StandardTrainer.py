@@ -64,11 +64,13 @@ class StandardTrainer(BaseTrainerComponent):
                                         weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
                                         use_swa: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
                                         use_se: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
+                                        se_lastk: typing.Tuple[typing.Tuple, int] = ((3,), 3)
                                         ) -> ConfigurationSpace:
         cs = super(StandardTrainer, StandardTrainer). \
             get_hyperparameter_search_space(dataset_properties=dataset_properties,
                                             weighted_loss=weighted_loss,
                                             use_swa=use_swa,
-                                            use_se=use_se)
+                                            use_se=use_se,
+                                            se_lastk=se_lastk)
 
         return cs
