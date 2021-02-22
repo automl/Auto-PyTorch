@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -101,7 +102,7 @@ class SGDOptimizer(BaseOptimizerComponent):
         cs.add_hyperparameters([lr, weight_decay, momentum, use_wd])
 
         cs.add_condition(
-            ConfigurationSpace.EqualsCondition(
+            CS.EqualsCondition(
                 weight_decay,
                 use_wd,
                 True,

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -109,7 +110,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
         cs.add_hyperparameters([lr, beta1, beta2, weight_decay, use_wd])
 
         cs.add_condition(
-            ConfigurationSpace.EqualsCondition(
+            CS.EqualsCondition(
                 weight_decay,
                 use_wd,
                 True,
