@@ -1,6 +1,7 @@
 import os
 import pickle
 import sys
+import time
 from test.utils import DisplayablePath
 
 import numpy as np
@@ -118,7 +119,13 @@ def test_classification(openml_id, resampling_strategy, backend):
             run_key_model_run_dir,
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), f"{model_file} {DisplayablePath.make_tree(os.path.dirname(model_file))}"
+        try:
+            assert os.path.exists(model_file), model_file
+        except AssertionError as e:
+            time.sleep(5)
+            DisplayablePath.make_tree(os.path.dirname(model_file))
+            raise AssertionError(e)
+
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
         assert isinstance(model, VotingClassifier)
