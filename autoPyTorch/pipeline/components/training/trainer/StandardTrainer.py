@@ -1,14 +1,8 @@
 import typing
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-<<<<<<< HEAD
-from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
-)
-=======
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
->>>>>>> swa working, se in progress
 import numpy as np
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
@@ -80,7 +74,11 @@ class StandardTrainer(BaseTrainerComponent):
         use_se: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_se",
                                                                        value_range=(True, False),
                                                                        default_value=True),
+        se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="se_lastk",
+                                                                      value_range=(3, ),
+                                                                      default_value=3),
     ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
