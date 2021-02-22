@@ -102,8 +102,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                          list(_activations.keys())[0]),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        multi_branch_choice: Tuple[Tuple, str] = (
-                                                ('None', 'shake-shake', 'shake-drop'), 'shake-drop'),
+                                        multi_branch_choice: Tuple[Tuple, str] = (('None', 'shake-shake',
+                                                                                   'shake-drop'), 'shake-drop'),
                                         max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
