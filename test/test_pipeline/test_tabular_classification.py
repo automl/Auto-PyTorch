@@ -352,4 +352,4 @@ class TestTabularClassification:
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
 
-        assert isinstance(pipeline.named_steps['trainer'].optimizer, Lookahead)
+        assert isinstance(pipeline.named_steps['trainer'].choice.optimizer, Lookahead)
