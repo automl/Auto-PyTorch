@@ -15,14 +15,12 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
         on a different way. That is, in standard training we provide the data to the
         network as we receive it to the loader. Some regularization techniques, like mixup
         alter the data.
-
         Args:
             X (np.ndarray): The batch training features
             y (np.ndarray): The batch training labels
-
         Returns:
             np.ndarray: that processes data
-            Dict[str, np.ndarray]: arguments to the criterion function
+            typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
         lam = self.random_state.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
         batch_size = X.size()[0]

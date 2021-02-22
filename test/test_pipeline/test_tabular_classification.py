@@ -405,8 +405,9 @@ class TestTabularClassification:
         optimizer = pipeline.named_steps['trainer'].choice.optimizer
         assert isinstance(optimizer, Lookahead)
 
-        # check if final value of la_step is epochs % la_steps
-        assert optimizer.get_la_step() == fit_dictionary['epochs'] % optimizer._total_la_steps
+        # check if final value of la_step is epochs * num_batches % la_steps
+        assert optimizer.get_la_step() == fit_dictionary['epochs'] * len(list(X['train_data_loader'].batch_sampler)) \
+               % optimizer._total_la_steps
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
