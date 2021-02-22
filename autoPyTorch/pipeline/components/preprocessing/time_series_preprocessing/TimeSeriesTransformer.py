@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+
+from sklearn.pipeline import Pipeline, make_pipeline
+
 import torch
-from sklearn.pipeline import make_pipeline, Pipeline
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import \
     autoPyTorchTimeSeriesPreprocessingComponent
@@ -35,7 +37,7 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         preprocessors = get_time_series_preprocessers(X)
 
         if len(X['dataset_properties']['categorical_features']):
-            raise ValueError(f"Categorical features are not yet supported for time series")
+            raise ValueError("Categorical features are not yet supported for time series")
 
         numerical_pipeline = make_pipeline(*preprocessors['numerical'])
 
@@ -44,7 +46,6 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
         if 'X_train' in X:
-            print(X.keys())
             X_train = subsampler(X['X_train'], X['train_indices'])
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]

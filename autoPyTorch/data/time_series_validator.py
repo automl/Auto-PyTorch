@@ -3,8 +3,6 @@ import logging
 import typing
 
 from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
-from autoPyTorch.data.tabular_target_validator import TabularTargetValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger

@@ -109,7 +109,6 @@ class ScalerChoice(autoPyTorchChoice):
 
         """
         super()._check_dataset_properties(dataset_properties)
-        print(dataset_properties)
         assert 'numerical_features' in dataset_properties and \
                'categorical_features' in dataset_properties, \
             "Dataset properties must contain information about the type of features"

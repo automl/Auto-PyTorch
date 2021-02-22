@@ -4,10 +4,8 @@ from typing import Optional, Union
 import numpy as np
 
 import sklearn.utils
-
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.data.base_feature_validator import BaseFeatureValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
@@ -35,7 +33,7 @@ class TimeSeriesFeatureValidator(BaseEstimator):
         """
 
         if not isinstance(X_train, np.ndarray):
-            raise ValueError(f"Time series train data must be given as a numpy array")
+            raise ValueError("Time series train data must be given as a numpy array")
 
         if X_train.ndim != 3:
             raise ValueError(f"Invalid number of dimensions for time series train data, "
@@ -54,7 +52,7 @@ class TimeSeriesFeatureValidator(BaseEstimator):
 
         if X_test is not None:
             if not isinstance(X_test, np.ndarray):
-                raise ValueError(f"Time series test data must be given as a numpy array")
+                raise ValueError("Time series test data must be given as a numpy array")
 
             if not X_test.ndim == 3:
                 raise ValueError(f"Invalid number of dimensions for time series test data, "

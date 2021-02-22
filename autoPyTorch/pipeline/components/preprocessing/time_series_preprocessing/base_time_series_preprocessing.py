@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 
 from sklearn.base import BaseEstimator
 

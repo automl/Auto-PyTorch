@@ -1,8 +1,8 @@
 from typing import Any
 
 import numpy as np
-import sklearn
 
+import sklearn
 from sklearn.base import BaseEstimator
 
 
@@ -12,14 +12,14 @@ class TimeSeriesScaler(BaseEstimator):
     def __init__(self, mode: str):
         self.mode = mode
 
-    def fit(self, X: np.ndarray, y: Any = None):
+    def fit(self, X: np.ndarray, y: Any = None) -> "TimeSeriesScaler":
         """
         For time series we do not need to fit anything since each time series is scaled individually
         """
-        pass
+        return self
 
-    def transform(self, X: np.ndarray):
-        X: np.ndarray = sklearn.utils.check_array(
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        X = sklearn.utils.check_array(
             X,
             force_all_finite=True,
             ensure_2d=False,
