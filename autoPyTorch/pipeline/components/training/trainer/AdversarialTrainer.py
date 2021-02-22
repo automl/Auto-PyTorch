@@ -1,15 +1,16 @@
 import typing
 from copy import deepcopy
 
-import numpy as np
-
-import torch
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
+
+import numpy as np
+
+import torch
+
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
