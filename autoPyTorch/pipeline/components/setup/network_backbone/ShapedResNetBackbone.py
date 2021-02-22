@@ -88,8 +88,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                                         max_units: Tuple[Tuple, int] = ((10, 1024), 200),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         max_dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        multi_branch_choice: Tuple[Tuple, str] = (('None', 'shake-shake',
-                                                                                   'shake-drop'), 'shake-drop'),
+                                        multi_branch_choice: Tuple[Tuple, str] = (('shake-drop', 'shake-shake',
+                                                                                   'none'), 'shake-drop'),
                                         max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5),
                                         resnet_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
                                                                             'diamond', 'hexagon',
@@ -153,12 +153,9 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
-        cs.add_condition(
-            CS.AndConjunction(
-                CS.EqualsCondition(shake_drop_prob, use_sc, True),
-                CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"),
-            )
-        )
+        # TODO check if shake_drop is as an option in mb_choice
+        # Incomplete work
+        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         max_units = UniformIntegerHyperparameter(
             "max_units",
