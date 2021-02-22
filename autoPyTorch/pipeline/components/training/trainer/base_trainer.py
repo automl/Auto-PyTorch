@@ -21,6 +21,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -475,7 +476,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
                                         use_swa: Tuple[Tuple, bool] = ((True, False), True),
                                         use_se: Tuple[Tuple, bool] = ((True, False), True),
-                                        se_lastk: Tuple[Tuple, int] = ((3,), 3)
+                                        se_lastk: Tuple[Tuple, int] = ((3,), 3),
+                                        use_lookahead_optimizer: Tuple[Tuple, bool] = ((True, False), True),
+                                        la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
+                                        la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
@@ -487,10 +491,24 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # of restarts.
         se_lastk = Constant('se_lastk', se_lastk[1])
 
+        use_lookahead_optimizer = CategoricalHyperparameter("use_lookahead_optimizer",
+                                                            choices=use_lookahead_optimizer[0],
+                                                            default_value=use_lookahead_optimizer[1])
+
+        config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                 la_alpha=la_alpha)
+        parent_hyperparameter = {'parent': 'use_lookahead_optimizer', 'value': True}
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([use_swa, use_se, se_lastk])
+        cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
+        cs.add_configuration_space(
+            'lookahead_optimizer',
+            config_space,
+            parent_hyperparameter=parent_hyperparameter
+        )
         cond = EqualsCondition(se_lastk, use_se, True)
         cs.add_condition(cond)
+
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
                 cs.add_hyperparameters([weighted_loss])
