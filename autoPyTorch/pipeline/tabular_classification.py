@@ -60,17 +60,16 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Examples
     """
 
-    def __init__(
-            self,
-            config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-    ):
+    def __init__(self,
+                 config: Optional[Configuration] = None,
+                 steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 include: Optional[Dict[str, Any]] = None,
+                 exclude: Optional[Dict[str, Any]] = None,
+                 random_state: Optional[np.random.RandomState] = None,
+                 init_params: Optional[Dict[str, Any]] = None,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
@@ -79,8 +78,8 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         # Pre-process X
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
-        if self.dataset_properties['output_shape'] == 1:
-            proba = pred[:, :self.dataset_properties['num_classes']]
+        if isinstance(self.dataset_properties['output_shape'], int):
+            proba = pred[:, :self.dataset_properties['output_shape']]
             normalizer = proba.sum(axis=1)[:, np.newaxis]
             normalizer[normalizer == 0.0] = 1.0
             proba /= normalizer
@@ -91,7 +90,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             all_proba = []
 
             for k in range(self.dataset_properties['output_shape']):
-                proba_k = pred[:, k, :self.dataset_properties['num_classes'][k]]
+                proba_k = pred[:, k, :self.dataset_properties['output_shape'][k]]
                 normalizer = proba_k.sum(axis=1)[:, np.newaxis]
                 normalizer[normalizer == 0.0] = 1.0
                 proba_k /= normalizer
@@ -141,12 +140,11 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         return y
 
-    def _get_hyperparameter_search_space(
-            self,
-            dataset_properties: Dict[str, Any],
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-    ) -> ConfigurationSpace:
+    def _get_hyperparameter_search_space(self,
+                                         dataset_properties: Dict[str, Any],
+                                         include: Optional[Dict[str, Any]] = None,
+                                         exclude: Optional[Dict[str, Any]] = None,
+                                         ) -> ConfigurationSpace:
         """Create the hyperparameter configuration space.
 
         For the given steps, and the Choices within that steps,
@@ -218,7 +216,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("preprocessing", EarlyPreprocessing()),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent(default_dataset_properties)),
+            ("network", NetworkComponent()),
             ("network_init", NetworkInitializerChoice(default_dataset_properties)),
             ("optimizer", OptimizerChoice(default_dataset_properties)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties)),

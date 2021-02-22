@@ -44,7 +44,7 @@ def test_losses(weighted):
     list_predictions = [pred_cross_entropy, torch.empty(4).random_(2), torch.randn(4)]
     list_names = [None, 'BCEWithLogitsLoss', None]
     list_targets = [torch.empty(4, dtype=torch.long).random_(4), torch.empty(4).random_(2), torch.randn(4)]
-    labels = [torch.empty(20, dtype=torch.long).random_(4), torch.empty(12, dtype=torch.long).random_(2), None]
+    labels = [torch.empty(100, dtype=torch.long).random_(4), torch.empty(100, dtype=torch.long).random_(2), None]
     for dataset_properties, pred, target, name, label in zip(list_properties, list_predictions,
                                                              list_targets, list_names, labels):
         loss = get_loss_instance(dataset_properties=dataset_properties, name=name)

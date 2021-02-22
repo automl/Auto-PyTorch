@@ -7,7 +7,7 @@ from sklearn.compose import make_column_transformer
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     NoFeaturePreprocessor import NoFeaturePreprocessor
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor_choice import FeatureProprocessorChoice
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
@@ -18,20 +18,20 @@ def preprocessor(request):
     return request.param
 
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
-                                            'fit_dictionary_num_and_categorical'], indirect=True)
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
+                                                    'classification_numerical_and_categorical'], indirect=True)
 class TestFeaturePreprocessors:
 
-    def test_feature_preprocessor(self, fit_dictionary, preprocessor):
+    def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor):
         preprocessor = FeatureProprocessorChoice(
-            dataset_properties=fit_dictionary['dataset_properties']
+            dataset_properties=fit_dictionary_tabular['dataset_properties']
         ).get_components()[preprocessor]()
-        configuration = preprocessor.\
-            get_hyperparameter_search_space(dataset_properties=fit_dictionary["dataset_properties"]) \
+        configuration = preprocessor. \
+            get_hyperparameter_search_space(dataset_properties=fit_dictionary_tabular["dataset_properties"]) \
             .get_default_configuration().get_dictionary()
         preprocessor = preprocessor.set_params(**configuration)
-        preprocessor.fit(fit_dictionary)
-        X = preprocessor.transform(fit_dictionary)
+        preprocessor.fit(fit_dictionary_tabular)
+        X = preprocessor.transform(fit_dictionary_tabular)
         sklearn_preprocessor = X['feature_preprocessor']['numerical']
 
         # check if the fit dictionary X is modified as expected
@@ -51,22 +51,22 @@ class TestFeaturePreprocessors:
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)
 
-    def test_pipeline_fit_include(self, fit_dictionary, preprocessor):
+    def test_pipeline_fit_include(self, fit_dictionary_tabular, preprocessor):
         """
         This test ensures that a tabular classification
         pipeline can be fit with all preprocessors
         in the include
         """
 
-        fit_dictionary['epochs'] = 1
+        fit_dictionary_tabular['epochs'] = 1
 
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary['dataset_properties'],
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'feature_preprocessor': [preprocessor]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary)
+        pipeline.fit(fit_dictionary_tabular)
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy

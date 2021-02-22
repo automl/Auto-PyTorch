@@ -6,12 +6,11 @@ import numpy as np
 import pandas as pd
 
 import torch
-from torch.autograd import Variable
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import BINARY
+from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -119,9 +118,8 @@ class RunSummary(object):
 
     def get_best_epoch(self, loss_type: str = 'val_loss') -> int:
         return np.argmin(
-            [self.performance_tracker[loss_type][e] for e in range(1, len(
-                self.performance_tracker[loss_type]) + 1
-            )]
+            [self.performance_tracker[loss_type][e]
+             for e in range(1, len(self.performance_tracker[loss_type]) + 1)]
         ) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
@@ -194,18 +192,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # Weights for the loss function
         weights = None
-        kwargs = {}
-        if self.weighted_loss:
-            weights = self.get_class_weights(output_type, labels)
-            if output_type == BINARY:
-                kwargs['pos_weight'] = weights
-            else:
-                kwargs['weight'] = weights
-
-        criterion = criterion(**kwargs) if weights is not None else criterion()
+        kwargs: Dict[str, Any] = {}
+        # if self.weighted_loss:
+        #     weights = self.get_class_weights(output_type, labels)
+        #     if output_type == BINARY:
+        #         kwargs['pos_weight'] = weights
+        #         pass
+        #     else:
+        #         kwargs['weight'] = weights
 
         # Setup the loss function
-        self.criterion = criterion
+        self.criterion = criterion(**kwargs) if weights is not None else criterion()
 
         # setup the model
         self.model = model.to(device)
@@ -271,8 +268,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             loss, outputs = self.train_step(data, targets)
 
             # save for metric evaluation
-            outputs_data.append(outputs.detach())
-            targets_data.append(targets.detach())
+            outputs_data.append(outputs.detach().cpu())
+            targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
@@ -290,6 +287,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return loss_sum / N, {}
 
+    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+        if self.task_type in REGRESSION_TASKS:
+            targets = targets.float().to(self.device)
+            # make sure that targets will have same shape as outputs (really important for mse loss for example)
+            if targets.ndim == 1:
+                targets = targets.unsqueeze(1)
+        else:
+            targets = targets.long().to(self.device)
+        return targets
+
     def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -304,10 +311,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
-        data = Variable(data)
 
         # training
         self.optimizer.zero_grad()
@@ -347,17 +353,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         with torch.no_grad():
             for step, (data, targets) in enumerate(test_loader):
-
                 batch_size = data.shape[0]
+
                 data = data.float().to(self.device)
-                targets = targets.long().to(self.device)
+                targets = self.cast_targets(targets)
+
                 outputs = self.model(data)
+
                 loss = self.criterion(outputs, targets)
                 loss_sum += loss.item() * batch_size
                 N += batch_size
 
-                outputs_data.append(outputs.detach())
-                targets_data.append(targets.detach())
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
                 if writer:
                     writer.add_scalar(
@@ -372,8 +380,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
                         ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
-        outputs_data = torch.cat(outputs_data, dim=0)
-        targets_data = torch.cat(targets_data, dim=0)
+        outputs_data = torch.cat(outputs_data, dim=0).numpy()
+        targets_data = torch.cat(targets_data, dim=0).numpy()
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
     def get_class_weights(self, output_type: int, labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
@@ -381,7 +389,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         strategy = get_loss_weight_strategy(output_type)
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
-        weights = weights.type(torch.FloatTensor).to(self.device)
+        weights = weights.float().to(self.device)
         return weights
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,

@@ -12,16 +12,20 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
     TabularColumnTransformer
 )
 
-
 @pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
                                             'fit_dictionary_categorical_only',
                                             'fit_dictionary_num_and_categorical'], indirect=True)
 class TestTabularTransformer:
     def test_tabular_preprocess(self, fit_dictionary):
 
-        pipeline = TabularPipeline(dataset_properties=fit_dictionary['dataset_properties'])
-        pipeline = pipeline.fit(fit_dictionary)
-        X = pipeline.transform(fit_dictionary)
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
+                                                    'classification_categorical_only',
+                                                    'classification_numerical_and_categorical'], indirect=True)
+class TestTabularTransformer:
+    def test_tabular_preprocess(self, fit_dictionary_tabular):
+        pipeline = TabularPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'])
+        pipeline = pipeline.fit(fit_dictionary_tabular)
+        X = pipeline.transform(fit_dictionary_tabular)
         column_transformer = X['tabular_transformer']
 
         # check if transformer was added to fit dictionary
@@ -34,7 +38,7 @@ class TestTabularTransformer:
         data = column_transformer.preprocessor.fit_transform(X['X_train'])
         assert isinstance(data, np.ndarray)
 
-    def test_sparse_data(self, fit_dictionary):
+    def test_sparse_data(self, fit_dictionary_tabular):
         X = np.random.binomial(1, 0.1, (100, 2000))
         sparse_X = csr_matrix(X)
         numerical_columns = list(range(2000))
