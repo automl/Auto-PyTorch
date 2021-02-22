@@ -153,7 +153,12 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, 'shake-drop'))
+        cs.add_condition(
+            CS.AndConjunction(
+                CS.EqualsCondition(shake_drop_prob, mb_choice, 'shake-drop'),
+                CS.EqualsCondition(shake_drop_prob, use_sc, True)
+            )
+        )
 
         max_units = UniformIntegerHyperparameter(
             "max_units",
