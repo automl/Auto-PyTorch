@@ -102,8 +102,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                          list(_activations.keys())[0]),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        multi_branch_choice: Tuple[Tuple, str] = (('None', 'shake-shake',
-                                                                                   'shake-drop'), 'shake-drop'),
+                                        multi_branch_choice: Tuple[Tuple, str] = (('shake-drop', 'shake-shake',
+                                                                                   'none'), 'shake-drop'),
                                         max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
@@ -147,14 +147,12 @@ class ResNetBackbone(NetworkBackboneComponent):
             upper=max_shake_drop_probability[0][1],
             default_value=max_shake_drop_probability[1])
 
+
         cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
-        cs.add_condition(
-            CS.AndConjunction(
-                CS.EqualsCondition(shake_drop_prob, use_sc, True),
-                CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"),
-            )
-        )
+        #TODO check if shake_drop is as an option in mb_choice
+        # Incomplete work
+        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
