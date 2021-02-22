@@ -5,7 +5,14 @@ from sklearn.datasets import make_classification, make_regression
 
 import torch
 
-from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, OUTPUT_TYPES_TO_STRING, CONTINUOUS, BINARY, TASK_TYPES_TO_STRING
+from autoPyTorch.constants import (
+    BINARY,
+    CLASSIFICATION_TASKS,
+    CONTINUOUS,
+    OUTPUT_TYPES_TO_STRING,
+    REGRESSION_TASKS,
+    TASK_TYPES_TO_STRING
+)
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 
