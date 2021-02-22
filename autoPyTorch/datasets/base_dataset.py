@@ -184,7 +184,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         return X, Y
 
-    def __len__(self) -> int: return self.train_tensors[0].shape[0]
+    def __len__(self) -> int:
+        return self.train_tensors[0].shape[0]
 
     def _get_indices(self) -> np.ndarray:
         return self.rng.permutation(len(self)) if self.shuffle else np.arange(len(self))
