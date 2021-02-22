@@ -303,7 +303,6 @@ class TestTimeSeriesClassification:
             else:
                 value_range = (0, 1)
                 default_value = 1
-            print(name, hyperparameter_name)
             updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
                            value_range=value_range, default_value=default_value)
         pipeline = TimeSeriesClassificationPipeline(dataset_properties=dataset_properties,
