@@ -6,8 +6,8 @@ import pandas as pd
 
 import torchvision.transforms
 
-from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, REGRESSION_OUTPUTS, STRING_TO_OUTPUT_TYPES, \
-    TASK_TYPES_TO_STRING, TIMESERIES_CLASSIFICATION, TIMESERIES_REGRESSION
+from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, CLASSIFICATION_TASKS, REGRESSION_OUTPUTS, \
+    STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES, TASK_TYPES_TO_STRING, TIMESERIES_CLASSIFICATION, TIMESERIES_REGRESSION
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
@@ -185,6 +185,8 @@ class TimeSeriesDataset(BaseDataset):
                 raise ValueError(f"Output type {self.output_type} currently not supported ")
         else:
             raise ValueError("Task type not currently supported ")
+        if STRING_TO_TASK_TYPES[self.task_type] in CLASSIFICATION_TASKS:
+            self.num_classes: int = len(np.unique(self.train_tensors[1]))
 
         # filter the default cross and holdout validators if we have a regression task
         # since we cannot use stratification there

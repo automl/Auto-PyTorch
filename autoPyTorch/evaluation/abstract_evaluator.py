@@ -30,7 +30,6 @@ from autoPyTorch.constants import (
     TABULAR_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import (
     VotingRegressorWrapper,
     convert_multioutput_multiclass_to_multilabel
@@ -251,9 +250,7 @@ class AbstractEvaluator(object):
             raise ValueError('disable_file_output should be either a bool or a list')
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
-        info: Dict[str, Any] = {'task_type': self.datamanager.task_type,
-                                'output_type': self.datamanager.output_type,
-                                'issparse': self.issparse}
+        info = self.datamanager.get_required_dataset_info()
         if self.task_type in REGRESSION_TASKS:
             if isinstance(self.configuration, int):
                 self.pipeline_class = DummyClassificationPipeline
@@ -282,10 +279,7 @@ class AbstractEvaluator(object):
                 else:
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
-        if self.task_type in TABULAR_TASKS:
-            assert isinstance(self.datamanager, TabularDataset)
-            info.update({'numerical_columns': self.datamanager.numerical_columns,
-                         'categorical_columns': self.datamanager.categorical_columns})
+
         self.dataset_properties = self.datamanager.get_dataset_properties(get_dataset_requirements(info))
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
