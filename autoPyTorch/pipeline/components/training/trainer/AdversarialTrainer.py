@@ -134,7 +134,7 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         return {
             'shortname': 'AdversarialTrainer',
-            'name': 'FGSM Adversarial Regularized Trainer',
+            'name': 'AdversarialTrainer',
             'handles_tabular': True,
             'handles_image': False,
             'handles_time_series': False,
