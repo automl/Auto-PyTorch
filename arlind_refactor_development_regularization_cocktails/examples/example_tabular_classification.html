@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fb0b6687820&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe9eef77100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -153,7 +153,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018830299377441406, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018584728240966797, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -184,41 +184,40 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=4.404452800750732, wallclock_time=5.789628744125366, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 90
+, ta_runs=1, ta_time_used=4.428110837936401, wallclock_time=5.82064151763916, budget=5.555555555555555), TrajEntry(train_perf=0.1286549707602339, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 228
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:PolynomialFeatures:degree, Value: 3
-  feature_preprocessor:PolynomialFeatures:include_bias, Value: True
-  feature_preprocessor:PolynomialFeatures:interaction_only, Value: True
-  feature_preprocessor:__choice__, Value: &#39;PolynomialFeatures&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;median&#39;
+  feature_preprocessor:KernelPCA:kernel, Value: &#39;cosine&#39;
+  feature_preprocessor:KernelPCA:n_components, Value: 6
+  feature_preprocessor:__choice__, Value: &#39;KernelPCA&#39;
+  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
+  imputer:numerical_strategy, Value: &#39;constant_zero&#39;
   lr_scheduler:__choice__, Value: &#39;NoScheduler&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 3
-  network_backbone:MLPBackbone:num_units_1, Value: 866
-  network_backbone:MLPBackbone:num_units_2, Value: 404
-  network_backbone:MLPBackbone:num_units_3, Value: 945
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 82
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;stairs&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 4
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 235
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
   network_head:fully_connected:activation, Value: &#39;tanh&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 390
-  network_init:KaimingInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;KaimingInit&#39;
-  optimizer:AdamWOptimizer:beta1, Value: 0.8905868645397917
-  optimizer:AdamWOptimizer:beta2, Value: 0.9006408322507851
-  optimizer:AdamWOptimizer:lr, Value: 0.00047852051031163406
+  network_head:fully_connected:num_layers, Value: 4
+  network_head:fully_connected:units_layer_1, Value: 125
+  network_head:fully_connected:units_layer_2, Value: 181
+  network_head:fully_connected:units_layer_3, Value: 342
+  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;XavierInit&#39;
+  optimizer:AdamWOptimizer:beta1, Value: 0.9752666166907117
+  optimizer:AdamWOptimizer:beta2, Value: 0.9494064342820837
+  optimizer:AdamWOptimizer:lr, Value: 0.0021375272099625003
   optimizer:AdamWOptimizer:use_weight_decay, Value: True
-  optimizer:AdamWOptimizer:weight_decay, Value: 0.06210207116849203
+  optimizer:AdamWOptimizer:weight_decay, Value: 0.003568402646414004
   optimizer:__choice__, Value: &#39;AdamWOptimizer&#39;
-  scaler:Normalizer:norm, Value: &#39;mean_abs&#39;
-  scaler:__choice__, Value: &#39;Normalizer&#39;
-  trainer:AdversarialTrainer:epsilon, Value: 0.05491330399239199
-  trainer:__choice__, Value: &#39;AdversarialTrainer&#39;
-, ta_runs=9, ta_time_used=70.9322509765625, wallclock_time=90.62867879867554, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
+  scaler:__choice__, Value: &#39;NoScaler&#39;
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=39, ta_time_used=354.27840876579285, wallclock_time=477.5659546852112, budget=50.0)]
+{&#39;accuracy&#39;: 0.8728323699421965}
 </pre></div>
 </div>
 <div class="line-block">
@@ -302,7 +301,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  2.392 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  14.530 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
