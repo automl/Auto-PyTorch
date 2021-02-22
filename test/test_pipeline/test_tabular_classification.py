@@ -1,6 +1,7 @@
 import os
 import re
 
+from ConfigSpace.configuration_space import Configuration
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
@@ -372,6 +373,17 @@ class TestTabularClassification:
             include={'lr_scheduler': ['CosineAnnealingWarmRestarts']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
+        trainer = config.get('trainer:__choice__')
+        config_dict = config.get_dictionary()
+        config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = True
+        config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = True
+        if not config_dict[f'trainer:{trainer}:use_lookahead_optimizer']:
+            config_dict[f'trainer:{trainer}:use_lookahead_optimizer'] = True
+            default_values = Lookahead.get_hyperparameter_search_space().get_default_configuration().get_dictionary()
+            for key, value in default_values.items():
+                config_dict[f'trainer:{trainer}:Lookahead:{key}'] = value
+        config = Configuration(cs, values=config_dict)
+        assert 'CosineAnnealingWarmRestarts' == config.get('lr_scheduler:__choice__')
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary.copy())
@@ -388,7 +400,12 @@ class TestTabularClassification:
         assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
-        assert isinstance(pipeline.named_steps['trainer'].choice.optimizer, Lookahead)
+
+        optimizer = pipeline.named_steps['trainer'].choice.optimizer
+        assert isinstance(optimizer, Lookahead)
+
+        # check if final value of la_step is epochs % la_steps
+        assert optimizer.get_la_step() == fit_dictionary['epochs'] % optimizer._total_la_steps
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)

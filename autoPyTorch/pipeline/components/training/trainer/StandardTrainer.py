@@ -7,8 +7,8 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTr
 
 class StandardTrainer(BaseTrainerComponent):
     def __init__(self, weighted_loss: bool = False,
-                 use_swa: bool = False,
-                 use_se: bool = False,
+                 use_stochastic_weight_averaging: bool = False,
+                 use_snapshot_ensemble: bool = False,
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
@@ -22,8 +22,8 @@ class StandardTrainer(BaseTrainerComponent):
         """
         super().__init__(random_state=random_state,
                          weighted_loss=weighted_loss,
-                         use_swa=use_swa,
-                         use_se=use_se,
+                         use_stochastic_weight_averaging=use_stochastic_weight_averaging,
+                         use_snapshot_ensemble=use_snapshot_ensemble,
                          se_lastk=se_lastk,
                          use_lookahead_optimizer=use_lookahead_optimizer,
                          **lookahead_config)
