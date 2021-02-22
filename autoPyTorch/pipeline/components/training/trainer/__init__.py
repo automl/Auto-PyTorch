@@ -33,8 +33,8 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BudgetTracker,
     RunSummary,
 )
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, update_model_state_dict_from_swa
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
-from autoPyTorch.pipeline.components.training.trainer.utils import update_model_state_dict_from_swa
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
 trainer_directory = os.path.split(__file__)[0]
@@ -640,3 +640,24 @@ class TrainerChoice(autoPyTorchChoice):
         """ Allow a nice understanding of what components where used """
         string = str(self.run_summary)
         return string
+
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
+        """Get the search space updates with the given prefix
+
+        Keyword Arguments:
+            prefix {str} -- Only return search space updates with given prefix (default: {None})
+
+        Returns:
+            dict -- Mapping of search space updates. Keys don't contain the prefix.
+        """
+        updates = super()._get_search_space_updates(prefix=prefix)
+
+        result: Dict[str, Tuple] = dict()
+
+        # iterate over all search space updates of this node and filter the ones out, that have the given prefix
+        for key in updates.keys():
+            if key.startswith(Lookahead.__name__):
+                result[key[len(Lookahead.__name__) + 1:]] = updates[key]
+            else:
+                result[key] = updates[key]
+        return result
