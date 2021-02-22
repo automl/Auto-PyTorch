@@ -52,7 +52,7 @@ class StandardTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
-                   ) -> Dict[str, Union[str, bool]]:
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'StandardTrainer',
             'name': 'StandardTrainer',

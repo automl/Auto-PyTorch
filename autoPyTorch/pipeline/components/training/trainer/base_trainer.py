@@ -24,7 +24,7 @@ from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTr
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.implementations import get_loss_weight_strategy
+from autoPyTorch.utils.implementations import LossWeightStrategyWeighted
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
@@ -240,7 +240,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if self.weighted_loss:
             weights = self.get_class_weights(output_type, labels)
             if output_type == BINARY:
-                kwargs['pos_weight'] = weights
+                kwargs['weight'] = weights
             else:
                 kwargs['weight'] = weights
 
@@ -457,7 +457,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def get_class_weights(self, output_type: int, labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
                           ) -> np.ndarray:
-        strategy = get_loss_weight_strategy(output_type)
+        # hardcoding LossWeightedStrategy. change after fix losses PR merged
+        strategy = LossWeightStrategyWeighted()
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
         weights = weights.type(torch.FloatTensor).to(self.device)
