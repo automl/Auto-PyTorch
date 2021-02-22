@@ -255,7 +255,7 @@ class ResBlock(nn.Module):
         self.layers = self._build_block(in_features, out_features)
 
         if self.config["use_skip_connection"]:
-            if config["mb_choice"] == 'shake-shake':
+            if config["multi_branch_choice"] == 'shake-shake':
                 self.shake_shake_layers = self._build_block(in_features, out_features)
 
     # each block consists of two linear layers with batch norm and activation
@@ -298,7 +298,7 @@ class ResBlock(nn.Module):
                 residual = self.shortcut(x)
 
         if self.config["use_skip_connection"]:
-            if self.config["mb_choice"] == 'shake-shake':
+            if self.config["multi_branch_choice"] == 'shake-shake':
                 x1 = self.layers(x)
                 x2 = self.shake_shake_layers(x)
                 alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
@@ -309,7 +309,7 @@ class ResBlock(nn.Module):
             x = self.layers(x)
 
         if self.config["use_skip_connection"]:
-            if self.config["mb_choice"] == 'shake-drop':
+            if self.config["multi_branch_choice"] == 'shake-drop':
                 alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
                 bl = shake_drop_get_bl(
                     self.block_index,
