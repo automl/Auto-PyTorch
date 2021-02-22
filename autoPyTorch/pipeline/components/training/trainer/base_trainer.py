@@ -176,7 +176,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  use_swa: bool = False,
                  use_se: bool = False,
                  se_lastk: int = 3,
-                 random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 **lookahead_config) -> None:
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
@@ -188,6 +190,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.use_swa = use_swa
         self.use_se = use_se
         self.se_lastk = se_lastk
+        self.use_lookahead_optimizer = use_lookahead_optimizer
+        self.lookahead_config = lookahead_config
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
         ])
@@ -238,6 +242,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             self.model_snapshots: List[torch.nn.Module] = list()
 
         # setup the optimizers
+        if self.use_lookahead_optimizer:
+            optimizer = Lookahead(optimizer=optimizer, config=self.lookahead_config)
         self.optimizer = optimizer
 
         # The budget tracker
@@ -502,7 +508,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
                                                                  la_alpha=la_alpha)
-        parent_hyperparameter = {'parent': 'use_lookahead_optimizer', 'value': True}
+        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
 
         cs = ConfigurationSpace()
         cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])

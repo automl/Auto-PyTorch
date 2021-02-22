@@ -10,7 +10,9 @@ class StandardTrainer(BaseTrainerComponent):
                  use_swa: bool = False,
                  use_se: bool = False,
                  se_lastk: int = 3,
-                 random_state: Optional[np.random.RandomState] = None):
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 **lookahead_config):
         """
         This class handles the training of a network for a single given epoch.
 
@@ -22,7 +24,9 @@ class StandardTrainer(BaseTrainerComponent):
                          weighted_loss=weighted_loss,
                          use_swa=use_swa,
                          use_se=use_se,
-                         se_lastk=se_lastk)
+                         se_lastk=se_lastk,
+                         use_lookahead_optimizer=use_lookahead_optimizer,
+                         **lookahead_config)
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
