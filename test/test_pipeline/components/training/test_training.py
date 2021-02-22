@@ -307,8 +307,12 @@ def test_get_set_config_space(test_input, expected):
             # Remove the selected_choice string from the parameter
             # so we can query in the object for it
             key = key.replace(selected_choice + ':', '')
-            assert key in vars(trainer_choice.choice)
-            assert value == trainer_choice.choice.__dict__[key]
+            if 'Lookahead' in key:
+                assert key in trainer_choice.choice.__dict__['lookahead_config'].keys()
+                assert value == trainer_choice.choice.__dict__['lookahead_config'][key]
+            else:
+                assert key in vars(trainer_choice.choice)
+                assert value == trainer_choice.choice.__dict__[key]
 
 
 @pytest.mark.parametrize("cutmix_prob", [1.0, 0.0])
