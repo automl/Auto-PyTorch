@@ -15,7 +15,9 @@ import pytest
 from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesDataset
 from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
@@ -226,13 +228,32 @@ def get_tabular_data(task):
     return X, y, validator
 
 
-def get_fit_dictionary(X, y, validator, backend):
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        validator=validator,
-        X_test=X, Y_test=y,
-    )
+def get_time_series_data(task):
+    sin_wave = np.sin(np.arange(30))
+    cos_wave = np.cos(np.arange(30))
+    sin_waves = []
+    cos_waves = []
+    # create a dummy dataset with 100 sin and 100 cosine waves
+    for i in range(100):
+        # add some random noise so not every sample is equal
+        sin_waves.append(sin_wave + np.random.randn(30) * 0.1)
+        cos_waves.append(cos_wave + np.random.randn(30) * 0.1)
+    sin_waves = np.stack(sin_waves)[..., np.newaxis]
+    cos_waves = np.stack(cos_waves)[..., np.newaxis]
 
+    if task == "classification_numerical_only":
+        X = np.concatenate([sin_waves, cos_waves])
+        y = np.array([0] * len(sin_waves) + [1] * len(cos_waves))
+
+        validator = TimeSeriesInputValidator(is_classification=True).fit(X.copy(), y.copy())
+
+    else:
+        raise ValueError("Unsupported task {}".format(task))
+
+    return X, y, validator
+
+
+def get_fit_dictionary(datamanager, backend):
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
@@ -260,6 +281,24 @@ def get_fit_dictionary(X, y, validator, backend):
     return fit_dictionary
 
 
+def get_tabular_fit_dictionary(X, y, validator, backend):
+    datamanager = TabularDataset(
+        X=X, Y=y,
+        validator=validator,
+        X_test=X, Y_test=y,
+    )
+    return get_fit_dictionary(datamanager, backend)
+
+
+def get_time_series_fit_dictionary(X, y, validator, backend):
+    datamanager = TimeSeriesDataset(
+        X=X, Y=y,
+        validator=validator,
+        X_test=X, Y_test=y,
+    )
+    return get_fit_dictionary(datamanager, backend)
+
+
 @pytest.fixture
 def fit_dictionary_tabular_dummy(request, backend):
     if request.param == "classification":
@@ -267,14 +306,29 @@ def fit_dictionary_tabular_dummy(request, backend):
     elif request.param == "regression":
         X, y, validator = get_tabular_data("regression_numerical_only")
     else:
-        raise ValueError("Unsupported indirect fixture {}".format(request.param))
-    return get_fit_dictionary(X, y, validator, backend)
+        raise ValueError(f"Unsupported indirect fixture {request.param}")
+    return get_tabular_fit_dictionary(X, y, validator, backend)
+
+
+@pytest.fixture
+def fit_dictionary_time_series_dummy(request, backend):
+    if request.param == "classification":
+        X, y, validator = get_time_series_data("classification_numerical_only")
+    else:
+        raise ValueError(f"Unsupported indirect fixture {request.param}")
+    return get_time_series_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
 def fit_dictionary_tabular(request, backend):
     X, y, validator = get_tabular_data(request.param)
-    return get_fit_dictionary(X, y, validator, backend)
+    return get_tabular_fit_dictionary(X, y, validator, backend)
+
+
+@pytest.fixture
+def fit_dictionary_time_series(request, backend):
+    X, y, validator = get_time_series_data(request.param)
+    return get_time_series_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
@@ -318,10 +372,6 @@ def dataset_traditional_classifier_num_categorical():
 @pytest.fixture
 def search_space_updates():
     updates = HyperparameterSearchSpaceUpdates()
-    updates.append(node_name="imputer",
-                   hyperparameter="numerical_strategy",
-                   value_range=("mean", "most_frequent"),
-                   default_value="mean")
     updates.append(node_name="data_loader",
                    hyperparameter="batch_size",
                    value_range=[16, 512],
@@ -330,20 +380,16 @@ def search_space_updates():
                    hyperparameter="CosineAnnealingLR:T_max",
                    value_range=[50, 60],
                    default_value=55)
-    updates.append(node_name='network_backbone',
-                   hyperparameter='ResNetBackbone:dropout',
-                   value_range=[0, 0.5],
-                   default_value=0.2)
+    updates.append(node_name="optimizer",
+                   hyperparameter="AdamOptimizer:lr",
+                   value_range=[0.0001, 0.001],
+                   default_value=0.001)
     return updates
 
 
 @pytest.fixture
 def error_search_space_updates():
     updates = HyperparameterSearchSpaceUpdates()
-    updates.append(node_name="imputer",
-                   hyperparameter="num_str",
-                   value_range=("mean", "most_frequent"),
-                   default_value="mean")
     updates.append(node_name="data_loader",
                    hyperparameter="batch_size",
                    value_range=[16, 512],
