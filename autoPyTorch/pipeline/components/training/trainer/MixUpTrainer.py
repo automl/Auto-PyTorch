@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -9,7 +9,7 @@ from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
 class MixUpTrainer(MixUp, BaseTrainerComponent):
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -22,7 +22,7 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
 
         Returns:
             np.ndarray: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            Dict[str, np.ndarray]: arguments to the criterion function
         """
         lam = np.random.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
         batch_size = X.size()[0]
@@ -33,8 +33,9 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
         return mixed_x, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+
         return {
             'shortname': 'MixUpTrainer',
             'name': 'MixUp Regularized Trainer',
