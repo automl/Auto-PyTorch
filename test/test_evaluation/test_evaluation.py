@@ -1,4 +1,4 @@
-import logging
+import logging.handlers
 import os
 import shutil
 import sys
@@ -46,7 +46,7 @@ class EvaluationTest(unittest.TestCase):
         self.datamanager = get_multiclass_classification_datamanager()
         self.tmp = os.path.join(os.getcwd(), '.test_evaluation')
         os.mkdir(self.tmp)
-        self.logger = logging.getLogger()
+        self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = 10
         scenario_mock.algo_runs_timelimit = 1000
@@ -100,7 +100,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
@@ -119,7 +120,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         self.stats.ta_runs = 1
         ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None, instance_specific=None,
@@ -144,7 +146,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
@@ -163,7 +166,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         self.scenario.wallclock_limit = 5
         self.stats.submitted_ta_runs += 1
@@ -183,7 +187,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
 
         # The following should not fail because abort on first config crashed is false
@@ -223,7 +228,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
@@ -260,7 +266,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
@@ -282,7 +289,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
@@ -308,13 +316,14 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         self.scenario.wallclock_limit = 180
         instance = "{'subsample': 30}"
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=instance,
                                       instance_specific=None, seed=1, capped=False))
-        self.assertEqual(info[1].status, StatusType.SUCCESS)
+        self.assertEqual(info[1].status, StatusType.SUCCESS, info)
         self.assertEqual(len(info[1].additional_info), 2)
         self.assertIn('configuration_origin', info[1].additional_info)
         self.assertEqual(info[1].additional_info['message'], "{'subsample': 30}")
@@ -331,7 +340,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         self.stats.submitted_ta_runs += 1
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
@@ -353,7 +363,8 @@ class EvaluationTest(unittest.TestCase):
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
-                                    logger=self.logger
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
                                     )
         ta.pynisher_logger = unittest.mock.Mock()
         self.stats.submitted_ta_runs += 1

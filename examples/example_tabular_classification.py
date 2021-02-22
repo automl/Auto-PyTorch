@@ -82,3 +82,4 @@ if __name__ == '__main__':
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
+    print(api.show_models())

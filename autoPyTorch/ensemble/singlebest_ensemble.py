@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -97,7 +97,7 @@ class SingleBest(AbstractEnsemble):
                           enumerate(self.identifiers_)
                           if self.weights_[idx] > 0]))
 
-    def get_models_with_weights(self, models: BasePipeline
+    def get_models_with_weights(self, models: Dict[Any, BasePipeline]
                                 ) -> List[Tuple[float, BasePipeline]]:
         output = []
         for i, weight in enumerate(self.weights_):

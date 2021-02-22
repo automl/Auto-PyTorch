@@ -190,9 +190,10 @@ class TrainerChoice(autoPyTorchChoice):
 
         # Setup the logger
         self.logger = get_named_client_logger(
-            name=X['num_run'],
+            name=f"{X['num_run']}_{time.time()}",
             # Log to a user provided port else to the default logging port
-            port=X['logger_port'] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            port=X['logger_port'
+                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
 
         fit_function = self._fit
@@ -294,7 +295,6 @@ class TrainerChoice(autoPyTorchChoice):
             train_loss, train_metrics = self.choice.train_epoch(
                 train_loader=X['train_data_loader'],
                 epoch=epoch,
-                logger=self.logger,
                 writer=writer,
             )
 
@@ -333,7 +333,8 @@ class TrainerChoice(autoPyTorchChoice):
 
             epoch += 1
 
-            torch.cuda.empty_cache()
+            if 'cuda' in X['device']:
+                torch.cuda.empty_cache()
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
@@ -351,7 +352,6 @@ class TrainerChoice(autoPyTorchChoice):
                 val_metrics=val_metrics,
                 test_metrics=test_metrics,
             )
-            self.logger.debug(self.run_summary.repr_last_epoch())
             self.save_model_for_ensemble()
 
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")

@@ -171,7 +171,7 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         r2 = 0
         while r2 < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             r2 = metrics['r2']
 
@@ -192,7 +192,7 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -215,7 +215,7 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
