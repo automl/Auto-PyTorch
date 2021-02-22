@@ -25,7 +25,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.utils.common import FitRequirement
 
-
 BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 
 
