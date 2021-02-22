@@ -5,12 +5,12 @@
 
 Computation times
 =================
-**17:33.741** total execution time for **examples** files:
+**17:45.156** total execution time for **examples** files:
 
 +----------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_example_tabular_classification.py` (``example_tabular_classification.py``) | 08:58.645 | 0.0 MB |
+| :ref:`sphx_glr_examples_example_tabular_classification.py` (``example_tabular_classification.py``) | 09:13.196 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_example_tabular_regression.py` (``example_tabular_regression.py``)         | 08:27.763 | 0.0 MB |
+| :ref:`sphx_glr_examples_example_tabular_regression.py` (``example_tabular_regression.py``)         | 08:26.163 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_example_image_classification.py` (``example_image_classification.py``)     | 00:07.334 | 0.0 MB |
+| :ref:`sphx_glr_examples_example_image_classification.py` (``example_image_classification.py``)     | 00:05.798 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------+-----------+--------+
