@@ -151,8 +151,8 @@ class ResNetBackbone(NetworkBackboneComponent):
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
         cs.add_condition(
             CS.AndConjunction(
-                CS.EqualsCondition(shake_drop_prob, mb_choice, 'shake-drop'),
-                CS.EqualsCondition(shake_drop_prob, use_sc, True)
+                CS.EqualsCondition(shake_drop_prob, use_sc, True),
+                CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"),
             )
         )
 
