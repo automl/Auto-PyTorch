@@ -22,6 +22,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
 from autoPyTorch.pipeline.components.setup.lr_scheduler.NoScheduler import NoScheduler
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
@@ -343,6 +344,7 @@ class TestTabularClassification:
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
 
+
     def test_set_choices_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
                               'task_type': 'tabular_classification', 'issparse': False,
@@ -369,7 +371,8 @@ class TestTabularClassification:
                                                  search_space_updates=updates)
         self._assert_pipeline_search_space(pipeline, updates)
 
-    def test_swa_se(self, fit_dictionary, mocker):  # noqa F811
+
+    def test_trainer_cocktails(self, fit_dictionary, mocker):  # noqa F811
         fit_dictionary['epochs'] = 10
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'],
@@ -392,6 +395,7 @@ class TestTabularClassification:
         assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
+        assert isinstance(pipeline.named_steps['trainer'].choice.optimizer, Lookahead)
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
