@@ -182,7 +182,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
-                 **lookahead_config: Dict[str, Any]) -> None:
+                 **lookahead_config: Any) -> None:
         super().__init__()
         self.random_state = random_state
         self.weighted_loss = weighted_loss
@@ -190,6 +190,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.use_se = use_se
         self.se_lastk = se_lastk
         self.use_lookahead_optimizer = use_lookahead_optimizer
+        # Add default values for the lookahead optimizer
+        if len(lookahead_config) == 0:
+            lookahead_config = {f'{Lookahead.__name__}:la_steps': 6,
+                                f'{Lookahead.__name__}:la_alpha': 0.6}
         self.lookahead_config = lookahead_config
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
