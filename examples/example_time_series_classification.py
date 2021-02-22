@@ -1,6 +1,6 @@
 """
 ======================
-Tabular Regression
+Time Series Classification
 ======================
 
 The following example shows how to fit a sample classification model
@@ -8,12 +8,7 @@ with AutoPyTorch
 """
 import os
 import tempfile as tmp
-import typing
 import warnings
-
-from sklearn.datasets import make_regression
-
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
 
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -23,10 +18,13 @@ os.environ['MKL_NUM_THREADS'] = '1'
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from sklearn import model_selection, preprocessing
+import numpy as np
 
-from autoPyTorch.api.tabular_regression import TabularRegressionTask
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
+import sklearn.model_selection
+
+from sktime.datasets import load_gunpoint
+
+from autoPyTorch.api.time_series_classification import TimeSeriesClassificationTask
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
@@ -56,48 +54,40 @@ if __name__ == '__main__':
     ############################################################################
     # Data Loading
     # ============
+    X, y = load_gunpoint(return_X_y=True)
 
-    # Get the training data for tabular regression
-    # X, y = datasets.fetch_openml(name="cholesterol", return_X_y=True)
+    # Convert the pandas dataframes returned from load_gunpoint to 3D numpy array since that is
+    # the format AutoPyTorch expects for now
+    X = [X.iloc[i][0].values for i in range(len(X))]
+    y = [int(y.iloc[i]) for i in range(len(y))]
+    X = np.vstack(X)
 
-    # Use dummy data for now since there are problems with categorical columns
-    X, y = make_regression(
-        n_samples=5000,
-        n_features=4,
-        n_informative=3,
-        n_targets=1,
-        shuffle=True,
-        random_state=0
-    )
+    # Expand the last dimension because time series data has to be of shape [B, T, F]
+    # where B is the batch size, T is the time dimension and F are the number of features per time step
+    X = X[..., np.newaxis]
 
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(
+    # Subtract one from the labels because they are initially in {1, 2}, but are expected to be in {0, 1}
+    y = np.array(y) - 1
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X,
         y,
         random_state=1,
     )
 
-    # Scale the regression targets to have zero mean and unit variance.
-    # This is important for Neural Networks since predicting large target values would require very large weights.
-    # One can later rescale the network predictions like this: y_pred = y_pred_scaled * y_train_std + y_train_mean
-    y_train_mean = y_train.mean()
-    y_train_std = y_train.std()
-
-    y_train_scaled = (y_train - y_train_mean) / y_train_std
-    y_test_scaled = (y_test - y_train_mean) / y_train_std
-
     ############################################################################
-    # Build and fit a regressor
+    # Build and fit a classifier
     # ==========================
-    api = TabularRegressionTask(
+    api = TimeSeriesClassificationTask(
         delete_tmp_folder_after_terminate=False,
         search_space_updates=get_search_space_updates()
     )
     api.search(
         X_train=X_train,
-        y_train=y_train_scaled,
+        y_train=y_train,
         X_test=X_test.copy(),
-        y_test=y_test_scaled.copy(),
-        optimize_metric='r2',
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
         total_walltime_limit=500,
         func_eval_time_limit=50
     )
@@ -106,10 +96,6 @@ if __name__ == '__main__':
     # Print the final ensemble performance
     # ====================================
     print(api.run_history, api.trajectory)
-    y_pred_scaled = api.predict(X_test)
-
-    # Rescale the Neural Network predictions into the original target range
-    y_pred = y_pred_scaled * y_train_std + y_train_mean
+    y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
-
     print(score)

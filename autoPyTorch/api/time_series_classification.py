@@ -8,24 +8,24 @@ import pandas as pd
 
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.constants import (
-    TABULAR_REGRESSION,
-    TASK_TYPES_TO_STRING
+    TASK_TYPES_TO_STRING,
+    TIMESERIES_CLASSIFICATION
 )
-from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
-from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesDataset
+from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
-class TabularRegressionTask(BaseTask):
+class TimeSeriesClassificationTask(BaseTask):
     """
-    Tabular Regression API to the pipelines.
+    Time Series Classification API to the pipelines.
     Args:
         seed (int): seed to be used for reproducibility.
         n_jobs (int), (default=1): number of consecutive processes to spawn.
@@ -49,25 +49,24 @@ class TabularRegressionTask(BaseTask):
             Otherwise specifies set of components not to use. Incompatible with include
             components
     """
-
     def __init__(
-            self,
-            seed: int = 1,
-            n_jobs: int = 1,
-            logging_config: Optional[Dict] = None,
-            ensemble_size: int = 50,
-            ensemble_nbest: int = 50,
-            max_models_on_disc: int = 50,
-            temporary_directory: Optional[str] = None,
-            output_directory: Optional[str] = None,
-            delete_tmp_folder_after_terminate: bool = True,
-            delete_output_folder_after_terminate: bool = True,
-            include_components: Optional[Dict] = None,
-            exclude_components: Optional[Dict] = None,
-            resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-            resampling_strategy_args: Optional[Dict[str, Any]] = None,
-            backend: Optional[Backend] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        seed: int = 1,
+        n_jobs: int = 1,
+        logging_config: Optional[Dict] = None,
+        ensemble_size: int = 50,
+        ensemble_nbest: int = 50,
+        max_models_on_disc: int = 50,
+        temporary_directory: Optional[str] = None,
+        output_directory: Optional[str] = None,
+        delete_tmp_folder_after_terminate: bool = True,
+        delete_output_folder_after_terminate: bool = True,
+        include_components: Optional[Dict] = None,
+        exclude_components: Optional[Dict] = None,
+        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        backend: Optional[Backend] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             seed=seed,
@@ -86,43 +85,44 @@ class TabularRegressionTask(BaseTask):
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             search_space_updates=search_space_updates,
-            task_type=TASK_TYPES_TO_STRING[TABULAR_REGRESSION],
+            task_type=TASK_TYPES_TO_STRING[TIMESERIES_CLASSIFICATION],
         )
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
-        if not isinstance(dataset, TabularDataset):
+        if not isinstance(dataset, TimeSeriesDataset):
             raise ValueError("Dataset is incompatible for the given task,: {}".format(
                 type(dataset)
             ))
         return {'task_type': dataset.task_type,
                 'output_type': dataset.output_type,
                 'issparse': dataset.issparse,
-                'numerical_columns': dataset.numerical_columns,
-                'categorical_columns': dataset.categorical_columns}
+                'numerical_features': dataset.numerical_features,
+                'categorical_features': dataset.categorical_features}
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
-        return TabularRegressionPipeline(dataset_properties=dataset_properties)
+    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TimeSeriesClassificationPipeline:
+        return TimeSeriesClassificationPipeline(dataset_properties=dataset_properties)
 
-    def search(self,
-               optimize_metric: str,
-               X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               dataset_name: Optional[str] = None,
-               budget_type: Optional[str] = None,
-               budget: Optional[float] = None,
-               total_walltime_limit: int = 100,
-               func_eval_time_limit: int = 60,
-               traditional_per_total_budget: float = 0.,
-               memory_limit: Optional[int] = 4096,
-               smac_scenario_args: Optional[Dict[str, Any]] = None,
-               get_smac_object_callback: Optional[Callable] = None,
-               all_supported_metrics: bool = True,
-               precision: int = 32,
-               disable_file_output: List = [],
-               load_models: bool = True,
-               ) -> 'BaseTask':
+    def search(
+        self,
+        optimize_metric: str,
+        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        dataset_name: Optional[str] = None,
+        budget_type: Optional[str] = None,
+        budget: Optional[float] = None,
+        total_walltime_limit: int = 100,
+        func_eval_time_limit: int = 60,
+        traditional_per_total_budget: float = 0.,
+        memory_limit: Optional[int] = 4096,
+        smac_scenario_args: Optional[Dict[str, Any]] = None,
+        get_smac_object_callback: Optional[Callable] = None,
+        all_supported_metrics: bool = True,
+        precision: int = 32,
+        disable_file_output: List = [],
+        load_models: bool = True,
+    ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
 
@@ -195,8 +195,8 @@ class TabularRegressionTask(BaseTask):
 
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(
-            is_classification=False,
+        self.InputValidator = TimeSeriesInputValidator(
+            is_classification=True,
             logger_port=self._logger_port,
         )
 
@@ -205,7 +205,7 @@ class TabularRegressionTask(BaseTask):
         # to prevent unseen categories during inference
         self.InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
 
-        self.dataset = TabularDataset(
+        self.dataset = TimeSeriesDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             validator=self.InputValidator,
@@ -214,7 +214,7 @@ class TabularRegressionTask(BaseTask):
         )
 
         if traditional_per_total_budget > 0.:
-            self._logger.warning("Tabular regression for now does not support traditional classifiers. "
+            self._logger.warning("Time series classification for now does not support traditional classifiers. "
                                  "Setting traditional_per_total_budget to 0.")
             traditional_per_total_budget = 0.
 
@@ -246,9 +246,23 @@ class TabularRegressionTask(BaseTask):
                              "the estimator fit() method.")
 
         X_test = self.InputValidator.feature_validator.transform(X_test)
-        predicted_values = super().predict(X_test, batch_size=batch_size,
-                                           n_jobs=n_jobs)
+        predicted_probabilities = super().predict(X_test, batch_size=batch_size,
+                                                  n_jobs=n_jobs)
+
+        if self.InputValidator.target_validator.is_single_column_target():
+            predicted_indexes = np.argmax(predicted_probabilities, axis=1)
+        else:
+            predicted_indexes = (predicted_probabilities > 0.5).astype(int)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_values)
+        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
+
+    def predict_proba(self,
+                      X_test: Union[np.ndarray, pd.DataFrame, List],
+                      batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
+        if self.InputValidator is None or not self.InputValidator._is_fitted:
+            raise ValueError("predict() is only supported after calling search. Kindly call first "
+                             "the estimator fit() method.")
+        X_test = self.InputValidator.feature_validator.transform(X_test)
+        return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)

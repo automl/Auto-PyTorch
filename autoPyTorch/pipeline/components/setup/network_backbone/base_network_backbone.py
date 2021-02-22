@@ -10,6 +10,8 @@ from scipy.sparse import csr_matrix
 import torch
 from torch import nn
 
+import torchvision
+
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
@@ -31,7 +33,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False)])
+            FitRequirement('preprocess_transforms', (Iterable,), user_defined=False, dataset_property=False)])
         self.backbone: nn.Module = None
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
@@ -53,8 +55,8 @@ class NetworkBackboneComponent(autoPyTorchComponent):
             input_shape = X_train.shape[1:]
         else:
             # get input shape by transforming first two elements of the training set
-            column_transformer = X['tabular_transformer'].preprocessor
-            input_shape = column_transformer.transform(X_train[:1]).shape[1:]
+            transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
+            input_shape = transforms(X_train[:1, ...]).shape[1:]
 
         self.input_shape = input_shape
 

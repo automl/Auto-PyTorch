@@ -105,10 +105,10 @@ class ScalerChoice(autoPyTorchChoice):
         It recursively makes sure that the children and parent level requirements
         are honored before fit.
         Args:
-            dataset_properties:
+            dataset_properties (Dict[str, Any]): dictionary holding the dataset properties
 
         """
         super()._check_dataset_properties(dataset_properties)
-        assert 'numerical_features' in dataset_properties and \
-               'categorical_features' in dataset_properties, \
+        assert "numerical_features" in dataset_properties and \
+               "categorical_features" in dataset_properties, \
             "Dataset properties must contain information about the type of features"

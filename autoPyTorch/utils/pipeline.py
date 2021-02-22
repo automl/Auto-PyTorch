@@ -9,10 +9,12 @@ from autoPyTorch.constants import (
     REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS,
+    TIMESERIES_TASKS,
 )
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
+from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -79,20 +81,32 @@ def _get_regression_dataset_requirements(info: Dict[str, Any], include: Dict[str
         raise ValueError("Task_type not supported")
 
 
-def _get_classification_dataset_requirements(info: Dict[str, Any], include: Dict[str, List[str]],
+def _get_classification_dataset_requirements(info: Dict[str, Any],
+                                             include: Dict[str, List[str]],
                                              exclude: Dict[str, List[str]]) -> List[FitRequirement]:
     task_type = STRING_TO_TASK_TYPES[info['task_type']]
 
     if task_type in TABULAR_TASKS:
         return TabularClassificationPipeline(
             dataset_properties=info,
-            include=include, exclude=exclude).\
-            get_dataset_requirements()
+            include=include,
+            exclude=exclude
+        ).get_dataset_requirements()
+
+    elif task_type in TIMESERIES_TASKS:
+        return TimeSeriesClassificationPipeline(
+            dataset_properties=info,
+            include=include,
+            exclude=exclude,
+        ).get_dataset_requirements()
+
     elif task_type in IMAGE_TASKS:
         return ImageClassificationPipeline(
             dataset_properties=info,
-            include=include, exclude=exclude).\
-            get_dataset_requirements()
+            include=include,
+            exclude=exclude
+        ).get_dataset_requirements()
+
     else:
         raise ValueError("Task_type not supported")
 
@@ -143,11 +157,18 @@ def _get_classification_configuration_space(info: Dict[str, Any], include: Dict[
                                                  include=include, exclude=exclude,
                                                  search_space_updates=search_space_updates)
         return pipeline.get_hyperparameter_search_space()
+
+    elif STRING_TO_TASK_TYPES[info['task_type']] in TIMESERIES_TASKS:
+        pipeline = TimeSeriesClassificationPipeline(dataset_properties=info,
+                                                    include=include, exclude=exclude,
+                                                    search_space_updates=search_space_updates)
+        return pipeline.get_hyperparameter_search_space()
+
     elif STRING_TO_TASK_TYPES[info['task_type']] in IMAGE_TASKS:
         return ImageClassificationPipeline(
             dataset_properties=info,
             include=include, exclude=exclude,
-            search_space_updates=search_space_updates).\
+            search_space_updates=search_space_updates). \
             get_hyperparameter_search_space()
     else:
         raise ValueError("Task_type not supported")
