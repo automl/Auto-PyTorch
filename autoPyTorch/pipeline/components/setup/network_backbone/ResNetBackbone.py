@@ -96,13 +96,14 @@ class ResNetBackbone(NetworkBackboneComponent):
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
                                         use_batch_norm: Tuple[Tuple, bool] = ((True, False), True),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        use_skip_connection: Tuple[Tuple, bool] = ((True, False), True),
                                         num_units: Tuple[Tuple, int] = ((10, 1024), 200),
                                         activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
                                                                          list(_activations.keys())[0]),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
+                                        multi_branch_choice: Tuple[Tuple, str] = (
+                                                ('None', 'shake-shake', 'shake-drop'), 'shake-drop'),
                                         max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
@@ -128,17 +129,27 @@ class ResNetBackbone(NetworkBackboneComponent):
         cs.add_hyperparameters([use_dropout])
         cs.add_hyperparameters([use_batch_normalization])
 
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
-                                                    default_value=use_shake_shake[1])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
-                                                   default_value=use_shake_drop[1])
+        use_sc = CategoricalHyperparameter(
+            "use_skip_connection",
+            choices=use_skip_connection[0],
+            default_value=use_skip_connection[1],
+        )
+
+        mb_choice = CategoricalHyperparameter(
+            "mb_choice",
+            choices=multi_branch_choice[0],
+            default_value=multi_branch_choice[1],
+        )
+
         shake_drop_prob = UniformFloatHyperparameter(
             "max_shake_drop_probability",
             lower=max_shake_drop_probability[0][0],
             upper=max_shake_drop_probability[0][1],
             default_value=max_shake_drop_probability[1])
-        cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
+
+        cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
+        cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
+        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, 'shake-drop'))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
@@ -227,8 +238,9 @@ class ResBlock(nn.Module):
         self.num_blocks = blocks_per_group * self.config["num_groups"]
         self.layers = self._build_block(in_features, out_features)
 
-        if config["use_shake_shake"]:
-            self.shake_shake_layers = self._build_block(in_features, out_features)
+        if self.config["use_skip_connection"]:
+            if config["mb_choice"] == 'shake-shake':
+                self.shake_shake_layers = self._build_block(in_features, out_features)
 
     # each block consists of two linear layers with batch norm and activation
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
@@ -251,7 +263,9 @@ class ResBlock(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        residual = x
+
+        if self.config["use_skip_connection"]:
+            residual = x
 
         # if shortcut is not none we need a layer such that x matches the output dimension
         if self.shortcut is not None and self.start_norm is not None:
@@ -264,26 +278,33 @@ class ResBlock(nn.Module):
             # if in_features != out_features
             # -> result = W_shortcut(A(BN(x))) + W_2(~D(A(BN(W_1(A(BN(x))))))
             x = self.start_norm(x)
-            residual = self.shortcut(x)
+            if self.config["use_skip_connection"]:
+                residual = self.shortcut(x)
 
-        if self.config["use_shake_shake"]:
-            x1 = self.layers(x)
-            x2 = self.shake_shake_layers(x)
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            x = shake_shake(x1, x2, alpha, beta)
+        if self.config["use_skip_connection"]:
+            if self.config["mb_choice"] == 'shake-shake':
+                x1 = self.layers(x)
+                x2 = self.shake_shake_layers(x)
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                x = shake_shake(x1, x2, alpha, beta)
+            else:
+                x = self.layers(x)
         else:
             x = self.layers(x)
 
-        if self.config["use_shake_drop"]:
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            bl = shake_drop_get_bl(
-                self.block_index,
-                1 - self.config["max_shake_drop_probability"],
-                self.num_blocks,
-                self.training,
-                x.is_cuda
-            )
-            x = shake_drop(x, alpha, beta, bl)
+        if self.config["use_skip_connection"]:
+            if self.config["mb_choice"] == 'shake-drop':
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                bl = shake_drop_get_bl(
+                    self.block_index,
+                    1 - self.config["max_shake_drop_probability"],
+                    self.num_blocks,
+                    self.training,
+                    x.is_cuda,
+                )
+                x = shake_drop(x, alpha, beta, bl)
 
-        x = x + residual
+        if self.config["use_skip_connection"]:
+            x = x + residual
+
         return x
