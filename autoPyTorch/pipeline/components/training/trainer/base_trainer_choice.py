@@ -26,13 +26,13 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.training.losses import get_loss
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.pipeline.components.training.trainer.utils import update_model_state_dict_from_swa
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
     BudgetTracker,
     RunSummary,
 )
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
+from autoPyTorch.pipeline.components.training.trainer.utils import update_model_state_dict_from_swa
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
 trainer_directory = os.path.split(__file__)[0]
@@ -276,10 +276,22 @@ class TrainerChoice(autoPyTorchChoice):
         )
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
+        self.choice = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_se:
             X['network_snapshots'].extend(self.choice.model_snapshots)
 
-        return cast(autoPyTorchComponent, self.choice)
+        if X['use_pynisher']:
+            # Normally the X[network] is a pointer to the object, so at the
+            # end, when we train using X, the pipeline network is updated for free
+            # If we do multiprocessing (because of pynisher) we have to update
+            # X[network] manually. we do so in a way that every pipeline component
+            # can see this new network -- via an update, not overwrite of the pointer
+            state_dict = state_dict.result
+            X['network'].load_state_dict(state_dict)
+
+        # TODO: when have the optimizer code, the pynisher object might have failed
+        # We should process this function as Failure if so trough fit_function.exit_status
+        return self.choice
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
         """
@@ -393,12 +405,12 @@ class TrainerChoice(autoPyTorchChoice):
 
         if self.choice.use_swa:
             # update batch norm statistics
-            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model)
+            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model.double())
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_se:
                 for model in self.choice.model_snapshots:
-                    swa_utils.update_bn(X['train_data_loader'], model)
+                    swa_utils.update_bn(X['train_data_loader'], model.double())
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):

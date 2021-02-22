@@ -1,6 +1,5 @@
-from copy import deepcopy
-from queue import LifoQueue
 import time
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from ConfigSpace.conditions import EqualsCondition
@@ -9,9 +8,6 @@ from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     Constant
 )
-
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter
 import numpy as np
 
 import pandas as pd
@@ -223,7 +219,11 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             self.swa_model = swa_utils.AveragedModel(self.model)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
-        self._budget_threshold: int = int(0.75 * budget_tracker.max_epochs)
+        self._budget_threshold = 0
+        if self.use_swa or self.use_se:
+            assert budget_tracker.max_epochs is not None, "Can only use stochastic weight averaging or snapshot " \
+                                                          "ensemble when budget is epochs"
+            self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
 
         # in case we are using se, initialise list to store model snapshots
         if self.use_se:
@@ -473,6 +473,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                                         weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
                                         use_swa: Tuple[Tuple, bool] = ((True, False), True),
                                         use_se: Tuple[Tuple, bool] = ((True, False), True),
+                                        se_lastk: Tuple[Tuple, int] = ((3,), 3)
                                         ) -> ConfigurationSpace:
         weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
                                                   default_value=weighted_loss[1])
@@ -482,7 +483,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # Note, this is not easy to be considered as a hyperparameter.
         # When used with cyclic learning rates, it depends on the number
         # of restarts.
-        se_lastk = Constant('se_lastk', 3)
+        se_lastk = Constant('se_lastk', se_lastk[1])
 
         cs = ConfigurationSpace()
         cs.add_hyperparameters([use_swa, use_se, se_lastk])
