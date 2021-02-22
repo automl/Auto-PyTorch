@@ -66,6 +66,7 @@ class StandardTrainer(BaseTrainerComponent):
                                         weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
                                         use_swa: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
                                         use_se: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
+                                        se_lastk: typing.Tuple[typing.Tuple, int] = ((3,), 3)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         if dataset_properties is not None:
