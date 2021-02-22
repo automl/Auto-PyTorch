@@ -2,13 +2,12 @@ import typing
 
 import numpy as np
 
-import torch
-
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
-from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
+from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
 
-class MixUpTrainer(MixUp, BaseTrainerComponent):
+class GridCutOutTrainer(CutOut, BaseTrainerComponent):
+
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
         """
@@ -25,21 +24,33 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        lam = np.random.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
-        batch_size = X.size()[0]
-        index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
+        r = np.random.rand(1)
+        batch_size, channel, W, H = X.size()
+        if r > self.cutout_prob:
+            return X, {'y_a': y, 'y_b': y, 'lam': 1}
 
-        mixed_x = lam * X + (1 - lam) * X[index, :]
-        y_a, y_b = y, y[index]
-        return mixed_x, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
+        # Draw parameters of a random bounding box
+        # Where to cut basically
+        cut_rat = np.sqrt(1. - self.patch_ratio)
+        cut_w = np.int(W * cut_rat)
+        cut_h = np.int(H * cut_rat)
+        cx = np.random.randint(W)
+        cy = np.random.randint(H)
+        bbx1 = np.clip(cx - cut_w // 2, 0, W)
+        bby1 = np.clip(cy - cut_h // 2, 0, H)
+        bbx2 = np.clip(cx + cut_w // 2, 0, W)
+        bby2 = np.clip(cy + cut_h // 2, 0, H)
+        X[:, :, bbx1:bbx2, bby1:bby2] = 0.0
+
+        return X, {'y_a': y, 'y_b': y, 'lam': 1}
 
     @staticmethod
     def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
                        ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
-            'shortname': 'MixUpTrainer',
-            'name': 'MixUp Regularized Trainer',
-            'handles_tabular': True,
+            'shortname': 'GridCutOutTrainer',
+            'name': 'GridCutOutTrainer',
+            'handles_tabular': False,
             'handles_image': True,
-            'handles_time_series': True,
+            'handles_time_series': False,
         }
