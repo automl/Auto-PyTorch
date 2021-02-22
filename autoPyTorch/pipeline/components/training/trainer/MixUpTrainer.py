@@ -22,7 +22,6 @@ class MixUpTrainer(MixUp, BaseTrainerComponent):
         on a different way. That is, in standard training we provide the data to the
         network as we receive it to the loader. Some regularization techniques, like mixup
         alter the data.
-
         Args:
             X (torch.Tensor): The batch training features
             y (torch.Tensor): The batch training labels
