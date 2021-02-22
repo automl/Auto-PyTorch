@@ -3,6 +3,7 @@ import re
 import unittest
 import unittest.mock
 
+from ConfigSpace.configuration_space import Configuration
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
@@ -327,7 +328,6 @@ class TestTabularClassification:
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
 
-
     def test_set_choices_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
                               'task_type': 'tabular_classification'}
@@ -353,19 +353,32 @@ class TestTabularClassification:
                                                  search_space_updates=updates)
         self._assert_pipeline_search_space(pipeline, updates)
 
-
-    def test_trainer_cocktails(self, fit_dictionary, mocker):  # noqa F811
+    @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
+                                              'ReduceLROnPlateau'])
+    def test_trainer_cocktails(self, fit_dictionary, mocker, lr_scheduler):  # noqa F811
         fit_dictionary['epochs'] = 10
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'],
-            include={'lr_scheduler': ['CosineAnnealingWarmRestarts']})
+            include={'lr_scheduler': [lr_scheduler]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
+        trainer = config.get('trainer:__choice__')
+        config_dict = config.get_dictionary()
+        config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = True
+        config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = True
+        if not config_dict[f'trainer:{trainer}:use_lookahead_optimizer']:
+            config_dict[f'trainer:{trainer}:use_lookahead_optimizer'] = True
+            default_values = Lookahead.get_hyperparameter_search_space().get_default_configuration().get_dictionary()
+            for key, value in default_values.items():
+                config_dict[f'trainer:{trainer}:Lookahead:{key}'] = value
+        config = Configuration(cs, values=config_dict)
+        assert lr_scheduler == config.get('lr_scheduler:__choice__')
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary.copy())
         X = pipeline.transform(fit_dictionary.copy())
-        assert 'is_cyclic_scheduler' in X and X['is_cyclic_scheduler']
+        assert 'is_cyclic_scheduler' in X and \
+               (X['is_cyclic_scheduler'] or config.get('lr_scheduler:__choice__') == 'ReduceLROnPlateau')
 
         trainer = config.get('trainer:__choice__')
         assert 'network_snapshots' in X and \
@@ -377,7 +390,13 @@ class TestTabularClassification:
         assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
-        assert isinstance(pipeline.named_steps['trainer'].choice.optimizer, Lookahead)
+
+        optimizer = pipeline.named_steps['trainer'].choice.optimizer
+        assert isinstance(optimizer, Lookahead)
+
+        # check if final value of la_step is epochs * num_batches % la_steps
+        assert optimizer.get_la_step() == fit_dictionary['epochs'] * len(list(X['train_data_loader'].batch_sampler)) \
+               % optimizer._total_la_steps
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
