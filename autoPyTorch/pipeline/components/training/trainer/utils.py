@@ -45,9 +45,9 @@ class Lookahead(Optimizer):
         """
         self.optimizer = optimizer
         self._la_step = 0  # counter for inner optimizer
-        self.la_alpha = config["la_alpha"]
+        self.la_alpha = config["lookahead_optimizer:la_alpha"]
         self.la_alpha = torch.tensor(self.la_alpha)
-        self._total_la_steps = config["la_steps"]
+        self._total_la_steps = config["lookahead_optimizer:la_steps"]
         # TODO possibly incorporate different momentum options when using SGD
         pullback_momentum = "none"
         pullback_momentum = pullback_momentum.lower()
@@ -148,8 +148,8 @@ class Lookahead(Optimizer):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
-            la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
+        la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
+        la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
     ):
         cs = ConfigurationSpace()
         la_steps = UniformIntegerHyperparameter('la_steps', lower=la_steps[0][0],
@@ -157,9 +157,9 @@ class Lookahead(Optimizer):
                                                 default_value=la_steps[1],
                                                 log=la_steps[2])
         la_alpha = UniformFloatHyperparameter('la_alpha', lower=la_alpha[0][0],
-                                                upper=la_alpha[0][1],
-                                                default_value=la_alpha[1],
-                                                log=la_alpha[2])
+                                              upper=la_alpha[0][1],
+                                              default_value=la_alpha[1],
+                                              log=la_alpha[2])
         cs.add_hyperparameters([la_steps, la_alpha])
 
         return cs
