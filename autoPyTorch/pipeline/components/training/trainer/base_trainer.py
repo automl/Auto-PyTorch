@@ -27,6 +27,7 @@ from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTr
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -198,7 +199,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
-                 **lookahead_config) -> None:
+                 **lookahead_config: Dict[str, Any]) -> None:
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
@@ -554,7 +555,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         cs = ConfigurationSpace()
         cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
         cs.add_configuration_space(
-            'lookahead_optimizer',
+            Lookahead.__name__,
             config_space,
             parent_hyperparameter=parent_hyperparameter
         )
