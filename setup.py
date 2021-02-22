@@ -64,6 +64,7 @@ setuptools.setup(
             "pytest-cov",
             'pytest-forked',
             'pytest-subtests',
+            "pytest-mock"
             "codecov",
             "pep8",
             "mypy",
