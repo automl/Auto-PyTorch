@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f4188667ee0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f9bd539e700> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -67,7 +67,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019037723541259766, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018351078033447266, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -98,43 +98,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.678320407867432, wallclock_time=6.035339593887329, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=2, incumbent=Configuration:
-      data_loader:batch_size, Value: 69
-      encoder:__choice__, Value: 'NoEncoder'
-      feature_preprocessor:TruncatedSVD:target_dim, Value: 4
-      feature_preprocessor:__choice__, Value: 'TruncatedSVD'
-      imputer:categorical_strategy, Value: 'constant_!missing!'
-      imputer:numerical_strategy, Value: 'constant_zero'
-      lr_scheduler:CyclicLR:base_lr, Value: 0.00251154343200726
-      lr_scheduler:CyclicLR:max_lr, Value: 0.051216755510936456
-      lr_scheduler:CyclicLR:mode, Value: 'triangular'
-      lr_scheduler:CyclicLR:step_size_up, Value: 3083
-      lr_scheduler:__choice__, Value: 'CyclicLR'
-      network_backbone:ShapedMLPBackbone:activation, Value: 'sigmoid'
-      network_backbone:ShapedMLPBackbone:max_dropout, Value: 0.6835023027376572
-      network_backbone:ShapedMLPBackbone:max_units, Value: 85
-      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'triangle'
-      network_backbone:ShapedMLPBackbone:num_groups, Value: 1
-      network_backbone:ShapedMLPBackbone:output_dim, Value: 36
-      network_backbone:ShapedMLPBackbone:use_dropout, Value: True
-      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'relu'
-      network_head:fully_connected:num_layers, Value: 3
-      network_head:fully_connected:units_layer_1, Value: 108
-      network_head:fully_connected:units_layer_2, Value: 97
-      network_init:OrthogonalInit:bias_strategy, Value: 'Zero'
-      network_init:__choice__, Value: 'OrthogonalInit'
-      optimizer:RMSpropOptimizer:alpha, Value: 0.4374567672951828
-      optimizer:RMSpropOptimizer:lr, Value: 3.960392405840104e-05
-      optimizer:RMSpropOptimizer:momentum, Value: 0.5431827957628166
-      optimizer:RMSpropOptimizer:use_weight_decay, Value: True
-      optimizer:RMSpropOptimizer:weight_decay, Value: 0.012886961452976032
-      optimizer:__choice__, Value: 'RMSpropOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:MixUpTrainer:alpha, Value: 0.6947387386235198
-      trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=20, ta_time_used=172.1960644721985, wallclock_time=233.03258395195007, budget=50.0)]
+    , ta_runs=1, ta_time_used=4.4033119678497314, wallclock_time=5.828702449798584, budget=5.555555555555555)]
     {'accuracy': 0.8786127167630058}
 
 
@@ -226,7 +190,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  14.104 seconds)
+   **Total running time of the script:** ( 9 minutes  2.034 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_classification.py:
