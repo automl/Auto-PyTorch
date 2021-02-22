@@ -131,9 +131,13 @@ class AdversarialTrainer(BaseTrainerComponent):
     @staticmethod
     def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
                        ) -> typing.Dict[str, str]:
+
         return {
             'shortname': 'AdversarialTrainer',
             'name': 'FGSM Adversarial Regularized Trainer',
+            'handles_tabular': True,
+            'handles_image': False,
+            'handles_time_series': False,
         }
 
     @staticmethod
