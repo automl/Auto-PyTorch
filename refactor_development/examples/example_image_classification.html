@@ -3939,21 +3939,23 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration:
-  image_augmenter:GaussianBlur:use_augmenter, Value: False
+  image_augmenter:GaussianBlur:sigma_min, Value: 0.8480354370981031
+  image_augmenter:GaussianBlur:sigma_offset, Value: 1.8662941407999276
+  image_augmenter:GaussianBlur:use_augmenter, Value: True
   image_augmenter:GaussianNoise:use_augmenter, Value: False
   image_augmenter:RandomAffine:use_augmenter, Value: False
-  image_augmenter:RandomCutout:p, Value: 0.5586693024569416
+  image_augmenter:RandomCutout:p, Value: 0.3656551312711466
   image_augmenter:RandomCutout:use_augmenter, Value: True
   image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.4581846771624755
-  normalizer:__choice__, Value: &#39;ImageNormalizer&#39;
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.4929042351991033
+  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
 
 Fitting the pipeline...
 ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        ImageNormalizer
+        NoNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -4018,7 +4020,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.798 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.334 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_image_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
