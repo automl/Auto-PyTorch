@@ -140,7 +140,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         )
 
         mb_choice = CategoricalHyperparameter(
-            "mb_choice",
+            "multi_branch_choice",
             choices=multi_branch_choice[0],
             default_value=multi_branch_choice[1],
         )
