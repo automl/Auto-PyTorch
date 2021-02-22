@@ -243,7 +243,7 @@ def test_every_trainer_is_valid():
     trainer_choice = TrainerChoice(dataset_properties={})
 
     # Make sure all components are returned
-    assert len(trainer_choice.get_components().keys()) == 6
+    assert len(trainer_choice.get_components().keys()) == 7
 
     # For every optimizer in the components, make sure
     # that it complies with the scikit learn estimator.
@@ -274,7 +274,7 @@ def test_every_trainer_is_valid():
 
 
 @pytest.mark.parametrize("test_input,expected", [
-    ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer'])),
+    ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer', 'AdversarialTrainer'])),
     ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer'])),
     ("time_series_classification", set([])),
 ])
@@ -414,7 +414,7 @@ class TrainerTest(unittest.TestCase):
         trainer_choice = TrainerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        self.assertEqual(len(trainer_choice.get_components().keys()), 3)
+        self.assertEqual(len(trainer_choice.get_components().keys()), 7)
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
