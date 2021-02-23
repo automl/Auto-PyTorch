@@ -52,8 +52,10 @@ class TestTabularRegression:
     def test_pipeline_fit(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
+        # TODO: fix issue where adversarial also works for regression
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
 
         config = cs.sample_configuration()
@@ -89,7 +91,8 @@ class TestTabularRegression:
                                                 "AdamOptimizer:lr",
                                                 value_range=[0.0001, 0.001],
                                                 default_value=0.001)
-            ])
+            ]),
+            exclude={'trainer': ['AdversarialTrainer']}
         )
 
         cs = pipeline.get_hyperparameter_search_space()
@@ -116,7 +119,8 @@ class TestTabularRegression:
         given a random configuration"""
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -141,7 +145,8 @@ class TestTabularRegression:
         """
 
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
@@ -174,14 +179,16 @@ class TestTabularRegression:
         fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
 
         pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
         for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads', 'dataset_properties']:
             fit_dictionary_tabular_copy = fit_dictionary_tabular.copy()
             fit_dictionary_tabular_copy.pop(key)
@@ -192,7 +199,8 @@ class TestTabularRegression:
         """Fitting a network should put the network in the X"""
         # Create the pipeline to check. A random config should be sufficient
         pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
@@ -234,7 +242,8 @@ class TestTabularRegression:
     def test_get_fit_requirements(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [], 'categorical_columns': [],
                               'task_type': 'tabular_regression'}
-        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties)
+        pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                             exclude={'trainer': ['AdversarialTrainer']})
         fit_requirements = pipeline.get_fit_requirements()
 
         # check if fit requirements is a list of FitRequirement named tuples
@@ -246,7 +255,8 @@ class TestTabularRegression:
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
                               'task_type': 'tabular_regression'}
         pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
-                                             search_space_updates=search_space_updates)
+                                             search_space_updates=search_space_updates,
+                                             exclude={'trainer': ['AdversarialTrainer']})
         self._assert_pipeline_search_space(pipeline, search_space_updates)
 
     def test_read_and_update_search_space(self, fit_dictionary_tabular, search_space_updates):
@@ -263,7 +273,8 @@ class TestTabularRegression:
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
                               'task_type': 'tabular_regression'}
         pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
-                                             search_space_updates=file_search_space_updates)
+                                             search_space_updates=file_search_space_updates,
+                                             exclude={'trainer': ['AdversarialTrainer']})
         assert file_search_space_updates == pipeline.search_space_updates
 
     def test_error_search_space_updates(self, fit_dictionary_tabular, error_search_space_updates):
@@ -271,7 +282,8 @@ class TestTabularRegression:
                               'task_type': 'tabular_regression'}
         try:
             _ = TabularRegressionPipeline(dataset_properties=dataset_properties,
-                                          search_space_updates=error_search_space_updates)
+                                          search_space_updates=error_search_space_updates,
+                                          exclude={'trainer': ['AdversarialTrainer']})
         except Exception as e:
             assert isinstance(e, ValueError)
             assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
@@ -280,7 +292,8 @@ class TestTabularRegression:
     def test_set_range_search_space_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
                               'task_type': 'tabular_regression'}
-        config_dict = TabularRegressionPipeline(dataset_properties=dataset_properties). \
+        config_dict = TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                                exclude={'trainer': ['AdversarialTrainer']}). \
             get_hyperparameter_search_space()._hyperparameters
         updates = HyperparameterSearchSpaceUpdates()
         for i, (name, hyperparameter) in enumerate(config_dict.items()):
@@ -300,7 +313,8 @@ class TestTabularRegression:
             updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
                            value_range=value_range, default_value=default_value)
         pipeline = TabularRegressionPipeline(dataset_properties=dataset_properties,
-                                             search_space_updates=updates)
+                                             search_space_updates=updates,
+                                             exclude={'trainer': ['AdversarialTrainer']})
 
         try:
             self._assert_pipeline_search_space(pipeline, updates)
