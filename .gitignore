@@ -138,7 +138,3 @@ dask-worker-space/
 # Test output
 tmp/
 .tmp_evaluation
-
-# private
-grep.py
-private/

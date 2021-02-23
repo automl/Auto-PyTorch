@@ -161,9 +161,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
     def __getitem__(self, index: int, train: bool = True) -> Tuple[np.ndarray, ...]:
         """
-        The base dataset uses a Subset of the data. Nevertheless, the base dataset expect
-        both validation and test data to be present in the same dataset, which is motivated
-        by the need to dynamically give train/test data with the __getitem__ command.
+        The base dataset uses a Subset of the data. Nevertheless, the base dataset expects
+        both validation and test data to be present in the same dataset, which motivates
+        the need to dynamically give train/test data with the __getitem__ command.
 
         This method yields a datapoint of the whole data (after a Subset has selected a given
         item, based on the resampling strategy) and applies a train/testing transformation, if any.

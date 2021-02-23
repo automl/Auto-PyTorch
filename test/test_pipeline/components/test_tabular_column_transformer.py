@@ -12,11 +12,6 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
     TabularColumnTransformer
 )
 
-@pytest.mark.parametrize("fit_dictionary", ['fit_dictionary_numerical_only',
-                                            'fit_dictionary_categorical_only',
-                                            'fit_dictionary_num_and_categorical'], indirect=True)
-class TestTabularTransformer:
-    def test_tabular_preprocess(self, fit_dictionary):
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
                                                     'classification_categorical_only',
