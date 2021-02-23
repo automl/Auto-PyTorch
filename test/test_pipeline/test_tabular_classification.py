@@ -230,8 +230,8 @@ class TestTabularClassification:
         # Then fitting a optimizer should fail if no network:
         assert 'optimizer' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
         ):
             pipeline.named_steps['optimizer'].fit({'dataset_properties': {}}, None)
 
@@ -242,8 +242,8 @@ class TestTabularClassification:
         # Then fitting a optimizer should fail if no network:
         assert 'lr_scheduler' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
         ):
             pipeline.named_steps['lr_scheduler'].fit({'dataset_properties': {}}, None)
 
@@ -329,16 +329,21 @@ class TestTabularClassification:
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
 
+    @pytest.mark.parametrize('trainer', ['StandardTrainer',
+                                         'AdversarialTrainer',
+                                         'MixUpTrainer',
+                                         'RowCutMixTrainer',
+                                         'RowCutOutTrainer'])
     @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
                                               'ReduceLROnPlateau'])
-    def test_trainer_cocktails(self, fit_dictionary, mocker, lr_scheduler):  # noqa F811
+    def test_trainer_cocktails(self, fit_dictionary, mocker, lr_scheduler, trainer):  # noqa F811
         fit_dictionary['epochs'] = 10
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'],
-            include={'lr_scheduler': [lr_scheduler]})
+            include={'lr_scheduler': [lr_scheduler], 'trainer': [trainer]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
-        trainer = config.get('trainer:__choice__')
+        assert trainer == config.get('trainer:__choice__')
         config_dict = config.get_dictionary()
         config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = True
         config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = True
