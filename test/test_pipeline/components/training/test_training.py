@@ -510,26 +510,20 @@ class AdversarialTrainerTest(BaseTraining, unittest.TestCase):
         Makes sure we are able to train a model and produce good
         training performance
         """
-        trainer = AdversarialTrainer(epsilon=0.07)
-        trainer.prepare(
-            scheduler=None,
-            model=self.model,
-            metrics=self.metrics,
-            criterion=self.criterion,
-            budget_tracker=self.budget_tracker,
-            optimizer=self.optimizer,
-            device=self.device,
-            metrics_during_training=True,
-            task_type=self.task_type,
-            output_type=self.output_type,
-            labels=self.y
-        )
+        (trainer,
+         _,
+         _,
+         loader,
+         _,
+         epochs,
+         logger) = self.prepare_trainer(AdversarialTrainer(epsilon=0.07),
+                                        constants.TABULAR_CLASSIFICATION)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(self.loader, epoch=1, logger=self.logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
