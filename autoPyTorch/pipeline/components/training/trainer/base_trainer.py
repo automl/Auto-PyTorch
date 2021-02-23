@@ -559,7 +559,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         cs.add_condition(cond)
 
         if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] not in CLASSIFICATION_TASKS:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 cs.add_hyperparameters([weighted_loss])
 
         return cs
