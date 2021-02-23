@@ -27,7 +27,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import
 )
 
 sys.path.append(os.path.dirname(__file__))
-from test.test_pipeline.components.base import BaseTraining  # noqa (E402: module level import not at top of file)
+from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
 
 
 class BaseDataLoaderTest(unittest.TestCase):
