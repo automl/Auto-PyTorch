@@ -39,7 +39,13 @@ class TestTabularRegression:
                 assert any(update.node_name + ':' + update.hyperparameter in name
                            for name in config_space.get_hyperparameter_names()), \
                     "Can't find hyperparameter: {}".format(update.hyperparameter)
-                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
+                # dimension reduction in embedding starts from 0
+                if 'embedding' in update.node_name:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_0')
+                else:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_1')
             assert update.default_value == hyperparameter.default_value
             if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
                 assert update.value_range[0] == hyperparameter.lower
@@ -199,6 +205,7 @@ class TestTabularRegression:
 
         # Make sure that fitting a network adds a "network" to X
         assert 'network' in pipeline.named_steps.keys()
+        fit_dictionary_tabular['network_embedding'] = torch.nn.Linear(3, 3)
         fit_dictionary_tabular['network_backbone'] = torch.nn.Linear(3, 4)
         fit_dictionary_tabular['network_head'] = torch.nn.Linear(4, 1)
         X = pipeline.named_steps['network'].fit(

@@ -178,7 +178,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         restored_estimator.predict(X_test)
 
 
-@pytest.mark.parametrize('openml_name', ("cholesterol", ))
+@pytest.mark.parametrize('openml_name', ("boston", ))
 @pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
                                                  CrossValTypes.k_fold_cross_validation,
                                                  ))
