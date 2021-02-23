@@ -322,11 +322,13 @@ class TestTabularClassification:
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
 
-    def test_trainer_cocktails(self, fit_dictionary, mocker):  # noqa F811
+    @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
+                                              'ReduceLROnPlateau'])
+    def test_trainer_cocktails(self, fit_dictionary, mocker, lr_scheduler):  # noqa F811
         fit_dictionary['epochs'] = 10
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary['dataset_properties'],
-            include={'lr_scheduler': ['CosineAnnealingWarmRestarts']})
+            include={'lr_scheduler': [lr_scheduler]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
         trainer = config.get('trainer:__choice__')
@@ -339,12 +341,13 @@ class TestTabularClassification:
             for key, value in default_values.items():
                 config_dict[f'trainer:{trainer}:Lookahead:{key}'] = value
         config = Configuration(cs, values=config_dict)
-        assert 'CosineAnnealingWarmRestarts' == config.get('lr_scheduler:__choice__')
+        assert lr_scheduler == config.get('lr_scheduler:__choice__')
         pipeline.set_hyperparameters(config)
 
         pipeline.fit(fit_dictionary.copy())
         X = pipeline.transform(fit_dictionary.copy())
-        assert 'is_cyclic_scheduler' in X and X['is_cyclic_scheduler']
+        assert 'is_cyclic_scheduler' in X and \
+               (X['is_cyclic_scheduler'] or config.get('lr_scheduler:__choice__') == 'ReduceLROnPlateau')
 
         trainer = config.get('trainer:__choice__')
         assert 'network_snapshots' in X and \
