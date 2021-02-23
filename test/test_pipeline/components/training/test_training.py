@@ -27,7 +27,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import
 )
 
 sys.path.append(os.path.dirname(__file__))
-from base import BaseTraining  # noqa (E402: module level import not at top of file)
+from test.test_pipeline.components.base import BaseTraining  # noqa (E402: module level import not at top of file)
 
 
 class BaseDataLoaderTest(unittest.TestCase):
@@ -128,6 +128,7 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
         Makes sure we properly evaluate data, returning a proper loss
         and metric
         """
+
         (trainer,
          model,
          optimizer,
@@ -156,7 +157,6 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
 
 
 class StandardTrainerTest(BaseTraining, unittest.TestCase):
-
     def test_regression_epoch_training(self):
         (trainer,
          _,
@@ -171,7 +171,7 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         r2 = 0
         while r2 < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             r2 = metrics['r2']
 
@@ -192,7 +192,7 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -215,7 +215,7 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, logger=logger, writer=None)
+            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 

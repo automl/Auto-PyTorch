@@ -58,6 +58,10 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None):
+        self.config = config
+        self.dataset_properties = dataset_properties
+        self.random_state = random_state
+        self.init_params = init_params
         self.pipeline = autoPyTorch.pipeline.traditional_tabular_classification.\
             TraditionalTabularClassificationPipeline(dataset_properties=dataset_properties)
         configuration_space = self.pipeline.get_hyperparameter_search_space()
@@ -83,6 +87,9 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
 
     def get_additional_run_info(self) -> None:  # pylint: disable=R0201
         return None
+
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return self.pipeline.get_pipeline_representation()
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:

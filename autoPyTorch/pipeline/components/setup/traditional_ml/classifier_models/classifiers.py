@@ -106,6 +106,13 @@ class LGBModel(BaseClassifier):
         y_pred = self.model.predict(X_test)
         return y_pred
 
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'LGBMClassifier',
+            'name': 'Light Gradient Boosting Machine Classifier',
+        }
+
 
 class CatboostModel(BaseClassifier):
 
@@ -167,6 +174,13 @@ class CatboostModel(BaseClassifier):
         y_pred = self.model.predict(X_test)
         return y_pred
 
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'CatBoostClassifier',
+            'name': 'Categorical Boosting Classifier',
+        }
+
 
 class RFModel(BaseClassifier):
 
@@ -225,6 +239,13 @@ class RFModel(BaseClassifier):
             return self.model.predict_proba(X_test)
         y_pred = self.model.predict(X_test)
         return y_pred
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'RFClassifier',
+            'name': 'Random Forest Classifier',
+        }
 
 
 class ExtraTreesModel(BaseClassifier):
@@ -285,6 +306,13 @@ class ExtraTreesModel(BaseClassifier):
         y_pred = self.model.predict(X_test)
         return y_pred
 
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'ExtraTreesClassifier',
+            'name': 'ExtraTreesClassifier',
+        }
+
 
 class KNNModel(BaseClassifier):
 
@@ -338,6 +366,13 @@ class KNNModel(BaseClassifier):
         y_pred = self.model.predict(X_test)
         return y_pred
 
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'KNNClassifier',
+            'name': 'K Nearest Neighbors Classifier',
+        }
+
 
 class SVMModel(BaseClassifier):
 
@@ -384,3 +419,10 @@ class SVMModel(BaseClassifier):
             return self.model.predict_proba(X_test)
         y_pred = self.model.predict(X_test)
         return y_pred
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'SVC',
+            'name': 'Support Vector Classification',
+        }

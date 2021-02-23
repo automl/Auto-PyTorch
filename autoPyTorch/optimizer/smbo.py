@@ -246,7 +246,6 @@ class AutoMLSMBO(object):
             backend=copy.deepcopy(self.backend),
             seed=seed,
             initial_num_run=num_run,
-            logger=self.logger,
             include=self.include if self.include is not None else dict(),
             exclude=self.exclude if self.exclude is not None else dict(),
             metric=self.metric,
@@ -329,9 +328,11 @@ class AutoMLSMBO(object):
         if self.ensemble_callback is not None:
             smac.register_callback(self.ensemble_callback)
 
-        self.logger.info("initialised smac, running optimise")
+        self.logger.info("initialised SMBO, running SMBO.optimize()")
 
         smac.optimize()
+
+        self.logger.info("finished SMBO.optimize()")
 
         self.runhistory = smac.solver.runhistory
         self.trajectory = smac.solver.intensifier.traj_logger.trajectory
