@@ -32,6 +32,25 @@ def update_model_state_dict_from_swa(model: torch.nn.Module, swa_state_dict: Dic
         model_state[name].copy_(param)
 
 
+def swa_average_function(averaged_model_parameter: torch.nn.parameter.Parameter,
+                         model_parameter: torch.nn.parameter.Parameter,
+                         num_averaged: int) -> torch.nn.parameter.Parameter:
+    """
+    Pickling the averaged function causes an error because of
+    how pytorch initialises the average function.
+    Passing this function fixes the issue.
+    Args:
+        averaged_model_parameter:
+        model_parameter:
+        num_averaged:
+
+    Returns:
+
+    """
+    return averaged_model_parameter + \
+        (model_parameter - averaged_model_parameter) / (num_averaged + 1)
+
+
 class Lookahead(Optimizer):
     r"""PyTorch implementation of the lookahead wrapper.
     Lookahead Optimizer: https://arxiv.org/abs/1907.08610
