@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional, Tuple
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
 
@@ -20,7 +22,8 @@ class AdamWOptimizer(BaseOptimizerComponent):
         lr (float): learning rate (default: 1e-2)
         beta1 (float): coefficients used for computing running averages of gradient
         beta2 (float): coefficients used for computing running averages of square
-        weight_decay (float): weight decay (L2 penalty)
+        use_weight_decay (bool): flag for the activation of weight decay
+        weight_decay (float): weight decay (L2 penalty) (default: 0)
         random_state (Optional[np.random.RandomState]): random state
     """
 
@@ -29,7 +32,8 @@ class AdamWOptimizer(BaseOptimizerComponent):
         lr: float,
         beta1: float,
         beta2: float,
-        weight_decay: float,
+        use_weight_decay: bool,
+        weight_decay: float = 0,
         random_state: Optional[np.random.RandomState] = None,
     ):
 
@@ -37,6 +41,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
+        self.use_weight_decay = use_weight_decay
         self.weight_decay = weight_decay
         self.random_state = random_state
 
@@ -77,6 +82,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
                                         lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
                                         beta1: Tuple[Tuple, float] = ((0.85, 0.999), 0.9),
                                         beta2: Tuple[Tuple, float] = ((0.9, 0.9999), 0.9),
+                                        use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
                                         weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0)
                                         ) -> ConfigurationSpace:
 
@@ -92,9 +98,23 @@ class AdamWOptimizer(BaseOptimizerComponent):
         beta2 = UniformFloatHyperparameter('beta2', lower=beta2[0][0], upper=beta2[0][1],
                                            default_value=beta2[1])
 
+        use_wd = CategoricalHyperparameter(
+            'use_weight_decay',
+            choices=use_weight_decay[0],
+            default_value=use_weight_decay[1],
+        )
+
         weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
                                                   default_value=weight_decay[1])
 
-        cs.add_hyperparameters([lr, beta1, beta2, weight_decay])
+        cs.add_hyperparameters([lr, beta1, beta2, weight_decay, use_wd])
+
+        cs.add_condition(
+            CS.EqualsCondition(
+                weight_decay,
+                use_wd,
+                True,
+            )
+        )
 
         return cs

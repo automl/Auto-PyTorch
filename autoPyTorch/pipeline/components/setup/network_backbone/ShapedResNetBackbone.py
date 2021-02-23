@@ -5,7 +5,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
-    UniformIntegerHyperparameter
+    UniformIntegerHyperparameter,
 )
 
 import torch
@@ -63,8 +63,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         backbone = torch.nn.Sequential(*layers)
         self.backbone = backbone
         return backbone
@@ -82,12 +82,14 @@ class ShapedResNetBackbone(ResNetBackbone):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,  # type: ignore[override]
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
+                                        use_batch_norm: Tuple[Tuple, bool] = ((True, False), True),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
+                                        use_skip_connection: Tuple[Tuple, bool] = ((True, False), True),
                                         max_units: Tuple[Tuple, int] = ((10, 1024), 200),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         max_dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
+                                        multi_branch_choice: Tuple[Tuple, str] = (('shake-drop', 'shake-shake',
+                                                                                   'none'), 'shake-drop'),
                                         max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5),
                                         resnet_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
                                                                             'diamond', 'hexagon',
@@ -131,17 +133,29 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         cs.add_hyperparameters([num_groups, blocks_per_group, activation, output_dim])
 
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
-                                                    default_value=use_shake_shake[1])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
-                                                   default_value=use_shake_drop[1])
+        use_sc = CategoricalHyperparameter(
+            "use_skip_connection",
+            choices=use_skip_connection[0],
+            default_value=use_skip_connection[1],
+        )
+
+        mb_choice = CategoricalHyperparameter(
+            "multi_branch_choice",
+            choices=multi_branch_choice[0],
+            default_value=multi_branch_choice[1],
+        )
+
         shake_drop_prob = UniformFloatHyperparameter(
             "max_shake_drop_probability",
             lower=max_shake_drop_probability[0][0],
             upper=max_shake_drop_probability[0][1],
             default_value=max_shake_drop_probability[1])
-        cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
+
+        cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
+        cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
+        # TODO check if shake_drop is as an option in mb_choice
+        # Incomplete work
+        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         max_units = UniformIntegerHyperparameter(
             "max_units",
@@ -153,8 +167,12 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         use_dropout = CategoricalHyperparameter(
             "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        use_batch_normalization = CategoricalHyperparameter(
+            "use_batch_norm", choices=use_batch_norm[0], default_value=use_batch_norm[1])
+
         max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
                                                  default_value=max_dropout[1])
+        cs.add_hyperparameters([use_batch_normalization])
         cs.add_hyperparameters([use_dropout])
         cs.add_hyperparameters([max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))

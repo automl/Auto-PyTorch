@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional, Tuple
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
 
@@ -19,21 +21,23 @@ class SGDOptimizer(BaseOptimizerComponent):
     Args:
         lr (float): learning rate (default: 1e-2)
         momentum (float): momentum factor (default: 0)
+        use_weight_decay (bool): flag for the activation of weight decay
         weight_decay (float): weight decay (L2 penalty) (default: 0)
         random_state (Optional[np.random.RandomState]): random state
     """
-
     def __init__(
         self,
         lr: float,
         momentum: float,
-        weight_decay: float,
+        use_weight_decay: bool,
+        weight_decay: float = 0,
         random_state: Optional[np.random.RandomState] = None,
     ):
 
         super().__init__()
         self.lr = lr
         self.momentum = momentum
+        self.use_weight_decay = use_weight_decay
         self.weight_decay = weight_decay
         self.random_state = random_state
 
@@ -72,6 +76,7 @@ class SGDOptimizer(BaseOptimizerComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
+                                        use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
                                         weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0),
                                         momentum: Tuple[Tuple, float] = ((0.0, 0.99), 0.0),
                                         ) -> ConfigurationSpace:
@@ -82,12 +87,26 @@ class SGDOptimizer(BaseOptimizerComponent):
         lr = UniformFloatHyperparameter('lr', lower=lr[0][0], upper=lr[0][1],
                                         default_value=lr[1], log=lr[2])
 
+        use_wd = CategoricalHyperparameter(
+            'use_weight_decay',
+            choices=use_weight_decay[0],
+            default_value=use_weight_decay[1],
+        )
+
         weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
                                                   default_value=weight_decay[1])
 
         momentum = UniformFloatHyperparameter('momentum', lower=momentum[0][0], upper=momentum[0][1],
                                               default_value=momentum[1])
 
-        cs.add_hyperparameters([lr, weight_decay, momentum])
+        cs.add_hyperparameters([lr, weight_decay, momentum, use_wd])
+
+        cs.add_condition(
+            CS.EqualsCondition(
+                weight_decay,
+                use_wd,
+                True,
+            )
+        )
 
         return cs

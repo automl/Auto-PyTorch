@@ -15,6 +15,9 @@ import torch
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
+from autoPyTorch.pipeline.components.training.trainer.AdversarialTrainer import (
+    AdversarialTrainer
+)
 from autoPyTorch.pipeline.components.training.trainer.GridCutMixTrainer import GridCutMixTrainer
 from autoPyTorch.pipeline.components.training.trainer.GridCutOutTrainer import GridCutOutTrainer
 from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import (
@@ -243,7 +246,7 @@ def test_every_trainer_is_valid():
     trainer_choice = TrainerChoice(dataset_properties={})
 
     # Make sure all components are returned
-    assert len(trainer_choice.get_components().keys()) == 6
+    assert len(trainer_choice.get_components().keys()) == 7
 
     # For every optimizer in the components, make sure
     # that it complies with the scikit learn estimator.
@@ -274,7 +277,7 @@ def test_every_trainer_is_valid():
 
 
 @pytest.mark.parametrize("test_input,expected", [
-    ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer'])),
+    ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer', 'AdversarialTrainer'])),
     ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer'])),
     ("time_series_classification", set([])),
 ])
@@ -366,6 +369,82 @@ def test_cutput_regularizers(cutout_prob, regularizer, X):
         # The original X does not have the expected value
         # If a cutoff happened, then this value is gonna be there
         assert expected in X_new
+
+
+class AdversarialTrainerTest(BaseTraining, unittest.TestCase):
+
+    def test_epoch_training(self):
+        """
+        Makes sure we are able to train a model and produce good
+        training performance
+        """
+        trainer = AdversarialTrainer(epsilon=0.07)
+        trainer.prepare(
+            scheduler=None,
+            model=self.model,
+            metrics=self.metrics,
+            criterion=self.criterion,
+            budget_tracker=self.budget_tracker,
+            optimizer=self.optimizer,
+            device=self.device,
+            metrics_during_training=True,
+            task_type=self.task_type,
+            output_type=self.output_type,
+            labels=self.y
+        )
+
+        # Train the model
+        counter = 0
+        accuracy = 0
+        while accuracy < 0.7:
+            loss, metrics = trainer.train_epoch(self.loader, epoch=1, logger=self.logger, writer=None)
+            counter += 1
+            accuracy = metrics['accuracy']
+
+            if counter > 1000:
+                self.fail("Could not overfit a dummy binary classification under 1000 epochs")
+
+
+class TrainerTest(unittest.TestCase):
+    def test_every_trainer_is_valid(self):
+        """
+        Makes sure that every trainer is a valid estimator.
+        That is, we can fully create an object via get/set params.
+
+        This also test that we can properly initialize each one
+        of them
+        """
+        trainer_choice = TrainerChoice(dataset_properties={})
+
+        # Make sure all components are returned
+        self.assertEqual(len(trainer_choice.get_components().keys()), 7)
+
+        # For every optimizer in the components, make sure
+        # that it complies with the scikit learn estimator.
+        # This is important because usually components are forked to workers,
+        # so the set/get params methods should recreate the same object
+        for name, trainer in trainer_choice.get_components().items():
+            config = trainer.get_hyperparameter_search_space().sample_configuration()
+            estimator = trainer(**config)
+            estimator_clone = clone(estimator)
+            estimator_clone_params = estimator_clone.get_params()
+
+            # Make sure all keys are copied properly
+            for k, v in estimator.get_params().items():
+                self.assertIn(k, estimator_clone_params)
+
+            # Make sure the params getter of estimator are honored
+            klass = estimator.__class__
+            new_object_params = estimator.get_params(deep=False)
+            for name, param in new_object_params.items():
+                new_object_params[name] = clone(param, safe=False)
+            new_object = klass(**new_object_params)
+            params_set = new_object.get_params(deep=False)
+
+            for name in new_object_params:
+                param1 = new_object_params[name]
+                param2 = params_set[name]
+                self.assertEqual(param1, param2)
 
 
 if __name__ == '__main__':
