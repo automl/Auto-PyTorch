@@ -198,6 +198,12 @@ class TrainerChoice(autoPyTorchChoice):
 
         if default is None:
             defaults = ['StandardTrainer',
+                        'AdversarialTrainer',
+                        'GridCutMixTrainer',
+                        'GridCutOutTrainer',
+                        'MixUpTrainer',
+                        'RowCutMixTrainer',
+                        'RowCutOutTrainer',
                         ]
             for default_ in defaults:
                 if default_ in available_trainers:
