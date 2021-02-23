@@ -29,7 +29,7 @@ class AdversarialTrainer(BaseTrainerComponent):
             use_snapshot_ensemble: bool = False,
             se_lastk: int = 3,
             use_lookahead_optimizer: bool = True,
-            **lookahead_config: typing.Dict[str, typing.Any]
+            **lookahead_config: typing.Any
     ):
         """
         This class handles the training of a network for a single given epoch.
