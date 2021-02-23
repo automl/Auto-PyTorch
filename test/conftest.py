@@ -33,8 +33,6 @@ def callattr_ahead_of_alltests(request):
     the testing face, and it does so in a robust way, until the openml
     API provides the desired resources
     """
-    start_time = time.time()
-
     tasks_used = [
         146818,  # Australian
         2295,    # cholesterol
@@ -65,12 +63,7 @@ def callattr_ahead_of_alltests(request):
             break
         except Exception as e:
             if i == patience - 1:
-                print("Failed to preload openml dataset for testing after {} iters.".format(
-                    patience
-                ))
                 raise e
-
-    print(f"Pre-Fetch of {len(tasks_used)} tasks took {time.time() - start_time} seconds...")
     return
 
 

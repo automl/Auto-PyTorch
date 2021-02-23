@@ -47,6 +47,7 @@ setuptools.setup(
             "codecov",
             "pep8",
             "mypy",
+            "openml"
         ],
         "examples": [
             "matplotlib",
