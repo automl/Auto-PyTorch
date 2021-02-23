@@ -25,7 +25,7 @@ Tabular Classification
 The following example shows how to fit a sample classification model
 with AutoPyTorch
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-85
+.. GENERATED FROM PYTHON SOURCE LINES 9-86
 
 
 
@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fe3ae353e50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f57395fd610> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -72,8 +72,9 @@ with AutoPyTorch
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
+      trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021331310272216797, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.002315044403076172, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -109,9 +110,84 @@ with AutoPyTorch
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
+      trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=5.207238674163818, wallclock_time=6.623843193054199, budget=5.555555555555555)]
-    {'accuracy': 0.8670520231213873}
+    , ta_runs=1, ta_time_used=5.828276872634888, wallclock_time=7.265211343765259, budget=5.555555555555555), TrajEntry(train_perf=0.49122807017543857, incumbent_id=2, incumbent=Configuration:
+      data_loader:batch_size, Value: 343
+      encoder:__choice__, Value: 'OrdinalEncoder'
+      feature_preprocessor:Nystroem:gamma, Value: 2.3638903586447624
+      feature_preprocessor:Nystroem:kernel, Value: 'rbf'
+      feature_preprocessor:Nystroem:n_components, Value: 4
+      feature_preprocessor:__choice__, Value: 'Nystroem'
+      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'mean'
+      lr_scheduler:StepLR:gamma, Value: 0.23101890979872636
+      lr_scheduler:StepLR:step_size, Value: 4
+      lr_scheduler:__choice__, Value: 'StepLR'
+      network_backbone:MLPBackbone:activation, Value: 'sigmoid'
+      network_backbone:MLPBackbone:dropout_1, Value: 0.08740603818942434
+      network_backbone:MLPBackbone:dropout_10, Value: 0.31095150711116415
+      network_backbone:MLPBackbone:dropout_11, Value: 0.4312784423151592
+      network_backbone:MLPBackbone:dropout_12, Value: 0.4843896732327266
+      network_backbone:MLPBackbone:dropout_13, Value: 0.01685527415073711
+      network_backbone:MLPBackbone:dropout_14, Value: 0.5995561288521213
+      network_backbone:MLPBackbone:dropout_2, Value: 0.5878721979078683
+      network_backbone:MLPBackbone:dropout_3, Value: 0.3024772780792775
+      network_backbone:MLPBackbone:dropout_4, Value: 0.47236431551273467
+      network_backbone:MLPBackbone:dropout_5, Value: 0.13664172905060284
+      network_backbone:MLPBackbone:dropout_6, Value: 0.7932656877526004
+      network_backbone:MLPBackbone:dropout_7, Value: 0.32303401368333495
+      network_backbone:MLPBackbone:dropout_8, Value: 0.07551335178349455
+      network_backbone:MLPBackbone:dropout_9, Value: 0.09318802597776443
+      network_backbone:MLPBackbone:num_groups, Value: 14
+      network_backbone:MLPBackbone:num_units_1, Value: 790
+      network_backbone:MLPBackbone:num_units_10, Value: 70
+      network_backbone:MLPBackbone:num_units_11, Value: 586
+      network_backbone:MLPBackbone:num_units_12, Value: 133
+      network_backbone:MLPBackbone:num_units_13, Value: 253
+      network_backbone:MLPBackbone:num_units_14, Value: 427
+      network_backbone:MLPBackbone:num_units_2, Value: 960
+      network_backbone:MLPBackbone:num_units_3, Value: 442
+      network_backbone:MLPBackbone:num_units_4, Value: 170
+      network_backbone:MLPBackbone:num_units_5, Value: 316
+      network_backbone:MLPBackbone:num_units_6, Value: 186
+      network_backbone:MLPBackbone:num_units_7, Value: 523
+      network_backbone:MLPBackbone:num_units_8, Value: 73
+      network_backbone:MLPBackbone:num_units_9, Value: 531
+      network_backbone:MLPBackbone:use_dropout, Value: True
+      network_backbone:__choice__, Value: 'MLPBackbone'
+      network_head:__choice__, Value: 'fully_connected'
+      network_head:fully_connected:activation, Value: 'relu'
+      network_head:fully_connected:num_layers, Value: 2
+      network_head:fully_connected:units_layer_1, Value: 361
+      network_init:XavierInit:bias_strategy, Value: 'Zero'
+      network_init:__choice__, Value: 'XavierInit'
+      optimizer:SGDOptimizer:lr, Value: 0.0001884745557761679
+      optimizer:SGDOptimizer:momentum, Value: 0.5879677033393264
+      optimizer:SGDOptimizer:use_weight_decay, Value: True
+      optimizer:SGDOptimizer:weight_decay, Value: 0.021282355897373508
+      optimizer:__choice__, Value: 'SGDOptimizer'
+      scaler:Normalizer:norm, Value: 'mean_abs'
+      scaler:__choice__, Value: 'Normalizer'
+      trainer:AdversarialTrainer:Lookahead:la_alpha, Value: 0.7108470378847632
+      trainer:AdversarialTrainer:Lookahead:la_steps, Value: 6
+      trainer:AdversarialTrainer:epsilon, Value: 0.1570433255337304
+      trainer:AdversarialTrainer:use_lookahead_optimizer, Value: True
+      trainer:AdversarialTrainer:use_snapshot_ensemble, Value: False
+      trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: True
+      trainer:AdversarialTrainer:weighted_loss, Value: True
+      trainer:__choice__, Value: 'AdversarialTrainer'
+    , ta_runs=17, ta_time_used=173.87404990196228, wallclock_time=228.13633966445923, budget=50.0)]
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                         | Estimator                                          |   Weight |
+    |---:|:------------------------------------------------------|:---------------------------------------------------|---------:|
+    |  0 | None                                                  | RFClassifier                                       |     0.5  |
+    |  1 | None                                                  | ExtraTreesClassifier                               |     0.26 |
+    |  2 | None                                                  | KNNClassifier                                      |     0.12 |
+    |  3 | SimpleImputer,OrdinalEncoder,MinMaxScaler,TruncSVD    | ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  4 | None                                                  | SVC                                                |     0.04 |
+    |  5 | SimpleImputer,OrdinalEncoder,StandardScaler,TruncSVD  | MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+    |  6 | SimpleImputer,NoEncoder,MinMaxScaler,PowerTransformer | MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
 
 
 
@@ -198,11 +274,12 @@ with AutoPyTorch
         y_pred = api.predict(X_test)
         score = api.score(y_pred, y_test)
         print(score)
+        print(api.show_models())
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  21.664 seconds)
+   **Total running time of the script:** ( 9 minutes  23.016 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_classification.py:

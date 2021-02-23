@@ -55,6 +55,27 @@ Practical examples for using *Auto-PyTorch*.
    :hidden:
 
    /examples/example_tabular_classification
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with AutoPyTorch">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_example_tabular_regression_thumb.png
+     :alt: Tabular Regression
+
+     :ref:`sphx_glr_examples_example_tabular_regression.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/example_tabular_regression
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>
