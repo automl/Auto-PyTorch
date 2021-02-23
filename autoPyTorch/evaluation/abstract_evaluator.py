@@ -38,7 +38,7 @@ from autoPyTorch.evaluation.utils import (
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_score,
+    calculate_loss,
     get_metrics,
 )
 from autoPyTorch.utils.backend import Backend
@@ -364,30 +364,21 @@ class AbstractEvaluator(object):
     def _loss(self, y_true: np.ndarray, y_hat: np.ndarray) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
+        The calculate_loss internally translate a score function to
+        a minimization problem
 
-        On this regard, to optimize a metric:
-            1- score is calculared with calculate_score, with the caveat, that if
-            for the metric greater is not better, a negative score is returned.
-            2- the err (the optimization goal) is then:
-                optimum - (metric.sign * actual_score)
-                For accuracy for example: optimum(1) - (+1 * actual score)
-                For logloss for example: optimum(0) - (-1 * actual score)
         """
 
         if not isinstance(self.configuration, Configuration):
-            return {self.metric.name: 1.0}
+            return {self.metric.name: self.metric._worst_possible_result}
 
         if self.additional_metrics is not None:
             metrics = self.additional_metrics
         else:
             metrics = [self.metric]
-        score = calculate_score(
+
+        return calculate_loss(
             y_true, y_hat, self.task_type, metrics)
-
-        err = {metric.name: metric._optimum - score[metric.name] for metric in metrics
-               if metric.name in score.keys()}
-
-        return err
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],

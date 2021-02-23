@@ -6,7 +6,7 @@ import numpy as np
 from autoPyTorch.ensemble.abstract_ensemble import AbstractEnsemble
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss
 
 
 class EnsembleSelection(AbstractEnsemble):
@@ -71,60 +71,47 @@ class EnsembleSelection(AbstractEnsemble):
             dtype=np.float64,
         )
         for i in range(ensemble_size):
-            scores = np.zeros(
+            losses = np.zeros(
                 (len(predictions)),
                 dtype=np.float64,
             )
             s = len(ensemble)
-            if s == 0:
-                weighted_ensemble_prediction.fill(0.0)
-            else:
-                weighted_ensemble_prediction.fill(0.0)
-                for pred in ensemble:
-                    np.add(
-                        weighted_ensemble_prediction,
-                        pred,
-                        out=weighted_ensemble_prediction,
-                    )
-                np.multiply(
+            if s > 0:
+                np.add(
                     weighted_ensemble_prediction,
-                    1 / s,
-                    out=weighted_ensemble_prediction,
-                )
-                np.multiply(
-                    weighted_ensemble_prediction,
-                    (s / float(s + 1)),
+                    ensemble[-1],
                     out=weighted_ensemble_prediction,
                 )
 
+            # Memory-efficient averaging!
             for j, pred in enumerate(predictions):
-                # Memory-efficient averaging!
-                fant_ensemble_prediction.fill(0.0)
+                # fant_ensemble_prediction is the prediction of the current ensemble
+                # and should be ([predictions[selected_prev_iterations] + predictions[j])/(s+1)
+                # We overwrite the contents of fant_ensemble_prediction
+                # directly with weighted_ensemble_prediction + new_prediction and then scale for avg
                 np.add(
-                    fant_ensemble_prediction,
                     weighted_ensemble_prediction,
+                    pred,
                     out=fant_ensemble_prediction
                 )
-                np.add(
+                np.multiply(
                     fant_ensemble_prediction,
-                    (1. / float(s + 1)) * pred,
+                    (1. / float(s + 1)),
                     out=fant_ensemble_prediction
                 )
 
-                # Calculate score is versatile and can return a dict of score
-                # when all_scoring_functions=False, we know it will be a float
-                score = calculate_score(
+                # Calculate loss is versatile and can return a dict of slosses
+                losses[j] = calculate_loss(
                     metrics=[self.metric],
                     target=labels,
                     prediction=fant_ensemble_prediction,
                     task_type=self.task_type,
-                )
-                scores[j] = self.metric._optimum - score[self.metric.name]
+                )[self.metric.name]
 
-            all_best = np.argwhere(scores == np.nanmin(scores)).flatten()
+            all_best = np.argwhere(losses == np.nanmin(losses)).flatten()
             best = self.random_state.choice(all_best)
             ensemble.append(predictions[best])
-            trajectory.append(scores[best])
+            trajectory.append(losses[best])
             order.append(best)
 
             # Handle special case
@@ -133,7 +120,7 @@ class EnsembleSelection(AbstractEnsemble):
 
         self.indices_ = order
         self.trajectory_ = trajectory
-        self.train_score_ = trajectory[-1]
+        self.train_loss_ = trajectory[-1]
 
     def _calculate_weights(self) -> None:
         ensemble_members = Counter(self.indices_).most_common()
