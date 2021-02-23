@@ -411,7 +411,8 @@ class TestTabularClassification:
         assert isinstance(optimizer, Lookahead)
 
         # check if final value of la_step is epochs * num_batches % la_steps
-        assert optimizer.get_la_step() == fit_dictionary_tabular['epochs'] * len(list(X['train_data_loader'].batch_sampler)) \
+        assert optimizer.get_la_step() == fit_dictionary_tabular['epochs'] * \
+               len(list(X['train_data_loader'].batch_sampler)) \
                % optimizer._total_la_steps
 
 
