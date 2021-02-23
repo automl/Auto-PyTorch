@@ -8,6 +8,8 @@ import dask.distributed
 
 import numpy as np
 
+import openml
+
 import pandas as pd
 
 import pytest
@@ -21,6 +23,55 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
+
+
+@pytest.fixture(scope="session", autouse=True)
+def callattr_ahead_of_alltests(request):
+    """
+    This procedure will run at the start of the pytest session.
+    It will prefetch several task that are going to be used by
+    the testing face, and it does so in a robust way, until the openml
+    API provides the desired resources
+    """
+    start_time = time.time()
+
+    tasks_used = [
+        146818,  # Australian
+        2295,    # cholesterol
+        2075,    # abalone
+        2071,    # adult
+        3,       # kr-vs-kp
+        9981,    # cnae-9
+        146821,  # car
+        146822,  # Segment
+        2,       # anneal
+        53,      # vehicle
+        5136,    # tecator
+        4871,    # sensory
+        4857,    # boston
+        3916,    # kc1
+    ]
+
+    # Try to populate the tests 5 times
+    patience = 5
+    for i in range(patience):
+        try:
+            # Populate the cache
+            openml.populate_cache(task_ids=tasks_used)
+            # Also the bunch
+            for task in tasks_used:
+                fetch_openml(data_id=openml.tasks.get_task(task).dataset_id,
+                             return_X_y=True)
+            break
+        except Exception as e:
+            if i == patience - 1:
+                print("Failed to preload openml dataset for testing after {} iters.".format(
+                    patience
+                ))
+                raise e
+
+    print(f"Pre-Fetch of {len(tasks_used)} tasks took {time.time() - start_time} seconds...")
+    return
 
 
 def slugify(text):
