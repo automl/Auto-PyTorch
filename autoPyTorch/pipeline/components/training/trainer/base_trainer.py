@@ -21,7 +21,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
-from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_average_function
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -190,6 +190,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
                  random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 swa_model: Optional[torch.nn.Module] = None,
+                 model_snapshots: Optional[List[torch.nn.Module]] = None,
                  **lookahead_config: Any) -> None:
         super().__init__()
         self.random_state = random_state
@@ -198,6 +200,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.use_snapshot_ensemble = use_snapshot_ensemble
         self.se_lastk = se_lastk
         self.use_lookahead_optimizer = use_lookahead_optimizer
+        self.swa_model = swa_model
+        self.model_snapshots = model_snapshots
         # Add default values for the lookahead optimizer
         if len(lookahead_config) == 0:
             lookahead_config = {f'{Lookahead.__name__}:la_steps': 6,
@@ -239,7 +243,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # in case we are using swa, maintain an averaged model,
         if self.use_stochastic_weight_averaging:
-            self.swa_model = swa_utils.AveragedModel(self.model)
+            self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_average_function)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
         self._budget_threshold = 0
@@ -250,7 +254,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # in case we are using se, initialise list to store model snapshots
         if self.use_snapshot_ensemble:
-            self.model_snapshots: List[torch.nn.Module] = list()
+            self.model_snapshots = list()
 
         # setup the optimizers
         if self.use_lookahead_optimizer:
@@ -287,20 +291,30 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if X['is_cyclic_scheduler']:
             if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
                 if self.use_stochastic_weight_averaging:
+                    assert self.swa_model is not None, "SWA model can't be none when" \
+                                                       " stochastic weight averaging is enabled"
                     self.swa_model.update_parameters(self.model)
                 if self.use_snapshot_ensemble:
+                    assert self.model_snapshots is not None, "model snapshots container can't be " \
+                                                             "none when snapshot ensembling is enabled"
                     model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
                         else deepcopy(self.model)
+                    assert model_copy is not None
                     model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         else:
             if epoch > self._budget_threshold:
                 if self.use_stochastic_weight_averaging:
+                    assert self.swa_model is not None, "SWA model can't be none when" \
+                                                       " stochastic weight averaging is enabled"
                     self.swa_model.update_parameters(self.model)
                 if self.use_snapshot_ensemble:
+                    assert self.model_snapshots is not None, "model snapshots container can't be " \
+                                                             "none when snapshot ensembling is enabled"
                     model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
                         else deepcopy(self.model)
+                    assert model_copy is not None
                     model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
