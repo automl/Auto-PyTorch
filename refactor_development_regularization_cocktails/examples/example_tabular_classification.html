@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f273df2ccd0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe3ae353e50&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -152,8 +152,14 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:weight_decay, Value: 0.0
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
+  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+  trainer:StandardTrainer:se_lastk, Constant: 3
+  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020742416381835938, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021331310272216797, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -183,8 +189,14 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:weight_decay, Value: 0.0
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
+  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+  trainer:StandardTrainer:se_lastk, Constant: 3
+  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.5863425731658936, wallclock_time=7.071316719055176, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=5.207238674163818, wallclock_time=6.623843193054199, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8670520231213873}
 </pre></div>
 </div>
@@ -269,7 +281,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  19.999 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 9 minutes  21.664 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>

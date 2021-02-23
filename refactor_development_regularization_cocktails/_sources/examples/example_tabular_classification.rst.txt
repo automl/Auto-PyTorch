@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f273df2ccd0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fe3ae353e50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -66,8 +66,14 @@ with AutoPyTorch
       optimizer:AdamOptimizer:weight_decay, Value: 0.0
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
+      trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+      trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+      trainer:StandardTrainer:se_lastk, Constant: 3
+      trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+      trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+      trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020742416381835938, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021331310272216797, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -97,8 +103,14 @@ with AutoPyTorch
       optimizer:AdamOptimizer:weight_decay, Value: 0.0
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
+      trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+      trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+      trainer:StandardTrainer:se_lastk, Constant: 3
+      trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+      trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+      trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=5.5863425731658936, wallclock_time=7.071316719055176, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=5.207238674163818, wallclock_time=6.623843193054199, budget=5.555555555555555)]
     {'accuracy': 0.8670520231213873}
 
 
@@ -190,7 +202,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  19.999 seconds)
+   **Total running time of the script:** ( 9 minutes  21.664 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_classification.py:
