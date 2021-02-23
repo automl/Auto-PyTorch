@@ -336,10 +336,10 @@ class TestTabularClassification:
                                          'RowCutOutTrainer'])
     @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
                                               'ReduceLROnPlateau'])
-    def test_trainer_cocktails(self, fit_dictionary, mocker, lr_scheduler, trainer):  # noqa F811
-        fit_dictionary['epochs'] = 10
+    def test_trainer_cocktails(self, fit_dictionary_tabular, mocker, lr_scheduler, trainer):  # noqa F811
+        fit_dictionary_tabular['epochs'] = 10
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary['dataset_properties'],
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'lr_scheduler': [lr_scheduler], 'trainer': [trainer]})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.get_default_configuration()
@@ -356,8 +356,8 @@ class TestTabularClassification:
         assert lr_scheduler == config.get('lr_scheduler:__choice__')
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary.copy())
-        X = pipeline.transform(fit_dictionary.copy())
+        pipeline.fit(fit_dictionary_tabular.copy())
+        X = pipeline.transform(fit_dictionary_tabular.copy())
         assert 'is_cyclic_scheduler' in X and \
                (X['is_cyclic_scheduler'] or config.get('lr_scheduler:__choice__') == 'ReduceLROnPlateau')
 
@@ -368,7 +368,7 @@ class TestTabularClassification:
         mocker.patch("autoPyTorch.pipeline.components.setup.network.base_network.NetworkComponent._predict",
                      return_value=torch.Tensor([1]))
         # Assert that predict gives no error when swa and se are on
-        assert isinstance(pipeline.predict(fit_dictionary['X_train']), np.ndarray)
+        assert isinstance(pipeline.predict(fit_dictionary_tabular['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
 
@@ -376,5 +376,5 @@ class TestTabularClassification:
         assert isinstance(optimizer, Lookahead)
 
         # check if final value of la_step is epochs * num_batches % la_steps
-        assert optimizer.get_la_step() == fit_dictionary['epochs'] * len(list(X['train_data_loader'].batch_sampler)) \
+        assert optimizer.get_la_step() == fit_dictionary_tabular['epochs'] * len(list(X['train_data_loader'].batch_sampler)) \
                % optimizer._total_la_steps
