@@ -65,7 +65,7 @@ class EncoderChoice(autoPyTorchChoice):
             raise ValueError("no encoders found, please add a encoder")
 
         if default is None:
-            defaults = ['OneHotEncoder', 'OrdinalEncoder', 'NoEncoder']
+            defaults = ['OneHotEncoder', 'NoEncoder']
             for default_ in defaults:
                 if default_ in available_preprocessors:
                     if include is not None and default_ not in include:
