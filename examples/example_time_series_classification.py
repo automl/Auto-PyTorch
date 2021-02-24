@@ -10,6 +10,8 @@ import os
 import tempfile as tmp
 import warnings
 
+from autoPyTorch import metrics
+
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -43,10 +45,10 @@ def get_search_space_updates():
                    hyperparameter="CosineAnnealingLR:T_max",
                    value_range=[50, 60],
                    default_value=55)
-    updates.append(node_name='network_backbone',
-                   hyperparameter='ResNetBackbone:dropout',
-                   value_range=[0, 0.5],
-                   default_value=0.2)
+    updates.append(node_name='optimizer',
+                   hyperparameter='AdamOptimizer:lr',
+                   value_range=[0.0001, 0.001],
+                   default_value=0.0005)
     return updates
 
 
@@ -73,6 +75,7 @@ if __name__ == '__main__':
         X,
         y,
         random_state=1,
+        stratify=y
     )
 
     ############################################################################

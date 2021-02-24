@@ -19,6 +19,7 @@ from smac.tae import StatusType
 import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
+import autoPyTorch.pipeline.time_series_classification
 import autoPyTorch.pipeline.traditional_tabular_classification
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
@@ -27,7 +28,7 @@ from autoPyTorch.constants import (
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
-    TABULAR_TASKS,
+    TABULAR_TASKS, TIMESERIES_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.evaluation.utils import (
@@ -276,6 +277,9 @@ class AbstractEvaluator(object):
                     self.pipeline_class = autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline
                 elif self.task_type in IMAGE_TASKS:
                     self.pipeline_class = autoPyTorch.pipeline.image_classification.ImageClassificationPipeline
+                elif self.task_type in TIMESERIES_TASKS:
+                    self.pipeline_class = \
+                        autoPyTorch.pipeline.time_series_classification.TimeSeriesClassificationPipeline
                 else:
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
