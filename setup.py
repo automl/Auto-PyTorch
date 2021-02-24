@@ -46,13 +46,14 @@ setuptools.setup(
             "pytest-cov",
             "codecov",
             "pep8",
-            "mypy",
+            "mypy"
         ],
         "examples": [
             "matplotlib",
             "jupyter",
             "notebook",
             "seaborn",
+            "sktime"
         ],
         "docs": ["sphinx", "sphinx-gallery", "sphinx_bootstrap_theme", "numpydoc"],
     },
