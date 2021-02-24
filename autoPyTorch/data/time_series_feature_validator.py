@@ -5,6 +5,7 @@ import numpy as np
 
 import sklearn.utils
 from sklearn.base import BaseEstimator
+from sklearn.exceptions import NotFittedError
 
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
@@ -13,6 +14,7 @@ class TimeSeriesFeatureValidator(BaseEstimator):
     def __init__(self,
                  logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None) -> None:
         self.logger = logger
+        self._is_fitted = False
 
     def fit(self,
             X_train: np.ndarray,
@@ -33,7 +35,7 @@ class TimeSeriesFeatureValidator(BaseEstimator):
         """
 
         if not isinstance(X_train, np.ndarray):
-            raise ValueError("Time series train data must be given as a numpy array")
+            raise ValueError(f"Time series train data must be given as a numpy array, but got {type(X_train)}")
 
         if X_train.ndim != 3:
             raise ValueError(f"Invalid number of dimensions for time series train data, "
@@ -52,7 +54,7 @@ class TimeSeriesFeatureValidator(BaseEstimator):
 
         if X_test is not None:
             if not isinstance(X_test, np.ndarray):
-                raise ValueError("Time series test data must be given as a numpy array")
+                raise ValueError(f"Time series test data must be given as a numpy array, but got {type(X_test)}")
 
             if not X_test.ndim == 3:
                 raise ValueError(f"Invalid number of dimensions for time series test data, "
@@ -74,6 +76,8 @@ class TimeSeriesFeatureValidator(BaseEstimator):
                 accept_large_sparse=False
             )
 
+        self._is_fitted = True
+
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -87,6 +91,8 @@ class TimeSeriesFeatureValidator(BaseEstimator):
             np.ndarray:
                 The transformed array
         """
+        if not self._is_fitted:
+            raise NotFittedError("Cannot call transform on a validator that is not fitted")
 
         return sklearn.utils.check_array(
             X,
