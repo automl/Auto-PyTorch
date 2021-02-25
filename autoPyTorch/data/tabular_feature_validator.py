@@ -53,10 +53,25 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 for column in X.columns:
                     if X[column].isna().all():
                         X[column] = pd.to_numeric(X[column])
+                        # Also note this change in self.dtypes
+                        self.dtypes[list(X.columns).index(column)] = X[column].dtype
 
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             if len(self.enc_columns) > 0:
+                # impute missing values before encoding,
+                # remove once sklearn natively supports
+                # it in ordinal encoding. Sklearn issue:
+                # "https://github.com/scikit-learn/scikit-learn/issues/17123)"
+                for column in self.enc_columns:
+                    if X[column].isna().any():
+                        missing_value = -1
+                        # make sure for a string column we give
+                        # string missing value else we give numeric
+                        if type(X[column][0]) == str:
+                            missing_value = str(missing_value)
+                        X[column] = X[column].cat.add_categories([missing_value])
+                        X[column] = X[column].fillna(missing_value)
 
                 self.encoder = make_column_transformer(
                     (preprocessing.OrdinalEncoder(
@@ -217,19 +232,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # per estimator
             enc_columns, _ = self._get_columns_to_encode(X)
 
-            if len(enc_columns) > 0:
-                if np.any(pd.isnull(
-                    X[enc_columns].dropna(  # type: ignore[call-overload]
-                        axis='columns', how='all')
-                )):
-                    # Ignore all NaN columns, and if still a NaN
-                    # Error out
-                    raise ValueError("Categorical features in a dataframe cannot contain "
-                                     "missing/NaN values. The OrdinalEncoder used by "
-                                     "AutoPyTorch cannot handle this yet (due to a "
-                                     "limitation on scikit-learn being addressed via: "
-                                     "https://github.com/scikit-learn/scikit-learn/issues/17123)"
-                                     )
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
                 if self.column_order != column_order:
