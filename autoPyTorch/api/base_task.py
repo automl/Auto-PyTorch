@@ -13,7 +13,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -582,6 +582,11 @@ class BaseTask:
         assert self._logger is not None
         assert self._dask_client is not None
 
+
+        self._logger.info("Starting to create dummy predictions.")
+
+        # Initialise run history for the traditional classifiers
+        run_history = RunHistory()
         memory_limit = self._memory_limit
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
@@ -651,6 +656,13 @@ class BaseTask:
                     if status == StatusType.SUCCESS:
                         self._logger.info(
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
+                        configuration = additional_info['pipeline_configuration']
+                        origin = additional_info['configuration_origin']
+                        del additional_info['configuration_origin']
+                        del additional_info['pipeline_configuration']
+                        run_history.add(config=configuration, cost=cost,
+                                        time=runtime, status=status, seed=self.seed,
+                                        origin=origin)
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(

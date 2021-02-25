@@ -67,8 +67,8 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
         configuration_space = self.pipeline.get_hyperparameter_search_space()
         default_configuration = configuration_space.get_default_configuration().get_dictionary()
         default_configuration['model_trainer:tabular_classifier:classifier'] = config
-        configuration = Configuration(configuration_space, default_configuration)
-        self.pipeline.set_hyperparameters(configuration)
+        self.configuration = Configuration(configuration_space, default_configuration)
+        self.pipeline.set_hyperparameters(self.configuration)
 
     def fit(self, X: Dict[str, Any], y: Any,
             sample_weight: Optional[np.ndarray] = None) -> object:
@@ -85,8 +85,9 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
     def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
         return False
 
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_additional_run_info(self) -> Dict[str, Any]:  # pylint: disable=R0201
+        return {'pipeline_configuration': self.configuration,
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return self.pipeline.get_pipeline_representation()
