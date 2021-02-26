@@ -176,7 +176,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         Returns:
             A transformed single point prediction
         """
-        
+
         X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
             else self.train_tensors[0][index]
 
