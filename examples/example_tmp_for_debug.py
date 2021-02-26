@@ -60,6 +60,6 @@ if __name__ == '__main__':
         f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
     )
 
-    paths = DisplayablePath.make_tree(run_key_model_run_dir)
+    paths = DisplayablePath.make_tree(os.path.dirname(run_key_model_run_dir))
     for path in paths:
         print(path.displayable())
