@@ -49,5 +49,8 @@ class TimeSeriesScaler(BaseEstimator):
 
             return X / max_abs_
 
+        elif self.mode == "none":
+            return X
+
         else:
             raise ValueError(f"Unknown mode {self.mode} for time series scaler")
