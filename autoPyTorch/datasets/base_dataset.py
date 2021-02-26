@@ -34,11 +34,12 @@ def check_valid_data(data: Any) -> None:
 
 
 def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDatasetType] = None) -> None:
-    for train_tensor in train_tensors:
-        check_valid_data(train_tensor)
+    """To avoid unexpected behavior, we use loops over indices."""
+    for i in range(len(train_tensors)):
+        check_valid_data(train_tensors[i])
     if val_tensors is not None:
-        for val_tensor in val_tensors:
-            check_valid_data(val_tensor)
+        for i in range(len(val_tensors)):
+            check_valid_data(val_tensors[i])
 
 
 class TransformSubset(Subset):
