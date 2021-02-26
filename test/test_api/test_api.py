@@ -22,6 +22,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 
+from test.utils import DisplayablePath
 
 # Fixtures
 # ========
@@ -120,7 +121,14 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             run_key_model_run_dir,
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), model_file
+        try:
+            assert os.path.exists(model_file), model_file
+        except AssertionError:
+            paths = DisplayablePath.make_tree(run_key_model_run_dir)
+            for path in paths:
+                print(path.displayable())
+            raise AssertionError(model_file)
+
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
         assert isinstance(model, VotingClassifier)
