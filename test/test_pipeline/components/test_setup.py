@@ -293,7 +293,7 @@ class NetworkBackboneTest(unittest.TestCase):
     def test_all_backbones_available(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        self.assertEqual(len(backbone_choice.get_components().keys()), 8)
+        self.assertEqual(len(backbone_choice.get_components().keys()), 9)
 
     def test_dummy_forward_backward_pass(self):
         network_backbone_choice = NetworkBackboneChoice(dataset_properties={})
@@ -328,7 +328,7 @@ class NetworkBackboneTest(unittest.TestCase):
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        self.assertEqual(len(backbone_choice.get_components().keys()), 8)
+        self.assertEqual(len(backbone_choice.get_components().keys()), 9)
 
         for name, backbone in backbone_choice.get_components().items():
             config = backbone.get_hyperparameter_search_space().sample_configuration()
