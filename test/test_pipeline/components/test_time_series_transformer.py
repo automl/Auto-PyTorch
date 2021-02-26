@@ -1,3 +1,5 @@
+from test.test_pipeline.components.base import TimeSeriesPipeline
+
 import numpy as np
 
 import pytest
@@ -6,8 +8,6 @@ from sklearn.pipeline import Pipeline
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
-
-from test.test_pipeline.components.base import TimeSeriesPipeline
 
 
 @pytest.mark.parametrize("fit_dictionary_time_series", ['classification_numerical_only'], indirect=True)

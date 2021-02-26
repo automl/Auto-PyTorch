@@ -1,5 +1,3 @@
-import math
-from collections import OrderedDict
 from typing import Any, Dict, Optional, Tuple
 
 import ConfigSpace as CS
@@ -34,7 +32,6 @@ class _LSTM(nn.Module):
 
         hidden_states, (_, _) = self.lstm(x)
         if not self.config["bidirectional"]:
-            print(hidden_states[:, -1, :].shape)
             return hidden_states[:, -1, :]
         else:
             # concatenate last forward hidden state with first backward hidden state
@@ -117,9 +114,3 @@ class LSTMBackbone(NetworkBackboneComponent):
         cs.add_hyperparameter(bidirectional)
 
         return cs
-
-
-if __name__ == "__main__":
-    lstm = _LSTM(20, dict(LSTMBackbone.get_hyperparameter_search_space().get_default_configuration()))
-
-    lstm(torch.randn(32, 128, 20))

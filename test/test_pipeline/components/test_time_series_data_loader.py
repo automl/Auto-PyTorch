@@ -39,7 +39,5 @@ class TestTimeSeriesDataLoader(unittest.TestCase):
 
         self.assertIsInstance(compose, torchvision.transforms.Compose)
 
-        print(compose)
-
         # We expect the preprocess_transforms and from_numpy
         self.assertEqual(len(compose.transforms), 2)

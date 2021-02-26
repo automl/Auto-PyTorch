@@ -4,13 +4,12 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from sklearn.base import BaseEstimator
-from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.MinMaxScaler import MinMaxScaler
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.MaxAbsScaler import MaxAbsScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.MinMaxScaler import MinMaxScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.NoScaler import NoScaler
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.StandardScaler import \
     StandardScaler
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.NoScaler import NoScaler
 
 
 class TestMinMaxScaler(unittest.TestCase):
@@ -81,7 +80,6 @@ class TestMaxAbsScaler(unittest.TestCase):
         # make column transformer with returned encoder to fit on data
         scaler = scaler.fit(X["X_train"])
         transformed = scaler.transform(X["X_train"])
-        print(transformed)
         assert_allclose(transformed,
                         np.array([
                             [[-1], [0.2], [0.3]],
