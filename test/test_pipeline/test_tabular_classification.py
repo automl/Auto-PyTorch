@@ -214,9 +214,11 @@ class TestTabularClassification:
 
         # Make sure that fitting a network adds a "network" to X
         assert 'network' in pipeline.named_steps.keys()
+
         fit_dictionary_tabular['network_embedding'] = torch.nn.Linear(3, 3)
         fit_dictionary_tabular['network_backbone'] = torch.nn.Linear(3, 4)
         fit_dictionary_tabular['network_head'] = torch.nn.Linear(4, 1)
+
         X = pipeline.named_steps['network'].fit(
             fit_dictionary_tabular,
             None

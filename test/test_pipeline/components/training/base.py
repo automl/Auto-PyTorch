@@ -13,8 +13,8 @@ from autoPyTorch.constants import (
     REGRESSION_TASKS,
     TASK_TYPES_TO_STRING
 )
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 
 
 class BaseTraining(unittest.TestCase):
