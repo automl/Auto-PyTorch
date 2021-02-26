@@ -582,8 +582,7 @@ class BaseTask:
         assert self._logger is not None
         assert self._dask_client is not None
 
-
-        self._logger.info("Starting to create dummy predictions.")
+        self._logger.info("Starting to create traditional classifier predictions.")
 
         # Initialise run history for the traditional classifiers
         run_history = RunHistory()
