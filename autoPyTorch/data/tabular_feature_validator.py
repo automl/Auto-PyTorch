@@ -54,7 +54,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     if X[column].isna().all():
                         X[column] = pd.to_numeric(X[column])
                         # Also note this change in self.dtypes
-                        self.dtypes[list(X.columns).index(column)] = X[column].dtype
+                        if len(self.dtypes) != 0:
+                            self.dtypes[list(X.columns).index(column)] = X[column].dtype
 
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
@@ -65,7 +66,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 # "https://github.com/scikit-learn/scikit-learn/issues/17123)"
                 for column in self.enc_columns:
                     if X[column].isna().any():
-                        missing_value = -1
+                        missing_value: typing.Union[int, str] = -1
                         # make sure for a string column we give
                         # string missing value else we give numeric
                         if type(X[column][0]) == str:
