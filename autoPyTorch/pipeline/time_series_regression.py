@@ -10,10 +10,10 @@ from sklearn.base import RegressorMixin
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
+    ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
@@ -23,7 +23,6 @@ from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init
     NetworkInitializerChoice
 )
 from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
-from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 from autoPyTorch.pipeline.components.training.data_loader.time_series_data_loader import TimeSeriesDataLoader
 from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
     TrainerChoice

@@ -232,7 +232,7 @@ class TestTimeSeriesRegression:
         dataset_properties = {'numerical_features': [0], 'categorical_features': [],
                               'task_type': 'time_series_classification'}
         pipeline = TimeSeriesRegressionPipeline(dataset_properties=dataset_properties,
-                                                    search_space_updates=search_space_updates)
+                                                search_space_updates=search_space_updates)
         self._assert_pipeline_search_space(pipeline, search_space_updates)
 
     def test_read_and_update_search_space(self, fit_dictionary_time_series, search_space_updates):
@@ -249,7 +249,7 @@ class TestTimeSeriesRegression:
         dataset_properties = {'numerical_features': [1], 'categorical_features': [2],
                               'task_type': 'time_series_classification'}
         pipeline = TimeSeriesRegressionPipeline(dataset_properties=dataset_properties,
-                                                    search_space_updates=file_search_space_updates)
+                                                search_space_updates=file_search_space_updates)
         assert file_search_space_updates == pipeline.search_space_updates
 
     def test_error_search_space_updates(self, fit_dictionary_time_series, error_search_space_updates):
@@ -257,7 +257,7 @@ class TestTimeSeriesRegression:
                               'task_type': 'time_series_classification'}
         try:
             _ = TimeSeriesRegressionPipeline(dataset_properties=dataset_properties,
-                                                 search_space_updates=error_search_space_updates)
+                                             search_space_updates=error_search_space_updates)
         except Exception as e:
             assert isinstance(e, ValueError)
             assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
@@ -285,7 +285,7 @@ class TestTimeSeriesRegression:
             updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
                            value_range=value_range, default_value=default_value)
         pipeline = TimeSeriesRegressionPipeline(dataset_properties=dataset_properties,
-                                                    search_space_updates=updates)
+                                                search_space_updates=updates)
 
         try:
             self._assert_pipeline_search_space(pipeline, updates)
