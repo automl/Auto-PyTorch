@@ -50,12 +50,6 @@ class DisplayablePath(object):
     def _default_criteria(cls, path):
         return True
 
-    @property
-    def displayname(self):
-        if self.path.is_dir():
-            return self.path.name + '/'
-        return self.path.name
-
     def displayable(self):
         if self.parent is None:
             return self.displayname
