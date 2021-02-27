@@ -22,8 +22,6 @@ import numpy as np
 
 import sklearn.model_selection
 
-from sktime.datasets import load_gunpoint
-
 from autoPyTorch.api.time_series_regression import TimeSeriesRegressionTask
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -95,8 +93,6 @@ if __name__ == '__main__':
         X_test=X_test.copy(),
         y_test=y_test.copy(),
         optimize_metric='r2',
-        budget_type="epochs",
-        budget=1000,
         total_walltime_limit=500,
         func_eval_time_limit=50
     )
