@@ -8,8 +8,7 @@ import pandas as pd
 
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.constants import (
-    TASK_TYPES_TO_STRING,
-    TIMESERIES_CLASSIFICATION
+    TASK_TYPES_TO_STRING, TIMESERIES_REGRESSION
 )
 from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
@@ -18,14 +17,15 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesDataset
-from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
+from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
+from autoPyTorch.pipeline.time_series_regression import TimeSeriesRegressionPipeline
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
-class TimeSeriesClassificationTask(BaseTask):
+class TimeSeriesRegressionTask(BaseTask):
     """
-    Time Series Classification API to the pipelines.
+    Time Series Regression API to the pipelines.
     Args:
         seed (int): seed to be used for reproducibility.
         n_jobs (int), (default=1): number of consecutive processes to spawn.
@@ -49,24 +49,25 @@ class TimeSeriesClassificationTask(BaseTask):
             Otherwise specifies set of components not to use. Incompatible with include
             components
     """
+
     def __init__(
-        self,
-        seed: int = 1,
-        n_jobs: int = 1,
-        logging_config: Optional[Dict] = None,
-        ensemble_size: int = 50,
-        ensemble_nbest: int = 50,
-        max_models_on_disc: int = 50,
-        temporary_directory: Optional[str] = None,
-        output_directory: Optional[str] = None,
-        delete_tmp_folder_after_terminate: bool = True,
-        delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        backend: Optional[Backend] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            self,
+            seed: int = 1,
+            n_jobs: int = 1,
+            logging_config: Optional[Dict] = None,
+            ensemble_size: int = 50,
+            ensemble_nbest: int = 50,
+            max_models_on_disc: int = 50,
+            temporary_directory: Optional[str] = None,
+            output_directory: Optional[str] = None,
+            delete_tmp_folder_after_terminate: bool = True,
+            delete_output_folder_after_terminate: bool = True,
+            include_components: Optional[Dict] = None,
+            exclude_components: Optional[Dict] = None,
+            resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            backend: Optional[Backend] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             seed=seed,
@@ -85,7 +86,7 @@ class TimeSeriesClassificationTask(BaseTask):
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             search_space_updates=search_space_updates,
-            task_type=TASK_TYPES_TO_STRING[TIMESERIES_CLASSIFICATION],
+            task_type=TASK_TYPES_TO_STRING[TIMESERIES_REGRESSION],
         )
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
@@ -95,30 +96,29 @@ class TimeSeriesClassificationTask(BaseTask):
             ))
         return dataset.get_required_dataset_info()
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TimeSeriesClassificationPipeline:
-        return TimeSeriesClassificationPipeline(dataset_properties=dataset_properties)
+    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
+        return TimeSeriesRegressionPipeline(dataset_properties=dataset_properties)
 
-    def search(
-        self,
-        optimize_metric: str,
-        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        dataset_name: Optional[str] = None,
-        budget_type: Optional[str] = None,
-        budget: Optional[float] = None,
-        total_walltime_limit: int = 100,
-        func_eval_time_limit: int = 60,
-        traditional_per_total_budget: float = 0.,
-        memory_limit: Optional[int] = 4096,
-        smac_scenario_args: Optional[Dict[str, Any]] = None,
-        get_smac_object_callback: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
-        precision: int = 32,
-        disable_file_output: List = [],
-        load_models: bool = True,
-    ) -> 'BaseTask':
+    def search(self,
+               optimize_metric: str,
+               X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+               y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+               X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+               y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+               dataset_name: Optional[str] = None,
+               budget_type: Optional[str] = None,
+               budget: Optional[float] = None,
+               total_walltime_limit: int = 100,
+               func_eval_time_limit: int = 60,
+               traditional_per_total_budget: float = 0.,
+               memory_limit: Optional[int] = 4096,
+               smac_scenario_args: Optional[Dict[str, Any]] = None,
+               get_smac_object_callback: Optional[Callable] = None,
+               all_supported_metrics: bool = True,
+               precision: int = 32,
+               disable_file_output: List = [],
+               load_models: bool = True,
+               ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
 
@@ -192,7 +192,7 @@ class TimeSeriesClassificationTask(BaseTask):
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         self.InputValidator = TimeSeriesInputValidator(
-            is_classification=True,
+            is_classification=False,
             logger_port=self._logger_port,
         )
 
@@ -210,7 +210,7 @@ class TimeSeriesClassificationTask(BaseTask):
         )
 
         if traditional_per_total_budget > 0.:
-            self._logger.warning("Time series classification for now does not support traditional classifiers. "
+            self._logger.warning("Time series regression for now does not support traditional classifiers. "
                                  "Setting traditional_per_total_budget to 0.")
             traditional_per_total_budget = 0.
 
@@ -242,23 +242,9 @@ class TimeSeriesClassificationTask(BaseTask):
                              "the estimator fit() method.")
 
         X_test = self.InputValidator.feature_validator.transform(X_test)
-        predicted_probabilities = super().predict(X_test, batch_size=batch_size,
-                                                  n_jobs=n_jobs)
-
-        if self.InputValidator.target_validator.is_single_column_target():
-            predicted_indexes = np.argmax(predicted_probabilities, axis=1)
-        else:
-            predicted_indexes = (predicted_probabilities > 0.5).astype(int)
+        predicted_values = super().predict(X_test, batch_size=batch_size,
+                                           n_jobs=n_jobs)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
-
-    def predict_proba(self,
-                      X_test: Union[np.ndarray, pd.DataFrame, List],
-                      batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
-            raise ValueError("predict() is only supported after calling search. Kindly call first "
-                             "the estimator fit() method.")
-        X_test = self.InputValidator.feature_validator.transform(X_test)
-        return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)
+        return self.InputValidator.target_validator.inverse_transform(predicted_values)

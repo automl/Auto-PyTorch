@@ -229,15 +229,16 @@ def get_tabular_data(task):
 
 
 def get_time_series_data(task):
-    sin_wave = np.sin(np.arange(30))
-    cos_wave = np.cos(np.arange(30))
+    length = 10
+    sin_wave = np.sin(np.arange(length))
+    cos_wave = np.cos(np.arange(length))
     sin_waves = []
     cos_waves = []
     # create a dummy dataset with 100 sin and 100 cosine waves
-    for i in range(100):
+    for i in range(200):
         # add some random noise so not every sample is equal
-        sin_waves.append(sin_wave + np.random.randn(30) * 0.1)
-        cos_waves.append(cos_wave + np.random.randn(30) * 0.1)
+        sin_waves.append(sin_wave + np.random.randn(length) * 0.1)
+        cos_waves.append(cos_wave + np.random.randn(length) * 0.1)
     sin_waves = np.stack(sin_waves)[..., np.newaxis]
     cos_waves = np.stack(cos_waves)[..., np.newaxis]
 
@@ -246,6 +247,15 @@ def get_time_series_data(task):
         y = np.array([0] * len(sin_waves) + [1] * len(cos_waves))
 
         validator = TimeSeriesInputValidator(is_classification=True).fit(X.copy(), y.copy())
+
+    elif task == "regression_numerical_only":
+        X = np.concatenate([sin_waves, cos_waves])
+
+        # use the last value of the time series as dummy regression target
+        y = X[:, -1, 0]
+        X = X[:, :-1, :]
+
+        validator = TimeSeriesInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     else:
         raise ValueError("Unsupported task {}".format(task))
@@ -314,6 +324,8 @@ def fit_dictionary_tabular_dummy(request, backend):
 def fit_dictionary_time_series_dummy(request, backend):
     if request.param == "classification":
         X, y, validator = get_time_series_data("classification_numerical_only")
+    elif request.param == "regression":
+        X, y, validator = get_time_series_data("regression_numerical_only")
     else:
         raise ValueError(f"Unsupported indirect fixture {request.param}")
     return get_time_series_fit_dictionary(X, y, validator, backend)

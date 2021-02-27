@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.image_classification import ImageClassificationPipelin
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
+from autoPyTorch.pipeline.time_series_regression import TimeSeriesRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -71,12 +72,19 @@ def _get_regression_dataset_requirements(info: Dict[str, Any], include: Dict[str
                                          exclude: Dict[str, List[str]]) -> List[FitRequirement]:
     task_type = STRING_TO_TASK_TYPES[info['task_type']]
     if task_type in TABULAR_TASKS:
-        fit_requirements = TabularRegressionPipeline(
+        return TabularRegressionPipeline(
             dataset_properties=info,
             include=include,
             exclude=exclude
         ).get_dataset_requirements()
-        return fit_requirements
+
+    elif task_type in TIMESERIES_TASKS:
+        return TimeSeriesRegressionPipeline(
+            dataset_properties=info,
+            include=include,
+            exclude=exclude
+        ).get_dataset_requirements()
+
     else:
         raise ValueError("Task_type not supported")
 
@@ -137,13 +145,18 @@ def _get_regression_configuration_space(info: Dict[str, Any], include: Dict[str,
                                         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                                         ) -> ConfigurationSpace:
     if STRING_TO_TASK_TYPES[info['task_type']] in TABULAR_TASKS:
-        configuration_space = TabularRegressionPipeline(
-            dataset_properties=info,
-            include=include,
-            exclude=exclude,
-            search_space_updates=search_space_updates
-        ).get_hyperparameter_search_space()
-        return configuration_space
+        pipeline = TabularRegressionPipeline(dataset_properties=info,
+                                             include=include,
+                                             exclude=exclude,
+                                             search_space_updates=search_space_updates)
+        return pipeline.get_hyperparameter_search_space()
+
+    elif STRING_TO_TASK_TYPES[info['task_type']] in TIMESERIES_TASKS:
+        pipeline = TimeSeriesRegressionPipeline(dataset_properties=info,
+                                                include=include, exclude=exclude,
+                                                search_space_updates=search_space_updates)
+        return pipeline.get_hyperparameter_search_space()
+
     else:
         raise ValueError("Task_type not supported")
 
