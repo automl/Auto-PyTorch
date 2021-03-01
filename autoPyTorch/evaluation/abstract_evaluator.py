@@ -331,6 +331,8 @@ class AbstractEvaluator(object):
             name=logger_name,
             port=logger_port,
         )
+        self.backend.setup_logger(name=logger_name, port=logger_port)
+
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
