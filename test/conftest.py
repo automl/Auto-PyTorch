@@ -8,6 +8,8 @@ import dask.distributed
 
 import numpy as np
 
+import openml
+
 import pandas as pd
 
 import pytest
@@ -21,6 +23,42 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
+
+
+@pytest.fixture(scope="session")
+def callattr_ahead_of_alltests(request):
+    """
+    This procedure will run at the start of the pytest session.
+    It will prefetch several task that are going to be used by
+    the testing face, and it does so in a robust way, until the openml
+    API provides the desired resources
+    """
+    tasks_used = [
+        146818,  # Australian
+        2295,    # cholesterol
+        2075,    # abalone
+        2071,    # adult
+        3,       # kr-vs-kp
+        9981,    # cnae-9
+        146821,  # car
+        146822,  # Segment
+        2,       # anneal
+        53,      # vehicle
+        5136,    # tecator
+        4871,    # sensory
+        4857,    # boston
+        3916,    # kc1
+    ]
+
+    # Populate the cache
+    # This will make the test fail immediately rather than
+    # Waiting for a openml fetch timeout
+    openml.populate_cache(task_ids=tasks_used)
+    # Also the bunch
+    for task in tasks_used:
+        fetch_openml(data_id=openml.tasks.get_task(task).dataset_id,
+                     return_X_y=True)
+    return
 
 
 def slugify(text):
