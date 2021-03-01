@@ -47,6 +47,7 @@ class TestTabularClassification:
             elif isinstance(hyperparameter, CategoricalHyperparameter):
                 assert update.value_range == hyperparameter.choices
 
+    @flaky.flaky(max_runs=2)
     def test_pipeline_fit(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
