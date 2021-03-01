@@ -11,7 +11,7 @@ import scipy.sparse
 import sklearn.utils
 from sklearn import preprocessing
 from sklearn.base import BaseEstimator
-from sklearn.compose import make_column_transformer
+from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
@@ -74,11 +74,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         X[column] = X[column].cat.add_categories([missing_value])
                         X[column] = X[column].fillna(missing_value)
 
-                self.encoder = make_column_transformer(
-                    (preprocessing.OrdinalEncoder(
-                        handle_unknown='use_encoded_value',
-                        unknown_value=-1,
-                    ), self.enc_columns),
+                self.encoder = ColumnTransformer(
+                    [
+                        ("encoder",
+                         preprocessing.OrdinalEncoder(
+                             handle_unknown='use_encoded_value',
+                             unknown_value=-1,
+                         ), self.enc_columns)],
                     remainder="passthrough"
                 )
 
@@ -101,6 +103,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         return 1
                     else:
                         raise ValueError((cmp1, cmp2))
+
                 self.feat_type = sorted(
                     self.feat_type,
                     key=functools.cmp_to_key(comparator)
@@ -199,8 +202,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " scipy sparse and Python Lists, yet, the provided input is"
                              " of type {}".format(
-                                 type(X)
-                             ))
+                type(X)
+            ))
 
         if self.data_type is None:
             self.data_type = type(X)
@@ -239,9 +242,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     raise ValueError("Changing the column order of the features after fit() is "
                                      "not supported. Fit() method was called with "
                                      "{} whereas the new features have {} as type".format(
-                                         self.column_order,
-                                         column_order,
-                                     ))
+                        self.column_order,
+                        column_order,
+                    ))
             else:
                 self.column_order = column_order
             dtypes = [dtype.name for dtype in X.dtypes]
@@ -250,9 +253,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     raise ValueError("Changing the dtype of the features after fit() is "
                                      "not supported. Fit() method was called with "
                                      "{} whereas the new features have {} as type".format(
-                                         self.dtypes,
-                                         dtypes,
-                                     ))
+                        self.dtypes,
+                        dtypes,
+                    ))
             else:
                 self.dtypes = dtypes
 
@@ -297,7 +300,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         "pandas.Series.astype ."
                         "If working with string objects, the following "
                         "tutorial illustrates how to work with text data: "
-                        "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(  # noqa: E501
+                        "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
+                            # noqa: E501
                             column,
                         )
                     )
@@ -353,14 +357,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
         X_train = pd.DataFrame(data=X_train).infer_objects()
         self.logger.warning("The provided feature types to AutoPyTorch are of type list."
                             "Features have been interpreted as: {}".format(
-                                [(col, t) for col, t in zip(X_train.columns, X_train.dtypes)]
-                            ))
+            [(col, t) for col, t in zip(X_train.columns, X_train.dtypes)]
+        ))
         if X_test is not None:
             if not isinstance(X_test, list):
                 self.logger.warning("Train features are a list while the provided test data"
                                     "is {}. X_test will be casted as DataFrame.".format(
-                                        type(X_test)
-                                    ))
+                    type(X_test)
+                ))
             X_test = pd.DataFrame(data=X_test).infer_objects()
         return X_train, X_test
 
