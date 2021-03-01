@@ -25,7 +25,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def callattr_ahead_of_alltests(request):
     """
     This procedure will run at the start of the pytest session.
@@ -50,20 +50,14 @@ def callattr_ahead_of_alltests(request):
         3916,    # kc1
     ]
 
-    # Try to populate the tests 5 times
-    patience = 5
-    for i in range(patience):
-        try:
-            # Populate the cache
-            openml.populate_cache(task_ids=tasks_used)
-            # Also the bunch
-            for task in tasks_used:
-                fetch_openml(data_id=openml.tasks.get_task(task).dataset_id,
-                             return_X_y=True)
-            break
-        except Exception as e:
-            if i == patience - 1:
-                raise e
+    # Populate the cache
+    # This will make the test fail immediately rather than
+    # Waiting for a openml fetch timeout
+    openml.populate_cache(task_ids=tasks_used)
+    # Also the bunch
+    for task in tasks_used:
+        fetch_openml(data_id=openml.tasks.get_task(task).dataset_id,
+                     return_X_y=True)
     return
 
 
