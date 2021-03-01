@@ -1,4 +1,3 @@
-import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -22,8 +21,9 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
     restarts in SGDR
 
     Args:
-        T_0 (int): Number of iterations for the first restart
-        T_mult (int):  A factor increases T_{i} after a restart
+        n_restarts (int): Number of restarts. In autopytorch, based
+            on the total budget(epochs) there are 'n_restarts'
+            restarts made periodically.
         random_state (Optional[np.random.RandomState]): random state
     """
 
@@ -54,7 +54,7 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
 
         # initialise required attributes for the scheduler
         T_mult: int = 1
-        T_0: int = math.floor(X['epochs'] / self.n_restarts)
+        T_0: int = max(X['epochs'] // self.n_restarts, 1)
 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=X['optimizer'],
