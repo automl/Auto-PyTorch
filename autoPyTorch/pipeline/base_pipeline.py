@@ -522,6 +522,19 @@ class BasePipeline(Pipeline):
         """
         return self._additional_run_info
 
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        """
+        Returns a representation of the pipeline, so that it can be
+        consumed and formatted by the API.
+
+        It should be a representation that follows:
+        [{'PreProcessing': <>, 'Estimator': <>}]
+
+        Returns:
+            Dict: contains the pipeline representation in a short format
+        """
+        raise NotImplementedError()
+
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
         return {

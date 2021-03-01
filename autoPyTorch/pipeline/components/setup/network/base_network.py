@@ -131,6 +131,13 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        return {
+            'shortname': 'nn.Sequential',
+            'name': 'torch.nn.Sequential',
+        }
+
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
         string = self.network.__class__.__name__

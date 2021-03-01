@@ -103,7 +103,6 @@ class BaseTraining(unittest.TestCase):
             device=device,
             metrics_during_training=True,
             task_type=task_type,
-            output_type=output_type,
             labels=y
         )
         return trainer, model, optimizer, loader, criterion, epochs, logger

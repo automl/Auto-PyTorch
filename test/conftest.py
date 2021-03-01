@@ -14,6 +14,8 @@ import pytest
 
 from sklearn.datasets import fetch_openml, make_classification, make_regression
 
+import torch
+
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
@@ -415,3 +417,61 @@ def error_search_space_updates():
                    value_range=[0, 0.5],
                    default_value=0.2)
     return updates
+
+
+@pytest.fixture
+def loss_cross_entropy_multiclass():
+    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'multiclass'}
+    predictions = torch.randn(4, 4, requires_grad=True)
+    name = 'CrossEntropyLoss'
+    targets = torch.empty(4, dtype=torch.long).random_(4)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(4)
+        if len(torch.unique(labels)) == 4:
+            break
+
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
+def loss_cross_entropy_binary():
+    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'binary'}
+    predictions = torch.randn(4, 2, requires_grad=True)
+    name = 'CrossEntropyLoss'
+    targets = torch.empty(4, dtype=torch.long).random_(2)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(2)
+        if len(torch.unique(labels)) == 2:
+            break
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
+def loss_bce():
+    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'binary'}
+    predictions = torch.empty(4).random_(2)
+    name = 'BCEWithLogitsLoss'
+    targets = torch.empty(4).random_(2)
+    # to ensure we have all classes in the labels
+    while True:
+        labels = torch.empty(20, dtype=torch.long).random_(2)
+        if len(torch.unique(labels)) == 2:
+            break
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
+def loss_mse():
+    dataset_properties = {'task_type': 'tabular_regression', 'output_type': 'continuous'}
+    predictions = torch.randn(4)
+    name = 'MSELoss'
+    targets = torch.randn(4)
+    labels = None
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
+def loss_details(request):
+    return request.getfixturevalue(request.param)

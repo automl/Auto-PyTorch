@@ -4,6 +4,7 @@ import logging.handlers
 import math
 import multiprocessing
 import os
+import platform
 import sys
 import tempfile
 import time
@@ -185,6 +186,8 @@ class BaseTask:
         self.resampling_strategy_args = resampling_strategy_args
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
+
+        self._dask_client = None
 
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:
@@ -504,7 +507,7 @@ class BaseTask:
             backend=self._backend,
             seed=self.seed,
             metric=self._metric,
-            logger=self._logger,
+            logger_port=self._logger_port,
             cost_for_crash=get_cost_of_crash(self._metric),
             abort_on_first_run_crash=False,
             initial_num_run=num_run,
@@ -550,8 +553,11 @@ class BaseTask:
 
     def _do_traditional_prediction(self, num_run: int, time_for_traditional: int) -> int:
 
+        # Mypy Checkings -- Traditional prediction is only called for search
+        # where the following objects are created
         assert self._metric is not None
         assert self._logger is not None
+        assert self._dask_client is not None
 
         self._logger.info("Starting to create dummy predictions.")
 
@@ -573,7 +579,7 @@ class BaseTask:
                 backend=self._backend,
                 seed=self.seed,
                 metric=self._metric,
-                logger=self._logger,
+                logger_port=self._logger_port,
                 cost_for_crash=get_cost_of_crash(self._metric),
                 abort_on_first_run_crash=False,
                 initial_num_run=num_run,
@@ -720,6 +726,9 @@ class BaseTask:
 
         self._backend.save_datamanager(dataset)
 
+        # Print debug information to log
+        self._print_debug_info_to_log()
+
         self._metric = get_metrics(
             names=[optimize_metric], dataset_properties=dataset_properties)[0]
 
@@ -737,7 +746,14 @@ class BaseTask:
         if self.task_type is None:
             raise ValueError("Cannot interpret task type from the dataset")
 
-        self._create_dask_client()
+        # If no dask client was provided, we create one, so that we can
+        # start a ensemble process in parallel to smbo optimize
+        if (
+            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs is not None and self.n_jobs > 1)
+        ):
+            self._create_dask_client()
+        else:
+            self._is_dask_client_internally_created = False
 
         # ============> Run dummy predictions
         num_run = 1
@@ -794,7 +810,7 @@ class BaseTask:
                 ensemble_memory_limit=self._memory_limit,
                 random_state=self.seed,
                 precision=precision,
-                logger_port=self._logger_port
+                logger_port=self._logger_port,
             )
             self._stopwatch.stop_task(ensemble_task_name)
 
@@ -854,18 +870,20 @@ class BaseTask:
         if proc_ensemble is not None:
             self.ensemble_performance_history = list(proc_ensemble.history)
 
+            if len(proc_ensemble.futures) > 0:
+                # Also add ensemble runs that did not finish within smac time
+                # and add them into the ensemble history
+                self._logger.info("Ensemble script still running, waiting for it to finish.")
+                result = proc_ensemble.futures.pop().result()
+                if result:
+                    ensemble_history, _, _, _ = result
+                    self.ensemble_performance_history.extend(ensemble_history)
+                self._logger.info("Ensemble script finished, continue shutdown.")
+
             # save the ensemble performance history file
             if len(self.ensemble_performance_history) > 0:
                 pd.DataFrame(self.ensemble_performance_history).to_json(
                     os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
-
-            if len(proc_ensemble.futures) > 0:
-                future = proc_ensemble.futures.pop()
-                # Now we need to wait for the future to return as it cannot be cancelled while it
-                # is running: https://stackoverflow.com/a/49203129
-                self._logger.info("Ensemble script still running, waiting for it to finish.")
-                future.result()
-                self._logger.info("Ensemble script finished, continue shutdown.")
 
         self._logger.info("Closing the dask infrastructure")
         self._close_dask_client()
@@ -1123,3 +1141,32 @@ class BaseTask:
             self
     ):
         pass
+
+    def get_models_with_weights(self) -> List:
+        if self.models_ is None or len(self.models_) == 0 or \
+                self.ensemble_ is None:
+            self._load_models()
+
+        assert self.ensemble_ is not None
+        return self.ensemble_.get_models_with_weights(self.models_)
+
+    def show_models(self) -> str:
+        df = []
+        for weight, model in self.get_models_with_weights():
+            representation = model.get_pipeline_representation()
+            representation.update({'Weight': weight})
+            df.append(representation)
+        return pd.DataFrame(df).to_markdown()
+
+    def _print_debug_info_to_log(self) -> None:
+        """
+        Prints to the log file debug information about the current estimator
+        """
+        assert self._logger is not None
+        self._logger.debug("Starting to print environment information")
+        self._logger.debug('  Python version: %s', sys.version.split('\n'))
+        self._logger.debug('  System: %s', platform.system())
+        self._logger.debug('  Machine: %s', platform.machine())
+        self._logger.debug('  Platform: %s', platform.platform())
+        for key, value in vars(self).items():
+            self._logger.debug(f"\t{key}->{value}")

@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -197,3 +197,23 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
             str: name of the pipeline type
         """
         return "tabular_classifier"
+
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        """
+        Returns a representation of the pipeline, so that it can be
+        consumed and formatted by the API.
+
+        It should be a representation that follows:
+        [{'PreProcessing': <>, 'Estimator': <>}]
+
+        Returns:
+            Dict: contains the pipeline representation in a short format
+        """
+        estimator_name = 'TraditionalTabularClassification'
+        if self.steps[0][1].choice is not None:
+            estimator_name = cast(str,
+                                  self.steps[0][1].choice.model.get_properties()['shortname'])
+        return {
+            'Preprocessing': 'None',
+            'Estimator': estimator_name,
+        }

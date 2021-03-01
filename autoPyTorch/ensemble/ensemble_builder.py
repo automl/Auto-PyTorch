@@ -4,6 +4,7 @@ import gzip
 import logging
 import logging.handlers
 import math
+import multiprocessing
 import numbers
 import os
 import pickle
@@ -157,7 +158,12 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
     ) -> None:
         self.build_ensemble(smbo.tae_runner.client)
 
-    def build_ensemble(self, dask_client: dask.distributed.Client) -> None:
+    def build_ensemble(
+        self,
+        dask_client: dask.distributed.Client,
+        pynisher_context: str = 'spawn',
+        unit_test: bool = False
+    ) -> None:
 
         # The second criteria is elapsed time
         elapsed_time = time.time() - self.start_time
@@ -227,11 +233,13 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                     memory_limit=self.ensemble_memory_limit,
                     read_at_most=self.read_at_most,
                     random_state=self.seed,
-                    logger_port=self.logger_port,
                     end_at=self.start_time + self.time_left_for_ensembles,
                     iteration=self.iteration,
                     return_predictions=False,
                     priority=100,
+                    pynisher_context=pynisher_context,
+                    logger_port=self.logger_port,
+                    unit_test=unit_test,
                 ))
 
                 logger.info(
@@ -267,10 +275,12 @@ def fit_and_return_ensemble(
     memory_limit: Optional[int],
     read_at_most: int,
     random_state: int,
-    logger_port: int,
     end_at: float,
     iteration: int,
     return_predictions: bool,
+    pynisher_context: str,
+    logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+    unit_test: bool = False,
 ) -> Tuple[
         List[Dict[str, float]],
         int,
@@ -317,13 +327,20 @@ def fit_and_return_ensemble(
             memory limit in mb. If ``None``, no memory limit is enforced.
         read_at_most: int
             read at most n new prediction files in each iteration
-        logger_port: int
-            port in localhost where to publish msg
         end_at: float
             At what time the job must finish. Needs to be the endtime and not the time left
             because we do not know when dask schedules the job.
         iteration: int
             The current iteration
+        pynisher_context: str
+            Context to use for multiprocessing, can be either fork, spawn or forkserver.
+        logger_port: int
+            The port where the logging server is listening to.
+        unit_test: bool
+            Turn on unit testing mode. This currently makes fit_ensemble raise a MemoryError.
+            Having this is very bad coding style, but I did not find a way to make
+            unittest.mock work through the pynisher with all spawn contexts. If you know a
+            better solution, please let us know by opening an issue.
     Returns
     -------
         List[Tuple[int, float, float, float]]
@@ -346,33 +363,36 @@ def fit_and_return_ensemble(
         read_at_most=read_at_most,
         random_state=random_state,
         logger_port=logger_port,
+        unit_test=unit_test,
     ).run(
         end_at=end_at,
         iteration=iteration,
         return_predictions=return_predictions,
+        pynisher_context=pynisher_context,
     )
     return result
 
 
 class EnsembleBuilder(object):
     def __init__(
-            self,
-            backend: Backend,
-            dataset_name: str,
-            task_type: int,
-            output_type: int,
-            metrics: List[autoPyTorchMetric],
-            opt_metric: str,
-            ensemble_size: int = 10,
-            ensemble_nbest: int = 100,
-            max_models_on_disc: Union[float, int] = 100,
-            performance_range_threshold: float = 0,
-            seed: int = 1,
-            precision: int = 32,
-            memory_limit: Optional[int] = 1024,
-            read_at_most: int = 5,
-            random_state: Optional[Union[int, np.random.RandomState]] = None,
-            logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+        self,
+        backend: Backend,
+        dataset_name: str,
+        task_type: int,
+        output_type: int,
+        metrics: List[autoPyTorchMetric],
+        opt_metric: str,
+        ensemble_size: int = 10,
+        ensemble_nbest: int = 100,
+        max_models_on_disc: Union[float, int] = 100,
+        performance_range_threshold: float = 0,
+        seed: int = 1,
+        precision: int = 32,
+        memory_limit: Optional[int] = 1024,
+        read_at_most: int = 5,
+        random_state: Optional[Union[int, np.random.RandomState]] = None,
+        logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+        unit_test: bool = False,
     ):
         """
             Constructor
@@ -420,7 +440,12 @@ class EnsembleBuilder(object):
             read_at_most: int
                 read at most n new prediction files in each iteration
             logger_port: int
-                port where to publish messages
+                port that receives logging records
+            unit_test: bool
+                Turn on unit testing mode. This currently makes fit_ensemble raise a MemoryError.
+                Having this is very bad coding style, but I did not find a way to make
+                unittest.mock work through the pynisher with all spawn contexts. If you know a
+                better solution, please let us know by opening an issue.
         """
 
         super(EnsembleBuilder, self).__init__()
@@ -461,6 +486,7 @@ class EnsembleBuilder(object):
         self.memory_limit = memory_limit
         self.read_at_most = read_at_most
         self.random_state = check_random_state(random_state)
+        self.unit_test = unit_test
 
         # Setup the logger
         self.logger_port = logger_port
@@ -564,6 +590,7 @@ class EnsembleBuilder(object):
         end_at: Optional[float] = None,
         time_buffer: int = 5,
         return_predictions: bool = False,
+        pynisher_context: str = 'spawn',  # only change for unit testing!
     ) -> Tuple[
         List[Dict[str, float]],
         int,
@@ -625,12 +652,16 @@ class EnsembleBuilder(object):
             else:
                 raise NotImplementedError()
 
-            if time_left - time_buffer < 1:
+            wall_time_in_s = int(time_left - time_buffer)
+            if wall_time_in_s < 1:
                 break
+            context = multiprocessing.get_context(pynisher_context)
+
             safe_ensemble_script = pynisher.enforce_limits(
-                wall_time_in_s=int(time_left - time_buffer),
+                wall_time_in_s=wall_time_in_s,
                 mem_in_mb=self.memory_limit,
-                logger=self.logger
+                logger=self.logger,
+                context=context,
             )(self.main)
             safe_ensemble_script(time_left, iteration, return_predictions)
             if safe_ensemble_script.exit_status is pynisher.MemorylimitException:
@@ -1216,6 +1247,10 @@ class EnsembleBuilder(object):
             ensemble: EnsembleSelection
                 trained Ensemble
         """
+
+        if self.unit_test:
+            raise MemoryError()
+
         predictions_train = [self.read_preds[k][Y_ENSEMBLE] for k in selected_keys]
         include_num_runs = [
             (
