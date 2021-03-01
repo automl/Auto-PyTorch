@@ -231,10 +231,17 @@ def test_featurevalidator_unsupported_numpy(input_data_featuretest):
     ),
     indirect=True
 )
-def test_featurevalidator_unsupported_pandas(input_data_featuretest):
+def test_featurevalidator_categorical_nan(input_data_featuretest):
     validator = TabularFeatureValidator()
-    with pytest.raises(ValueError, match=r"Categorical features in a dataframe.*missing/NaN"):
-        validator.fit(input_data_featuretest)
+    validator.fit(input_data_featuretest)
+    transformed_X = validator.transform(input_data_featuretest)
+    assert any(pd.isna(input_data_featuretest))
+    assert any((-1 in categories) or ('-1' in categories) for categories in
+               validator.encoder.named_transformers_['encoder'].categories_)
+    assert np.shape(input_data_featuretest) == np.shape(transformed_X)
+    assert np.issubdtype(transformed_X.dtype, np.number)
+    assert validator._is_fitted
+    assert isinstance(transformed_X, np.ndarray)
 
 
 @pytest.mark.parametrize(
