@@ -410,7 +410,7 @@ class TrainerChoice(autoPyTorchChoice):
             if 'cuda' in X['device']:
                 torch.cuda.empty_cache()
 
-        if self.choice.use_stochastic_weight_averaging:
+        if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
             # update batch norm statistics
             swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model.double())
             # change model
