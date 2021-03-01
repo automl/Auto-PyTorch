@@ -303,6 +303,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     assert self.swa_model is not None, "SWA model can't be none when" \
                                                        " stochastic weight averaging is enabled"
                     self.swa_model.update_parameters(self.model)
+                    self.swa_updated = True
                 if self.use_snapshot_ensemble:
                     assert self.model_snapshots is not None, "model snapshots container can't be " \
                                                              "none when snapshot ensembling is enabled"
@@ -318,6 +319,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     assert self.swa_model is not None, "SWA model can't be none when" \
                                                        " stochastic weight averaging is enabled"
                     self.swa_model.update_parameters(self.model)
+                    self.swa_updated = True
                 if self.use_snapshot_ensemble:
                     assert self.model_snapshots is not None, "model snapshots container can't be " \
                                                              "none when snapshot ensembling is enabled"
