@@ -201,9 +201,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if not isinstance(X, (np.ndarray, pd.DataFrame)) and not scipy.sparse.issparse(X):
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " scipy sparse and Python Lists, yet, the provided input is"
-                             " of type {}".format(
-                type(X)
-            ))
+                             " of type {}".format(type(X))
+                             )
 
         if self.data_type is None:
             self.data_type = type(X)
@@ -241,10 +240,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if self.column_order != column_order:
                     raise ValueError("Changing the column order of the features after fit() is "
                                      "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(
-                        self.column_order,
-                        column_order,
-                    ))
+                                     "{} whereas the new features have {} as type".format(self.column_order,
+                                                                                          column_order,)
+                                     )
             else:
                 self.column_order = column_order
             dtypes = [dtype.name for dtype in X.dtypes]
@@ -252,10 +250,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if self.dtypes != dtypes:
                     raise ValueError("Changing the dtype of the features after fit() is "
                                      "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(
-                        self.dtypes,
-                        dtypes,
-                    ))
+                                     "{} whereas the new features have {} as type".format(self.dtypes,
+                                                                                          dtypes,
+                                                                                          )
+                                     )
             else:
                 self.dtypes = dtypes
 
@@ -356,15 +354,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # If a list was provided, it will be converted to pandas
         X_train = pd.DataFrame(data=X_train).infer_objects()
         self.logger.warning("The provided feature types to AutoPyTorch are of type list."
-                            "Features have been interpreted as: {}".format(
-            [(col, t) for col, t in zip(X_train.columns, X_train.dtypes)]
-        ))
+                            "Features have been interpreted as: {}".format([(col, t) for col, t in
+                                                                            zip(X_train.columns, X_train.dtypes)]))
         if X_test is not None:
             if not isinstance(X_test, list):
                 self.logger.warning("Train features are a list while the provided test data"
-                                    "is {}. X_test will be casted as DataFrame.".format(
-                    type(X_test)
-                ))
+                                    "is {}. X_test will be casted as DataFrame.".format(type(X_test))
+                                    )
             X_test = pd.DataFrame(data=X_test).infer_objects()
         return X_train, X_test
 
