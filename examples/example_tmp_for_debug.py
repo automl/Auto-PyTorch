@@ -140,3 +140,11 @@ if __name__ == '__main__':
     paths = DisplayablePath.make_tree(os.path.dirname(run_key_model_run_dir))
     for path in paths:
         print(path.displayable())
+
+    # printing log file
+    tmp_dir = estimator._backend.temporary_directory
+    log_file = os.path.join(tmp_dir, "AutoPyTorch:{}:{}.log".format(estimator.dataset_name, estimator.seed))
+    f = open(log_file, 'r')
+    lines = f.readlines()
+    for line in lines:
+        print(line)
