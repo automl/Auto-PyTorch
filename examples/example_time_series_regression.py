@@ -20,7 +20,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
 
-import sklearn.model_selection
+from sktime.datasets import load_italy_power_demand
 
 from autoPyTorch.api.time_series_regression import TimeSeriesRegressionTask
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -35,7 +35,7 @@ def get_search_space_updates():
     updates = HyperparameterSearchSpaceUpdates()
     updates.append(node_name="data_loader",
                    hyperparameter="batch_size",
-                   value_range=[16, 512],
+                   value_range=[32, 64],
                    default_value=32)
     updates.append(node_name="lr_scheduler",
                    hyperparameter="CosineAnnealingLR:T_max",
@@ -51,33 +51,27 @@ def get_search_space_updates():
 if __name__ == '__main__':
     ############################################################################
     # Data Loading
+    # (Mostly copied from
+    # https://github.com/sktime/sktime-dl/blob/master/examples/univariate_time_series_regression_and_forecasting.ipynb)
     # ============
+    X_train_pd, _ = load_italy_power_demand(split='train', return_X_y=True)
+    X_test_pd, _ = load_italy_power_demand(split='test', return_X_y=True)
 
-    # Create a dummy dataset consisting of sine and cosine waves
-    length = 10
-    sin_wave = np.sin(np.arange(length))
-    cos_wave = np.cos(np.arange(length))
-    sin_waves = []
-    cos_waves = []
-    # create a dummy dataset with 100 sin and 100 cosine waves
-    for i in range(1000):
-        # add some random noise so not every sample is equal
-        sin_waves.append(sin_wave + np.random.randn(length) * 0.01)
-        cos_waves.append(cos_wave + np.random.randn(length) * 0.01)
-    sin_waves = np.stack(sin_waves)[..., np.newaxis]
-    cos_waves = np.stack(cos_waves)[..., np.newaxis]
+    # Create some regression values.
+    # Make the value y equal to the sum of the X values at time-steps 1 and 10.
+    X_train = np.zeros((len(X_train_pd), 24, 1), dtype=float)
+    y_train = np.zeros(len(X_train_pd), dtype=float)
+    for i in range(len(X_train_pd)):
+        y_train[i] = X_train_pd.iloc[i].iloc[0].iloc[1]
+        y_train[i] = y_train[i] + X_train_pd.iloc[i].iloc[0].iloc[10]
+        X_train[i] = X_train_pd.iloc[i].iloc[0][:, np.newaxis]
 
-    X = np.concatenate([sin_waves, cos_waves])
-
-    # use the last value of the time series as dummy regression target
-    y = X[:, -1, 0]
-    X = X[:, :-1, :]
-
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X,
-        y,
-        random_state=1
-    )
+    X_test = np.zeros((len(X_test_pd), 24, 1), dtype=float)
+    y_test = np.zeros(len(X_test_pd))
+    for i in range(len(X_test_pd)):
+        y_test[i] = X_test_pd.iloc[i].iloc[0].iloc[1]
+        y_test[i] = y_test[i] + X_test_pd.iloc[i].iloc[0].iloc[10]
+        X_test[i] = X_test_pd.iloc[i].iloc[0][:, np.newaxis]
 
     ############################################################################
     # Build and fit a regressor
@@ -93,6 +87,8 @@ if __name__ == '__main__':
         X_test=X_test.copy(),
         y_test=y_test.copy(),
         optimize_metric='r2',
+        budget_type="runtime",
+        budget=50,
         total_walltime_limit=500,
         func_eval_time_limit=50
     )
