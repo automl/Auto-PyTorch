@@ -53,7 +53,7 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
 
         # initialise required attributes for the scheduler
         T_mult: int = 1
-        T_0: int = math.floor(X['epochs'] / self.n_restarts)
+        T_0: int = min(math.floor(X['epochs'] / self.n_restarts), 1)
 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=X['optimizer'],
