@@ -48,6 +48,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
+        include_components={'network_embedding': ['NoEmbedding']}
     )
 
     estimator.search(
