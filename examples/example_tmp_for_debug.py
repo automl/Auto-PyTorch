@@ -130,11 +130,12 @@ if __name__ == '__main__':
         if os.path.exists(run_key_model_run_dir):
             break
 
-
     model_file = os.path.join(
         run_key_model_run_dir,
         f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
     )
+
+    print(model_file)
 
     paths = DisplayablePath.make_tree(os.path.dirname(run_key_model_run_dir))
     for path in paths:
