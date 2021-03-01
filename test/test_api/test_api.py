@@ -124,7 +124,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         try:
             assert os.path.exists(model_file), model_file
         except AssertionError:
-            paths = DisplayablePath.make_tree(run_key_model_run_dir)
+            paths = DisplayablePath.make_tree(os.path.dirname(run_key_model_run_dir))
             for path in paths:
                 print(path.displayable())
             raise AssertionError(model_file)
