@@ -296,6 +296,11 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if self.use_snapshot_ensemble:
             self.model_snapshots = list()
 
+        # in case we are using, swa or se with early stopping,
+        # we need to make sure network params are only updated
+        # from the swa model if the swa model was actually updated
+        self.swa_updated: bool = False
+
         # setup the optimizers
         if self.use_lookahead_optimizer:
             optimizer = Lookahead(optimizer=optimizer, config=self.lookahead_config)
