@@ -244,7 +244,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         '.autoPyTorch/ensemble_read_preds.pkl',
         '.autoPyTorch/start_time_1',
         '.autoPyTorch/ensemble_history.json',
-        '.autoPyTorch/ensemble_read_scores.pkl',
+        '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
     ]
     for expected_file in expected_files:
