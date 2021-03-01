@@ -150,4 +150,3 @@ class TestNoneScaler(unittest.TestCase):
         # check if the fit dictionary X is modified as expected
         self.assertIsInstance(X['scaler'], dict)
         self.assertIsNone(X['scaler']['categorical'])
-        self.assertIsNone(X['scaler']['numerical'])
