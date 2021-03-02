@@ -22,7 +22,6 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 
-from test.utils import DisplayablePath
 
 # Fixtures
 # ========
@@ -44,11 +43,16 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
+    include = None
+    # for python less than 3.7, learned entity embedding
+    # is not able to be stored on disk (only on CI)
+    if sys.version_info < (3, 7):
+        include = {'network_embedding': ['NoEmbedding']}
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
-        include_components={'network_embedding': ['NoEmbedding']}
+        include_components=include
     )
 
     estimator.search(
@@ -122,13 +126,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             run_key_model_run_dir,
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
         )
-        try:
-            assert os.path.exists(model_file), model_file
-        except AssertionError:
-            paths = DisplayablePath.make_tree(os.path.dirname(run_key_model_run_dir))
-            for path in paths:
-                print(path.displayable())
-            raise AssertionError(model_file)
+        assert os.path.exists(model_file), model_file
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
