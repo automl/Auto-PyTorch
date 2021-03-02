@@ -1029,7 +1029,7 @@ class EnsembleBuilder(object):
         # note: dummy model must have run_id=1 (there is no run_id=0)
         dummy_losses = list(filter(lambda x: x[2] == 1, sorted_keys))
         # Leave this here for when we enable dummy classifier/scorer
-        if dummy_losses:
+        if len(dummy_losses) > 0:
             # number of dummy models
             num_dummy = len(dummy_losses)
             dummy_loss = dummy_losses[0]
@@ -1038,7 +1038,7 @@ class EnsembleBuilder(object):
 
             # remove Dummy Classifier
             sorted_keys = list(filter(lambda x: x[2] > 1, sorted_keys))
-            if not sorted_keys:
+            if len(sorted_keys) == 0:
                 # no model left; try to use dummy loss (num_run==0)
                 # log warning when there are other models but not better than dummy model
                 if num_keys > num_dummy:
@@ -1440,7 +1440,7 @@ class EnsembleBuilder(object):
         """
             Deletes models excess models on disc. self.max_models_on_disc
             defines the upper limit on how many models to keep.
-            Any additional model with a worst loss than the top
+            Any additional model with a worse loss than the top
             self.max_models_on_disc is deleted.
         """
 
