@@ -27,7 +27,7 @@ def embedding(request):
                                                     'classification_categorical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)
 class TestNetworks:
-    def test_pipeline_fit(self, fit_dictionary_tabular, backbone, head):
+    def test_pipeline_fit(self, fit_dictionary_tabular, embedding, backbone, head):
         """This test makes sure that the pipeline is able to fit
         every combination of network embedding, backbone, head"""
 
