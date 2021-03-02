@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # Build and fit a classifier
     # ==========================
     api = TimeSeriesClassificationTask(
-        n_jobs=4,
+        n_jobs=6,
         delete_tmp_folder_after_terminate=False,
         search_space_updates=get_search_space_updates(),
         exclude_components={"network_backbone": ["LSTMBackbone"]}
@@ -89,11 +89,9 @@ if __name__ == '__main__':
         y_train=y_train,
         X_test=X_test.copy(),
         y_test=y_test.copy(),
-        budget_type="epochs",
-        budget=5,
         optimize_metric='accuracy',
-        total_walltime_limit=3600,
-        func_eval_time_limit=3600
+        total_walltime_limit=1200,
+        func_eval_time_limit=1200
     )
 
     ############################################################################
@@ -103,3 +101,4 @@ if __name__ == '__main__':
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
+    print(api.show_models())
