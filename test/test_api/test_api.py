@@ -93,6 +93,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
+        '.autoPyTorch/traditional_run_history.json',
     ]
     for expected_file in expected_files:
         assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
@@ -261,6 +262,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
+        '.autoPyTorch/traditional_run_history.json',
     ]
     for expected_file in expected_files:
         assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
