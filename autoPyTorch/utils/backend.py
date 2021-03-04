@@ -392,6 +392,7 @@ class Backend(object):
             cv_model: Optional[BasePipeline], ensemble_predictions: Optional[np.ndarray],
             valid_predictions: Optional[np.ndarray], test_predictions: Optional[np.ndarray],
     ) -> None:
+        assert self._logger is not None
         runs_directory = self.get_runs_directory()
         tmpdir = tempfile.mkdtemp(dir=runs_directory)
         if model is not None:
@@ -417,6 +418,8 @@ class Backend(object):
                 with open(file_path, 'wb') as fh:
                     pickle.dump(preds.astype(np.float32), fh, -1)
         try:
+            self._logger.debug("Renaming {} to {}".format(tmpdir,
+                                                          self.get_numrun_directory(seed, idx, budget)))
             os.rename(tmpdir, self.get_numrun_directory(seed, idx, budget))
         except OSError:
             if os.path.exists(self.get_numrun_directory(seed, idx, budget)):

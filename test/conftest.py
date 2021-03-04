@@ -227,7 +227,7 @@ def get_tabular_data(task):
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_categorical_only":
-        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        X, y = fetch_openml("boston", return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
 
@@ -245,7 +245,7 @@ def get_tabular_data(task):
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_and_categorical":
-        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        X, y = fetch_openml("boston", return_X_y=True, as_frame=True)
 
         # fill nan values for now since they are not handled properly yet
         for column in X.columns:

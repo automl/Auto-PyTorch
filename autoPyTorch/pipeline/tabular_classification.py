@@ -1,7 +1,9 @@
+import copy
 import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
+from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
@@ -25,6 +27,7 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
     NetworkInitializerChoice
@@ -62,15 +65,15 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     """
 
     def __init__(
-            self,
-            config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        config: Optional[Configuration] = None,
+        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        dataset_properties: Optional[Dict[str, Any]] = None,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        random_state: Optional[np.random.RandomState] = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
@@ -188,6 +191,33 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         # Here we add custom code, like this with this
         # is not a valid configuration
+        # Learned Entity Embedding is only valid when encoder is one hot encoder
+        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
+            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
+            if 'LearnedEntityEmbedding' in embeddings:
+                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
+                possible_default_embeddings = copy.copy(list(embeddings))
+                del possible_default_embeddings[possible_default_embeddings.index(default)]
+
+                for encoder in encoders:
+                    if encoder == 'OneHotEncoder':
+                        continue
+                    while True:
+                        try:
+                            cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(cs.get_hyperparameter(
+                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                            ))
+                            break
+                        except ValueError:
+                            # change the default and try again
+                            try:
+                                default = possible_default_embeddings.pop()
+                            except IndexError:
+                                raise ValueError("Cannot find a legal default configuration")
+                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
@@ -216,6 +246,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
             ("preprocessing", EarlyPreprocessing()),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties)),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
             ("network", NetworkComponent()),

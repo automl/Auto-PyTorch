@@ -31,4 +31,5 @@ jobs:
     - name: Run tests
       run: |
         python examples/example_tabular_classification.py
+        python examples/example_tabular_regression.py
         python examples/example_image_classification.py

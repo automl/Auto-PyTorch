@@ -331,6 +331,8 @@ class AbstractEvaluator(object):
             name=logger_name,
             port=logger_port,
         )
+        self.backend.setup_logger(name=logger_name, port=logger_port)
+
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
@@ -538,6 +540,7 @@ class AbstractEvaluator(object):
         else:
             pipeline = None
 
+        self.logger.debug("Saving directory {}, {}, {}".format(self.seed, self.num_run, self.budget))
         self.backend.save_numrun_to_dir(
             seed=int(self.seed),
             idx=int(self.num_run),

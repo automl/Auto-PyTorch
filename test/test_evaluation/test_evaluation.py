@@ -380,6 +380,10 @@ class EvaluationTest(unittest.TestCase):
                 """'save_targets_ensemble'",)""",
                 """AttributeError("'BackendMock' object has no attribute """
                 """'save_targets_ensemble'")""",
+                """AttributeError("'BackendMock' object has no attribute """
+                """'setup_logger'",)""",
+                """AttributeError("'BackendMock' object has no attribute """
+                """'setup_logger'")""",
             )
         )
         self.assertNotIn('exitcode', info[1].additional_info)
