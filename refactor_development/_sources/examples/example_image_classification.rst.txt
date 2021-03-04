@@ -42,7 +42,7 @@ Image Classification
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
     0.0%    159.1%Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
     Processing...
-    /opt/hostedtoolcache/Python/3.8.7/x64/lib/python3.8/site-packages/torchvision/datasets/mnist.py:480: UserWarning: The given NumPy array is not writeable, and PyTorch does not support non-writeable tensors. This means you can write to the underlying (supposedly non-writeable) NumPy array using the tensor. You may want to copy the array to protect its data or make it writeable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at  /pytorch/torch/csrc/utils/tensor_numpy.cpp:141.)
+    /opt/hostedtoolcache/Python/3.8.8/x64/lib/python3.8/site-packages/torchvision/datasets/mnist.py:480: UserWarning: The given NumPy array is not writeable, and PyTorch does not support non-writeable tensors. This means you can write to the underlying (supposedly non-writeable) NumPy array using the tensor. You may want to copy the array to protect its data or make it writeable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at  /pytorch/torch/csrc/utils/tensor_numpy.cpp:141.)
       return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
     Done!
     Pipeline CS:
@@ -77,23 +77,22 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:sigma_min, Value: 0.8028082276383658
-      image_augmenter:GaussianBlur:sigma_offset, Value: 0.9134580927714017
-      image_augmenter:GaussianBlur:use_augmenter, Value: True
-      image_augmenter:GaussianNoise:sigma_offset, Value: 2.7052914035288045
+      image_augmenter:GaussianBlur:use_augmenter, Value: False
+      image_augmenter:GaussianNoise:sigma_offset, Value: 0.0912963521330118
       image_augmenter:GaussianNoise:use_augmenter, Value: True
       image_augmenter:RandomAffine:use_augmenter, Value: False
-      image_augmenter:RandomCutout:use_augmenter, Value: False
-      image_augmenter:Resize:use_augmenter, Value: False
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.31028229980870564
-      normalizer:__choice__, Value: 'ImageNormalizer'
+      image_augmenter:RandomCutout:p, Value: 0.26803834833676243
+      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:Resize:use_augmenter, Value: True
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.3212184051746134
+      normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
     ________________________________________
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            ImageNormalizer
+            NoNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -165,7 +164,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.327 seconds)
+   **Total running time of the script:** ( 0 minutes  6.992 seconds)
 
 
 .. _sphx_glr_download_examples_example_image_classification.py:
