@@ -30,6 +30,8 @@ jobs:
         echo "::set-output name=BEFORE::$(git status --porcelain -b)"
     - name: Run tests
       run: |
-        python examples/example_tabular_classification.py
-        python examples/example_tabular_regression.py
+        python examples/tabular/20_basics/example_tabular_classification.py
+        python examples/tabular/20_basics/example_tabular_regression.py
+        python examples/tabular/40_advanced/example_custom_configuration_space.py
+        python examples/tabular/40_advanced/example_resampling_strategy.py
         python examples/example_image_classification.py
