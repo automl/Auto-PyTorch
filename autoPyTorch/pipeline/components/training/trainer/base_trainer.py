@@ -176,7 +176,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         weighted_loss (bool, default=True): In case for classification, whether to weight
             the loss function according to the distribution of classes in the target
         use_stochastic_weight_averaging (bool, default=True): whether to use stochastic
-            weight averaging
+            weight averaging. Stochastic weight averaging is a simple average of
+            multiple points(model parameters) along the trajectory of SGD. SWA
+            has been proposed in
+            [Averaging Weights Leads to Wider Optima and Better Generalization](https://arxiv.org/abs/1803.05407)
         use_snapshot_ensemble (bool, default=True): whether to use snapshot
             ensemble
         se_lastk (int, default=3): Number of snapshots of the network to maintain
