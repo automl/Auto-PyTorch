@@ -5,7 +5,8 @@ Tabular Classification with different resampling strategy
 
 The following example shows how to fit a sample classification model
 with different resampling strategies in AutoPyTorch
-
+By default, AutoPyTorch uses Holdout Validation with
+a 67% train size split.
 """
 import os
 import tempfile as tmp
@@ -23,6 +24,7 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 
 
 ############################################################################
@@ -42,14 +44,20 @@ if __name__ == '__main__':
 
     X_train, X_test, y_train, y_test = get_data()
     ############################################################################
-    # Build and fit a classifier
+    # Build and fit a classifier with default resampling strategy
     # ==========================
     api = TabularClassificationTask(
         temporary_directory='/tmp/autoPyTorch_example_tmp_01',
         output_directory='/tmp/autoPyTorch_example_out_01',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
-        delete_output_folder_after_terminate=True
+        delete_output_folder_after_terminate=True,
+        # 'HoldoutValTypes.holdout_validation' with 'val_share': 0.33
+        # is the default argument setting for TabularClassificationTask.
+        # It is explicitly specified in this example for demonstrational
+        # purpose.
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        resampling_strategy_args={'val_share': 0.33}
     )
     api.search(
         X_train=X_train,
@@ -57,8 +65,79 @@ if __name__ == '__main__':
         X_test=X_test.copy(),
         y_test=y_test.copy(),
         optimize_metric='accuracy',
-        total_walltime_limit=300,
-        func_eval_time_limit=50
+        total_walltime_limit=150,
+        func_eval_time_limit=30
+    )
+
+    ############################################################################
+    # Print the final ensemble performance
+    # ====================================
+    print(api.run_history, api.trajectory)
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    # Print the final ensemble built by AutoPyTorch
+    print(api.show_models())
+
+    ############################################################################
+
+    ############################################################################
+    # Build and fit a classifier with Cross validation resampling strategy
+    # ==========================
+    api = TabularClassificationTask(
+        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
+        output_directory='/tmp/autoPyTorch_example_out_01',
+        # To maintain logs of the run, set the next two as False
+        delete_tmp_folder_after_terminate=True,
+        delete_output_folder_after_terminate=True,
+        resampling_strategy=CrossValTypes.k_fold_cross_validation,
+        resampling_strategy_args={'num_splits': 3}
+    )
+    api.search(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=150,
+        func_eval_time_limit=30
+    )
+
+    ############################################################################
+    # Print the final ensemble performance
+    # ====================================
+    print(api.run_history, api.trajectory)
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    # Print the final ensemble built by AutoPyTorch
+    print(api.show_models())
+
+    ############################################################################
+
+    ############################################################################
+    # Build and fit a classifier with Stratified resampling strategy
+    # ==========================
+    api = TabularClassificationTask(
+        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
+        output_directory='/tmp/autoPyTorch_example_out_01',
+        # To maintain logs of the run, set the next two as False
+        delete_tmp_folder_after_terminate=True,
+        delete_output_folder_after_terminate=True,
+        # For demonstration purposes, we use
+        # Stratified hold out validation. However,
+        # one can also use CrossValTypes.stratified_k_fold_cross_validation.
+        resampling_strategy=HoldoutValTypes.stratified_holdout_validation,
+        resampling_strategy_args={'val_share': 0.33}
+    )
+    api.search(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=150,
+        func_eval_time_limit=30
     )
 
     ############################################################################
