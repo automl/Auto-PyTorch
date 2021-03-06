@@ -1413,7 +1413,8 @@ class EnsembleBuilder(object):
 
     def _get_list_of_sorted_preds(self) -> List[Tuple[str, float, int]]:
         """
-            Returns a list of sorted predictions in descending order
+            Returns a list of sorted predictions in descending performance order.
+            (We are solving a minimization problem)
             Losses are taken from self.read_losses.
 
             Parameters
@@ -1422,7 +1423,10 @@ class EnsembleBuilder(object):
 
             Return
             ------
-            sorted_keys: list
+            sorted_keys:
+                given a sequence of pairs of (loss[i], num_run[i]) = (l[i], n[i]),
+                we will sort s.t. l[0] <= l[1] <= ... <= l[N] and for any pairs of
+                i, j (i < j, l[i] = l[j]), the resulting sequence satisfies n[i] <= n[j]
         """
         # Sort by loss - smaller is better!
         sorted_keys = list(sorted(
