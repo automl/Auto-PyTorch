@@ -134,6 +134,12 @@ class DummyClassificationPipeline(DummyClassifier):
     def get_additional_run_info(self) -> None:  # pylint: disable=R0201
         return None
 
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return {
+            'Preprocessing': 'None',
+            'Estimator': 'Dummy',
+        }
+
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
         return {'budget_type': 'epochs',

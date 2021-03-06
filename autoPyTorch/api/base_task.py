@@ -858,8 +858,11 @@ class BaseTask:
                 saveable_trajectory = \
                     [list(entry[:2]) + [entry[2].get_dictionary()] + list(entry[3:])
                      for entry in self.trajectory]
-                with open(trajectory_filename, 'w') as fh:
-                    json.dump(saveable_trajectory, fh)
+                if os.path.exists(trajectory_filename):
+                    with open(trajectory_filename, 'w') as fh:
+                        json.dump(saveable_trajectory, fh)
+                else:
+                    self._logger.warning(f"File {trajectory_filename} does not exists...")
             except Exception as e:
                 self._logger.exception(str(e))
                 raise
