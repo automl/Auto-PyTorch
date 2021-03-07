@@ -107,7 +107,7 @@ class TestFeaturePreprocessors:
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'feature_preprocessor': [preprocessor]})
         cs = pipeline.get_hyperparameter_search_space()
-        config = cs.sample_configuration()
+        config = cs.get_default_configuration()
         pipeline.set_hyperparameters(config)
         try:
             pipeline.fit(fit_dictionary_tabular)
