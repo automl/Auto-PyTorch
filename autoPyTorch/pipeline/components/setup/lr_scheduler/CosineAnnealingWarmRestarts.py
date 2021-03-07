@@ -52,8 +52,9 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         self.check_requirements(X, y)
 
         # initialise required attributes for the scheduler
-        T_mult: int = 1
-        T_0: int = max(X['epochs'] // self.n_restarts, 1)
+        T_mult: int = 2
+        # using Epochs = T_0 * (T_mul ** n_restarts -1) / (T_mul - 1) (Sum of GP)
+        T_0: int = max((X['epochs'] * (T_mult - 1)) // (T_mult ** self.n_restarts - 1), 1)
 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=X['optimizer'],

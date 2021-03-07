@@ -73,4 +73,5 @@ class ExponentialLR(BaseLRComponent):
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
+
         return cs
