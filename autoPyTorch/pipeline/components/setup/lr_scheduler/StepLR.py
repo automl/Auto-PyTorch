@@ -70,8 +70,8 @@ class StepLR(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        gamma: Tuple[Tuple, float] = ((0.001, 0.9), 0.1),
-                                        step_size: Tuple[Tuple, int] = ((1, 10), 5)
+                                        gamma: Tuple[Tuple[float, float], float] = ((0.001, 0.9), 0.1),
+                                        step_size: Tuple[Tuple[int, int], int] = ((1, 10), 5)
                                         ) -> ConfigurationSpace:
         gamma = UniformFloatHyperparameter(
             "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])
