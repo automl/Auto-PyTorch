@@ -99,7 +99,6 @@ class ReduceLROnPlateau(BaseLRComponent):
                                                                       default_value=0.1,
                                                                       )
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, mode, CategoricalHyperparameter)

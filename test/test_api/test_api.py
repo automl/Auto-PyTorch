@@ -36,6 +36,8 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
+from test.test_api.api_utils import print_debug_information
+
 
 CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
@@ -149,7 +151,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), model_file
+        time.sleep(5)
+        assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
