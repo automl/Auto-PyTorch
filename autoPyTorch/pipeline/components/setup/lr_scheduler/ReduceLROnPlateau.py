@@ -80,7 +80,7 @@ class ReduceLROnPlateau(BaseLRComponent):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         mode: Tuple[Tuple, str] = (('min', 'max'), 'min'),
-                                        patience: Tuple[Tuple, int] = ((5, 20), 10),
+                                        patience: Tuple[Tuple[int, int], int] = ((5, 20), 10),
                                         factor: Tuple[Tuple[float, float], float] = ((0.01, 0.9), 0.1)
                                         ) -> ConfigurationSpace:
         mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
