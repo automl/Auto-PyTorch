@@ -29,7 +29,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
-from .api_utils import print_debug_information
+from test.test_api.api_utils import print_debug_information
 
 
 # Fixtures
