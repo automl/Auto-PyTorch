@@ -23,7 +23,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 
-from .api_utils import print_debug_information
+from test.test_api.api_utils import print_debug_information
 
 
 # Fixtures
