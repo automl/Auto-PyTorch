@@ -3,7 +3,6 @@ import pickle
 import sys
 import unittest
 import time
-from .api_utils import print_debug_information
 
 import numpy as np
 
@@ -25,6 +24,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+
+from .api_utils import print_debug_information
 
 
 # Fixtures

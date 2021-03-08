@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 
 def print_debug_information(automl):
