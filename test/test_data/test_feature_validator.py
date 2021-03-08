@@ -236,7 +236,7 @@ def test_featurevalidator_categorical_nan(input_data_featuretest):
     validator.fit(input_data_featuretest)
     transformed_X = validator.transform(input_data_featuretest)
     assert any(pd.isna(input_data_featuretest))
-    assert any((-1 in categories) or ('-1' in categories) for categories in
+    assert any((-1 in categories) or ('-1' in categories) or ('Missing!' in categories) for categories in
                validator.encoder.named_transformers_['encoder'].categories_)
     assert np.shape(input_data_featuretest) == np.shape(transformed_X)
     assert np.issubdtype(transformed_X.dtype, np.number)
@@ -327,10 +327,6 @@ def test_features_unsupported_calls_are_raised():
     with pytest.raises(ValueError, match=r"AutoPyTorch does not support time"):
         validator.fit(
             pd.DataFrame({'datetime': [pd.Timestamp('20180310')]})
-        )
-    with pytest.raises(ValueError, match="has invalid type object"):
-        validator.fit(
-            pd.DataFrame({'string': [TabularFeatureValidator()]})
         )
     with pytest.raises(ValueError, match=r"AutoPyTorch only supports.*yet, the provided input"):
         validator.fit({'input1': 1, 'input2': 2})

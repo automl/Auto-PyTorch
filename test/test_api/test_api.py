@@ -1,6 +1,7 @@
 import os
 import pickle
 import sys
+import unittest
 
 import numpy as np
 
@@ -21,6 +22,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
+from autoPyTorch.optimizer.smbo import AutoMLSMBO
 
 
 # Fixtures
@@ -344,3 +346,45 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         with open(dump_file, 'rb') as f:
             restored_estimator = pickle.load(f)
         restored_estimator.predict(X_test)
+
+
+@pytest.mark.parametrize('openml_id', (
+    1590,  # Adult to test NaN in categorical columns
+))
+def test_tabular_input_support(openml_id, backend):
+    """
+    Make sure we can process inputs with NaN in categorical and Object columns
+    when the later is possible
+    """
+
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        data_id=int(openml_id),
+        return_X_y=True, as_frame=True
+    )
+
+    # Make sure we are robust against objects
+    X[X.columns[0]] = X[X.columns[0]].astype(object)
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X, y, random_state=1)
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        ensemble_size=0,
+    )
+
+    estimator._do_dummy_prediction = unittest.mock.MagicMock()
+
+    with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
+        AutoMLSMBOMock.return_value = ({}, {}, 'epochs')
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='accuracy',
+            total_walltime_limit=150,
+            func_eval_time_limit=50,
+            traditional_per_total_budget=0,
+            load_models=False,
+        )
