@@ -3,6 +3,7 @@ import pickle
 import sys
 import unittest
 import time
+from .api_utils import print_debug_information
 
 import numpy as np
 
@@ -136,7 +137,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), model_file
+        time.sleep(5)
+        assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
