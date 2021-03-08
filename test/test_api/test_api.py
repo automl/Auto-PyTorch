@@ -2,7 +2,7 @@ import os
 import pickle
 import sys
 import time
-from test.utils import DisplayablePath
+from .api_utils import print_debug_information
 
 import numpy as np
 
@@ -123,8 +123,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
         )
         time.sleep(5)
-        DisplayablePath.make_tree(os.path.dirname(model_file))
-        assert os.path.exists(model_file), model_file
+        assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, run_key.config_id, run_key.budget)
