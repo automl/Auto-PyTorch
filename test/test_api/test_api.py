@@ -2,7 +2,6 @@ import os
 import pickle
 import sys
 import time
-from .api_utils import print_debug_information
 
 import numpy as np
 
@@ -23,6 +22,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
+
+from .api_utils import print_debug_information
 
 
 # Fixtures
