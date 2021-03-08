@@ -3,7 +3,6 @@ import pickle
 import sys
 import unittest
 import time
-from .api_utils import print_debug_information
 
 import numpy as np
 
@@ -29,6 +28,8 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+
+from .api_utils import print_debug_information
 
 
 # Fixtures
