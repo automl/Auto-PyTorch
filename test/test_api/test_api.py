@@ -2,6 +2,7 @@ import os
 import pickle
 import sys
 import time
+from test.test_api.api_utils import print_debug_information
 
 import numpy as np
 
@@ -22,8 +23,6 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-
-from test.test_api.api_utils import print_debug_information
 
 
 # Fixtures
