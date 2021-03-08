@@ -39,6 +39,24 @@ class EnsembleSelection(AbstractEnsemble):
         labels: np.ndarray,
         identifiers: List[Tuple[int, int, float]],
     ) -> AbstractEnsemble:
+        """
+        Builds a ensemble given the individual models out of fold predictions.
+        Fundamentally, defines a set of weights on how to perform a soft-voting
+        aggregation of the models in the given identifiers.
+
+        Arguments:
+            predictions (List[np.array]):
+                A list of individual model predictions of shape (n_datapoints, n_targets)
+                that are each model best estimate of the labels.
+            labels (np.ndarray):
+                The ground truth targets of shape (n_datapoints, n_targets)
+            identifiers: List[Tuple[int, int, float]]
+                A list of model identifiers, each with the form
+                (seed, number of run, budget)
+
+        Returns:
+            A copy of self
+        """
         self.ensemble_size = int(self.ensemble_size)
         if self.ensemble_size < 1:
             raise ValueError('Ensemble size cannot be less than one!')
@@ -53,7 +71,20 @@ class EnsembleSelection(AbstractEnsemble):
         predictions: List[np.ndarray],
         labels: np.ndarray,
     ) -> None:
-        """Fast version of Rich Caruana's ensemble selection method."""
+        """
+        Fast version of Rich Caruana's ensemble selection method.
+
+        For more details, please check the paper
+        "Ensemble Selection from Library of Models" by R Caruana  (2004)
+
+        Arguments:
+            predictions (List[np.array]):
+                A list of individual model predictions of shape (n_datapoints, n_targets)
+                that are each model best estimate of the labels.
+            identifiers (List[Tuple[int, int, float]]):
+                A list of model identifiers, each with the form
+                (seed, number of run, budget)
+        """
         self.num_input_models_ = len(predictions)
 
         ensemble = []  # type: List[np.ndarray]
@@ -123,6 +154,12 @@ class EnsembleSelection(AbstractEnsemble):
         self.train_loss_ = trajectory[-1]
 
     def _calculate_weights(self) -> None:
+        """
+        Calculates the contribution each of the individual models
+        should have, in the final ensemble soft voting. It does so by
+        a frequency counting scheme. In particular, how many times a model
+        was used during hill climbing optimization.
+        """
         ensemble_members = Counter(self.indices_).most_common()
         weights = np.zeros(
             (self.num_input_models_,),
@@ -138,6 +175,19 @@ class EnsembleSelection(AbstractEnsemble):
         self.weights_ = weights
 
     def predict(self, predictions: Union[np.ndarray, List[np.ndarray]]) -> np.ndarray:
+        """
+        Given a list of predictions from the individual model, this method
+        aggregates the predictions using a soft voting scheme with the weights
+        found during training.
+
+        Arguments:
+            predictions (List[np.ndarray]):
+                A list of predictions from the individual base models.
+
+        Returns:
+            A predictions product of soft voting with self._weights found during
+            ensemble selection fit.
+        """
 
         average = np.zeros_like(predictions[0], dtype=np.float64)
         tmp_predictions = np.empty_like(predictions[0], dtype=np.float64)
@@ -178,6 +228,17 @@ class EnsembleSelection(AbstractEnsemble):
         self,
         models: Dict[Any, BasePipeline]
     ) -> List[Tuple[float, BasePipeline]]:
+        """
+        Handy function to tag the provided input models with a given weight.
+
+        Arguments:
+            models (List[Tuple[float, BasePipeline]]):
+                A dictionary that maps a model's name to it's actual python object.
+
+        Returns:
+            List[Tuple[float, BasePipeline]]:
+                each model with the related weight, sorted by performance
+        """
         output = []
         for i, weight in enumerate(self.weights_):
             if weight > 0.0:
@@ -190,6 +251,15 @@ class EnsembleSelection(AbstractEnsemble):
         return output
 
     def get_selected_model_identifiers(self) -> List[Tuple[int, int, float]]:
+        """
+        After training of ensemble selection, not all models will be used.
+        Some of them will have zero weight. This procedure filters this models
+        out.
+
+        Returns:
+            List[Tuple[int, int, float]]:
+                The models actually used by ensemble selection
+        """
         output = []
 
         for i, weight in enumerate(self.weights_):
@@ -200,4 +270,11 @@ class EnsembleSelection(AbstractEnsemble):
         return output
 
     def get_validation_performance(self) -> float:
+        """
+        Returns the best optimization performance seen during hill climbing
+
+        Returns:
+            float:
+                best ensemble training performance
+        """
         return self.trajectory_[-1]
