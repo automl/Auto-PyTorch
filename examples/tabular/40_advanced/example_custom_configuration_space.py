@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # ==========================
     api = TabularClassificationTask(
         search_space_updates=get_search_space_updates(),
-        include_components={'network_backbone': ['MLPBackbone'],
+        include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
                             'encoder': ['OneHotEncoder']}
     )
     api.search(

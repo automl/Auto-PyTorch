@@ -54,8 +54,8 @@ if __name__ == '__main__':
     # Build and fit a regressor
     # ==========================
     api = TabularRegressionTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_02',
-        output_directory='/tmp/autoPyTorch_example_out_02',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_02',
+        output_directory='./tmp/autoPyTorch_example_out_02',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True

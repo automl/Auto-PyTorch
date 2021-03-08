@@ -47,8 +47,8 @@ if __name__ == '__main__':
     # Build and fit a classifier with default resampling strategy
     # ==========================
     api = TabularClassificationTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
-        output_directory='/tmp/autoPyTorch_example_out_01',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_03',
+        output_directory='./tmp/autoPyTorch_example_out_03',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
@@ -85,8 +85,8 @@ if __name__ == '__main__':
     # Build and fit a classifier with Cross validation resampling strategy
     # ==========================
     api = TabularClassificationTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
-        output_directory='/tmp/autoPyTorch_example_out_01',
+        temporary_directory='/tmp/autoPyTorch_example_tmp_04',
+        output_directory='/tmp/autoPyTorch_example_out_04',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     # Build and fit a classifier with Stratified resampling strategy
     # ==========================
     api = TabularClassificationTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
-        output_directory='/tmp/autoPyTorch_example_out_01',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_05',
+        output_directory='./tmp/autoPyTorch_example_out_05',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,

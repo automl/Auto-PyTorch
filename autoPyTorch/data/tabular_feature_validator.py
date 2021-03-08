@@ -69,7 +69,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         missing_value: typing.Union[int, str] = -1
                         # make sure for a string column we give
                         # string missing value else we give numeric
-                        if type(X[column][0]) == str:
+                        if type(X[column].iloc[0]) == str:
                             missing_value = str(missing_value)
                         X[column] = X[column].cat.add_categories([missing_value])
                         X[column] = X[column].fillna(missing_value)

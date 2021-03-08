@@ -44,8 +44,8 @@ if __name__ == '__main__':
     # Build and fit a classifier
     # ==========================
     api = TabularClassificationTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
-        output_directory='/tmp/autoPyTorch_example_out_01',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_01',
+        output_directory='./tmp/autoPyTorch_example_out_01',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True
