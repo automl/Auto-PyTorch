@@ -6,7 +6,7 @@ def print_debug_information(automl):
 
     # Log file path
     log_file = glob.glob(os.path.join(
-        automl._backend.temporary_directory, 'AutPyTorch*.log'))[0]
+        automl._backend.temporary_directory, 'AutoPyTorch*.log'))[0]
 
     include_messages = ['INFO', 'DEBUG', 'WARN',
                         'CRITICAL', 'ERROR', 'FATAL']
