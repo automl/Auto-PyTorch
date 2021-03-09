@@ -57,22 +57,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         if len(self.dtypes) != 0:
                             self.dtypes[list(X.columns).index(column)] = X[column].dtype
 
+            if not X.select_dtypes(include='object').empty:
+                X = self.infer_objects(X)
+
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             if len(self.enc_columns) > 0:
-                # impute missing values before encoding,
-                # remove once sklearn natively supports
-                # it in ordinal encoding. Sklearn issue:
-                # "https://github.com/scikit-learn/scikit-learn/issues/17123)"
-                for column in self.enc_columns:
-                    if X[column].isna().any():
-                        missing_value: typing.Union[int, str] = -1
-                        # make sure for a string column we give
-                        # string missing value else we give numeric
-                        if type(X[column].iloc[0]) == str:
-                            missing_value = str(missing_value)
-                        X[column] = X[column].cat.add_categories([missing_value])
-                        X[column] = X[column].fillna(missing_value)
+                X = self.impute_nan_in_categories(X)
 
                 self.encoder = ColumnTransformer(
                     [
@@ -160,6 +151,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     if X[column].isna().all():
                         X[column] = pd.to_numeric(X[column])
 
+            # Also remove the object dtype for new data
+            if not X.select_dtypes(include='object').empty:
+                X = self.infer_objects(X)
+
         # Check the data here so we catch problems on new test data
         self._check_data(X)
 
@@ -172,6 +167,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 for column in X.columns:
                     if X[column].isna().all():
                         X[column] = pd.to_numeric(X[column])
+
+            # We also need to fillna on the transformation
+            # in case test data is provided
+            X = self.impute_nan_in_categories(X)
+
             X = self.encoder.transform(X)
 
         # Sparse related transformations
@@ -179,11 +179,20 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
 
-        return sklearn.utils.check_array(
-            X,
-            force_all_finite=False,
-            accept_sparse='csr'
-        )
+        try:
+            X = sklearn.utils.check_array(
+                X,
+                force_all_finite=False,
+                accept_sparse='csr'
+            )
+        except Exception as e:
+            self.logger.exception(f"Conversion failed for input {X.dtypes} {X}"
+                                  "This means AutoPyTorch was not able to properly "
+                                  "Extract the dtypes of the provided input features. "
+                                  "Please try to manually cast it to a supported "
+                                  "numerical or categorical values.")
+            raise e
+        return X
 
     def _check_data(
         self,
@@ -231,6 +240,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # If entered here, we have a pandas dataframe
             X = typing.cast(pd.DataFrame, X)
 
+            # Handle objects if possible
+            if not X.select_dtypes(include='object').empty:
+                X = self.infer_objects(X)
+
             # Define the column to be encoded here as the feature validator is fitted once
             # per estimator
             enc_columns, _ = self._get_columns_to_encode(X)
@@ -245,6 +258,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                                      )
             else:
                 self.column_order = column_order
+
             dtypes = [dtype.name for dtype in X.dtypes]
             if len(self.dtypes) > 0:
                 if self.dtypes != dtypes:
@@ -379,3 +393,96 @@ class TabularFeatureValidator(BaseFeatureValidator):
             pd.DataFrame
         """
         return pd.DataFrame(X).infer_objects().convert_dtypes()
+
+    def infer_objects(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        In case the input contains object columns, their type is inferred if possible
+
+        This has to be done once, so the test and train data are treated equally
+
+        Arguments:
+            X (pd.DataFrame):
+                data to be interpreted.
+
+        Returns:
+            pd.DataFrame
+        """
+        if hasattr(self, 'object_dtype_mapping'):
+            # Mypy does not process the has attr. This dict is defined below
+            for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
+                if 'int' in dtype.name:
+                    # In the case train data was interpreted as int
+                    # and test data was interpreted as float, because of 0.0
+                    # for example, honor training data
+                    X[key] = X[key].applymap(np.int64)
+                else:
+                    try:
+                        X[key] = X[key].astype(dtype.name)
+                    except Exception as e:
+                        # Try inference if possible
+                        self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
+                        pass
+        else:
+            X = X.infer_objects()
+            for column in X.columns:
+                if not is_numeric_dtype(X[column]):
+                    X[column] = X[column].astype('category')
+            self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
+        self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
+        return X
+
+    def impute_nan_in_categories(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        impute missing values before encoding,
+        remove once sklearn natively supports
+        it in ordinal encoding. Sklearn issue:
+        "https://github.com/scikit-learn/scikit-learn/issues/17123)"
+
+        Arguments:
+            X (pd.DataFrame):
+                data to be interpreted.
+
+        Returns:
+            pd.DataFrame
+        """
+
+        # To be on the safe side, map always to the same missing
+        # value per column
+        if not hasattr(self, 'dict_nancol_to_missing'):
+            self.dict_missing_value_per_col: typing.Dict[str, typing.Any] = {}
+
+        # First make sure that we do not alter the type of the column which cause:
+        # TypeError: '<' not supported between instances of 'int' and 'str'
+        # in the encoding
+        for column in self.enc_columns:
+            if X[column].isna().any():
+                if column not in self.dict_missing_value_per_col:
+                    try:
+                        float(X[column].dropna().values[0])
+                        can_cast_as_number = True
+                    except Exception:
+                        can_cast_as_number = False
+                    if can_cast_as_number:
+                        # In this case, we expect to have a number as category
+                        # it might be string, but its value represent a number
+                        missing_value: typing.Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
+                                                                                   str) else -1
+                    else:
+                        missing_value = 'Missing!'
+
+                    # Make sure this missing value is not seen before
+                    # Do this check for categorical columns
+                    # else modify the value
+                    if hasattr(X[column], 'cat'):
+                        while missing_value in X[column].cat.categories:
+                            if isinstance(missing_value, str):
+                                missing_value += '0'
+                            else:
+                                missing_value += missing_value
+                    self.dict_missing_value_per_col[column] = missing_value
+
+                # Convert the frame in place
+                X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
+                                             inplace=True)
+                X.fillna({column: self.dict_missing_value_per_col[column]}, inplace=True)
+        return X
