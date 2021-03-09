@@ -6,10 +6,10 @@ import torchvision.transforms
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
-    HoldoutValTypes,
     CrossValFuncs,
-    HoldOutFuncs
+    HoldOutFuncs,
+    CrossValTypes,
+    HoldoutValTypes
 )
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
