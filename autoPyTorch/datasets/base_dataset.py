@@ -43,13 +43,20 @@ def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDataset
 
 
 class TransformSubset(Subset):
-    """
-    I did not understand the meaning of this doc-string.
-    Because the BaseDataset contains all the data (train/val/test), the transformations
-    have to be applied with some directions. That is, if yielding train data,
-    we expect to apply train transformation (which have augmentations exclusively).
+    """Wrapper of BaseDataset for splitted datasets
+
+    Since the BaseDataset contains all the data points (train/val/test),
+    we require different transformation for each data point.
+    This class helps to take the subset of the dataset
+    with either training or validation transformation.
 
     We achieve so by adding a train flag to the pytorch subset
+
+    Attributes:
+        dataset (BaseDataset/Dataset): Dataset to sample the subset
+        indices names (Sequence[int]): Indices to sample from the dataset
+        train (bool): If we apply train or validation transformation
+
     """
 
     def __init__(self, dataset: Dataset, indices: Sequence[int], train: bool) -> None:
