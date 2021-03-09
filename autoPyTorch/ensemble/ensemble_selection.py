@@ -185,8 +185,8 @@ class EnsembleSelection(AbstractEnsemble):
                 A list of predictions from the individual base models.
 
         Returns:
-            average (np.array): A predictions product of soft voting with self._weights
-                                found during ensemble selection fit.
+            average (np.array): Soft voting predictions of ensemble models, using
+                                the weights found during ensemble selection (self._weights)
         """
 
         average = np.zeros_like(predictions[0], dtype=np.float64)
