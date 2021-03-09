@@ -58,8 +58,8 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer=X['optimizer'],
-            T_0=T_0,
-            T_mult=T_mult,
+            T_0=int(T_0),
+            T_mult=int(T_mult),
         )
         return self
 
