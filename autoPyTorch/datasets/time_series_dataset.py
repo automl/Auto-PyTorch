@@ -7,8 +7,8 @@ import torchvision.transforms
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValFuncs,
-    HoldOutFuncs,
     CrossValTypes,
+    HoldOutFuncs,
     HoldoutValTypes
 )
 
