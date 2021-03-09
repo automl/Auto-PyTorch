@@ -106,27 +106,29 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
             continue
 
         run_key_model_run_dir = estimator._backend.get_numrun_directory(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, run_key.config_id + 1, run_key.budget)
         if os.path.exists(run_key_model_run_dir):
+            # Runkey config id is different from the num_run
+            # more specifically num_run = config_id + 1(dummy)
+            successful_num_run = run_key.config_id + 1
             break
-
     if resampling_strategy == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
-                                  f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.model")
+                                  f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
-            f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
+            f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
         time.sleep(5)
         assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model, VotingClassifier)
         assert len(model.estimators_) == 3
         assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
@@ -137,7 +139,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,
                                    estimator._backend.get_prediction_filename(
-                                       'test', estimator.seed, run_key.config_id,
+                                       'test', estimator.seed, successful_num_run,
                                        run_key.budget))
     assert os.path.exists(test_prediction), test_prediction
     assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == np.shape(X_test)[0]
@@ -147,7 +149,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     ensemble_prediction = os.path.join(run_key_model_run_dir,
                                        estimator._backend.get_prediction_filename(
                                            'ensemble',
-                                           estimator.seed, run_key.config_id,
+                                           estimator.seed, successful_num_run,
                                            run_key.budget))
     assert os.path.exists(ensemble_prediction), ensemble_prediction
     assert np.shape(np.load(ensemble_prediction, allow_pickle=True))[0] == np.shape(
@@ -262,32 +264,32 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
     for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if i == 0:
-            # Ignore dummy run
-            continue
         if 'SUCCESS' not in str(value.status):
             continue
 
         run_key_model_run_dir = estimator._backend.get_numrun_directory(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, run_key.config_id + 1, run_key.budget)
         if os.path.exists(run_key_model_run_dir):
+            # Runkey config id is different from the num_run
+            # more specifically num_run = config_id + 1(dummy)
+            successful_num_run = run_key.config_id + 1
             break
 
     if resampling_strategy == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
-                                  f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.model")
+                                  f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
-            f"{estimator.seed}.{run_key.config_id}.{run_key.budget}.cv_model"
+            f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
-            estimator.seed, run_key.config_id, run_key.budget)
+            estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model, VotingRegressor)
         assert len(model.estimators_) == 3
         assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
@@ -298,7 +300,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,
                                    estimator._backend.get_prediction_filename(
-                                       'test', estimator.seed, run_key.config_id,
+                                       'test', estimator.seed, successful_num_run,
                                        run_key.budget))
     assert os.path.exists(test_prediction), test_prediction
     assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == np.shape(X_test)[0]
@@ -308,7 +310,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     ensemble_prediction = os.path.join(run_key_model_run_dir,
                                        estimator._backend.get_prediction_filename(
                                            'ensemble',
-                                           estimator.seed, run_key.config_id,
+                                           estimator.seed, successful_num_run,
                                            run_key.budget))
     assert os.path.exists(ensemble_prediction), ensemble_prediction
     assert np.shape(np.load(ensemble_prediction, allow_pickle=True))[0] == np.shape(
