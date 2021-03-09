@@ -599,8 +599,7 @@ class AbstractEvaluator(object):
                 pipeline = None
         else:
             pipeline = None
-
-        self.logger.debug("Saving directory {}, {}, {}".format(self.seed, self.num_run, self.budget))
+        self.logger.debug("Saving model {}_{}_{} to disk".format(self.seed, self.num_run, self.budget))
         self.backend.save_numrun_to_dir(
             seed=int(self.seed),
             idx=int(self.num_run),
