@@ -56,30 +56,31 @@ def get_search_space_updates():
                    default_value=0.2)
     return updates
 
-############################################################################
-# Data Loading
-# ============
-def get_data():
+
+if __name__ == '__main__':
+
+    ############################################################################
+    # Data Loading
+    # ============
     X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X,
         y,
         random_state=1,
     )
-    return X_train, X_test, y_train, y_test
-
-
-if __name__ == '__main__':
-    X_train, X_test, y_train, y_test = get_data()
 
     ############################################################################
     # Build and fit a classifier with include components
-    # ==========================
+    # ==================================================
     api = TabularClassificationTask(
         search_space_updates=get_search_space_updates(),
         include_components={'network_backbone': ['MLPBackbone'],
                             'encoder': ['OneHotEncoder']}
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train.copy(),
         y_train=y_train.copy(),
@@ -101,12 +102,16 @@ if __name__ == '__main__':
 
     ############################################################################
     # Build and fit a classifier with exclude components
-    # ==========================
+    # ==================================================
     api = TabularClassificationTask(
         search_space_updates=get_search_space_updates(),
         exclude_components={'network_backbone': ['MLPBackbone'],
                             'encoder': ['OneHotEncoder']}
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train,
         y_train=y_train,

@@ -27,28 +27,24 @@ from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 
 
-############################################################################
-# Data Loading
-# ============
-def get_data():
+if __name__ == '__main__':
+
+    ############################################################################
+    # Data Loading
+    # ============
     X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X,
         y,
         random_state=1,
     )
-    return X_train, X_test, y_train, y_test
 
-
-if __name__ == '__main__':
-
-    X_train, X_test, y_train, y_test = get_data()
     ############################################################################
     # Build and fit a classifier with default resampling strategy
-    # ==========================
+    # ===========================================================
     api = TabularClassificationTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_01',
-        output_directory='/tmp/autoPyTorch_example_out_01',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_03',
+        output_directory='./tmp/autoPyTorch_example_out_03',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
@@ -59,6 +55,10 @@ if __name__ == '__main__':
         resampling_strategy=HoldoutValTypes.holdout_validation,
         resampling_strategy_args={'val_share': 0.33}
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train,
         y_train=y_train,
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     ############################################################################
     # Build and fit a classifier with Cross validation resampling strategy
-    # ==========================
+    # ====================================================================
     api = TabularClassificationTask(
         temporary_directory='/tmp/autoPyTorch_example_tmp_01',
         output_directory='/tmp/autoPyTorch_example_out_01',
@@ -93,6 +93,10 @@ if __name__ == '__main__':
         resampling_strategy=CrossValTypes.k_fold_cross_validation,
         resampling_strategy_args={'num_splits': 3}
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train,
         y_train=y_train,
@@ -117,7 +121,7 @@ if __name__ == '__main__':
 
     ############################################################################
     # Build and fit a classifier with Stratified resampling strategy
-    # ==========================
+    # ==============================================================
     api = TabularClassificationTask(
         temporary_directory='/tmp/autoPyTorch_example_tmp_01',
         output_directory='/tmp/autoPyTorch_example_out_01',
@@ -130,6 +134,10 @@ if __name__ == '__main__':
         resampling_strategy=HoldoutValTypes.stratified_holdout_validation,
         resampling_strategy_args={'val_share': 0.33}
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train,
         y_train=y_train,

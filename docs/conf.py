@@ -68,9 +68,9 @@ if "dev" in autoPyTorch.__version__:
 
 sphinx_gallery_conf = {
     # path to the examples
-    'examples_dirs': '../examples',
+    'examples_dirs': ['../examples/tabular/20_basics', '../examples/tabular/40_advanced'],
     # path where to save gallery generated examples
-    'gallery_dirs': 'examples',
+    'gallery_dirs': ['basics_tabular', 'advanced_tabular'],
     #TODO: fix back/forward references for the examples.
     #'doc_module': ('autoPyTorch'),
     #'reference_url': {

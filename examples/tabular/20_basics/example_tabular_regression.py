@@ -24,22 +24,17 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
 
 
-############################################################################
-# Data Loading
-# ============
-def get_data():
-    X, y = sklearn.datasets.fetch_openml(name="cholesterol", return_X_y=True)
+if __name__ == '__main__':
+
+    ############################################################################
+    # Data Loading
+    # ============
+    X, y = sklearn.datasets.fetch_openml(name='boston', return_X_y=True, as_frame=True)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X,
         y,
         random_state=1,
     )
-    return X_train, X_test, y_train, y_test
-
-
-if __name__ == '__main__':
-
-    X_train, X_test, y_train, y_test = get_data()
 
     # Scale the regression targets to have zero mean and unit variance.
     # This is important for Neural Networks since predicting large target values would require very large weights.
@@ -54,12 +49,16 @@ if __name__ == '__main__':
     # Build and fit a regressor
     # ==========================
     api = TabularRegressionTask(
-        temporary_directory='/tmp/autoPyTorch_example_tmp_02',
-        output_directory='/tmp/autoPyTorch_example_out_02',
+        temporary_directory='./tmp/autoPyTorch_example_tmp_02',
+        output_directory='./tmp/autoPyTorch_example_out_02',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True
     )
+
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
     api.search(
         X_train=X_train,
         y_train=y_train_scaled,
