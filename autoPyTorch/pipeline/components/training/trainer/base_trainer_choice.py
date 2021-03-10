@@ -203,7 +203,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         return cast(autoPyTorchComponent, self.choice)
 
-    def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> torch.nn.Module:
+    def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
         """
         Fits a component by using an input dictionary with pre-requisites
 
@@ -336,7 +336,7 @@ class TrainerChoice(autoPyTorchChoice):
         # Tag as fitted
         self.fitted_ = True
 
-        return X['network'].state_dict()
+        return self
 
     def early_stop_handler(self, X: Dict[str, Any]) -> bool:
         """
