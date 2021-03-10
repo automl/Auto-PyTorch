@@ -7,6 +7,5 @@
             "torch_num_threads": 1,
             "early_stopping": 20,
             "use_tensorboard_logger": "False",
-            "use_pynisher": "False",
             "metrics_during_training": "True"
 }

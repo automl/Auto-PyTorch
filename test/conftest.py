@@ -290,7 +290,6 @@ def get_fit_dictionary(X, y, validator, backend):
         'early_stopping': 10,
         'working_dir': '/tmp',
         'use_tensorboard_logger': True,
-        'use_pynisher': False,
         'metrics_during_training': True,
         'split_id': 0,
         'backend': backend,

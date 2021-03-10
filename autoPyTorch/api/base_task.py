@@ -227,7 +227,7 @@ class BaseTask:
         Args:
             **pipeline_config_kwargs: Valid config options include "num_run",
             "device", "budget_type", "epochs", "runtime", "torch_num_threads",
-            "early_stopping", "use_tensorboard_logger", "use_pynisher",
+            "early_stopping", "use_tensorboard_logger",
             "metrics_during_training"
 
         Returns:
