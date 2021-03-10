@@ -24,16 +24,17 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
 
-BASE_DATASET_INPUT = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+BaseDatasetType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 
 
 def check_valid_data(data: Any) -> None:
-    if not (hasattr(data, '__getitem__') and hasattr(data, '__len__')):
+    if not all(hasattr(data, attr) for attr in ['__getitem__', '__len__']):
         raise ValueError(
-            'The specified Data for Dataset does either not have a __getitem__ or a __len__ attribute.')
+            'The specified Data for Dataset must have both __getitem__ and __len__ attribute.')
 
 
-def type_check(train_tensors: BASE_DATASET_INPUT, val_tensors: Optional[BASE_DATASET_INPUT] = None) -> None:
+def type_check(train_tensors: BaseDatasetType, val_tensors: Optional[BaseDatasetType] = None) -> None:
+    """To avoid unexpected behavior, we use loops over indices."""
     for i in range(len(train_tensors)):
         check_valid_data(train_tensors[i])
     if val_tensors is not None:
@@ -42,12 +43,20 @@ def type_check(train_tensors: BASE_DATASET_INPUT, val_tensors: Optional[BASE_DAT
 
 
 class TransformSubset(Subset):
-    """
-    Because the BaseDataset contains all the data (train/val/test), the transformations
-    have to be applied with some directions. That is, if yielding train data,
-    we expect to apply train transformation (which have augmentations exclusively).
+    """Wrapper of BaseDataset for splitted datasets
+
+    Since the BaseDataset contains all the data points (train/val/test),
+    we require different transformation for each data point.
+    This class helps to take the subset of the dataset
+    with either training or validation transformation.
 
     We achieve so by adding a train flag to the pytorch subset
+
+    Attributes:
+        dataset (BaseDataset/Dataset): Dataset to sample the subset
+        indices names (Sequence[int]): Indices to sample from the dataset
+        train (bool): If we apply train or validation transformation
+
     """
 
     def __init__(self, dataset: Dataset, indices: Sequence[int], train: bool) -> None:
@@ -62,10 +71,10 @@ class TransformSubset(Subset):
 class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
-        train_tensors: BASE_DATASET_INPUT,
+        train_tensors: BaseDatasetType,
         dataset_name: Optional[str] = None,
-        val_tensors: Optional[BASE_DATASET_INPUT] = None,
-        test_tensors: Optional[BASE_DATASET_INPUT] = None,
+        val_tensors: Optional[BaseDatasetType] = None,
+        test_tensors: Optional[BaseDatasetType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
@@ -97,18 +106,15 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        if dataset_name is not None:
-            self.dataset_name = dataset_name
-        else:
-            self.dataset_name = hash_array_or_matrix(train_tensors[0])
+        self.dataset_name = dataset_name if dataset_name is not None \
+            else hash_array_or_matrix(train_tensors[0])
+
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
-        self.train_tensors = train_tensors
-        self.val_tensors = val_tensors
-        self.test_tensors = test_tensors
+        self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
         self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
-        self.rand = np.random.RandomState(seed=seed)
+        self.rng = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -128,16 +134,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.is_small_preprocess = True
 
         # Make sure cross validation splits are created once
-        self.cross_validators = get_cross_validators(
-            CrossValTypes.stratified_k_fold_cross_validation,
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation,
-            CrossValTypes.stratified_shuffle_split_cross_validation
-        )
-        self.holdout_validators = get_holdout_validators(
-            HoldoutValTypes.holdout_validation,
-            HoldoutValTypes.stratified_holdout_validation
-        )
+        self.cross_validators = get_cross_validators(*CrossValTypes)
+        self.holdout_validators = get_holdout_validators(*HoldoutValTypes)
         self.splits = self.get_splits_from_resampling_strategy()
 
         # We also need to be able to transform the data, be it for pre-processing
@@ -146,19 +144,19 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.val_transform = val_transforms
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
-                         train: bool = True,
-                         ) -> 'BaseDataset':
+                         train: bool = True) -> 'BaseDataset':
         """
         During the pipeline execution, the pipeline object might propose transformations
         as a product of the current pipeline configuration being tested.
 
-        This utility allows to return a self with the updated transformation, so that
+        This utility allows to return self with the updated transformation, so that
         a dataloader can yield this dataset with the desired transformations
 
         Args:
-            transform (torchvision.transforms.Compose): The transformations proposed
-                by the current pipeline
-            train (bool): Whether to update the train or validation transform
+            transform (torchvision.transforms.Compose):
+                The transformations proposed by the current pipeline
+            train (bool):
+                Whether to update the train or validation transform
 
         Returns:
             self: A copy of the update pipeline
@@ -171,9 +169,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
     def __getitem__(self, index: int, train: bool = True) -> Tuple[np.ndarray, ...]:
         """
-        The base dataset uses a Subset of the data. Nevertheless, the base dataset expect
-        both validation and test data to be present in the same dataset, which motivated the
-        need to dynamically give train/test data with the __getitem__ command.
+        The base dataset uses a Subset of the data. Nevertheless, the base dataset expects
+        both validation and test data to be present in the same dataset, which motivates
+        the need to dynamically give train/test data with the __getitem__ command.
 
         This method yields a datapoint of the whole data (after a Subset has selected a given
         item, based on the resampling strategy) and applies a train/testing transformation, if any.
@@ -186,10 +184,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             A transformed single point prediction
         """
 
-        if hasattr(self.train_tensors[0], 'loc'):
-            X = self.train_tensors[0].iloc[[index]]
-        else:
-            X = self.train_tensors[0][index]
+        X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
+            else self.train_tensors[0][index]
 
         if self.train_transform is not None and train:
             X = self.train_transform(X)
@@ -197,11 +193,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             X = self.val_transform(X)
 
         # In case of prediction, the targets are not provided
-        Y = self.train_tensors[1]
-        if Y is not None:
-            Y = Y[index]
-        else:
-            Y = None
+        Y = self.train_tensors[1][index] if self.train_tensors[1] is not None else None
 
         return X, Y
 
@@ -209,11 +201,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return self.train_tensors[0].shape[0]
 
     def _get_indices(self) -> np.ndarray:
-        if self.shuffle:
-            indices = self.rand.permutation(len(self))
-        else:
-            indices = np.arange(len(self))
-        return indices
+        return self.rng.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
         """
@@ -333,7 +321,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return (TransformSubset(self, self.splits[split_id][0], train=True),
                 TransformSubset(self, self.splits[split_id][1], train=False))
 
-    def replace_data(self, X_train: BASE_DATASET_INPUT, X_test: Optional[BASE_DATASET_INPUT]) -> 'BaseDataset':
+    def replace_data(self, X_train: BaseDatasetType, X_test: Optional[BaseDatasetType]) -> 'BaseDataset':
         """
         To speed up the training of small dataset, early pre-processing of the data
         can be made on the fly by the pipeline.
@@ -361,7 +349,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 contain.
 
         Returns:
-
+            dataset_properties (Dict[str, Any]):
+                Dict of the dataset properties.
         """
         dataset_properties = dict()
         for dataset_requirement in dataset_requirements:

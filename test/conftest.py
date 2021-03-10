@@ -276,7 +276,6 @@ def get_fit_dictionary(X, y, validator, backend):
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-
     fit_dictionary = {
         'X_train': datamanager.train_tensors[0],
         'y_train': datamanager.train_tensors[1],
