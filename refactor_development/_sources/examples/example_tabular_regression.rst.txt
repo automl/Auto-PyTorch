@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f1e00a06e50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f41fc4762e0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       imputer:numerical_strategy, Value: 'mean'
@@ -65,7 +65,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017309188842773438, budget=0), TrajEntry(train_perf=0.0003191593212231725, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018343925476074219, budget=0), TrajEntry(train_perf=0.0006981695502918939, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       imputer:numerical_strategy, Value: 'mean'
@@ -94,8 +94,8 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=8.489260911941528, wallclock_time=12.06636643409729, budget=5.555555555555555)]
-    {'r2': 0.9996971295334267}
+    , ta_runs=1, ta_time_used=7.188728332519531, wallclock_time=10.688534498214722, budget=5.555555555555555)]
+    {'r2': 0.9998706896933107}
 
 
 
@@ -218,7 +218,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  33.372 seconds)
+   **Total running time of the script:** ( 8 minutes  33.280 seconds)
 
 
 .. _sphx_glr_download_examples_example_tabular_regression.py:
