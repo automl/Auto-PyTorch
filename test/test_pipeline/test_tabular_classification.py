@@ -60,7 +60,10 @@ class TestTabularClassification:
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"Failed due to {e} for config={config}")
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy
