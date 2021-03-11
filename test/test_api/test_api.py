@@ -268,7 +268,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     # Check that smac was able to find proper models
     succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
     ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.data.items()]
+    assert len(succesful_runs) >= 1, [(k, v) for k, v in estimator.run_history.data.items()]
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc

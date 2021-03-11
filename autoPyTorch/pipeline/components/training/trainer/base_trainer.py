@@ -29,9 +29,6 @@ class BudgetTracker(object):
 
         It also allows to define a 'epoch_or_time' budget type, which means,
         the first of them both which is exhausted, is honored
-
-        In case use_pynisher is set to false, this function allows to
-        still terminate the task with a time domain consideration
         """
         self.start_time = time.time()
         self.budget_type = budget_type

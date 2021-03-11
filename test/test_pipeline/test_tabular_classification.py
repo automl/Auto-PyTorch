@@ -63,7 +63,10 @@ class TestTabularClassification:
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"Failed due to {e} for config={config}")
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy
@@ -201,7 +204,7 @@ class TestTabularClassification:
         """Makes sure that when a key is removed from X, correct error is outputted"""
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
-        for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads', 'dataset_properties']:
+        for key in ['num_run', 'device', 'split_id', 'torch_num_threads', 'dataset_properties']:
             fit_dictionary_tabular_copy = fit_dictionary_tabular.copy()
             fit_dictionary_tabular_copy.pop(key)
             with pytest.raises(ValueError, match=r"To fit .+?, expected fit dictionary to have"):
