@@ -28,16 +28,18 @@ python setup.py install
 
 ## Contributing
 
-If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
+If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch.
 
 ```sh
 $ git checkout refactor_development
 ```
 
+Note that you should follow the [Github Rules](https://github.com/automl/Auto-PyTorch/wiki/Github-Rules) for smooth communication.
+
 
 ## Examples
 
-For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
+For a detailed tutorial, please refer to the Jupyter Notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
 
 In a nutshell:
 
