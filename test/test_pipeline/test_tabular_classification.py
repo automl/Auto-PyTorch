@@ -7,6 +7,8 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter,
 )
 
+import flaky
+
 import numpy as np
 
 import pytest
@@ -51,6 +53,7 @@ class TestTabularClassification:
             elif isinstance(hyperparameter, CategoricalHyperparameter):
                 assert update.value_range == hyperparameter.choices
 
+    @flaky.flaky(max_runs=2)
     def test_pipeline_fit(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
@@ -101,8 +104,9 @@ class TestTabularClassification:
 
         # we should be able to get a decent score on this dummy data
         accuracy = metrics.accuracy(y, prediction.squeeze())
-        assert accuracy >= 0.8
+        assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
 
+    @flaky.flaky(max_runs=3)
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""

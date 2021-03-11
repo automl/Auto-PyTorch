@@ -104,17 +104,17 @@ def get_metrics(dataset_properties: Dict[str, Any],
 
 
 def calculate_score(
-        target: np.ndarray,
-        prediction: np.ndarray,
-        task_type: int,
-        metrics: Iterable[autoPyTorchMetric],
+    target: np.ndarray,
+    prediction: np.ndarray,
+    task_type: int,
+    metrics: Iterable[autoPyTorchMetric],
 ) -> Dict[str, float]:
     score_dict = dict()
     if task_type in REGRESSION_TASKS:
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
             try:
-                score_dict[metric_.name] = metric_(target, cprediction)
+                score_dict[metric_.name] = metric_._sign * metric_(target, cprediction)
             except ValueError as e:
                 warnings.warn(f"{e} {e.args[0]}")
                 if e.args[0] == "Mean Squared Logarithmic Error cannot be used when " \
@@ -126,7 +126,7 @@ def calculate_score(
     else:
         for metric_ in metrics:
             try:
-                score_dict[metric_.name] = metric_(target, prediction)
+                score_dict[metric_.name] = metric_._sign * metric_(target, prediction)
             except ValueError as e:
                 if e.args[0] == 'multiclass format is not supported':
                     continue
@@ -143,3 +143,49 @@ def calculate_score(
                 else:
                     raise e
     return score_dict
+
+
+def calculate_loss(
+    target: np.ndarray,
+    prediction: np.ndarray,
+    task_type: int,
+    metrics: Iterable[autoPyTorchMetric],
+) -> Dict[str, float]:
+    """
+    Returns a loss (a magnitude that allows casting the
+    optimization problem, as a minimization one) for the
+    given Auto-Sklearn Scorer object
+    Parameters
+    ----------
+        solution: np.ndarray
+            The ground truth of the targets
+        prediction: np.ndarray
+            The best estimate from the model, of the given targets
+        task_type: int
+            To understand if the problem task is classification
+            or regression
+        metric: Scorer
+            Object that host a function to calculate how good the
+            prediction is according to the solution.
+        scoring_functions: List[Scorer]
+            A list of metrics to calculate multiple losses
+    Returns
+    -------
+        float or Dict[str, float]
+            A loss function for each of the provided scorer objects
+    """
+    score = calculate_score(
+        target=target,
+        prediction=prediction,
+        task_type=task_type,
+        metrics=metrics,
+    )
+
+    loss_dict = dict()
+    for metric_ in metrics:
+        # TODO: When metrics are annotated with type_of_target support
+        # we can remove this check
+        if metric_.name not in score:
+            continue
+        loss_dict[metric_.name] = metric_._optimum - metric_._sign * score[metric_.name]
+    return loss_dict

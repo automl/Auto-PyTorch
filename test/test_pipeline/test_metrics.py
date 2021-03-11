@@ -14,14 +14,18 @@ from autoPyTorch.constants import (
     TABULAR_REGRESSION,
     TASK_TYPES_TO_STRING
 )
-from autoPyTorch.metrics import accuracy
+from autoPyTorch.metrics import accuracy, balanced_accuracy, mean_squared_error
 from autoPyTorch.pipeline.components.training.metrics.base import (
     _PredictMetric,
     _ThresholdMetric,
     autoPyTorchMetric,
     make_metric,
 )
-from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
+from autoPyTorch.pipeline.components.training.metrics.utils import (
+    calculate_loss,
+    calculate_score,
+    get_metrics,
+)
 
 
 @pytest.mark.parametrize('output_type', ['multiclass',
@@ -190,3 +194,64 @@ def test_classification_only_metric():
 
     previous_score = scorer._optimum
     assert score['accuracy'] == pytest.approx(previous_score)
+
+
+def test_calculate_loss():
+    # In a 0-1 ranged scorer, make sure that the loss
+    # has a expected positive value
+    y_pred = np.array([0, 1, 0, 1, 1, 1, 0, 0, 0, 0])
+    y_true = np.array([0, 1, 0, 1, 1, 0, 0, 0, 0, 0])
+    score = sklearn.metrics.accuracy_score(y_true, y_pred)
+    assert pytest.approx(score) == calculate_score(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_CLASSIFICATION,
+        metrics=[accuracy],
+    )['accuracy']
+    loss = 1.0 - score
+    assert pytest.approx(loss) == calculate_loss(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_CLASSIFICATION,
+        metrics=[accuracy],
+    )['accuracy']
+
+    # Test the dictionary case
+    score_dict = calculate_score(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_CLASSIFICATION,
+        metrics=[accuracy, balanced_accuracy],
+    )
+    expected_score_dict = {
+        'accuracy': 0.9,
+        'balanced_accuracy': 0.9285714285714286,
+    }
+    loss_dict = calculate_loss(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_CLASSIFICATION,
+        metrics=[accuracy, balanced_accuracy],
+    )
+    for expected_metric, expected_score in expected_score_dict.items():
+        assert pytest.approx(expected_score) == score_dict[expected_metric]
+        assert pytest.approx(1 - expected_score) == loss_dict[expected_metric]
+
+    # Lastly make sure that metrics whose optimum is zero
+    # are also properly working
+    y_true = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+    y_pred = np.array([0.11, 0.22, 0.33, 0.44, 0.55, 0.66])
+    score = sklearn.metrics.mean_squared_error(y_true, y_pred)
+    assert pytest.approx(score) == calculate_score(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_REGRESSION,
+        metrics=[mean_squared_error],
+    )['mean_squared_error']
+    loss = score
+    assert pytest.approx(loss) == calculate_loss(
+        target=y_true,
+        prediction=y_pred,
+        task_type=TABULAR_REGRESSION,
+        metrics=[mean_squared_error],
+    )['mean_squared_error']

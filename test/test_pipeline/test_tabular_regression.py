@@ -115,7 +115,7 @@ class TestTabularRegression:
 
         # we should be able to get a decent score on this dummy data
         r2_score = metrics.r2(y, prediction)
-        assert r2_score >= 0.5
+        assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
 
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
