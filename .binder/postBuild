@@ -8,8 +8,8 @@ python -m pip install .[docs,examples]
 # under BSD3 license, copyright the scikit-learn contributors
 
 # This script is called in a binder context. When this script is called, we are
-# inside a git checkout of the automl/auto-sklearn repo. This script
-# generates notebooks from the auto-sklearn python examples.
+# inside a git checkout of the automl/Auto-PyTorch repo. This script
+# generates notebooks from the Auto-PyTorch python examples.
 
 if [[ ! -f /.dockerenv ]]; then
     echo "This script was written for repo2docker and is supposed to run inside a docker container."
