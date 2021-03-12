@@ -41,7 +41,6 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         super().__init__(batch_size=batch_size)
         self.sequence_length: int = sequence_length
         self.upper_seuqnce_length = upper_sequence_length
-        self.n_prediction_steps = n_prediction_steps
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """The transform function calls the transform function of the
@@ -86,8 +85,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             self.val_transform,
             train=False,
         )
-        import pdb
-        pdb.set_trace()
+
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
@@ -123,9 +121,10 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         X_train, y_train = datamanager.train_tensors
         val_tensors = datamanager.val_tensors
         test_tensors = datamanager.test_tensors
+        n_prediction_steps = datamanager.n_prediction_steps
 
         time_series_length, population_size, num_features = X_train.shape
-        num_datapoints = time_series_length - self.sequence_length - self.n_prediction_steps + 1
+        num_datapoints = time_series_length - self.sequence_length - n_prediction_steps + 1
         num_targets = y_train.shape[-1]
 
         y_train = y_train[-num_datapoints:, :]

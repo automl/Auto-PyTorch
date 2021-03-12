@@ -70,10 +70,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                  random_state: Optional[np.random.RandomState] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-                 n_prediction_steps: int = 1,
                  ):
         # TODO consider multi steps prediction
-        self.n_prediction_steps = n_prediction_steps
         if 'upper_sequence_length' not in dataset_properties:
             warnings.warn('max_sequence_length is not given in dataset property , might exists the risk of selecting '
                           'length that is greater than the maximal allowed length of the dataset')
@@ -179,7 +177,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("optimizer", OptimizerChoice(default_dataset_properties)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
             ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
-                                                            n_prediction_steps=self.n_prediction_steps,
                                                             )),
             ("trainer", TrainerChoice(default_dataset_properties)),
         ])
