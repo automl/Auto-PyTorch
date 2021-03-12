@@ -39,6 +39,7 @@ class HyperparameterSearchSpaceUpdate:
         Args:
             pipeline (List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]):
                 The named steps of the current autopytorch pipeline
+
         Returns:
             None
         """
@@ -56,18 +57,18 @@ class HyperparameterSearchSpaceUpdate:
 
 
 class HyperparameterSearchSpaceUpdates:
-    """
-    Contains a collection of HyperparameterSearchSpaceUpdate
-    """
+    """ Contains a collection of HyperparameterSearchSpaceUpdate """
     def __init__(self, updates: Optional[List[HyperparameterSearchSpaceUpdate]] = None) -> None:
         self.updates = updates if updates is not None else []
 
     def apply(self, pipeline: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]) -> None:
         """
         Iteratively applies updates to the pipeline
+
         Args:
             pipeline: (List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]):
-                The named steps of the current autopytorch pipeline
+                The named steps of the current autoPyTorch pipeline
+
         Returns:
             None
         """
@@ -78,6 +79,7 @@ class HyperparameterSearchSpaceUpdates:
                default_value: Union[int, float, str], log: bool = False) -> None:
         """
         Add a new update
+
         Args:
             node_name (str):
             The name of the node in the pipeline
@@ -104,6 +106,7 @@ class HyperparameterSearchSpaceUpdates:
     def save_as_file(self, path: str) -> None:
         """
         Save the updates as a file to reuse later
+
         Args:
             path (str): path of the file
 
