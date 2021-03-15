@@ -90,6 +90,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
         self.task_type = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
 
         self.train_tensors = (X.astype(np.float32), Y.astype(np.float32))
+        self.test_tensors = (X_test.astype(np.float32), Y.astype(np.float32))
         self.num_features = self.train_tensors[0].shape[2]
         self.numerical_features: List[int] = list(range(self.num_features))
         self.categorical_features: List[int] = []

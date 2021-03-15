@@ -54,7 +54,16 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             np.ndarray: Transformed features
         """
         X.update({'train_data_loader': self.train_data_loader,
-                  'val_data_loader': self.val_data_loader})
+                  'val_data_loader': self.val_data_loader,
+                  'X_train': self.datamanager.train_tensors[0],
+                  'y_train': self.datamanager.train_tensors[1]})
+        if self.datamanager.val_tensors is not None and 'X_val' in X:
+            X.update({'X_val': self.datamanager.val_tensors[0],
+                      'y_val': self.datamanager.val_tensors[1]})
+        if self.datamanager.test_tensors is not None and 'X_test' in X:
+            X.update({'X_test': self.datamanager.test_tensors[0],
+                      'y_test': self.datamanager.test_tensors[1]})
+
         return X
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
@@ -87,11 +96,14 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             train=False,
         )
 
+
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
+
+        self.datamanager = datamanager
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -198,9 +210,9 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         """
         if X.ndim == 3:
             X_shape = X.shape
-            if X_shape[1] == self.population_size and X_shape[0] == self.num_features:
+            if X_shape[1] == self.population_size and X_shape[-1] == self.num_features:
                 pass
-            elif X_shape[1] == self.num_features and X_shape[0] == self.population_size:
+            elif X_shape[-1] == self.num_features and X_shape[0] == self.population_size:
                 X = np.swapaxes(X, 0, 1)
             else:
                 raise ValueError("the shape of test data is incompatible with the training data")

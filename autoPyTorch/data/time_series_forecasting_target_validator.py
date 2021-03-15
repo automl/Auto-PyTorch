@@ -19,6 +19,66 @@ from autoPyTorch.data.base_target_validator import BaseTargetValidator, SUPPORTE
 
 
 class TimeSeriesForecastingTargetValidator(TabularTargetValidator):
+    def fit(
+        self,
+        y_train: SUPPORTED_TARGET_TYPES,
+        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+    ) -> BaseEstimator:
+        """
+        Validates and fit a categorical encoder (if needed) to the targets
+        The supported data types are List, numpy arrays and pandas DataFrames.
+
+        Arguments:
+            y_train (SUPPORTED_TARGET_TYPES)
+                A set of targets set aside for training
+            y_test (typing.Union[SUPPORTED_TARGET_TYPES])
+                A hold out set of data used of the targets. It is also used to fit the
+                categories of the encoder.
+        """
+        # Check that the data is valid
+        self._check_data(y_train)
+
+        shape = np.shape(y_train)
+        if y_test is not None:
+            self._check_data(y_test)
+
+            if len(shape) != len(np.shape(y_test)) or (
+                    len(shape) > 1 and (shape[0] != np.shape(y_test)[0] or shape[-1] != np.shape(y_test)[-1])):
+                raise ValueError("The dimensionality of the train and test targets "
+                                 "does not match train({}) != test({})".format(
+                                     np.shape(y_train),
+                                     np.shape(y_test)
+                                 ))
+            if isinstance(y_train, pd.DataFrame):
+                y_train = typing.cast(pd.DataFrame, y_train)
+                y_test = typing.cast(pd.DataFrame, y_test)
+                if y_train.columns.tolist() != y_test.columns.tolist():
+                    raise ValueError(
+                        "Train and test targets must both have the same columns, yet "
+                        "y={} and y_test={} ".format(
+                            y_train.columns,
+                            y_test.columns
+                        )
+                    )
+
+                if list(y_train.dtypes) != list(y_test.dtypes):
+                    raise ValueError("Train and test targets must both have the same dtypes")
+
+        if self.out_dimensionality is None:
+            self.out_dimensionality = 1 if len(shape) == 1 else shape[1]
+        else:
+            _n_outputs = 1 if len(shape) == 1 else shape[1]
+            if self.out_dimensionality != _n_outputs:
+                raise ValueError('Number of outputs changed from %d to %d!' %
+                                 (self.out_dimensionality, _n_outputs))
+
+        # Fit on the training data
+        self._fit(y_train, y_test)
+
+        self._is_fitted = True
+
+        return self
+
     def transform(
             self,
             y: typing.Union[SUPPORTED_TARGET_TYPES],

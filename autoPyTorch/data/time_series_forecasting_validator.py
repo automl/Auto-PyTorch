@@ -4,8 +4,7 @@ from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 import logging
 import typing
 
-from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
+from autoPyTorch.data.time_series_forecasting_feature_validator import TimeSeriesForecastingFeatureValidator
 from autoPyTorch.data.time_series_forecasting_target_validator import TimeSeriesForecastingTargetValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
@@ -45,7 +44,7 @@ class TimeSeriesForecastingInputValidator(TimeSeriesInputValidator):
         else:
             self.logger = logging.getLogger('Validation')
 
-        self.feature_validator = TimeSeriesFeatureValidator(logger=self.logger)
+        self.feature_validator = TimeSeriesForecastingFeatureValidator(logger=self.logger)
         self.target_validator = TimeSeriesForecastingTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger
