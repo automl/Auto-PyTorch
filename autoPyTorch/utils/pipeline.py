@@ -16,6 +16,7 @@ from autoPyTorch.pipeline.tabular_classification import TabularClassificationPip
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
 from autoPyTorch.pipeline.time_series_regression import TimeSeriesRegressionPipeline
+from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -132,8 +133,14 @@ def get_configuration_space(info: Dict[str, Any],
                                                    exclude if exclude is not None else {},
                                                    search_space_updates=search_space_updates
                                                    )
-    else:
+    elif task_type in CLASSIFICATION_TASKS:
         return _get_classification_configuration_space(info,
+                                                       include if include is not None else {},
+                                                       exclude if exclude is not None else {},
+                                                       search_space_updates=search_space_updates
+                                                       )
+    else:
+        return _get_forecasting_configuration_space(info,
                                                        include if include is not None else {},
                                                        exclude if exclude is not None else {},
                                                        search_space_updates=search_space_updates
@@ -185,3 +192,13 @@ def _get_classification_configuration_space(info: Dict[str, Any], include: Dict[
             get_hyperparameter_search_space()
     else:
         raise ValueError("Task_type not supported")
+
+
+def _get_forecasting_configuration_space(info: Dict[str, Any], include: Dict[str, List[str]],
+                                         exclude: Dict[str, List[str]],
+                                         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                                         ) -> ConfigurationSpace:
+    pipeline = TimeSeriesForecastingPipeline(dataset_properties=info,
+                                             include=include, exclude=exclude,
+                                             search_space_updates=search_space_updates)
+    return pipeline.get_hyperparameter_search_space()

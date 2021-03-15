@@ -41,6 +41,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         super().__init__(batch_size=batch_size)
         self.sequence_length: int = sequence_length
         self.upper_seuqnce_length = upper_sequence_length
+        self.n_prediction_steps = n_prediction_steps
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """The transform function calls the transform function of the
@@ -124,6 +125,8 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         n_prediction_steps = datamanager.n_prediction_steps
 
         time_series_length, population_size, num_features = X_train.shape
+        self.population_size = population_size
+        self.num_features = num_features
         num_datapoints = time_series_length - self.sequence_length - n_prediction_steps + 1
         num_targets = y_train.shape[-1]
 
@@ -140,7 +143,8 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
                 datamanager.val_tensors = val_tensors
 
             X_test = np.concatenate([X_train[-self.sequence_length + 1:], X_test])
-            self.X_val_tail = X_test[-self.sequence_length + 1:]
+            self.X_val_tail = X_test[-self.sequence_length + 1:] if self.sequence_length > 1 \
+                else np.zeros((0, population_size, num_features), dtype=X_test.dtype)
 
             test_tensors = self._ser2seq(X_test, y_test, num_datapoints, num_features, num_targets)
             datamanager.test_tensors = test_tensors
@@ -150,11 +154,14 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             X_val = np.concatenate([X_train[-self.sequence_length+1:], X_val])
 
             # used for prediction
-            self.X_val_tail = X_val[-self.sequence_length+1:]
+            self.X_val_tail = X_val[-self.sequence_length+1:] if self.sequence_length > 1 \
+                else np.zeros((0, population_size, num_features), dtype=X_val.dtype)
             val_tensors = self._ser2seq(X_val, y_val, num_datapoints, num_features, num_targets)
             datamanager.val_tensors = val_tensors
         else:
-            self.X_val_tail = X_train[-self.sequence_length+1:]
+            self.X_val_tail = X_train[-self.sequence_length+1:] if self.sequence_length > 1 \
+                else np.zeros((0, population_size, num_features), dtype=X_train.dtype)
+
         train_tensors = self._ser2seq(X_train, y_train, num_datapoints, num_features, num_targets)
         datamanager.train_tensors = train_tensors
         datamanager.splits = datamanager.get_splits_from_resampling_strategy()
@@ -190,10 +197,17 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         applying the transformations meant to validation objects
         """
         if X.ndim == 3:
-            X = np.swapaxes(X, 0, 1)
+            X_shape = X.shape
+            if X_shape[1] == self.population_size and X_shape[0] == self.num_features:
+                pass
+            elif X_shape[1] == self.num_features and X_shape[0] == self.population_size:
+                X = np.swapaxes(X, 0, 1)
+            else:
+                raise ValueError("the shape of test data is incompatible with the training data")
             X = np.concatenate([self.X_val_tail, X])
-            time_series_length, population_size, num_features = X.shape
-            X = X.reshape((-1, self.sequence_length, num_features))
+            X = X.reshape((-1, self.sequence_length, self.num_features))
+        else:
+            raise ValueError("The test data for time series forecasting has to be a three-dimensional tensor of shape PxLxM.")
 
         dataset = BaseDataset(
             train_tensors=(X, y),

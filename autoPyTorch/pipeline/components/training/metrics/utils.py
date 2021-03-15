@@ -6,6 +6,7 @@ import numpy as np
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     REGRESSION_TASKS,
+    FORECASTING_TASKS,
     STRING_TO_TASK_TYPES,
     TASK_TYPES,
 )
@@ -16,7 +17,7 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICAT
 def sanitize_array(array: np.ndarray) -> np.ndarray:
     """
     Replace NaN and Inf (there should not be any!)
-    :param array:
+    :param array:z
     :return:
     """
     a = np.ravel(array)
