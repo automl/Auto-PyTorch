@@ -32,7 +32,7 @@ class BaseNamedTuple():
             drink 7
 
         >>> print(today)
-            NamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
+            BaseNamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
 
         >>> print(today["meat"], today.fish)
             13 3
@@ -97,7 +97,7 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
             drink 7
 
         >>> print(today)
-            NamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
+            BaseNamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
 
         >>> print(today["meat"], today.fish)
             13 3
@@ -115,7 +115,7 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
 
         def __repr__(self):
             tuple_name = self.__class__.__bases__[0].__name__ 
-            header = f"NamedTuple('{tuple_name}', "
+            header = f"BaseNamedTuple('{tuple_name}', "
             ret = "{"
             for key, value in self._asdict().items(): 
                 ret += f"'{key}': {value}, "
