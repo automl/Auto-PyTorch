@@ -11,6 +11,55 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
+class BaseDict(dict):
+    """non-static version of NamedTuple
+
+    When we would like to define variables explicitly,
+    we use this class.
+    If neither a default value or an input
+    are not given, we will use None. 
+
+    Examples:
+    >>> class NewDict(BaseDict):
+    >>>     a: int = 3
+    >>>     b: float = 2.0
+    >>>     c: str
+
+    >>> new_dict = NewDict(a=1, d=5)
+    >>> print(new_dict)
+        {'a': 1, 'd': 5, 'b': 2.0, 'c': None}
+
+    >>> print(new_dict.a, new_dict.b, new_dict.c, new_dict.d)
+        1 2.0 None 5
+
+    """
+    def __init__(self, **kwargs):
+        var_dict = {var_name: getattr(self, var_name)
+                    if hasattr(self, var_name) else None
+                    for var_name in self.__annotations__.keys()}
+
+        for var_name, default_value in var_dict.items():
+            if var_name not in kwargs.keys():
+                kwargs[var_name] = default_value
+
+        for var_name, value in kwargs.items():
+            self.__setattr__(var_name, value)
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        super().__setitem__(name, value)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key):
+        if hasattr(self, key):
+            return getattr(self, key)
+        else:
+            raise KeyError(key)
+
+
 class FitRequirement(NamedTuple):
     """
     A class that holds inputs required to fit a pipeline. Also indicates wether
