@@ -144,7 +144,10 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"Failed on config={config} with {e}")
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
