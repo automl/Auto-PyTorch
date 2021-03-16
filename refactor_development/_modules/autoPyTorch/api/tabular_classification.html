@@ -139,27 +139,36 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Tabular Classification API to the pipelines.</span>
 <span class="sd">    Args:</span>
-<span class="sd">        seed (int): seed to be used for reproducibility.</span>
-<span class="sd">        n_jobs (int), (default=1): number of consecutive processes to spawn.</span>
-<span class="sd">        logging_config (Optional[Dict]): specifies configuration</span>
-<span class="sd">            for logging, if None, it is loaded from the logging.yaml</span>
-<span class="sd">        ensemble_size (int), (default=50): Number of models added to the ensemble built by</span>
+<span class="sd">        seed (int):</span>
+<span class="sd">            seed to be used for reproducibility.</span>
+<span class="sd">        n_jobs (int), (default=1):</span>
+<span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        logging_config (Optional[Dict]):</span>
+<span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
+<span class="sd">        ensemble_size (int), (default=50):</span>
+<span class="sd">            Number of models added to the ensemble built by</span>
 <span class="sd">            Ensemble selection from libraries of models.</span>
 <span class="sd">            Models are drawn with replacement.</span>
-<span class="sd">        ensemble_nbest (int), (default=50): only consider the ensemble_nbest</span>
+<span class="sd">        ensemble_nbest (int), (default=50):</span>
+<span class="sd">            only consider the ensemble_nbest</span>
 <span class="sd">            models to build the ensemble</span>
-<span class="sd">        max_models_on_disc (int), (default=50): maximum number of models saved to disc.</span>
+<span class="sd">        max_models_on_disc (int), (default=50):</span>
+<span class="sd">            maximum number of models saved to disc.</span>
 <span class="sd">            Also, controls the size of the ensemble as any additional models will be deleted.</span>
 <span class="sd">            Must be greater than or equal to 1.</span>
-<span class="sd">        temporary_directory (str): folder to store configuration output and log file</span>
-<span class="sd">        output_directory (str): folder to store predictions for optional test set</span>
-<span class="sd">        delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,</span>
-<span class="sd">            when finished</span>
-<span class="sd">        include_components (Optional[Dict]): If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components to use.</span>
-<span class="sd">        exclude_components (Optional[Dict]): If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components not to use. Incompatible with include</span>
-<span class="sd">            components</span>
+<span class="sd">        temporary_directory (str):</span>
+<span class="sd">            folder to store configuration output and log file</span>
+<span class="sd">        output_directory (str):</span>
+<span class="sd">            folder to store predictions for optional test set</span>
+<span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
+<span class="sd">            determines whether to delete the temporary directory, when finished</span>
+<span class="sd">        include_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise</span>
+<span class="sd">            specifies set of components to use.</span>
+<span class="sd">        exclude_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise</span>
+<span class="sd">            specifies set of components not to use. Incompatible</span>
+<span class="sd">            with include components</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>

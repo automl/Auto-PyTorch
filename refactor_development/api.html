@@ -130,33 +130,36 @@
 <dd><p>Tabular Classification API to the pipelines.
 Args:</p>
 <blockquote>
-<div><p>seed (int): seed to be used for reproducibility.
-n_jobs (int), (default=1): number of consecutive processes to spawn.
-logging_config (Optional[Dict]): specifies configuration</p>
-<blockquote>
-<div><p>for logging, if None, it is loaded from the logging.yaml</p>
-</div></blockquote>
-<dl class="simple">
-<dt>ensemble_size (int), (default=50): Number of models added to the ensemble built by</dt><dd><p>Ensemble selection from libraries of models.
+<div><dl class="simple">
+<dt>seed (int):</dt><dd><p>seed to be used for reproducibility.</p>
+</dd>
+<dt>n_jobs (int), (default=1):</dt><dd><p>number of consecutive processes to spawn.</p>
+</dd>
+<dt>logging_config (Optional[Dict]):</dt><dd><p>specifies configuration for logging, if None, it is loaded from the logging.yaml</p>
+</dd>
+<dt>ensemble_size (int), (default=50):</dt><dd><p>Number of models added to the ensemble built by
+Ensemble selection from libraries of models.
 Models are drawn with replacement.</p>
 </dd>
-<dt>ensemble_nbest (int), (default=50): only consider the ensemble_nbest</dt><dd><p>models to build the ensemble</p>
+<dt>ensemble_nbest (int), (default=50):</dt><dd><p>only consider the ensemble_nbest
+models to build the ensemble</p>
 </dd>
-<dt>max_models_on_disc (int), (default=50): maximum number of models saved to disc.</dt><dd><p>Also, controls the size of the ensemble as any additional models will be deleted.
+<dt>max_models_on_disc (int), (default=50):</dt><dd><p>maximum number of models saved to disc.
+Also, controls the size of the ensemble as any additional models will be deleted.
 Must be greater than or equal to 1.</p>
 </dd>
-</dl>
-<p>temporary_directory (str): folder to store configuration output and log file
-output_directory (str): folder to store predictions for optional test set
-delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,</p>
-<blockquote>
-<div><p>when finished</p>
-</div></blockquote>
-<dl class="simple">
-<dt>include_components (Optional[Dict]): If None, all possible components are used.</dt><dd><p>Otherwise specifies set of components to use.</p>
+<dt>temporary_directory (str):</dt><dd><p>folder to store configuration output and log file</p>
 </dd>
-<dt>exclude_components (Optional[Dict]): If None, all possible components are used.</dt><dd><p>Otherwise specifies set of components not to use. Incompatible with include
-components</p>
+<dt>output_directory (str):</dt><dd><p>folder to store predictions for optional test set</p>
+</dd>
+<dt>delete_tmp_folder_after_terminate (bool):</dt><dd><p>determines whether to delete the temporary directory, when finished</p>
+</dd>
+<dt>include_components (Optional[Dict]):</dt><dd><p>If None, all possible components are used. Otherwise
+specifies set of components to use.</p>
+</dd>
+<dt>exclude_components (Optional[Dict]):</dt><dd><p>If None, all possible components are used. Otherwise
+specifies set of components not to use. Incompatible
+with include components</p>
 </dd>
 </dl>
 </div></blockquote>
