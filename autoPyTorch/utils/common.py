@@ -11,6 +11,102 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
+class BaseNamedTuple():
+    """
+    A class that extends the NamedTuple package.
+    This class allows NamedTuple to be used like a dict
+    by inheriting this class.
+    Therefore, self must be NamedTuple class.
+
+    Examples:
+        >>> class menu(NamedTuple):
+        >>>     fish: int = 5
+        >>>     meat: int = 10
+        >>>     drink: int = 7
+
+        >>> today = create_dictlike_namedtuple(menu, fish=3, meat=13)
+        >>> for key, value in today.items():
+        >>>     print(key, value)
+            fish 3
+            meat 13
+            drink 7
+
+        >>> print(today)
+            WrapedNamedTuple(fish=3, meat=13, drink=7)
+
+    Note:
+        When you inherit NamedTuple class,
+        you cannot inherit any other class at the same time.
+        For this reason, we have to use `create_dictlike_namedtuple`.
+
+    """
+    def __getitem__(self, key: str):
+        if hasattr(self, key):
+            return getattr(self, key)
+        else:
+            raise AttributeError(f"NamedTuple does not have the attribute name {key}")
+
+    def __repr__(self):
+        return self._asdict()
+
+    def pkg_check(self):
+        if hasattr(self, "_asdict"):
+            return True
+        else:
+            raise AttributeError("The child class of BaseNamedTuple must inherit NamedTuple class.")
+
+    def keys(self):
+        self.pkg_check()
+        return self._asdict().keys()
+
+    def values(self):
+        self.pkg_check()
+        return self._asdict().values()
+
+    def items(self):
+        self.pkg_check()
+        return self._asdict().items()
+
+
+def create_dictlike_namedtuple(ntpl, **kwargs):
+    """Returns a dict-like immutable NamedTuple
+
+    The function that returns the NamedTuple
+    that inherits the BaseNamedTuple.
+    Since class that inherits NamedTuple cannot
+    inherit any other class at the same time,
+    This function wraps the procedure to inherit
+    BaseNamedTuple class.
+
+    Args:
+        ntpl (Any): A class that inherits NamedTuple
+        kwargs (Dict[str, Any]): The contents of the given NamedTuple.
+
+    Returns:
+        (WarpedNamedTuple): A dict-like immutable NamedTuple
+
+    Examples:
+        >>> class menu(NamedTuple):
+        >>>     fish: int = 5
+        >>>     meat: int = 10
+        >>>     drink: int = 7
+
+        >>> today = create_dictlike_namedtuple(menu, fish=3, meat=13)
+        >>> for key, value in today.items():
+        >>>     print(key, value)
+            fish 3
+            meat 13
+            drink 7
+
+        >>> print(today)
+            WrapedNamedTuple(fish=3, meat=13, drink=7)
+    """
+    class WrapedNamedTuple(ntpl, BaseNamedTuple):
+        pass
+
+    return WrapedNamedTuple(**kwargs)
+
+
 class FitRequirement(NamedTuple):
     """
     A class that holds inputs required to fit a pipeline. Also indicates wether
