@@ -13,12 +13,13 @@ from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.clas
     SVMModel)
 
 _classifiers = {
-    'catboost': CatboostModel,
-    'extra_trees': ExtraTreesModel,
-    'knn_classifier': KNNModel,
+    # Sort by fit importance
     'lgb': LGBModel,
+    'catboost': CatboostModel,
     'random_forest': RFModel,
-    'svm_classifier': SVMModel
+    'extra_trees': ExtraTreesModel,
+    'svm_classifier': SVMModel,
+    'knn_classifier': KNNModel,
 }
 _addons = ThirdPartyComponents(BaseClassifier)
 

@@ -67,7 +67,7 @@ if __name__ == '__main__':
         optimize_metric='r2',
         total_walltime_limit=300,
         func_eval_time_limit=50,
-        traditional_per_total_budget=0
+        enable_traditional_pipeline=False,
     )
 
     ############################################################################

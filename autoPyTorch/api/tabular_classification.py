@@ -122,8 +122,8 @@ class TabularClassificationTask(BaseTask):
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
         total_walltime_limit: int = 100,
-        func_eval_time_limit: int = 60,
-        traditional_per_total_budget: float = 0.1,
+        func_eval_time_limit: Optional[int] = None,
+        enable_traditional_pipeline: bool = True,
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
@@ -156,16 +156,20 @@ class TabularClassificationTask(BaseTask):
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit (int), (default=60): Time limit
+            func_eval_time_limit (int), (default=None): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
                 this value high enough so that typical machine
                 learning algorithms can be fit on the training
                 data.
-            traditional_per_total_budget (float), (default=0.1):
-                Percent of total walltime to be allocated for
-                running traditional classifiers.
+            enable_traditional_pipeline (bool), (default=True):
+                We fit traditional machine learning algorithms
+                (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
+                prior building PyTorch Neural Networks. You can disable this
+                feature by turning this flag to False. All machine learning
+                algorithms that are fitted during search() are considered for
+                ensemble building.
             memory_limit (Optional[int]), (default=4096): Memory
                 limit in MB for the machine learning algorithm. autopytorch
                 will stop fitting the machine learning algorithm if it tries
@@ -229,7 +233,7 @@ class TabularClassificationTask(BaseTask):
             budget=budget,
             total_walltime_limit=total_walltime_limit,
             func_eval_time_limit=func_eval_time_limit,
-            traditional_per_total_budget=traditional_per_total_budget,
+            enable_traditional_pipeline=enable_traditional_pipeline,
             memory_limit=memory_limit,
             smac_scenario_args=smac_scenario_args,
             get_smac_object_callback=get_smac_object_callback,
