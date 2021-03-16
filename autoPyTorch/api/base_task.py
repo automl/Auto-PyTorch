@@ -650,8 +650,8 @@ class BaseTask:
 
             # Exit if no more time is available for a new classifier
             if time_left < func_eval_time_limit:
-                self.logger.warning("Not enough time to fit all traditional machine learning models."
-                                    "Please consider increasing the run time to further improve performance.")
+                self._logger.warning("Not enough time to fit all traditional machine learning models."
+                                     "Please consider increasing the run time to further improve performance.")
                 break
 
         return num_run
