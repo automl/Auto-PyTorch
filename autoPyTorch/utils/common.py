@@ -27,10 +27,14 @@ class BaseDict(dict):
 
     >>> new_dict = NewDict(a=1, d=5)
     >>> print(new_dict)
-        {'a': 1, 'd': 5, 'b': 2.0, 'c': None}
+        BaseDict('NewDict', {'a': 1, 'd': 5, 'b': 2.0, 'c': None})
 
     >>> print(new_dict.a, new_dict.b, new_dict.c, new_dict.d)
         1 2.0 None 5
+    
+    >>> new_dict.a = 100
+    >>> print(new_dict.a, new_dict['a'])
+        100 100
 
     """
     def __init__(self, **kwargs):
@@ -44,6 +48,19 @@ class BaseDict(dict):
 
         for var_name, value in kwargs.items():
             self.__setattr__(var_name, value)
+    
+    def __repr__(self):
+        super_cls = set([obj.__name__ for obj in self.__class__.__mro__])
+        super_cls -= set(['BaseDict', 'dict', 'object'])
+        dict_name = list(super_cls)[0]
+
+        header = f"BaseDict('{dict_name}', "
+        ret = "{"
+        for key, value in self.items(): 
+            ret += f"'{key}': {value}, "
+
+        ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
+        return "".join([header, ret])
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
