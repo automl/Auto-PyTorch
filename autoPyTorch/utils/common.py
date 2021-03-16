@@ -32,7 +32,13 @@ class BaseNamedTuple():
             drink 7
 
         >>> print(today)
-            WrapedNamedTuple(fish=3, meat=13, drink=7)
+            NamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
+
+        >>> print(today["meat"], today.fish)
+            13 3
+        
+        >>> today["fish"] = 10
+            TypeError: 'WrapedNamedTuple' object does not support item assignment
 
     Note:
         When you inherit NamedTuple class,
@@ -40,14 +46,6 @@ class BaseNamedTuple():
         For this reason, we have to use `create_dictlike_namedtuple`.
 
     """
-    def __getitem__(self, key: str):
-        if hasattr(self, key):
-            return getattr(self, key)
-        else:
-            raise AttributeError(f"NamedTuple does not have the attribute name {key}")
-
-    def __repr__(self):
-        return self._asdict()
 
     def pkg_check(self):
         if hasattr(self, "_asdict"):
@@ -99,10 +97,31 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
             drink 7
 
         >>> print(today)
-            WrapedNamedTuple(fish=3, meat=13, drink=7)
+            NamedTuple('menu', {'fish': 3, 'meat': 13, 'drink': 7})
+
+        >>> print(today["meat"], today.fish)
+            13 3
+        
+        >>> today["fish"] = 10
+            TypeError: 'WrapedNamedTuple' object does not support item assignment
+
     """
     class WrapedNamedTuple(ntpl, BaseNamedTuple):
-        pass
+        def __getitem__(self, key: str):
+            if hasattr(self, key):
+                return getattr(self, key)
+            else:
+                raise AttributeError(f"NamedTuple does not have the attribute name {key}")
+
+        def __repr__(self):
+            tuple_name = self.__class__.__bases__[0].__name__ 
+            header = f"NamedTuple('{tuple_name}', "
+            ret = "{"
+            for key, value in self._asdict().items(): 
+                ret += f"'{key}': {value}, "
+
+            ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
+            return "".join([header, ret])
 
     return WrapedNamedTuple(**kwargs)
 
