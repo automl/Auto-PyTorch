@@ -36,7 +36,7 @@ class BaseNamedTuple():
 
         >>> print(today["meat"], today.fish)
             13 3
-        
+
         >>> today["fish"] = 10
             TypeError: 'WrapedNamedTuple' object does not support item assignment
 
@@ -101,7 +101,7 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
 
         >>> print(today["meat"], today.fish)
             13 3
-        
+
         >>> today["fish"] = 10
             TypeError: 'WrapedNamedTuple' object does not support item assignment
 
@@ -114,10 +114,10 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
                 raise AttributeError(f"NamedTuple does not have the attribute name {key}")
 
         def __repr__(self):
-            tuple_name = self.__class__.__bases__[0].__name__ 
+            tuple_name = self.__class__.__bases__[0].__name__
             header = f"BaseNamedTuple('{tuple_name}', "
             ret = "{"
-            for key, value in self._asdict().items(): 
+            for key, value in self._asdict().items():
                 ret += f"'{key}': {value}, "
 
             ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
