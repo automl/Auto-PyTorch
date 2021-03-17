@@ -582,71 +582,86 @@ class BaseTask:
         assert self._logger is not None
         assert self._dask_client is not None
 
-        self._logger.info("Starting to create traditional pipeline predictions.")
-
         memory_limit = self._memory_limit
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
         available_classifiers = get_available_classifiers()
         dask_futures = []
 
+        total_number_classifiers = len(available_classifiers) + num_run
         for n_r, classifier in enumerate(available_classifiers, start=num_run):
+
+            # Only launch a task if there is time
             start_time = time.time()
-            scenario_mock = unittest.mock.Mock()
-            scenario_mock.wallclock_limit = time_left
-            # This stats object is a hack - maybe the SMAC stats object should
-            # already be generated here!
-            stats = Stats(scenario_mock)
-            stats.start_timing()
-            ta = ExecuteTaFuncWithQueue(
-                backend=self._backend,
-                seed=self.seed,
-                metric=self._metric,
-                logger_port=self._logger_port,
-                cost_for_crash=get_cost_of_crash(self._metric),
-                abort_on_first_run_crash=False,
-                initial_num_run=num_run,
-                stats=stats,
-                memory_limit=memory_limit,
-                disable_file_output=True if len(self._disable_file_output) > 0 else False,
-                all_supported_metrics=self._all_supported_metrics
-            )
-            dask_futures.append([
-                classifier,
-                self._dask_client.submit(
-                    ta.run, config=classifier,
-                    cutoff=func_eval_time_limit,
+            if time_left >= func_eval_time_limit:
+                self._logger.info(f"{n_r}: Started fitting {classifier} with cutoff={func_eval_time_limit}")
+                scenario_mock = unittest.mock.Mock()
+                scenario_mock.wallclock_limit = time_left
+                # This stats object is a hack - maybe the SMAC stats object should
+                # already be generated here!
+                stats = Stats(scenario_mock)
+                stats.start_timing()
+                ta = ExecuteTaFuncWithQueue(
+                    backend=self._backend,
+                    seed=self.seed,
+                    metric=self._metric,
+                    logger_port=self._logger_port,
+                    cost_for_crash=get_cost_of_crash(self._metric),
+                    abort_on_first_run_crash=False,
+                    initial_num_run=n_r,
+                    stats=stats,
+                    memory_limit=memory_limit,
+                    disable_file_output=True if len(self._disable_file_output) > 0 else False,
+                    all_supported_metrics=self._all_supported_metrics
                 )
-            ])
+                dask_futures.append([
+                    classifier,
+                    self._dask_client.submit(
+                        ta.run, config=classifier,
+                        cutoff=func_eval_time_limit,
+                    )
+                ])
+
+                # Increment the launched job index
+                num_run = n_r
 
             if len(dask_futures) >= self.n_jobs:
-                # We launch dask jobs only when there are resources available.
-                # This allow us to control time allocation properly, and early terminate
-                # the traditional machine learning pipeline
-                classifier_to_wait, future = dask_futures.pop(0)
-                status, cost, runtime, additional_info = future.result()
-                if status == StatusType.SUCCESS:
-                    self._logger.info(f"Fitting {classifier_to_wait} took {runtime} seconds")
-                else:
-                    if additional_info.get('exitcode') == -6:
-                        self._logger.error(
-                            "Traditional prediction for %s failed with run state %s. "
-                            "The error suggests that the provided memory limits were too tight. Please "
-                            "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                            "problem, please open an issue and paste the additional output. "
-                            "Additional output: %s.",
-                            classifier_to_wait, str(status), str(additional_info),
-                        )
+
+                # How many workers to wait before starting fitting the next iteration
+                workers_to_wait = 1
+                if n_r >= total_number_classifiers - 1 or time_left <= func_eval_time_limit:
+                    # If on the last iteration, flush out all tasks
+                    workers_to_wait = len(dask_futures)
+
+                while workers_to_wait >= 1:
+                    workers_to_wait -= 1
+                    # We launch dask jobs only when there are resources available.
+                    # This allow us to control time allocation properly, and early terminate
+                    # the traditional machine learning pipeline
+                    cls, future = dask_futures.pop(0)
+                    status, cost, runtime, additional_info = future.result()
+                    if status == StatusType.SUCCESS:
+                        self._logger.info(
+                            f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
                     else:
-                        self._logger.error(
-                            "Traditional prediction for %s failed with run state %s and additional output: %s.",
-                            classifier_to_wait, str(status), str(additional_info),
-                        )
+                        if additional_info.get('exitcode') == -6:
+                            self._logger.error(
+                                "Traditional prediction for %s failed with run state %s. "
+                                "The error suggests that the provided memory limits were too tight. Please "
+                                "increase the 'ml_memory_limit' and try again. If this does not solve your "
+                                "problem, please open an issue and paste the additional output. "
+                                "Additional output: %s.",
+                                cls, str(status), str(additional_info),
+                            )
+                        else:
+                            self._logger.error(
+                                "Traditional prediction for %s failed with run state %s and additional output: %s.",
+                                cls, str(status), str(additional_info),
+                            )
 
             # In the case of a serial execution, calling submit halts the run for a resource
             # dynamically adjust time in this case
             time_left -= int(time.time() - start_time)
-            num_run = n_r
 
             # Exit if no more time is available for a new classifier
             if time_left < func_eval_time_limit:
