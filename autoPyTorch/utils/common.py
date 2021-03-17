@@ -41,7 +41,7 @@ class BaseDict(dict):
         100 100
 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Dict[str, Any]):
         if not hasattr(self, "__annotations__"):
             raise KeyError("BaseDict must define at least one variable.")
 
@@ -60,7 +60,7 @@ class BaseDict(dict):
         dict.__init__(self, **kwargs)
         self.__dict__ = self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         super_cls = set([obj.__name__ for obj in self.__class__.__mro__])
         super_cls -= set(['BaseDict', 'dict', 'object'])
         dict_name = list(super_cls)[0]
@@ -71,16 +71,16 @@ class BaseDict(dict):
         seg[-1] = seg[-1][:-2] + "})" if len(seg) > 2 else seg[-1] + "})"
         return "".join(seg)
 
-    def _prohibited_overwrite(self, name):
+    def _prohibited_overwrite(self, name: str) -> None:
         if name in _prohibited:
             raise AttributeError(f"Cannot overwrite dict attribute '{name}'. "
                                  "Use another variable name.")
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         self._prohibited_overwrite(name)
         super().__setattr__(name, value)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         self._prohibited_overwrite(key)
         super().__setitem__(key, value)
 

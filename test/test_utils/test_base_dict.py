@@ -1,5 +1,6 @@
-from autoPyTorch.utils.common import BaseDict
 import numpy as np
+
+from autoPyTorch.utils.common import BaseDict
 
 
 class DummyDict(BaseDict):
@@ -8,7 +9,7 @@ class DummyDict(BaseDict):
     arr: np.ndarray
 
 
-def test_base_dict():
+def test_base_dict() -> None:
     dummy_dict = DummyDict()
     assert dummy_dict.a == 1 and dummy_dict['a'] == 1
     assert dummy_dict.b == 2 and dummy_dict['b'] == 2
@@ -34,4 +35,3 @@ def test_base_dict():
 
 if __name__ == '__main__':
     test_base_dict()
-    print("Test complete.")
