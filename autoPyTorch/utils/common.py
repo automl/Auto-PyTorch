@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union, Iterator
 
 import numpy as np
 
@@ -50,26 +50,26 @@ class BaseNamedTuple():
 
     """
 
-    def pkg_check(self):
+    def pkg_check(self) -> bool:
         if hasattr(self, "_asdict"):
             return True
         else:
             raise AttributeError("The child class of BaseNamedTuple must inherit NamedTuple class.")
 
-    def keys(self):
+    def keys(self) -> Iterator:
         self.pkg_check()
-        return self._asdict().keys()
+        return getattr(self, '_asdict')().keys()
 
-    def values(self):
+    def values(self) -> Iterator:
         self.pkg_check()
-        return self._asdict().values()
+        return getattr(self, '_asdict')().values()
 
-    def items(self):
+    def items(self) -> Iterator:
         self.pkg_check()
-        return self._asdict().items()
+        return getattr(self, '_asdict')().items()
 
 
-def create_dictlike_namedtuple(ntpl, **kwargs):
+def create_dictlike_namedtuple(ntpl: Any, **kwargs) -> Any:
     """Returns a dict-like immutable NamedTuple
 
     The function that returns the NamedTuple
@@ -110,13 +110,17 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
 
     """
     class WrapedNamedTuple(ntpl, BaseNamedTuple):
-        def __getitem__(self, key: str):
+        def __getitem__(self, key: Union[str, int]):
+            if type(key) is int:
+                # The exceptional process for python 3.7
+                return self._asdict()[self._fields[key]]
+
             if hasattr(self, key):
                 return getattr(self, key)
             else:
                 raise AttributeError(f"NamedTuple does not have the attribute name {key}")
 
-        def __repr__(self):
+        def __repr__(self) -> str:
             tuple_name = self.__class__.__bases__[0].__name__
             header = f"BaseNamedTuple('{tuple_name}', "
             ret = "{"

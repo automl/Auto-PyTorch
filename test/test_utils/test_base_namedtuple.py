@@ -1,16 +1,17 @@
-from autoPyTorch.utils.common import create_dictlike_namedtuple
 from typing import NamedTuple
 import numpy as np
 
+from autoPyTorch.utils.common import create_dictlike_namedtuple
+
 
 class DummyNamedTuple(NamedTuple):
+    arr: np.ndarray
     a: int = 1
     b: int = 2
-    arr: np.ndarray = None
 
 
-def test_base_namedtuple():
-    dummy_namedtuple = create_dictlike_namedtuple(DummyNamedTuple)
+def test_base_namedtuple() -> None:
+    dummy_namedtuple = create_dictlike_namedtuple(DummyNamedTuple, arr=None)
     assert dummy_namedtuple.a == 1 and dummy_namedtuple['a'] == 1
     assert dummy_namedtuple.b == 2 and dummy_namedtuple['b'] == 2
     assert dummy_namedtuple.arr is None and dummy_namedtuple.arr is None
@@ -53,4 +54,3 @@ def test_base_namedtuple():
 
 if __name__ == '__main__':
     test_base_namedtuple()
-    print("Test complete.")
