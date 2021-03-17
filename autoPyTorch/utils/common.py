@@ -41,7 +41,7 @@ class BaseDict(dict):
         100 100
 
     """
-    def __init__(self, **kwargs: Dict[str, Any]):
+    def __init__(self, **kwargs: Any):
         if not hasattr(self, "__annotations__"):
             raise KeyError("BaseDict must define at least one variable.")
 
