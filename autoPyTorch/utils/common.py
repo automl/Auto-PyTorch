@@ -11,6 +11,9 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
+_prohibited = ['items', 'keys', 'pkg_check', 'values']
+
+
 class BaseNamedTuple():
     """
     A class that extends the NamedTuple package.
@@ -122,6 +125,15 @@ def create_dictlike_namedtuple(ntpl, **kwargs):
 
             ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
             return "".join([header, ret])
+
+    if not hasattr(ntpl, "__annotations__"):
+        raise KeyError("BaseNamedTuple must have at least one variable.")
+
+    _prohibited_name_usages = list(set(_prohibited) & set(ntpl.__annotations__.keys()))
+
+    if len(_prohibited_name_usages):
+        raise AttributeError(f"Cannot overwrite BaseNamedTuple attribute '{_prohibited_name_usages}'. "
+                             "Use another variable name.")
 
     return WrapedNamedTuple(**kwargs)
 
