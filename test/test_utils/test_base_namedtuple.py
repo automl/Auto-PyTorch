@@ -48,6 +48,7 @@ def test_base_namedtuple() -> None:
         elif key == 'b':
             assert value == 4
         elif key == 'arr':
+            assert id(value) == id(dummy_namedtuple.arr)
             assert all(v1 == v2 for v1, v2 in zip(value, np.arange(5)))
         else:
             raise KeyError(f'Key {key} does not exist.')
