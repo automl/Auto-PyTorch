@@ -625,6 +625,14 @@ class BaseTask:
                 # Increment the launched job index
                 num_run = n_r
 
+            # When managing time, we need to take into account the allocated time resources,
+            # which are dependent on the number of cores. 'dask_futures' is a proxy to the number
+            # of workers /n_jobs that we have, in that if there are 4 cores allocated, we can run at most
+            # 4 task in parallel. Every 'cutoff' seconds, we generate up to 4 tasks.
+            # If we only have 4 workers and there are 4 futures in dask_futures, it means that every
+            # worker has a task. We would not like to launch another job until a worker is available. To this
+            # end, the following if-statement queries the number of active jobs, and forces to wait for a job
+            # completion via future.result(), so that a new worker is available for the next iteration.
             if len(dask_futures) >= self.n_jobs:
 
                 # How many workers to wait before starting fitting the next iteration
