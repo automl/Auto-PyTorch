@@ -69,7 +69,7 @@ class BaseNamedTuple():
         return getattr(self, '_asdict')().items()
 
 
-def create_dictlike_namedtuple(ntpl: Any, **kwargs: Any) -> Any:
+def create_dictlike_namedtuple(target_namedtuple: Any, **kwargs: Any) -> Any:
     """Returns a dict-like immutable NamedTuple
 
     The function that returns the NamedTuple
@@ -80,8 +80,8 @@ def create_dictlike_namedtuple(ntpl: Any, **kwargs: Any) -> Any:
     BaseNamedTuple class.
 
     Args:
-        ntpl (Any): A class that inherits NamedTuple
-        kwargs (Dict[str, Any]): The contents of the given NamedTuple.
+        target_namedtuple (Any): A class that inherits NamedTuple
+        kwargs (Any): The contents of the given NamedTuple.
 
     Returns:
         (WarpedNamedTuple): A dict-like immutable NamedTuple
@@ -109,9 +109,9 @@ def create_dictlike_namedtuple(ntpl: Any, **kwargs: Any) -> Any:
             TypeError: 'WrapedNamedTuple' object does not support item assignment
 
     """
-    NT: Any = ntpl
+    TargetNamedTuple: Any = target_namedtuple
 
-    class WrapedNamedTuple(NT, BaseNamedTuple):
+    class WrapedNamedTuple(TargetNamedTuple, BaseNamedTuple):
         def __getitem__(self, key: Union[str, int]) -> Any:
             if type(key) is int:
                 # The exceptional process for python 3.7
@@ -133,10 +133,10 @@ def create_dictlike_namedtuple(ntpl: Any, **kwargs: Any) -> Any:
             ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
             return "".join([header, ret])
 
-    if not hasattr(ntpl, "__annotations__"):
+    if not hasattr(TargetNamedTuple, "__annotations__"):
         raise KeyError("BaseNamedTuple must have at least one variable.")
 
-    _prohibited_name_usages = list(set(_prohibited) & set(ntpl.__annotations__.keys()))
+    _prohibited_name_usages = list(set(_prohibited) & set(TargetNamedTuple.__annotations__.keys()))
 
     if len(_prohibited_name_usages):
         raise AttributeError(f"Cannot overwrite BaseNamedTuple attribute '{_prohibited_name_usages}'. "
