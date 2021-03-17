@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Type, Union, Iterator
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, Optional, Type, Union
 
 import numpy as np
 
@@ -69,7 +69,7 @@ class BaseNamedTuple():
         return getattr(self, '_asdict')().items()
 
 
-def create_dictlike_namedtuple(ntpl: Any, **kwargs) -> Any:
+def create_dictlike_namedtuple(ntpl: Any, **kwargs: Any) -> Any:
     """Returns a dict-like immutable NamedTuple
 
     The function that returns the NamedTuple
@@ -109,14 +109,17 @@ def create_dictlike_namedtuple(ntpl: Any, **kwargs) -> Any:
             TypeError: 'WrapedNamedTuple' object does not support item assignment
 
     """
-    class WrapedNamedTuple(ntpl, BaseNamedTuple):
-        def __getitem__(self, key: Union[str, int]):
+    NT: Any = ntpl
+
+    class WrapedNamedTuple(NT, BaseNamedTuple):
+        def __getitem__(self, key: Union[str, int]) -> Any:
             if type(key) is int:
                 # The exceptional process for python 3.7
                 return self._asdict()[self._fields[key]]
 
-            if hasattr(self, key):
-                return getattr(self, key)
+            str_key: str = str(key)
+            if hasattr(self, str_key):
+                return getattr(self, str_key)
             else:
                 raise AttributeError(f"NamedTuple does not have the attribute name {key}")
 

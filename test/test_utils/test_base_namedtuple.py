@@ -1,4 +1,5 @@
 from typing import NamedTuple
+
 import numpy as np
 
 from autoPyTorch.utils.common import create_dictlike_namedtuple
