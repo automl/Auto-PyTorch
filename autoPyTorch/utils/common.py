@@ -11,13 +11,17 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 
+_prohibited = ['clear', 'copy', 'fromkeys', 'get', 'items', 'keys',
+               'pop', 'popitem', 'setdefault', 'update', 'values']
+
+
 class BaseDict(dict):
     """non-static version of NamedTuple
 
     When we would like to define variables explicitly,
     we use this class.
     If neither a default value or an input
-    are not given, we will use None. 
+    are not given, we will use None.
 
     Examples:
     >>> class NewDict(BaseDict):
@@ -31,50 +35,54 @@ class BaseDict(dict):
 
     >>> print(new_dict.a, new_dict.b, new_dict.c, new_dict.d)
         1 2.0 None 5
-    
+
     >>> new_dict.a = 100
     >>> print(new_dict.a, new_dict['a'])
         100 100
 
     """
     def __init__(self, **kwargs):
+        if not hasattr(self, "__annotations__"):
+            raise KeyError("BaseDict must define at least one variable.")
+
         var_dict = {var_name: getattr(self, var_name)
                     if hasattr(self, var_name) else None
                     for var_name in self.__annotations__.keys()}
 
         for var_name, default_value in var_dict.items():
+            self._prohibited_overwrite(var_name)
             if var_name not in kwargs.keys():
                 kwargs[var_name] = default_value
 
-        for var_name, value in kwargs.items():
-            self.__setattr__(var_name, value)
-    
+        for var_name in kwargs.keys():
+            self._prohibited_overwrite(var_name)
+
+        dict.__init__(self, **kwargs)
+        self.__dict__ = self
+
     def __repr__(self):
         super_cls = set([obj.__name__ for obj in self.__class__.__mro__])
         super_cls -= set(['BaseDict', 'dict', 'object'])
         dict_name = list(super_cls)[0]
 
-        header = f"BaseDict('{dict_name}', "
-        ret = "{"
-        for key, value in self.items(): 
-            ret += f"'{key}': {value}, "
+        seg = [f"BaseDict('{dict_name}', ", "{"]
+        seg += [f"'{key}': {value}, " for key, value in self.items()]
 
-        ret = ret[:-2] + "})" if len(ret) > 1 else ret + "})"
-        return "".join([header, ret])
+        seg[-1] = seg[-1][:-2] + "})" if len(seg) > 2 else seg[-1] + "})"
+        return "".join(seg)
+
+    def _prohibited_overwrite(self, name):
+        if name in _prohibited:
+            raise AttributeError(f"Cannot overwrite dict attribute '{name}'. "
+                                 "Use another variable name.")
 
     def __setattr__(self, name, value):
+        self._prohibited_overwrite(name)
         super().__setattr__(name, value)
-        super().__setitem__(name, value)
 
     def __setitem__(self, key, value):
-        setattr(self, key, value)
+        self._prohibited_overwrite(key)
         super().__setitem__(key, value)
-
-    def __getitem__(self, key):
-        if hasattr(self, key):
-            return getattr(self, key)
-        else:
-            raise KeyError(key)
 
 
 class FitRequirement(NamedTuple):
