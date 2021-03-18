@@ -66,7 +66,7 @@ if __name__ == '__main__':
         y_test=y_test_scaled.copy(),
         optimize_metric='r2',
         total_walltime_limit=300,
-        func_eval_time_limit=50,
+        func_eval_time_limit_secs=50,
         enable_traditional_pipeline=False,
     )
 
