@@ -122,7 +122,7 @@ class TabularClassificationTask(BaseTask):
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
         total_walltime_limit: int = 100,
-        func_eval_time_limit: Optional[int] = None,
+        func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
@@ -156,17 +156,21 @@ class TabularClassificationTask(BaseTask):
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit (int), (default=None): Time limit
+            func_eval_time_limit_secs (int), (default=None): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
                 this value high enough so that typical machine
                 learning algorithms can be fit on the training
                 data.
+                When set to None, this time will automatically be set to
+                total_walltime_limit // 2 to allow enough time to fit
+                at least 2 individual machine learning algorithms.
+                Set to np.inf in case no time limit is desired.
             enable_traditional_pipeline (bool), (default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
-                prior building PyTorch Neural Networks. You can disable this
+                before building PyTorch Neural Networks. You can disable this
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
@@ -232,7 +236,7 @@ class TabularClassificationTask(BaseTask):
             budget_type=budget_type,
             budget=budget,
             total_walltime_limit=total_walltime_limit,
-            func_eval_time_limit=func_eval_time_limit,
+            func_eval_time_limit_secs=func_eval_time_limit_secs,
             enable_traditional_pipeline=enable_traditional_pipeline,
             memory_limit=memory_limit,
             smac_scenario_args=smac_scenario_args,

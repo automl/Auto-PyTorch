@@ -13,7 +13,16 @@ from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.clas
     SVMModel)
 
 _classifiers = {
-    # Sort by fit importance
+    # Sort by more robust models
+    # Depending on the allocated time budget, only the
+    # top models from this dict are two be fitted.
+    # LGBM is the more robust model, with
+    # internal measures to prevent crashes, overfit
+    # Additionally, it is one of the state of the art
+    # methods for tabular prediction.
+    # Then follow with catboost for categorical heavy
+    # datasets. The other models are complementary and
+    # their ordering is not critical
     'lgb': LGBModel,
     'catboost': CatboostModel,
     'random_forest': RFModel,

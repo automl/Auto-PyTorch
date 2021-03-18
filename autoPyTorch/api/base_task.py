@@ -551,7 +551,7 @@ class BaseTask:
                     % (str(status), str(additional_info))
                 )
 
-    def _do_traditional_prediction(self, num_run: int, time_left: int, func_eval_time_limit: int
+    def _do_traditional_prediction(self, num_run: int, time_left: int, func_eval_time_limit_secs: int
                                    ) -> int:
         """
         Fits traditional machine learning algorithms to the provided dataset, while
@@ -567,7 +567,7 @@ class BaseTask:
                 Hard limit on how many machine learning algorithms can be fit. Depending on how
                 fast a traditional machine learning algorithm trains, it will allow multiple
                 models to be fitted.
-            func_eval_time_limit: (int)
+            func_eval_time_limit_secs: (int)
                 Maximum training time each algorithm is allowed to take, during training
 
         Returns:
@@ -593,8 +593,8 @@ class BaseTask:
 
             # Only launch a task if there is time
             start_time = time.time()
-            if time_left >= func_eval_time_limit:
-                self._logger.info(f"{n_r}: Started fitting {classifier} with cutoff={func_eval_time_limit}")
+            if time_left >= func_eval_time_limit_secs:
+                self._logger.info(f"{n_r}: Started fitting {classifier} with cutoff={func_eval_time_limit_secs}")
                 scenario_mock = unittest.mock.Mock()
                 scenario_mock.wallclock_limit = time_left
                 # This stats object is a hack - maybe the SMAC stats object should
@@ -618,7 +618,7 @@ class BaseTask:
                     classifier,
                     self._dask_client.submit(
                         ta.run, config=classifier,
-                        cutoff=func_eval_time_limit,
+                        cutoff=func_eval_time_limit_secs,
                     )
                 ])
 
@@ -637,7 +637,7 @@ class BaseTask:
 
                 # How many workers to wait before starting fitting the next iteration
                 workers_to_wait = 1
-                if n_r >= total_number_classifiers - 1 or time_left <= func_eval_time_limit:
+                if n_r >= total_number_classifiers - 1 or time_left <= func_eval_time_limit_secs:
                     # If on the last iteration, flush out all tasks
                     workers_to_wait = len(dask_futures)
 
@@ -672,7 +672,7 @@ class BaseTask:
             time_left -= int(time.time() - start_time)
 
             # Exit if no more time is available for a new classifier
-            if time_left < func_eval_time_limit:
+            if time_left < func_eval_time_limit_secs:
                 self._logger.warning("Not enough time to fit all traditional machine learning models."
                                      "Please consider increasing the run time to further improve performance.")
                 break
@@ -686,7 +686,7 @@ class BaseTask:
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
         total_walltime_limit: int = 100,
-        func_eval_time_limit: Optional[int] = None,
+        func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
@@ -721,13 +721,17 @@ class BaseTask:
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit (int), (default=None): Time limit
+            func_eval_time_limit_secs (int), (default=None): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
                 this value high enough so that typical machine
                 learning algorithms can be fit on the training
                 data.
+                When set to None, this time will automatically be set to
+                total_walltime_limit // 2 to allow enough time to fit
+                at least 2 individual machine learning algorithms.
+                Set to np.inf in case no time limit is desired.
             enable_traditional_pipeline (bool), (default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
@@ -823,22 +827,22 @@ class BaseTask:
         # Handle time resource allocation
         elapsed_time = self._stopwatch.wall_elapsed(experiment_task_name)
         time_left_for_modelfit = int(max(0, total_walltime_limit - elapsed_time))
-        if func_eval_time_limit is None or func_eval_time_limit > time_left_for_modelfit:
+        if func_eval_time_limit_secs is None or func_eval_time_limit_secs > time_left_for_modelfit:
             self._logger.warning(
                 'Time limit for a single run is higher than total time '
                 'limit. Capping the limit for a single run to the total '
                 'time given to SMAC (%f)' % time_left_for_modelfit
             )
-            func_eval_time_limit = time_left_for_modelfit
+            func_eval_time_limit_secs = time_left_for_modelfit
 
         # Make sure that at least 2 models are created for the ensemble process
-        num_models = time_left_for_modelfit // func_eval_time_limit
+        num_models = time_left_for_modelfit // func_eval_time_limit_secs
         if num_models < 2:
-            func_eval_time_limit = time_left_for_modelfit // 2
+            func_eval_time_limit_secs = time_left_for_modelfit // 2
             self._logger.warning(
-                "Capping the func_eval_time_limit to {} to have "
+                "Capping the func_eval_time_limit_secs to {} to have "
                 "time for a least 2 models to ensemble.".format(
-                    func_eval_time_limit
+                    func_eval_time_limit_secs
                 )
             )
 
@@ -860,10 +864,10 @@ class BaseTask:
                 elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
                 # We want time for at least 1 Neural network in SMAC
                 time_for_traditional = int(
-                    self._time_for_task - elapsed_time - func_eval_time_limit
+                    self._time_for_task - elapsed_time - func_eval_time_limit_secs
                 )
                 num_run = self._do_traditional_prediction(
-                    num_run=num_run + 1, func_eval_time_limit=func_eval_time_limit,
+                    num_run=num_run + 1, func_eval_time_limit_secs=func_eval_time_limit_secs,
                     time_left=time_for_traditional,
                 )
                 self._stopwatch.stop_task(traditional_task_name)
@@ -923,7 +927,7 @@ class BaseTask:
                 dataset_name=dataset.dataset_name,
                 backend=self._backend,
                 total_walltime_limit=total_walltime_limit,
-                func_eval_time_limit=func_eval_time_limit,
+                func_eval_time_limit_secs=func_eval_time_limit_secs,
                 dask_client=self._dask_client,
                 memory_limit=self._memory_limit,
                 n_jobs=self.n_jobs,
