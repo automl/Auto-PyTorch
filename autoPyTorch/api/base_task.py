@@ -573,7 +573,7 @@ class BaseTask:
         Returns:
             num_run: (int)
                 The incremented identifier index. This depends on how many machine learning
-                models where fitted.
+                models were fitted.
         """
 
         # Mypy Checkings -- Traditional prediction is only called for search
