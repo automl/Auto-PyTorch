@@ -106,8 +106,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = dataset_name if dataset_name is not None \
-            else hash_array_or_matrix(train_tensors[0])
+
+        # Explicit definition for mypy compatibility
+        if dataset_name is not None:
+            self.dataset_name: str = dataset_name
+        else:
+            self.dataset_name: str = hash_array_or_matrix(train_tensors[0])
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)

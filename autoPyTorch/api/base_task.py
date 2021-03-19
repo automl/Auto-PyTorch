@@ -175,6 +175,7 @@ class BaseTask:
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: Optional[RunHistory] = None
         self.trajectory: Optional[List] = None
+        """Comment: Another solution is to generate hash here"""
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
 
@@ -783,9 +784,11 @@ class BaseTask:
         self._dataset_requirements = dataset_requirements
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
+
         self.dataset_name = dataset.dataset_name
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)
+
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
         self._memory_limit = memory_limit
@@ -862,6 +865,7 @@ class BaseTask:
                 traditional_task_name = 'runTraditional'
                 self._stopwatch.start_task(traditional_task_name)
                 elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
+
                 # We want time for at least 1 Neural network in SMAC
                 time_for_traditional = int(
                     self._time_for_task - elapsed_time - func_eval_time_limit_secs
