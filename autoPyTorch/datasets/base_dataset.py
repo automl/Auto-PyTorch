@@ -188,10 +188,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             A transformed single point prediction
         """
 
-        if hasattr(self.train_tensors[0], 'loc'):
-            X = self.train_tensors[0].iloc[[index]]
-        else:
-            X = self.train_tensors[0][index]
+        X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
+            else self.train_tensors[0][index]
 
         if self.train_transform is not None and train:
             X = self.train_transform(X)
