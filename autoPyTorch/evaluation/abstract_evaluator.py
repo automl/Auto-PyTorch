@@ -86,6 +86,15 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
         return False
 
     def get_additional_run_info(self) -> Dict[str, Any]:  # pylint: disable=R0201
+        """
+        Can be used to return additional info for the run.
+        Returns:
+            Dict[str, Any]:
+            Currently contains
+                1. pipeline_configuration: the configuration of the pipeline, i.e, the traditional model used
+                2. trainer_configuration: the parameters for the traditional model used.
+                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/classifier_configs
+        """
         return {'pipeline_configuration': self.configuration,
                 'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
 

@@ -173,7 +173,7 @@ class BaseTask:
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
-        self.run_history: Optional[RunHistory] = None
+        self.run_history: Dict = {}
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
@@ -688,6 +688,10 @@ class BaseTask:
                                      "Please consider increasing the run time to further improve performance.")
                 break
 
+        self._logger.debug("Run history traditional: {}".format(run_history))
+        # add run history of traditional to api run history
+        self.run_history.update(run_history.data)
+        run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'))
         return num_run
 
     def _search(
@@ -958,8 +962,9 @@ class BaseTask:
                 search_space_updates=self.search_space_updates
             )
             try:
-                self.run_history, self.trajectory, budget_type = \
+                run_history, self.trajectory, budget_type = \
                     _proc_smac.run_smbo()
+                self.run_history.update(run_history.data)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),
                     'trajectory.json')
