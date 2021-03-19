@@ -1,6 +1,6 @@
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 import os
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 import uuid
 
 import numpy as np
@@ -124,7 +124,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.resampling_strategy_args = resampling_strategy_args
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
-        self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:] 
+        self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
