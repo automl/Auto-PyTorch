@@ -77,13 +77,13 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         Returns:
             A instance of self
         """
-
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
         datamanager = X['backend'].load_datamanager()
         datamanager = self._update_dataset(datamanager)
+
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
@@ -131,12 +131,19 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         """
         update the dataset to build time sequence
         """
+        num_features = datamanager.num_features
+        population_size = datamanager.population_size
+        num_target = datamanager.num_target
+
         X_train, y_train = datamanager.train_tensors
         val_tensors = datamanager.val_tensors
         test_tensors = datamanager.test_tensors
         n_prediction_steps = datamanager.n_prediction_steps
 
-        time_series_length, population_size, num_features = X_train.shape
+        X_train = X_train.reshape([-1, population_size, num_features])
+        y_train = y_train.reshape([-1, population_size, num_target])
+
+        time_series_length = X_train.shape[0]
         self.population_size = population_size
         self.num_features = num_features
         num_datapoints = time_series_length - self.sequence_length - n_prediction_steps + 1
@@ -146,19 +153,28 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         if test_tensors is not None:
             X_test, y_test = test_tensors
 
+            X_test = X_test.reshape([-1, population_size, num_features])
+            y_test = y_test.reshape([-1, population_size, num_target])
+
             if val_tensors is not None:
                 X_val, y_val = val_tensors
 
+                X_val = X_val.reshape([-1, population_size, num_features])
+                y_val = y_val.reshape([-1, population_size, num_target])
+
+                num_datapoints_val = X_val.shape[0]
+
                 X_test = np.concatenate([X_val[-self.sequence_length + 1:], X_test])
                 X_val = np.concatenate([X_train[-self.sequence_length+1:], X_val])
-                val_tensors = self._ser2seq(X_val, y_val, num_datapoints, num_features, num_targets)
+                val_tensors = self._ser2seq(X_val, y_val, num_datapoints_val, num_features, num_targets)
                 datamanager.val_tensors = val_tensors
 
+            num_datapoints_test = X_test.shape[0]
             X_test = np.concatenate([X_train[-self.sequence_length + 1:], X_test])
             self.X_val_tail = X_test[-self.sequence_length + 1:] if self.sequence_length > 1 \
                 else np.zeros((0, population_size, num_features), dtype=X_test.dtype)
 
-            test_tensors = self._ser2seq(X_test, y_test, num_datapoints, num_features, num_targets)
+            test_tensors = self._ser2seq(X_test, y_test, num_datapoints_test, num_features, num_targets)
             datamanager.test_tensors = test_tensors
 
         elif val_tensors is not None:
@@ -196,8 +212,8 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             [num_datapoints * population_size, num_targets]
         """
         X_in = np.concatenate([np.roll(X_in, shift=i, axis=0) for i in range(0, -self.sequence_length, -1)],
-                               axis=2,
-                               dtype=np.float32)[:num_datapoints]
+                              axis=2,
+                              dtype=np.float32)[:num_datapoints]
         X_in = X_in.reshape((-1, self.sequence_length, num_features))
         y_in = y_in.reshape((-1, num_targets))
         return X_in, y_in
@@ -210,16 +226,29 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         """
         if X.ndim == 3:
             X_shape = X.shape
-            if X_shape[1] == self.population_size and X_shape[-1] == self.num_features:
-                pass
-            elif X_shape[-1] == self.num_features and X_shape[0] == self.population_size:
+            if X_shape[-1] != self.num_features:
+                raise ValueError("the features of test data is incompatible with the training data")
+
+            if X_shape[1] == self.population_size:
+                num_points_X_in = X_shape[0]
+            elif X_shape[0] == self.population_size:
+                num_points_X_in = X_shape[1]
                 X = np.swapaxes(X, 0, 1)
+            elif X_shape[1] == 1:
+                X = X.reshape([-1, self.population_size, self.num_features])
+                num_points_X_in = X_shape[0]
             else:
-                raise ValueError("the shape of test data is incompatible with the training data")
-            X = np.concatenate([self.X_val_tail, X])
-            X = X.reshape((-1, self.sequence_length, self.num_features))
+                raise ValueError("test shape is incompatible with the training shape")
         else:
-            raise ValueError("The test data for time series forecasting has to be a three-dimensional tensor of shape PxLxM.")
+            raise ValueError(
+                "The test data for time series forecasting has to be a three-dimensional tensor of shape PxLxM.")
+
+        X = np.concatenate([self.X_val_tail, X])
+        X = np.concatenate([np.roll(X, shift=i, axis=0) for i in range(0, -self.sequence_length, -1)],
+                           axis=2,
+                           dtype=np.float32)[:num_points_X_in]
+        X = X.reshape((-1, self.sequence_length, self.num_features))
+
 
         dataset = BaseDataset(
             train_tensors=(X, y),

@@ -21,6 +21,7 @@ import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
 import autoPyTorch.pipeline.time_series_classification
 import autoPyTorch.pipeline.traditional_tabular_classification
+import autoPyTorch.pipeline.time_series_forecasting
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     IMAGE_TASKS,
@@ -29,6 +30,7 @@ from autoPyTorch.constants import (
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS, TIMESERIES_TASKS,
+    FORECASTING_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.evaluation.utils import (
@@ -266,7 +268,10 @@ class AbstractEvaluator(object):
                 raise ValueError("Only tabular classifications tasks "
                                  "are currently supported with traditional methods")
             elif isinstance(self.configuration, Configuration):
-                self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
+                if self.task_type in TABULAR_TASKS:
+                    self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
+                elif self.task_type in FORECASTING_TASKS:
+                    self.pipeline_class = autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline
             else:
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression
