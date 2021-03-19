@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7ff48074f7f0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f9cea6fab50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -77,7 +77,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016129016876220703, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001828908920288086, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -118,7 +118,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.8205549716949463, wallclock_time=5.178636789321899, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=4.126279592514038, wallclock_time=5.539167642593384, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 153
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:KernelPCA:gamma, Value: 0.6217858094449208
@@ -151,22 +151,21 @@ with AutoPyTorch
       trainer:MixUpTrainer:alpha, Value: 0.7490557199071863
       trainer:MixUpTrainer:weighted_loss, Value: False
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=4, ta_time_used=34.10045671463013, wallclock_time=41.19611716270447, budget=5.555555555555555)]
-    {'accuracy': 0.8670520231213873}
-    |    | Preprocessing                                                     | Estimator                                                       |   Weight |
-    |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.26 |
-    |  1 | SimpleImputer,OneHotEncoder,MinMaxScaler,PolynomialFeatures       | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-    |  3 | None                                                              | KNNClassifier                                                   |     0.1  |
-    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-    |  5 | None                                                              | ExtraTreesClassifier                                            |     0.08 |
-    |  6 | None                                                              | RFClassifier                                                    |     0.06 |
-    |  7 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  8 | SimpleImputer,NoEncoder,NoScaler,Nystroem                         | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    |  9 | None                                                              | LGBMClassifier                                                  |     0.02 |
-    | 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-    | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    , ta_runs=4, ta_time_used=40.480043172836304, wallclock_time=47.98805809020996, budget=5.555555555555555)]
+    {'accuracy': 0.8728323699421965}
+    |    | Preprocessing                                               | Estimator                                                       |   Weight |
+    |---:|:------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | None                                                        | CatBoostClassifier                                              |     0.3  |
+    |  1 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
+    |  2 | None                                                        | RFClassifier                                                    |     0.08 |
+    |  3 | None                                                        | ExtraTreesClassifier                                            |     0.08 |
+    |  4 | SimpleImputer,NoEncoder,NoScaler,Nystroem                   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,PolynomialFeatures | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
+    |  7 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  8 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures         | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+    |  9 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    | 10 | None                                                        | SVC                                                             |     0.02 |
 
 
 
@@ -228,7 +227,7 @@ with AutoPyTorch
             y_test=y_test.copy(),
             optimize_metric='accuracy',
             total_walltime_limit=300,
-            func_eval_time_limit=50
+            func_eval_time_limit_secs=50
         )
 
         ############################################################################
@@ -244,7 +243,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  45.063 seconds)
+   **Total running time of the script:** ( 5 minutes  49.512 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_classification.py:

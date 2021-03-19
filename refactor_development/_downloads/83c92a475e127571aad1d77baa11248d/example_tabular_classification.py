@@ -57,7 +57,7 @@ if __name__ == '__main__':
         y_test=y_test.copy(),
         optimize_metric='accuracy',
         total_walltime_limit=300,
-        func_eval_time_limit=50
+        func_eval_time_limit_secs=50
     )
 
     ############################################################################

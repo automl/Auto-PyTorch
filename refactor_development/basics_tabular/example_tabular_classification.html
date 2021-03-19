@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff48074f7f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f9cea6fab50&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -163,7 +163,7 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016129016876220703, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001828908920288086, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -204,7 +204,7 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.8205549716949463, wallclock_time=5.178636789321899, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=4.126279592514038, wallclock_time=5.539167642593384, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 153
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:KernelPCA:gamma, Value: 0.6217858094449208
@@ -237,22 +237,21 @@ with AutoPyTorch</p>
   trainer:MixUpTrainer:alpha, Value: 0.7490557199071863
   trainer:MixUpTrainer:weighted_loss, Value: False
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=4, ta_time_used=34.10045671463013, wallclock_time=41.19611716270447, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                                     | Estimator                                                       |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.26 |
-|  1 | SimpleImputer,OneHotEncoder,MinMaxScaler,PolynomialFeatures       | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  3 | None                                                              | KNNClassifier                                                   |     0.1  |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  5 | None                                                              | ExtraTreesClassifier                                            |     0.08 |
-|  6 | None                                                              | RFClassifier                                                    |     0.06 |
-|  7 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  8 | SimpleImputer,NoEncoder,NoScaler,Nystroem                         | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  9 | None                                                              | LGBMClassifier                                                  |     0.02 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-| 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+, ta_runs=4, ta_time_used=40.480043172836304, wallclock_time=47.98805809020996, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8728323699421965}
+|    | Preprocessing                                               | Estimator                                                       |   Weight |
+|---:|:------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | None                                                        | CatBoostClassifier                                              |     0.3  |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
+|  2 | None                                                        | RFClassifier                                                    |     0.08 |
+|  3 | None                                                        | ExtraTreesClassifier                                            |     0.08 |
+|  4 | SimpleImputer,NoEncoder,NoScaler,Nystroem                   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,PolynomialFeatures | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
+|  7 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  8 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures         | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+|  9 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+| 10 | None                                                        | SVC                                                             |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -309,7 +308,7 @@ with AutoPyTorch</p>
         <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
         <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">50</span>
+        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
@@ -323,7 +322,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  45.063 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  49.512 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>

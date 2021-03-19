@@ -66,7 +66,7 @@ if __name__ == '__main__':
         y_test=y_test.copy(),
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=30
+        func_eval_time_limit_secs=30
     )
 
     ############################################################################
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         y_test=y_test.copy(),
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=30
+        func_eval_time_limit_secs=30
     )
 
     ############################################################################
@@ -145,7 +145,7 @@ if __name__ == '__main__':
         y_test=y_test.copy(),
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=30
+        func_eval_time_limit_secs=30
     )
 
     ############################################################################

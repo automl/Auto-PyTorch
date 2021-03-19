@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff47909fdf0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f9ce89ef700&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -155,7 +155,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017027854919433594, budget=0), TrajEntry(train_perf=0.4667916252036377, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001852273941040039, budget=0), TrajEntry(train_perf=0.32685194037111853, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -188,13 +188,12 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=2.994832754135132, wallclock_time=5.971029758453369, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.916464310548205}
+, ta_runs=1, ta_time_used=3.450744152069092, wallclock_time=6.744311094284058, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.8638329676730996}
 |    | Preprocessing                              | Estimator                                                    |   Weight |
 |---:|:-------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.84 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.76 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -260,8 +259,8 @@ with AutoPyTorch</p>
         <span class="n">y_test</span><span class="o">=</span><span class="n">y_test_scaled</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
         <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;r2&#39;</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-        <span class="n">traditional_per_total_budget</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">enable_traditional_pipeline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
@@ -279,7 +278,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  14.511 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  14.448 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
