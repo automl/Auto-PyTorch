@@ -211,8 +211,13 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         estimator_name = 'TraditionalTabularClassification'
         if self.steps[0][1].choice is not None:
-            estimator_name = cast(str,
-                                  self.steps[0][1].choice.model.get_properties()['shortname'])
+            if self.steps[0][1].choice.model is None:
+                estimator_name = self.steps[0][1].choice.__class__.__name__
+            else:
+                estimator_name = cast(
+                    str,
+                    self.steps[0][1].choice.model.get_properties()['shortname']
+                )
         return {
             'Preprocessing': 'None',
             'Estimator': estimator_name,

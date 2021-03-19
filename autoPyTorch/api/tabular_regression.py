@@ -103,26 +103,27 @@ class TabularRegressionTask(BaseTask):
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
         return TabularRegressionPipeline(dataset_properties=dataset_properties)
 
-    def search(self,
-               optimize_metric: str,
-               X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-               dataset_name: Optional[str] = None,
-               budget_type: Optional[str] = None,
-               budget: Optional[float] = None,
-               total_walltime_limit: int = 100,
-               func_eval_time_limit: int = 60,
-               traditional_per_total_budget: float = 0.1,
-               memory_limit: Optional[int] = 4096,
-               smac_scenario_args: Optional[Dict[str, Any]] = None,
-               get_smac_object_callback: Optional[Callable] = None,
-               all_supported_metrics: bool = True,
-               precision: int = 32,
-               disable_file_output: List = [],
-               load_models: bool = True,
-               ) -> 'BaseTask':
+    def search(
+        self,
+        optimize_metric: str,
+        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        dataset_name: Optional[str] = None,
+        budget_type: Optional[str] = None,
+        budget: Optional[float] = None,
+        total_walltime_limit: int = 100,
+        func_eval_time_limit_secs: Optional[int] = None,
+        enable_traditional_pipeline: bool = False,
+        memory_limit: Optional[int] = 4096,
+        smac_scenario_args: Optional[Dict[str, Any]] = None,
+        get_smac_object_callback: Optional[Callable] = None,
+        all_supported_metrics: bool = True,
+        precision: int = 32,
+        disable_file_output: List = [],
+        load_models: bool = True,
+    ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
 
@@ -147,16 +148,20 @@ class TabularRegressionTask(BaseTask):
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit (int), (default=60): Time limit
+            func_eval_time_limit_secs (int), (default=None): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
                 this value high enough so that typical machine
                 learning algorithms can be fit on the training
                 data.
-            traditional_per_total_budget (float), (default=0.1):
-                Percent of total walltime to be allocated for
-                running traditional classifiers.
+                When set to None, this time will automatically be set to
+                total_walltime_limit // 2 to allow enough time to fit
+                at least 2 individual machine learning algorithms.
+                Set to np.inf in case no time limit is desired.
+            enable_traditional_pipeline (bool), (default=False):
+                Not enabled for regression. This flag is here to comply
+                with the API.
             memory_limit (Optional[int]), (default=4096): Memory
                 limit in MB for the machine learning algorithm. autopytorch
                 will stop fitting the machine learning algorithm if it tries
@@ -219,8 +224,8 @@ class TabularRegressionTask(BaseTask):
             budget_type=budget_type,
             budget=budget,
             total_walltime_limit=total_walltime_limit,
-            func_eval_time_limit=func_eval_time_limit,
-            traditional_per_total_budget=traditional_per_total_budget,
+            func_eval_time_limit_secs=func_eval_time_limit_secs,
+            enable_traditional_pipeline=enable_traditional_pipeline,
             memory_limit=memory_limit,
             smac_scenario_args=smac_scenario_args,
             get_smac_object_callback=get_smac_object_callback,

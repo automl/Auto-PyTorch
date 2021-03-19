@@ -110,6 +110,10 @@ class TrainEvaluator(AbstractEvaluator):
 
             status = StatusType.SUCCESS
 
+            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{}".format(
+                self.num_run,
+                loss
+            ))
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
@@ -236,7 +240,10 @@ class TrainEvaluator(AbstractEvaluator):
             self.pipeline = self._get_pipeline()
 
             status = StatusType.SUCCESS
-            self.logger.debug("In train evaluator fit_predict_and_loss, loss:{}".format(opt_loss))
+            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{}".format(
+                self.num_run,
+                opt_loss
+            ))
             self.finish_up(
                 loss=opt_loss,
                 train_loss=train_loss,

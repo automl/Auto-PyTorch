@@ -62,8 +62,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         X_test=X_test, y_test=y_test,
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit=50,
-        traditional_per_total_budget=0
+        func_eval_time_limit_secs=50,
+        enable_traditional_pipeline=False,
     )
 
     # Internal dataset has expected settings
@@ -230,8 +230,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         X_test=X_test, y_test=y_test,
         optimize_metric='r2',
         total_walltime_limit=50,
-        func_eval_time_limit=10,
-        traditional_per_total_budget=0
+        func_eval_time_limit_secs=10,
+        enable_traditional_pipeline=False,
     )
 
     # Internal dataset has expected settings
@@ -390,7 +390,7 @@ def test_tabular_input_support(openml_id, backend):
             X_test=X_test, y_test=y_test,
             optimize_metric='accuracy',
             total_walltime_limit=150,
-            func_eval_time_limit=50,
-            traditional_per_total_budget=0,
+            func_eval_time_limit_secs=50,
+            enable_traditional_pipeline=False,
             load_models=False,
         )

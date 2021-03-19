@@ -442,7 +442,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         empty_queue(queue)
         self.logger.debug(
-            'Finished function evaluation. Status: %s, Cost: %f, Runtime: %f, Additional %s',
-            status, cost, runtime, additional_run_info,
+            'Finished function evaluation %s. Status: %s, Cost: %f, Runtime: %f, Additional %s',
+            str(num_run), status, cost, runtime, additional_run_info,
         )
         return status, cost, runtime, additional_run_info

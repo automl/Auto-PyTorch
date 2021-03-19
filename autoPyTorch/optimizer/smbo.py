@@ -84,7 +84,7 @@ class AutoMLSMBO(object):
                  dataset_name: str,
                  backend: Backend,
                  total_walltime_limit: float,
-                 func_eval_time_limit: float,
+                 func_eval_time_limit_secs: float,
                  memory_limit: typing.Optional[int],
                  metric: autoPyTorchMetric,
                  watcher: StopWatch,
@@ -120,7 +120,7 @@ class AutoMLSMBO(object):
                 An interface with disk
             total_walltime_limit (float):
                 The maximum allowed time for this job
-            func_eval_time_limit (float):
+            func_eval_time_limit_secs (float):
                 How much each individual task is allowed to last
             memory_limit (typing.Optional[int]):
                 Maximum allowed CPU memory this task can use
@@ -180,7 +180,7 @@ class AutoMLSMBO(object):
         # and a bunch of useful limits
         self.worst_possible_result = get_cost_of_crash(self.metric)
         self.total_walltime_limit = int(total_walltime_limit)
-        self.func_eval_time_limit = int(func_eval_time_limit)
+        self.func_eval_time_limit_secs = int(func_eval_time_limit_secs)
         self.memory_limit = memory_limit
         self.watcher = watcher
         self.seed = seed
@@ -265,7 +265,7 @@ class AutoMLSMBO(object):
         scenario_dict = {
             'abort_on_first_run_crash': False,
             'cs': self.config_space,
-            'cutoff_time': self.func_eval_time_limit,
+            'cutoff_time': self.func_eval_time_limit_secs,
             'deterministic': 'true',
             'instances': instances,
             'memory_limit': self.memory_limit,
