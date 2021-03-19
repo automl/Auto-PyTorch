@@ -108,10 +108,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
 
         # Explicit definition for mypy compatibility
+        self.dataset_name: str = ""
+
         if dataset_name is not None:
-            self.dataset_name: str = dataset_name
+            self.dataset_name = dataset_name
         else:
-            self.dataset_name: str = hash_array_or_matrix(train_tensors[0])
+            self.dataset_name = hash_array_or_matrix(train_tensors[0])
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
