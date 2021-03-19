@@ -51,8 +51,8 @@ class TransformSubset(Subset):
     we require different transformation for each data point.
     This class helps to take the subset of the dataset
     with either training or validation transformation.
-
-    We achieve so by adding a train flag to the pytorch subset
+    The TransformSubset allows to add train flags
+    while indexing the main dataset towards this goal.
 
     Attributes:
         dataset (BaseDataset/Dataset): Dataset to sample the subset
