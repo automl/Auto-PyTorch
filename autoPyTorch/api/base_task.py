@@ -290,6 +290,8 @@ class BaseTask:
         # Setup the configuration for the logger
         # This is gonna be honored by the server
         # Which is created below
+        aaaaaaaaaaaaaaaa = 0
+        aaaaaaaaaaaaaaaa += 1
         setup_logger(
             filename='%s.log' % str(logger_name),
             logging_config=self.logging_config,
