@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.preprocessing import Normalizer as SklearnNormalizer
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler import BaseScaler
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class Normalizer(BaseScaler):
@@ -36,13 +37,15 @@ class Normalizer(BaseScaler):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
-                                        norm: Tuple[Tuple, str] = (("mean_abs", "mean_squared", "max"),
-                                                                   "mean_squared")
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, Any]] = None,
+        norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="norm",
+                                                                    value_range=("mean_abs", "mean_squared", "max"),
+                                                                    default_value="mean_squared",
+                                                                    log=False)
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        norm = CategoricalHyperparameter("norm", norm[0], default_value=norm[1])
-        cs.add_hyperparameter(norm)
+        add_hyperparameter(cs, norm, CategoricalHyperparameter)
         return cs
 
     @staticmethod

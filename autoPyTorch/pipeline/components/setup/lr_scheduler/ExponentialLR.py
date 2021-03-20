@@ -11,6 +11,7 @@ import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ExponentialLR(BaseLRComponent):
@@ -58,15 +59,17 @@ class ExponentialLR(BaseLRComponent):
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
             'shortname': 'ExponentialLR',
-            'name': 'ExponentialLR',
+            'name': 'Exponential Learning Rate Scheduler',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        gamma: Tuple[Tuple, float] = ((0.7, 0.9999), 0.9)
-                                        ) -> ConfigurationSpace:
-        gamma = UniformFloatHyperparameter(
-            "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
+                                                                     value_range=(0.7, 0.9999),
+                                                                     default_value=0.9,
+                                                                     log=False)
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([gamma])
+        add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
         return cs

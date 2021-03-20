@@ -9,6 +9,7 @@ import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class CosineAnnealingWarmRestarts(BaseLRComponent):
@@ -30,7 +31,6 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         T_mult: int,
         random_state: Optional[np.random.RandomState] = None
     ):
-
         super().__init__()
         self.T_0 = T_0
         self.T_mult = T_mult
@@ -67,14 +67,19 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        T_0: Tuple[Tuple[int, int], int] = ((1, 20), 1),
-                                        T_mult: Tuple[Tuple[float, float], float] = ((1.0, 2.0), 1.0)
-                                        ) -> ConfigurationSpace:
-        T_0 = UniformIntegerHyperparameter(
-            "T_0", T_0[0][0], T_0[0][1], default_value=T_0[1])
-        T_mult = UniformFloatHyperparameter(
-            "T_mult", T_mult[0][0], T_mult[0][1], default_value=T_mult[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        T_0: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_0',
+                                                                   value_range=(1, 20),
+                                                                   default_value=1,
+                                                                   log=False),
+        T_mult: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_mult',
+                                                                      value_range=(1.0, 2.0),
+                                                                      default_value=1.0,
+                                                                      log=False),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([T_0, T_mult])
+        add_hyperparameter(cs, T_0, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, T_mult, UniformFloatHyperparameter)
+
         return cs

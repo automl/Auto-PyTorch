@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.impute import SimpleImputer as SklearnSimpleImputer
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.base_imputer import BaseImputer
-
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 class SimpleImputer(BaseImputer):
     """
@@ -65,28 +65,29 @@ class SimpleImputer(BaseImputer):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, Any]] = None,
-                                        numerical_strategy: Tuple[Tuple, str] = (("mean", "median",
-                                                                                  "most_frequent", "constant_zero"),
-                                                                                 "mean"),
-                                        categorical_strategy: Tuple[Tuple, str] = (("most_frequent",
-                                                                                    "constant_!missing!"),
-                                                                                   "most_frequent")
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, Any]] = None,
+        numerical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='numerical_strategy',
+                                                                                  value_range=("mean", "median",
+                                                                                               "most_frequent",
+                                                                                               "constant_zero"),
+                                                                                  default_value="mean",
+                                                                                  log=False),
+        categorical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='numerical_strategy',
+                                                                                  value_range=("most_frequent",
+                                                                                               "constant_!missing!"),
+                                                                                  default_value="most_frequent",
+                                                                                  log=False)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         assert dataset_properties is not None, "To create hyperparameter search space" \
                                                ", dataset_properties should not be None"
         if len(dataset_properties['numerical_columns']) != 0:
-            numerical_strategy = CategoricalHyperparameter("numerical_strategy",
-                                                           numerical_strategy[0],
-                                                           default_value=numerical_strategy[1])
-            cs.add_hyperparameter(numerical_strategy)
+            add_hyperparameter(cs, numerical_strategy, CategoricalHyperparameter)
 
         if len(dataset_properties['categorical_columns']) != 0:
-            categorical_strategy = CategoricalHyperparameter("categorical_strategy",
-                                                             categorical_strategy[0],
-                                                             default_value=categorical_strategy[1])
-            cs.add_hyperparameter(categorical_strategy)
+            add_hyperparameter(cs, categorical_strategy, CategoricalHyperparameter)
+
         return cs
 
     @staticmethod

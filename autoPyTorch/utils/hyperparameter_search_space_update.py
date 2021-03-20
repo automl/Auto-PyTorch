@@ -1,9 +1,10 @@
 import ast
 import os
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, HyperparameterValueType
 
 
 class HyperparameterSearchSpaceUpdate:
@@ -16,19 +17,21 @@ class HyperparameterSearchSpaceUpdate:
             The name of the node in the pipeline
         hyperparameter (str):
             The name of the hyperparameter
-        value_range (Union[List, Tuple]):
+        value_range (Sequence[HyperparameterValueType]):
             In case of categorical hyperparameter, defines the new categorical choices.
             In case of numerical hyperparameter, defines the new range
             in the form of (LOWER, UPPER)
-        default_value (Union[int, float, str]):
+        default_value (HyperparameterValueType):
             New default value for the hyperparameter
         log (bool) (default=False):
             In case of numerical hyperparameters, whether to sample on a log scale
     """
-    def __init__(self, node_name: str, hyperparameter: str, value_range: Union[List, Tuple],
-                 default_value: Union[int, float, str], log: bool = False) -> None:
+    def __init__(self, node_name: str, hyperparameter: str, value_range: Sequence[HyperparameterValueType],
+                 default_value: HyperparameterValueType, log: bool = False) -> None:
         self.node_name = node_name
         self.hyperparameter = hyperparameter
+        if len(value_range) == 0:
+            raise ValueError("The new value range needs at least one value")
         self.value_range = value_range
         self.log = log
         self.default_value = default_value
@@ -43,17 +46,19 @@ class HyperparameterSearchSpaceUpdate:
         Returns:
             None
         """
-        [node[1]._apply_search_space_update(name=self.hyperparameter,
-                                            new_value_range=self.value_range,
-                                            log=self.log,
-                                            default_value=self.default_value)
-         for node in pipeline if node[0] == self.node_name]
+        [node[1]._apply_search_space_update(self) for node in pipeline if node[0] == self.node_name]
 
     def __str__(self) -> str:
         return "{}, {}, {}, {}, {}".format(self.node_name, self.hyperparameter, str(self.value_range),
                                            self.default_value if isinstance(self.default_value,
                                                                             str) else self.default_value,
                                            (" log" if self.log else ""))
+
+    def get_search_space(self) -> HyperparameterSearchSpace:
+        return HyperparameterSearchSpace(hyperparameter=self.hyperparameter,
+                                         value_range=self.value_range,
+                                         default_value=self.default_value,
+                                         log=self.log)
 
 
 class HyperparameterSearchSpaceUpdates:

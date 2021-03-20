@@ -104,7 +104,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
 
         # add only child hyperparameters of early_preprocessor choices
         for name in preprocessor.choices:
-            updates = self._get_search_space_updates(prefix=name)
+            updates = self._get_search_space_updates(hyperparameter=name)
             config_space = available_[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
                                                                             **updates)
             parent_hyperparameter = {'parent': preprocessor, 'value': name}

@@ -365,7 +365,7 @@ class BasePipeline(Pipeline):
                 cs.add_configuration_space(
                     node_name,
                     node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[arg-type]
-                                                         **node._get_search_space_updates()),
+                                                         **node._get_search_space_updates(node_name)),
                 )
             # If the node is a choice, we have to figure out which of its
             #  choices are actually legal choices

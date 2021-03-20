@@ -10,7 +10,8 @@ from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 def find_components(
@@ -96,7 +97,7 @@ class autoPyTorchComponent(BaseEstimator):
     def __init__(self) -> None:
         super().__init__()
         self._fit_requirements: List[FitRequirement] = list()
-        self._cs_updates: Dict[str, Tuple] = dict()
+        self._cs_updates: Dict[str, HyperparameterSearchSpaceUpdate] = dict()
 
     @classmethod
     def get_required_properties(cls) -> Optional[List[str]]:
@@ -253,8 +254,7 @@ class autoPyTorchComponent(BaseEstimator):
         name = self.get_properties()['name']
         return "autoPyTorch.pipeline %s" % name
 
-    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
-                                   default_value: Union[int, float, str], log: bool = False) -> None:
+    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
         """Allows the user to update a hyperparameter
 
         Arguments:
@@ -263,11 +263,9 @@ class autoPyTorchComponent(BaseEstimator):
             log {bool} -- is hyperparameter logscale
         """
 
-        if len(new_value_range) == 0:
-            raise ValueError("The new value range needs at least one value")
-        self._cs_updates[name] = tuple([new_value_range, default_value, log])
+        self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
+    def _get_search_space_updates(self, hyperparameter: str) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
@@ -276,13 +274,11 @@ class autoPyTorchComponent(BaseEstimator):
         Returns:
             dict -- Mapping of search space updates. Keys don't contain the prefix.
         """
-        if prefix is None:
-            return self._cs_updates
-        result: Dict[str, Tuple] = dict()
+
+        result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if key.startswith(prefix):
-                # different for autopytorch component as the hyperparameter
-                result[key[len(prefix):]] = self._cs_updates[key]
+            if hyperparameter == key:
+                result[hyperparameter] = self._cs_updates[hyperparameter].get_search_space()
         return result

@@ -11,8 +11,9 @@ import numpy as np
 import sklearn.decomposition
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing\
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing \
     .base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
@@ -38,18 +39,25 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        target_dim: Tuple[Tuple, float] = ((0.5, 0.9), 0.5),
+        target_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='target_dim',
+                                                                          value_range=(0.5, 0.9),
+                                                                          default_value=0.5,
+                                                                          log=False),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         if dataset_properties is not None:
             n_features = len(dataset_properties['numerical_columns'])
-            target_dim = ((floor(target_dim[0][0] * n_features), floor(target_dim[0][1] * n_features)),
-                          floor(target_dim[1] * n_features))
+            target_dim = HyperparameterSearchSpace(hyperparameter=target_dim.hyperparameter,
+                                                   value_range=(floor(target_dim.value_range[0] * n_features),
+                                                                floor(target_dim.value_range[1] * n_features)),
+                                                   default_value=floor(target_dim[1] * n_features),
+                                                   log=target_dim.log)
         else:
-            target_dim = ((10, 256), 128)
-        target_dim = UniformIntegerHyperparameter("target_dim", lower=target_dim[0][0],
-                                                  upper=target_dim[0][1], default_value=target_dim[1])
-        cs.add_hyperparameters([target_dim])
+            target_dim = HyperparameterSearchSpace(hyperparameter=target_dim.hyperparameter,
+                                                   value_range=(10, 256),
+                                                   default_value=128,
+                                                   log=target_dim.log)
 
+        add_hyperparameter(cs, target_dim, UniformIntegerHyperparameter)
         return cs

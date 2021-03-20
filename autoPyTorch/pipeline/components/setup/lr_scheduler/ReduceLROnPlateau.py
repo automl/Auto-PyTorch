@@ -13,6 +13,7 @@ import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ReduceLROnPlateau(BaseLRComponent):
@@ -31,6 +32,7 @@ class ReduceLROnPlateau(BaseLRComponent):
             rate will be reduced.
         random_state (Optional[np.random.RandomState]): random state
     """
+
     def __init__(
         self,
         mode: str,
@@ -38,7 +40,6 @@ class ReduceLROnPlateau(BaseLRComponent):
         patience: int,
         random_state: Optional[np.random.RandomState] = None
     ):
-
         super().__init__()
         self.mode = mode
         self.factor = factor
@@ -77,16 +78,26 @@ class ReduceLROnPlateau(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        mode: Tuple[Tuple, str] = (('min', 'max'), 'min'),
-                                        patience: Tuple[Tuple, int] = ((5, 20), 10),
-                                        factor: Tuple[Tuple[float, float], float] = ((0.01, 0.9), 0.1)
-                                        ) -> ConfigurationSpace:
-        mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
-        patience = UniformIntegerHyperparameter(
-            "patience", patience[0][0], patience[0][1], default_value=patience[1])
-        factor = UniformFloatHyperparameter(
-            "factor", factor[0][0], factor[0][1], default_value=factor[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        mode: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='mode',
+                                                                    value_range=('min', 'max'),
+                                                                    default_value='min',
+                                                                    log=False),
+        patience: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='patience',
+                                                                        value_range=(5, 20),
+                                                                        default_value=10,
+                                                                        log=False),
+        factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='factor',
+                                                                      value_range=(0.01, 0.9),
+                                                                      default_value=0.1,
+                                                                      log=False),
+    ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([mode, patience, factor])
+
+        add_hyperparameter(cs, mode, CategoricalHyperparameter)
+        add_hyperparameter(cs, patience, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, factor, UniformFloatHyperparameter)
+
         return cs

@@ -16,6 +16,7 @@ from torch.nn import functional as F
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class _DenseLayer(nn.Sequential):
@@ -152,51 +153,54 @@ class DenseNetBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_blocks: Tuple[Tuple, int] = ((3, 4), 3),
-                                        num_layers: Tuple[Tuple, int] = ((4, 64), 16),
-                                        growth_rate: Tuple[Tuple, int] = ((12, 40), 20),
-                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
-                                                                         list(_activations.keys())[0]),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        dropout: Tuple[Tuple, float] = ((0, 0.5), 0.2)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
+                                                                          value_range=(4, 64),
+                                                                          default_value=16,
+                                                                          log=False),
+        num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_blocks',
+                                                                          value_range=(3, 4),
+                                                                          default_value=3,
+                                                                          log=False),
+        growth_rate: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='growth_rate',
+                                                                           value_range=(12, 40),
+                                                                           default_value=20,
+                                                                           log=False),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='activation',
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0],
+                                                                          log=False),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='use_dropout',
+                                                                           value_range=(True, False),
+                                                                           default_value=False,
+                                                                           log=False),
+        dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='dropout',
+                                                                       value_range=(0, 0.5),
+                                                                       default_value=0.2,
+                                                                       log=False),
+    ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
-        min_growth_rate, max_growth_rate = growth_rate[0]
-        growth_rate_hp = UniformIntegerHyperparameter('growth_rate',
-                                                      lower=min_growth_rate,
-                                                      upper=max_growth_rate,
-                                                      default_value=growth_rate[1])
-        cs.add_hyperparameter(growth_rate_hp)
+        min_num_layers, max_num_layers = num_layers.value_range
+        add_hyperparameter(cs, num_layers, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, growth_rate, UniformIntegerHyperparameter)
 
-        min_num_blocks, max_num_blocks = num_blocks[0]
-        blocks_hp = UniformIntegerHyperparameter('blocks',
-                                                 lower=min_num_blocks,
-                                                 upper=max_num_blocks,
-                                                 default_value=num_blocks[1])
+        min_num_blocks, max_num_blocks = num_blocks.value_range
+        blocks_hp = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
         cs.add_hyperparameter(blocks_hp)
 
-        activation_hp = CategoricalHyperparameter('activation',
-                                                  choices=activation[0],
-                                                  default_value=activation[1])
-        cs.add_hyperparameter(activation_hp)
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
 
-        use_dropout = CategoricalHyperparameter('use_dropout',
-                                                choices=use_dropout[0],
-                                                default_value=use_dropout[1])
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
 
-        min_dropout, max_dropout = dropout[0]
-        dropout = UniformFloatHyperparameter('dropout',
-                                             lower=min_dropout,
-                                             upper=max_dropout,
-                                             default_value=dropout[1])
+        dropout = get_hyperparameter(dropout, UniformFloatHyperparameter)
 
         cs.add_hyperparameters([use_dropout, dropout])
         cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
         for i in range(1, max_num_blocks + 1):
-            min_num_layers, max_num_layers = num_layers[0]
+
             layer_hp = UniformIntegerHyperparameter('layer_in_block_%d' % i,
                                                     lower=min_num_layers,
                                                     upper=max_num_layers,
