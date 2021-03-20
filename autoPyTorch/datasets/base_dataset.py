@@ -295,8 +295,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 '`val_share` specified, but the Dataset was a given a pre-defined split at initialization already.')
         if val_share < 0 or val_share > 1:
             raise ValueError(f"`val_share` must be between 0 and 1, got {val_share}.")
-        if not isinstance(holdout_val_type, HoldoutValTypes):
-            raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
         kwargs = {}
         if is_stratified(holdout_val_type):
             # we need additional information about the data for stratification
