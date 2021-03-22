@@ -127,7 +127,7 @@ class MLPBackbone(NetworkBackboneComponent):
                                                              value_range=num_units.value_range,
                                                              default_value=num_units.default_value,
                                                              log=num_units.log)
-            dropout_hp = get_hyperparameter(dropout_search_space, UniformIntegerHyperparameter)
+            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
             cs.add_hyperparameter(dropout_hp)
 
             dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)

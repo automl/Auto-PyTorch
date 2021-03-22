@@ -130,8 +130,7 @@ class ResNetBackbone(NetworkBackboneComponent):
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
             value_range=(0, 1),
-            default_value=0.5,
-            ),
+            default_value=0.5),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

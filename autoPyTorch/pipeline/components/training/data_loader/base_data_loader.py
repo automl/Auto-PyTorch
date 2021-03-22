@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -205,10 +205,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         # or from X, Y pairs
         if 'split_id' not in X:
             raise ValueError("To fit a data loader, expected fit dictionary to have split_id. "
-                             "Currently X={}.".format(
-                X
-            )
-            )
+                             "Currently X={}.".format(X))
         if 'backend' not in X:
             raise ValueError("backend is needed to load the data from disk")
 

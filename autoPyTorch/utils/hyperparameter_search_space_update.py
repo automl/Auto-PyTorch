@@ -1,6 +1,5 @@
 import ast
 import os
-import re
 from typing import List, Optional, Sequence, Tuple, Union
 
 from sklearn.base import BaseEstimator

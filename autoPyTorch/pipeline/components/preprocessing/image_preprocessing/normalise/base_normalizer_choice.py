@@ -76,10 +76,21 @@ class NormalizerChoice(autoPyTorchChoice):
                     default = default_
                     break
 
-        preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                     list(available_preprocessors.keys()),
-                                                     default_value=default)
-
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_preprocessors):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_preprocessors,
+                                                               choice_hyperparameter.value_range))
+            preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                         choice_hyperparameter.value_range,
+                                                         default_value=choice_hyperparameter.default_value)
+        else:
+            preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                         list(available_preprocessors.keys()),
+                                                         default_value=default)
         cs.add_hyperparameter(preprocessor)
 
         # add only child hyperparameters of early_preprocessor choices

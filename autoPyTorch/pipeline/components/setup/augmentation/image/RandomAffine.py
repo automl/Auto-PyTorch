@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -14,7 +14,7 @@ from imgaug.augmenters.meta import Augmenter
 import numpy as np
 
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 class RandomAffine(BaseImageAugmenter):
@@ -50,8 +50,7 @@ class RandomAffine(BaseImageAugmenter):
         translate_percent_offset: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="translate_percent_offset",
             value_range=(0, 0.4),
-            default_value=0.2,
-            ),
+            default_value=0.2),
         shear: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="shear",
                                                                      value_range=(0, 45),
                                                                      default_value=30,

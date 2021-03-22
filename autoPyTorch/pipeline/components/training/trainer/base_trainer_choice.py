@@ -137,14 +137,25 @@ class TrainerChoice(autoPyTorchChoice):
                 if default_ in available_trainers:
                     default = default_
                     break
-
-        trainer = CategoricalHyperparameter(
-            '__choice__',
-            list(available_trainers.keys()),
-            default_value=default
-        )
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_trainers):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_trainers,
+                                                               choice_hyperparameter.value_range))
+            trainer = CategoricalHyperparameter('__choice__',
+                                                choice_hyperparameter.value_range,
+                                                default_value=choice_hyperparameter.default_value)
+        else:
+            trainer = CategoricalHyperparameter(
+                '__choice__',
+                list(available_trainers.keys()),
+                default_value=default
+            )
         cs.add_hyperparameter(trainer)
-        for name in available_trainers:
+        for name in trainer.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_trainers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
                                                                                     **updates)

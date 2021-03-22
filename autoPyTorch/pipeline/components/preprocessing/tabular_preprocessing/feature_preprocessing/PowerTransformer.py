@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -37,13 +37,12 @@ class PowerTransformer(autoPyTorchFeaturePreprocessingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None,
-            standardize: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='standardize',
-                                                                     value_range=(True, False),
-                                                                     default_value=True,
-                                                                     ),
+        dataset_properties: Optional[Dict[str, str]] = None,
+        standardize: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='standardize',
+                                                                           value_range=(True, False),
+                                                                           default_value=True,
+                                                                           ),
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
         add_hyperparameter(cs, standardize, CategoricalHyperparameter)
 

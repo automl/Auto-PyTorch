@@ -1,7 +1,7 @@
+import re
 import warnings
 from collections import OrderedDict
-import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 

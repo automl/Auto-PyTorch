@@ -84,12 +84,12 @@ class ShapedResNetBackbone(ResNetBackbone):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict] = None,  # type: ignore[override]
         resnet_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="resnet_shape",
-                                                                         value_range=('funnel', 'long_funnel',
-                                                                                      'diamond', 'hexagon',
-                                                                                      'brick', 'triangle',
-                                                                                      'stairs'),
-                                                                         default_value='funnel',
-                                                                         ),
+                                                                            value_range=('funnel', 'long_funnel',
+                                                                                         'diamond', 'hexagon',
+                                                                                         'brick', 'triangle',
+                                                                                         'stairs'),
+                                                                            default_value='funnel',
+                                                                            ),
         output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
                                                                           value_range=(10, 1024),
                                                                           default_value=200,
@@ -112,8 +112,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                 value_range=(1, 4),
                                                                                 default_value=2),
         max_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_dropout",
-                                                                       value_range=(0, 0.8),
-                                                                       default_value=0.5),
+                                                                           value_range=(0, 0.8),
+                                                                           default_value=0.5),
         use_shake_shake: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_shake",
                                                                                value_range=(True, False),
                                                                                default_value=True),
@@ -123,8 +123,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
             value_range=(0, 1),
-            default_value=0.5,
-            ),
+            default_value=0.5),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

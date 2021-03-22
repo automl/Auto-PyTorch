@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -15,6 +15,7 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+
 
 class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_components: int = 100,

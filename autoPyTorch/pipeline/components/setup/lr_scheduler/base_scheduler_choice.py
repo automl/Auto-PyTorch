@@ -15,7 +15,6 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
 
-
 directory = os.path.split(__file__)[0]
 _schedulers = find_components(__package__,
                               directory,
@@ -150,14 +149,25 @@ class SchedulerChoice(autoPyTorchChoice):
                 if default_ in available_schedulers:
                     default = default_
                     break
-
-        scheduler = CSH.CategoricalHyperparameter(
-            '__choice__',
-            list(available_schedulers.keys()),
-            default_value=default
-        )
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_schedulers):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_schedulers,
+                                                               choice_hyperparameter.value_range))
+            scheduler = CSH.CategoricalHyperparameter('__choice__',
+                                                      choice_hyperparameter.value_range,
+                                                      default_value=choice_hyperparameter.default_value)
+        else:
+            scheduler = CSH.CategoricalHyperparameter(
+                '__choice__',
+                list(available_schedulers.keys()),
+                default_value=default
+            )
         cs.add_hyperparameter(scheduler)
-        for name in available_schedulers:
+        for name in scheduler.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_schedulers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
                                                                                       **updates)

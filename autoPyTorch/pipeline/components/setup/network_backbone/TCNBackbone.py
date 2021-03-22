@@ -138,8 +138,8 @@ class TCNBackbone(NetworkBackboneComponent):
                                                                            value_range=(True, False),
                                                                            default_value=False),
         dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
-                                                                           value_range=(0, 0.5),
-                                                                           default_value=0.1),
+                                                                       value_range=(0, 0.5),
+                                                                       default_value=0.1),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

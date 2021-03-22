@@ -330,4 +330,27 @@ class TestTabularClassification:
         except AssertionError as e:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
-            assert 'fully_connected:units_layer' in e.args[0]
+            assert 'fully_connected:units_layer' in e.args[0], e.args[0]
+
+    def test_set_choices_updates(self, fit_dictionary_tabular):
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
+                              'task_type': 'tabular_classification'}
+        config_dict = TabularClassificationPipeline(dataset_properties=dataset_properties). \
+            get_hyperparameter_search_space()._hyperparameters
+        updates = HyperparameterSearchSpaceUpdates()
+        for i, (name, hyperparameter) in enumerate(config_dict.items()):
+            if '__choice__' not in name:
+                continue
+            name = name.split(':')
+            hyperparameter_name = ':'.join(name[1:])
+            if name[0] == 'network_embedding' and hyperparameter_name == '__choice__':
+                value_range = ('NoEmbedding',)
+                default_value = 'NoEmbedding'
+            else:
+                value_range = (hyperparameter.choices[0],)
+                default_value = hyperparameter.choices[0]
+            updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
+                           value_range=value_range, default_value=default_value)
+        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                 search_space_updates=updates)
+        self._assert_pipeline_search_space(pipeline, updates)

@@ -158,14 +158,25 @@ class NetworkBackboneChoice(autoPyTorchChoice):
                 if default_ in available_backbones:
                     default = default_
                     break
-
-        backbone = CSH.CategoricalHyperparameter(
-            '__choice__',
-            list(available_backbones.keys()),
-            default_value=default
-        )
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_backbones):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_backbones,
+                                                               choice_hyperparameter.value_range))
+            backbone = CSH.CategoricalHyperparameter('__choice__',
+                                                     choice_hyperparameter.value_range,
+                                                     default_value=choice_hyperparameter.default_value)
+        else:
+            backbone = CSH.CategoricalHyperparameter(
+                '__choice__',
+                list(available_backbones.keys()),
+                default_value=default
+            )
         cs.add_hyperparameter(backbone)
-        for name in available_backbones:
+        for name in backbone.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_backbones[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
                                                                                      **updates)

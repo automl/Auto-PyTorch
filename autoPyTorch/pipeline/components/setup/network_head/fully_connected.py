@@ -10,7 +10,7 @@ from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 class FullyConnectedHead(NetworkHeadComponent):

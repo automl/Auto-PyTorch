@@ -3,11 +3,11 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Ty
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
-    Hyperparameter,
     CategoricalHyperparameter,
     Constant,
+    Hyperparameter,
+    UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
-    UniformFloatHyperparameter
 )
 
 import numpy as np
@@ -204,11 +204,15 @@ def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
     if len(hyperparameter.value_range) == 0:
         raise ValueError(hyperparameter.hyperparameter + ': The range has to contain at least one element')
     if len(hyperparameter.value_range) == 1 and hyperparameter_type != CategoricalHyperparameter:
-        return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0])
-        if isinstance(hyperparameter.value_range[0], bool) else hyperparameter.value_range[0])
+        if isinstance(hyperparameter.value_range[0], bool):
+            return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
+        else:
+            return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0]))
     if len(hyperparameter.value_range) == 2 and hyperparameter.value_range[0] == hyperparameter.value_range[1]:
-        return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0])
-        if isinstance(hyperparameter.value_range[0], bool) else hyperparameter.value_range[0])
+        if isinstance(hyperparameter.value_range[0], bool):
+            return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
+        else:
+            return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0]))
     if hyperparameter_type == CategoricalHyperparameter:
         return CategoricalHyperparameter(hyperparameter.hyperparameter,
                                          choices=hyperparameter.value_range,
