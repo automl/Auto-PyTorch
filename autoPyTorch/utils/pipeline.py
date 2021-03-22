@@ -10,6 +10,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS,
     TIMESERIES_TASKS,
+    FORECASTING_TASKS,
 )
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
@@ -85,6 +86,12 @@ def _get_regression_dataset_requirements(info: Dict[str, Any], include: Dict[str
             include=include,
             exclude=exclude
         ).get_dataset_requirements()
+    elif task_type in FORECASTING_TASKS:
+        return TimeSeriesForecastingPipeline(
+            dataset_properties=info,
+            include=include,
+            exclude=exclude
+        ).get_dataset_requirements()
 
     else:
         raise ValueError("Task_type not supported")
@@ -128,19 +135,19 @@ def get_configuration_space(info: Dict[str, Any],
     task_type: int = STRING_TO_TASK_TYPES[info['task_type']]
 
     if task_type in REGRESSION_TASKS:
+        if task_type in FORECASTING_TASKS:
+            return _get_forecasting_configuration_space(info,
+                                                        include if include is not None else {},
+                                                        exclude if exclude is not None else {},
+                                                        search_space_updates=search_space_updates
+                                                        )
         return _get_regression_configuration_space(info,
                                                    include if include is not None else {},
                                                    exclude if exclude is not None else {},
                                                    search_space_updates=search_space_updates
                                                    )
-    elif task_type in CLASSIFICATION_TASKS:
-        return _get_classification_configuration_space(info,
-                                                       include if include is not None else {},
-                                                       exclude if exclude is not None else {},
-                                                       search_space_updates=search_space_updates
-                                                       )
     else:
-        return _get_forecasting_configuration_space(info,
+        return _get_classification_configuration_space(info,
                                                        include if include is not None else {},
                                                        exclude if exclude is not None else {},
                                                        search_space_updates=search_space_updates

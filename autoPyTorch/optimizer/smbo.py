@@ -78,8 +78,7 @@ def get_smac_object(
 
 
 class AutoMLSMBO(object):
-
-    def __init__(self,
+    def  __init__(self,
                  config_space: ConfigSpace.ConfigurationSpace,
                  dataset_name: str,
                  backend: Backend,

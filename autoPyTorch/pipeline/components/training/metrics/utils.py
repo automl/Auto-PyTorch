@@ -6,7 +6,6 @@ import numpy as np
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     REGRESSION_TASKS,
-    FORECASTING_TASKS,
     STRING_TO_TASK_TYPES,
     TASK_TYPES,
 )

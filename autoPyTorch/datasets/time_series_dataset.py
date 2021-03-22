@@ -83,7 +83,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
         X = np.swapaxes(X, 0, 1).reshape(-1, 1, num_features)
         Y = np.swapaxes(Y, 0, 1).reshape(-1, num_target)
         if X_test is not None and Y_test is not None:
-            X_test = np.swapaxes(X_test, 0, 1).reshape(-1, num_features)
+            X_test = np.swapaxes(X_test, 0, 1).reshape(-1, 1, num_features)
             Y_test = np.swapaxes(Y_test, 0, 1).reshape(-1, num_target)
             test_tensors = (X_test, Y_test)
         else:
