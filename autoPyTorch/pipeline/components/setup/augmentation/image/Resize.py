@@ -39,7 +39,7 @@ class Resize(BaseImageAugmenter):
         use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
                                                                              value_range=(True, False),
                                                                              default_value=True,
-                                                                             log=False),
+                                                                             ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, use_augmenter, CategoricalHyperparameter)

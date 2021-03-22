@@ -45,7 +45,7 @@ class ZeroPadAndCrop(BaseImageAugmenter):
         percent: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='percent',
                                                                        value_range=(0, 0.5),
                                                                        default_value=0.1,
-                                                                       log=False)
+                                                                       )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

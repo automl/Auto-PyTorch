@@ -365,7 +365,7 @@ class BasePipeline(Pipeline):
                 cs.add_configuration_space(
                     node_name,
                     node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[arg-type]
-                                                         **node._get_search_space_updates(node_name)),
+                                                         **node._get_search_space_updates()),
                 )
             # If the node is a choice, we have to figure out which of its
             #  choices are actually legal choices
@@ -398,24 +398,47 @@ class BasePipeline(Pipeline):
                 raise ValueError("Unknown node name. Expected update node name to be in {} "
                                  "got {}".format(self.named_steps.keys(), update.node_name))
             node = self.named_steps[update.node_name]
+            # if node is a choice module
             if hasattr(node, 'get_components'):
                 split_hyperparameter = update.hyperparameter.split(':')
 
+                # check if component is not present in include
                 if include is not None and update.node_name in include.keys():
                     if split_hyperparameter[0] not in include[update.node_name]:
                         raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
 
+                # check if component is present in exclude
                 if exclude is not None and update.node_name in exclude.keys():
                     if split_hyperparameter[0] in exclude[update.node_name]:
                         raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
 
                 components = node.get_components()
-                if split_hyperparameter[0] not in components.keys():
+                # if hyperparameter is __choice__, check if
+                # the components in the value range of search space update
+                # are in components of the choice module
+                if split_hyperparameter[0] == '__choice__':
+                    for component in update.value_range:
+                        if include is not None and update.node_name in include.keys():
+                            if component not in include[update.node_name]:
+                                raise ValueError("Not found {} in include".format(component))
+                        if exclude is not None and update.node_name in exclude.keys():
+                            if component in exclude[update.node_name]:
+                                raise ValueError("Found {} in exclude".format(component))
+                        if component not in components.keys():
+                            raise ValueError("Unknown hyperparameter for choice {}. "
+                                             "Expected update hyperparameter "
+                                             "to be in {} got {}".format(node.__class__.__name__,
+                                                                         components.keys(), component))
+                # check if the component whose hyperparameter
+                # needs to be updated is in components of the
+                # choice module
+                elif split_hyperparameter[0] not in components.keys():
                     raise ValueError("Unknown hyperparameter for choice {}. "
                                      "Expected update hyperparameter "
                                      "to be in {} got {}".format(node.__class__.__name__,
                                                                  components.keys(), split_hyperparameter[0]))
                 else:
+                    # check if hyperparameter is in the search space of the component
                     component = components[split_hyperparameter[0]]
                     if split_hyperparameter[1] not in component. \
                             get_hyperparameter_search_space(dataset_properties=self.dataset_properties):

@@ -72,11 +72,11 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         T_0: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_0',
                                                                    value_range=(1, 20),
                                                                    default_value=1,
-                                                                   log=False),
+                                                                   ),
         T_mult: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_mult',
                                                                       value_range=(1.0, 2.0),
                                                                       default_value=1.0,
-                                                                      log=False),
+                                                                      ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, T_0, UniformIntegerHyperparameter)

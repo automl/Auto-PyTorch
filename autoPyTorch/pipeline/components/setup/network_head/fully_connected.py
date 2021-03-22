@@ -10,6 +10,7 @@ from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class FullyConnectedHead(NetworkHeadComponent):
@@ -42,36 +43,36 @@ class FullyConnectedHead(NetworkHeadComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None,
-                                        num_layers: Tuple[Tuple, int] = ((1, 4), 2),
-                                        units_layer: Tuple[Tuple, int] = ((64, 512), 128),
-                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
-                                                                         list(_activations.keys())[0])
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, str]] = None,
+        num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_layers",
+                                                                          value_range=(1, 4),
+                                                                          default_value=2),
+        units_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="units_layer",
+                                                                           value_range=(64, 512),
+                                                                           default_value=128),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0]),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        min_num_layers, max_num_layers = num_layers[0]
-        num_layers_hp = UniformIntegerHyperparameter("num_layers",
-                                                     lower=min_num_layers,
-                                                     upper=max_num_layers,
-                                                     default_value=num_layers[1]
-                                                     )
+        min_num_layers, max_num_layers = num_layers.value_range
+        num_layers_hp = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
 
-        activation_hp = CategoricalHyperparameter(
-            "activation", choices=activation[0],
-            default_value=activation[1]
-        )
+        activation_hp = get_hyperparameter(activation, CategoricalHyperparameter)
 
         cs.add_hyperparameters([num_layers_hp, activation_hp])
         cs.add_condition(CS.GreaterThanCondition(activation_hp, num_layers_hp, 1))
 
         for i in range(1, max_num_layers):
-
-            num_units_hp = UniformIntegerHyperparameter(f"units_layer_{i}",
-                                                        lower=units_layer[0][0],
-                                                        upper=units_layer[0][1],
-                                                        default_value=units_layer[1])
+            num_units_search_space = HyperparameterSearchSpace(hyperparameter=f"units_layer_{i}",
+                                                               value_range=units_layer.value_range,
+                                                               default_value=units_layer.default_value,
+                                                               log=units_layer.log)
+            num_units_hp = get_hyperparameter(num_units_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_units_hp)
+
             if i >= min_num_layers:
                 cs.add_condition(CS.GreaterThanCondition(num_units_hp, num_layers_hp, i))
 

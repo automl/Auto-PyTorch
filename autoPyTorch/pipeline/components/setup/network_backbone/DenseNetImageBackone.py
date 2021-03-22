@@ -158,31 +158,30 @@ class DenseNetBackbone(NetworkBackboneComponent):
         num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
                                                                           value_range=(4, 64),
                                                                           default_value=16,
-                                                                          log=False),
+                                                                          ),
         num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_blocks',
                                                                           value_range=(3, 4),
                                                                           default_value=3,
-                                                                          log=False),
+                                                                          ),
         growth_rate: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='growth_rate',
                                                                            value_range=(12, 40),
                                                                            default_value=20,
-                                                                           log=False),
+                                                                           ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='activation',
                                                                           value_range=tuple(_activations.keys()),
                                                                           default_value=list(_activations.keys())[0],
-                                                                          log=False),
+                                                                          ),
         use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='use_dropout',
                                                                            value_range=(True, False),
                                                                            default_value=False,
-                                                                           log=False),
+                                                                           ),
         dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='dropout',
                                                                        value_range=(0, 0.5),
                                                                        default_value=0.2,
-                                                                       log=False),
+                                                                       ),
     ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
-        min_num_layers, max_num_layers = num_layers.value_range
         add_hyperparameter(cs, num_layers, UniformIntegerHyperparameter)
         add_hyperparameter(cs, growth_rate, UniformIntegerHyperparameter)
 
@@ -201,11 +200,11 @@ class DenseNetBackbone(NetworkBackboneComponent):
 
         for i in range(1, max_num_blocks + 1):
 
-            layer_hp = UniformIntegerHyperparameter('layer_in_block_%d' % i,
-                                                    lower=min_num_layers,
-                                                    upper=max_num_layers,
-                                                    default_value=num_layers[1])
-            cs.add_hyperparameter(layer_hp)
+            layer_search_space = HyperparameterSearchSpace(hyperparameter='layer_in_block_%d' % i,
+                                                           value_range=num_layers.value_range,
+                                                           default_value=num_layers.default_value,
+                                                           log=num_layers.log)
+            layer_hp = get_hyperparameter(layer_search_space, UniformIntegerHyperparameter)
 
             if i > min_num_blocks:
                 cs.add_condition(CS.GreaterThanCondition(layer_hp, blocks_hp, i - 1))

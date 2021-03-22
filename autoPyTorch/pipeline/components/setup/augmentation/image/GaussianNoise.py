@@ -34,11 +34,11 @@ class GaussianNoise(BaseImageAugmenter):
         use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
                                                                              value_range=(True, False),
                                                                              default_value=True,
-                                                                             log=False),
+                                                                             ),
         sigma_offset: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="sigma_offset",
                                                                             value_range=(0.0, 3.0),
                                                                             default_value=0.3,
-                                                                            log=False),
+                                                                            ),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

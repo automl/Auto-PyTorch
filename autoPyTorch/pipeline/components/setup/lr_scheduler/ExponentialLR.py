@@ -68,7 +68,7 @@ class ExponentialLR(BaseLRComponent):
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
                                                                      value_range=(0.7, 0.9999),
                                                                      default_value=0.9,
-                                                                     log=False)
+                                                                     )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)

@@ -49,11 +49,11 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
         interaction_only: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='interaction_only',
                                                                                 value_range=(True, False),
                                                                                 default_value=False,
-                                                                                log=False),
+                                                                                ),
         include_bias: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='include_bias',
                                                                             value_range=(True, False),
                                                                             default_value=False,
-                                                                            log=False),
+                                                                            ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, degree, UniformIntegerHyperparameter)

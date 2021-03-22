@@ -1,5 +1,6 @@
 import warnings
 from collections import OrderedDict
+import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
@@ -259,7 +260,7 @@ class autoPyTorchChoice(object):
 
         self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, hyperparameter: str) -> Dict[str, HyperparameterSearchSpace]:
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
@@ -268,11 +269,16 @@ class autoPyTorchChoice(object):
         Returns:
             dict -- Mapping of search space updates. Keys don't contain the prefix.
         """
+        RETURN_ALL = False
+        if prefix is None:
+            RETURN_ALL = True
 
         result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if hyperparameter == key:
-                result[hyperparameter] = self._cs_updates[hyperparameter].get_search_space()
+            if RETURN_ALL:
+                result[key] = self._cs_updates[key].get_search_space()
+            elif re.search(f'^{prefix}', key) is not None:
+                result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
         return result

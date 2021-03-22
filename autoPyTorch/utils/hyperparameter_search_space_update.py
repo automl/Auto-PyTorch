@@ -1,9 +1,10 @@
 import ast
 import os
+import re
 from typing import List, Optional, Sequence, Tuple, Union
 
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from sklearn.base import BaseEstimator
+
 from autoPyTorch.utils.common import HyperparameterSearchSpace, HyperparameterValueType
 
 
@@ -36,11 +37,11 @@ class HyperparameterSearchSpaceUpdate:
         self.log = log
         self.default_value = default_value
 
-    def apply(self, pipeline: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]) -> None:
+    def apply(self, pipeline: List[Tuple[str, BaseEstimator]]) -> None:
         """
         Applies the update to the appropriate hyperparameter of the pipeline
         Args:
-            pipeline (List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]):
+            pipeline (List[Tuple[str, BaseEstimator]]):
                 The named steps of the current autopytorch pipeline
 
         Returns:
@@ -54,8 +55,23 @@ class HyperparameterSearchSpaceUpdate:
                                                                             str) else self.default_value,
                                            (" log" if self.log else ""))
 
-    def get_search_space(self) -> HyperparameterSearchSpace:
-        return HyperparameterSearchSpace(hyperparameter=self.hyperparameter,
+    def get_search_space(self, remove_prefix: Optional[str] = None) -> HyperparameterSearchSpace:
+        """
+        Get Update as a HyperparameterSearchSpace object.
+
+        Args:
+            remove_prefix (Optional[str]):
+                if specified, remove given prefix from hyperparameter name
+
+        Returns:
+            HyperparameterSearchSpace
+        """
+        hyperparameter_name = self.hyperparameter
+        if remove_prefix is not None:
+            # remove prefix from hyperparameter name
+            if remove_prefix in self.hyperparameter:
+                hyperparameter_name = hyperparameter_name.replace(f"{remove_prefix}:", '')
+        return HyperparameterSearchSpace(hyperparameter=hyperparameter_name,
                                          value_range=self.value_range,
                                          default_value=self.default_value,
                                          log=self.log)
@@ -66,12 +82,12 @@ class HyperparameterSearchSpaceUpdates:
     def __init__(self, updates: Optional[List[HyperparameterSearchSpaceUpdate]] = None) -> None:
         self.updates = updates if updates is not None else []
 
-    def apply(self, pipeline: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]) -> None:
+    def apply(self, pipeline: List[Tuple[str, BaseEstimator]]) -> None:
         """
         Iteratively applies updates to the pipeline
 
         Args:
-            pipeline: (List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]):
+            pipeline: (List[Tuple[str, BaseEstimator]]):
                 The named steps of the current autoPyTorch pipeline
 
         Returns:

@@ -42,7 +42,7 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
         target_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='target_dim',
                                                                           value_range=(0.5, 0.9),
                                                                           default_value=0.5,
-                                                                          log=False),
+                                                                          ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -51,7 +51,7 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
             target_dim = HyperparameterSearchSpace(hyperparameter=target_dim.hyperparameter,
                                                    value_range=(floor(target_dim.value_range[0] * n_features),
                                                                 floor(target_dim.value_range[1] * n_features)),
-                                                   default_value=floor(target_dim[1] * n_features),
+                                                   default_value=floor(target_dim.default_value * n_features),
                                                    log=target_dim.log)
         else:
             target_dim = HyperparameterSearchSpace(hyperparameter=target_dim.hyperparameter,

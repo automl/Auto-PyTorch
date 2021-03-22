@@ -83,15 +83,15 @@ class ReduceLROnPlateau(BaseLRComponent):
         mode: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='mode',
                                                                     value_range=('min', 'max'),
                                                                     default_value='min',
-                                                                    log=False),
+                                                                    ),
         patience: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='patience',
                                                                         value_range=(5, 20),
                                                                         default_value=10,
-                                                                        log=False),
+                                                                        ),
         factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='factor',
                                                                       value_range=(0.01, 0.9),
                                                                       default_value=0.1,
-                                                                      log=False),
+                                                                      ),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

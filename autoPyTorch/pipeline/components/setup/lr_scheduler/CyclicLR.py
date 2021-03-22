@@ -92,21 +92,21 @@ class CyclicLR(BaseLRComponent):
         base_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='base_lr',
                                                                        value_range=(1e-6, 1e-1),
                                                                        default_value=0.01,
-                                                                       log=False),
+                                                                       ),
         mode: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='mode',
                                                                     value_range=('triangular',
                                                                                  'triangular2',
                                                                                  'exp_range'),
                                                                     default_value='triangular',
-                                                                    log=False),
+                                                                    ),
         step_size_up: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_size_up',
                                                                             value_range=(1000, 4000),
                                                                             default_value=2000,
-                                                                            log=False),
+                                                                            ),
         max_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='max_lr',
                                                                       value_range=(1e-3, 1e-1),
                                                                       default_value=0.1,
-                                                                      log=False)
+                                                                      )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

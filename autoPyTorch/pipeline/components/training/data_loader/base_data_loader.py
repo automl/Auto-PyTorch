@@ -11,11 +11,15 @@ import torch
 
 import torchvision
 
-
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.utils.backend import Backend
-from autoPyTorch.utils.common import FitRequirement, custom_collate_fn
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    HyperparameterSearchSpace,
+    add_hyperparameter,
+    custom_collate_fn
+)
 
 
 class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
@@ -202,9 +206,9 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         if 'split_id' not in X:
             raise ValueError("To fit a data loader, expected fit dictionary to have split_id. "
                              "Currently X={}.".format(
-                                 X
-                             )
-                             )
+                X
+            )
+            )
         if 'backend' not in X:
             raise ValueError("backend is needed to load the data from disk")
 
@@ -248,13 +252,14 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        batch_size: Tuple[Tuple, int] = ((32, 320), 64)
-                                        ) -> ConfigurationSpace:
-        batch_size = UniformIntegerHyperparameter(
-            "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        batch_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="batch_size",
+                                                                          value_range=(32, 320),
+                                                                          default_value=64)
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([batch_size])
+        add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
         return cs
 
     def __str__(self) -> str:

@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import pkgutil
+import re
 import sys
 import warnings
 from collections import OrderedDict
@@ -15,9 +16,9 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 def find_components(
-        package: str,
-        directory: str,
-        base_class: BaseEstimator
+    package: str,
+    directory: str,
+    base_class: BaseEstimator
 ) -> Dict[str, BaseEstimator]:
     """Utility to find component on a given directory,
     that inherit from base_class
@@ -36,7 +37,7 @@ def find_components(
 
             for member_name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and issubclass(obj, base_class) and \
-                        obj != base_class:
+                    obj != base_class:
                     # TODO test if the obj implements the interface
                     # Keep in mind that this only instantiates the ensemble_wrapper,
                     # but not the real target classifier
@@ -141,7 +142,7 @@ class autoPyTorchComponent(BaseEstimator):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, str]] = None
     ) -> ConfigurationSpace:
         """Return the configuration space of this classification algorithm.
 
@@ -265,7 +266,7 @@ class autoPyTorchComponent(BaseEstimator):
 
         self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, hyperparameter: str) -> Dict[str, HyperparameterSearchSpace]:
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
@@ -274,11 +275,16 @@ class autoPyTorchComponent(BaseEstimator):
         Returns:
             dict -- Mapping of search space updates. Keys don't contain the prefix.
         """
+        RETURN_ALL = False
+        if prefix is None:
+            RETURN_ALL = True
 
         result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if hyperparameter == key:
-                result[hyperparameter] = self._cs_updates[hyperparameter].get_search_space()
+            if RETURN_ALL:
+                result[key] = self._cs_updates[key].get_search_space()
+            elif re.search(f'^{prefix}', key) is not None:
+                result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
         return result

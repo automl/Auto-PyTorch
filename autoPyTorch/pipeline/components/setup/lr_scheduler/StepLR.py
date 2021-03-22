@@ -26,13 +26,13 @@ class StepLR(BaseLRComponent):
         gamma (float) – Multiplicative factor of learning rate decay. Default: 0.1.
 
     """
+
     def __init__(
         self,
         step_size: int,
         gamma: float,
         random_state: Optional[np.random.RandomState] = None
     ):
-
         super().__init__()
         self.gamma = gamma
         self.step_size = step_size
@@ -74,13 +74,12 @@ class StepLR(BaseLRComponent):
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
                                                                      value_range=(0.001, 0.9),
                                                                      default_value=0.1,
-                                                                     log=False),
+                                                                     ),
         step_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_size',
-                                                                     value_range=(1, 10),
-                                                                     default_value=5,
-                                                                     log=False),
+                                                                         value_range=(1, 10),
+                                                                         default_value=5,
+                                                                         ),
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, step_size, UniformIntegerHyperparameter)

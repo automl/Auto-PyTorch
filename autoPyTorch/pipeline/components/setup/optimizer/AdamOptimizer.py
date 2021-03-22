@@ -10,6 +10,7 @@ import numpy as np
 from torch.optim import Adam
 
 from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer import BaseOptimizerComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class AdamOptimizer(BaseOptimizerComponent):
@@ -32,7 +33,6 @@ class AdamOptimizer(BaseOptimizerComponent):
         weight_decay: float,
         random_state: Optional[np.random.RandomState] = None,
     ):
-
         super().__init__()
         self.lr = lr
         self.beta1 = beta1
@@ -73,28 +73,28 @@ class AdamOptimizer(BaseOptimizerComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
-                                        beta1: Tuple[Tuple, float] = ((0.85, 0.999), 0.9),
-                                        beta2: Tuple[Tuple, float] = ((0.9, 0.9999), 0.9),
-                                        weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0)
-                                        ) -> ConfigurationSpace:
-
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="lr",
+                                                                  value_range=(1e-5, 1e-1),
+                                                                  default_value=1e-2,
+                                                                  log=True),
+        beta1: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="beta1",
+                                                                     value_range=(0.85, 0.999),
+                                                                     default_value=0.9),
+        beta2: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="beta2",
+                                                                     value_range=(0.9, 0.9999),
+                                                                     default_value=0.9),
+        weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weight_decay",
+                                                                            value_range=(0.0, 0.1),
+                                                                            default_value=0.0),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # The learning rate for the model
-        lr = UniformFloatHyperparameter('lr', lower=lr[0][0], upper=lr[0][1],
-                                        default_value=lr[1], log=lr[2])
-
-        beta1 = UniformFloatHyperparameter('beta1', lower=beta1[0][0], upper=beta1[0][1],
-                                           default_value=beta1[1])
-
-        beta2 = UniformFloatHyperparameter('beta2', lower=beta2[0][0], upper=beta2[0][1],
-                                           default_value=beta2[1])
-
-        weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
-                                                  default_value=weight_decay[1])
-
-        cs.add_hyperparameters([lr, beta1, beta2, weight_decay])
+        add_hyperparameter(cs, lr, UniformFloatHyperparameter)
+        add_hyperparameter(cs, beta1, UniformFloatHyperparameter)
+        add_hyperparameter(cs, beta2, UniformFloatHyperparameter)
+        add_hyperparameter(cs, weight_decay, UniformFloatHyperparameter)
 
         return cs

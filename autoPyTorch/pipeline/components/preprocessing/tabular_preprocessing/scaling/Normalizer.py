@@ -42,7 +42,7 @@ class Normalizer(BaseScaler):
         norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="norm",
                                                                     value_range=("mean_abs", "mean_squared", "max"),
                                                                     default_value="mean_squared",
-                                                                    log=False)
+                                                                    )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, norm, CategoricalHyperparameter)

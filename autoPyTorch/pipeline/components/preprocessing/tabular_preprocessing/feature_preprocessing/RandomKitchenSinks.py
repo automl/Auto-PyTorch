@@ -38,7 +38,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
         n_components: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='n_components',
                                                                             value_range=(0.5, 0.9),
                                                                             default_value=0.5,
-                                                                            log=False),
+                                                                            ),
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
                                                                      value_range=(3.0517578125e-05, 8),
                                                                      default_value=0.01,

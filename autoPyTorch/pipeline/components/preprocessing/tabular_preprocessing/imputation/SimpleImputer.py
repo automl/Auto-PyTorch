@@ -12,6 +12,7 @@ from sklearn.impute import SimpleImputer as SklearnSimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.base_imputer import BaseImputer
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
+
 class SimpleImputer(BaseImputer):
     """
     Impute missing values for categorical columns with '!missing!'
@@ -72,13 +73,14 @@ class SimpleImputer(BaseImputer):
                                                                                                "most_frequent",
                                                                                                "constant_zero"),
                                                                                   default_value="mean",
-                                                                                  log=False),
-        categorical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='numerical_strategy',
-                                                                                  value_range=("most_frequent",
-                                                                                               "constant_!missing!"),
-                                                                                  default_value="most_frequent",
-                                                                                  log=False)
-                                        ) -> ConfigurationSpace:
+                                                                                  ),
+        categorical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter='categorical_strategy',
+            value_range=("most_frequent",
+                         "constant_!missing!"),
+            default_value="most_frequent",
+            )
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         assert dataset_properties is not None, "To create hyperparameter search space" \
                                                ", dataset_properties should not be None"

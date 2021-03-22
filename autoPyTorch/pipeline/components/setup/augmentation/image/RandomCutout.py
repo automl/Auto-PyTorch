@@ -36,11 +36,11 @@ class RandomCutout(BaseImageAugmenter):
         use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
                                                                              value_range=(True, False),
                                                                              default_value=True,
-                                                                             log=False),
+                                                                             ),
         p: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="p",
                                                                  value_range=(0.2, 1.0),
                                                                  default_value=0.5,
-                                                                 log=False),
+                                                                 ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

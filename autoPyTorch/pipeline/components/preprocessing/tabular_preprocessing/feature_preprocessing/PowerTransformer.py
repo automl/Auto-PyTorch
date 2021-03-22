@@ -41,7 +41,7 @@ class PowerTransformer(autoPyTorchFeaturePreprocessingComponent):
             standardize: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='standardize',
                                                                      value_range=(True, False),
                                                                      default_value=True,
-                                                                     log=False),
+                                                                     ),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

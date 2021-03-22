@@ -52,7 +52,7 @@ class HyperparameterSearchSpace(NamedTuple):
     Attributes:
         hyperparameter (str):
             name of the hyperparameter
-        value_range (Iterable[HyperparameterValueType]):
+        value_range (Sequence[HyperparameterValueType]):
             range of the hyperparameter
         default_value (HyperparameterValueType):
             default value of the hyperparameter
@@ -62,7 +62,7 @@ class HyperparameterSearchSpace(NamedTuple):
     hyperparameter: str
     value_range: Sequence[HyperparameterValueType]
     default_value: HyperparameterValueType
-    log: bool
+    log: bool = False
 
 
 def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: str = "") -> Dict[str, Any]:
@@ -221,7 +221,7 @@ def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
                                           lower=hyperparameter.value_range[0],
                                           upper=hyperparameter.value_range[1],
                                           log=hyperparameter.log,
-                                          defaul_value=hyperparameter.default_value)
+                                          default_value=hyperparameter.default_value)
     if hyperparameter_type == UniformIntegerHyperparameter:
         assert len(hyperparameter.value_range) == 2, \
             "Int HP range update for %s is specified by the two upper " \
@@ -230,7 +230,7 @@ def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
                                             lower=hyperparameter.value_range[0],
                                             upper=hyperparameter.value_range[1],
                                             log=hyperparameter.log,
-                                            defaul_value=hyperparameter.default_value)
+                                            default_value=hyperparameter.default_value)
     raise ValueError('Unknown type: %s for hp %s' % (hyperparameter_type, hyperparameter.hyperparameter))
 
 
@@ -239,6 +239,7 @@ def add_hyperparameter(cs: ConfigurationSpace,
                        hyperparameter_type: Type[Hyperparameter]):
     """
     Adds the given hyperparameter to the given configuration space
+
     Args:
         cs (ConfigurationSpace):
             Configuration space where the hyperparameter must be added

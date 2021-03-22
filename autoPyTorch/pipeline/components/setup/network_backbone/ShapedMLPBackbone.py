@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
     get_shaped_neuron_counts,
 )
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class ShapedMLPBackbone(NetworkBackboneComponent):
@@ -75,57 +76,58 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
-                                        max_dropout: Tuple[Tuple, float] = ((0, 1), 0.5),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        mlp_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
-                                                                         'diamond', 'hexagon',
-                                                                         'brick', 'triangle', 'stairs'), 'funnel'),
-                                        activation: Tuple[Tuple, str] = (
-                                        tuple(_activations.keys()), list(_activations.keys())[0])
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
+                                                                          value_range=(1, 15),
+                                                                          default_value=5,
+                                                                          ),
+        max_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_dropout",
+                                                                           value_range=(0, 1),
+                                                                           default_value=0.5,
+                                                                           ),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                           value_range=(True, False),
+                                                                           default_value=False,
+                                                                           ),
+        max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
+                                                                         value_range=(10, 1024),
+                                                                         default_value=200,
+                                                                         ),
+        output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
+                                                                          value_range=(10, 1024),
+                                                                          default_value=200,
+                                                                          ),
+        mlp_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="mlp_shape",
+                                                                         value_range=('funnel', 'long_funnel',
+                                                                                      'diamond', 'hexagon',
+                                                                                      'brick', 'triangle',
+                                                                                      'stairs'),
+                                                                         default_value='funnel',
+                                                                         ),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0],
+                                                                          ),
+
+    ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 
         # The number of groups that will compose the resnet. That is,
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
-        num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=num_groups[0][0], upper=num_groups[0][1], default_value=num_groups[1])
-
-        mlp_shape = CategoricalHyperparameter('mlp_shape', choices=mlp_shape[0],
-                                              default_value=mlp_shape[1])
-
-        activation = CategoricalHyperparameter(
-            "activation", choices=activation[0],
-            default_value=activation[1]
-        )
-        (min_num_units, max_num_units), default_units = max_units[:2]
-        max_units = UniformIntegerHyperparameter(
-            "max_units",
-            lower=min_num_units,
-            upper=max_num_units,
-            default_value=default_units,
-        )
-
-        output_dim = UniformIntegerHyperparameter(
-            "output_dim",
-            lower=output_dim[0][0],
-            upper=output_dim[0][1],
-            default_value=output_dim[1]
-        )
-
-        cs.add_hyperparameters([num_groups, activation, mlp_shape, max_units, output_dim])
+        add_hyperparameter(cs, num_groups, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, mlp_shape, CategoricalHyperparameter)
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        add_hyperparameter(cs, max_units, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
 
         # We can have dropout in the network for
         # better generalization
-        use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
-        max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
-                                                 default_value=max_dropout[1])
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
+        max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+
         cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
