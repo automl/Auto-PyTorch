@@ -156,14 +156,14 @@ class TCNBackbone(NetworkBackboneComponent):
         cs.add_hyperparameter(dropout_hp)
         cs.add_condition(CS.EqualsCondition(dropout_hp, use_dropout_hp, True))
 
-        for i in range(0, max_num_blocks):
+        for i in range(0, int(max_num_blocks)):
             num_filter_search_space = HyperparameterSearchSpace(f"num_filter_{i}",
                                                                 value_range=num_filters.value_range,
                                                                 default_value=num_filters.default_value,
                                                                 log=num_filters.log)
             num_filters_hp = get_hyperparameter(num_filter_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_filters_hp)
-            if i >= min_num_blocks:
+            if i >= int(min_num_blocks):
                 cs.add_condition(CS.GreaterThanCondition(
                     num_filters_hp, num_blocks_hp, i))
 

@@ -204,15 +204,9 @@ def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
     if len(hyperparameter.value_range) == 0:
         raise ValueError(hyperparameter.hyperparameter + ': The range has to contain at least one element')
     if len(hyperparameter.value_range) == 1 and hyperparameter_type != CategoricalHyperparameter:
-        if isinstance(hyperparameter.value_range[0], bool):
-            return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
-        else:
-            return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0]))
+        return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
     if len(hyperparameter.value_range) == 2 and hyperparameter.value_range[0] == hyperparameter.value_range[1]:
-        if isinstance(hyperparameter.value_range[0], bool):
-            return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
-        else:
-            return Constant(hyperparameter.hyperparameter, int(hyperparameter.value_range[0]))
+        return Constant(hyperparameter.hyperparameter, hyperparameter.value_range[0])
     if hyperparameter_type == CategoricalHyperparameter:
         return CategoricalHyperparameter(hyperparameter.hyperparameter,
                                          choices=hyperparameter.value_range,
@@ -240,7 +234,7 @@ def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
 
 def add_hyperparameter(cs: ConfigurationSpace,
                        hyperparameter: HyperparameterSearchSpace,
-                       hyperparameter_type: Type[Hyperparameter]):
+                       hyperparameter_type: Type[Hyperparameter]) -> None:
     """
     Adds the given hyperparameter to the given configuration space
 
@@ -253,6 +247,6 @@ def add_hyperparameter(cs: ConfigurationSpace,
             type of the hyperparameter
 
     Returns:
-
+        None
     """
     return cs.add_hyperparameter(get_hyperparameter(hyperparameter, hyperparameter_type))

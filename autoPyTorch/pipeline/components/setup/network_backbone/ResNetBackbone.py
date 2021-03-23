@@ -156,7 +156,7 @@ class ResNetBackbone(NetworkBackboneComponent):
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
-        for i in range(0, max_num_groups + 1):
+        for i in range(0, int(max_num_groups) + 1):
 
             n_units_search_space = HyperparameterSearchSpace(hyperparameter='num_units_%d' % i,
                                                              value_range=num_units.value_range,

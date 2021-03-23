@@ -417,18 +417,18 @@ class BasePipeline(Pipeline):
                 # the components in the value range of search space update
                 # are in components of the choice module
                 if split_hyperparameter[0] == '__choice__':
-                    for component in update.value_range:
+                    for choice in update.value_range:
                         if include is not None and update.node_name in include.keys():
-                            if component not in include[update.node_name]:
-                                raise ValueError("Not found {} in include".format(component))
+                            if choice not in include[update.node_name]:
+                                raise ValueError("Not found {} in include".format(choice))
                         if exclude is not None and update.node_name in exclude.keys():
-                            if component in exclude[update.node_name]:
-                                raise ValueError("Found {} in exclude".format(component))
-                        if component not in components.keys():
+                            if choice in exclude[update.node_name]:
+                                raise ValueError("Found {} in exclude".format(choice))
+                        if choice not in components.keys():
                             raise ValueError("Unknown hyperparameter for choice {}. "
                                              "Expected update hyperparameter "
                                              "to be in {} got {}".format(node.__class__.__name__,
-                                                                         components.keys(), component))
+                                                                         components.keys(), choice))
                 # check if the component whose hyperparameter
                 # needs to be updated is in components of the
                 # choice module

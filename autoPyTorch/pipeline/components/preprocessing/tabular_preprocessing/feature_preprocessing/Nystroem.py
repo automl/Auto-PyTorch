@@ -75,11 +75,11 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
             if n_features == 1:
                 log = False
             else:
-                log = n_components[2]
+                log = n_components.log
             n_components = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                     value_range=(floor(n_components.value_range[0] * n_features),
-                                                                  ceil(n_components.value_range[1] * n_features)),
-                                                     default_value=ceil(n_components.default_value * n_features),
+                                                     value_range=(floor(int(n_components.value_range[0]) * n_features),
+                                                                  ceil(int(n_components.value_range[1]) * n_features)),
+                                                     default_value=ceil(int(n_components.default_value) * n_features),
                                                      log=log)
         else:
             n_components = HyperparameterSearchSpace(hyperparameter='n_components',

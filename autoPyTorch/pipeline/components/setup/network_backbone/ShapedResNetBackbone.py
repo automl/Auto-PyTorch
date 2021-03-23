@@ -81,8 +81,8 @@ class ShapedResNetBackbone(ResNetBackbone):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,  # type: ignore[override]
+    def get_hyperparameter_search_space(  # type: ignore[override]
+        dataset_properties: Optional[Dict] = None,
         resnet_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="resnet_shape",
                                                                             value_range=('funnel', 'long_funnel',
                                                                                          'diamond', 'hexagon',

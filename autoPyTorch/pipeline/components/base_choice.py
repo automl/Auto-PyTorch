@@ -252,7 +252,7 @@ class autoPyTorchChoice(object):
     def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
         """Allows the user to update a hyperparameter
 
-        Arguments:
+        Args:
             name {string} -- name of hyperparameter
             new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
             log {bool} -- is hyperparameter logscale
@@ -263,7 +263,7 @@ class autoPyTorchChoice(object):
     def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
-        Keyword Arguments:
+        Args:
             prefix {str} -- Only return search space updates with given prefix (default: {None})
 
         Returns:
@@ -280,5 +280,6 @@ class autoPyTorchChoice(object):
             if RETURN_ALL:
                 result[key] = self._cs_updates[key].get_search_space()
             elif re.search(f'^{prefix}', key) is not None:
+                assert isinstance(prefix, str)
                 result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
         return result

@@ -1,7 +1,6 @@
 import importlib
 import inspect
 import pkgutil
-import re
 import sys
 import warnings
 from collections import OrderedDict
@@ -265,25 +264,16 @@ class autoPyTorchComponent(BaseEstimator):
 
         self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
-        """Get the search space updates with the given prefix
-
-        Keyword Arguments:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+    def _get_search_space_updates(self) -> Dict[str, HyperparameterSearchSpace]:
+        """Get the search space updates
 
         Returns:
             dict -- Mapping of search space updates. Keys don't contain the prefix.
         """
-        RETURN_ALL = False
-        if prefix is None:
-            RETURN_ALL = True
 
         result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if RETURN_ALL:
-                result[key] = self._cs_updates[key].get_search_space()
-            elif re.search(f'^{prefix}', key) is not None:
-                result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
+            result[key] = self._cs_updates[key].get_search_space()
         return result

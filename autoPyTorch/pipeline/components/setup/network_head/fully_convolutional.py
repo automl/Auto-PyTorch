@@ -98,14 +98,14 @@ class FullyConvolutional2DHead(NetworkHeadComponent):
         cs.add_hyperparameters([num_layers_hp, activation_hp])
         cs.add_condition(CS.GreaterThanCondition(activation_hp, num_layers_hp, 1))
 
-        for i in range(1, max_num_layers):
+        for i in range(1, int(max_num_layers)):
             num_filters_search_space = HyperparameterSearchSpace(f"layer_{i}_filters",
                                                                  value_range=num_filters.value_range,
                                                                  default_value=num_filters.default_value,
                                                                  log=num_filters.log)
             num_filters_hp = get_hyperparameter(num_filters_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_filters_hp)
-            if i >= min_num_layers:
+            if i >= int(min_num_layers):
                 cs.add_condition(CS.GreaterThanCondition(num_filters_hp, num_layers_hp, i))
 
         return cs

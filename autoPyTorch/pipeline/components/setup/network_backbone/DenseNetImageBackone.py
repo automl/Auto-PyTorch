@@ -198,7 +198,7 @@ class DenseNetBackbone(NetworkBackboneComponent):
         cs.add_hyperparameters([use_dropout, dropout])
         cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
-        for i in range(1, max_num_blocks + 1):
+        for i in range(1, int(max_num_blocks) + 1):
 
             layer_search_space = HyperparameterSearchSpace(hyperparameter='layer_in_block_%d' % i,
                                                            value_range=num_layers.value_range,
@@ -206,7 +206,7 @@ class DenseNetBackbone(NetworkBackboneComponent):
                                                            log=num_layers.log)
             layer_hp = get_hyperparameter(layer_search_space, UniformIntegerHyperparameter)
 
-            if i > min_num_blocks:
+            if i > int(min_num_blocks):
                 cs.add_condition(CS.GreaterThanCondition(layer_hp, blocks_hp, i - 1))
 
         return cs

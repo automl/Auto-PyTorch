@@ -88,7 +88,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
         weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weight_decay",
                                                                             value_range=(0.0, 0.1),
                                                                             default_value=0.0),
-    ) -> ConfigurationSpace():
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # The learning rate for the model
