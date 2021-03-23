@@ -13,7 +13,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
