@@ -47,8 +47,6 @@ class TestNetworks:
         assert backbone == config.get('network_backbone:__choice__', None)
         assert head == config.get('network_head:__choice__', None)
         pipeline.set_hyperparameters(config)
-        # Need more epochs to make sure validation performance is met
-        fit_dictionary_tabular['epochs'] = 100
         # Early stop to the best configuration seen
         fit_dictionary_tabular['early_stopping'] = 50
 

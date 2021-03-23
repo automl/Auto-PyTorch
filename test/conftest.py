@@ -259,7 +259,9 @@ def get_tabular_data(task):
         y = y.iloc[0:200]
         y = (y - y.mean()) / y.std()
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
-
+    elif task == 'iris':
+        X, y = fetch_openml("iris", return_X_y=True, as_frame=True)
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
     else:
         raise ValueError("Unsupported task {}".format(task))
 

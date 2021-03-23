@@ -354,3 +354,61 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
                                                  search_space_updates=updates)
         self._assert_pipeline_search_space(pipeline, updates)
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
+def test_constant_pipeline_iris(fit_dictionary_tabular):
+    search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='__choice__',
+                                value_range=['MLPBackbone'],
+                                default_value='MLPBackbone')
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_groups',
+                                value_range=[1, 1],
+                                default_value=1)
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_units',
+                                value_range=[100],
+                                default_value=100)
+    search_space_updates.append(node_name='trainer',
+                                hyperparameter='__choice__',
+                                value_range=['StandardTrainer'],
+                                default_value='StandardTrainer')
+    search_space_updates.append(node_name='lr_scheduler',
+                                hyperparameter='__choice__',
+                                value_range=['NoScheduler'],
+                                default_value='NoScheduler')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='__choice__',
+                                value_range=['AdamOptimizer'],
+                                default_value='AdamOptimizer')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='AdamOptimizer:lr',
+                                value_range=[1e-2],
+                                default_value=1e-2)
+    pipeline = TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'],
+                                             search_space_updates=search_space_updates)
+
+    try:
+        pipeline.fit(fit_dictionary_tabular)
+    except Exception as e:
+        pytest.fail(f"Failed due to {e}")
+
+    # To make sure we fitted the model, there should be a
+    # run summary object with accuracy
+    run_summary = pipeline.named_steps['trainer'].run_summary
+    assert run_summary is not None
+
+    # Make sure that performance was properly captured
+    assert run_summary.performance_tracker['train_loss'][1] > 0
+    assert run_summary.total_parameter_count > 0
+    assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
+
+    # Make sure default pipeline achieves a good score for dummy datasets
+    epoch2loss = run_summary.performance_tracker['val_loss']
+    best_loss = min(list(epoch2loss.values()))
+    epoch_where_best = list(epoch2loss.keys())[list(epoch2loss.values()).index(best_loss)]
+    score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['accuracy']
+
+    assert score >= 0.9, run_summary.performance_tracker['val_metrics']
