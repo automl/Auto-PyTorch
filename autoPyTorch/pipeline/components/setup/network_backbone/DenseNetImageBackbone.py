@@ -93,7 +93,7 @@ class DenseNetBackbone(NetworkBackboneComponent):
         channels, iw, ih = input_shape
 
         growth_rate = self.config['growth_rate']
-        block_config = [self.config['layer_in_block_%d' % (i + 1)] for i in range(self.config['blocks'])]
+        block_config = [self.config['layer_in_block_%d' % (i + 1)] for i in range(self.config['num_blocks'])]
         num_init_features = 2 * growth_rate
         bn_size = 4
         drop_rate = self.config['dropout'] if self.config['use_dropout'] else 0
@@ -206,6 +206,7 @@ class DenseNetBackbone(NetworkBackboneComponent):
                                                            log=num_layers.log)
             layer_hp = get_hyperparameter(layer_search_space, UniformIntegerHyperparameter)
 
+            cs.add_hyperparameter(layer_hp)
             if i > int(min_num_blocks):
                 cs.add_condition(CS.GreaterThanCondition(layer_hp, blocks_hp, i - 1))
 

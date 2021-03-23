@@ -74,26 +74,26 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
                                                                           value_range=(2, 8),
                                                                           default_value=4,
                                                                           ),
-        num_init_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_init_filters',
-                                                                                value_range=(16, 64),
-                                                                                default_value=32,
-                                                                                ),
+        conv_init_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_init_filters',
+                                                                                 value_range=(16, 64),
+                                                                                 default_value=32,
+                                                                                 ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='activation',
                                                                           value_range=tuple(_activations.keys()),
                                                                           default_value=list(_activations.keys())[0],
                                                                           ),
-        kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='kernel_size',
-                                                                           value_range=(3, 5),
-                                                                           default_value=3,
-                                                                           ),
-        stride: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='stride',
-                                                                      value_range=(1, 3),
-                                                                      default_value=1,
-                                                                      ),
-        padding: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='padding',
-                                                                       value_range=(2, 3),
-                                                                       default_value=2,
-                                                                       ),
+        conv_kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_size',
+                                                                                value_range=(3, 5),
+                                                                                default_value=3,
+                                                                                ),
+        conv_kernel_stride: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_stride',
+                                                                                  value_range=(1, 3),
+                                                                                  default_value=1,
+                                                                                  ),
+        conv_kernel_padding: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_padding',
+                                                                                   value_range=(2, 3),
+                                                                                   default_value=2,
+                                                                                   ),
         pool_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='pool_size',
                                                                          value_range=(2, 3),
                                                                          default_value=2,
@@ -101,12 +101,12 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
     ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
-        add_hyperparameter(cs, num_init_filters, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, num_init_filters, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, num_layers, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_init_filters, UniformIntegerHyperparameter)
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
-        add_hyperparameter(cs, kernel_size, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, stride, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, padding, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_kernel_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_kernel_stride, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_kernel_padding, UniformIntegerHyperparameter)
         add_hyperparameter(cs, pool_size, UniformIntegerHyperparameter)
 
         return cs

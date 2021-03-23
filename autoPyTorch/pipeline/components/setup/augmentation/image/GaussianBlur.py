@@ -40,7 +40,7 @@ class GaussianBlur(BaseImageAugmenter):
                                                                          value_range=(0, 3),
                                                                          default_value=0,
                                                                          ),
-        sigma_offset: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="sigma_min",
+        sigma_offset: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="sigma_offset",
                                                                             value_range=(0.0, 3.0),
                                                                             default_value=0.5,
                                                                             ),

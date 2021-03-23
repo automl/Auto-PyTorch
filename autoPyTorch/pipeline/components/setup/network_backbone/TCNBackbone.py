@@ -157,7 +157,7 @@ class TCNBackbone(NetworkBackboneComponent):
         cs.add_condition(CS.EqualsCondition(dropout_hp, use_dropout_hp, True))
 
         for i in range(0, int(max_num_blocks)):
-            num_filter_search_space = HyperparameterSearchSpace(f"num_filter_{i}",
+            num_filter_search_space = HyperparameterSearchSpace(f"num_filters_{i}",
                                                                 value_range=num_filters.value_range,
                                                                 default_value=num_filters.default_value,
                                                                 log=num_filters.log)
