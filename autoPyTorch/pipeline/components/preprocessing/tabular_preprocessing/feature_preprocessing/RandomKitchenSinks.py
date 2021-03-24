@@ -42,7 +42,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
                                                                             ),
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
                                                                      value_range=(3.0517578125e-05, 8),
-                                                                     default_value=0.01,
+                                                                     default_value=1.0,
                                                                      log=True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()

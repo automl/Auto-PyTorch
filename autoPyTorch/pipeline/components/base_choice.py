@@ -250,12 +250,12 @@ class autoPyTorchChoice(object):
         assert isinstance(dataset_properties, dict), "dataset_properties must be a dictionary"
 
     def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
-        """Allows the user to update a hyperparameter
+        """
+        Applies search space update to the class
 
         Args:
-            name {string} -- name of hyperparameter
-            new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
-            log {bool} -- is hyperparameter logscale
+            hyperparameter_search_space_update (HyperparameterSearchSpaceUpdate):
+                Search Space update for the current autoPyTorchChoice module
         """
 
         self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
@@ -264,22 +264,20 @@ class autoPyTorchChoice(object):
         """Get the search space updates with the given prefix
 
         Args:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+            prefix (str):
+                Only return search space updates with given prefix (default: {None})
 
         Returns:
-            dict -- Mapping of search space updates. Keys don't contain the prefix.
+            Dict[str, HyperparameterSearchSpace]:
+                Mapping of search space updates. Keys don't contain the prefix.
         """
-        RETURN_ALL = False
-        if prefix is None:
-            RETURN_ALL = True
 
         result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if RETURN_ALL:
+            if prefix is None:
                 result[key] = self._cs_updates[key].get_search_space()
             elif re.search(f'^{prefix}', key) is not None:
-                assert isinstance(prefix, str)
                 result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
         return result

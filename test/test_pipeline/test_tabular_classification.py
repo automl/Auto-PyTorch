@@ -343,6 +343,8 @@ class TestTabularClassification:
                 continue
             name = name.split(':')
             hyperparameter_name = ':'.join(name[1:])
+            # Using NoEmbedding is safer for this test
+            # to avoid forbidden configuration errors
             if name[0] == 'network_embedding' and hyperparameter_name == '__choice__':
                 value_range = ('NoEmbedding',)
                 default_value = 'NoEmbedding'
@@ -359,9 +361,17 @@ class TestTabularClassification:
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
 def test_constant_pipeline_iris(fit_dictionary_tabular):
     search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name='feature_preprocessor',
+                                hyperparameter='__choice__',
+                                value_range=['PolynomialFeatures'],
+                                default_value='PolynomialFeatures')
+    search_space_updates.append(node_name='scaler',
+                                hyperparameter='__choice__',
+                                value_range=['StandardScaler'],
+                                default_value='StandardScaler')
     search_space_updates.append(node_name='network_backbone',
                                 hyperparameter='__choice__',
-                                value_range=['MLPBackbone'],
+                                value_range=['MLPBackbone', 'ShapedMLPBackbone'],
                                 default_value='MLPBackbone')
     search_space_updates.append(node_name='network_backbone',
                                 hyperparameter='MLPBackbone:num_groups',
@@ -390,10 +400,24 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
     pipeline = TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'],
                                              search_space_updates=search_space_updates)
 
+    fit_dictionary_tabular['additional_metrics'] = ['balanced_accuracy']
+
     try:
         pipeline.fit(fit_dictionary_tabular)
     except Exception as e:
         pytest.fail(f"Failed due to {e}")
+
+    configuration = pipeline.configuration
+
+    assert 'PolynomialFeatures' == configuration.get('feature_preprocessor:__choice__')
+    assert 'StandardScaler' == configuration.get('scaler:__choice__')
+    assert 'MLPBackbone' == configuration.get('network_backbone:__choice__')
+    assert 'StandardTrainer' == configuration.get('trainer:__choice__')
+    assert 'NoScheduler' == configuration.get('lr_scheduler:__choice__')
+    assert 'AdamOptimizer' == configuration.get('optimizer:__choice__')
+    assert 1 == configuration.get('network_backbone:MLPBackbone:num_groups')
+    assert 100 == configuration.get('network_backbone:MLPBackbone:num_units_1')
+    assert 1e-2 == configuration.get('optimizer:AdamOptimizer:lr')
 
     # To make sure we fitted the model, there should be a
     # run summary object with accuracy
@@ -403,12 +427,14 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
     # Make sure that performance was properly captured
     assert run_summary.performance_tracker['train_loss'][1] > 0
     assert run_summary.total_parameter_count > 0
-    assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
+    assert 'balanced_accuracy' in run_summary.performance_tracker['train_metrics'][1]
 
     # Make sure default pipeline achieves a good score for dummy datasets
     epoch2loss = run_summary.performance_tracker['val_loss']
     best_loss = min(list(epoch2loss.values()))
     epoch_where_best = list(epoch2loss.keys())[list(epoch2loss.values()).index(best_loss)]
-    score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['accuracy']
+    val_score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['balanced_accuracy']
+    train_score = run_summary.performance_tracker['train_metrics'][epoch_where_best]['balanced_accuracy']
 
-    assert score >= 0.9, run_summary.performance_tracker['val_metrics']
+    assert val_score >= 0.9, run_summary.performance_tracker['val_metrics']
+    assert train_score >= 0.9, run_summary.performance_tracker['train_metrics']
