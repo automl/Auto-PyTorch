@@ -4,6 +4,7 @@ from ConfigSpace.hyperparameters import (
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter
 )
+
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -54,9 +55,9 @@ def test_hyperparameter_search_space_update():
     config_space = dummy_component.get_hyperparameter_search_space(**new_updates)
 
     for i, (update, hp_type) in enumerate(zip(['X', 'Y', 'Z'],
-                                   [UniformIntegerHyperparameter,
-                                    UniformFloatHyperparameter,
-                                    CategoricalHyperparameter])):
+                                              [UniformIntegerHyperparameter,
+                                               UniformFloatHyperparameter,
+                                               CategoricalHyperparameter])):
 
         search_space_update = updates.updates[i]
         search_space = search_space_update.get_search_space()

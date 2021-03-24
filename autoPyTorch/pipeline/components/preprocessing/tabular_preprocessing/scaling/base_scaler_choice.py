@@ -81,7 +81,7 @@ class ScalerChoice(autoPyTorchChoice):
             if len(dataset_properties['numerical_columns']) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 if 'NoScaler' not in choice_hyperparameter.value_range:
-                    raise ValueError("Provided {} in choices, however, the dataset " \
+                    raise ValueError("Provided {} in choices, however, the dataset "
                                      "is incompatible with it".format(choice_hyperparameter.value_range))
 
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
