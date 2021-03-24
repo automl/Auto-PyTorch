@@ -164,6 +164,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
 
                 num_datapoints_val = X_val.shape[0]
 
+                #TODO needs to be fixed here!!!
                 X_test = np.concatenate([X_val[-self.sequence_length + 1:], X_test])
                 X_val = np.concatenate([X_train[-self.sequence_length+1:], X_val])
                 val_tensors = self._ser2seq(X_val, y_val, num_datapoints_val, num_features, num_targets)
@@ -172,23 +173,21 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             num_datapoints_test = X_test.shape[0]
             X_test = np.concatenate([X_train[-self.sequence_length + 1:], X_test])
             self.X_val_tail = X_test[-self.sequence_length + 1:] if self.sequence_length > 1 \
-                else np.zeros((0, population_size, num_features), dtype=X_test.dtype)
+                else np.zeros((0, population_size, num_features)).astype(dtype=X_test.dtype)
 
             test_tensors = self._ser2seq(X_test, y_test, num_datapoints_test, num_features, num_targets)
             datamanager.test_tensors = test_tensors
 
         elif val_tensors is not None:
             X_val, y_val = val_tensors
-            X_val = np.concatenate([X_train[-self.sequence_length+1:], X_val])
+            X_val = np.concatenate([X_train[-self.sequence_length + self.n_prediction_steps - 1:], X_val])
 
             # used for prediction
-            self.X_val_tail = X_val[-self.sequence_length+1:] if self.sequence_length > 1 \
-                else np.zeros((0, population_size, num_features), dtype=X_val.dtype)
+            self.X_val_tail = X_val[-self.sequence_length + self.n_prediction_steps - 1:]
             val_tensors = self._ser2seq(X_val, y_val, num_datapoints, num_features, num_targets)
             datamanager.val_tensors = val_tensors
         else:
-            self.X_val_tail = X_train[-self.sequence_length+1:] if self.sequence_length > 1 \
-                else np.zeros((0, population_size, num_features), dtype=X_train.dtype)
+            self.X_val_tail = X_train[-self.sequence_length + self.n_prediction_steps - 1:]
 
         train_tensors = self._ser2seq(X_train, y_train, num_datapoints, num_features, num_targets)
         datamanager.train_tensors = train_tensors
@@ -212,8 +211,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             [num_datapoints * population_size, num_targets]
         """
         X_in = np.concatenate([np.roll(X_in, shift=i, axis=0) for i in range(0, -self.sequence_length, -1)],
-                              axis=2,
-                              dtype=np.float32)[:num_datapoints]
+                              axis=2).astype(np.float32)[:num_datapoints]
         X_in = X_in.reshape((-1, self.sequence_length, num_features))
         y_in = y_in.reshape((-1, num_targets))
         return X_in, y_in
@@ -245,8 +243,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
 
         X = np.concatenate([self.X_val_tail, X])
         X = np.concatenate([np.roll(X, shift=i, axis=0) for i in range(0, -self.sequence_length, -1)],
-                           axis=2,
-                           dtype=np.float32)[:num_points_X_in]
+                           axis=2).astype(np.float32)[:num_points_X_in]
         X = X.reshape((-1, self.sequence_length, self.num_features))
 
 
