@@ -351,7 +351,7 @@ class AbstractEvaluator(object):
         if isinstance(self.configuration, int):
             pipeline = self.pipeline_class(config=self.configuration,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         elif isinstance(self.configuration, Configuration):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
@@ -364,7 +364,7 @@ class AbstractEvaluator(object):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         else:
             raise ValueError("Invalid configuration entered")
         return pipeline
