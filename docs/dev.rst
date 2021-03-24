@@ -22,7 +22,7 @@ AutoPyTorch relies on Scikit-Learn `Pipeline <https://scikit-learn.org/stable/mo
 In other words, each of the individual models fitted by SMAC are (and comply) with Scikit-Learn pipeline and framework. For example, when a pipeline is fitted,
 we use pickle to save it to disk as stated `here <https://scikit-learn.org/stable/modules/model_persistence.html>`_. SMAC runs an optimization loop that proposes new
 configurations based on bayesian optimization, which comply with the package `ConfigSpace <https://automl.github.io/ConfigSpace/master/>`_. These configurations are
-translated to a pipeline configuration, fitted and saved to disc using the function evaluator `ExecuteTaFuncWithQueue`. The later is basically a worker that that
+translated to a pipeline configuration, fitted and saved to disc using the function evaluator `ExecuteTaFuncWithQueue`. The latter is basically a worker that that
 reads a dataset from disc, fits a pipeline, and collect the performance result which is communicated back to the main process via a Queue. This worker manages
 resources using `Pynisher <https://github.com/automl/pynisher>`_, and it usually does so by creating a new process.
 
