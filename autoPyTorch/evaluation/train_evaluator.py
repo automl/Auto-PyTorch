@@ -143,6 +143,8 @@ class TrainEvaluator(AbstractEvaluator):
             # weights for opt_losses.
             opt_fold_weights = [np.NaN] * self.num_folds
 
+            additional_run_info = {}
+
             for i, (train_split, test_split) in enumerate(self.splits):
 
                 pipeline = self.pipelines[i]
@@ -178,7 +180,8 @@ class TrainEvaluator(AbstractEvaluator):
                 # number of optimization data points for this fold.
                 # Used for weighting the average.
                 opt_fold_weights[i] = len(train_split)
-
+                additional_run_info.update(pipeline.get_additional_run_info() if hasattr(
+                    pipeline, 'get_additional_run_info') else {})
             # Compute weights of each fold based on the number of samples in each
             # fold.
             train_fold_weights = [w / sum(train_fold_weights)

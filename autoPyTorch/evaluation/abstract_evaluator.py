@@ -141,8 +141,8 @@ class DummyClassificationPipeline(DummyClassifier):
     def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
         return False
 
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
+        return {}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return {
@@ -182,8 +182,8 @@ class DummyRegressionPipeline(DummyRegressor):
     def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
         return False
 
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
+        return {}
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
