@@ -181,7 +181,7 @@ class TrainEvaluator(AbstractEvaluator):
                 # Used for weighting the average.
                 opt_fold_weights[i] = len(train_split)
                 additional_run_info.update(pipeline.get_additional_run_info() if hasattr(
-                    pipeline, 'get_additional_run_info') else {})
+                    pipeline, 'get_additional_run_info') and pipeline.get_additional_run_info() is not None else {})
             # Compute weights of each fold based on the number of samples in each
             # fold.
             train_fold_weights = [w / sum(train_fold_weights)

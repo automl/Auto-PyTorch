@@ -14,6 +14,8 @@ import sklearn
 import sklearn.datasets
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
+from smac.runhistory.runhistory import RunHistory
+
 import torch
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
@@ -390,7 +392,7 @@ def test_tabular_input_support(openml_id, backend):
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
 
     with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
-        AutoMLSMBOMock.return_value = ({}, {}, 'epochs')
+        AutoMLSMBOMock.return_value = (RunHistory(), {}, 'epochs')
         estimator.search(
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
