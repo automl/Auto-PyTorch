@@ -95,7 +95,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         num_groups: Tuple[Tuple, int] = ((1, 15), 5),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        num_units: Tuple[Tuple, int, bool] = ((10, 1024), 200, True),
                                         activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
                                                                          list(_activations.keys())[0]),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
@@ -145,7 +145,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                 "num_units_%d" % i,
                 lower=num_units[0][0],
                 upper=num_units[0][1],
-                default_value=num_units[1]
+                default_value=num_units[1],
+                log=num_units[2],
             )
             blocks_per_group = UniformIntegerHyperparameter(
                 "blocks_per_group_%d" % i,
