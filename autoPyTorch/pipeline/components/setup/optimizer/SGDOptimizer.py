@@ -82,6 +82,7 @@ class SGDOptimizer(BaseOptimizerComponent):
         lr = UniformFloatHyperparameter('lr', lower=lr[0][0], upper=lr[0][1],
                                         default_value=lr[1], log=lr[2])
 
+        # TODO should be refactored into l2 regularization in the future
         weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
                                                   default_value=weight_decay[1])
 
