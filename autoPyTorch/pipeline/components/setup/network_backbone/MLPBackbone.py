@@ -73,7 +73,7 @@ class MLPBackbone(NetworkBackboneComponent):
                                         activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
                                                                          list(_activations.keys())[0]),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        num_units: Tuple[Tuple, int, bool] = ((10, 1024), 200, True),
                                         dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5)
                                         ) -> ConfigurationSpace:
 
@@ -102,7 +102,8 @@ class MLPBackbone(NetworkBackboneComponent):
             n_units_hp = UniformIntegerHyperparameter("num_units_%d" % i,
                                                       lower=num_units[0][0],
                                                       upper=num_units[0][1],
-                                                      default_value=num_units[1])
+                                                      default_value=num_units[1],
+                                                      log=num_units[2],)
             cs.add_hyperparameter(n_units_hp)
 
             if i > min_mlp_layers:

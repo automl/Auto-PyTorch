@@ -85,7 +85,7 @@ class RMSpropOptimizer(BaseOptimizerComponent):
                                         lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
                                         alpha: Tuple[Tuple, float] = ((0.1, 0.99), 0.99),
                                         use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
-                                        weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0),
+                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 0.0),
                                         momentum: Tuple[Tuple, float] = ((0.0, 0.99), 0.0),
                                         ) -> ConfigurationSpace:
 
@@ -105,7 +105,7 @@ class RMSpropOptimizer(BaseOptimizerComponent):
         )
 
         weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
-                                                  default_value=weight_decay[1])
+                                                  default_value=weight_decay[1], log=weight_decay[2])
 
         momentum = UniformFloatHyperparameter('momentum', lower=momentum[0][0], upper=momentum[0][1],
                                               default_value=momentum[1])

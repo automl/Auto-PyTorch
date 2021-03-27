@@ -85,7 +85,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                                         use_batch_norm: Tuple[Tuple, bool] = ((True, False), True),
                                         use_dropout: Tuple[Tuple, bool] = ((True, False), False),
                                         use_skip_connection: Tuple[Tuple, bool] = ((True, False), True),
-                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        max_units: Tuple[Tuple, int, bool] = ((10, 1024), 200, True),
                                         blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
                                         max_dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
                                         multi_branch_choice: Tuple[Tuple, str] = (('shake-drop', 'shake-shake',
@@ -96,7 +96,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                             'brick', 'triangle', 'stairs'), 'funnel'),
                                         activation: Tuple[Tuple, str] = (
                                         tuple(_activations.keys()), list(_activations.keys())[0]),
-                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
+                                        output_dim: Tuple[Tuple, int, bool] = ((10, 1024), 200, True),
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -124,11 +124,13 @@ class ShapedResNetBackbone(ResNetBackbone):
             default_value=activation[1]
         )
         (min_num_units, max_num_units), default_units = max_units[:2]
+        log_num_units = max_units[2]
         output_dim = UniformIntegerHyperparameter(
             "output_dim",
             lower=output_dim[0][0],
             upper=output_dim[0][1],
-            default_value=output_dim[1]
+            default_value=output_dim[1],
+            log=output_dim[2],
         )
 
         cs.add_hyperparameters([num_groups, blocks_per_group, activation, output_dim])
@@ -161,7 +163,8 @@ class ShapedResNetBackbone(ResNetBackbone):
             "max_units",
             lower=min_num_units,
             upper=max_num_units,
-            default_value=default_units
+            default_value=default_units,
+            log=log_num_units,
         )
         cs.add_hyperparameters([max_units])
 

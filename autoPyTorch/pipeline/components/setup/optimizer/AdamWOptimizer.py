@@ -83,7 +83,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
                                         beta1: Tuple[Tuple, float] = ((0.85, 0.999), 0.9),
                                         beta2: Tuple[Tuple, float] = ((0.9, 0.9999), 0.9),
                                         use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
-                                        weight_decay: Tuple[Tuple, float] = ((0.0, 0.1), 0.0)
+                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 0.0, True)
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -105,7 +105,7 @@ class AdamWOptimizer(BaseOptimizerComponent):
         )
 
         weight_decay = UniformFloatHyperparameter('weight_decay', lower=weight_decay[0][0], upper=weight_decay[0][1],
-                                                  default_value=weight_decay[1])
+                                                  default_value=weight_decay[1], log=weight_decay[2])
 
         cs.add_hyperparameters([lr, beta1, beta2, weight_decay, use_wd])
 
