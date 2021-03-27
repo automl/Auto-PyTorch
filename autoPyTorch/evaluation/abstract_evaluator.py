@@ -197,8 +197,6 @@ class DummyRegressionPipeline(DummyRegressor):
     """
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
-    def __init__(self, config: Configuration,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None) -> None:
         self.configuration = config
         if config == 1:
