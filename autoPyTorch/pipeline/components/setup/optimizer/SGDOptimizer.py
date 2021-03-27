@@ -77,7 +77,7 @@ class SGDOptimizer(BaseOptimizerComponent):
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         lr: Tuple[Tuple, float, bool] = ((1e-5, 1e-1), 1e-2, True),
                                         use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
-                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 0.0, True),
+                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 1E-4, True),
                                         momentum: Tuple[Tuple, float] = ((0.0, 0.99), 0.0),
                                         ) -> ConfigurationSpace:
 

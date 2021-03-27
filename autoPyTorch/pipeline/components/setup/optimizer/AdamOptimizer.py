@@ -83,7 +83,7 @@ class AdamOptimizer(BaseOptimizerComponent):
                                         beta1: Tuple[Tuple, float] = ((0.85, 0.999), 0.9),
                                         beta2: Tuple[Tuple, float] = ((0.9, 0.9999), 0.9),
                                         use_weight_decay: Tuple[Tuple, bool] = ((True, False), True),
-                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 0.0, True)
+                                        weight_decay: Tuple[Tuple, float, bool] = ((1E-7, 0.1), 1E-4, True)
                                         ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
