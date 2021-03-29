@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9ce89ef700> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7ff8fe8a3760> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -52,10 +52,7 @@ with AutoPyTorch
       network_backbone:ShapedMLPBackbone:output_dim, Value: 200
       network_backbone:ShapedMLPBackbone:use_dropout, Value: False
       network_backbone:__choice__, Value: 'ShapedMLPBackbone'
-      network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.5
-      network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.5
-      network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 5
-      network_embedding:__choice__, Value: 'LearnedEntityEmbedding'
+      network_embedding:__choice__, Value: 'NoEmbedding'
       network_head:__choice__, Value: 'fully_connected'
       network_head:fully_connected:activation, Value: 'relu'
       network_head:fully_connected:num_layers, Value: 2
@@ -69,7 +66,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001852273941040039, budget=0), TrajEntry(train_perf=0.32685194037111853, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019583702087402344, budget=0), TrajEntry(train_perf=0.5533776866210233, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -85,10 +82,7 @@ with AutoPyTorch
       network_backbone:ShapedMLPBackbone:output_dim, Value: 200
       network_backbone:ShapedMLPBackbone:use_dropout, Value: False
       network_backbone:__choice__, Value: 'ShapedMLPBackbone'
-      network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.5
-      network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.5
-      network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 5
-      network_embedding:__choice__, Value: 'LearnedEntityEmbedding'
+      network_embedding:__choice__, Value: 'NoEmbedding'
       network_head:__choice__, Value: 'fully_connected'
       network_head:fully_connected:activation, Value: 'relu'
       network_head:fully_connected:num_layers, Value: 2
@@ -102,12 +96,13 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.450744152069092, wallclock_time=6.744311094284058, budget=5.555555555555555)]
-    {'r2': 0.8638329676730996}
-    |    | Preprocessing                              | Estimator                                                    |   Weight |
-    |---:|:-------------------------------------------|:-------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.76 |
-    |  1 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
+    , ta_runs=1, ta_time_used=4.2590272426605225, wallclock_time=7.846783399581909, budget=5.555555555555555)]
+    {'r2': 0.9072018192915265}
+    |    | Preprocessing                              | Estimator                                                       |   Weight |
+    |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.94 |
+    |  1 | SimpleImputer,NoEncoder,NoScaler           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 
 
 
@@ -199,7 +194,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  14.448 seconds)
+   **Total running time of the script:** ( 5 minutes  12.548 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_regression.py:

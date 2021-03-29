@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f9ce89ef700&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff8fe8a3760&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -138,10 +138,7 @@ with AutoPyTorch</p>
   network_backbone:ShapedMLPBackbone:output_dim, Value: 200
   network_backbone:ShapedMLPBackbone:use_dropout, Value: False
   network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.5
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.5
-  network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 5
-  network_embedding:__choice__, Value: &#39;LearnedEntityEmbedding&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
   network_head:fully_connected:activation, Value: &#39;relu&#39;
   network_head:fully_connected:num_layers, Value: 2
@@ -155,7 +152,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001852273941040039, budget=0), TrajEntry(train_perf=0.32685194037111853, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019583702087402344, budget=0), TrajEntry(train_perf=0.5533776866210233, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -171,10 +168,7 @@ with AutoPyTorch</p>
   network_backbone:ShapedMLPBackbone:output_dim, Value: 200
   network_backbone:ShapedMLPBackbone:use_dropout, Value: False
   network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.5
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.5
-  network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 5
-  network_embedding:__choice__, Value: &#39;LearnedEntityEmbedding&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
   network_head:fully_connected:activation, Value: &#39;relu&#39;
   network_head:fully_connected:num_layers, Value: 2
@@ -188,12 +182,13 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.450744152069092, wallclock_time=6.744311094284058, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.8638329676730996}
-|    | Preprocessing                              | Estimator                                                    |   Weight |
-|---:|:-------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.76 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
+, ta_runs=1, ta_time_used=4.2590272426605225, wallclock_time=7.846783399581909, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.9072018192915265}
+|    | Preprocessing                              | Estimator                                                       |   Weight |
+|---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.94 |
+|  1 | SimpleImputer,NoEncoder,NoScaler           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -278,7 +273,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  14.448 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  12.548 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -313,7 +308,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.3.<br/>
     </p>
   </div>
 </footer>
