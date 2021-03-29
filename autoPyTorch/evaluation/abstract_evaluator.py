@@ -54,6 +54,23 @@ __all__ = [
 
 
 class MyTraditionalTabularClassificationPipeline(BaseEstimator):
+    """
+    A wrapper class that holds a pipeline for traditional classification.
+    Estimators like CatBoost, and Random Forest are considered traditional machine
+    learning models and are fitted before neural architecture search.
+
+    This class is an interface to fit a pipeline containing a traditional machine
+    learning model, and is the final object that is stored for inference.
+
+    Attributes:
+        dataset_properties (Dict[str, Any]):
+            A dictionary containing dataset specific information
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
     def __init__(self, config: str,
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
@@ -98,6 +115,21 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
 
 
 class DummyClassificationPipeline(DummyClassifier):
+    """
+    A wrapper class that holds a pipeline for dummy classification.
+
+    A wrapper over DummyClassifier of scikit learn. This estimator is considered the
+    worst performing model. In case of failure, at least this model will be fitted.
+
+    Attributes:
+        dataset_properties (Dict[str, Any]):
+            A dictionary containing dataset specific information
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None
@@ -148,6 +180,21 @@ class DummyClassificationPipeline(DummyClassifier):
 
 
 class DummyRegressionPipeline(DummyRegressor):
+    """
+    A wrapper class that holds a pipeline for dummy regression.
+
+    A wrapper over DummyRegressor of scikit learn. This estimator is considered the
+    worst performing model. In case of failure, at least this model will be fitted.
+
+    Attributes:
+        dataset_properties (Dict[str, Any]):
+            A dictionary containing dataset specific information
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None) -> None:
@@ -351,7 +398,7 @@ class AbstractEvaluator(object):
         if isinstance(self.configuration, int):
             pipeline = self.pipeline_class(config=self.configuration,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         elif isinstance(self.configuration, Configuration):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
@@ -364,7 +411,7 @@ class AbstractEvaluator(object):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         else:
             raise ValueError("Invalid configuration entered")
         return pipeline

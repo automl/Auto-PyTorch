@@ -1,3 +1,5 @@
+import flaky
+
 import numpy as np
 
 import pytest
@@ -51,6 +53,7 @@ class TestFeaturePreprocessors:
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)
 
+    @flaky.flaky(max_runs=3)
     def test_pipeline_fit_include(self, fit_dictionary_tabular, preprocessor):
         """
         This test ensures that a tabular classification
