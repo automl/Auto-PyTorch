@@ -333,4 +333,111 @@ class TestTabularClassification:
         except AssertionError as e:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
-            assert 'fully_connected:units_layer' in e.args[0]
+            assert 'fully_connected:units_layer' in e.args[0], e.args[0]
+
+    def test_set_choices_updates(self, fit_dictionary_tabular):
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
+                              'task_type': 'tabular_classification'}
+        config_dict = TabularClassificationPipeline(dataset_properties=dataset_properties). \
+            get_hyperparameter_search_space()._hyperparameters
+        updates = HyperparameterSearchSpaceUpdates()
+        for i, (name, hyperparameter) in enumerate(config_dict.items()):
+            if '__choice__' not in name:
+                continue
+            name = name.split(':')
+            hyperparameter_name = ':'.join(name[1:])
+            # Using NoEmbedding is safer for this test
+            # to avoid forbidden configuration errors
+            if name[0] == 'network_embedding' and hyperparameter_name == '__choice__':
+                value_range = ('NoEmbedding',)
+                default_value = 'NoEmbedding'
+            else:
+                value_range = (hyperparameter.choices[0],)
+                default_value = hyperparameter.choices[0]
+            updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
+                           value_range=value_range, default_value=default_value)
+        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                 search_space_updates=updates)
+        self._assert_pipeline_search_space(pipeline, updates)
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
+def test_constant_pipeline_iris(fit_dictionary_tabular):
+    search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name='feature_preprocessor',
+                                hyperparameter='__choice__',
+                                value_range=['PolynomialFeatures'],
+                                default_value='PolynomialFeatures')
+    search_space_updates.append(node_name='scaler',
+                                hyperparameter='__choice__',
+                                value_range=['StandardScaler'],
+                                default_value='StandardScaler')
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='__choice__',
+                                value_range=['MLPBackbone', 'ShapedMLPBackbone'],
+                                default_value='MLPBackbone')
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_groups',
+                                value_range=[1, 1],
+                                default_value=1)
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_units',
+                                value_range=[100],
+                                default_value=100)
+    search_space_updates.append(node_name='trainer',
+                                hyperparameter='__choice__',
+                                value_range=['StandardTrainer'],
+                                default_value='StandardTrainer')
+    search_space_updates.append(node_name='lr_scheduler',
+                                hyperparameter='__choice__',
+                                value_range=['NoScheduler'],
+                                default_value='NoScheduler')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='__choice__',
+                                value_range=['AdamOptimizer'],
+                                default_value='AdamOptimizer')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='AdamOptimizer:lr',
+                                value_range=[1e-2],
+                                default_value=1e-2)
+    pipeline = TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'],
+                                             search_space_updates=search_space_updates)
+
+    fit_dictionary_tabular['additional_metrics'] = ['balanced_accuracy']
+
+    try:
+        pipeline.fit(fit_dictionary_tabular)
+    except Exception as e:
+        pytest.fail(f"Failed due to {e}")
+
+    configuration = pipeline.configuration
+
+    assert 'PolynomialFeatures' == configuration.get('feature_preprocessor:__choice__')
+    assert 'StandardScaler' == configuration.get('scaler:__choice__')
+    assert 'MLPBackbone' == configuration.get('network_backbone:__choice__')
+    assert 'StandardTrainer' == configuration.get('trainer:__choice__')
+    assert 'NoScheduler' == configuration.get('lr_scheduler:__choice__')
+    assert 'AdamOptimizer' == configuration.get('optimizer:__choice__')
+    assert 1 == configuration.get('network_backbone:MLPBackbone:num_groups')
+    assert 100 == configuration.get('network_backbone:MLPBackbone:num_units_1')
+    assert 1e-2 == configuration.get('optimizer:AdamOptimizer:lr')
+
+    # To make sure we fitted the model, there should be a
+    # run summary object with accuracy
+    run_summary = pipeline.named_steps['trainer'].run_summary
+    assert run_summary is not None
+
+    # Make sure that performance was properly captured
+    assert run_summary.performance_tracker['train_loss'][1] > 0
+    assert run_summary.total_parameter_count > 0
+    assert 'balanced_accuracy' in run_summary.performance_tracker['train_metrics'][1]
+
+    # Make sure default pipeline achieves a good score for dummy datasets
+    epoch2loss = run_summary.performance_tracker['val_loss']
+    best_loss = min(list(epoch2loss.values()))
+    epoch_where_best = list(epoch2loss.keys())[list(epoch2loss.values()).index(best_loss)]
+    val_score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['balanced_accuracy']
+    train_score = run_summary.performance_tracker['train_metrics'][epoch_where_best]['balanced_accuracy']
+
+    assert val_score >= 0.9, run_summary.performance_tracker['val_metrics']
+    assert train_score >= 0.9, run_summary.performance_tracker['train_metrics']

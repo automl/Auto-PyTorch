@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,6 +11,7 @@ import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class CosineAnnealingLR(BaseLRComponent):
@@ -56,16 +57,18 @@ class CosineAnnealingLR(BaseLRComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
-            'shortname': 'CosineAnnealingWarmRestarts',
-            'name': 'Cosine Annealing WarmRestarts',
+            'shortname': 'CosineAnnealing',
+            'name': 'Cosine Annealing',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        T_max: Tuple[Tuple[int, int], int] = ((10, 500), 200)
-                                        ) -> ConfigurationSpace:
-        T_max = UniformIntegerHyperparameter(
-            "T_max", T_max[0][0], T_max[0][1], default_value=T_max[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        T_max: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_max',
+                                                                     value_range=(10, 500),
+                                                                     default_value=200,
+                                                                     )
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([T_max])
+        add_hyperparameter(cs, T_max, UniformIntegerHyperparameter)
         return cs

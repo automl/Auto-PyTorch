@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -12,6 +12,7 @@ import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class StepLR(BaseLRComponent):
@@ -25,13 +26,13 @@ class StepLR(BaseLRComponent):
         gamma (float) – Multiplicative factor of learning rate decay. Default: 0.1.
 
     """
+
     def __init__(
         self,
         step_size: int,
         gamma: float,
         random_state: Optional[np.random.RandomState] = None
     ):
-
         super().__init__()
         self.gamma = gamma
         self.step_size = step_size
@@ -68,14 +69,20 @@ class StepLR(BaseLRComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        gamma: Tuple[Tuple, float] = ((0.001, 0.9), 0.1),
-                                        step_size: Tuple[Tuple, int] = ((1, 10), 5)
-                                        ) -> ConfigurationSpace:
-        gamma = UniformFloatHyperparameter(
-            "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])
-        step_size = UniformIntegerHyperparameter(
-            "step_size", step_size[0][0], step_size[0][1], default_value=step_size[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
+                                                                     value_range=(0.001, 0.9),
+                                                                     default_value=0.1,
+                                                                     ),
+        step_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_size',
+                                                                         value_range=(1, 10),
+                                                                         default_value=5,
+                                                                         ),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([gamma, step_size])
+
+        add_hyperparameter(cs, step_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
+
         return cs

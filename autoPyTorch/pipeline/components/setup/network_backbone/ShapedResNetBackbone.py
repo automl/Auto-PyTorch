@@ -15,6 +15,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
     get_shaped_neuron_counts,
 )
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class ShapedResNetBackbone(ResNetBackbone):
@@ -80,81 +81,76 @@ class ShapedResNetBackbone(ResNetBackbone):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,  # type: ignore[override]
-                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        max_units: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
-                                        max_dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
-                                        max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5),
-                                        resnet_shape: Tuple[Tuple, str] = (('funnel', 'long_funnel',
-                                                                            'diamond', 'hexagon',
-                                                                            'brick', 'triangle', 'stairs'), 'funnel'),
-                                        activation: Tuple[Tuple, str] = (
-                                        tuple(_activations.keys()), list(_activations.keys())[0]),
-                                        output_dim: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(  # type: ignore[override]
+        dataset_properties: Optional[Dict] = None,
+        resnet_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="resnet_shape",
+                                                                            value_range=('funnel', 'long_funnel',
+                                                                                         'diamond', 'hexagon',
+                                                                                         'brick', 'triangle',
+                                                                                         'stairs'),
+                                                                            default_value='funnel',
+                                                                            ),
+        output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
+                                                                          value_range=(10, 1024),
+                                                                          default_value=200,
+                                                                          ),
+        num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
+                                                                          value_range=(1, 15),
+                                                                          default_value=5,
+                                                                          ),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                           value_range=(True, False),
+                                                                           default_value=False,
+                                                                           ),
+        max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
+                                                                         value_range=(10, 1024),
+                                                                         default_value=200),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0]),
+        blocks_per_group: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="blocks_per_group",
+                                                                                value_range=(1, 4),
+                                                                                default_value=2),
+        max_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_dropout",
+                                                                           value_range=(0, 0.8),
+                                                                           default_value=0.5),
+        use_shake_shake: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_shake",
+                                                                               value_range=(True, False),
+                                                                               default_value=True),
+        use_shake_drop: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_drop",
+                                                                              value_range=(True, False),
+                                                                              default_value=True),
+        max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="max_shake_drop_probability",
+            value_range=(0, 1),
+            default_value=0.5),
+    ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
 
         # Support for different shapes
-        resnet_shape = CategoricalHyperparameter(
-            'resnet_shape',
-            choices=resnet_shape[0],
-            default_value=resnet_shape[1]
-        )
-        cs.add_hyperparameter(resnet_shape)
+        add_hyperparameter(cs, resnet_shape, CategoricalHyperparameter)
 
         # The number of groups that will compose the resnet. That is,
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
-        num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=num_groups[0][0], upper=num_groups[0][1], default_value=num_groups[1])
+        add_hyperparameter(cs, num_groups, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, blocks_per_group, UniformIntegerHyperparameter)
 
-        blocks_per_group = UniformIntegerHyperparameter(
-            "blocks_per_group", lower=blocks_per_group[0][0],
-            upper=blocks_per_group[0][1],
-            default_value=blocks_per_group[1])
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
 
-        activation = CategoricalHyperparameter(
-            "activation", choices=activation[0],
-            default_value=activation[1]
-        )
-        (min_num_units, max_num_units), default_units = max_units[:2]
-        output_dim = UniformIntegerHyperparameter(
-            "output_dim",
-            lower=output_dim[0][0],
-            upper=output_dim[0][1],
-            default_value=output_dim[1]
-        )
-
-        cs.add_hyperparameters([num_groups, blocks_per_group, activation, output_dim])
-
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
-                                                    default_value=use_shake_shake[1])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
-                                                   default_value=use_shake_drop[1])
-        shake_drop_prob = UniformFloatHyperparameter(
-            "max_shake_drop_probability",
-            lower=max_shake_drop_probability[0][0],
-            upper=max_shake_drop_probability[0][1],
-            default_value=max_shake_drop_probability[1])
+        use_shake_shake = get_hyperparameter(use_shake_shake, CategoricalHyperparameter)
+        use_shake_drop = get_hyperparameter(use_shake_drop, CategoricalHyperparameter)
+        shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 
-        max_units = UniformIntegerHyperparameter(
-            "max_units",
-            lower=min_num_units,
-            upper=max_num_units,
-            default_value=default_units
-        )
-        cs.add_hyperparameters([max_units])
+        add_hyperparameter(cs, max_units, UniformIntegerHyperparameter)
 
-        use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
-        max_dropout = UniformFloatHyperparameter("max_dropout", lower=max_dropout[0][0], upper=max_dropout[0][1],
-                                                 default_value=max_dropout[1])
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
+        max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+
         cs.add_hyperparameters([use_dropout])
         cs.add_hyperparameters([max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,7 +11,7 @@ import numpy as np
 import torch
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
 class BaseNetworkInitializerComponent(autoPyTorchSetupComponent):
@@ -72,16 +72,16 @@ class BaseNetworkInitializerComponent(autoPyTorchSetupComponent):
         return X
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        bias_strategy: Tuple[Tuple, str] = (('Zero', 'Normal'), 'Normal')
-                                        ) -> ConfigurationSpace:
-
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        bias_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bias_strategy",
+                                                                             value_range=('Zero', 'Normal'),
+                                                                             default_value='Normal')
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # The strategy for bias initializations
-        bias_strategy = CategoricalHyperparameter(
-            "bias_strategy", choices=bias_strategy[0], default_value=bias_strategy[1])
-        cs.add_hyperparameters([bias_strategy])
+        add_hyperparameter(cs, bias_strategy, CategoricalHyperparameter)
         return cs
 
     def __str__(self) -> str:

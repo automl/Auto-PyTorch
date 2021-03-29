@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -12,6 +12,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class _LearnedEntityEmbedding(nn.Module):
@@ -100,25 +101,24 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        min_unique_values_for_embedding: Tuple[Tuple, int, bool] = ((3, 7), 5, True),
-        dimension_reduction: Tuple[Tuple, float] = ((0, 1), 0.5),
+        min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="min_unique_values_for_embedding",
+            value_range=(3, 7),
+            default_value=5,
+            log=True),
+        dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dimension_reduction",
+                                                                                   value_range=(0, 1),
+                                                                                   default_value=0.5),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        min_hp = UniformIntegerHyperparameter("min_unique_values_for_embedding",
-                                              lower=min_unique_values_for_embedding[0][0],
-                                              upper=min_unique_values_for_embedding[0][1],
-                                              default_value=min_unique_values_for_embedding[1],
-                                              log=min_unique_values_for_embedding[2]
-                                              )
-        cs.add_hyperparameter(min_hp)
+        add_hyperparameter(cs, min_unique_values_for_embedding, UniformIntegerHyperparameter)
         if dataset_properties is not None:
             for i in range(len(dataset_properties['categorical_columns'])):
-                ee_dimensions_hp = UniformFloatHyperparameter("dimension_reduction_" + str(i),
-                                                              lower=dimension_reduction[0][0],
-                                                              upper=dimension_reduction[0][1],
-                                                              default_value=dimension_reduction[1]
-                                                              )
-                cs.add_hyperparameter(ee_dimensions_hp)
+                ee_dimensions_search_space = HyperparameterSearchSpace(hyperparameter="dimension_reduction_" + str(i),
+                                                                       value_range=dimension_reduction.value_range,
+                                                                       default_value=dimension_reduction.default_value,
+                                                                       log=dimension_reduction.log)
+                add_hyperparameter(cs, ee_dimensions_search_space, UniformFloatHyperparameter)
         return cs
 
     @staticmethod

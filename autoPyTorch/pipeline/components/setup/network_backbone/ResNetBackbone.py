@@ -19,6 +19,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     shake_get_alpha_beta,
     shake_shake
 )
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class ResNetBackbone(NetworkBackboneComponent):
@@ -92,86 +93,100 @@ class ResNetBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
-                                                                         list(_activations.keys())[0]),
-                                        blocks_per_group: Tuple[Tuple, int] = ((1, 4), 2),
-                                        dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5),
-                                        use_shake_shake: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_shake_drop: Tuple[Tuple, bool] = ((True, False), True),
-                                        max_shake_drop_probability: Tuple[Tuple, float] = ((0, 1), 0.5)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
+                                                                          value_range=(1, 15),
+                                                                          default_value=5,
+                                                                          ),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                           value_range=(True, False),
+                                                                           default_value=False,
+                                                                           ),
+        num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
+                                                                         value_range=(10, 1024),
+                                                                         default_value=200,
+                                                                         ),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0],
+                                                                          ),
+        blocks_per_group: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="blocks_per_group",
+                                                                                value_range=(1, 4),
+                                                                                default_value=2,
+                                                                                ),
+        dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
+                                                                       value_range=(0, 0.8),
+                                                                       default_value=0.5,
+                                                                       ),
+        use_shake_shake: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_shake",
+                                                                               value_range=(True, False),
+                                                                               default_value=True,
+                                                                               ),
+        use_shake_drop: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_drop",
+                                                                              value_range=(True, False),
+                                                                              default_value=True,
+                                                                              ),
+        max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="max_shake_drop_probability",
+            value_range=(0, 1),
+            default_value=0.5),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # The number of groups that will compose the resnet. That is,
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
-        min_num_gropus, max_num_groups = num_groups[0]
-        num_groups = UniformIntegerHyperparameter(
-            "num_groups", lower=min_num_gropus, upper=max_num_groups, default_value=num_groups[1])
+        min_num_gropus, max_num_groups = num_groups.value_range
+        num_groups = get_hyperparameter(num_groups, UniformIntegerHyperparameter)
 
-        activation = CategoricalHyperparameter(
-            "activation", choices=activation[0],
-            default_value=activation[1]
-        )
-        cs.add_hyperparameters([num_groups, activation])
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        cs.add_hyperparameters([num_groups])
 
         # We can have dropout in the network for
         # better generalization
-        use_dropout = CategoricalHyperparameter("use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameters([use_dropout])
 
-        use_shake_shake = CategoricalHyperparameter("use_shake_shake", choices=use_shake_shake[0],
-                                                    default_value=use_shake_shake[1])
-        use_shake_drop = CategoricalHyperparameter("use_shake_drop", choices=use_shake_drop[0],
-                                                   default_value=use_shake_drop[1])
-        shake_drop_prob = UniformFloatHyperparameter(
-            "max_shake_drop_probability",
-            lower=max_shake_drop_probability[0][0],
-            upper=max_shake_drop_probability[0][1],
-            default_value=max_shake_drop_probability[1])
+        use_shake_shake = get_hyperparameter(use_shake_shake, CategoricalHyperparameter)
+        use_shake_drop = get_hyperparameter(use_shake_drop, CategoricalHyperparameter)
+        shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
         cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
         cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
-        (min_blocks_per_group, max_blocks_per_group), default_blocks_per_group = blocks_per_group[:2]
-        for i in range(0, max_num_groups + 1):
+        for i in range(0, int(max_num_groups) + 1):
 
-            n_units = UniformIntegerHyperparameter(
-                "num_units_%d" % i,
-                lower=num_units[0][0],
-                upper=num_units[0][1],
-                default_value=num_units[1]
-            )
-            blocks_per_group = UniformIntegerHyperparameter(
-                "blocks_per_group_%d" % i,
-                lower=min_blocks_per_group,
-                upper=max_blocks_per_group,
-                default_value=default_blocks_per_group)
+            n_units_search_space = HyperparameterSearchSpace(hyperparameter='num_units_%d' % i,
+                                                             value_range=num_units.value_range,
+                                                             default_value=num_units.default_value,
+                                                             log=num_units.log)
+            n_units_hp = get_hyperparameter(n_units_search_space, UniformIntegerHyperparameter)
 
-            cs.add_hyperparameters([n_units, blocks_per_group])
+            blocks_per_group_search_space = HyperparameterSearchSpace(hyperparameter='blocks_per_group_%d' % i,
+                                                                      value_range=blocks_per_group.value_range,
+                                                                      default_value=blocks_per_group.default_value,
+                                                                      log=blocks_per_group.log)
+            blocks_per_group_hp = get_hyperparameter(blocks_per_group_search_space, UniformIntegerHyperparameter)
+            cs.add_hyperparameters([n_units_hp, blocks_per_group_hp])
 
             if i > 1:
-                cs.add_condition(CS.GreaterThanCondition(n_units, num_groups, i - 1))
-                cs.add_condition(CS.GreaterThanCondition(blocks_per_group, num_groups, i - 1))
+                cs.add_condition(CS.GreaterThanCondition(n_units_hp, num_groups, i - 1))
+                cs.add_condition(CS.GreaterThanCondition(blocks_per_group_hp, num_groups, i - 1))
 
-            this_dropout = UniformFloatHyperparameter(
-                "dropout_%d" % i,
-                lower=dropout[0][0],
-                upper=dropout[0][1],
-                default_value=dropout[1]
-            )
-            cs.add_hyperparameters([this_dropout])
+            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
+                                                             value_range=dropout.value_range,
+                                                             default_value=dropout.default_value,
+                                                             log=dropout.log)
+            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
+            cs.add_hyperparameter(dropout_hp)
 
-            dropout_condition_1 = CS.EqualsCondition(this_dropout, use_dropout, True)
+            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
 
             if i > 1:
 
-                dropout_condition_2 = CS.GreaterThanCondition(this_dropout, num_groups, i - 1)
+                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
 
                 cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
             else:
@@ -185,14 +200,14 @@ class ResBlock(nn.Module):
     """
 
     def __init__(
-            self,
-            config: Dict[str, Any],
-            in_features: int,
-            out_features: int,
-            blocks_per_group: int,
-            block_index: int,
-            dropout: bool,
-            activation: nn.Module
+        self,
+        config: Dict[str, Any],
+        in_features: int,
+        out_features: int,
+        blocks_per_group: int,
+        block_index: int,
+        dropout: bool,
+        activation: nn.Module
     ):
         super(ResBlock, self).__init__()
         self.config = config

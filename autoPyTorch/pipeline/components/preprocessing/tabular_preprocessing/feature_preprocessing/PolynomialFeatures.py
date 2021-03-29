@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,8 +11,9 @@ import numpy as np
 import sklearn.decomposition
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.\
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
@@ -27,7 +28,6 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
         super().__init__()
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-
         self.preprocessor['numerical'] = sklearn.preprocessing.PolynomialFeatures(
             degree=self.degree, interaction_only=self.interaction_only,
             include_bias=self.include_bias)
@@ -42,20 +42,22 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, str]] = None,
-        degree: Tuple[Tuple, int] = ((2, 3), 2),
-        interaction_only: Tuple[Tuple, bool] = ((True, False), False),
-        include_bias: Tuple[Tuple, bool] = ((True, False), False)
+        degree: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='degree',
+                                                                      value_range=(2, 3),
+                                                                      default_value=2,
+                                                                      log=True),
+        interaction_only: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='interaction_only',
+                                                                                value_range=(True, False),
+                                                                                default_value=False,
+                                                                                ),
+        include_bias: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='include_bias',
+                                                                            value_range=(True, False),
+                                                                            default_value=False,
+                                                                            ),
     ) -> ConfigurationSpace:
-
-        degree = UniformIntegerHyperparameter("degree", lower=degree[0][0], upper=degree[0][1], default_value=degree[1])
-        interaction_only = CategoricalHyperparameter("interaction_only",
-                                                     choices=interaction_only[0],
-                                                     default_value=interaction_only[1])
-        include_bias = CategoricalHyperparameter("include_bias",
-                                                 choices=include_bias[0],
-                                                 default_value=include_bias[1])
-
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([degree, interaction_only, include_bias])
+        add_hyperparameter(cs, degree, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, interaction_only, CategoricalHyperparameter)
+        add_hyperparameter(cs, include_bias, CategoricalHyperparameter)
 
         return cs

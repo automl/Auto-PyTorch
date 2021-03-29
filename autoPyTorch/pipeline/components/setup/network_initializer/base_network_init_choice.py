@@ -46,10 +46,10 @@ class NetworkInitializerChoice(autoPyTorchChoice):
         return components
 
     def get_available_components(
-            self,
-            dataset_properties: Optional[Dict[str, str]] = None,
-            include: List[str] = None,
-            exclude: List[str] = None,
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        include: List[str] = None,
+        exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -102,11 +102,11 @@ class NetworkInitializerChoice(autoPyTorchChoice):
         return components_dict
 
     def get_hyperparameter_search_space(
-            self,
-            dataset_properties: Optional[Dict[str, str]] = None,
-            default: Optional[str] = None,
-            include: Optional[List[str]] = None,
-            exclude: Optional[List[str]] = None,
+        self,
+        dataset_properties: Optional[Dict[str, str]] = None,
+        default: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -141,14 +141,25 @@ class NetworkInitializerChoice(autoPyTorchChoice):
                 if default_ in initializers:
                     default = default_
                     break
-
-        initializer = CSH.CategoricalHyperparameter(
-            '__choice__',
-            list(initializers.keys()),
-            default_value=default
-        )
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(initializers):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               initializers,
+                                                               choice_hyperparameter.value_range))
+            initializer = CSH.CategoricalHyperparameter('__choice__',
+                                                        choice_hyperparameter.value_range,
+                                                        default_value=choice_hyperparameter.default_value)
+        else:
+            initializer = CSH.CategoricalHyperparameter(
+                '__choice__',
+                list(initializers.keys()),
+                default_value=default
+            )
         cs.add_hyperparameter(initializer)
-        for name in initializers:
+        for name in initializer.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = initializers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
                                                                               **updates)

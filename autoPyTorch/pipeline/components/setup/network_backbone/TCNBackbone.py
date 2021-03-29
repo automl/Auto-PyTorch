@@ -13,6 +13,7 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 # _Chomp1d, _TemporalBlock and _TemporalConvNet copied from
@@ -122,50 +123,47 @@ class TCNBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_blocks: Tuple[Tuple, int] = ((1, 10), 5),
-                                        num_filters: Tuple[Tuple, int] = ((4, 64), 32),
-                                        kernel_size: Tuple[Tuple, int] = ((4, 64), 32),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        dropout: Tuple[Tuple, float] = ((0.0, 0.5), 0.1)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
+                                                                          value_range=(1, 10),
+                                                                          default_value=5),
+        num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
+                                                                           value_range=(4, 64),
+                                                                           default_value=32),
+        kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
+                                                                           value_range=(4, 64),
+                                                                           default_value=32),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                           value_range=(True, False),
+                                                                           default_value=False),
+        dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
+                                                                       value_range=(0, 0.5),
+                                                                       default_value=0.1),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        min_num_blocks, max_num_blocks = num_blocks[0]
-        num_blocks_hp = UniformIntegerHyperparameter("num_blocks",
-                                                     lower=min_num_blocks,
-                                                     upper=max_num_blocks,
-                                                     default_value=num_blocks[1])
+        min_num_blocks, max_num_blocks = num_blocks.value_range
+        num_blocks_hp = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
         cs.add_hyperparameter(num_blocks_hp)
 
-        min_kernel_size, max_kernel_size = kernel_size[0]
-        kernel_size_hp = UniformIntegerHyperparameter("kernel_size",
-                                                      lower=min_kernel_size,
-                                                      upper=max_kernel_size,
-                                                      default_value=kernel_size[1])
-        cs.add_hyperparameter(kernel_size_hp)
+        add_hyperparameter(cs, kernel_size, UniformIntegerHyperparameter)
 
-        use_dropout_hp = CategoricalHyperparameter("use_dropout",
-                                                   choices=use_dropout[0],
-                                                   default_value=use_dropout[1])
+        use_dropout_hp = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameter(use_dropout_hp)
 
-        min_dropout, max_dropout = dropout[0]
-        dropout_hp = UniformFloatHyperparameter("dropout",
-                                                lower=min_dropout,
-                                                upper=max_dropout,
-                                                default_value=dropout[1])
+        dropout_hp = get_hyperparameter(dropout, UniformFloatHyperparameter)
         cs.add_hyperparameter(dropout_hp)
         cs.add_condition(CS.EqualsCondition(dropout_hp, use_dropout_hp, True))
 
-        for i in range(0, max_num_blocks):
-            min_num_filters, max_num_filters = num_filters[0]
-            num_filters_hp = UniformIntegerHyperparameter(f"num_filters_{i}",
-                                                          lower=min_num_filters,
-                                                          upper=max_num_filters,
-                                                          default_value=num_filters[1])
+        for i in range(0, int(max_num_blocks)):
+            num_filter_search_space = HyperparameterSearchSpace(f"num_filters_{i}",
+                                                                value_range=num_filters.value_range,
+                                                                default_value=num_filters.default_value,
+                                                                log=num_filters.log)
+            num_filters_hp = get_hyperparameter(num_filter_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_filters_hp)
-            if i >= min_num_blocks:
+            if i >= int(min_num_blocks):
                 cs.add_condition(CS.GreaterThanCondition(
                     num_filters_hp, num_blocks_hp, i))
 

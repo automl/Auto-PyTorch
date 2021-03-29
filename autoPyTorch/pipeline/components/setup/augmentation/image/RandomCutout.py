@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -13,6 +13,7 @@ from imgaug.augmenters.meta import Augmenter
 import numpy as np
 
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 class RandomCutout(BaseImageAugmenter):
@@ -31,16 +32,21 @@ class RandomCutout(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None,
-            use_augmenter: Tuple[Tuple, bool] = ((True, False), True),
-            p: Tuple[Tuple, float] = ((0.2, 1.0), 0.5)
+        dataset_properties: Optional[Dict[str, str]] = None,
+        use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
+                                                                             value_range=(True, False),
+                                                                             default_value=True,
+                                                                             ),
+        p: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="p",
+                                                                 value_range=(0.2, 1.0),
+                                                                 default_value=0.5,
+                                                                 ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        p = UniformFloatHyperparameter('p', lower=p[0][0], upper=p[0][1], default_value=p[1])
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0],
-                                                  default_value=use_augmenter[1])
-        cs.add_hyperparameters([p, use_augmenter])
 
+        use_augmenter = get_hyperparameter(use_augmenter, CategoricalHyperparameter)
+        p = get_hyperparameter(p, UniformFloatHyperparameter)
+        cs.add_hyperparameters([use_augmenter, p])
         # only add hyperparameters to configuration space if we are using the augmenter
         cs.add_condition(CS.EqualsCondition(p, use_augmenter, True))
         return cs

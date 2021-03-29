@@ -7,6 +7,7 @@ import numpy as np
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class StandardTrainer(BaseTrainerComponent):
@@ -53,15 +54,15 @@ class StandardTrainer(BaseTrainerComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: typing.Optional[typing.Dict] = None,
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
+                                                                             value_range=(True, False),
+                                                                             default_value=True),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
-                weighted_loss = CategoricalHyperparameter("weighted_loss",
-                                                          choices=weighted_loss[0],
-                                                          default_value=weighted_loss[1])
-                cs.add_hyperparameter(weighted_loss)
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
 
         return cs

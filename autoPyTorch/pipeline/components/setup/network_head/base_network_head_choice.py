@@ -17,7 +17,6 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
     NetworkHeadComponent,
 )
 
-
 directory = os.path.split(__file__)[0]
 _heads = find_components(__package__,
                          directory,
@@ -157,14 +156,24 @@ class NetworkHeadChoice(autoPyTorchChoice):
                 if default_ in available_heads:
                     default = default_
                     break
-
-        head = CSH.CategoricalHyperparameter(
-            '__choice__',
-            list(available_heads.keys()),
-            default_value=default
-        )
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_heads):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_heads,
+                                                               choice_hyperparameter.value_range))
+            head = CSH.CategoricalHyperparameter('__choice__',
+                                                 choice_hyperparameter.value_range,
+                                                 default_value=choice_hyperparameter.default_value)
+        else:
+            head = CSH.CategoricalHyperparameter(
+                '__choice__',
+                list(available_heads.keys()),
+                default_value=default)
         cs.add_hyperparameter(head)
-        for name in available_heads:
+        for name in head.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_heads[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
                                                                                  **updates)

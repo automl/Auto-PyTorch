@@ -70,20 +70,37 @@ class ScalerChoice(autoPyTorchChoice):
                 if default_ in available_scalers:
                     default = default_
                     break
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_scalers):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_scalers,
+                                                               choice_hyperparameter.value_range))
+            if len(dataset_properties['numerical_columns']) == 0:
+                assert len(choice_hyperparameter.value_range) == 1
+                if 'NoScaler' not in choice_hyperparameter.value_range:
+                    raise ValueError("Provided {} in choices, however, the dataset "
+                                     "is incompatible with it".format(choice_hyperparameter.value_range))
 
-        # add only no scaler to choice hyperparameters in case the dataset is only categorical
-        if len(dataset_properties['numerical_columns']) == 0:
-            default = 'NoScaler'
-            if include is not None and default not in include:
-                raise ValueError("Provided {} in include, however, "
-                                 "the dataset is incompatible with it".format(include))
             preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         ['NoScaler'],
-                                                         default_value=default)
+                                                         choice_hyperparameter.value_range,
+                                                         default_value=choice_hyperparameter.default_value)
         else:
-            preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         list(available_scalers.keys()),
-                                                         default_value=default)
+            # add only no scaler to choice hyperparameters in case the dataset is only categorical
+            if len(dataset_properties['numerical_columns']) == 0:
+                default = 'NoScaler'
+                if include is not None and default not in include:
+                    raise ValueError("Provided {} in include, however, "
+                                     "the dataset is incompatible with it".format(include))
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                             ['NoScaler'],
+                                                             default_value=default)
+            else:
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                             list(available_scalers.keys()),
+                                                             default_value=default)
         cs.add_hyperparameter(preprocessor)
 
         # add only child hyperparameters of early_preprocessor choices

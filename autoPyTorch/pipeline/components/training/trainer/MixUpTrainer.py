@@ -12,6 +12,7 @@ import torch
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class MixUpTrainer(BaseTrainerComponent):
@@ -65,19 +66,19 @@ class MixUpTrainer(BaseTrainerComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: typing.Optional[typing.Dict] = None,
-                                        alpha: typing.Tuple[typing.Tuple[float, float], float] = ((0, 1), 0.2),
-                                        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True)
-                                        ) -> ConfigurationSpace:
-        alpha = UniformFloatHyperparameter(
-            "alpha", alpha[0][0], alpha[0][1], default_value=alpha[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: typing.Optional[typing.Dict] = None,
+        alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="alpha",
+                                                                     value_range=(0, 1),
+                                                                     default_value=0.2),
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
+                                                                             value_range=(True, False),
+                                                                             default_value=True),
+    ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([alpha])
+        add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
-                weighted_loss = CategoricalHyperparameter("weighted_loss",
-                                                          choices=weighted_loss[0],
-                                                          default_value=weighted_loss[1])
-                cs.add_hyperparameter(weighted_loss)
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
         return cs

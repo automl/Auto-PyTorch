@@ -309,7 +309,7 @@ class TestNetworkBackbone:
                        value_range=[1, 3],
                        default_value=2)
         updates.append(node_name='network_backbone',
-                       hyperparameter='ConvNetImageBackbone:num_init_filters',
+                       hyperparameter='ConvNetImageBackbone:conv_init_filters',
                        value_range=[8, 16],
                        default_value=8)
         updates.append(node_name='network_backbone',

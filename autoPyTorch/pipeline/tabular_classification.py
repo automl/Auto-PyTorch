@@ -189,16 +189,14 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             cs=cs, dataset_properties=dataset_properties,
             exclude=exclude, include=include, pipeline=self.steps)
 
-        # Here we add custom code, like this with this
-        # is not a valid configuration
+        # Here we add custom code, that is used to ensure valid configurations, For example
         # Learned Entity Embedding is only valid when encoder is one hot encoder
         if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
             embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
             if 'LearnedEntityEmbedding' in embeddings:
                 encoders = cs.get_hyperparameter('encoder:__choice__').choices
-                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
                 possible_default_embeddings = copy.copy(list(embeddings))
-                del possible_default_embeddings[possible_default_embeddings.index(default)]
+                del possible_default_embeddings[possible_default_embeddings.index('LearnedEntityEmbedding')]
 
                 for encoder in encoders:
                     if encoder == 'OneHotEncoder':

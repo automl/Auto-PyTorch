@@ -9,6 +9,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 # Code inspired by https://github.com/hfawaz/InceptionTime
@@ -142,39 +143,30 @@ class InceptionTimeBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_blocks: Tuple[Tuple, int] = ((1, 10), 5),
-                                        num_filters: Tuple[Tuple, int] = ((4, 64), 32),
-                                        kernel_size: Tuple[Tuple, int] = ((4, 64), 32),
-                                        bottleneck_size: Tuple[Tuple, int] = ((16, 64), 32)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
+                                                                          value_range=(1, 10),
+                                                                          default_value=5,
+                                                                          ),
+        num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
+                                                                           value_range=(4, 64),
+                                                                           default_value=32,
+                                                                           ),
+        kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
+                                                                           value_range=(4, 64),
+                                                                           default_value=32,
+                                                                           ),
+        bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
+                                                                               value_range=(16, 64),
+                                                                               default_value=32,
+                                                                               ),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        min_num_blocks, max_num_blocks = num_blocks[0]
-        num_blocks_hp = UniformIntegerHyperparameter("num_blocks",
-                                                     lower=min_num_blocks,
-                                                     upper=max_num_blocks,
-                                                     default_value=num_blocks[1])
-        cs.add_hyperparameter(num_blocks_hp)
+        add_hyperparameter(cs, num_blocks, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, num_filters, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, kernel_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, bottleneck_size, UniformIntegerHyperparameter)
 
-        min_num_filters, max_num_filters = num_filters[0]
-        num_filters_hp = UniformIntegerHyperparameter("num_filters",
-                                                      lower=min_num_filters,
-                                                      upper=max_num_filters,
-                                                      default_value=num_filters[1])
-        cs.add_hyperparameter(num_filters_hp)
-
-        min_bottleneck_size, max_bottleneck_size = bottleneck_size[0]
-        bottleneck_size_hp = UniformIntegerHyperparameter("bottleneck_size",
-                                                          lower=min_bottleneck_size,
-                                                          upper=max_bottleneck_size,
-                                                          default_value=bottleneck_size[1])
-        cs.add_hyperparameter(bottleneck_size_hp)
-
-        min_kernel_size, max_kernel_size = kernel_size[0]
-        kernel_size_hp = UniformIntegerHyperparameter("kernel_size",
-                                                      lower=min_kernel_size,
-                                                      upper=max_kernel_size,
-                                                      default_value=kernel_size[1])
-        cs.add_hyperparameter(kernel_size_hp)
         return cs

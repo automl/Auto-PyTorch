@@ -1,6 +1,7 @@
+import re
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -9,7 +10,8 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 class autoPyTorchChoice(object):
@@ -49,7 +51,7 @@ class autoPyTorchChoice(object):
         # self.set_hyperparameters(self.configuration)
         self.choice: Optional[autoPyTorchComponent] = None
 
-        self._cs_updates: Dict[str, Tuple] = dict()
+        self._cs_updates: Dict[str, HyperparameterSearchSpaceUpdate] = dict()
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         if self.choice is not None:
@@ -247,35 +249,35 @@ class autoPyTorchChoice(object):
         """
         assert isinstance(dataset_properties, dict), "dataset_properties must be a dictionary"
 
-    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
-                                   default_value: Union[int, float, str], log: bool = False) -> None:
-        """Allows the user to update a hyperparameter
+    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
+        """
+        Applies search space update to the class
 
-        Arguments:
-            name {string} -- name of hyperparameter
-            new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
-            log {bool} -- is hyperparameter logscale
+        Args:
+            hyperparameter_search_space_update (HyperparameterSearchSpaceUpdate):
+                Search Space update for the current autoPyTorchChoice module
         """
 
-        if len(new_value_range) == 0:
-            raise ValueError("The new value range needs at least one value")
-        self._cs_updates[name] = tuple([new_value_range, default_value, log])
+        self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
-        Keyword Arguments:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+        Args:
+            prefix (str):
+                Only return search space updates with given prefix (default: {None})
 
         Returns:
-            dict -- Mapping of search space updates. Keys don't contain the prefix.
+            Dict[str, HyperparameterSearchSpace]:
+                Mapping of search space updates. Keys don't contain the prefix.
         """
-        if prefix is None:
-            return self._cs_updates
-        result: Dict[str, Tuple] = dict()
 
-        # iterate over all search space updates of this node and filter the ones out, that have the given prefix
+        result: Dict[str, HyperparameterSearchSpace] = dict()
+
+        # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if key.startswith(prefix):
-                result[key[len(prefix) + 1:]] = self._cs_updates[key]
+            if prefix is None:
+                result[key] = self._cs_updates[key].get_search_space()
+            elif re.search(f'^{prefix}', key) is not None:
+                result[key[len(prefix) + 1:]] = self._cs_updates[key].get_search_space(remove_prefix=prefix)
         return result

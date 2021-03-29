@@ -146,26 +146,42 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
 
         if default is None:
             defaults = [
+                'NoEmbedding',
                 'LearnedEntityEmbedding',
-                'NoEmbedding'
             ]
             for default_ in defaults:
                 if default_ in available_embedding:
                     default = default_
                     break
-
-        if len(dataset_properties['categorical_columns']) == 0:
-            default = 'NoEmbedding'
-            if include is not None and default not in include:
-                raise ValueError("Provided {} in include, however, the dataset "
-                                 "is incompatible with it".format(include))
+        updates = self._get_search_space_updates()
+        if '__choice__' in updates.keys():
+            choice_hyperparameter = updates['__choice__']
+            if not set(choice_hyperparameter.value_range).issubset(available_embedding):
+                raise ValueError("Expected given update for {} to have "
+                                 "choices in {} got {}".format(self.__class__.__name__,
+                                                               available_embedding,
+                                                               choice_hyperparameter.value_range))
+            if len(dataset_properties['categorical_columns']) == 0:
+                assert len(choice_hyperparameter.value_range) == 1
+                if 'NoEmbedding' not in choice_hyperparameter.value_range:
+                    raise ValueError("Provided {} in choices, however, the dataset "
+                                     "is incompatible with it".format(choice_hyperparameter.value_range))
             embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                      ['NoEmbedding'],
-                                                      default_value=default)
+                                                      choice_hyperparameter.value_range,
+                                                      default_value=choice_hyperparameter.default_value)
         else:
-            embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                      list(available_embedding.keys()),
-                                                      default_value=default)
+            if len(dataset_properties['categorical_columns']) == 0:
+                default = 'NoEmbedding'
+                if include is not None and default not in include:
+                    raise ValueError("Provided {} in include, however, the dataset "
+                                     "is incompatible with it".format(include))
+                embedding = CSH.CategoricalHyperparameter('__choice__',
+                                                          ['NoEmbedding'],
+                                                          default_value=default)
+            else:
+                embedding = CSH.CategoricalHyperparameter('__choice__',
+                                                          list(available_embedding.keys()),
+                                                          default_value=default)
 
         cs.add_hyperparameter(embedding)
         for name in embedding.choices:
