@@ -51,10 +51,10 @@ class SGDW(Optimizer):
             self,
             params: Iterable,
             lr: float,
-            weight_decay: Optional[float] = 0,
-            momentum: Optional[float] = 0,
-            dampening: Optional[float] = 0,
-            nesterov: Optional[bool] = False,
+            weight_decay: float = 0,
+            momentum: float = 0,
+            dampening: float = 0,
+            nesterov: bool = False,
     ):
         if lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
