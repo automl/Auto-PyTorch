@@ -30333,19 +30333,15 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration:
-  image_augmenter:GaussianBlur:sigma_min, Value: 2.347890373001397
-  image_augmenter:GaussianBlur:sigma_offset, Value: 2.0479702188194073
+  image_augmenter:GaussianBlur:sigma_min, Value: 2.165796742739372
+  image_augmenter:GaussianBlur:sigma_offset, Value: 1.3799361755012818
   image_augmenter:GaussianBlur:use_augmenter, Value: True
-  image_augmenter:GaussianNoise:sigma_offset, Value: 2.801545601651509
-  image_augmenter:GaussianNoise:use_augmenter, Value: True
-  image_augmenter:RandomAffine:rotate, Value: 224
-  image_augmenter:RandomAffine:scale_offset, Value: 0.005064108067539897
-  image_augmenter:RandomAffine:shear, Value: 15
-  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.19089956357045176
-  image_augmenter:RandomAffine:use_augmenter, Value: True
-  image_augmenter:RandomCutout:use_augmenter, Value: False
+  image_augmenter:GaussianNoise:use_augmenter, Value: False
+  image_augmenter:RandomAffine:use_augmenter, Value: False
+  image_augmenter:RandomCutout:p, Value: 0.3950490433045823
+  image_augmenter:RandomCutout:use_augmenter, Value: True
   image_augmenter:Resize:use_augmenter, Value: True
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.4549481631599265
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.05514196048509584
   normalizer:__choice__, Value: &#39;NoNormalizer&#39;
 
 Fitting the pipeline...
@@ -30418,7 +30414,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.551 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.415 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_image_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
