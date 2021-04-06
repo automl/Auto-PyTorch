@@ -97,8 +97,9 @@ class RMSpropOptimizer(BaseOptimizerComponent):
                                                                                 default_value=True,
                                                                                 ),
         weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weight_decay",
-                                                                            value_range=(0.0, 0.1),
-                                                                            default_value=0.0),
+                                                                            value_range=(1E-7, 0.1),
+                                                                            default_value=1E-4,
+                                                                            log=True),
         momentum: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="momentum",
                                                                         value_range=(0.0, 0.99),
                                                                         default_value=0.0),
@@ -109,7 +110,6 @@ class RMSpropOptimizer(BaseOptimizerComponent):
         add_hyperparameter(cs, lr, UniformFloatHyperparameter)
         add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
         add_hyperparameter(cs, momentum, UniformFloatHyperparameter)
-
         weight_decay = get_hyperparameter(weight_decay, UniformFloatHyperparameter)
         use_weight_decay = get_hyperparameter(use_weight_decay, CategoricalHyperparameter)
         cs.add_hyperparameters([use_weight_decay, weight_decay])
