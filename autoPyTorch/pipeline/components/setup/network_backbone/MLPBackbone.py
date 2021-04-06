@@ -86,13 +86,13 @@ class MLPBackbone(NetworkBackboneComponent):
         num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200,
+                                                                         log=True
                                                                          ),
         dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
                                                                        value_range=(0, 0.8),
                                                                        default_value=0.5,
                                                                        ),
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         # The number of hidden layers the network will have.
@@ -113,6 +113,7 @@ class MLPBackbone(NetworkBackboneComponent):
                                                              default_value=num_units.default_value,
                                                              log=num_units.log)
             n_units_hp = get_hyperparameter(n_units_search_space, UniformIntegerHyperparameter)
+
             cs.add_hyperparameter(n_units_hp)
 
             if i > int(min_mlp_layers):
