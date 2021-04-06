@@ -128,6 +128,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             return Y_snapshot_preds_tensor.mean(dim=0).cpu().numpy()
 
     def _predict(self, network: torch.nn.Module, loader: torch.utils.data.DataLoader) -> torch.Tensor:
+        network.to(self.device)
         network.float()
         network.eval()
         # Batch prediction
@@ -136,10 +137,10 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
             X_batch = X_batch.float().to(self.device)
-            Y_batch_pred = network(X_batch).detach().cpu()
+            Y_batch_pred = network(X_batch)
             if self.final_activation is not None:
                 Y_batch_pred = self.final_activation(Y_batch_pred)
-            Y_batch_preds.append(Y_batch_pred)
+            Y_batch_preds.append(Y_batch_pred.detach().cpu())
 
         return torch.cat(Y_batch_preds, 0)
 
