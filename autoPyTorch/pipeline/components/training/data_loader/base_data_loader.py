@@ -262,10 +262,12 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         batch_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="batch_size",
                                                                           value_range=(32, 320),
-                                                                          default_value=64)
+                                                                          default_value=64,
+                                                                          log=True)
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
+
         return cs
 
     def __str__(self) -> str:
