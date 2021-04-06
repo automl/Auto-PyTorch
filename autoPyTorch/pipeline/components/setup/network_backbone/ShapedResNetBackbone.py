@@ -93,6 +93,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
                                                                           value_range=(10, 1024),
                                                                           default_value=200,
+                                                                          log=True
                                                                           ),
         num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                           value_range=(1, 15),
@@ -116,7 +117,9 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                    ),
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
                                                                          value_range=(10, 1024),
-                                                                         default_value=200),
+                                                                         default_value=200,
+                                                                         log=True
+                                                                         ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
                                                                           value_range=tuple(_activations.keys()),
                                                                           default_value=list(_activations.keys())[0]),

@@ -118,6 +118,7 @@ class ResNetBackbone(NetworkBackboneComponent):
         num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200,
+                                                                         log=True
                                                                          ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
                                                                           value_range=tuple(_activations.keys()),
@@ -181,6 +182,7 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                              default_value=num_units.default_value,
                                                              log=num_units.log)
             n_units_hp = get_hyperparameter(n_units_search_space, UniformIntegerHyperparameter)
+
 
             blocks_per_group_search_space = HyperparameterSearchSpace(hyperparameter='blocks_per_group_%d' % i,
                                                                       value_range=blocks_per_group.value_range,

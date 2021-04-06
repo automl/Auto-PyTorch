@@ -93,11 +93,11 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200,
-                                                                         ),
+                                                                         log=True),
         output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
                                                                           value_range=(10, 1024),
                                                                           default_value=200,
-                                                                          ),
+                                                                          log=True),
         mlp_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="mlp_shape",
                                                                          value_range=('funnel', 'long_funnel',
                                                                                       'diamond', 'hexagon',
@@ -111,7 +111,6 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
                                                                           ),
 
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         # The number of groups that will compose the resnet. That is,

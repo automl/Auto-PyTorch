@@ -91,12 +91,13 @@ class AdamOptimizer(BaseOptimizerComponent):
                                                                      value_range=(0.9, 0.9999),
                                                                      default_value=0.9),
         use_weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_weight_decay",
-                                                                           value_range=(True, False),
-                                                                           default_value=True,
-                                                                           ),
+                                                                                value_range=(True, False),
+                                                                                default_value=True,
+                                                                                ),
         weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weight_decay",
-                                                                            value_range=(0.0, 0.1),
-                                                                            default_value=0.0),
+                                                                            value_range=(1E-7, 0.1),
+                                                                            default_value=1E-4,
+                                                                            log=True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
