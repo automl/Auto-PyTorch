@@ -29,7 +29,7 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICAT
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_average_function
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
@@ -583,49 +583,61 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         raise NotImplementedError()
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        weighted_loss: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_stochastic_weight_averaging: Tuple[Tuple, bool] = ((True, False), True),
-                                        use_snapshot_ensemble: Tuple[Tuple, bool] = ((True, False), True),
-                                        se_lastk: Tuple[Tuple, int] = ((3,), 3),
-                                        use_lookahead_optimizer: Tuple[Tuple, bool] = ((True, False), True),
-                                        la_steps: Tuple[Tuple, int, bool] = ((5, 10), 6, False),
-                                        la_alpha: Tuple[Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
-                                        ) -> ConfigurationSpace:
-        weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
-                                                  default_value=weighted_loss[1])
-        use_swa = CategoricalHyperparameter("use_stochastic_weight_averaging",
-                                            choices=use_stochastic_weight_averaging[0],
-                                            default_value=use_stochastic_weight_averaging[1])
-        use_se = CategoricalHyperparameter("use_snapshot_ensemble",
-                                           choices=use_snapshot_ensemble[0],
-                                           default_value=use_snapshot_ensemble[1])
-
-        # Note, this is not easy to be considered as a hyperparameter.
-        # When used with cyclic learning rates, it depends on the number
-        # of restarts.
-        se_lastk = Constant('se_lastk', se_lastk[1])
-
-        use_lookahead_optimizer = CategoricalHyperparameter("use_lookahead_optimizer",
-                                                            choices=use_lookahead_optimizer[0],
-                                                            default_value=use_lookahead_optimizer[1])
-
-        config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
-                                                                 la_alpha=la_alpha)
-        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
-
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=(True, False),
+            default_value=True),
+        la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_steps",
+            value_range=(5, 10),
+            default_value=6,
+            log=False),
+        la_alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_alpha",
+            value_range=(0.5, 0.8),
+            default_value=0.6,
+            log=False),
+        use_lookahead_optimizer: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_lookahead_optimizer",
+            value_range=(True, False),
+            default_value=True),
+        use_stochastic_weight_averaging: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_stochastic_weight_averaging",
+            value_range=(True, False),
+            default_value=True),
+        use_snapshot_ensemble: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_snapshot_ensemble",
+            value_range=(True, False),
+            default_value=True),
+        se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="se_lastk",
+            value_range=(3,),
+            default_value=3),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
+
+        add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        se_lastk = get_hyperparameter(se_lastk, Constant)
+        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
+        cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
+        cs.add_condition(cond)
+
+        use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_lookahead_optimizer)
+        la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                    la_alpha=la_alpha)
+        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
         cs.add_configuration_space(
             Lookahead.__name__,
-            config_space,
+            la_config_space,
             parent_hyperparameter=parent_hyperparameter
         )
-        cond = EqualsCondition(se_lastk, use_se, True)
-        cs.add_condition(cond)
 
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
-                cs.add_hyperparameters([weighted_loss])
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
 
         return cs

@@ -55,9 +55,6 @@ class MixUp:
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
                                                                              value_range=(True, False),
                                                                              default_value=True),
-        alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="alpha",
-                                                                     value_range=(0, 1),
-                                                                     default_value=0.2),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -84,18 +81,23 @@ class MixUp:
             hyperparameter="se_lastk",
             value_range=(3,),
             default_value=3),
+        alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="alpha",
+            value_range=(0, 1),
+            default_value=0.2),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
-        add_hyperparameter(cs, se_lastk, Constant)
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
-        use_snapshot_ensemble = get_hyperparameter(cs, use_snapshot_ensemble, CategoricalHyperparameter)
-        cs.add_hyperparameter(use_snapshot_ensemble)
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        se_lastk = get_hyperparameter(se_lastk, Constant)
+        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
         cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
         cs.add_condition(cond)
 
-        add_hyperparameter(cs, use_lookahead_optimizer, CategoricalHyperparameter)
+        use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_lookahead_optimizer)
         la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
                                                                     la_alpha=la_alpha)
         parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
