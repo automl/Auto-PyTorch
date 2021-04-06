@@ -3,7 +3,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
     <title>Tabular Regression &#8212; AutoPyTorch 0.0.3 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
@@ -117,12 +118,12 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-examples-example-tabular-regression-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="tabular-regression">
+<section class="sphx-glr-example-title" id="tabular-regression">
 <span id="sphx-glr-examples-example-tabular-regression-py"></span><h1>Tabular Regression<a class="headerlink" href="#tabular-regression" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f9ac706ba90&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f65bdfa6370&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
@@ -148,7 +149,7 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:beta2, Value: 0.9
   optimizer:AdamOptimizer:lr, Value: 0.01
   optimizer:AdamOptimizer:use_weight_decay, Value: True
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
+  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
@@ -158,7 +159,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002161741256713867, budget=0), TrajEntry(train_perf=0.0023124620313044186, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001964092254638672, budget=0), TrajEntry(train_perf=0.0008204224883585631, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
@@ -184,7 +185,7 @@ with AutoPyTorch</p>
   optimizer:AdamOptimizer:beta2, Value: 0.9
   optimizer:AdamOptimizer:lr, Value: 0.01
   optimizer:AdamOptimizer:use_weight_decay, Value: True
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
+  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
@@ -194,42 +195,8 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=7.577795028686523, wallclock_time=11.378600358963013, budget=5.555555555555555), TrajEntry(train_perf=0.007724043300765815, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 502
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  imputer:numerical_strategy, Value: &#39;most_frequent&#39;
-  lr_scheduler:__choice__, Value: &#39;NoScheduler&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;tanh&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 1
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.1517368709538051
-  network_backbone:ShapedResNetBackbone:max_units, Value: 254
-  network_backbone:ShapedResNetBackbone:multi_branch_choice, Value: &#39;shake-shake&#39;
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 7
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 126
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;brick&#39;
-  network_backbone:ShapedResNetBackbone:use_batch_norm, Value: False
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_skip_connection, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:num_layers, Value: 1
-  network_init:NoInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;NoInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9481379615749385
-  optimizer:AdamOptimizer:beta2, Value: 0.975978385169487
-  optimizer:AdamOptimizer:lr, Value: 0.01924341974264098
-  optimizer:AdamOptimizer:use_weight_decay, Value: False
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;NoScaler&#39;
-  trainer:MixUpTrainer:alpha, Value: 0.6106245467721916
-  trainer:MixUpTrainer:se_lastk, Constant: 3
-  trainer:MixUpTrainer:use_lookahead_optimizer, Value: False
-  trainer:MixUpTrainer:use_snapshot_ensemble, Value: True
-  trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=17, ta_time_used=294.1746070384979, wallclock_time=344.89423751831055, budget=50.0)]
-{&#39;r2&#39;: 0.9996698482299967}
+, ta_runs=1, ta_time_used=9.31979751586914, wallclock_time=13.245802164077759, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.9995805604515139}
 </pre></div>
 </div>
 <div class="line-block">
@@ -345,7 +312,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  35.774 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  34.566 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -358,7 +325,7 @@ with AutoPyTorch</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
+</section>
 
 
     </div>
@@ -380,7 +347,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.3.<br/>
     </p>
   </div>
 </footer>
