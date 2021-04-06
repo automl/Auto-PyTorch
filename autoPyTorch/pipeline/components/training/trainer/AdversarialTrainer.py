@@ -1,5 +1,5 @@
-import typing
 from copy import deepcopy
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from ConfigSpace.conditions import EqualsCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -17,6 +17,7 @@ import torch
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class AdversarialTrainer(BaseTrainerComponent):
@@ -24,12 +25,12 @@ class AdversarialTrainer(BaseTrainerComponent):
             self,
             epsilon: float,
             weighted_loss: bool = False,
-            random_state: typing.Optional[np.random.RandomState] = None,
+            random_state: Optional[np.random.RandomState] = None,
             use_stochastic_weight_averaging: bool = False,
             use_snapshot_ensemble: bool = False,
             se_lastk: int = 3,
             use_lookahead_optimizer: bool = True,
-            **lookahead_config: typing.Any
+            **lookahead_config: Any
     ):
         """
         This class handles the training of a network for a single given epoch.
@@ -48,7 +49,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         self.epsilon = epsilon
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[typing.Tuple[np.ndarray, np.ndarray], typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[Tuple[np.ndarray, np.ndarray], Dict[str, np.ndarray]]:
         """Generate adversarial examples from the original inputs.
 
         Args:
@@ -63,7 +64,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         return (X, X_adversarial), {'y_a': y}
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
-                              ) -> typing.Callable:
+                              ) -> Callable:
         # Initial implementation, consider the adversarial loss and the normal network loss
         # equally.
         return lambda criterion, pred, adversarial_pred: 0.5 * criterion(pred, y_a) + \
@@ -142,8 +143,8 @@ class AdversarialTrainer(BaseTrainerComponent):
         return adv_data
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
 
         return {
             'shortname': 'AdversarialTrainer',
@@ -155,53 +156,67 @@ class AdversarialTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict] = None,
-        weighted_loss: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
-        use_stochastic_weight_averaging: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
-        use_snapshot_ensemble: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
-        se_lastk: typing.Tuple[typing.Tuple, int] = ((3,), 3),
-        use_lookahead_optimizer: typing.Tuple[typing.Tuple, bool] = ((True, False), True),
-        la_steps: typing.Tuple[typing.Tuple, int, bool] = ((5, 10), 6, False),
-        la_alpha: typing.Tuple[typing.Tuple, float, bool] = ((0.5, 0.8), 0.6, False),
-        epsilon: typing.Tuple[typing.Tuple[float, float], float] = ((0.05, 0.2), 0.2),
+        dataset_properties: Optional[Dict] = None,
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=(True, False),
+            default_value=True),
+        la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_steps",
+            value_range=(5, 10),
+            default_value=6,
+            log=False),
+        la_alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_alpha",
+            value_range=(0.5, 0.8),
+            default_value=0.6,
+            log=False),
+        use_lookahead_optimizer: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_lookahead_optimizer",
+            value_range=(True, False),
+            default_value=True),
+        use_stochastic_weight_averaging: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_stochastic_weight_averaging",
+            value_range=(True, False),
+            default_value=True),
+        use_snapshot_ensemble: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_snapshot_ensemble",
+            value_range=(True, False),
+            default_value=True),
+        se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="se_lastk",
+            value_range=(3,),
+            default_value=3),
+        epsilon: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="epsilon",
+            value_range=(0.05, 0.2),
+            default_value=0.2),
     ) -> ConfigurationSpace:
-        epsilon = UniformFloatHyperparameter(
-            "epsilon", epsilon[0][0], epsilon[0][1], default_value=epsilon[1])
-        weighted_loss = CategoricalHyperparameter("weighted_loss", choices=weighted_loss[0],
-                                                  default_value=weighted_loss[1])
-
-        use_swa = CategoricalHyperparameter("use_stochastic_weight_averaging",
-                                            choices=use_stochastic_weight_averaging[0],
-                                            default_value=use_stochastic_weight_averaging[1])
-        use_se = CategoricalHyperparameter("use_snapshot_ensemble",
-                                           choices=use_snapshot_ensemble[0],
-                                           default_value=use_snapshot_ensemble[1])
-
-        # Note, this is not easy to be considered as a hyperparameter.
-        # When used with cyclic learning rates, it depends on the number
-        # of restarts.
-        se_lastk = Constant('se_lastk', se_lastk[1])
-
-        use_lookahead_optimizer = CategoricalHyperparameter("use_lookahead_optimizer",
-                                                            choices=use_lookahead_optimizer[0],
-                                                            default_value=use_lookahead_optimizer[1])
-
-        config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
-                                                                 la_alpha=la_alpha)
-        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
-
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([use_swa, use_se, se_lastk, use_lookahead_optimizer])
-        cs.add_configuration_space(
-            Lookahead.__name__,
-            config_space,
-            parent_hyperparameter=parent_hyperparameter
-        )
-        cond = EqualsCondition(se_lastk, use_se, True)
+
+        add_hyperparameter(cs, epsilon, UniformFloatHyperparameter)
+
+        get_hyperparameter(se_lastk, Constant)
+        add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        se_lastk = get_hyperparameter(se_lastk, Constant)
+        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
+        cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
         cs.add_condition(cond)
 
-        cs.add_hyperparameters([epsilon])
+        use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_lookahead_optimizer)
+        la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                    la_alpha=la_alpha)
+        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
+        cs.add_configuration_space(
+            Lookahead.__name__,
+            la_config_space,
+            parent_hyperparameter=parent_hyperparameter
+        )
+
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
-                cs.add_hyperparameters([weighted_loss])
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+
         return cs
