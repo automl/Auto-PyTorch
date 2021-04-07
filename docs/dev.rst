@@ -26,6 +26,8 @@ translated to a pipeline configuration, fitted and saved to disc using the funct
 reads a dataset from disc, fits a pipeline, and collect the performance result which is communicated back to the main process via a Queue. This worker manages
 resources using `Pynisher <https://github.com/automl/pynisher>`_, and it usually does so by creating a new process.
 
+The Scikit-learn pipeline inherits from the `BaseEstimator <https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html>`_, which implies that we have to honor the `Scikit-Learn development Guidelines <https://scikit-learn.org/stable/developers/develop.html>`_. Of particular interest is that any estimator must define as attributes, the arguments that the class constructor receives (see `get_params and set_params` from the above documentation).
+
 Regarding multiprocessing, AutoPyTorch and SMAC work with `Dask.distributed <https://distributed.dask.org/en/latest/>`_. We only submits jobs to Dask up to the number of 
 workers, and wait for a worker to be available before continuing.
 
@@ -46,3 +48,6 @@ The AutoML Part
 
 The ensemble builder and the individual model constructions are both regulated by the `BaseTask`. This entity fundamentally calls the aforementioned task, and wait until
 the time resource is exhausted.
+
+We also rely on the `ConfigSpace <https://automl.github.io/ConfigSpace/master/index.html>`_ package to build a configuration space and sample configurations from it. A configuration in this context, determines the content of a pipeline (for example, that the final estimator will be a MLP, or that it will have PCA as preprocessing).The set of valid configurations is determined by the configuration space. The configuration space is build using the dataset characteristics, like type
+of features (categorical, numerical) or the target type (classification, regression).
