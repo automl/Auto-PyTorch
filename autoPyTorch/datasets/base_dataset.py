@@ -108,7 +108,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name: str = dataset_name
+        self.dataset_name = ""
 
         if self.dataset_name is not None:
             self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
