@@ -25,7 +25,7 @@ import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import RunHistory, DataOrigin
+from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 

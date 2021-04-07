@@ -100,15 +100,15 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
 
     # Check that smac was able to find proper models
-    succesful_runs = [run_value.status for run_value in estimator.run_history.values(
+    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
     ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.items()]
+    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.data.items()]
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
     successful_num_run = None
     SUCCESS = False
-    for i, (run_key, value) in enumerate(estimator.run_history.items()):
+    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
         if 'SUCCESS' in str(value.status):
             run_key_model_run_dir = estimator._backend.get_numrun_directory(
                 estimator.seed, run_key.config_id + 1, run_key.budget)
@@ -271,15 +271,15 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
 
     # Check that smac was able to find proper models
-    succesful_runs = [run_value.status for run_value in estimator.run_history.values(
+    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
     ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) >= 1, [(k, v) for k, v in estimator.run_history.items()]
+    assert len(succesful_runs) >= 1, [(k, v) for k, v in estimator.run_history.data.items()]
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
     successful_num_run = None
     SUCCESS = False
-    for i, (run_key, value) in enumerate(estimator.run_history.items()):
+    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
         if 'SUCCESS' in str(value.status):
             run_key_model_run_dir = estimator._backend.get_numrun_directory(
                 estimator.seed, run_key.config_id + 1, run_key.budget)
