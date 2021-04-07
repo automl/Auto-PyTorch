@@ -782,7 +782,7 @@ class BaseTask:
                              ":{}".format(self.task_type, dataset.task_type))
 
         # Initialise information needed for the experiment
-        experiment_task_name = 'runSearch'
+        experiment_task_name: str = 'runSearch'
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
         self._dataset_requirements = dataset_requirements
@@ -916,7 +916,7 @@ class BaseTask:
             self._stopwatch.stop_task(ensemble_task_name)
 
         # ==> Run SMAC
-        smac_task_name = 'runSMAC'
+        smac_task_name: str = 'runSMAC'
         self._stopwatch.start_task(smac_task_name)
         elapsed_time = self._stopwatch.wall_elapsed(experiment_task_name)
         time_left_for_smac = max(0, total_walltime_limit - elapsed_time)
