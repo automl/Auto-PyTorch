@@ -486,10 +486,13 @@ class BaseTask:
 
         return ensemble
 
-    def _do_dummy_prediction(self, num_run: int) -> None:
+    def _do_dummy_prediction(self) -> None:
 
         assert self._metric is not None
         assert self._logger is not None
+
+        # For dummy estimator, we always expect the num_run to be 1
+        num_run = 1
 
         self._logger.info("Starting to create dummy predictions.")
 
@@ -551,8 +554,7 @@ class BaseTask:
                     % (str(status), str(additional_info))
                 )
 
-    def _do_traditional_prediction(self, num_run: int, time_left: int, func_eval_time_limit_secs: int
-                                   ) -> int:
+    def _do_traditional_prediction(self, time_left: int, func_eval_time_limit_secs: int) -> None:
         """
         Fits traditional machine learning algorithms to the provided dataset, while
         complying with time resource allocation.
@@ -560,20 +562,12 @@ class BaseTask:
         This method currently only supports classification.
 
         Args:
-            num_run: (int)
-                An identifier to indicate the current machine learning algorithm
-                being processed
             time_left: (int)
                 Hard limit on how many machine learning algorithms can be fit. Depending on how
                 fast a traditional machine learning algorithm trains, it will allow multiple
                 models to be fitted.
             func_eval_time_limit_secs: (int)
                 Maximum training time each algorithm is allowed to take, during training
-
-        Returns:
-            num_run: (int)
-                The incremented identifier index. This depends on how many machine learning
-                models were fitted.
         """
 
         # Mypy Checkings -- Traditional prediction is only called for search
@@ -592,8 +586,8 @@ class BaseTask:
         available_classifiers = get_available_classifiers()
         dask_futures = []
 
-        total_number_classifiers = len(available_classifiers) + num_run
-        for n_r, classifier in enumerate(available_classifiers, start=num_run):
+        total_number_classifiers = len(available_classifiers)
+        for n_r, classifier in enumerate(available_classifiers):
 
             # Only launch a task if there is time
             start_time = time.time()
@@ -612,7 +606,7 @@ class BaseTask:
                     logger_port=self._logger_port,
                     cost_for_crash=get_cost_of_crash(self._metric),
                     abort_on_first_run_crash=False,
-                    initial_num_run=n_r,
+                    initial_num_run=self._backend.get_next_num_run(),
                     stats=stats,
                     memory_limit=memory_limit,
                     disable_file_output=True if len(self._disable_file_output) > 0 else False,
@@ -625,9 +619,6 @@ class BaseTask:
                         cutoff=func_eval_time_limit_secs,
                     )
                 ])
-
-                # Increment the launched job index
-                num_run = n_r
 
             # When managing time, we need to take into account the allocated time resources,
             # which are dependent on the number of cores. 'dask_futures' is a proxy to the number
@@ -691,7 +682,7 @@ class BaseTask:
         self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
         run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'),
                               save_external=True)
-        return num_run
+        return
 
     def _search(
         self,
@@ -861,10 +852,9 @@ class BaseTask:
             )
 
         # ============> Run dummy predictions
-        num_run = 1
         dummy_task_name = 'runDummy'
         self._stopwatch.start_task(dummy_task_name)
-        self._do_dummy_prediction(num_run)
+        self._do_dummy_prediction()
         self._stopwatch.stop_task(dummy_task_name)
 
         # ============> Run traditional ml
@@ -880,8 +870,8 @@ class BaseTask:
                 time_for_traditional = int(
                     self._time_for_task - elapsed_time - func_eval_time_limit_secs
                 )
-                num_run = self._do_traditional_prediction(
-                    num_run=num_run + 1, func_eval_time_limit_secs=func_eval_time_limit_secs,
+                self._do_traditional_prediction(
+                    func_eval_time_limit_secs=func_eval_time_limit_secs,
                     time_left=time_for_traditional,
                 )
                 self._stopwatch.stop_task(traditional_task_name)
@@ -957,7 +947,9 @@ class BaseTask:
                 pipeline_config={**self.pipeline_options, **budget_config},
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
-                start_num_run=num_run,
+                # We do not increase the num_run here, this is something
+                # smac does internally
+                start_num_run=self._backend.get_next_num_run(peek=True),
                 search_space_updates=self.search_space_updates
             )
             try:
@@ -1063,7 +1055,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'num_run': 0
+                                  'num_run': self._backend.get_next_num_run(),
                                   })
         X.update({**self.pipeline_options, **budget_config})
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
@@ -1140,7 +1132,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'num_run': 0
+                                  'num_run': self._backend.get_next_num_run(),
                                   })
         X.update({**self.pipeline_options, **budget_config})
 

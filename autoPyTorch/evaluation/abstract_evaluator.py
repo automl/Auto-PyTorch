@@ -144,7 +144,9 @@ class DummyClassificationPipeline(DummyClassifier):
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None
                  ) -> None:
-        self.configuration = config
+        self.config = config
+        self.init_params = init_params
+        self.random_state = random_state
         if config == 1:
             super(DummyClassificationPipeline, self).__init__(strategy="uniform")
         else:
@@ -208,7 +210,9 @@ class DummyRegressionPipeline(DummyRegressor):
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None) -> None:
-        self.configuration = config
+        self.config = config
+        self.init_params = init_params
+        self.random_state = random_state
         if config == 1:
             super(DummyRegressionPipeline, self).__init__(strategy='mean')
         else:
