@@ -6,7 +6,7 @@
 Developer Documentation
 =======================
 
-This documentation summarizes how the AutoPyTorch code works, and is meant as a guide for the developers to help contribute to it. .
+This documentation summarizes how the AutoPyTorch code works, and is meant as a guide for the developers to help contribute to it.
 
 AutoPyTorch relies on the `SMAC <https://automl.github.io/SMAC3/master/>`_ library to build individual models,
 which are later ensembled together using ensemble selection by `Caruana et al. (2004) <https://dl.acm.org/doi/pdf/10.1145/1015330.1015432>`_.
