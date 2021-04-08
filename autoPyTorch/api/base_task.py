@@ -657,8 +657,6 @@ class BaseTask:
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
                         configuration = additional_info['pipeline_configuration']
                         origin = additional_info['configuration_origin']
-                        del additional_info['configuration_origin']
-                        del additional_info['pipeline_configuration']
                         run_history.add(config=configuration, cost=cost,
                                         time=runtime, status=status, seed=self.seed,
                                         origin=origin)
