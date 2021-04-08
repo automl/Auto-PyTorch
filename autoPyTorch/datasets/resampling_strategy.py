@@ -113,7 +113,7 @@ class HoldOutFuncs():
                                       indices: np.ndarray,
                                       **kwargs: Any
                                       ) -> Tuple[np.ndarray, np.ndarray]:
-        train, val = train_test_split(indices, test_size=val_share, shuffle=False, stratify=kwargs["stratify"])
+        train, val = train_test_split(indices, test_size=val_share, shuffle=True, stratify=kwargs["stratify"])
         return train, val
 
     @classmethod
