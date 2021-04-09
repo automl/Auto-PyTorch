@@ -31,7 +31,6 @@ from autoPyTorch.constants import (
     TABULAR_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import (
     VotingRegressorWrapper,
     convert_multioutput_multiclass_to_multilabel

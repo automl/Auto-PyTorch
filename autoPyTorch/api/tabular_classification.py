@@ -13,7 +13,6 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
