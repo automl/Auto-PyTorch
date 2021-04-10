@@ -139,27 +139,36 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Tabular Classification API to the pipelines.</span>
 <span class="sd">    Args:</span>
-<span class="sd">        seed (int): seed to be used for reproducibility.</span>
-<span class="sd">        n_jobs (int), (default=1): number of consecutive processes to spawn.</span>
-<span class="sd">        logging_config (Optional[Dict]): specifies configuration</span>
-<span class="sd">            for logging, if None, it is loaded from the logging.yaml</span>
-<span class="sd">        ensemble_size (int), (default=50): Number of models added to the ensemble built by</span>
+<span class="sd">        seed (int):</span>
+<span class="sd">            seed to be used for reproducibility.</span>
+<span class="sd">        n_jobs (int), (default=1):</span>
+<span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        logging_config (Optional[Dict]):</span>
+<span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
+<span class="sd">        ensemble_size (int), (default=50):</span>
+<span class="sd">            Number of models added to the ensemble built by</span>
 <span class="sd">            Ensemble selection from libraries of models.</span>
 <span class="sd">            Models are drawn with replacement.</span>
-<span class="sd">        ensemble_nbest (int), (default=50): only consider the ensemble_nbest</span>
+<span class="sd">        ensemble_nbest (int), (default=50):</span>
+<span class="sd">            only consider the ensemble_nbest</span>
 <span class="sd">            models to build the ensemble</span>
-<span class="sd">        max_models_on_disc (int), (default=50): maximum number of models saved to disc.</span>
+<span class="sd">        max_models_on_disc (int), (default=50):</span>
+<span class="sd">            maximum number of models saved to disc.</span>
 <span class="sd">            Also, controls the size of the ensemble as any additional models will be deleted.</span>
 <span class="sd">            Must be greater than or equal to 1.</span>
-<span class="sd">        temporary_directory (str): folder to store configuration output and log file</span>
-<span class="sd">        output_directory (str): folder to store predictions for optional test set</span>
-<span class="sd">        delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,</span>
-<span class="sd">            when finished</span>
-<span class="sd">        include_components (Optional[Dict]): If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components to use.</span>
-<span class="sd">        exclude_components (Optional[Dict]): If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components not to use. Incompatible with include</span>
-<span class="sd">            components</span>
+<span class="sd">        temporary_directory (str):</span>
+<span class="sd">            folder to store configuration output and log file</span>
+<span class="sd">        output_directory (str):</span>
+<span class="sd">            folder to store predictions for optional test set</span>
+<span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
+<span class="sd">            determines whether to delete the temporary directory, when finished</span>
+<span class="sd">        include_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise</span>
+<span class="sd">            specifies set of components to use.</span>
+<span class="sd">        exclude_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise</span>
+<span class="sd">            specifies set of components not to use. Incompatible</span>
+<span class="sd">            with include components</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -225,8 +234,8 @@
         <span class="n">budget_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
-        <span class="n">traditional_per_total_budget</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">func_eval_time_limit_secs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enable_traditional_pipeline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">memory_limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
         <span class="n">smac_scenario_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">get_smac_object_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -259,16 +268,24 @@
 <span class="sd">                in seconds for the search of appropriate models.</span>
 <span class="sd">                By increasing this value, autopytorch has a higher</span>
 <span class="sd">                chance of finding better models.</span>
-<span class="sd">            func_eval_time_limit (int), (default=60): Time limit</span>
+<span class="sd">            func_eval_time_limit_secs (int), (default=None): Time limit</span>
 <span class="sd">                for a single call to the machine learning model.</span>
 <span class="sd">                Model fitting will be terminated if the machine</span>
 <span class="sd">                learning algorithm runs over the time limit. Set</span>
 <span class="sd">                this value high enough so that typical machine</span>
 <span class="sd">                learning algorithms can be fit on the training</span>
 <span class="sd">                data.</span>
-<span class="sd">            traditional_per_total_budget (float), (default=0.1):</span>
-<span class="sd">                Percent of total walltime to be allocated for</span>
-<span class="sd">                running traditional classifiers.</span>
+<span class="sd">                When set to None, this time will automatically be set to</span>
+<span class="sd">                total_walltime_limit // 2 to allow enough time to fit</span>
+<span class="sd">                at least 2 individual machine learning algorithms.</span>
+<span class="sd">                Set to np.inf in case no time limit is desired.</span>
+<span class="sd">            enable_traditional_pipeline (bool), (default=True):</span>
+<span class="sd">                We fit traditional machine learning algorithms</span>
+<span class="sd">                (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)</span>
+<span class="sd">                before building PyTorch Neural Networks. You can disable this</span>
+<span class="sd">                feature by turning this flag to False. All machine learning</span>
+<span class="sd">                algorithms that are fitted during search() are considered for</span>
+<span class="sd">                ensemble building.</span>
 <span class="sd">            memory_limit (Optional[int]), (default=4096): Memory</span>
 <span class="sd">                limit in MB for the machine learning algorithm. autopytorch</span>
 <span class="sd">                will stop fitting the machine learning algorithm if it tries</span>
@@ -331,8 +348,8 @@
             <span class="n">budget_type</span><span class="o">=</span><span class="n">budget_type</span><span class="p">,</span>
             <span class="n">budget</span><span class="o">=</span><span class="n">budget</span><span class="p">,</span>
             <span class="n">total_walltime_limit</span><span class="o">=</span><span class="n">total_walltime_limit</span><span class="p">,</span>
-            <span class="n">func_eval_time_limit</span><span class="o">=</span><span class="n">func_eval_time_limit</span><span class="p">,</span>
-            <span class="n">traditional_per_total_budget</span><span class="o">=</span><span class="n">traditional_per_total_budget</span><span class="p">,</span>
+            <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="n">func_eval_time_limit_secs</span><span class="p">,</span>
+            <span class="n">enable_traditional_pipeline</span><span class="o">=</span><span class="n">enable_traditional_pipeline</span><span class="p">,</span>
             <span class="n">memory_limit</span><span class="o">=</span><span class="n">memory_limit</span><span class="p">,</span>
             <span class="n">smac_scenario_args</span><span class="o">=</span><span class="n">smac_scenario_args</span><span class="p">,</span>
             <span class="n">get_smac_object_callback</span><span class="o">=</span><span class="n">get_smac_object_callback</span><span class="p">,</span>
