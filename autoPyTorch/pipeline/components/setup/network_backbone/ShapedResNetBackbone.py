@@ -112,7 +112,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                    default_value=True,
                                                                                    ),
         multi_branch_choice: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="mb_choice",
-                                                                                   value_range=('None', 'shake-shake', 'shake-drop'),
+                                                                                   value_range=('None', 'shake-shake',
+                                                                                                'shake-drop'),
                                                                                    default_value='shake-drop',
                                                                                    ),
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
@@ -152,6 +153,7 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
         use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
