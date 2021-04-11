@@ -112,7 +112,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                                    default_value=True,
                                                                                    ),
         multi_branch_choice: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="mb_choice",
-                                                                                   value_range=('None', 'shake-shake', 'shake-drop'),
+                                                                                   value_range=('None', 'shake-shake',
+                                                                                                'shake-drop'),
                                                                                    default_value='shake-drop',
                                                                                    ),
         num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
@@ -182,7 +183,6 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                              default_value=num_units.default_value,
                                                              log=num_units.log)
             n_units_hp = get_hyperparameter(n_units_search_space, UniformIntegerHyperparameter)
-
 
             blocks_per_group_search_space = HyperparameterSearchSpace(hyperparameter='blocks_per_group_%d' % i,
                                                                       value_range=blocks_per_group.value_range,

@@ -58,14 +58,6 @@ class CutOut:
                 hyperparameter="weighted_loss",
                 value_range=(True, False),
                 default_value=True),
-            patch_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="patch_ratio",
-                value_range=(0, 1),
-                default_value=0.2),
-            cutout_prob: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="cutout_prob",
-                value_range=(0, 1),
-                default_value=0.2),
             la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="la_steps",
                 value_range=(5, 10),
@@ -92,6 +84,14 @@ class CutOut:
                 hyperparameter="se_lastk",
                 value_range=(3, ),
                 default_value=3),
+            patch_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="patch_ratio",
+                value_range=(0, 1),
+                default_value=0.2),
+            cutout_prob: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="cutout_prob",
+                value_range=(0, 1),
+                default_value=0.2),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
