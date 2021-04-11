@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9ccf735b50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f99e0f64550> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -73,7 +73,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016074180603027344, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.002025604248046875, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -110,7 +110,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=2.749469518661499, wallclock_time=4.877245664596558, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=3.358346700668335, wallclock_time=5.936842918395996, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 33
       encoder:__choice__, Value: 'NoEncoder'
       imputer:categorical_strategy, Value: 'constant_!missing!'
@@ -149,7 +149,7 @@ with AutoPyTorch
       trainer:MixUpTrainer:use_snapshot_ensemble, Value: True
       trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=30.297082662582397, wallclock_time=46.475703716278076, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=36.89717173576355, wallclock_time=56.20049571990967, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 158
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -191,8 +191,8 @@ with AutoPyTorch
       trainer:RowCutOutTrainer:use_snapshot_ensemble, Value: False
       trainer:RowCutOutTrainer:use_stochastic_weight_averaging, Value: False
       trainer:__choice__, Value: 'RowCutOutTrainer'
-    , ta_runs=13, ta_time_used=39.06893610954285, wallclock_time=69.50884103775024, budget=50.0)]
-    {'r2': -0.927720076752141}
+    , ta_runs=13, ta_time_used=47.0244140625, wallclock_time=84.24331212043762, budget=50.0)]
+    {'r2': -0.677547315962564}
     |    | Preprocessing   | Estimator   |   Weight |
     |---:|:----------------|:------------|---------:|
     |  0 | None            | Dummy       |        1 |
@@ -287,7 +287,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  17.361 seconds)
+   **Total running time of the script:** ( 5 minutes  11.696 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_regression.py:

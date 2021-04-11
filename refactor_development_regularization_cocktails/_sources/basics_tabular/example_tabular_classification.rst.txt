@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9ce471fd30> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f99e138bfd0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -75,7 +75,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018024444580078125, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0022068023681640625, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -114,7 +114,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=2.8527472019195557, wallclock_time=3.2592594623565674, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=3.5021121501922607, wallclock_time=3.943368434906006, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 52
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -157,7 +157,7 @@ with AutoPyTorch
       trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=32.98463702201843, wallclock_time=48.06534266471863, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=39.1822669506073, wallclock_time=59.74411630630493, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 41
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:KernelPCA:coef0, Value: 0.47591146237464943
@@ -216,16 +216,16 @@ with AutoPyTorch
       trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
       trainer:AdversarialTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'AdversarialTrainer'
-    , ta_runs=13, ta_time_used=45.82523322105408, wallclock_time=75.90046691894531, budget=50.0)]
-    {'accuracy': 0.8670520231213873}
+    , ta_runs=13, ta_time_used=56.001492738723755, wallclock_time=94.79381680488586, budget=50.0)]
+    {'accuracy': 0.8554913294797688}
     |    | Preprocessing   | Estimator            |   Weight |
     |---:|:----------------|:---------------------|---------:|
-    |  0 | None            | ExtraTreesClassifier |     0.3  |
-    |  1 | None            | CatBoostClassifier   |     0.24 |
-    |  2 | None            | RFClassifier         |     0.16 |
-    |  3 | None            | KNNClassifier        |     0.16 |
-    |  4 | None            | LGBMClassifier       |     0.1  |
-    |  5 | None            | SVC                  |     0.04 |
+    |  0 | None            | ExtraTreesClassifier |     0.32 |
+    |  1 | None            | CatBoostClassifier   |     0.3  |
+    |  2 | None            | RFClassifier         |     0.26 |
+    |  3 | None            | KNNClassifier        |     0.06 |
+    |  4 | None            | SVC                  |     0.04 |
+    |  5 | None            | LGBMClassifier       |     0.02 |
 
 
 
@@ -303,7 +303,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  52.094 seconds)
+   **Total running time of the script:** ( 5 minutes  53.062 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_classification.py:

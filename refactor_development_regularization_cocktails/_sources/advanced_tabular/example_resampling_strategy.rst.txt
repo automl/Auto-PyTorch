@@ -38,7 +38,7 @@ a 67% train size split.
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9ccd31a8b0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f99e13c92b0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -77,7 +77,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017933845520019531, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020847320556640625, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -116,7 +116,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.030927896499634, wallclock_time=3.5656731128692627, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=3.4937164783477783, wallclock_time=3.9294023513793945, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 52
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -159,7 +159,7 @@ a 67% train size split.
       trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=34.97218894958496, wallclock_time=50.9302659034729, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=39.78784728050232, wallclock_time=59.48887586593628, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 41
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:KernelPCA:coef0, Value: 0.47591146237464943
@@ -218,17 +218,17 @@ a 67% train size split.
       trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
       trainer:AdversarialTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'AdversarialTrainer'
-    , ta_runs=13, ta_time_used=49.90874171257019, wallclock_time=79.55195426940918, budget=50.0)]
+    , ta_runs=13, ta_time_used=55.645963191986084, wallclock_time=94.49625086784363, budget=50.0)]
     {'accuracy': 0.861271676300578}
     |    | Preprocessing   | Estimator            |   Weight |
     |---:|:----------------|:---------------------|---------:|
-    |  0 | None            | CatBoostClassifier   |     0.28 |
-    |  1 | None            | RFClassifier         |     0.26 |
-    |  2 | None            | ExtraTreesClassifier |     0.24 |
-    |  3 | None            | KNNClassifier        |     0.14 |
-    |  4 | None            | LGBMClassifier       |     0.06 |
+    |  0 | None            | CatBoostClassifier   |     0.36 |
+    |  1 | None            | RFClassifier         |     0.24 |
+    |  2 | None            | ExtraTreesClassifier |     0.18 |
+    |  3 | None            | KNNClassifier        |     0.12 |
+    |  4 | None            | LGBMClassifier       |     0.08 |
     |  5 | None            | SVC                  |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9ccd3d11f0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f99c9d51d90> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -267,7 +267,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017747879028320312, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021567344665527344, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -306,7 +306,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.7744314670562744, wallclock_time=4.217397689819336, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=4.355262517929077, wallclock_time=4.818415403366089, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 52
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -349,7 +349,7 @@ a 67% train size split.
       trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=42.58108949661255, wallclock_time=56.63887333869934, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=48.16661047935486, wallclock_time=65.47159552574158, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 41
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:KernelPCA:coef0, Value: 0.47591146237464943
@@ -408,17 +408,17 @@ a 67% train size split.
       trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
       trainer:AdversarialTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'AdversarialTrainer'
-    , ta_runs=13, ta_time_used=58.631803035736084, wallclock_time=86.13618111610413, budget=50.0)]
+    , ta_runs=13, ta_time_used=66.34492754936218, wallclock_time=101.63414287567139, budget=50.0)]
     {'accuracy': 0.8670520231213873}
     |    | Preprocessing   | Estimator         |   Weight |
     |---:|:----------------|:------------------|---------:|
-    |  0 | None            | TabularClassifier |     0.38 |
-    |  1 | None            | TabularClassifier |     0.3  |
+    |  0 | None            | TabularClassifier |     0.42 |
+    |  1 | None            | TabularClassifier |     0.28 |
     |  2 | None            | TabularClassifier |     0.12 |
     |  3 | None            | TabularClassifier |     0.1  |
-    |  4 | None            | TabularClassifier |     0.06 |
+    |  4 | None            | TabularClassifier |     0.04 |
     |  5 | None            | TabularClassifier |     0.04 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7f9cb72d4a30> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f99e051f190> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -457,7 +457,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001772165298461914, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.002269268035888672, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -496,7 +496,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.0117201805114746, wallclock_time=3.435751438140869, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=3.490065097808838, wallclock_time=3.9331746101379395, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 52
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -539,7 +539,7 @@ a 67% train size split.
       trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=34.795676946640015, wallclock_time=51.15718698501587, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=39.238572120666504, wallclock_time=59.68513870239258, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 41
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:KernelPCA:coef0, Value: 0.47591146237464943
@@ -598,15 +598,13 @@ a 67% train size split.
       trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
       trainer:AdversarialTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'AdversarialTrainer'
-    , ta_runs=13, ta_time_used=49.661083459854126, wallclock_time=79.96473717689514, budget=50.0)]
-    {'accuracy': 0.8554913294797688}
-    |    | Preprocessing   | Estimator            |   Weight |
-    |---:|:----------------|:---------------------|---------:|
-    |  0 | None            | ExtraTreesClassifier |     0.28 |
-    |  1 | None            | CatBoostClassifier   |     0.24 |
-    |  2 | None            | RFClassifier         |     0.24 |
-    |  3 | None            | KNNClassifier        |     0.14 |
-    |  4 | None            | LGBMClassifier       |     0.1  |
+    , ta_runs=13, ta_time_used=54.482197284698486, wallclock_time=95.011474609375, budget=50.0)]
+    {'accuracy': 0.8786127167630058}
+    |    | Preprocessing   | Estimator          |   Weight |
+    |---:|:----------------|:-------------------|---------:|
+    |  0 | None            | CatBoostClassifier |     0.94 |
+    |  1 | None            | KNNClassifier      |     0.04 |
+    |  2 | None            | RFClassifier       |     0.02 |
 
 
 
@@ -770,7 +768,7 @@ a 67% train size split.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  46.407 seconds)
+   **Total running time of the script:** ( 10 minutes  8.004 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_resampling_strategy.py:
