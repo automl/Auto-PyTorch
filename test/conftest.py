@@ -310,7 +310,6 @@ def get_fit_dictionary(X, y, validator, backend):
         'use_tensorboard_logger': True,
         'metrics_during_training': True,
         'split_id': 0,
-        'use_pynisher': False,
         'backend': backend,
         'logger_port': logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     }
