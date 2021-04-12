@@ -603,7 +603,7 @@ class TrainerChoice(autoPyTorchChoice):
         """
         updates = super()._get_search_space_updates(prefix=prefix)
 
-        result: Dict[str, Tuple] = dict()
+        result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in updates.keys():
