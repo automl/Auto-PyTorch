@@ -161,14 +161,19 @@ class ShapedResNetBackbone(ResNetBackbone):
         max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
         cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
-
         use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
+
+        shake_drop_prob_flag = False
+        if 'shake-drop' in multi_branch_choice.value_range:
+            shake_drop_prob_flag = True
         mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
-        shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
-        cs.add_hyperparameters([use_sc, mb_choice, shake_drop_prob])
+
+        cs.add_hyperparameters([use_sc, mb_choice])
         cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
-        # TODO check if shake_drop is as an option in mb_choice
-        # Incomplete work
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
+
+        if shake_drop_prob_flag:
+            shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
+            cs.add_hyperparameter(shake_drop_prob)
+            cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         return cs
