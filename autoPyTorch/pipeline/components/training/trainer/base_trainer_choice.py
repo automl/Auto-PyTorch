@@ -206,7 +206,7 @@ class TrainerChoice(autoPyTorchChoice):
                 if default_ in available_trainers:
                     default = default_
                     break
-        updates = self._get_search_space_updates()
+        updates: Dict[str, HyperparameterSearchSpace] = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter: HyperparameterSearchSpace = updates['__choice__']
             if not set(choice_hyperparameter.value_range).issubset(available_trainers):
@@ -592,7 +592,7 @@ class TrainerChoice(autoPyTorchChoice):
         string = str(self.run_summary)
         return string
 
-    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
         Keyword Arguments:
