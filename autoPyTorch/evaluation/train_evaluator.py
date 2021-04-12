@@ -36,9 +36,9 @@ def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
 class TrainEvaluator(AbstractEvaluator):
     """
     This class builds a pipeline using the provided configuration.
-    Such configuration is fitted using the datamanager object retrieved from disc,
-    via the backend.
-    After the configuration is fitted, it is save to disc and the performance estimate
+    A pipeline implementing the provided configuration is fitted
+    using the datamanager object retrieved from disc, via the backend.
+    After the pipeline is fitted, it is save to disc and the performance estimate
     is communicated to the main process via a Queue.
 
     Attributes:

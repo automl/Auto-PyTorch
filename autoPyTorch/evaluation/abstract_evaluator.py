@@ -259,7 +259,7 @@ class AbstractEvaluator(object):
 
     The provided configuration determines the type of pipeline created:
         int: A dummy classifier/dummy regressor is created. This estimator serves
-             as a baseline model to ignore all models that perform worst than this
+             as a baseline model to ignore all models that perform worse than this
              dummy estimator. Also, in the worst case scenario, this is the final
              estimator created (for instance, in case not enough memory was allocated
              and all configurations crashed).
@@ -317,10 +317,10 @@ class AbstractEvaluator(object):
         logger_port (Optional[int]):
             Logging is performed using a socket-server scheme to be robust against many
             parallel entities that want to write to the same file. This integer states the
-            socket port for the communication channel. If None is provided, a traditional
-            logger is used.
+            socket port for the communication channel.
+            If None is provided, the logging.handlers.DEFAULT_TCP_LOGGING_PORT is used.
         all_supported_metrics  (bool):
-            Whether all supported metric should be calculated for every configuration.
+            Whether all supported metrics should be calculated for every configuration.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
@@ -477,7 +477,8 @@ class AbstractEvaluator(object):
              as a baseline model to ignore all models that perform worst than this
              fixed estimator. Also, in the worst case scenario, this is the final
              estimator created (for instance, in case not enough memory was allocated).
-        str: A traditional pipeline is created, as the configuration will contain a
+        str: A pipeline with traditional classifiers like random forest, SVM, etc is created,
+             as the configuration will contain a
              string defining the configuration to use, for example 'RandomForest'
         Configuration: A pipeline object matching this configuration is created. This
              is the case of neural architecture search, where different backbones
@@ -674,7 +675,7 @@ class AbstractEvaluator(object):
 
         It is also the interface to the backed save_numrun_to_dir
         which stores all the pipeline related information to a single
-        directory or easy identification of the current run.
+        directory for easy identification of the current run.
 
         Args:
             Y_optimization_pred (np.ndarray):
