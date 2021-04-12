@@ -381,7 +381,7 @@ def test_tabular_input_support(openml_id, backend):
         ensemble_size=0,
     )
 
-    estimator._do_dummy_prediction = unittest.mock.MagicMock()
+    estimator._run_dummy_predictions = unittest.mock.MagicMock()
 
     with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
         AutoMLSMBOMock.return_value = ({}, {}, 'epochs')

@@ -1,7 +1,6 @@
 import copy
 import json
 import logging.handlers
-import math
 import multiprocessing
 import os
 import platform
@@ -13,7 +12,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -44,6 +43,7 @@ from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_classifier import BaseClassifier
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.backend import Backend, create
@@ -470,38 +470,19 @@ class BaseTask:
             run_history=self.run_history,
             backend=self._backend,
         )
+        msg = "No valid ensemble was created. Please check the log" \
+              f"file for errors. Default to the best individual estimator:{ensemble.identifiers_}"
+
         if self._logger is None:
-            warnings.warn(
-                "No valid ensemble was created. Please check the log"
-                "file for errors. Default to the best individual estimator:{}".format(
-                    ensemble.identifiers_
-                )
-            )
+            warnings.warn(msg)
         else:
-            self._logger.exception(
-                "No valid ensemble was created. Please check the log"
-                "file for errors. Default to the best individual estimator:{}".format(
-                    ensemble.identifiers_
-                )
-            )
+            self._logger.exception(msg)
 
         return ensemble
 
-    def _do_dummy_prediction(self) -> None:
-
-        assert self._metric is not None
-        assert self._logger is not None
-
-        self._logger.info("Starting to create dummy predictions.")
-
-        memory_limit = self._memory_limit
-        if memory_limit is not None:
-            memory_limit = int(math.ceil(memory_limit))
-
+    def _get_target_algorithm(self, wallclock_limit: int) -> ExecuteTaFuncWithQueue:
         scenario_mock = unittest.mock.Mock()
-        scenario_mock.wallclock_limit = self._total_walltime_limit
-        # This stats object is a hack - maybe the SMAC stats object should
-        # already be generated here!
+        scenario_mock.wallclock_limit = wallclock_limit
         stats = Stats(scenario_mock)
         stats.start_timing()
         ta = ExecuteTaFuncWithQueue(
@@ -513,46 +494,64 @@ class BaseTask:
             abort_on_first_run_crash=False,
             initial_num_run=self.num_run,
             stats=stats,
-            memory_limit=memory_limit,
+            memory_limit=self._memory_limit,
             disable_file_output=True if len(self._disable_file_output) > 0 else False,
             all_supported_metrics=self._all_supported_metrics
         )
+        return ta
 
-        status, cost, runtime, additional_info = ta.run(self.num_run, cutoff=self._total_walltime_limit)
-        if status == StatusType.SUCCESS:
-            self._logger.info("Finished creating dummy predictions.")
+    def _logging_failed_prediction(self, additional_info: Any, header: str) -> None:
+        assert self._logger is not None
+
+        if additional_info.get('exitcode') == -6:
+            err_msg = "The error suggests that the provided memory limits were too tight. Please " \
+                      "increase the 'ml_memory_limit' and try again. If this does not solve your " \
+                      "problem, please open an issue and paste the additional output. " \
+                      f"Additional output: {str(additional_info)}.",
+            output = f"{header}. {err_msg}"
+            self._logger.error(output)
+            raise ValueError(output)
+
         else:
-            if additional_info.get('exitcode') == -6:
-                self._logger.error(
-                    "Dummy prediction failed with run state %s. "
-                    "The error suggests that the provided memory limits were too tight. Please "
-                    "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                    "problem, please open an issue and paste the additional output. "
-                    "Additional output: %s.",
-                    str(status), str(additional_info),
-                )
-                # Fail if dummy prediction fails.
-                raise ValueError(
-                    "Dummy prediction failed with run state %s. "
-                    "The error suggests that the provided memory limits were too tight. Please "
-                    "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                    "problem, please open an issue and paste the additional output. "
-                    "Additional output: %s." %
-                    (str(status), str(additional_info)),
-                )
+            output = f"{header} and additional output: {str(additional_info)}."
+            self._logger.error(output)
+            raise ValueError(output)
 
+    def _parallel_worker_allocation(self, num_future_jobs: int,
+                                    dask_futures: List[List[Union[Type[BaseClassifier], Any]]]
+                                    ) -> None:
+        """
+        The functin to allocate jobs to unused workers.
+
+        Args:
+            num_future_jobs (int): The number of jobs to run
+            dask_futures (List[List[Union[Type[BaseClassifier], Any]]]):
+                The list of pairs of the classifier to run and the function to
+                train the classifier
+
+        Note:
+            - `dask_futures.pop(0)` gives a classifier and a next job to run
+            - `future.result()` calls a submitted job in and return the results
+            - We have to wait for the return of `future.result()`
+              once the number of running jobs reaches `num_workers` in self.dask_client
+
+        """
+        assert self._logger is not None
+
+        while num_future_jobs >= 1:
+            num_future_jobs -= 1
+            classifier, future = dask_futures.pop(0)
+            # call the training by future.result()
+            status, cost, runtime, additional_info = future.result()
+
+            if status == StatusType.SUCCESS:
+                self._logger.info(
+                    f"Fitting {classifier} took {runtime}s, performance:{cost}/{additional_info}")
             else:
-                self._logger.error(
-                    "Dummy prediction failed with run state %s and additional output: %s.",
-                    str(status), str(additional_info),
-                )
-                # Fail if dummy prediction fails.
-                raise ValueError(
-                    "Dummy prediction failed with run state %s and additional output: %s."
-                    % (str(status), str(additional_info))
-                )
+                header = f"Traditional prediction for {classifier} failed with run state {str(status)}"
+                self._logging_failed_prediction(additional_info, header)
 
-    def _do_traditional_prediction(self, time_left: int) -> None:
+    def _traditional_predictions(self, time_left: int) -> None:
         """
         Fits traditional machine learning algorithms to the provided dataset, while
         complying with time resource allocation.
@@ -583,10 +582,6 @@ class BaseTask:
         assert self._dask_client is not None
 
         self.num_run += 1
-
-        memory_limit = self._memory_limit
-        if memory_limit is not None:
-            memory_limit = int(math.ceil(memory_limit))
         available_classifiers = get_available_classifiers()
         dask_futures = []
 
@@ -595,94 +590,51 @@ class BaseTask:
 
             # Only launch a task if there is time
             start_time = time.time()
-            if time_left >= self._func_eval_time_limit_secs:
+            sufficient_time_available = (time_left >= self._func_eval_time_limit_secs)
+
+            if sufficient_time_available:
                 self._logger.info(f"{n_r}: Started fitting {classifier} with cutoff={self._func_eval_time_limit_secs}")
-                scenario_mock = unittest.mock.Mock()
-                scenario_mock.wallclock_limit = time_left
-                # This stats object is a hack - maybe the SMAC stats object should
-                # already be generated here!
-                stats = Stats(scenario_mock)
-                stats.start_timing()
-                ta = ExecuteTaFuncWithQueue(
-                    backend=self._backend,
-                    seed=self.seed,
-                    metric=self._metric,
-                    logger_port=self._logger_port,
-                    cost_for_crash=get_cost_of_crash(self._metric),
-                    abort_on_first_run_crash=False,
-                    initial_num_run=n_r,
-                    stats=stats,
-                    memory_limit=memory_limit,
-                    disable_file_output=True if len(self._disable_file_output) > 0 else False,
-                    all_supported_metrics=self._all_supported_metrics
-                )
+                ta = self._get_target_algorithm(time_left)
                 dask_futures.append([
                     classifier,
                     self._dask_client.submit(
                         ta.run, config=classifier,
                         cutoff=self._func_eval_time_limit_secs,
-                    )
-                ])
+                    )])
 
-                # Increment the launched job index
-                self.num_run = n_r
-
-            # When managing time, we need to take into account the allocated time resources,
-            # which are dependent on the number of cores. 'dask_futures' is a proxy to the number
-            # of workers /n_jobs that we have, in that if there are 4 cores allocated, we can run at most
-            # 4 task in parallel. Every 'cutoff' seconds, we generate up to 4 tasks.
-            # If we only have 4 workers and there are 4 futures in dask_futures, it means that every
-            # worker has a task. We would not like to launch another job until a worker is available. To this
-            # end, the following if-statement queries the number of active jobs, and forces to wait for a job
-            # completion via future.result(), so that a new worker is available for the next iteration.
             if len(dask_futures) >= self.n_jobs:
+                last_iteration = (n_r >= total_number_classifiers - 1)
+                num_future_jobs = 1
+                # If it is the last iteration, we have to run all the jobs
+                if not sufficient_time_available or last_iteration:
+                    num_future_jobs = len(dask_futures)
 
-                # How many workers to wait before starting fitting the next iteration
-                workers_to_wait = 1
-                if n_r >= total_number_classifiers - 1 or time_left <= self._func_eval_time_limit_secs:
-                    # If on the last iteration, flush out all tasks
-                    workers_to_wait = len(dask_futures)
+                self._parallel_worker_allocation(num_future_jobs=num_future_jobs,
+                                                 dask_futures=dask_futures)
 
-                while workers_to_wait >= 1:
-                    workers_to_wait -= 1
-                    # We launch dask jobs only when there are resources available.
-                    # This allow us to control time allocation properly, and early terminate
-                    # the traditional machine learning pipeline
-                    cls, future = dask_futures.pop(0)
-                    status, cost, runtime, additional_info = future.result()
-                    if status == StatusType.SUCCESS:
-                        self._logger.info(
-                            f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
-                    else:
-                        if additional_info.get('exitcode') == -6:
-                            self._logger.error(
-                                "Traditional prediction for %s failed with run state %s. "
-                                "The error suggests that the provided memory limits were too tight. Please "
-                                "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                                "problem, please open an issue and paste the additional output. "
-                                "Additional output: %s.",
-                                cls, str(status), str(additional_info),
-                            )
-                        else:
-                            self._logger.error(
-                                "Traditional prediction for %s failed with run state %s and additional output: %s.",
-                                cls, str(status), str(additional_info),
-                            )
-
-            # In the case of a serial execution, calling submit halts the run for a resource
-            # dynamically adjust time in this case
             time_left -= int(time.time() - start_time)
+            self.num_run = n_r
 
-            # Exit if no more time is available for a new classifier
             if time_left < self._func_eval_time_limit_secs:
                 self._logger.warning("Not enough time to fit all traditional machine learning models."
                                      "Please consider increasing the run time to further improve performance.")
                 break
 
     def _run_dummy_predictions(self) -> None:
+        assert self._metric is not None
+        assert self._logger is not None
+
         dummy_task_name = 'runDummy'
         self._stopwatch.start_task(dummy_task_name)
-        self._do_dummy_prediction()
+        self._logger.info("Starting to create dummy predictions.")
+        ta = self._get_target_algorithm(self._total_walltime_limit)
+        status, cost, runtime, additional_info = ta.run(self.num_run, cutoff=self._total_walltime_limit)
+        if status == StatusType.SUCCESS:
+            self._logger.info("Finished creating dummy predictions.")
+        else:
+            header = f"Dummy prediction failed with run state {str(status)}"
+            self._logging_failed_prediction(additional_info=additional_info,
+                                            header=header)
         self._stopwatch.stop_task(dummy_task_name)
 
     def _run_traditional_ml(self) -> None:
@@ -699,7 +651,7 @@ class BaseTask:
             time_for_traditional = int(
                 self._total_walltime_limit - elapsed_time - self._func_eval_time_limit_secs
             )
-            self._do_traditional_prediction(time_left=time_for_traditional)
+            self._traditional_predictions(time_left=time_for_traditional)
             self._stopwatch.stop_task(traditional_task_name)
 
     def _run_ensemble(self, dataset: BaseDataset, optimize_metric: str,
