@@ -82,7 +82,7 @@ class CutOut:
                 default_value=True),
             se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="se_lastk",
-                value_range=(3, ),
+                value_range=(3,),
                 default_value=3),
             patch_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="patch_ratio",

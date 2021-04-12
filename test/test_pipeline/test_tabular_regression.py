@@ -164,7 +164,7 @@ class TestTabularRegression:
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             exclude={'trainer': ['AdversarialTrainer']})
-        for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads', 'dataset_properties']:
+        for key in ['num_run', 'device', 'split_id', 'torch_num_threads', 'dataset_properties']:
             fit_dictionary_tabular_copy = fit_dictionary_tabular.copy()
             fit_dictionary_tabular_copy.pop(key)
             with pytest.raises(ValueError, match=r"To fit .+?, expected fit dictionary to have"):
