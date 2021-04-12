@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
+
 import torch
 
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
