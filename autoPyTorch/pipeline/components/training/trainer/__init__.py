@@ -288,8 +288,6 @@ class TrainerChoice(autoPyTorchChoice):
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
 
-        # TODO: when have the optimizer code, the pynisher object might have failed
-        # We should process this function as Failure if so trough fit_function.exit_status
         return self.choice
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
