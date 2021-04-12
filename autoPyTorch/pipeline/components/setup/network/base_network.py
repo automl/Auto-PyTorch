@@ -116,7 +116,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         """
         if len(self.network_snapshots) == 0:
             assert self.network is not None
-            return self._predict(network=self.network, loader=loader).cpu().numpy()
+            return self._predict(network=self.network, loader=loader).numpy()
         else:
             # if there are network snapshots,
             # take average of predictions of all snapshots
@@ -125,7 +125,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             for network in self.network_snapshots:
                 Y_snapshot_preds.append(self._predict(network, loader))
             Y_snapshot_preds_tensor = torch.stack(Y_snapshot_preds)
-            return Y_snapshot_preds_tensor.mean(dim=0).cpu().numpy()
+            return Y_snapshot_preds_tensor.mean(dim=0).numpy()
 
     def _predict(self, network: torch.nn.Module, loader: torch.utils.data.DataLoader) -> torch.Tensor:
         network.to(self.device)
