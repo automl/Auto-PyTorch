@@ -47,7 +47,7 @@ from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models impo
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.backend import Backend, create
-from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool
+from autoPyTorch.utils.common import replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import (
     PicklableClientLogger,
@@ -170,13 +170,14 @@ class BaseTask:
             os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
 
         self.search_space: Optional[ConfigurationSpace] = None
-        self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: Optional[RunHistory] = None
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
+        self.num_run: int = 1
+        self.experiment_task_name: str = 'runSearch'
 
         # By default try to use the TCP logging port or get a new port
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -687,7 +688,7 @@ class BaseTask:
 
     def _run_traditional_ml(self,
                             enable_traditional_pipeline: bool,
-                            func_eval_time_limit_secs: Optional[int] = None) -> int:
+                            func_eval_time_limit_secs: Optional[int] = None) -> None:
         """We would like to obtain training time for at least 1 Neural network in SMAC"""
 
         if enable_traditional_pipeline:
@@ -784,7 +785,6 @@ class BaseTask:
                 self._logger.warning(f"Could not save {trajectory_filename} due to {e}...")
 
     def _run_smac(self,
-                  experiment_task_name: str,
                   dataset: BaseDataset,
                   proc_ensemble: EnsembleBuilderManager,
                   total_walltime_limit: int,
@@ -796,7 +796,7 @@ class BaseTask:
 
         smac_task_name = 'runSMAC'
         self._stopwatch.start_task(smac_task_name)
-        elapsed_time = self._stopwatch.wall_elapsed(experiment_task_name)
+        elapsed_time = self._stopwatch.wall_elapsed(self.experiment_task_name)
         time_left_for_smac = max(0, total_walltime_limit - elapsed_time)
 
         self._logger.info(f"Run SMAC with {time_left_for_smac:.2f} sec time left")
@@ -830,6 +830,116 @@ class BaseTask:
             )
 
             self._start_smac(proc_smac)
+
+    def _search_settings(self, dataset: BaseDataset, disable_file_output: List,
+                         optimize_metric: str, memory_limit: Optional[int] = 4096,
+                         total_walltime_limit: int = 100, all_supported_metrics: bool = True
+                         ) -> None:
+
+        """Initialise information needed for the experiment"""
+        self.experiment_task_name = 'runSearch'
+        dataset_requirements = get_dataset_requirements(
+            info=self._get_required_dataset_properties(dataset))
+        dataset_properties = dataset.get_dataset_properties(dataset_requirements)
+
+        self._stopwatch.start_task(self.experiment_task_name)
+        self.dataset_name = dataset.dataset_name
+        self._all_supported_metrics = all_supported_metrics
+        self._disable_file_output = disable_file_output
+        self._memory_limit = memory_limit
+        self._time_for_task = total_walltime_limit
+        self._metric = get_metrics(
+            names=[optimize_metric], dataset_properties=dataset_properties)[0]
+
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset_name)
+
+        # Save start time to backend
+        self._backend.save_start_time(str(self.seed))
+        self._backend.save_datamanager(dataset)
+
+        # Print debug information to log
+        self._print_debug_info_to_log()
+
+        self.search_space = self.get_search_space(dataset)
+
+        # If no dask client was provided, we create one, so that we can
+        # start a ensemble process in parallel to smbo optimize
+        if (
+            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs is not None and self.n_jobs > 1)
+        ):
+            self._create_dask_client()
+        else:
+            self._is_dask_client_internally_created = False
+
+    def _adapt_time_resource_allocation(self,
+                                        total_walltime_limit: int,
+                                        func_eval_time_limit_secs: Optional[int] = None
+                                        ) -> int:
+
+        # Handle time resource allocation
+        elapsed_time = self._stopwatch.wall_elapsed(self.experiment_task_name)
+        time_left_for_modelfit = int(max(0, total_walltime_limit - elapsed_time))
+        if func_eval_time_limit_secs is None or func_eval_time_limit_secs > time_left_for_modelfit:
+            self._logger.warning(
+                'Time limit for a single run is higher than total time '
+                'limit. Capping the limit for a single run to the total '
+                'time given to SMAC (%f)' % time_left_for_modelfit
+            )
+            func_eval_time_limit_secs = time_left_for_modelfit
+
+        # Make sure that at least 2 models are created for the ensemble process
+        num_models = time_left_for_modelfit // func_eval_time_limit_secs
+        if num_models < 2:
+            func_eval_time_limit_secs = time_left_for_modelfit // 2
+            self._logger.warning(
+                "Capping the func_eval_time_limit_secs to {} to have "
+                "time for a least 2 models to ensemble.".format(
+                    func_eval_time_limit_secs
+                )
+            )
+
+        return func_eval_time_limit_secs
+
+    def _save_ensemble_performance_history(self, proc_ensemble: EnsembleBuilderManager) -> None:
+        if len(proc_ensemble.futures) > 0:
+            # Also add ensemble runs that did not finish within smac time
+            # and add them into the ensemble history
+            self._logger.info("Ensemble script still running, waiting for it to finish.")
+            result = proc_ensemble.futures.pop().result()
+            if result:
+                ensemble_history, _, _, _ = result
+                self.ensemble_performance_history.extend(ensemble_history)
+            self._logger.info("Ensemble script finished, continue shutdown.")
+
+        # save the ensemble performance history file
+        if len(self.ensemble_performance_history) > 0:
+            pd.DataFrame(self.ensemble_performance_history).to_json(
+                os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
+
+    def _finish_experiment(self, proc_ensemble: EnsembleBuilderManager,
+                           load_models: bool) -> None:
+
+        # Wait until the ensemble process is finished to avoid shutting down
+        # while the ensemble builder tries to access the data
+        self._logger.info("Start Shutdown")
+
+        if proc_ensemble is not None:
+            self.ensemble_performance_history = list(proc_ensemble.history)
+            self._save_ensemble_performance_history(proc_ensemble)
+
+        self._logger.info("Closing the dask infrastructure")
+        self._close_dask_client()
+        self._logger.info("Finished closing the dask infrastructure")
+
+        if load_models:
+            self._logger.info("Loading models...")
+            self._load_models()
+            self._logger.info("Finished loading models...")
+
+        # Clean up the logger
+        self._logger.info("Starting to clean up the logger")
+        self._clean_logger()
 
     def _search(
         self,
@@ -927,69 +1037,20 @@ class BaseTask:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
                              ":{}".format(self.task_type, dataset.task_type))
+        if self.task_type is None:
+            raise ValueError("Cannot interpret task type from the dataset")
         if precision not in [16, 32, 64]:
             raise ValueError(f"precision must be either [16, 32, 64], but got {precision}")
 
-        # Initialise information needed for the experiment
-        experiment_task_name = 'runSearch'
-        dataset_requirements = get_dataset_requirements(
-            info=self._get_required_dataset_properties(dataset))
-        self._dataset_requirements = dataset_requirements
-        dataset_properties = dataset.get_dataset_properties(dataset_requirements)
-        self._stopwatch.start_task(experiment_task_name)
-        self.dataset_name = dataset.dataset_name
-        if self._logger is None:
-            self._logger = self._get_logger(self.dataset_name)
-        self._all_supported_metrics = all_supported_metrics
-        self._disable_file_output = disable_file_output
-        self._memory_limit = memory_limit
-        self._time_for_task = total_walltime_limit
-        # Save start time to backend
-        self._backend.save_start_time(str(self.seed))
+        self._search_settings(dataset=dataset, disable_file_output=disable_file_output,
+                              optimize_metric=optimize_metric, memory_limit=memory_limit,
+                              all_supported_metrics=all_supported_metrics,
+                              total_walltime_limit=total_walltime_limit)
 
-        self._backend.save_datamanager(dataset)
-
-        # Print debug information to log
-        self._print_debug_info_to_log()
-
-        self._metric = get_metrics(
-            names=[optimize_metric], dataset_properties=dataset_properties)[0]
-
-        self.search_space = self.get_search_space(dataset)
-
-        if self.task_type is None:
-            raise ValueError("Cannot interpret task type from the dataset")
-
-        # If no dask client was provided, we create one, so that we can
-        # start a ensemble process in parallel to smbo optimize
-        if (
-            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs is not None and self.n_jobs > 1)
-        ):
-            self._create_dask_client()
-        else:
-            self._is_dask_client_internally_created = False
-
-        # Handle time resource allocation
-        elapsed_time = self._stopwatch.wall_elapsed(experiment_task_name)
-        time_left_for_modelfit = int(max(0, total_walltime_limit - elapsed_time))
-        if func_eval_time_limit_secs is None or func_eval_time_limit_secs > time_left_for_modelfit:
-            self._logger.warning(
-                'Time limit for a single run is higher than total time '
-                'limit. Capping the limit for a single run to the total '
-                'time given to SMAC (%f)' % time_left_for_modelfit
-            )
-            func_eval_time_limit_secs = time_left_for_modelfit
-
-        # Make sure that at least 2 models are created for the ensemble process
-        num_models = time_left_for_modelfit // func_eval_time_limit_secs
-        if num_models < 2:
-            func_eval_time_limit_secs = time_left_for_modelfit // 2
-            self._logger.warning(
-                "Capping the func_eval_time_limit_secs to {} to have "
-                "time for a least 2 models to ensemble.".format(
-                    func_eval_time_limit_secs
-                )
-            )
+        func_eval_time_limit_secs = self._adapt_time_resource_allocation(
+            total_walltime_limit=total_walltime_limit,
+            func_eval_time_limit_secs=func_eval_time_limit_secs
+        )
 
         self.num_run = 1
         self._run_dummy_predictions()
@@ -999,47 +1060,13 @@ class BaseTask:
                                            optimize_metric=optimize_metric,
                                            total_walltime_limit=total_walltime_limit)
 
-        self._run_smac(experiment_task_name=experiment_task_name,
-                       budget=budget, budget_type=budget_type, proc_ensemble=proc_ensemble,
+        self._run_smac(budget=budget, budget_type=budget_type, proc_ensemble=proc_ensemble,
                        dataset=dataset, total_walltime_limit=total_walltime_limit,
                        func_eval_time_limit_secs=func_eval_time_limit_secs,
                        get_smac_object_callback=get_smac_object_callback,
                        smac_scenario_args=smac_scenario_args)
 
-        # Wait until the ensemble process is finished to avoid shutting down
-        # while the ensemble builder tries to access the data
-        self._logger.info("Start Shutdown")
-
-        if proc_ensemble is not None:
-            self.ensemble_performance_history = list(proc_ensemble.history)
-
-            if len(proc_ensemble.futures) > 0:
-                # Also add ensemble runs that did not finish within smac time
-                # and add them into the ensemble history
-                self._logger.info("Ensemble script still running, waiting for it to finish.")
-                result = proc_ensemble.futures.pop().result()
-                if result:
-                    ensemble_history, _, _, _ = result
-                    self.ensemble_performance_history.extend(ensemble_history)
-                self._logger.info("Ensemble script finished, continue shutdown.")
-
-            # save the ensemble performance history file
-            if len(self.ensemble_performance_history) > 0:
-                pd.DataFrame(self.ensemble_performance_history).to_json(
-                    os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
-
-        self._logger.info("Closing the dask infrastructure")
-        self._close_dask_client()
-        self._logger.info("Finished closing the dask infrastructure")
-
-        if load_models:
-            self._logger.info("Loading models...")
-            self._load_models()
-            self._logger.info("Finished loading models...")
-
-        # Clean up the logger
-        self._logger.info("Starting to clean up the logger")
-        self._clean_logger()
+        self._finish_experiment(proc_ensemble=proc_ensemble, load_models=load_models)
 
         return self
 
