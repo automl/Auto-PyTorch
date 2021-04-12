@@ -3,6 +3,7 @@ import re
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
+    Constant,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
@@ -314,6 +315,9 @@ class TestTabularRegression:
             if isinstance(hyperparameter, CategoricalHyperparameter):
                 value_range = (hyperparameter.choices[0],)
                 default_value = hyperparameter.choices[0]
+            elif isinstance(hyperparameter, Constant):
+                value_range = (hyperparameter.value,)
+                default_value = hyperparameter.value
             else:
                 value_range = (0, 1)
                 default_value = 1
