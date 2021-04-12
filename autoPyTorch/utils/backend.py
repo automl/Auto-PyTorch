@@ -334,6 +334,28 @@ class Backend(object):
         return os.path.join(self.internals_directory, 'runs', '%d_%d_%s' % (seed, num_run, budget))
 
     def get_next_num_run(self, peek: bool = False) -> int:
+        """
+        Every pipeline that is fitted by the estimator is stored with an
+        identifier called num_run. A dummy classifier will always have a num_run
+        equal to 1, and all other new configurations that are explored will
+        have a sequentially increasing identifier.
+
+        This method returns the next num_run a configuration should take.
+
+        Parameters
+        ----------
+        peek: bool
+            By default, the next num_rum will be returned, i.e. self.active_num_run + 1
+            Yet, if this bool parameter is equal to True, the value of the current
+            num_run is provided, i.e, self.active_num_run.
+            In other words, peek allows to get the current maximum identifier
+            of a configuration.
+
+        Returns
+        -------
+        num_run: int
+            An unique identifier for a configuration
+        """
 
         # If there are other num_runs, their name would be runs/<seed>_<num_run>_<budget>
         other_num_runs = [int(os.path.basename(run_dir).split('_')[1])
