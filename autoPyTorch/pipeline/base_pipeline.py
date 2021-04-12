@@ -579,6 +579,5 @@ class BasePipeline(Pipeline):
             'torch_num_threads': 1,
             'early_stopping': 10,
             'use_tensorboard_logger': True,
-            'use_pynisher': False,
             'metrics_during_training': True
         }

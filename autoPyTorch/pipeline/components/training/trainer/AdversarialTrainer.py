@@ -195,8 +195,6 @@ class AdversarialTrainer(BaseTrainerComponent):
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, epsilon, UniformFloatHyperparameter)
-
-        get_hyperparameter(se_lastk, Constant)
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
         use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
         se_lastk = get_hyperparameter(se_lastk, Constant)
