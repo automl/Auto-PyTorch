@@ -32,7 +32,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     RunSummary,
 )
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, update_model_state_dict_from_swa
-from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, get_device_from_fit_dictionary
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
 trainer_directory = os.path.split(__file__)[0]
@@ -208,7 +208,7 @@ class TrainerChoice(autoPyTorchChoice):
                     break
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
-            choice_hyperparameter = updates['__choice__']
+            choice_hyperparameter: HyperparameterSearchSpace = updates['__choice__']
             if not set(choice_hyperparameter.value_range).issubset(available_trainers):
                 raise ValueError("Expected given update for {} to have "
                                  "choices in {} got {}".format(self.__class__.__name__,
@@ -282,18 +282,9 @@ class TrainerChoice(autoPyTorchChoice):
         )
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
-        self.choice = cast(autoPyTorchComponent, self.choice)
+        self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
-
-        if X['use_pynisher']:
-            # Normally the X[network] is a pointer to the object, so at the
-            # end, when we train using X, the pipeline network is updated for free
-            # If we do multiprocessing (because of pynisher) we have to update
-            # X[network] manually. we do so in a way that every pipeline component
-            # can see this new network -- via an update, not overwrite of the pointer
-            state_dict = state_dict.result
-            X['network'].load_state_dict(state_dict)
 
         # TODO: when have the optimizer code, the pynisher object might have failed
         # We should process this function as Failure if so trough fit_function.exit_status
