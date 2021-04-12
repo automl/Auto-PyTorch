@@ -3,8 +3,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tabular Regression &#8212; AutoPyTorch 0.0.3 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
@@ -118,12 +117,12 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-basics-tabular-example-tabular-regression-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<section class="sphx-glr-example-title" id="tabular-regression">
+<div class="sphx-glr-example-title section" id="tabular-regression">
 <span id="sphx-glr-basics-tabular-example-tabular-regression-py"></span><h1>Tabular Regression<a class="headerlink" href="#tabular-regression" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f99e0f64550&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f4c5204e4f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -160,7 +159,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002025604248046875, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020339488983154297, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -197,7 +196,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.358346700668335, wallclock_time=5.936842918395996, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=3.6462996006011963, wallclock_time=6.505040407180786, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 33
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
@@ -236,7 +235,7 @@ with AutoPyTorch</p>
   trainer:MixUpTrainer:use_snapshot_ensemble, Value: True
   trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=10, ta_time_used=36.89717173576355, wallclock_time=56.20049571990967, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+, ta_runs=10, ta_time_used=40.214481830596924, wallclock_time=61.165581703186035, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 158
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -278,8 +277,8 @@ with AutoPyTorch</p>
   trainer:RowCutOutTrainer:use_snapshot_ensemble, Value: False
   trainer:RowCutOutTrainer:use_stochastic_weight_averaging, Value: False
   trainer:__choice__, Value: &#39;RowCutOutTrainer&#39;
-, ta_runs=13, ta_time_used=47.0244140625, wallclock_time=84.24331212043762, budget=50.0)]
-{&#39;r2&#39;: -0.677547315962564}
+, ta_runs=13, ta_time_used=51.03989124298096, wallclock_time=90.45402932167053, budget=50.0)]
+{&#39;r2&#39;: -1.011142526203646}
 |    | Preprocessing   | Estimator   |   Weight |
 |---:|:----------------|:------------|---------:|
 |  0 | None            | Dummy       |        1 |
@@ -367,7 +366,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  11.696 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  11.980 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -380,7 +379,7 @@ with AutoPyTorch</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
+</div>
 
 
     </div>
@@ -402,7 +401,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
     </p>
   </div>
 </footer>

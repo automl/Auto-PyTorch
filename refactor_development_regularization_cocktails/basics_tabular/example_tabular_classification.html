@@ -3,8 +3,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tabular Classification &#8212; AutoPyTorch 0.0.3 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
@@ -118,12 +117,12 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-basics-tabular-example-tabular-classification-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<section class="sphx-glr-example-title" id="tabular-classification">
+<div class="sphx-glr-example-title section" id="tabular-classification">
 <span id="sphx-glr-basics-tabular-example-tabular-classification-py"></span><h1>Tabular Classification<a class="headerlink" href="#tabular-classification" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f99e138bfd0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f4c52f10190&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -162,7 +161,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0022068023681640625, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002190113067626953, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -201,7 +200,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.5021121501922607, wallclock_time=3.943368434906006, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=3.8545103073120117, wallclock_time=4.379502534866333, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 52
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -244,7 +243,7 @@ with AutoPyTorch</p>
   trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: True
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=10, ta_time_used=39.1822669506073, wallclock_time=59.74411630630493, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
+, ta_runs=10, ta_time_used=41.34264516830444, wallclock_time=61.98261833190918, budget=16.666666666666664), TrajEntry(train_perf=1.0, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 41
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:KernelPCA:coef0, Value: 0.47591146237464943
@@ -303,16 +302,16 @@ with AutoPyTorch</p>
   trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
   trainer:AdversarialTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;AdversarialTrainer&#39;
-, ta_runs=13, ta_time_used=56.001492738723755, wallclock_time=94.79381680488586, budget=50.0)]
-{&#39;accuracy&#39;: 0.8554913294797688}
+, ta_runs=13, ta_time_used=59.29621171951294, wallclock_time=98.10808634757996, budget=50.0)]
+{&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing   | Estimator            |   Weight |
 |---:|:----------------|:---------------------|---------:|
-|  0 | None            | ExtraTreesClassifier |     0.32 |
-|  1 | None            | CatBoostClassifier   |     0.3  |
-|  2 | None            | RFClassifier         |     0.26 |
-|  3 | None            | KNNClassifier        |     0.06 |
-|  4 | None            | SVC                  |     0.04 |
-|  5 | None            | LGBMClassifier       |     0.02 |
+|  0 | None            | CatBoostClassifier   |     0.28 |
+|  1 | None            | ExtraTreesClassifier |     0.26 |
+|  2 | None            | RFClassifier         |     0.2  |
+|  3 | None            | KNNClassifier        |     0.12 |
+|  4 | None            | LGBMClassifier       |     0.08 |
+|  5 | None            | SVC                  |     0.06 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -383,7 +382,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  53.062 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  52.748 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -396,7 +395,7 @@ with AutoPyTorch</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
+</div>
 
 
     </div>
@@ -418,7 +417,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
     </p>
   </div>
 </footer>
