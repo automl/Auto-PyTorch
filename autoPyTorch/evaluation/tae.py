@@ -1,3 +1,8 @@
+"""
+TODO:
+    * Put documentation for some functions
+    * Add tests for some functions
+"""
 # -*- encoding: utf-8 -*-
 import functools
 import json
@@ -6,15 +11,16 @@ import math
 import multiprocessing
 import time
 import traceback
-import typing
 import warnings
-from queue import Empty
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
 
 import numpy as np
 
 import pynisher
+from pynisher import TimeoutException, MemorylimitException
+from pynisher.enforce_limits import function_wrapper
 
 from smac.runhistory.runhistory import RunInfo, RunValue
 from smac.stats.stats import Stats
@@ -24,18 +30,42 @@ from smac.tae.execute_func import AbstractTAFunc
 import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.utils.attr_dict import AttrDict
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
 
-def fit_predict_try_except_decorator(
-        ta: typing.Callable,
-        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> None:
+class AdditionalRunInfo(AttrDict):
+    traceback: Optional[str]
+    error: Optional[str]
+    subprocess_stdout: Optional[str]
+    subprocess_stderr: Optional[str]
+    info: Optional[str]
+    exit_status: Optional[Any]
+    exit_code: Optional[str]
+    learning_curve: Optional[List[List]]
+    learning_curve_runtime: Optional[List[List]]
+    train_learning_curve: Optional[List[List]]
+    validation_learning_curve: Optional[List[List]]
+    test_learning_curve: Optional[List[List]]
+    configuration_origin: Optional[str]
+    duration: Optional[float]
+    num_run: Optional[int]
+    train_loss: Optional[Dict[str, float]]
+    validation_loss: Optional[Dict[str, float]]
+    test_loss: Optional[Dict[str, float]]
+
+
+AdditionalRunInfoType = Union[Dict[str, Any], AdditionalRunInfo]
+
+
+def fit_predict_try_except_decorator(ta: Callable, queue: multiprocessing.Queue,
+                                     cost_for_crash: float, **kwargs: Any) -> None:
     try:
         return ta(queue=queue, **kwargs)
     except Exception as e:
-        if isinstance(e, (MemoryError, pynisher.TimeoutException)):
+        if isinstance(e, (MemoryError, TimeoutException)):
             # Re-raise the memory error to let the pynisher handle that correctly
             raise e
 
@@ -96,23 +126,23 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             metric: autoPyTorchMetric,
             cost_for_crash: float,
             abort_on_first_run_crash: bool,
-            pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            pipeline_config: Optional[Dict[str, Any]] = None,
             initial_num_run: int = 1,
-            stats: typing.Optional[Stats] = None,
+            stats: Optional[Stats] = None,
             run_obj: str = 'quality',
             par_factor: int = 1,
             output_y_hat_optimization: bool = True,
-            include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            memory_limit: typing.Optional[int] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            memory_limit: Optional[int] = None,
             disable_file_output: bool = False,
-            init_params: typing.Dict[str, typing.Any] = None,
+            init_params: Dict[str, Any] = None,
             budget_type: str = None,
-            ta: typing.Optional[typing.Callable] = None,
+            ta: Optional[Callable] = None,
             logger_port: int = None,
             all_supported_metrics: bool = True,
             pynisher_context: str = 'spawn',
-            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
@@ -148,7 +178,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
         self.logger_port = logger_port
         if self.logger_port is None:
-            self.logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
+            self.logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
         else:
             self.logger = get_named_client_logger(
                 name="TAE",
@@ -175,10 +205,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.search_space_updates = search_space_updates
 
-    def run_wrapper(
-            self,
-            run_info: RunInfo,
-    ) -> typing.Tuple[RunInfo, RunValue]:
+    def run_wrapper(self, run_info: RunInfo) -> Tuple[RunInfo, RunValue]:
         """
         wrapper function for ExecuteTARun.run_wrapper() to cap the target algorithm
         runtime if it would run over the total allowed runtime.
@@ -195,18 +222,16 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         if self.budget_type is None:
             if run_info.budget != 0:
                 raise ValueError(
-                    'If budget_type is None, budget must be.0, but is %f' % run_info.budget
+                    f'If budget_type is None, budget must be.0, but is {run_info.budget}'
                 )
         else:
             if run_info.budget == 0:
                 run_info = run_info._replace(budget=100.0)
             elif run_info.budget <= 0 or run_info.budget > 100:
-                raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
-                                 run_info.budget)
+                raise ValueError(f'Invalid value for budget, must be in (0, 100], but got {run_info.budget}')
             if self.budget_type not in ('epochs', 'runtime'):
-                raise ValueError("Illegal value for budget type, must be one of "
-                                 "('epochs', 'runtime'), but is : %s" %
-                                 self.budget_type)
+                raise ValueError("Invalid value for budget type, must be one of "
+                                 f"('epochs', 'runtime'), but got : {self.budget_type}")
 
         remaining_time = self.stats.get_remaing_time_budget()
 
@@ -231,63 +256,157 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         return super().run_wrapper(run_info=run_info)
 
-    def run(
-            self,
-            config: Configuration,
-            instance: typing.Optional[str] = None,
-            cutoff: typing.Optional[float] = None,
-            seed: int = 12345,
-            budget: float = 0.0,
-            instance_specific: typing.Optional[str] = None,
-    ) -> typing.Tuple[StatusType, float, float, typing.Dict[str, typing.Any]]:
+    def _process_exception(self, obj: function_wrapper, queue: multiprocessing.Queue, info_msg: str,
+                           info_for_empty: AdditionalRunInfoType, status: StatusType,
+                           is_anything_exception: bool
+                           ) -> Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]:
 
-        context = multiprocessing.get_context(self.pynisher_context)
-        queue: multiprocessing.queues.Queue = context.Queue()
+        cost, info = self.worst_possible_result, None
+        additional_run_info: AdditionalRunInfoType = {}
 
-        if not (instance_specific is None or instance_specific == '0'):
-            raise ValueError(instance_specific)
+        if queue.empty():
+            additional_run_info.update(info_for_empty)
+        else:
+            info = read_queue(queue)
+            result, status = info[-1]['loss'], info[-1]['status']
+            additional_run_info = info[-1]['additional_run_info']
+
+            if is_anything_exception and obj.exit_status == 0:
+                cost = result
+            else:
+                additional_run_info.update(
+                    subprocess_stdout=obj.stdout,
+                    subprocess_stderr=obj.stderr,
+                    info=info_msg
+                )
+
+                if is_anything_exception:
+                    status = StatusType.CRASHED
+                    additional_run_info.update(exit_status=_encode_exit_status(obj.exit_status))
+                elif status in [StatusType.SUCCESS, StatusType.DONOTADVANCE]:
+                    cost = result
+
+        return cost, status, info, additional_run_info
+
+    def _process_exceptions(self, obj: function_wrapper, queue: multiprocessing.Queue, budget: float
+                            ) -> Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]:
+        additional_run_info: AdditionalRunInfoType = {}
+
+        if obj.exit_status is TimeoutException:
+            cost, status, info, additional_run_info = self._process_exception(
+                obj=obj, queue=queue, info_msg='Run stopped because of timeout.',
+                info_for_empty={'error': 'Timeout'},
+                status=StatusType.TIMEOUT, is_anything_exception=False
+            )
+        elif obj.exit_status is MemorylimitException:
+            cost, status, info, additional_run_info = self._process_exception(
+                obj=obj, queue=queue, info_msg='Run stopped because of memout.',
+                info_for_empty={'error': 'Memout'},
+                status=StatusType.MEMOUT, is_anything_exception=False
+            )
+        elif obj.exit_status is TAEAbortException:
+            info, status, cost = None, StatusType.ABORT, self.worst_possible_result
+            additional_run_info.update(
+                error='Your configuration of autoPyTorch does not work!',
+                exit_status=_encode_exit_status(obj.exit_status),
+                subprocess_stdout=obj.stdout,
+                subprocess_stderr=obj.stderr
+            )
+        else:
+            info_msg = 'Run treated as crashed because the pynisher exit ' \
+                       f'status {str(obj.exit_status)} is unknown.'
+            info_for_empty: AdditionalRunInfoType = {}
+            info_for_empty.update(
+                error='Result queue is empty',
+                exit_status=_encode_exit_status(obj.exit_status),
+                subprocess_stdout=obj.stdout,
+                subprocess_stderr=obj.stderr,
+                exitcode=obj.exitcode
+            )
+
+            cost, status, info, additional_run_info = self._process_exception(
+                obj=obj, queue=queue, info_msg=info_msg,
+                info_for_empty=info_for_empty,
+                status=StatusType.CRASHED, is_anything_exception=True
+            )
+
+        if ((self.budget_type is None or budget == 0) and status == StatusType.DONOTADVANCE):
+            status = StatusType.SUCCESS
+
+        if not isinstance(additional_run_info, dict):
+            additional_run_info = {'message': additional_run_info}
+
+        return cost, status, info, additional_run_info
+
+    def _add_learning_curve_info(self, info: Optional[List[RunValue]],
+                                 additional_run_info: AdditionalRunInfoType,
+                                 ) -> AdditionalRunInfoType:
+        lc_runtime = extract_learning_curve(info, 'duration')
+        d = {
+            'learning_curve': True,
+            'train_learning_curve': True,
+            'validation_learning_curve': self._get_validation_loss,
+            'test_learning_curve': self._get_test_loss
+        }
+
+        for key, collect in d.items():
+            if collect:
+                lc = extract_learning_curve(info, key)
+                if len(lc) > 1:
+                    additional_run_info[key] = lc
+                    additional_run_info['learning_curve_runtime'] = lc_runtime
+
+        return additional_run_info
+
+    def _get_init_params(self, instance: Optional[str]) -> Dict[str, Any]:
         init_params = {'instance': instance}
         if self.init_params is not None:
             init_params.update(self.init_params)
+        return init_params
 
+    def _get_pynisher_args(self, cutoff: Optional[float] = None) -> Dict[str, Any]:
+
+        context = multiprocessing.get_context(self.pynisher_context)
         if self.logger_port is None:
-            logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
+            logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
         else:
-            logger = get_named_client_logger(
-                name="pynisher",
-                port=self.logger_port,
-            )
+            logger = get_named_client_logger(name="pynisher", port=self.logger_port)
 
-        pynisher_arguments = dict(
-            logger=logger,
-            # Pynisher expects seconds as a time indicator
+        return dict(
+            logger=logger, mem_in_mb=self.memory_limit,
+            capture_output=True, context=context,
             wall_time_in_s=int(cutoff) if cutoff is not None else None,
-            mem_in_mb=self.memory_limit,
-            capture_output=True,
-            context=context,
         )
 
+    def _get_num_run(self, config: Any) -> int:
         if isinstance(config, (int, str)):
             num_run = self.initial_num_run
         else:
             num_run = config.config_id + self.initial_num_run
 
-        self.logger.debug("Search space updates for {}: {}".format(num_run,
-                                                                   self.search_space_updates))
-        obj_kwargs = dict(
-            queue=queue,
-            config=config,
+        self.logger.debug(f"Search space updates for {num_run}: {self.search_space_updates}")
+
+        return num_run
+
+    def _get_configuration_origin(self, config: Any) -> str:
+        if isinstance(config, int):
+            origin = 'DUMMY'
+        elif isinstance(config, str):
+            origin = 'traditional'
+        else:
+            origin = getattr(config, 'origin', 'UNKNOWN')
+
+        return origin
+
+    def _collect_obj_kwargs(self) -> Dict[str, Any]:
+        return dict(
             backend=self.backend,
             metric=self.metric,
             seed=self.seed,
-            num_run=num_run,
             output_y_hat_optimization=self.output_y_hat_optimization,
             include=self.include,
             exclude=self.exclude,
             disable_file_output=self.disable_file_output,
-            instance=instance,
-            init_params=init_params,
-            budget=budget,
             budget_type=self.budget_type,
             pipeline_config=self.pipeline_config,
             logger_port=self.logger_port,
@@ -295,11 +414,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             search_space_updates=self.search_space_updates
         )
 
-        info: typing.Optional[typing.List[RunValue]]
-        additional_run_info: typing.Dict[str, typing.Any]
+    def _run_objective(self, obj: function_wrapper,
+                       cutoff: Optional[float],
+                       obj_kwargs: Dict[str, Any]) -> Tuple[bool, AdditionalRunInfoType]:
+        additional_run_info: AdditionalRunInfoType = {}
+
         try:
-            obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
             obj(**obj_kwargs)
+            return True, additional_run_info
         except Exception as e:
             exception_traceback = traceback.format_exc()
             error_message = repr(e)
@@ -307,137 +429,51 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 'traceback': exception_traceback,
                 'error': error_message
             }
+            return False, additional_run_info
+
+    def run(self, config: Configuration,
+            instance: Optional[str] = None,
+            cutoff: Optional[float] = None,
+            seed: int = 12345, budget: float = 0.0,
+            instance_specific: Optional[str] = None,
+            ) -> Tuple[StatusType, float, float, AdditionalRunInfoType]:
+        """
+        Args:
+            cutoff (float):
+                The cutoff threshold (seconds)
+
+        Returns:
+
+        """
+
+        context = multiprocessing.get_context(self.pynisher_context)
+        queue: multiprocessing.queues.Queue = context.Queue()
+
+        if not (instance_specific is None or instance_specific == '0'):
+            raise ValueError(instance_specific)
+
+        num_run = self._get_num_run(config)
+
+        obj_kwargs = self._collect_obj_kwargs()
+        obj_kwargs.update(
+            queue=queue, config=config, budget=budget,
+            num_run=num_run, instance=instance,
+            init_params=self._get_init_params(instance)
+        )
+        obj = pynisher.enforce_limits(**self._get_pynisher_args(cutoff=cutoff))(self.ta)
+
+        _success, additional_run_info = self._run_objective(obj=obj, cutoff=cutoff, obj_kwargs=obj_kwargs)
+
+        if not _success:
             return StatusType.CRASHED, self.cost_for_crash, 0.0, additional_run_info
 
-        if obj.exit_status in (pynisher.TimeoutException, pynisher.MemorylimitException):
-            # Even if the pynisher thinks that a timeout or memout occured,
-            # it can be that the target algorithm wrote something into the queue
-            #  - then we treat it as a successful run
-            try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+        cost, status, info, additional_run_info = self._process_exceptions(obj=obj, queue=queue, budget=budget)
 
-                if obj.stdout:
-                    additional_run_info['subprocess_stdout'] = obj.stdout
-                if obj.stderr:
-                    additional_run_info['subprocess_stderr'] = obj.stderr
+        is_iterative_fit = self.resampling_strategy in ['holdout-iterative-fit', 'cv-iterative-fit']
+        if (info is not None and is_iterative_fit and status != StatusType.CRASHED):
+            self._add_learning_curve_info(info=info, additional_run_info=additional_run_info)
 
-                if obj.exit_status is pynisher.TimeoutException:
-                    additional_run_info['info'] = 'Run stopped because of timeout.'
-                elif obj.exit_status is pynisher.MemorylimitException:
-                    additional_run_info['info'] = 'Run stopped because of memout.'
-
-                if status in [StatusType.SUCCESS, StatusType.DONOTADVANCE]:
-                    cost = result
-                else:
-                    cost = self.worst_possible_result
-
-            except Empty:
-                info = None
-                if obj.exit_status is pynisher.TimeoutException:
-                    status = StatusType.TIMEOUT
-                    additional_run_info = {'error': 'Timeout'}
-                elif obj.exit_status is pynisher.MemorylimitException:
-                    status = StatusType.MEMOUT
-                    additional_run_info = {
-                        'error': 'Memout (used more than {} MB).'.format(self.memory_limit)
-                    }
-                else:
-                    raise ValueError(obj.exit_status)
-                cost = self.worst_possible_result
-
-        elif obj.exit_status is TAEAbortException:
-            info = None
-            status = StatusType.ABORT
-            cost = self.worst_possible_result
-            additional_run_info = {'error': 'Your configuration of '
-                                            'autoPyTorch does not work!',
-                                   'exit_status': _encode_exit_status(obj.exit_status),
-                                   'subprocess_stdout': obj.stdout,
-                                   'subprocess_stderr': obj.stderr,
-                                   }
-
-        else:
-            try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
-
-                if obj.exit_status == 0:
-                    cost = result
-                else:
-                    status = StatusType.CRASHED
-                    cost = self.worst_possible_result
-                    additional_run_info['info'] = 'Run treated as crashed ' \
-                                                  'because the pynisher exit ' \
-                                                  'status %s is unknown.' % \
-                                                  str(obj.exit_status)
-                    additional_run_info['exit_status'] = _encode_exit_status(obj.exit_status)
-                    additional_run_info['subprocess_stdout'] = obj.stdout
-                    additional_run_info['subprocess_stderr'] = obj.stderr
-            except Empty:
-                info = None
-                additional_run_info = {
-                    'error': 'Result queue is empty',
-                    'exit_status': _encode_exit_status(obj.exit_status),
-                    'subprocess_stdout': obj.stdout,
-                    'subprocess_stderr': obj.stderr,
-                    'exitcode': obj.exitcode
-                }
-                status = StatusType.CRASHED
-                cost = self.worst_possible_result
-
-        if (
-                (self.budget_type is None or budget == 0)
-                and status == StatusType.DONOTADVANCE
-        ):
-            status = StatusType.SUCCESS
-
-        if not isinstance(additional_run_info, dict):
-            additional_run_info = {'message': additional_run_info}
-
-        if (
-                info is not None
-                and self.resampling_strategy in ['holdout-iterative-fit', 'cv-iterative-fit']
-                and status != StatusType.CRASHED
-        ):
-            learning_curve = extract_learning_curve(info)
-            learning_curve_runtime = extract_learning_curve(info, 'duration')
-            if len(learning_curve) > 1:
-                additional_run_info['learning_curve'] = learning_curve
-                additional_run_info['learning_curve_runtime'] = learning_curve_runtime
-
-            train_learning_curve = extract_learning_curve(info, 'train_loss')
-            if len(train_learning_curve) > 1:
-                additional_run_info['train_learning_curve'] = train_learning_curve
-                additional_run_info['learning_curve_runtime'] = learning_curve_runtime
-
-            if self._get_validation_loss:
-                validation_learning_curve = extract_learning_curve(info, 'validation_loss')
-                if len(validation_learning_curve) > 1:
-                    additional_run_info['validation_learning_curve'] = \
-                        validation_learning_curve
-                    additional_run_info[
-                        'learning_curve_runtime'] = learning_curve_runtime
-
-            if self._get_test_loss:
-                test_learning_curve = extract_learning_curve(info, 'test_loss')
-                if len(test_learning_curve) > 1:
-                    additional_run_info['test_learning_curve'] = test_learning_curve
-                    additional_run_info[
-                        'learning_curve_runtime'] = learning_curve_runtime
-
-        if isinstance(config, int):
-            origin = 'DUMMY'
-        elif isinstance(config, str):
-            origin = 'traditional'
-        else:
-            origin = getattr(config, 'origin', 'UNKNOWN')
-        additional_run_info['configuration_origin'] = origin
-
+        additional_run_info['configuration_origin'] = self._get_configuration_origin(config)
         runtime = float(obj.wall_clock_time)
 
         empty_queue(queue)
