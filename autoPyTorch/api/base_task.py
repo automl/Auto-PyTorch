@@ -25,7 +25,7 @@ import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import RunHistory
+from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
@@ -173,7 +173,7 @@ class BaseTask:
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
-        self.run_history: Optional[RunHistory] = None
+        self.run_history: RunHistory = RunHistory()
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
@@ -582,6 +582,10 @@ class BaseTask:
         assert self._logger is not None
         assert self._dask_client is not None
 
+        self._logger.info("Starting to create traditional classifier predictions.")
+
+        # Initialise run history for the traditional classifiers
+        run_history = RunHistory()
         memory_limit = self._memory_limit
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
@@ -651,6 +655,11 @@ class BaseTask:
                     if status == StatusType.SUCCESS:
                         self._logger.info(
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
+                        configuration = additional_info['pipeline_configuration']
+                        origin = additional_info['configuration_origin']
+                        run_history.add(config=configuration, cost=cost,
+                                        time=runtime, status=status, seed=self.seed,
+                                        origin=origin)
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(
@@ -677,6 +686,11 @@ class BaseTask:
                                      "Please consider increasing the run time to further improve performance.")
                 break
 
+        self._logger.debug("Run history traditional: {}".format(run_history))
+        # add run history of traditional to api run history
+        self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+        run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'),
+                              save_external=True)
         return num_run
 
     def _search(
@@ -947,8 +961,9 @@ class BaseTask:
                 search_space_updates=self.search_space_updates
             )
             try:
-                self.run_history, self.trajectory, budget_type = \
+                run_history, self.trajectory, budget_type = \
                     _proc_smac.run_smbo()
+                self.run_history.update(run_history, DataOrigin.INTERNAL)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),
                     'trajectory.json')

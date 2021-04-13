@@ -14,6 +14,8 @@ import sklearn
 import sklearn.datasets
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
+from smac.runhistory.runhistory import RunHistory
+
 import torch
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
@@ -104,17 +106,20 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
+    successful_num_run = None
+    SUCCESS = False
     for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if 'SUCCESS' not in str(value.status):
-            continue
-
-        run_key_model_run_dir = estimator._backend.get_numrun_directory(
-            estimator.seed, run_key.config_id + 1, run_key.budget)
-        if os.path.exists(run_key_model_run_dir):
-            # Runkey config id is different from the num_run
-            # more specifically num_run = config_id + 1(dummy)
+        if 'SUCCESS' in str(value.status):
+            run_key_model_run_dir = estimator._backend.get_numrun_directory(
+                estimator.seed, run_key.config_id + 1, run_key.budget)
             successful_num_run = run_key.config_id + 1
-            break
+            if os.path.exists(run_key_model_run_dir):
+                # Runkey config id is different from the num_run
+                # more specifically num_run = config_id + 1(dummy)
+                SUCCESS = True
+                break
+
+    assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
     if resampling_strategy == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
@@ -272,17 +277,20 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
+    successful_num_run = None
+    SUCCESS = False
     for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if 'SUCCESS' not in str(value.status):
-            continue
-
-        run_key_model_run_dir = estimator._backend.get_numrun_directory(
-            estimator.seed, run_key.config_id + 1, run_key.budget)
-        if os.path.exists(run_key_model_run_dir):
-            # Runkey config id is different from the num_run
-            # more specifically num_run = config_id + 1(dummy)
+        if 'SUCCESS' in str(value.status):
+            run_key_model_run_dir = estimator._backend.get_numrun_directory(
+                estimator.seed, run_key.config_id + 1, run_key.budget)
             successful_num_run = run_key.config_id + 1
-            break
+            if os.path.exists(run_key_model_run_dir):
+                # Runkey config id is different from the num_run
+                # more specifically num_run = config_id + 1(dummy)
+                SUCCESS = True
+                break
+
+    assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
     if resampling_strategy == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
@@ -384,7 +392,7 @@ def test_tabular_input_support(openml_id, backend):
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
 
     with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
-        AutoMLSMBOMock.return_value = ({}, {}, 'epochs')
+        AutoMLSMBOMock.return_value = (RunHistory(), {}, 'epochs')
         estimator.search(
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,

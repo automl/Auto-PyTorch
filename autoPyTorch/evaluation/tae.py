@@ -57,7 +57,7 @@ def fit_predict_try_except_decorator(
 def get_cost_of_crash(metric: autoPyTorchMetric) -> float:
     # The metric must always be defined to extract optimum/worst
     if not isinstance(metric, autoPyTorchMetric):
-        raise ValueError("The metric must be stricly be an instance of autoPyTorchMetric")
+        raise ValueError("The metric must be strictly be an instance of autoPyTorchMetric")
 
     # Autopytorch optimizes the err. This function translates
     # worst_possible_result to be a minimization problem.
