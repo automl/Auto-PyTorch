@@ -342,14 +342,12 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                                  additional_run_info: AdditionalRunInfoType,
                                  ) -> AdditionalRunInfoType:
         lc_runtime = extract_learning_curve(info, 'duration')
-        d = {
-            'learning_curve': True,
-            'train_learning_curve': True,
-            'validation_learning_curve': self._get_validation_loss,
-            'test_learning_curve': self._get_test_loss
-        }
+        targets = {'learning_curve': True,
+                   'train_learning_curve': True,
+                   'validation_learning_curve': self._get_validation_loss,
+                   'test_learning_curve': self._get_test_loss}
 
-        for key, collect in d.items():
+        for key, collect in targets.items():
             if collect:
                 lc = extract_learning_curve(info, key)
                 if len(lc) > 1:
@@ -469,16 +467,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         cost, status, info, additional_run_info = self._process_exceptions(obj=obj, queue=queue, budget=budget)
 
-        is_iterative_fit = self.resampling_strategy in ['holdout-iterative-fit', 'cv-iterative-fit']
-        if (info is not None and is_iterative_fit and status != StatusType.CRASHED):
+        """TODO: Check how is_iterative_fit worked in auto-sklearn"""
+        if (info is not None and status != StatusType.CRASHED):
             self._add_learning_curve_info(info=info, additional_run_info=additional_run_info)
 
         additional_run_info['configuration_origin'] = self._get_configuration_origin(config)
         runtime = float(obj.wall_clock_time)
 
         empty_queue(queue)
-        self.logger.debug(
-            'Finished function evaluation %s. Status: %s, Cost: %f, Runtime: %f, Additional %s',
-            str(num_run), status, cost, runtime, additional_run_info,
-        )
+        self.logger.debug(f'Finished function evaluation {str(num_run)}. Status: {status}, '
+                          f'Cost: {cost}, Runtime: {runtime}, Additional {additional_run_info}')
         return status, cost, runtime, additional_run_info
