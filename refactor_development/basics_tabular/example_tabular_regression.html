@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7feb681a3e20&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f74912b30a0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -152,7 +152,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018358230590820312, budget=0), TrajEntry(train_perf=0.4038652463822179, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016345977783203125, budget=0), TrajEntry(train_perf=0.6495266348731004, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -182,12 +182,12 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.938471794128418, wallclock_time=7.579085111618042, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.9179773759363364}
+, ta_runs=1, ta_time_used=4.129133701324463, wallclock_time=7.758663892745972, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.8833727208468919}
 |    | Preprocessing                              | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.96 |
-|  1 | SimpleImputer,NoEncoder,NoScaler           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |      0.7 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |      0.3 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -272,7 +272,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  13.481 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  23.292 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -307,7 +307,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
     </p>
   </div>
 </footer>
