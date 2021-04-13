@@ -1247,15 +1247,17 @@ class BaseTask:
 
     @typing.no_type_check
     def get_incumbent_results(
-            self
+        self,
+        include_traditional: bool = False
     ):
-        pass
+        assert self.run_history is not None, "No Run History found, search has not been called."
+        assert not self.run_history.empty(), "Run History is empty."
 
-    @typing.no_type_check
-    def get_incumbent_config(
-            self
-    ):
-        pass
+        sorted_runvalue_by_cost = sorted(self.run_history.data.items(), key=lambda item: item[1].cost)
+        incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]
+        incumbent_config = self.run_history.ids_config[incumbent_run_key.config_id]
+        incumbent_results = incumbent_run_value.additional_info
+        return incumbent_config, incumbent_results
 
     def get_models_with_weights(self) -> List:
         if self.models_ is None or len(self.models_) == 0 or \
