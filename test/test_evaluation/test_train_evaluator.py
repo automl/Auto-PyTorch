@@ -50,8 +50,8 @@ class DummyPipeline(BasePipeline):
     def predict_proba(self, X, batch_size=None):
         return np.tile([0.6, 0.4], (len(X), 1))
 
-    def get_additional_run_info(self) -> None:
-        return None
+    def get_additional_run_info(self):
+        return {}
 
 
 class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
