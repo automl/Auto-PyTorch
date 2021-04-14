@@ -988,7 +988,7 @@ class BaseTask:
         self.num_run = 1
         self._run_dummy_predictions()
 
-        if not enable_traditional_pipeline:
+        if enable_traditional_pipeline:
             self._run_traditional_ml()
 
         proc_ensemble = self._run_ensemble(dataset=dataset, precision=precision,
