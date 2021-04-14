@@ -113,7 +113,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         """
         if len(self.network_snapshots) == 0:
             assert self.network is not None
-            return self._predict(network=self.network, loader=loader).cpu().numpy()
+            return self._predict(network=self.network, loader=loader).numpy()
         else:
             # if there are network snapshots,
             # take average of predictions of all snapshots
