@@ -1061,6 +1061,7 @@ class BaseTask:
         if enable_traditional_pipeline:
             self._run_traditional_ml()
 
+
         proc_ensemble = self._run_ensemble(dataset=dataset, precision=precision,
                                            optimize_metric=optimize_metric)
 

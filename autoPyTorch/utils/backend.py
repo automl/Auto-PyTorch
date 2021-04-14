@@ -169,6 +169,10 @@ class Backend(object):
         self._logger = None  # type: Optional[PicklableClientLogger]
         self.context = context
 
+        # Track the number of configurations launched
+        # num_run == 1 means a dummy estimator run
+        self.active_num_run = 1
+
         # Create the temporary directory if it does not yet exist
         try:
             os.makedirs(self.temporary_directory)
@@ -328,6 +332,47 @@ class Backend(object):
 
     def get_numrun_directory(self, seed: int, num_run: int, budget: float) -> str:
         return os.path.join(self.internals_directory, 'runs', '%d_%d_%s' % (seed, num_run, budget))
+
+    def get_next_num_run(self, peek: bool = False) -> int:
+        """
+        Every pipeline that is fitted by the estimator is stored with an
+        identifier called num_run. A dummy classifier will always have a num_run
+        equal to 1, and all other new configurations that are explored will
+        have a sequentially increasing identifier.
+
+        This method returns the next num_run a configuration should take.
+
+        Parameters
+        ----------
+        peek: bool
+            By default, the next num_rum will be returned, i.e. self.active_num_run + 1
+            Yet, if this bool parameter is equal to True, the value of the current
+            num_run is provided, i.e, self.active_num_run.
+            In other words, peek allows to get the current maximum identifier
+            of a configuration.
+
+        Returns
+        -------
+        num_run: int
+            An unique identifier for a configuration
+        """
+
+        # If there are other num_runs, their name would be runs/<seed>_<num_run>_<budget>
+        other_num_runs = [int(os.path.basename(run_dir).split('_')[1])
+                          for run_dir in glob.glob(os.path.join(self.internals_directory,
+                                                                'runs',
+                                                                '*'))]
+        if len(other_num_runs) > 0:
+            # We track the number of runs from two forefronts:
+            # The physically available num_runs (which might be deleted or a crash could happen)
+            # From a internally kept attribute. The later should be sufficient, but we
+            # want to be robust against multiple backend copies on different workers
+            self.active_num_run = max([self.active_num_run] + other_num_runs)
+
+        # We are interested in the next run id
+        if not peek:
+            self.active_num_run += 1
+        return self.active_num_run
 
     def get_model_filename(self, seed: int, idx: int, budget: float) -> str:
         return '%s.%s.%s.model' % (seed, idx, budget)
