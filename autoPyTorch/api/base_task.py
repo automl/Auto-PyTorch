@@ -12,7 +12,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -43,7 +43,6 @@ from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_classifier import BaseClassifier
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.backend import Backend, create
