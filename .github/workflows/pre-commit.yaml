@@ -11,6 +11,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
+    - name: Init Submodules
+      run: |
+        git submodule update --init --recursive
     - name: Install pre-commit
       run: |
         pip install pre-commit

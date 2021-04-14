@@ -12,6 +12,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
+        git submodule update --init --recursive
         pip install -e .[docs,examples]
     - name: Make docs
       run: |
