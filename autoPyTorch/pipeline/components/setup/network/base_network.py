@@ -122,7 +122,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             for network in self.network_snapshots:
                 Y_snapshot_preds.append(self._predict(network, loader))
             Y_snapshot_preds_tensor = torch.stack(Y_snapshot_preds)
-            return Y_snapshot_preds_tensor.mean(dim=0).cpu().numpy()
+            return Y_snapshot_preds_tensor.mean(dim=0).numpy()
 
     def _predict(self, network: torch.nn.Module, loader: torch.utils.data.DataLoader) -> torch.Tensor:
         network.to(self.device)
