@@ -74,7 +74,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
         train_tensors: BaseDatasetInputType,
-        dataset_name: Optional[str] = None,
+        dataset_name: str = "",
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
@@ -108,9 +108,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = ""
+        self.dataset_name = dataset_name
 
-        if self.dataset_name is not None:
+        if self.dataset_name == "":
             self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
         if not hasattr(train_tensors[0], 'shape'):
