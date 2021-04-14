@@ -243,7 +243,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         if self.budget_type is None:
             if run_info.budget != 0:
                 raise ValueError(
-                    f'If budget_type is None, budget must be.0, but is {run_info.budget}'
+                    f'If budget_type is None, budget must be 0, but got {run_info.budget}'
                 )
         else:
             if run_info.budget == 0:
