@@ -5,6 +5,7 @@ import numpy as np
 
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     MULTICLASS,
     OUTPUT_TYPES_TO_STRING,
@@ -13,7 +14,6 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
-from autoPyTorch.utils.backend import Backend
 
 
 class TabularPreprocessingTest(unittest.TestCase):

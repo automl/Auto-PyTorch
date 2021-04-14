@@ -14,12 +14,12 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.utils import read_queue
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.utils import backend
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
@@ -95,7 +95,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
-        backend_api = backend.create(self.tmp_dir, self.output_dir)
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='.autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 
@@ -133,7 +133,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
-        backend_api = backend.create(self.tmp_dir, self.output_dir)
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='.autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 

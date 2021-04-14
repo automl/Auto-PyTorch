@@ -1,6 +1,6 @@
 ---
 version: 1
-disable_existing_loggers: False
+disable_existing_loggers: false
 formatters:
   simple:
     format: '[%(levelname)s] [%(asctime)s:%(name)s] %(message)s'
@@ -30,10 +30,10 @@ root:
 
 loggers:
 
-  autoPyTorch.utils.backend:
+  autoPyTorch.automl_common.common.utils.backend:
     level: DEBUG
     handlers: [file_handler]
-    propagate: no
+    propagate: false
 
   smac.intensification.intensification.Intensifier:
     level: INFO

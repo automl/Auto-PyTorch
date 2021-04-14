@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from autoPyTorch.api.base_task import BaseTask
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     TABULAR_REGRESSION,
     TASK_TYPES_TO_STRING
@@ -19,7 +20,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
-from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 

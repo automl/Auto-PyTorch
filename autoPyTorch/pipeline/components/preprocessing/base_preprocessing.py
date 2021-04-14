@@ -10,8 +10,8 @@ from scipy.sparse import csr_matrix
 
 import torch
 
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import FitRequirement
 
 

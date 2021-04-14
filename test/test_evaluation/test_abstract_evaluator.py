@@ -11,9 +11,9 @@ import sklearn.dummy
 
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import Backend, BackendContext
 from autoPyTorch.evaluation.abstract_evaluator import AbstractEvaluator
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.utils.backend import Backend, BackendContext
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)

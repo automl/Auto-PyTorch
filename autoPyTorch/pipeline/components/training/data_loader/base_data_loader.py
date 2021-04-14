@@ -11,9 +11,9 @@ import torch
 
 import torchvision
 
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import (
     FitRequirement,
     HyperparameterSearchSpace,
