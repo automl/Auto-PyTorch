@@ -12,7 +12,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -484,6 +484,8 @@ class BaseTask:
         scenario_mock.wallclock_limit = wallclock_limit
         stats = Stats(scenario_mock)
         stats.start_timing()
+
+        assert self._metric is not None
         ta = ExecuteTaFuncWithQueue(
             backend=self._backend,
             seed=self.seed,
@@ -517,7 +519,7 @@ class BaseTask:
             raise ValueError(output)
 
     def _parallel_worker_allocation(self, num_future_jobs: int, run_history: RunHistory,
-                                    dask_futures: List[List[Union[Type[BaseClassifier], Any]]]
+                                    dask_futures: List[Tuple[str, Any]]
                                     ) -> None:
         """
         The functin to allocate and implement jobs to unused workers.
@@ -525,9 +527,9 @@ class BaseTask:
 
         Args:
             num_future_jobs (int): The number of jobs to run
-            dask_futures (List[List[Union[Type[BaseClassifier], Any]]]):
-                The list of pairs of the classifier to run and the function to
-                train the classifier
+            dask_futures (List[Tuple[str, Any]]):
+                The list of pairs of the name of the classifier to run and
+                the function to train the classifier
             run_history (RunHistory):
                 The running history of the experiment
 
