@@ -611,8 +611,7 @@ class AbstractEvaluator(object):
         additional_run_info = (
             {} if additional_run_info is None else additional_run_info
         )
-        for metric_name, value in loss.items():
-            additional_run_info[metric_name] = value
+        additional_run_info['opt_loss'] = loss
         additional_run_info['duration'] = self.duration
         additional_run_info['num_run'] = self.num_run
         if train_loss is not None:

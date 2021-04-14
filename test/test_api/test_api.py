@@ -6,6 +6,8 @@ import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
 
+from ConfigSpace.configuration_space import Configuration
+
 import numpy as np
 
 import pandas as pd
@@ -190,6 +192,13 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     score = estimator.score(y_pred, y_test)
     assert 'accuracy' in score
 
+    # check incumbent config and results
+    incumbent_config, incumbent_results = estimator.get_incumbent_results()
+    assert isinstance(incumbent_config, Configuration)
+    assert isinstance(incumbent_results, dict)
+    assert 'opt_loss' in incumbent_results
+    assert 'train_loss' in incumbent_results
+
     # Check that we can pickle
     # Test pickle
     # This can happen on python greater than 3.6
@@ -364,6 +373,13 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
 
     score = estimator.score(y_pred, y_test)
     assert 'r2' in score
+
+    # check incumbent config and results
+    incumbent_config, incumbent_results = estimator.get_incumbent_results()
+    assert isinstance(incumbent_config, Configuration)
+    assert isinstance(incumbent_results, dict)
+    assert 'opt_loss' in incumbent_results
+    assert 'train_loss' in incumbent_results
 
     # Check that we can pickle
     # Test pickle
