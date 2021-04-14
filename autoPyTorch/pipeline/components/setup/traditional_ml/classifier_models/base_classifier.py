@@ -32,7 +32,6 @@ class BaseClassifier:
             self.random_state = check_random_state(1)
         else:
             self.random_state = check_random_state(random_state)
-        self.random_state = random_state
         self.config = self.get_config()
 
         self.categoricals: np.ndarray = np.array(())
