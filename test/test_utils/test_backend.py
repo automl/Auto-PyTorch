@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
 import builtins
+import logging.handlers
 import unittest
 import unittest.mock
+
+import numpy as np
 
 import pytest
 
@@ -81,3 +84,23 @@ def test_loads_models_by_identifiers(exists_mock, openMock, pickleLoadMock, back
 
     assert isinstance(actual_dict, dict)
     assert expected_dict == actual_dict
+
+
+def test_get_next_num_run(backend):
+    # Asking for a num_run increases the tracked num_run
+    assert backend.get_next_num_run() == 2
+    assert backend.get_next_num_run() == 3
+    # Then test that we are robust against new files being generated
+    backend.setup_logger('Test', logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+    backend.save_numrun_to_dir(
+        seed=0,
+        idx=12,
+        budget=0.0,
+        model=dict(),
+        cv_model=None,
+        ensemble_predictions=np.zeros(10),
+        valid_predictions=None,
+        test_predictions=None,
+    )
+    assert backend.get_next_num_run() == 13
+    assert backend.get_next_num_run(peek=True) == 13

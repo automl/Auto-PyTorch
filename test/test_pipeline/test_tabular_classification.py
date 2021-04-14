@@ -439,5 +439,5 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
     val_score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['balanced_accuracy']
     train_score = run_summary.performance_tracker['train_metrics'][epoch_where_best]['balanced_accuracy']
 
-    assert val_score >= 0.9, run_summary.performance_tracker['val_metrics']
-    assert train_score >= 0.9, run_summary.performance_tracker['train_metrics']
+    assert val_score >= 0.8, run_summary.performance_tracker['val_metrics']
+    assert train_score >= 0.8, run_summary.performance_tracker['train_metrics']
