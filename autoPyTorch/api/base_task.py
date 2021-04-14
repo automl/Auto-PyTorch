@@ -25,7 +25,7 @@ import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import RunHistory
+from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
@@ -172,11 +172,10 @@ class BaseTask:
         self.search_space: Optional[ConfigurationSpace] = None
         self._metric: Optional[autoPyTorchMetric] = None
         self._logger: Optional[PicklableClientLogger] = None
-        self.run_history: Optional[RunHistory] = None
+        self.run_history: RunHistory = RunHistory()
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
-        self.num_run: int = 1
         self.experiment_task_name: str = 'runSearch'
 
         # By default try to use the TCP logging port or get a new port
@@ -492,6 +491,9 @@ class BaseTask:
         assert self._metric is not None
         assert self._logger is not None
 
+        # For dummy estimator, we always expect the num_run to be 1
+        num_run = 1
+
         self._logger.info("Starting to create dummy predictions.")
 
         memory_limit = self._memory_limit
@@ -511,14 +513,14 @@ class BaseTask:
             logger_port=self._logger_port,
             cost_for_crash=get_cost_of_crash(self._metric),
             abort_on_first_run_crash=False,
-            initial_num_run=self.num_run,
+            initial_num_run=num_run,
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=True if len(self._disable_file_output) > 0 else False,
             all_supported_metrics=self._all_supported_metrics
         )
 
-        status, cost, runtime, additional_info = ta.run(self.num_run, cutoff=self._total_walltime_limit)
+        status, cost, runtime, additional_info = ta.run(num_run, cutoff=self._total_walltime_limit)
         if status == StatusType.SUCCESS:
             self._logger.info("Finished creating dummy predictions.")
         else:
@@ -560,20 +562,12 @@ class BaseTask:
         This method currently only supports classification.
 
         Args:
-            num_run: (int)
-                An identifier to indicate the current machine learning algorithm
-                being processed
             time_left: (int)
                 Hard limit on how many machine learning algorithms can be fit. Depending on how
                 fast a traditional machine learning algorithm trains, it will allow multiple
                 models to be fitted.
             func_eval_time_limit_secs: (int)
                 Maximum training time each algorithm is allowed to take, during training
-
-        Returns:
-            num_run: (int)
-                The incremented identifier index. This depends on how many machine learning
-                models were fitted.
         """
 
         # Mypy Checkings -- Traditional prediction is only called for search
@@ -582,7 +576,10 @@ class BaseTask:
         assert self._logger is not None
         assert self._dask_client is not None
 
-        self.num_run += 1
+        self._logger.info("Starting to create traditional classifier predictions.")
+
+        # Initialise run history for the traditional classifiers
+        run_history = RunHistory()
 
         memory_limit = self._memory_limit
         if memory_limit is not None:
@@ -590,8 +587,8 @@ class BaseTask:
         available_classifiers = get_available_classifiers()
         dask_futures = []
 
-        total_number_classifiers = len(available_classifiers) + self.num_run
-        for n_r, classifier in enumerate(available_classifiers, start=self.num_run):
+        total_number_classifiers = len(available_classifiers)
+        for n_r, classifier in enumerate(available_classifiers):
 
             # Only launch a task if there is time
             start_time = time.time()
@@ -610,7 +607,7 @@ class BaseTask:
                     logger_port=self._logger_port,
                     cost_for_crash=get_cost_of_crash(self._metric),
                     abort_on_first_run_crash=False,
-                    initial_num_run=n_r,
+                    initial_num_run=self._backend.get_next_num_run(),
                     stats=stats,
                     memory_limit=memory_limit,
                     disable_file_output=True if len(self._disable_file_output) > 0 else False,
@@ -623,9 +620,6 @@ class BaseTask:
                         cutoff=self._func_eval_time_limit_secs,
                     )
                 ])
-
-                # Increment the launched job index
-                self.num_run = n_r
 
             # When managing time, we need to take into account the allocated time resources,
             # which are dependent on the number of cores. 'dask_futures' is a proxy to the number
@@ -653,6 +647,11 @@ class BaseTask:
                     if status == StatusType.SUCCESS:
                         self._logger.info(
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
+                        configuration = additional_info['pipeline_configuration']
+                        origin = additional_info['configuration_origin']
+                        run_history.add(config=configuration, cost=cost,
+                                        time=runtime, status=status, seed=self.seed,
+                                        origin=origin)
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(
@@ -678,6 +677,13 @@ class BaseTask:
                 self._logger.warning("Not enough time to fit all traditional machine learning models."
                                      "Please consider increasing the run time to further improve performance.")
                 break
+
+        self._logger.debug("Run history traditional: {}".format(run_history))
+        # add run history of traditional to api run history
+        self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+        run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'),
+                              save_external=True)
+        return
 
     def _run_dummy_predictions(self) -> None:
         dummy_task_name = 'runDummy'
@@ -727,13 +733,17 @@ class BaseTask:
                 dataset_name=dataset.dataset_name,
                 output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
                 task_type=STRING_TO_TASK_TYPES[self.task_type],
-                metrics=[self._metric], opt_metric=optimize_metric,
+                metrics=[self._metric],
+                opt_metric=optimize_metric,
                 ensemble_size=self.ensemble_size,
                 ensemble_nbest=self.ensemble_nbest,
                 max_models_on_disc=self.max_models_on_disc,
+                seed=self.seed,
+                max_iterations=None,
+                read_at_most=sys.maxsize,
                 ensemble_memory_limit=self._memory_limit,
-                seed=self.seed, max_iterations=None, random_state=self.seed,
-                read_at_most=sys.maxsize, precision=precision,
+                random_state=self.seed,
+                precision=precision,
                 logger_port=self._logger_port
             )
             self._stopwatch.stop_task(ensemble_task_name)
@@ -756,8 +766,9 @@ class BaseTask:
         assert self._logger is not None
 
         try:
-            self.run_history, self.trajectory, budget_type = \
+            run_history, self.trajectory, budget_type = \
                 proc_smac.run_smbo()
+            self.run_history.update(run_history, DataOrigin.INTERNAL)
             trajectory_filename = os.path.join(
                 self._backend.get_smac_output_directory_for_run(self.seed),
                 'trajectory.json')
@@ -802,8 +813,10 @@ class BaseTask:
                 func_eval_time_limit_secs=self._func_eval_time_limit_secs,
                 dask_client=self._dask_client,
                 memory_limit=self._memory_limit,
-                n_jobs=self.n_jobs, watcher=self._stopwatch,
-                metric=self._metric, seed=self.seed,
+                n_jobs=self.n_jobs,
+                watcher=self._stopwatch,
+                metric=self._metric,
+                seed=self.seed,
                 include=self.include_components,
                 exclude=self.exclude_components,
                 disable_file_output=self._disable_file_output,
@@ -813,7 +826,7 @@ class BaseTask:
                 pipeline_config={**self.pipeline_options, **budget_config},
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
-                start_num_run=self.num_run,
+                start_num_run=self._backend.get_next_num_run(peek=True),
                 search_space_updates=self.search_space_updates
             )
 
@@ -930,18 +943,23 @@ class BaseTask:
         self._logger.info("Starting to clean up the logger")
         self._clean_logger()
 
-    def _search(self, optimize_metric: str,
-                dataset: BaseDataset, budget_type: Optional[str] = None,
-                budget: Optional[float] = None,
-                total_walltime_limit: int = 100,
-                func_eval_time_limit_secs: Optional[int] = None,
-                enable_traditional_pipeline: bool = True,
-                memory_limit: Optional[int] = 4096,
-                smac_scenario_args: Optional[Dict[str, Any]] = None,
-                get_smac_object_callback: Optional[Callable] = None,
-                all_supported_metrics: bool = True,
-                precision: int = 32, disable_file_output: List = [],
-                load_models: bool = True) -> 'BaseTask':
+    def _search(
+        self,
+        optimize_metric: str,
+        dataset: BaseDataset,
+        budget_type: Optional[str] = None,
+        budget: Optional[float] = None,
+        total_walltime_limit: int = 100,
+        func_eval_time_limit_secs: Optional[int] = None,
+        enable_traditional_pipeline: bool = True,
+        memory_limit: Optional[int] = 4096,
+        smac_scenario_args: Optional[Dict[str, Any]] = None,
+        get_smac_object_callback: Optional[Callable] = None,
+        all_supported_metrics: bool = True,
+        precision: int = 32,
+        disable_file_output: List = [],
+        load_models: bool = True
+    ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
 
@@ -1033,7 +1051,6 @@ class BaseTask:
                               total_walltime_limit=total_walltime_limit)
 
         self._adapt_time_resource_allocation()
-        self.num_run = 1
         self._run_dummy_predictions()
 
         if enable_traditional_pipeline:
@@ -1098,7 +1115,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'num_run': 0
+                                  'num_run': self._backend.get_next_num_run(),
                                   })
         X.update({**self.pipeline_options, **budget_config})
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
@@ -1175,7 +1192,7 @@ class BaseTask:
                                   'train_indices': dataset.splits[split_id][0],
                                   'val_indices': dataset.splits[split_id][1],
                                   'split_id': split_id,
-                                  'num_run': 0
+                                  'num_run': self._backend.get_next_num_run(),
                                   })
         X.update({**self.pipeline_options, **budget_config})
 
