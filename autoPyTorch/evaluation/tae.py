@@ -1,4 +1,10 @@
 """
+Target algorithm execution package.
+
+Most notations comply with the SMAC API.
+You can find the information below:
+https://automl.github.io/SMAC3/master/apidoc/smac.tae.execute_func.html
+
 TODO:
     * Put documentation for some functions
     * Add tests for some functions
@@ -36,6 +42,7 @@ from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_l
 
 
 class AdditionalRunInfo(AttrDict):
+    """ The information obtained from the training """
     traceback: Optional[str]
     error: Optional[str]
     subprocess_stdout: Optional[str]
@@ -57,6 +64,7 @@ class AdditionalRunInfo(AttrDict):
 
 
 class PynisherFuncWrapperType(object):
+    """ Typing class for function wrapped by pynisher """
     def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]):
         self.exit_status: Any = None
         self.exitcode: Optional[str] = None
@@ -273,6 +281,24 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                              info_msg: str, info_for_empty: AdditionalRunInfoType,
                              status: StatusType, is_anything_exception: bool
                              ) -> ExceptionReturnType:
+        """
+        Args:
+            obj (PynisherFuncWrapperType):
+            queue (multiprocessing.Queue): The run histories
+            info_msg (str):
+                a message for the `info` key in additional_run_info
+            info_for_empty (AdditionalRunInfo):
+                the additional_run_info in the case of empty queue
+            status (StatusType): status type of the running
+            is_anything_exception (bool):
+                Exception other than TimeoutException or MemorylimitException
+
+        Returns:
+            cost (float): The metric obtained from the training
+            status (StatusType)
+            info: (Optional[List[RunValue]]): The training results at each time step
+            additional_run_info (AdditionalRunInfoType)
+        """
 
         cost, info = self.worst_possible_result, None
         additional_run_info: AdditionalRunInfoType = {}
@@ -303,6 +329,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
     def _process_exceptions(self, obj: PynisherFuncWrapperType, queue: multiprocessing.Queue, budget: float
                             ) -> ExceptionReturnType:
+        """ the conditional branch for _exception_processor() func """
+
         additional_run_info: AdditionalRunInfoType = {}
 
         if obj.exit_status is TimeoutException or obj.exit_status is MemorylimitException:
@@ -350,6 +378,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def _add_learning_curve_info(self, info: Optional[List[RunValue]],
                                  additional_run_info: AdditionalRunInfoType,
                                  ) -> AdditionalRunInfoType:
+
         lc_runtime = extract_learning_curve(info, 'duration')
         stored = False
         targets = {'learning_curve': (True, None),
@@ -370,6 +399,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         return additional_run_info
 
     def _get_init_params(self, instance: Optional[str]) -> Dict[str, Any]:
+        """ The initialization parameters for the objective function """
         init_params = {'instance': instance}
         if self.init_params is not None:
             init_params.update(self.init_params)
@@ -389,7 +419,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             wall_time_in_s=int(cutoff) if cutoff is not None else None,
         )
 
-    def _get_num_run(self, config: Any) -> int:
+    def _get_num_run(self, config: Union[int, str, Configuration]) -> int:
         if isinstance(config, (int, str)):
             num_run = self.initial_num_run
         else:
@@ -399,7 +429,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         return num_run
 
-    def _get_configuration_origin(self, config: Any) -> str:
+    def _get_configuration_origin(self, config: Union[int, str, Configuration]) -> str:
+        """ Get what the configuration is for """
         if isinstance(config, int):
             origin = 'DUMMY'
         elif isinstance(config, str):
@@ -410,6 +441,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         return origin
 
     def _collect_obj_kwargs(self) -> Dict[str, Any]:
+        """ collect obj_kwargs from the member variables """
         return dict(
             backend=self.backend,
             metric=self.metric,
@@ -428,6 +460,31 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def _run_objective(self, obj: PynisherFuncWrapperType,
                        cutoff: Optional[float],
                        obj_kwargs: Dict[str, Any]) -> Tuple[bool, AdditionalRunInfoType]:
+        """
+        Run the objective function and return errors if needed
+
+        Args:
+            obj (PynisherFuncWrapperType):
+                The target algorithm wrapped by pynisher.enforce_limits
+            cutoff (Optional[float]):
+                The cutoff of the training (cutoff seconds)
+            obj_kwargs (Dict[str, Any]):
+                The arguments for the objective function
+
+        Returns:
+            is_success (bool):
+                if we could finish the objective function successfully.
+            additional_run_info (AdditionalRunInfoType):
+                The information obtained from the training.
+
+        Note:
+            By default, we run `fit_predict_try_except_decorator`
+            taking `autoPyTorch.evaluation.train_evaluator.eval_function`
+            as `self.ta`.
+            When calling `obj`, we first instantiate
+            a model/models based on given `config`
+            and train and measure the performance.
+        """
         additional_run_info: AdditionalRunInfoType = {}
 
         try:
@@ -442,7 +499,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             }
             return False, additional_run_info
 
-    def run(self, config: Configuration,
+    def run(self, config: Union[int, str, Configuration],
             instance: Optional[str] = None,
             cutoff: Optional[float] = None,
             seed: int = 12345, budget: float = 0.0,
@@ -452,16 +509,30 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         Args:
             cutoff (float):
                 The cutoff threshold (seconds)
+            config (Union[int, str, Configuration]):
+                `int` for dummy,
+                `str` for traditional machine learning,
+                `Configuration` for AutoPytorch pipeline
+            seed (int): a seed for random numbers
+            budget (float): a time budget for running
+            instance (Optional[str]): Problem instance
+            instance_specific (Optional[str]):
+                Instance specific information
+                (e.g., domain file or solution)
 
         Returns:
-
+            cost (float): The metric obtained from the training
+            status (StatusType)
+            info: (Optional[List[RunValue]]): The training results at each time step
+            additional_run_info (AdditionalRunInfoType)
         """
 
         context = multiprocessing.get_context(self.pynisher_context)
         queue: multiprocessing.queues.Queue = context.Queue()
 
-        if not (instance_specific is None or instance_specific == '0'):
-            raise ValueError(instance_specific)
+        if instance_specific is not None and instance_specific != '0':
+            raise ValueError('Instance specific feature has not been supported yet.'
+                             ' Do not set instance_specific.')
 
         num_run = self._get_num_run(config)
 
@@ -471,8 +542,9 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             num_run=num_run, instance=instance,
             init_params=self._get_init_params(instance)
         )
-        obj = pynisher.enforce_limits(**self._get_pynisher_kwargs(cutoff=cutoff))(self.ta)
 
+        """For more details of `obj`, see the Note in _run_objective."""
+        obj = pynisher.enforce_limits(**self._get_pynisher_kwargs(cutoff=cutoff))(self.ta)
         _success, additional_run_info = self._run_objective(obj=obj, cutoff=cutoff, obj_kwargs=obj_kwargs)
 
         if not _success:
