@@ -923,7 +923,7 @@ class BaseTask:
             pd.DataFrame(self.ensemble_performance_history).to_json(
                 os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
-    def _finish_experiment(self, proc_ensemble: EnsembleBuilderManager,
+    def _finish_experiment(self, proc_ensemble: Optional[EnsembleBuilderManager],
                            load_models: bool) -> None:
 
         assert self._logger is not None
