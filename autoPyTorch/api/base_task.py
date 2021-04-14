@@ -13,7 +13,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -217,9 +217,7 @@ class BaseTask:
         """
         raise NotImplementedError
 
-    def set_pipeline_config(
-            self,
-            **pipeline_config_kwargs: Any) -> None:
+    def set_pipeline_config(self, **pipeline_config_kwargs: Any) -> None:
         """
         Check whether arguments are valid and
         then sets them to the current pipeline
@@ -253,12 +251,6 @@ class BaseTask:
         """
         return self.pipeline_options
 
-    # def set_search_space(self, search_space: ConfigurationSpace) -> None:
-    #     """
-    #     Update the search space.
-    #     """
-    #     raise NotImplementedError
-    #
     def get_search_space(self, dataset: BaseDataset = None) -> ConfigurationSpace:
         """
         Returns the current search space as ConfigurationSpace object.
@@ -396,9 +388,9 @@ class BaseTask:
             None
         """
         if (
-                hasattr(self, '_is_dask_client_internally_created')
-                and self._is_dask_client_internally_created
-                and self._dask_client
+            hasattr(self, '_is_dask_client_internally_created')
+            and self._is_dask_client_internally_created
+            and self._dask_client
         ):
             self._dask_client.shutdown()
             self._dask_client.close()
@@ -657,9 +649,11 @@ class BaseTask:
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
                         configuration = additional_info['pipeline_configuration']
                         origin = additional_info['configuration_origin']
+                        additional_info.pop('pipeline_configuration')
+                        additional_info.pop('configuration_origin')
                         run_history.add(config=configuration, cost=cost,
                                         time=runtime, status=status, seed=self.seed,
-                                        origin=origin)
+                                        origin=origin, additional_info=additional_info)
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(
@@ -1016,10 +1010,10 @@ class BaseTask:
         return self
 
     def refit(
-            self,
-            dataset: BaseDataset,
-            budget_config: Dict[str, Union[int, str]] = {},
-            split_id: int = 0
+        self,
+        dataset: BaseDataset,
+        budget_config: Dict[str, Union[int, str]] = {},
+        split_id: int = 0
     ) -> "BaseTask":
         """
         Refit all models found with fit to new data.
@@ -1150,10 +1144,10 @@ class BaseTask:
         return pipeline
 
     def predict(
-            self,
-            X_test: np.ndarray,
-            batch_size: Optional[int] = None,
-            n_jobs: int = 1
+        self,
+        X_test: np.ndarray,
+        batch_size: Optional[int] = None,
+        n_jobs: int = 1
     ) -> np.ndarray:
         """Generate the estimator predictions.
         Generate the predictions based on the given examples from the test set.
@@ -1203,9 +1197,9 @@ class BaseTask:
         return predictions
 
     def score(
-            self,
-            y_pred: np.ndarray,
-            y_test: Union[np.ndarray, pd.DataFrame]
+        self,
+        y_pred: np.ndarray,
+        y_test: Union[np.ndarray, pd.DataFrame]
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
@@ -1245,15 +1239,28 @@ class BaseTask:
         # until the estimator is deleted
         self._backend.context.delete_directories(force=False)
 
-    @typing.no_type_check
     def get_incumbent_results(
         self,
         include_traditional: bool = False
-    ):
+    ) -> Tuple[Configuration, Dict]:
+        """
+        Get Incumbent config and the corresponding results
+        Args:
+            include_traditional:
+
+        Returns:
+
+        """
         assert self.run_history is not None, "No Run History found, search has not been called."
         assert not self.run_history.empty(), "Run History is empty."
 
-        sorted_runvalue_by_cost = sorted(self.run_history.data.items(), key=lambda item: item[1].cost)
+        run_history_data = self.run_history.data
+        if not include_traditional:
+            run_history_data = dict(
+                filter(lambda elem: elem[1].additional_info is not None and 'trainer_configuration' not in elem[1].
+                       additional_info,
+                       run_history_data.items()))
+        sorted_runvalue_by_cost = sorted(run_history_data.items(), key=lambda item: item[1].cost)
         incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]
         incumbent_config = self.run_history.ids_config[incumbent_run_key.config_id]
         incumbent_results = incumbent_run_value.additional_info
