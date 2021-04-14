@@ -39,7 +39,7 @@ from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash, PynisherFuncWrapperType
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
@@ -518,7 +518,7 @@ class BaseTask:
             raise ValueError(output)
 
     def _parallel_worker_allocation(self, num_future_jobs: int, run_history: RunHistory,
-                                    dask_futures: List[Tuple[str, Any]]
+                                    dask_futures: List[Tuple[str, PynisherFuncWrapperType]]
                                     ) -> None:
         """
         The functin to allocate and implement jobs to unused workers.
@@ -526,7 +526,7 @@ class BaseTask:
 
         Args:
             num_future_jobs (int): The number of jobs to run
-            dask_futures (List[Tuple[str, Any]]):
+            dask_futures (List[Tuple[str, PynisherFuncWrapperType]]):
                 The list of pairs of the name of the classifier to run and
                 the function to train the classifier
             run_history (RunHistory):
