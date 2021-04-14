@@ -20,7 +20,6 @@ import numpy as np
 
 import pynisher
 from pynisher import TimeoutException, MemorylimitException
-from pynisher.enforce_limits import function_wrapper
 
 from smac.runhistory.runhistory import RunInfo, RunValue
 from smac.stats.stats import Stats
@@ -55,6 +54,19 @@ class AdditionalRunInfo(AttrDict):
     train_loss: Optional[Dict[str, float]]
     validation_loss: Optional[Dict[str, float]]
     test_loss: Optional[Dict[str, float]]
+
+
+class PynisherFuncWrapperType(object):
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]):
+        self.exit_status: Any = None
+        self.exitcode: Optional[str] = None
+        self.wall_clock_time: Optional[float] = None
+        self.stdout: Optional[str] = None
+        self.stderr: Optional[str] = None
+        raise TypeError("Cannot instantiate `PynisherFuncWrapperType` instances.")
+
+    def __call__(self,  *args: List[Any], **kwargs: Dict[str, Any]) -> None:
+        raise NotImplementedError
 
 
 AdditionalRunInfoType = Union[Dict[str, Any], AdditionalRunInfo]
@@ -257,7 +269,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         return super().run_wrapper(run_info=run_info)
 
-    def _exception_processor(self, obj: function_wrapper, queue: multiprocessing.Queue,
+    def _exception_processor(self, obj: PynisherFuncWrapperType, queue: multiprocessing.Queue,
                              info_msg: str, info_for_empty: AdditionalRunInfoType,
                              status: StatusType, is_anything_exception: bool
                              ) -> ExceptionReturnType:
@@ -289,7 +301,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         return cost, status, info, additional_run_info
 
-    def _process_exceptions(self, obj: function_wrapper, queue: multiprocessing.Queue, budget: float
+    def _process_exceptions(self, obj: PynisherFuncWrapperType, queue: multiprocessing.Queue, budget: float
                             ) -> ExceptionReturnType:
         additional_run_info: AdditionalRunInfoType = {}
 
@@ -340,14 +352,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                                  ) -> AdditionalRunInfoType:
         lc_runtime = extract_learning_curve(info, 'duration')
         stored = False
-        targets = {'learning_curve': True,
-                   'train_learning_curve': True,
-                   'validation_learning_curve': self._get_validation_loss,
-                   'test_learning_curve': self._get_test_loss}
+        targets = {'learning_curve': (True, None),
+                   'train_learning_curve': (True, 'train_loss'),
+                   'validation_learning_curve': (self._get_validation_loss, 'validation_loss'),
+                   'test_learning_curve': (self._get_test_loss, 'test_loss')}
 
-        for key, collect in targets.items():
+        for key, (collect, metric) in targets.items():
             if collect:
-                lc = extract_learning_curve(info, key)
+                lc = extract_learning_curve(info, metric)
                 if len(lc) > 1:
                     stored = True
                     additional_run_info[key] = lc
@@ -413,7 +425,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             search_space_updates=self.search_space_updates
         )
 
-    def _run_objective(self, obj: function_wrapper,
+    def _run_objective(self, obj: PynisherFuncWrapperType,
                        cutoff: Optional[float],
                        obj_kwargs: Dict[str, Any]) -> Tuple[bool, AdditionalRunInfoType]:
         additional_run_info: AdditionalRunInfoType = {}
@@ -459,7 +471,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             num_run=num_run, instance=instance,
             init_params=self._get_init_params(instance)
         )
-        obj = pynisher.enforce_limits(**self._get_pynisher_args(cutoff=cutoff))(self.ta)
+        obj = pynisher.enforce_limits(**self._get_pynisher_kwargs(cutoff=cutoff))(self.ta)
 
         _success, additional_run_info = self._run_objective(obj=obj, cutoff=cutoff, obj_kwargs=obj_kwargs)
 
