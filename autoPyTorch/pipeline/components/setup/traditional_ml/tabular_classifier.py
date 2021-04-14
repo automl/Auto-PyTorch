@@ -48,7 +48,8 @@ class TabularClassifier(BaseModelComponent):
 
         return cs
 
-    def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> BaseClassifier:
+    def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...],
+                    logger_port: int) -> BaseClassifier:
         """
         This method returns a classifier, that is dynamically built using
         a self.config that is model specific, and contains the additional
@@ -57,7 +58,7 @@ class TabularClassifier(BaseModelComponent):
         classifier_name = self.config["classifier"]
         Classifier = self._classifiers[classifier_name]
 
-        classifier = Classifier()
+        classifier = Classifier(random_state=self.random_state, logger_port=logger_port)
 
         return classifier
 

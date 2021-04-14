@@ -1235,7 +1235,8 @@ class BaseTask:
         # When a multiprocessing work is done, the
         # objects are deleted. We don't want to delete run areas
         # until the estimator is deleted
-        self._backend.context.delete_directories(force=False)
+        if hasattr(self, '_backend'):
+            self._backend.context.delete_directories(force=False)
 
     @typing.no_type_check
     def get_incumbent_results(

@@ -5,6 +5,8 @@ import numpy as np
 
 import pandas as pd
 
+from sklearn.utils import check_random_state
+
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
@@ -161,9 +163,15 @@ class RunSummary(object):
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
+    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__()
-        self.random_state = random_state
+        if random_state is None:
+            # A trainer components need a random state for
+            # sampling -- for example in MixUp training
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = random_state
+
         self.weighted_loss: bool = False
 
     def prepare(

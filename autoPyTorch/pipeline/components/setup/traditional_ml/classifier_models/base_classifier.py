@@ -1,24 +1,38 @@
 import json
-import logging
+import logging.handlers
 import os as os
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from sklearn.utils import check_random_state
+
 from autoPyTorch.metrics import accuracy
+from autoPyTorch.utils.logging_ import get_named_client_logger
 
 
-class BaseClassifier():
+class BaseClassifier:
     """
     Base class for classifiers.
     """
 
-    def __init__(self, name: str = ''):
-
-        self.configure_logging()
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None, name: str = ''):
 
         self.name = name
+        self.logger_port = logger_port
+        self.logger = get_named_client_logger(
+            name=name,
+            host='localhost',
+            port=logger_port,
+        )
+
+        if random_state is None:
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = check_random_state(random_state)
+        self.random_state = random_state
         self.config = self.get_config()
 
         self.categoricals: np.ndarray = np.array(())
@@ -27,17 +41,6 @@ class BaseClassifier():
         self.num_classes: Optional[int] = None
 
         self.metric = accuracy
-
-    def configure_logging(self) -> None:
-        """
-        Setup self.logger
-        """
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-        self.logger.addHandler(ch)
 
     def get_config(self) -> Dict[str, Any]:
         """

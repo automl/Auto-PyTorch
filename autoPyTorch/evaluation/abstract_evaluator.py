@@ -80,7 +80,8 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
         self.random_state = random_state
         self.init_params = init_params
         self.pipeline = autoPyTorch.pipeline.traditional_tabular_classification.\
-            TraditionalTabularClassificationPipeline(dataset_properties=dataset_properties)
+            TraditionalTabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                     random_state=self.random_state)
         configuration_space = self.pipeline.get_hyperparameter_search_space()
         default_configuration = configuration_space.get_default_configuration().get_dictionary()
         default_configuration['model_trainer:tabular_classifier:classifier'] = config
