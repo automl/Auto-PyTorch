@@ -58,6 +58,7 @@ class AdditionalRunInfo(AttrDict):
 
 
 AdditionalRunInfoType = Union[Dict[str, Any], AdditionalRunInfo]
+ExceptionReturnType = Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]
 
 
 def fit_predict_try_except_decorator(ta: Callable, queue: multiprocessing.Queue,
@@ -256,10 +257,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         return super().run_wrapper(run_info=run_info)
 
-    def _process_exception(self, obj: function_wrapper, queue: multiprocessing.Queue, info_msg: str,
-                           info_for_empty: AdditionalRunInfoType, status: StatusType,
-                           is_anything_exception: bool
-                           ) -> Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]:
+    def _exception_processor(self, obj: function_wrapper, queue: multiprocessing.Queue,
+                             info_msg: str, info_for_empty: AdditionalRunInfoType,
+                             status: StatusType, is_anything_exception: bool
+                             ) -> ExceptionReturnType:
 
         cost, info = self.worst_possible_result, None
         additional_run_info: AdditionalRunInfoType = {}
@@ -271,38 +272,34 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             result, status = info[-1]['loss'], info[-1]['status']
             additional_run_info = info[-1]['additional_run_info']
 
-            if is_anything_exception and obj.exit_status == 0:
+            _success_in_anything_exc = (is_anything_exception and obj.exit_status == 0)
+            _success_in_to_or_mle = (status in [StatusType.SUCCESS, StatusType.DONOTADVANCE]
+                                     and not is_anything_exception)
+
+            if _success_in_anything_exc or _success_in_to_or_mle:
                 cost = result
-            else:
+            if not is_anything_exception or not _success_in_anything_exc:
                 additional_run_info.update(
                     subprocess_stdout=obj.stdout,
                     subprocess_stderr=obj.stderr,
-                    info=info_msg
-                )
-
-                if is_anything_exception:
-                    status = StatusType.CRASHED
-                    additional_run_info.update(exit_status=_encode_exit_status(obj.exit_status))
-                elif status in [StatusType.SUCCESS, StatusType.DONOTADVANCE]:
-                    cost = result
+                    info=info_msg)
+            if is_anything_exception and not _success_in_anything_exc:
+                status = StatusType.CRASHED
+                additional_run_info.update(exit_status=_encode_exit_status(obj.exit_status))
 
         return cost, status, info, additional_run_info
 
     def _process_exceptions(self, obj: function_wrapper, queue: multiprocessing.Queue, budget: float
-                            ) -> Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]:
+                            ) -> ExceptionReturnType:
         additional_run_info: AdditionalRunInfoType = {}
 
-        if obj.exit_status is TimeoutException:
-            cost, status, info, additional_run_info = self._process_exception(
-                obj=obj, queue=queue, info_msg='Run stopped because of timeout.',
-                info_for_empty={'error': 'Timeout'},
-                status=StatusType.TIMEOUT, is_anything_exception=False
-            )
-        elif obj.exit_status is MemorylimitException:
-            cost, status, info, additional_run_info = self._process_exception(
-                obj=obj, queue=queue, info_msg='Run stopped because of memout.',
-                info_for_empty={'error': 'Memout'},
-                status=StatusType.MEMOUT, is_anything_exception=False
+        if obj.exit_status is TimeoutException or obj.exit_status is MemorylimitException:
+            is_timeout = obj.exit_status is TimeoutException
+            cost, status, info, additional_run_info = self._exception_processor(
+                obj=obj, queue=queue, is_anything_exception=False,
+                info_msg=f'Run stopped because of {"timeout" if is_timeout else "memout"}.',
+                info_for_empty={'error': 'Timeout' if is_timeout else 'Memout'},
+                status=StatusType.TIMEOUT if is_timeout else StatusType.MEMOUT
             )
         elif obj.exit_status is TAEAbortException:
             info, status, cost = None, StatusType.ABORT, self.worst_possible_result
@@ -324,10 +321,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 exitcode=obj.exitcode
             )
 
-            cost, status, info, additional_run_info = self._process_exception(
-                obj=obj, queue=queue, info_msg=info_msg,
-                info_for_empty=info_for_empty,
-                status=StatusType.CRASHED, is_anything_exception=True
+            cost, status, info, additional_run_info = self._exception_processor(
+                obj=obj, queue=queue, is_anything_exception=True,
+                info_msg=info_msg, info_for_empty=info_for_empty,
+                status=StatusType.CRASHED
             )
 
         if ((self.budget_type is None or budget == 0) and status == StatusType.DONOTADVANCE):
@@ -342,6 +339,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                                  additional_run_info: AdditionalRunInfoType,
                                  ) -> AdditionalRunInfoType:
         lc_runtime = extract_learning_curve(info, 'duration')
+        stored = False
         targets = {'learning_curve': True,
                    'train_learning_curve': True,
                    'validation_learning_curve': self._get_validation_loss,
@@ -351,8 +349,11 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             if collect:
                 lc = extract_learning_curve(info, key)
                 if len(lc) > 1:
+                    stored = True
                     additional_run_info[key] = lc
-                    additional_run_info['learning_curve_runtime'] = lc_runtime
+
+        if stored:
+            additional_run_info['learning_curve_runtime'] = lc_runtime
 
         return additional_run_info
 
@@ -362,7 +363,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             init_params.update(self.init_params)
         return init_params
 
-    def _get_pynisher_args(self, cutoff: Optional[float] = None) -> Dict[str, Any]:
+    def _get_pynisher_kwargs(self, cutoff: Optional[float] = None) -> Dict[str, Any]:
 
         context = multiprocessing.get_context(self.pynisher_context)
         if self.logger_port is None:
