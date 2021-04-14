@@ -157,6 +157,7 @@ class TestTabularClassification:
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
+    @flaky.flaky(max_runs=2)
     def test_pipeline_transform(self, fit_dictionary_tabular):
         """
         In the context of autopytorch, transform expands a fit dictionary with
