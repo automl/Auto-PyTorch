@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f0a561559d0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f36d7a75280&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -159,7 +159,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002041339874267578, budget=0), TrajEntry(train_perf=0.5850799253821113, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020751953125, budget=0), TrajEntry(train_perf=0.7213765333322905, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -196,7 +196,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=4.190636157989502, wallclock_time=7.854287624359131, budget=5.555555555555555), TrajEntry(train_perf=0.5421418111324402, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=4.56663966178894, wallclock_time=8.315259456634521, budget=5.555555555555555), TrajEntry(train_perf=0.42637684944122944, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 89
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -230,7 +230,7 @@ with AutoPyTorch</p>
   trainer:RowCutOutTrainer:use_snapshot_ensemble, Value: True
   trainer:RowCutOutTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;RowCutOutTrainer&#39;
-, ta_runs=3, ta_time_used=16.118412017822266, wallclock_time=24.778547763824463, budget=5.555555555555555), TrajEntry(train_perf=0.1895624715617943, incumbent_id=3, incumbent=Configuration:
+, ta_runs=3, ta_time_used=18.46494770050049, wallclock_time=26.994173288345337, budget=5.555555555555555), TrajEntry(train_perf=0.30525461937758114, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -267,16 +267,12 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=11, ta_time_used=54.66048002243042, wallclock_time=82.70115542411804, budget=16.666666666666664)]
-{&#39;r2&#39;: 0.9019897998106655}
+, ta_runs=11, ta_time_used=60.20658469200134, wallclock_time=88.88911175727844, budget=16.666666666666664)]
+{&#39;r2&#39;: 0.8648970504170232}
 |    | Preprocessing                              | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.42 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.36 |
-|  2 | SimpleImputer,NoEncoder,StandardScaler     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  3 | SimpleImputer,NoEncoder,NoScaler           | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.68 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.32 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -361,7 +357,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  13.146 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  14.862 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
