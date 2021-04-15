@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f95c8c8bf70> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f155b28f310> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -73,7 +73,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017812252044677734, budget=0), TrajEntry(train_perf=0.28800989912449815, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0032715797424316406, budget=0), TrajEntry(train_perf=0.5725703971331157, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -110,14 +110,85 @@ with AutoPyTorch
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.360677480697632, wallclock_time=8.017497062683105, budget=5.555555555555555)]
-    {'r2': 0.9039979163185814}
+    , ta_runs=1, ta_time_used=4.113708734512329, wallclock_time=7.5228025913238525, budget=5.555555555555555), TrajEntry(train_perf=0.4570852467421932, incumbent_id=2, incumbent=Configuration:
+      data_loader:batch_size, Value: 89
+      encoder:__choice__, Value: 'NoEncoder'
+      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'most_frequent'
+      lr_scheduler:__choice__, Value: 'NoScheduler'
+      network_backbone:ShapedMLPBackbone:activation, Value: 'relu'
+      network_backbone:ShapedMLPBackbone:max_units, Value: 165
+      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'hexagon'
+      network_backbone:ShapedMLPBackbone:num_groups, Value: 5
+      network_backbone:ShapedMLPBackbone:output_dim, Value: 56
+      network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
+      network_embedding:__choice__, Value: 'NoEmbedding'
+      network_head:__choice__, Value: 'fully_connected'
+      network_head:fully_connected:num_layers, Value: 1
+      network_init:NoInit:bias_strategy, Value: 'Zero'
+      network_init:__choice__, Value: 'NoInit'
+      optimizer:AdamOptimizer:beta1, Value: 0.8807659366281321
+      optimizer:AdamOptimizer:beta2, Value: 0.9798886944835528
+      optimizer:AdamOptimizer:lr, Value: 0.002130276824426696
+      optimizer:AdamOptimizer:use_weight_decay, Value: True
+      optimizer:AdamOptimizer:weight_decay, Value: 0.0015643941083428694
+      optimizer:__choice__, Value: 'AdamOptimizer'
+      scaler:__choice__, Value: 'StandardScaler'
+      trainer:RowCutOutTrainer:Lookahead:la_alpha, Value: 0.7581060744734438
+      trainer:RowCutOutTrainer:Lookahead:la_steps, Value: 9
+      trainer:RowCutOutTrainer:cutout_prob, Value: 0.9603666031316771
+      trainer:RowCutOutTrainer:patch_ratio, Value: 0.43329354649550056
+      trainer:RowCutOutTrainer:se_lastk, Constant: 3
+      trainer:RowCutOutTrainer:use_lookahead_optimizer, Value: True
+      trainer:RowCutOutTrainer:use_snapshot_ensemble, Value: True
+      trainer:RowCutOutTrainer:use_stochastic_weight_averaging, Value: True
+      trainer:__choice__, Value: 'RowCutOutTrainer'
+    , ta_runs=3, ta_time_used=16.533231496810913, wallclock_time=24.58261251449585, budget=5.555555555555555), TrajEntry(train_perf=0.21483765499301266, incumbent_id=3, incumbent=Configuration:
+      data_loader:batch_size, Value: 64
+      encoder:__choice__, Value: 'OneHotEncoder'
+      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'mean'
+      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
+      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
+      lr_scheduler:ReduceLROnPlateau:patience, Value: 10
+      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
+      network_backbone:ShapedMLPBackbone:activation, Value: 'relu'
+      network_backbone:ShapedMLPBackbone:max_units, Value: 200
+      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'funnel'
+      network_backbone:ShapedMLPBackbone:num_groups, Value: 5
+      network_backbone:ShapedMLPBackbone:output_dim, Value: 200
+      network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
+      network_embedding:__choice__, Value: 'NoEmbedding'
+      network_head:__choice__, Value: 'fully_connected'
+      network_head:fully_connected:activation, Value: 'relu'
+      network_head:fully_connected:num_layers, Value: 2
+      network_head:fully_connected:units_layer_1, Value: 128
+      network_init:XavierInit:bias_strategy, Value: 'Normal'
+      network_init:__choice__, Value: 'XavierInit'
+      optimizer:AdamOptimizer:beta1, Value: 0.9
+      optimizer:AdamOptimizer:beta2, Value: 0.9
+      optimizer:AdamOptimizer:lr, Value: 0.01
+      optimizer:AdamOptimizer:use_weight_decay, Value: True
+      optimizer:AdamOptimizer:weight_decay, Value: 0.0001
+      optimizer:__choice__, Value: 'AdamOptimizer'
+      scaler:__choice__, Value: 'StandardScaler'
+      trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+      trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+      trainer:StandardTrainer:se_lastk, Constant: 3
+      trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+      trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+      trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
+      trainer:__choice__, Value: 'StandardTrainer'
+    , ta_runs=11, ta_time_used=55.585163831710815, wallclock_time=83.14616990089417, budget=16.666666666666664)]
+    {'r2': 0.8909910989626619}
     |    | Preprocessing                              | Estimator                                                       |   Weight |
     |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.56 |
-    |  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.36 |
-    |  2 | SimpleImputer,NoEncoder,StandardScaler     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  3 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.6  |
+    |  1 | SimpleImputer,OneHotEncoder,StandardScaler | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.2  |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
+    |  3 | SimpleImputer,NoEncoder,NoScaler           | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
 
 
 
@@ -209,7 +280,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  19.888 seconds)
+   **Total running time of the script:** ( 5 minutes  12.727 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_regression.py:
