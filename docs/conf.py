@@ -181,6 +181,7 @@ html_theme_options = {
         ('Manual', 'manual'),
         ('Examples', 'examples/index'),
         ('API', 'api'),
+        ('Dev', 'dev'),
         ('Extending', 'extending'),
     ],
 
