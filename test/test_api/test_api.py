@@ -27,6 +27,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue
 
 
 # Fixtures
@@ -409,6 +410,38 @@ def test_tabular_input_support(openml_id, backend):
 
     with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
         AutoMLSMBOMock.return_value = (RunHistory(), {}, 'epochs')
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='accuracy',
+            total_walltime_limit=150,
+            func_eval_time_limit_secs=50,
+            enable_traditional_pipeline=False,
+            load_models=False,
+        )
+
+
+@pytest.mark.parametrize('dataset_name', ('iris',))
+def test_get_incumbent_results(dataset_name, backend):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        name=dataset_name,
+        return_X_y=True, as_frame=True
+    )
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X, y, random_state=1)
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        ensemble_size=0,
+    )
+
+    estimator._do_dummy_prediction = unittest.mock.MagicMock()
+
+    with unittest.mock.patch.object(ExecuteTaFuncWithQueue, 'run') as TAEMock:
+        TAEMock.return_value =
         estimator.search(
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,

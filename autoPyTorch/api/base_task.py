@@ -1242,20 +1242,23 @@ class BaseTask:
     def get_incumbent_results(
         self,
         include_traditional: bool = False
-    ) -> Tuple[Configuration, Dict]:
+    ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
         """
         Get Incumbent config and the corresponding results
         Args:
-            include_traditional:
+            include_traditional: Whether to include results from tradtional pipelines
 
         Returns:
 
         """
         assert self.run_history is not None, "No Run History found, search has not been called."
-        assert not self.run_history.empty(), "Run History is empty."
+        if self.run_history.empty():
+            raise ValueError("Run History is empty. Something went wrong, "
+                             "smac was not able to fit any model?")
 
         run_history_data = self.run_history.data
         if not include_traditional:
+            # traditional classifiers have trainer_configuration in their additional info
             run_history_data = dict(
                 filter(lambda elem: elem[1].additional_info is not None and 'trainer_configuration' not in elem[1].
                        additional_info,
