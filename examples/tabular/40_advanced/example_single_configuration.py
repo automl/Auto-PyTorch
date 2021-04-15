@@ -51,13 +51,8 @@ if __name__ == '__main__':
     )
 
     ###########################################################################
-    # Fit an user provided configuration
+    # Fit default configuration
     # ==================================
-
-    # We will create a configuration that has a user defined
-    # min_samples_split in the Random Forest. We recommend you to look into
-    # how the ConfigSpace package works here:
-    # https://automl.github.io/ConfigSpace/master/
 
     pipeline, run_info, run_value, dataset = estimator.fit_pipeline(X_train=X_train, y_train=y_train,
                                                                     dataset_name='kr-vs-kp',
@@ -78,6 +73,5 @@ if __name__ == '__main__':
     # The fit_pipeline command also returns a named tuple with train/test performance
     print(run_value)
 
-    # We can make sure that our pipeline configuration was honored as follows
     print("Passed Configuration:", pipeline.config)
-    print("Random Forest:", pipeline.named_steps['network'].choice.network)
+    print("Network:", pipeline.named_steps['network'].network)
