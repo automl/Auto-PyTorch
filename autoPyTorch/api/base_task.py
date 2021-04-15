@@ -789,6 +789,8 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
+        assert self.dataset_name is not None
+
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
@@ -1035,8 +1037,9 @@ class BaseTask:
         Returns:
             self
         """
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        self.dataset_name = dataset.dataset_name
+        assert self.dataset_name is None
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)
@@ -1105,8 +1108,8 @@ class BaseTask:
         Returns:
             (BasePipeline): fitted pipeline
         """
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+        self.dataset_name = dataset.dataset_name
+        assert self.dataset_name is None
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)

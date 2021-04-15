@@ -74,7 +74,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def __init__(
         self,
         train_tensors: BaseDatasetInputType,
-        dataset_name: str = "",
+        dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
@@ -110,7 +110,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         self.dataset_name = dataset_name
 
-        if self.dataset_name == "":
+        if self.dataset_name is None:
             self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
         if not hasattr(train_tensors[0], 'shape'):

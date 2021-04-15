@@ -73,7 +73,7 @@ class TabularDataset(BaseDataset):
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
-                 dataset_name: str = "",
+                 dataset_name: Optional[str] = None,
                  validator: Optional[BaseInputValidator] = None,
                  ):
 
