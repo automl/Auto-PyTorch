@@ -59,11 +59,10 @@ class FullyConnectedHead(NetworkHeadComponent):
 
         # TODO Create a unit test for the fully connected head with constant updates,
         #  changes were made to this module because of failing updates.
-        num_layers.value_range = list(num_layers.value_range)  # satisfying mypy
         num_layers_is_constant = True if len(num_layers.value_range) == 1 else False
-        min_num_layers: int = num_layers.value_range[0]  # noqa: E731
+        min_num_layers: int = num_layers.value_range[0]  # type: ignore
         if num_layers_is_constant:
-            max_num_layers: int = min_num_layers  # noqa: E731
+            max_num_layers: int = min_num_layers  # type: ignore
         else:
             max_num_layers = num_layers.value_range[1]
 
