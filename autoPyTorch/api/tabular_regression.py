@@ -159,7 +159,7 @@ class TabularRegressionTask(BaseTask):
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         InputValidator = TabularInputValidator(
-            is_classification=True,
+            is_classification=False,
             logger_port=self._logger_port,
         )
 
