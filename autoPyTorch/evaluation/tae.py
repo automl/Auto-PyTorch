@@ -79,6 +79,7 @@ class PynisherFuncWrapperType(object):
 
 AdditionalRunInfoType = Union[Dict[str, Any], AdditionalRunInfo]
 ExceptionReturnType = Tuple[float, StatusType, Optional[List[RunValue]], AdditionalRunInfoType]
+ResultType = Tuple[StatusType, float, float, AdditionalRunInfoType]
 
 
 def fit_predict_try_except_decorator(ta: Callable, queue: multiprocessing.Queue,
@@ -504,7 +505,7 @@ class ExecuteTAFuncWithQueue(AbstractTAFunc):
             cutoff: Optional[float] = None,
             seed: int = 12345, budget: float = 0.0,
             instance_specific: Optional[str] = None,
-            ) -> Tuple[StatusType, float, float, AdditionalRunInfoType]:
+            ) -> ResultType:
         """
         Args:
             cutoff (float):
