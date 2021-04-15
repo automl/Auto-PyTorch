@@ -15,7 +15,7 @@ from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 
 class Imputation(PipelineNode):
 
-    strategies = ["mean", "median", "most_frequent"]
+    strategies = ["none", "mean", "median", "most_frequent"]
 
     def fit(self, hyperparameter_config, X, train_indices, dataset_info):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
@@ -23,13 +23,17 @@ class Imputation(PipelineNode):
         if dataset_info.is_sparse:
             return {'imputation_preprocessor': None, 'all_nan_columns': None}
 
+        strategy = hyperparameter_config['strategy']
+        if strategy == 'none':
+            return {'imputation_preprocessor': None, 'all_nan_columns': None}
+
+
         # delete all nan columns
         all_nan = np.all(np.isnan(X), axis=0)
         X = X[:, ~all_nan]
         dataset_info.categorical_features = [dataset_info.categorical_features[i] for i, is_nan in enumerate(all_nan) if not is_nan]
 
         
-        strategy = hyperparameter_config['strategy']
         fill_value = int(np.nanmax(X)) + 1 if not dataset_info.is_sparse else 0
         numerical_imputer = SimpleImputer(strategy=strategy, copy=False)
         categorical_imputer = SimpleImputer(strategy='constant', copy=False, fill_value=fill_value)
