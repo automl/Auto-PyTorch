@@ -39,7 +39,7 @@ from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
-from autoPyTorch.evaluation.tae import AdditionalRunInfoType, ExecuteTAFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.tae import AdditionalRunInfoType, ExecuteTAFuncWithQueue, ResultType, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
@@ -58,15 +58,19 @@ from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requ
 from autoPyTorch.utils.stopwatch import StopWatch
 
 
+# Typing for ExecuteTAFuncWithQueue.run
+ExecuteTAFuncWithQueueRunType = Callable[[Dict[str, Any]], ResultType]
+
+
 class DaskFutureTaskType():
-    def __init__(self, ta: Type[ExecuteTAFuncWithQueue.run],
+    def __init__(self, ta: ExecuteTAFuncWithQueueRunType,
                  *args: List[Any], **kwargs: Dict[str, Any]):
         self.ta = ta
         self.args = args
         self.kwargs = kwargs
         raise TypeError("Cannot instantiate `DaskFutureTaskType` instances.")
 
-    def result(self) -> Tuple[StatusType, float, float, AdditionalRunInfoType]:
+    def result(self) -> ResultType:
         # Implement `return self.ta(*self.args, **self.kwargs)`
         raise NotImplementedError
 
