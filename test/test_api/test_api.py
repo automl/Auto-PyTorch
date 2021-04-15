@@ -30,6 +30,9 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+=======
+from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue
+>>>>>>> In progress addressing fransisco's comment
 
 
 CV_NUM_SPLITS = 2
@@ -551,13 +554,12 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
     # is not able to be stored on disk (only on CI)
     if sys.version_info < (3, 7):
         include = {'network_embedding': ['NoEmbedding']}
-    # Search for a good configuration
+        # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        include_components=include
+        include_components = include
     )
-
     with pytest.raises(FileNotFoundError, match=r"The path: .+? provided for 'portfolio_selection' "
                                                 r"for the file containing the portfolio configurations "
                                                 r"does not exist\. Please provide a valid path"):
@@ -570,3 +572,35 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
             enable_traditional_pipeline=False,
             portfolio_selection="random_path_to_test.json"
         )
+
+
+@pytest.mark.parametrize('dataset_name', ('iris',))
+def test_get_incumbent_results(dataset_name, backend):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        name=dataset_name,
+        return_X_y=True, as_frame=True
+    )
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X, y, random_state=1)
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        ensemble_size=0,
+    )
+
+    estimator._do_dummy_prediction = unittest.mock.MagicMock()
+
+    # with unittest.mock.patch.object(ExecuteTaFuncWithQueue, 'run') as TAEMock:
+    #     TAEMock.return_value =
+    #     estimator.search(
+    #         X_train=X_train, y_train=y_train,
+    #         X_test=X_test, y_test=y_test,
+    #         optimize_metric='accuracy',
+    #         total_walltime_limit=150,
+    #         func_eval_time_limit_secs=50,
+    #         enable_traditional_pipeline=False,
+    #         load_models=False,
+    #     )
