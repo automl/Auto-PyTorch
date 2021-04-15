@@ -60,16 +60,14 @@ class FullyConnectedHead(NetworkHeadComponent):
         # TODO Create a unit test for the fully connected head with constant updates,
         #  changes were made to this module because of failing updates.
         num_layers_is_constant = True if len(num_layers.value_range) == 1 else False
+        min_num_layers: int = num_layers.value_range[0]
         if num_layers_is_constant:
-            min_num_layers = num_layers.value_range[0]
-            max_num_layers = min_num_layers
+            max_num_layers: int = min_num_layers
         else:
-            min_num_layers, max_num_layers = num_layers.value_range
+            max_num_layers = num_layers.value_range[1]
 
         num_layers_hp = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
-
         activation_hp = get_hyperparameter(activation, CategoricalHyperparameter)
-
         cs.add_hyperparameter(num_layers_hp)
 
         if num_layers_is_constant:
