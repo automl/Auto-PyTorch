@@ -25,7 +25,7 @@ from ConfigSpace import Configuration
 import numpy as np
 
 import pynisher
-from pynisher import TimeoutException, MemorylimitException
+from pynisher import MemorylimitException, TimeoutException
 
 from smac.runhistory.runhistory import RunInfo, RunValue
 from smac.stats.stats import Stats
@@ -73,7 +73,7 @@ class PynisherFuncWrapperType(object):
         self.stderr: Optional[str] = None
         raise TypeError("Cannot instantiate `PynisherFuncWrapperType` instances.")
 
-    def __call__(self,  *args: List[Any], **kwargs: Dict[str, Any]) -> None:
+    def __call__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
         raise NotImplementedError
 
 
@@ -132,7 +132,7 @@ def _encode_exit_status(exit_status: multiprocessing.connection.Connection
         return str(exit_status)
 
 
-class ExecuteTaFuncWithQueue(AbstractTAFunc):
+class ExecuteTAFuncWithQueue(AbstractTAFunc):
     """
     Wrapper class that executes the target algorithm with
     queues according to what SMAC expects. This allows us to
@@ -375,7 +375,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         return cost, status, info, additional_run_info
 
-    def _add_learning_curve_info(self, info: Optional[List[RunValue]],
+    def _add_learning_curve_info(self, info: List[RunValue],
                                  additional_run_info: AdditionalRunInfoType,
                                  ) -> AdditionalRunInfoType:
 

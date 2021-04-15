@@ -14,7 +14,7 @@ from smac.runhistory.runhistory import RunInfo
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.tae import ExecuteTAFuncWithQueue, get_cost_of_crash
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 this_directory = os.path.dirname(__file__)
@@ -88,13 +88,13 @@ class EvaluationTest(unittest.TestCase):
         self.assertEqual(safe_eval.exit_status, pynisher.TimeoutException)
 
     ############################################################################
-    # Test ExecuteTaFuncWithQueue.run_wrapper()
+    # Test ExecuteTAFuncWithQueue.run_wrapper()
     @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
     def test_eval_with_limits_holdout(self, pynisher_mock):
         pynisher_mock.side_effect = safe_eval_success_mock
         config = unittest.mock.Mock()
         config.config_id = 198
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -114,7 +114,7 @@ class EvaluationTest(unittest.TestCase):
     def test_cutoff_lower_than_remaining_time(self, pynisher_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -140,7 +140,7 @@ class EvaluationTest(unittest.TestCase):
         pynisher_mock.return_value = m1
         m2.exit_status = pynisher.TimeoutException
         m2.wall_clock_time = 30
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -160,7 +160,7 @@ class EvaluationTest(unittest.TestCase):
     def test_zero_or_negative_cutoff(self, pynisher_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -181,7 +181,7 @@ class EvaluationTest(unittest.TestCase):
         config = unittest.mock.Mock()
         config.origin = 'MOCK'
         config.config_id = 198
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -222,7 +222,7 @@ class EvaluationTest(unittest.TestCase):
         pynisher_mock.side_effect = MemoryError
         config = unittest.mock.Mock()
         config.config_id = 198
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -260,7 +260,7 @@ class EvaluationTest(unittest.TestCase):
         m2.wall_clock_time = 30
 
         # Test for a succesful run
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -283,7 +283,7 @@ class EvaluationTest(unittest.TestCase):
                        'loss': 2.0,
                        'additional_run_info': {}})
         m2.side_effect = side_effect
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -310,7 +310,7 @@ class EvaluationTest(unittest.TestCase):
                        'loss': 0.5,
                        'additional_run_info': kwargs['instance']})
         eval_houldout_mock.side_effect = side_effect
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -334,7 +334,7 @@ class EvaluationTest(unittest.TestCase):
         config.config_id = 198
 
         eval_holdout_mock.side_effect = ValueError
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,
@@ -357,7 +357,7 @@ class EvaluationTest(unittest.TestCase):
         config = unittest.mock.Mock(spec=int)
         config.config_id = 198
 
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTAFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     metric=accuracy,

@@ -23,7 +23,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.tae import ExecuteTAFuncWithQueue, get_cost_of_crash
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -257,7 +257,7 @@ class AutoMLSMBO(object):
             pipeline_config=self.pipeline_config,
             search_space_updates=self.search_space_updates
         )
-        ta = ExecuteTaFuncWithQueue
+        ta = ExecuteTAFuncWithQueue
         self.logger.info("Created TA")
 
         startup_time = self.watcher.wall_elapsed(self.dataset_name)

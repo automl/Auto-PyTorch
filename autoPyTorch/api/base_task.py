@@ -39,7 +39,7 @@ from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash, PynisherFuncWrapperType
+from autoPyTorch.evaluation.tae import AdditionalRunInfoType, ExecuteTAFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
@@ -56,6 +56,19 @@ from autoPyTorch.utils.logging_ import (
 )
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
 from autoPyTorch.utils.stopwatch import StopWatch
+
+
+class DaskFutureTaskType():
+    def __init__(self, ta: ExecuteTAFuncWithQueue.run,
+                 *args: List[Any], **kwargs: Dict[str, Any]):
+        self.ta = ta
+        self.args = args
+        self.kwargs = kwargs
+        raise TypeError("Cannot instantiate `DaskFutureTaskType` instances.")
+
+    def result(self) -> Tuple[StatusType, float, float, AdditionalRunInfoType]:
+        # Implement `return self.ta(*self.args, **self.kwargs)`
+        raise NotImplementedError
 
 
 def _pipeline_predict(pipeline: BasePipeline,
@@ -478,14 +491,14 @@ class BaseTask:
 
         return ensemble
 
-    def _get_target_algorithm(self, wallclock_limit: int) -> ExecuteTaFuncWithQueue:
+    def _get_target_algorithm(self, wallclock_limit: int) -> ExecuteTAFuncWithQueue:
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = wallclock_limit
         stats = Stats(scenario_mock)
         stats.start_timing()
 
         assert self._metric is not None
-        ta = ExecuteTaFuncWithQueue(
+        ta = ExecuteTAFuncWithQueue(
             backend=self._backend,
             seed=self.seed,
             metric=self._metric,
@@ -518,7 +531,7 @@ class BaseTask:
             raise ValueError(output)
 
     def _parallel_worker_allocation(self, num_future_jobs: int, run_history: RunHistory,
-                                    dask_futures: List[Tuple[str, PynisherFuncWrapperType]]
+                                    dask_futures: List[Tuple[str, ExecuteTAFuncWithQueue.run]]
                                     ) -> None:
         """
         The functin to allocate and implement jobs to unused workers.
@@ -526,7 +539,7 @@ class BaseTask:
 
         Args:
             num_future_jobs (int): The number of jobs to run
-            dask_futures (List[Tuple[str, PynisherFuncWrapperType]]):
+            dask_futures (List[Tuple[str, ExecuteTAFuncWithQueue.run]]):
                 The list of pairs of the name of the classifier to run and
                 the function to train the classifier
             run_history (RunHistory):
@@ -618,7 +631,6 @@ class BaseTask:
                                                  dask_futures=dask_futures)
 
             time_left -= int(time.time() - start_time)
-            self.num_run = n_r
 
             if time_left < self._func_eval_time_limit_secs:
                 self._logger.warning("Not enough time to fit all traditional machine learning models."
