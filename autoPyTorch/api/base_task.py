@@ -12,7 +12,7 @@ import unittest.mock
 import uuid
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -59,7 +59,7 @@ from autoPyTorch.utils.stopwatch import StopWatch
 
 
 class DaskFutureTaskType():
-    def __init__(self, ta: ExecuteTAFuncWithQueue.run,
+    def __init__(self, ta: Type[ExecuteTAFuncWithQueue.run],
                  *args: List[Any], **kwargs: Dict[str, Any]):
         self.ta = ta
         self.args = args
@@ -531,7 +531,7 @@ class BaseTask:
             raise ValueError(output)
 
     def _parallel_worker_allocation(self, num_future_jobs: int, run_history: RunHistory,
-                                    dask_futures: List[Tuple[str, ExecuteTAFuncWithQueue.run]]
+                                    dask_futures: List[Tuple[str, DaskFutureTaskType]]
                                     ) -> None:
         """
         The functin to allocate and implement jobs to unused workers.
