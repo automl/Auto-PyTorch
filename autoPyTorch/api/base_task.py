@@ -500,7 +500,8 @@ class BaseTask:
         )
         return ta
 
-    def _logging_failed_prediction(self, additional_info: Any, header: str) -> None:
+    def _logging_failed_prediction(self, additional_info: Any,
+                                   header: str, raise_error: bool) -> None:
         assert self._logger is not None
 
         if additional_info.get('exitcode') == -6:
@@ -510,12 +511,14 @@ class BaseTask:
                       f"Additional output: {str(additional_info)}.",
             output = f"{header}. {err_msg}"
             self._logger.error(output)
-            raise ValueError(output)
+            if raise_error:
+                raise ValueError(output)
 
         else:
             output = f"{header} and additional output: {str(additional_info)}."
             self._logger.error(output)
-            raise ValueError(output)
+            if raise_error:
+                raise ValueError(output)
 
     def _parallel_worker_allocation(self, num_future_jobs: int, run_history: RunHistory,
                                     dask_futures: List[Tuple[str, Any]]
@@ -557,7 +560,7 @@ class BaseTask:
                                 origin=origin)
             else:
                 header = f"Traditional prediction for {classifier} failed with run state {str(status)}"
-                self._logging_failed_prediction(additional_info, header)
+                self._logging_failed_prediction(additional_info, header, raise_error=False)
 
     def _traditional_predictions(self, time_left: int) -> None:
         """
@@ -649,7 +652,7 @@ class BaseTask:
         else:
             header = f"Dummy prediction failed with run state {str(status)}"
             self._logging_failed_prediction(additional_info=additional_info,
-                                            header=header)
+                                            header=header, raise_error=True)
         self._stopwatch.stop_task(dummy_task_name)
 
     def _run_traditional_ml(self) -> None:
