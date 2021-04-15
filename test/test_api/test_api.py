@@ -407,7 +407,7 @@ def test_tabular_input_support(openml_id, backend):
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
-def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
+def test_run_dummy_prediction(dask_client, fit_dictionary_tabular):
     backend = fit_dictionary_tabular['backend']
     estimator = TabularClassificationTask(
         backend=backend,
@@ -424,7 +424,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._disable_file_output = []
     estimator._all_supported_metrics = False
 
-    estimator._do_dummy_prediction()
+    estimator._run_dummy_prediction()
 
     # Ensure that the dummy predictions are not in the current working
     # directory, but in the temporary directory.
