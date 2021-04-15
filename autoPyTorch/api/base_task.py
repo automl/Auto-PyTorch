@@ -10,7 +10,6 @@ import tempfile
 import time
 import typing
 import unittest.mock
-import uuid
 import warnings
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Union, cast
@@ -899,7 +898,7 @@ class BaseTask:
                 start_time=time.time(),
                 time_left_for_ensembles=time_left_for_ensembles,
                 backend=copy.deepcopy(self._backend),
-                dataset_name=dataset.dataset_name,
+                dataset_name=str(dataset.dataset_name),
                 output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
                 task_type=STRING_TO_TASK_TYPES[self.task_type],
                 metrics=[self._metric],
@@ -930,7 +929,7 @@ class BaseTask:
 
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
-                dataset_name=dataset.dataset_name,
+                dataset_name=str(dataset.dataset_name),
                 backend=self._backend,
                 total_walltime_limit=total_walltime_limit,
                 func_eval_time_limit_secs=func_eval_time_limit_secs,
@@ -1039,10 +1038,9 @@ class BaseTask:
         """
 
         self.dataset_name = dataset.dataset_name
-        assert self.dataset_name is None
 
         if self._logger is None:
-            self._logger = self._get_logger(self.dataset_name)
+            self._logger = self._get_logger(str(self.dataset_name))
 
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
@@ -1109,10 +1107,9 @@ class BaseTask:
             (BasePipeline): fitted pipeline
         """
         self.dataset_name = dataset.dataset_name
-        assert self.dataset_name is None
 
         if self._logger is None:
-            self._logger = self._get_logger(self.dataset_name)
+            self._logger = self._get_logger(str(self.dataset_name))
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
