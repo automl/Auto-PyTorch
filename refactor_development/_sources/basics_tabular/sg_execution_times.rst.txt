@@ -5,10 +5,10 @@
 
 Computation times
 =================
-**11:19.074** total execution time for **basics_tabular** files:
+**11:33.494** total execution time for **basics_tabular** files:
 
 +----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_basics_tabular_example_tabular_classification.py` (``example_tabular_classification.py``) | 06:05.257 | 0.0 MB |
+| :ref:`sphx_glr_basics_tabular_example_tabular_classification.py` (``example_tabular_classification.py``) | 06:10.960 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_basics_tabular_example_tabular_regression.py` (``example_tabular_regression.py``)         | 05:13.817 | 0.0 MB |
+| :ref:`sphx_glr_basics_tabular_example_tabular_regression.py` (``example_tabular_regression.py``)         | 05:22.534 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------+-----------+--------+

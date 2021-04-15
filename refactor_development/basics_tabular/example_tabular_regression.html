@@ -66,6 +66,7 @@
                 <li><a href="../manual.html">Manual</a></li>
                 <li><a href="../examples/index.html">Examples</a></li>
                 <li><a href="../api.html">API</a></li>
+                <li><a href="../dev.html">Dev</a></li>
                 <li><a href="../extending.html">Extending</a></li>
             
             
@@ -122,7 +123,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f7fc508cf40&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f2ad93eca90&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -152,7 +153,7 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0018508434295654297, budget=0), TrajEntry(train_perf=0.3455457959161278, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019381046295166016, budget=0), TrajEntry(train_perf=0.37169709500142045, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -182,13 +183,13 @@ with AutoPyTorch</p>
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=4.5675368309021, wallclock_time=8.493228435516357, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.8982766406312925}
+, ta_runs=1, ta_time_used=4.973564147949219, wallclock_time=9.214993715286255, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.9023839963347217}
 |    | Preprocessing                              | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.78 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.8  |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
+|  2 | SimpleImputer,NoEncoder,NoScaler           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -273,7 +274,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  13.817 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  22.534 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
