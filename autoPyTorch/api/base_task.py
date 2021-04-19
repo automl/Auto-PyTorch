@@ -1214,9 +1214,6 @@ class BaseTask:
                    y_train is not None or \
                    X_test is not None or \
                    y_test is not None, "No dataset provided, must provide X_train, y_train, X_test, y_test tensors"
-            resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
-            resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
-                self.resampling_strategy_args
             dataset = self.get_dataset(X_train=X_train,
                                        y_train=y_train,
                                        X_test=X_test,
