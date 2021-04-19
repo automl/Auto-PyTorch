@@ -115,7 +115,7 @@ class TabularRegressionTask(BaseTask):
                     y_train: Union[List, pd.DataFrame, np.ndarray],
                     X_test: Union[List, pd.DataFrame, np.ndarray],
                     y_test: Union[List, pd.DataFrame, np.ndarray],
-                    resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                    resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
                     resampling_strategy_args: Optional[Dict[str, Any]] = None,
                     dataset_name: Optional[str] = None,
                     return_only: Optional[bool] = False
@@ -123,6 +123,10 @@ class TabularRegressionTask(BaseTask):
 
         if dataset_name is None:
             dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+            self.resampling_strategy_args
 
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements

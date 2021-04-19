@@ -28,6 +28,7 @@ import sklearn.metrics
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
+from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
 if __name__ == '__main__':
@@ -50,17 +51,29 @@ if __name__ == '__main__':
         resampling_strategy_args={'val_share': 0.33}
     )
 
+    ############################################################################
+    # Get a random configuration of the pipeline for current dataset
+    # ===============================================================
+
+    dataset = estimator.get_dataset(X_train=X_train,
+                                    y_train=y_train,
+                                    X_test=X_test,
+                                    y_test=y_test)
+    dataset_requirements = get_dataset_requirements(
+        info=dataset.get_required_dataset_info())
+    dataset_properties = dataset.get_dataset_properties(dataset_requirements)
+    configuration = estimator.build_pipeline(dataset_properties).\
+        get_hyperparameter_search_space().get_default_configuration()
+
     ###########################################################################
-    # Fit default configuration
+    # Fit the configuration
     # ==================================
 
     pipeline, run_info, run_value, dataset = estimator.fit_pipeline(X_train=X_train, y_train=y_train,
                                                                     dataset_name='kr-vs-kp',
                                                                     X_test=X_test, y_test=y_test,
-                                                                    resampling_strategy=estimator.resampling_strategy,
-                                                                    resampling_strategy_args=estimator.
-                                                                    resampling_strategy_args,
                                                                     disable_file_output=False,
+                                                                    configuration=configuration
                                                                     )
 
     # This object complies with Scikit-Learn Pipeline API.
