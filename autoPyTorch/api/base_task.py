@@ -690,6 +690,7 @@ class BaseTask:
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
+        tae_func: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
         disable_file_output: List = [],
@@ -757,6 +758,10 @@ class BaseTask:
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
                 [SMAC](https://automl.github.io/SMAC3/master/index.html).
+            tae_func (Optional[Callable]):
+                TargetAlgorithm to be optimised. If None, `eval_function`
+                available in autoPyTorch/evaluation/train_evaluator is used.
+                Must be child class of AbstractEvaluator.
             all_supported_metrics (bool), (default=True): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
@@ -966,7 +971,7 @@ class BaseTask:
             )
             try:
                 run_history, self.trajectory, budget_type = \
-                    _proc_smac.run_smbo()
+                    _proc_smac.run_smbo(func=tae_func)
                 self.run_history.update(run_history, DataOrigin.INTERNAL)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),

@@ -30,9 +30,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-=======
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue
->>>>>>> In progress addressing fransisco's comment
 
 
 CV_NUM_SPLITS = 2
@@ -575,7 +572,8 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
 
 
 @pytest.mark.parametrize('dataset_name', ('iris',))
-def test_get_incumbent_results(dataset_name, backend):
+@pytest.mark.parametrize('include_traditional', (True, False))
+def test_get_incumbent_results(dataset_name, backend, include_traditional):
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
         name=dataset_name,
@@ -588,19 +586,21 @@ def test_get_incumbent_results(dataset_name, backend):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        ensemble_size=0,
     )
 
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
+    estimator.search(
+        X_train=X_train, y_train=y_train,
+        X_test=X_test, y_test=y_test,
+        optimize_metric='accuracy',
+        total_walltime_limit=150,
+        func_eval_time_limit_secs=50,
+        enable_traditional_pipeline=True,
+        load_models=False,
+    )
+    config, results = estimator.get_incumbent_results(include_traditional=include_traditional)
+    assert isinstance(config, Configuration)
+    assert isinstance(results, dict)
 
-    # with unittest.mock.patch.object(ExecuteTaFuncWithQueue, 'run') as TAEMock:
-    #     TAEMock.return_value =
-    #     estimator.search(
-    #         X_train=X_train, y_train=y_train,
-    #         X_test=X_test, y_test=y_test,
-    #         optimize_metric='accuracy',
-    #         total_walltime_limit=150,
-    #         func_eval_time_limit_secs=50,
-    #         enable_traditional_pipeline=False,
-    #         load_models=False,
-    #     )
+    if not include_traditional:
+        assert results['configuration_origin'] != 'traditional'
