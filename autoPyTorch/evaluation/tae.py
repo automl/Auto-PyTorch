@@ -199,7 +199,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 )
         else:
             if run_info.budget == 0:
-                run_info = run_info._replace(budget=100.0)
+                run_info = run_info._replace(budget=self.pipeline_config[self.budget_type])
             elif run_info.budget <= 0 or run_info.budget > 100:
                 raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
                                  run_info.budget)
