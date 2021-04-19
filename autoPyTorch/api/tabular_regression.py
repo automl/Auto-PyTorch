@@ -110,16 +110,16 @@ class TabularRegressionTask(BaseTask):
                                          exclude=exclude_components,
                                          search_space_updates=search_space_updates)
 
-    def _create_dataset(self,
-                        X_train: Union[List, pd.DataFrame, np.ndarray],
-                        y_train: Union[List, pd.DataFrame, np.ndarray],
-                        X_test: Union[List, pd.DataFrame, np.ndarray],
-                        y_test: Union[List, pd.DataFrame, np.ndarray],
-                        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-                        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                        dataset_name: Optional[str] = None,
-                        return_only: Optional[bool] = False
-                        ) -> BaseDataset:
+    def get_dataset(self,
+                    X_train: Union[List, pd.DataFrame, np.ndarray],
+                    y_train: Union[List, pd.DataFrame, np.ndarray],
+                    X_test: Union[List, pd.DataFrame, np.ndarray],
+                    y_test: Union[List, pd.DataFrame, np.ndarray],
+                    resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                    resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                    dataset_name: Optional[str] = None,
+                    return_only: Optional[bool] = False
+                    ) -> BaseDataset:
 
         if dataset_name is None:
             dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
@@ -240,13 +240,13 @@ class TabularRegressionTask(BaseTask):
 
         """
 
-        self._create_dataset(X_train=X_train,
-                             y_train=y_train,
-                             X_test=X_test,
-                             y_test=y_test,
-                             resampling_strategy=self.resampling_strategy,
-                             resampling_strategy_args=self.resampling_strategy_args,
-                             dataset_name=dataset_name)
+        self.get_dataset(X_train=X_train,
+                         y_train=y_train,
+                         X_test=X_test,
+                         y_test=y_test,
+                         resampling_strategy=self.resampling_strategy,
+                         resampling_strategy_args=self.resampling_strategy_args,
+                         dataset_name=dataset_name)
 
         return self._search(
             dataset=self.dataset,
