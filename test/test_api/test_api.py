@@ -36,7 +36,6 @@ CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
 
 
-# ====
 # Test
 # ====
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
