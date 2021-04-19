@@ -252,38 +252,29 @@ class AbstractEvaluator(object):
     interacting with SMAC through ExecuteTaFuncWithQueue.
 
     An evaluator is an object that:
-        + constructs a pipeline (be it a classification or regression estimator) for a given
+        + constructs a pipeline (i.e. a classification or regression estimator) for a given
           pipeline_config and run settings (budget, seed)
-        + Fits and train this pipeline (TrainEvaluator) or test a given
+        + Fits and trains this pipeline (TrainEvaluator) or tests a given
           configuration (TestEvaluator)
 
-    The provided configuration determines the type of pipeline created:
-        int: A dummy classifier/dummy regressor is created. This estimator serves
-             as a baseline model to ignore all models that perform worse than this
-             dummy estimator. Also, in the worst case scenario, this is the final
-             estimator created (for instance, in case not enough memory was allocated
-             and all configurations crashed).
-        str: A traditional pipeline is created, as the configuration will contain a
-             string defining the estimator to use. For example 'RandomForest'.
-        Configuration: A pipeline object matching this configuration object is created. This
-             is the case of neural architecture search, where different backbones
-             and head can be passed in the form of a configuration object.
+    The provided configuration determines the type of pipeline created. For more
+    details, please read the get_pipeline() method.
 
     Attributes:
         backend (Backend):
-            An object to interface with the disk storage. In particular, allows to
+            An object that allows interaction with the disk storage. In particular, allows to
             access the train and test datasets
         queue (Queue):
             Each worker available will instantiate an evaluator, and after completion,
-            it will return the evaluation result via a multiprocessing queue
+            it will append the result to a multiprocessing queue
         metric (autoPyTorchMetric):
             A scorer object that is able to evaluate how good a pipeline was fit. It
-            is a wrapper on top of the actual score method (a wrapper on top of scikit
-            lean accuracy for example) that formats the predictions accordingly.
+            is a wrapper on top of the actual score method (a wrapper on top of
+            scikit-learn accuracy for example) that formats the predictions accordingly.
         budget: (float):
             The amount of epochs/time a configuration is allowed to run.
         budget_type  (str):
-            The budget type, which can be epochs or time
+            The budget type. Currently, only epoch and time are allowed.
         pipeline_config (Optional[Dict[str, Any]]):
             Defines the content of the pipeline being evaluated. For example, it
             contains pipeline specific settings like logging name, or whether or not
@@ -478,8 +469,8 @@ class AbstractEvaluator(object):
              fixed estimator. Also, in the worst case scenario, this is the final
              estimator created (for instance, in case not enough memory was allocated).
         str: A pipeline with traditional classifiers like random forest, SVM, etc is created,
-             as the configuration will contain a
-             string defining the configuration to use, for example 'RandomForest'
+             as the configuration will contain an estimator name defining the configuration
+             to use, for example 'RandomForest'
         Configuration: A pipeline object matching this configuration is created. This
              is the case of neural architecture search, where different backbones
              and head can be passed in the form of a configuration object.
@@ -575,7 +566,7 @@ class AbstractEvaluator(object):
 
         Returns:
             duration (float):
-                The elapsed time of this evaluator
+                The elapsed time of the training of this evaluator
             loss (float):
                 The optimization loss of this run
             seed (int):
@@ -827,6 +818,8 @@ class AbstractEvaluator(object):
         It is a wrapper to provide the same interface to _predict_proba
 
         Regression predictions expects an unraveled dimensionality.
+        To comply with scikit-learn VotingRegressor requirement, if the estimator
+        predicts a (N,) shaped array, it is converted to (N, 1)
 
         Args:
             X (np.ndarray):

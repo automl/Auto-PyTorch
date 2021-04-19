@@ -403,7 +403,7 @@ def eval_function(
 
     Fundamentally, smac calls the ExecuteTaFuncWithQueue.run() method, which internally
     builds a TrainEvaluator. The TrainEvaluator builds a pipeline, stores the output files
-    to disc via the backend, and puts in the queue the performance result of the run.
+    to disc via the backend, and puts the performance result of the run in the queue.
 
 
     Attributes:
