@@ -33,7 +33,7 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X,
         y,
-        random_state=1,
+        random_state=42,
     )
 
     ############################################################################
@@ -44,7 +44,8 @@ if __name__ == '__main__':
         output_directory='./tmp/autoPyTorch_example_out_01',
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
-        delete_output_folder_after_terminate=True
+        delete_output_folder_after_terminate=True,
+        seed=42,
     )
 
     ############################################################################
