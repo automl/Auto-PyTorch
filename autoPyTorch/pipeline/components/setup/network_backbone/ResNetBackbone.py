@@ -44,8 +44,8 @@ class ResNetBackbone(NetworkBackboneComponent):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         layers.append(_activations[self.config["activation"]]())
         backbone = nn.Sequential(*layers)
         self.backbone = backbone
@@ -103,9 +103,24 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                            value_range=(True, False),
                                                                            default_value=False,
                                                                            ),
+        use_batch_norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_batch_norm",
+                                                                              value_range=(True, False),
+                                                                              default_value=False,
+                                                                              ),
+        use_skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_skip_connection",
+                                                                                   value_range=(True, False),
+                                                                                   default_value=True,
+                                                                                   ),
+        multi_branch_choice: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="multi_branch_choice",
+                                                                                   value_range=('shake-drop',
+                                                                                                'shake-shake',
+                                                                                                'None'),
+                                                                                   default_value='shake-drop',
+                                                                                   ),
         num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200,
+                                                                         log=True
                                                                          ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
                                                                           value_range=tuple(_activations.keys()),
@@ -137,22 +152,33 @@ class ResNetBackbone(NetworkBackboneComponent):
         # The number of groups that will compose the resnet. That is,
         # a group can have N Resblock. The M number of this N resblock
         # repetitions is num_groups
-        min_num_gropus, max_num_groups = num_groups.value_range
+        _, max_num_groups = num_groups.value_range
         num_groups = get_hyperparameter(num_groups, UniformIntegerHyperparameter)
 
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
         cs.add_hyperparameters([num_groups])
+
+        # activation controlled batch normalization
+        add_hyperparameter(cs, use_batch_norm, CategoricalHyperparameter)
 
         # We can have dropout in the network for
         # better generalization
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameters([use_dropout])
 
-        use_shake_shake = get_hyperparameter(use_shake_shake, CategoricalHyperparameter)
-        use_shake_drop = get_hyperparameter(use_shake_drop, CategoricalHyperparameter)
-        shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
-        cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
+        use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
+        shake_drop_prob_flag = False
+        if 'shake-drop' in multi_branch_choice.value_range:
+            shake_drop_prob_flag = True
+        mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
+
+        cs.add_hyperparameters([use_sc, mb_choice])
+        cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
+
+        if shake_drop_prob_flag:
+            shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
+            cs.add_hyperparameter(shake_drop_prob)
+            cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
@@ -222,28 +248,38 @@ class ResBlock(nn.Module):
         # as well (start_norm)
         if in_features != out_features:
             self.shortcut = nn.Linear(in_features, out_features)
-            self.start_norm = nn.Sequential(
-                nn.BatchNorm1d(in_features),
+            initial_normalization = list()
+            if self.config['use_batch_norm']:
+                initial_normalization.append(
+                    nn.BatchNorm1d(in_features)
+                )
+            initial_normalization.append(
                 self.activation()
+            )
+            self.start_norm = nn.Sequential(
+                *initial_normalization
             )
 
         self.block_index = block_index
         self.num_blocks = blocks_per_group * self.config["num_groups"]
         self.layers = self._build_block(in_features, out_features)
 
-        if config["use_shake_shake"]:
-            self.shake_shake_layers = self._build_block(in_features, out_features)
+        if self.config["use_skip_connection"]:
+            if config["multi_branch_choice"] == 'shake-shake':
+                self.shake_shake_layers = self._build_block(in_features, out_features)
 
-    # each bloack consists of two linear layers with batch norm and activation
+    # each block consists of two linear layers with batch norm and activation
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
         layers = list()
 
         if self.start_norm is None:
-            layers.append(nn.BatchNorm1d(in_features))
+            if self.config['use_batch_norm']:
+                layers.append(nn.BatchNorm1d(in_features))
             layers.append(self.activation())
         layers.append(nn.Linear(in_features, out_features))
 
-        layers.append(nn.BatchNorm1d(out_features))
+        if self.config['use_batch_norm']:
+            layers.append(nn.BatchNorm1d(out_features))
         layers.append(self.activation())
 
         if self.config["use_dropout"]:
@@ -253,7 +289,9 @@ class ResBlock(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        residual = x
+
+        if self.config["use_skip_connection"]:
+            residual = x
 
         # if shortcut is not none we need a layer such that x matches the output dimension
         if self.shortcut is not None and self.start_norm is not None:
@@ -266,26 +304,33 @@ class ResBlock(nn.Module):
             # if in_features != out_features
             # -> result = W_shortcut(A(BN(x))) + W_2(~D(A(BN(W_1(A(BN(x))))))
             x = self.start_norm(x)
-            residual = self.shortcut(x)
+            if self.config["use_skip_connection"]:
+                residual = self.shortcut(x)
 
-        if self.config["use_shake_shake"]:
-            x1 = self.layers(x)
-            x2 = self.shake_shake_layers(x)
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            x = shake_shake(x1, x2, alpha, beta)
+        if self.config["use_skip_connection"]:
+            if self.config["multi_branch_choice"] == 'shake-shake':
+                x1 = self.layers(x)
+                x2 = self.shake_shake_layers(x)
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                x = shake_shake(x1, x2, alpha, beta)
+            else:
+                x = self.layers(x)
         else:
             x = self.layers(x)
 
-        if self.config["use_shake_drop"]:
-            alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
-            bl = shake_drop_get_bl(
-                self.block_index,
-                1 - self.config["max_shake_drop_probability"],
-                self.num_blocks,
-                self.training,
-                x.is_cuda
-            )
-            x = shake_drop(x, alpha, beta, bl)
+        if self.config["use_skip_connection"]:
+            if self.config["multi_branch_choice"] == 'shake-drop':
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                bl = shake_drop_get_bl(
+                    self.block_index,
+                    1 - self.config["max_shake_drop_probability"],
+                    self.num_blocks,
+                    self.training,
+                    x.is_cuda,
+                )
+                x = shake_drop(x, alpha, beta, bl)
 
-        x = x + residual
+        if self.config["use_skip_connection"]:
+            x = x + residual
+
         return x

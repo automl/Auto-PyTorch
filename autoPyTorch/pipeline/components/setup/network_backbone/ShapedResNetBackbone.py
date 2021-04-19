@@ -5,7 +5,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
-    UniformIntegerHyperparameter
+    UniformIntegerHyperparameter,
 )
 
 import torch
@@ -64,8 +64,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                     dropout=self.config['use_dropout']
                 )
             )
-
-        layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        if self.config['use_batch_norm']:
+            layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         backbone = torch.nn.Sequential(*layers)
         self.backbone = backbone
         return backbone
@@ -93,6 +93,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
                                                                           value_range=(10, 1024),
                                                                           default_value=200,
+                                                                          log=True
                                                                           ),
         num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                           value_range=(1, 15),
@@ -102,9 +103,25 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                            value_range=(True, False),
                                                                            default_value=False,
                                                                            ),
+        use_batch_norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_batch_norm",
+                                                                              value_range=(True, False),
+                                                                              default_value=False,
+                                                                              ),
+        use_skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_skip_connection",
+                                                                                   value_range=(True, False),
+                                                                                   default_value=True,
+                                                                                   ),
+        multi_branch_choice: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="multi_branch_choice",
+                                                                                   value_range=('shake-drop',
+                                                                                                'shake-shake',
+                                                                                                'None'),
+                                                                                   default_value='shake-drop',
+                                                                                   ),
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
                                                                          value_range=(10, 1024),
-                                                                         default_value=200),
+                                                                         default_value=200,
+                                                                         log=True
+                                                                         ),
         activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
                                                                           value_range=tuple(_activations.keys()),
                                                                           default_value=list(_activations.keys())[0]),
@@ -114,18 +131,11 @@ class ShapedResNetBackbone(ResNetBackbone):
         max_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_dropout",
                                                                            value_range=(0, 0.8),
                                                                            default_value=0.5),
-        use_shake_shake: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_shake",
-                                                                               value_range=(True, False),
-                                                                               default_value=True),
-        use_shake_drop: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_drop",
-                                                                              value_range=(True, False),
-                                                                              default_value=True),
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
             value_range=(0, 1),
             default_value=0.5),
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         # Support for different shapes
@@ -136,23 +146,29 @@ class ShapedResNetBackbone(ResNetBackbone):
         # repetitions is num_groups
         add_hyperparameter(cs, num_groups, UniformIntegerHyperparameter)
         add_hyperparameter(cs, blocks_per_group, UniformIntegerHyperparameter)
-
-        add_hyperparameter(cs, activation, CategoricalHyperparameter)
-        add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
-
-        use_shake_shake = get_hyperparameter(use_shake_shake, CategoricalHyperparameter)
-        use_shake_drop = get_hyperparameter(use_shake_drop, CategoricalHyperparameter)
-        shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
-        cs.add_hyperparameters([use_shake_shake, use_shake_drop, shake_drop_prob])
-        cs.add_condition(CS.EqualsCondition(shake_drop_prob, use_shake_drop, True))
-
         add_hyperparameter(cs, max_units, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        # activation controlled batch normalization
+        add_hyperparameter(cs, use_batch_norm, CategoricalHyperparameter)
+        add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
 
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
-
-        cs.add_hyperparameters([use_dropout])
-        cs.add_hyperparameters([max_dropout])
+        cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
+        use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
+
+        shake_drop_prob_flag = False
+        if 'shake-drop' in multi_branch_choice.value_range:
+            shake_drop_prob_flag = True
+        mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
+
+        cs.add_hyperparameters([use_sc, mb_choice])
+        cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
+
+        if shake_drop_prob_flag:
+            shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
+            cs.add_hyperparameter(shake_drop_prob)
+            cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
 
         return cs

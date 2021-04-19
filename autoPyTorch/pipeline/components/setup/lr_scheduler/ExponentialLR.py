@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -56,10 +56,11 @@ class ExponentialLR(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ExponentialLR',
-            'name': 'Exponential Learning Rate Scheduler',
+            'name': 'ExponentialLR',
+            'cyclic': False
         }
 
     @staticmethod
@@ -72,4 +73,5 @@ class ExponentialLR(BaseLRComponent):
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
+
         return cs

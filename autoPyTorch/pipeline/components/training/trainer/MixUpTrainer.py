@@ -1,46 +1,24 @@
-import typing
-
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
-    UniformFloatHyperparameter,
-)
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
 import torch
 
-from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
 
-class MixUpTrainer(BaseTrainerComponent):
-    def __init__(self, alpha: float, weighted_loss: bool = False,
-                 random_state: typing.Optional[np.random.RandomState] = None):
-        """
-        This class handles the training of a network for a single given epoch.
-
-        Args:
-            alpha (float): the mixup ratio
-
-        """
-        super().__init__(random_state=random_state)
-        self.weighted_loss = weighted_loss
-        self.alpha = alpha
-
+class MixUpTrainer(MixUp, BaseTrainerComponent):
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
         network as we receive it to the loader. Some regularization techniques, like mixup
         alter the data.
-
         Args:
             X (np.ndarray): The batch training features
             y (np.ndarray): The batch training labels
-
         Returns:
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
@@ -53,32 +31,14 @@ class MixUpTrainer(BaseTrainerComponent):
         y_a, y_b = y, y[index]
         return mixed_x, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
-    def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
-                              ) -> typing.Callable:
-        return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
-
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+
         return {
             'shortname': 'MixUpTrainer',
             'name': 'MixUp Regularized Trainer',
+            'handles_tabular': True,
+            'handles_image': True,
+            'handles_time_series': True,
         }
-
-    @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict] = None,
-        alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="alpha",
-                                                                     value_range=(0, 1),
-                                                                     default_value=0.2),
-        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
-                                                                             value_range=(True, False),
-                                                                             default_value=True),
-    ) -> ConfigurationSpace:
-
-        cs = ConfigurationSpace()
-        add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
-        if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
-                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
-        return cs

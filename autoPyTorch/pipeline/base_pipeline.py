@@ -492,7 +492,7 @@ class BasePipeline(Pipeline):
         Returns:
             List[NamedTuple]: List of FitRequirements
         """
-        fit_requirements = list()  # List[FitRequirement]
+        fit_requirements: List[FitRequirement] = list()
         for name, step in self.steps:
             step_requirements = step.get_fit_requirements()
             if step_requirements:
@@ -560,6 +560,7 @@ class BasePipeline(Pipeline):
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
+
         return {
             'num_run': 0,
             'device': 'cpu',

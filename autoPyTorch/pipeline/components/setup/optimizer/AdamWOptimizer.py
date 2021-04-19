@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
 
@@ -10,7 +12,7 @@ import numpy as np
 from torch.optim import AdamW
 
 from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer import BaseOptimizerComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class AdamWOptimizer(BaseOptimizerComponent):
@@ -21,7 +23,8 @@ class AdamWOptimizer(BaseOptimizerComponent):
         lr (float): learning rate (default: 1e-2)
         beta1 (float): coefficients used for computing running averages of gradient
         beta2 (float): coefficients used for computing running averages of square
-        weight_decay (float): weight decay (L2 penalty)
+        use_weight_decay (bool): flag for the activation of weight decay
+        weight_decay (float): weight decay (L2 penalty) (default: 0)
         random_state (Optional[np.random.RandomState]): random state
     """
 
@@ -30,13 +33,15 @@ class AdamWOptimizer(BaseOptimizerComponent):
         lr: float,
         beta1: float,
         beta2: float,
-        weight_decay: float,
+        use_weight_decay: bool,
+        weight_decay: float = 0,
         random_state: Optional[np.random.RandomState] = None,
     ):
         super().__init__()
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
+        self.use_weight_decay = use_weight_decay
         self.weight_decay = weight_decay
         self.random_state = random_state
 
@@ -85,9 +90,14 @@ class AdamWOptimizer(BaseOptimizerComponent):
         beta2: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="beta2",
                                                                      value_range=(0.9, 0.9999),
                                                                      default_value=0.9),
+        use_weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_weight_decay",
+                                                                                value_range=(True, False),
+                                                                                default_value=True,
+                                                                                ),
         weight_decay: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weight_decay",
-                                                                            value_range=(0.0, 0.1),
-                                                                            default_value=0.0),
+                                                                            value_range=(1E-7, 0.1),
+                                                                            default_value=1E-4,
+                                                                            log=True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -95,6 +105,17 @@ class AdamWOptimizer(BaseOptimizerComponent):
         add_hyperparameter(cs, lr, UniformFloatHyperparameter)
         add_hyperparameter(cs, beta1, UniformFloatHyperparameter)
         add_hyperparameter(cs, beta2, UniformFloatHyperparameter)
-        add_hyperparameter(cs, weight_decay, UniformFloatHyperparameter)
+
+        weight_decay = get_hyperparameter(weight_decay, UniformFloatHyperparameter)
+        use_weight_decay = get_hyperparameter(use_weight_decay, CategoricalHyperparameter)
+        cs.add_hyperparameters([use_weight_decay, weight_decay])
+
+        cs.add_condition(
+            CS.EqualsCondition(
+                weight_decay,
+                use_weight_decay,
+                True,
+            )
+        )
 
         return cs

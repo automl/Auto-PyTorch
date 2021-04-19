@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -71,10 +71,11 @@ class ReduceLROnPlateau(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ReduceLROnPlateau',
             'name': 'ReduceLROnPlateau',
+            'cyclic': False
         }
 
     @staticmethod
@@ -93,7 +94,6 @@ class ReduceLROnPlateau(BaseLRComponent):
                                                                       default_value=0.1,
                                                                       ),
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, mode, CategoricalHyperparameter)

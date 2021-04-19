@@ -44,6 +44,7 @@ setuptools.setup(
             "pyarrow",
             "pre-commit",
             "pytest-cov",
+            "pytest-mock",
             "codecov",
             "pep8",
             "mypy",

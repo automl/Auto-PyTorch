@@ -1,19 +1,29 @@
 import time
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from ConfigSpace.conditions import EqualsCondition
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    Constant
+)
 
 import numpy as np
 
 import pandas as pd
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_average_function
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
@@ -160,11 +170,50 @@ class RunSummary(object):
 
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
-
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None) -> None:
+    """
+    Base class for training
+    Args:
+        weighted_loss (bool, default=True): In case for classification, whether to weight
+            the loss function according to the distribution of classes in the target
+        use_stochastic_weight_averaging (bool, default=True): whether to use stochastic
+            weight averaging. Stochastic weight averaging is a simple average of
+            multiple points(model parameters) along the trajectory of SGD. SWA
+            has been proposed in
+            [Averaging Weights Leads to Wider Optima and Better Generalization](https://arxiv.org/abs/1803.05407)
+        use_snapshot_ensemble (bool, default=True): whether to use snapshot
+            ensemble
+        se_lastk (int, default=3): Number of snapshots of the network to maintain
+        use_lookahead_optimizer (bool, default=True): whether to use lookahead
+            optimizer
+        random_state:
+        **lookahead_config:
+    """
+    def __init__(self, weighted_loss: bool = True,
+                 use_stochastic_weight_averaging: bool = True,
+                 use_snapshot_ensemble: bool = True,
+                 se_lastk: int = 3,
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 swa_model: Optional[torch.nn.Module] = None,
+                 model_snapshots: Optional[List[torch.nn.Module]] = None,
+                 **lookahead_config: Any) -> None:
         super().__init__()
         self.random_state = random_state
-        self.weighted_loss: bool = False
+        self.weighted_loss = weighted_loss
+        self.use_stochastic_weight_averaging = use_stochastic_weight_averaging
+        self.use_snapshot_ensemble = use_snapshot_ensemble
+        self.se_lastk = se_lastk
+        self.use_lookahead_optimizer = use_lookahead_optimizer
+        self.swa_model = swa_model
+        self.model_snapshots = model_snapshots
+        # Add default values for the lookahead optimizer
+        if len(lookahead_config) == 0:
+            lookahead_config = {f'{Lookahead.__name__}:la_steps': 6,
+                                f'{Lookahead.__name__}:la_alpha': 0.6}
+        self.lookahead_config = lookahead_config
+        self.add_fit_requirements([
+            FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
+        ])
 
     def prepare(
         self,
@@ -196,7 +245,29 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # setup the model
         self.model = model.to(device)
 
+        # in case we are using swa, maintain an averaged model,
+        if self.use_stochastic_weight_averaging:
+            self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_average_function)
+
+        # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
+        self._budget_threshold = 0
+        if self.use_stochastic_weight_averaging or self.use_snapshot_ensemble:
+            assert budget_tracker.max_epochs is not None, "Can only use stochastic weight averaging or snapshot " \
+                                                          "ensemble when budget is epochs"
+            self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
+
+        # in case we are using se, initialise list to store model snapshots
+        if self.use_snapshot_ensemble:
+            self.model_snapshots = list()
+
+        # in case we are using, swa or se with early stopping,
+        # we need to make sure network params are only updated
+        # from the swa model if the swa model was actually updated
+        self.swa_updated: bool = False
+
         # setup the optimizers
+        if self.use_lookahead_optimizer:
+            optimizer = Lookahead(optimizer=optimizer, config=self.lookahead_config)
         self.optimizer = optimizer
 
         # The budget tracker
@@ -226,6 +297,38 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         If returns True, the training is stopped
 
         """
+        if X['is_cyclic_scheduler']:
+            if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
+                if self.use_stochastic_weight_averaging:
+                    assert self.swa_model is not None, "SWA model can't be none when" \
+                                                       " stochastic weight averaging is enabled"
+                    self.swa_model.update_parameters(self.model)
+                    self.swa_updated = True
+                if self.use_snapshot_ensemble:
+                    assert self.model_snapshots is not None, "model snapshots container can't be " \
+                                                             "none when snapshot ensembling is enabled"
+                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
+                        else deepcopy(self.model)
+                    assert model_copy is not None
+                    model_copy.cpu()
+                    self.model_snapshots.append(model_copy)
+                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
+        else:
+            if epoch > self._budget_threshold:
+                if self.use_stochastic_weight_averaging:
+                    assert self.swa_model is not None, "SWA model can't be none when" \
+                                                       " stochastic weight averaging is enabled"
+                    self.swa_model.update_parameters(self.model)
+                    self.swa_updated = True
+                if self.use_snapshot_ensemble:
+                    assert self.model_snapshots is not None, "model snapshots container can't be " \
+                                                             "none when snapshot ensembling is enabled"
+                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
+                        else deepcopy(self.model)
+                    assert model_copy is not None
+                    model_copy.cpu()
+                    self.model_snapshots.append(model_copy)
+                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         return False
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
@@ -416,3 +519,63 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             Callable: a lambda that contains the new criterion calculation recipe
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict] = None,
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=(True, False),
+            default_value=True),
+        la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_steps",
+            value_range=(5, 10),
+            default_value=6,
+            log=False),
+        la_alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_alpha",
+            value_range=(0.5, 0.8),
+            default_value=0.6,
+            log=False),
+        use_lookahead_optimizer: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_lookahead_optimizer",
+            value_range=(True, False),
+            default_value=True),
+        use_stochastic_weight_averaging: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_stochastic_weight_averaging",
+            value_range=(True, False),
+            default_value=True),
+        use_snapshot_ensemble: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_snapshot_ensemble",
+            value_range=(True, False),
+            default_value=True),
+        se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="se_lastk",
+            value_range=(3,),
+            default_value=3),
+    ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+
+        add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        se_lastk = get_hyperparameter(se_lastk, Constant)
+        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
+        cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
+        cs.add_condition(cond)
+
+        use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_lookahead_optimizer)
+        la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                    la_alpha=la_alpha)
+        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
+        cs.add_configuration_space(
+            Lookahead.__name__,
+            la_config_space,
+            parent_hyperparameter=parent_hyperparameter
+        )
+
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+
+        return cs
