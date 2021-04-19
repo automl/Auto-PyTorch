@@ -32,6 +32,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 from test.test_api.api_utils import print_debug_information
 
@@ -458,11 +459,17 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
 
 
 @pytest.mark.parametrize("disable_file_output", [True, False])
-@pytest.mark.parametrize('openml_id', (40981,))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_pipeline_fit(openml_id, resampling_strategy, backend, disable_file_output):
+@pytest.mark.parametrize('openml_id', (40984,))
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                          )
+                         )
+def test_pipeline_fit(openml_id,
+                      resampling_strategy,
+                      resampling_strategy_args,
+                      backend,
+                      disable_file_output):
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
         data_id=int(openml_id),
@@ -477,11 +484,19 @@ def test_pipeline_fit(openml_id, resampling_strategy, backend, disable_file_outp
         resampling_strategy=resampling_strategy,
     )
 
-    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(X_train=X_train,
-                                                                    y_train=y_train,
-                                                                    X_test=X_test,
-                                                                    y_test=y_test,
-                                                                    resampling_strategy=resampling_strategy,
+    dataset = estimator.get_dataset(X_train=X_train,
+                                    y_train=y_train,
+                                    X_test=X_test,
+                                    y_test=y_test,
+                                    resampling_strategy=resampling_strategy,
+                                    resampling_strategy_args=resampling_strategy_args)
+    dataset_requirements = get_dataset_requirements(
+        info=dataset.get_required_dataset_info())
+    dataset_properties = dataset.get_dataset_properties(dataset_requirements)
+    configuration = estimator.build_pipeline(dataset_properties).\
+        get_hyperparameter_search_space().get_default_configuration()
+    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
+                                                                    configuration=configuration,
                                                                     run_time_limit_secs=50,
                                                                     disable_file_output=disable_file_output
                                                                     )

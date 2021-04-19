@@ -232,16 +232,16 @@ class BaseTask:
                                   "specific task which is a child of the BaseTask")
 
     @abstractmethod
-    def _create_dataset(self,
-                        X_train: Union[List, pd.DataFrame, np.ndarray],
-                        y_train: Union[List, pd.DataFrame, np.ndarray],
-                        X_test: Union[List, pd.DataFrame, np.ndarray],
-                        y_test: Union[List, pd.DataFrame, np.ndarray],
-                        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-                        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                        dataset_name: Optional[str] = None,
-                        return_only: Optional[bool] = False
-                        ) -> BaseDataset:
+    def get_dataset(self,
+                    X_train: Union[List, pd.DataFrame, np.ndarray],
+                    y_train: Union[List, pd.DataFrame, np.ndarray],
+                    X_test: Union[List, pd.DataFrame, np.ndarray],
+                    y_test: Union[List, pd.DataFrame, np.ndarray],
+                    resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                    resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                    dataset_name: Optional[str] = None,
+                    return_only: Optional[bool] = False
+                    ) -> BaseDataset:
         raise NotImplementedError("Function called on BaseTask, this can only be called by "
                                   "specific task which is a child of the BaseTask")
 
@@ -1117,10 +1117,12 @@ class BaseTask:
         return self
 
     def fit_pipeline(self,
-                     X_train: Union[List, pd.DataFrame, np.ndarray],
-                     y_train: Union[List, pd.DataFrame, np.ndarray],
-                     X_test: Union[List, pd.DataFrame, np.ndarray],
-                     y_test: Union[List, pd.DataFrame, np.ndarray],
+                     configuration: Configuration,
+                     dataset: Optional[BaseDataset] = None,
+                     X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+                     y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+                     X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+                     y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
                      dataset_name: Optional[str] = None,
                      resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes]] = None,
                      resampling_strategy_args: Optional[Dict[str, Any]] = None,
@@ -1133,7 +1135,6 @@ class BaseTask:
                      exclude_components: Optional[Dict] = None,
                      search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                      budget: float = 50,
-                     configuration: Optional[Configuration] = None,
                      pipeline_options: Optional[Dict] = None,
                      disable_file_output: Optional[Union[bool, List]] = False,
                      return_dataset: bool = True
@@ -1150,7 +1151,7 @@ class BaseTask:
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
             dataset_name (Optional[str]):
-                Name of the dayaset, if None, random value is used.
+                Name of the dataset, if None, random value is used.
             resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
@@ -1200,8 +1201,7 @@ class BaseTask:
                 for each finished configuration. This argument allows the user to skip
                 saving certain file type, for example the model, from being written to disk.
             configuration: (Optional[Configuration])
-                configuration to fit the pipeline with. If None,
-                uses default.
+                configuration to fit the pipeline with.
 
         Returns:
             (BasePipeline): fitted pipeline
@@ -1209,12 +1209,15 @@ class BaseTask:
             (RunValue): Result of fitting the pipeline
             (BaseDataset): Dataset created from the given tensors
         """
-
-        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
-        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
-            self.resampling_strategy_args
-
-        dataset = self._create_dataset(X_train=X_train,
+        if dataset is None:
+            assert X_train is not None or \
+                   y_train is not None or \
+                   X_test is not None or \
+                   y_test is not None, "No dataset provided, must provide X_train, y_train, X_test, y_test tensors"
+            resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+            resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+                self.resampling_strategy_args
+            dataset = self.get_dataset(X_train=X_train,
                                        y_train=y_train,
                                        X_test=X_test,
                                        y_test=y_test,
@@ -1223,13 +1226,17 @@ class BaseTask:
                                        dataset_name=dataset_name,
                                        return_only=True)
 
+        # TAE expects each configuration to have a config_id.
+        # For fitting a pipeline as it is not part of the
+        # search process, it makes sense to set it to 0
+        if hasattr(configuration, 'config_id') or configuration.config_id is None:
+            configuration.__setattr__('config_id', 0)
+
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
-
-        self._backend._make_internals_directory()
 
         if self._logger is None:
             self._logger = self._get_logger(dataset.dataset_name)
@@ -1242,13 +1249,6 @@ class BaseTask:
         if search_space_updates is None:
             search_space_updates = self.search_space_updates
 
-        pipeline = self.build_pipeline(dataset_properties=dataset_properties,
-                                       include_components=include_components,
-                                       exclude_components=exclude_components,
-                                       search_space_updates=search_space_updates)
-        if configuration is None:
-            configuration = pipeline.get_hyperparameter_search_space().get_default_configuration()
-        configuration.__setattr__('config_id', 0)
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = run_time_limit_secs
         # This stats object is a hack - maybe the SMAC stats object should
