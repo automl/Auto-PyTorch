@@ -157,12 +157,18 @@ class ShapedResNetBackbone(ResNetBackbone):
         add_hyperparameter(cs, use_batch_norm, CategoricalHyperparameter)
         add_hyperparameter(cs, output_dim, UniformIntegerHyperparameter)
 
+        dropout_flag = False
+        if any(use_dropout.value_range):
+            dropout_flag = True
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
-        max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
-        cs.add_hyperparameters([use_dropout, max_dropout])
-        cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
-        use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_dropout)
 
+        if dropout_flag:
+            max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+            cs.add_hyperparameter(max_dropout)
+            cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
+
+        use_sc = get_hyperparameter(use_skip_connection, CategoricalHyperparameter)
         shake_drop_prob_flag = False
         if 'shake-drop' in multi_branch_choice.value_range:
             shake_drop_prob_flag = True
