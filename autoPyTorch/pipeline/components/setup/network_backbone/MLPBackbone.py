@@ -104,6 +104,10 @@ class MLPBackbone(NetworkBackboneComponent):
 
         # We can have dropout in the network for
         # better generalization
+        dropout_flag = False
+        if any(use_dropout.value_range):
+            dropout_flag = True
+
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameters([num_groups, use_dropout])
 
@@ -124,19 +128,20 @@ class MLPBackbone(NetworkBackboneComponent):
                         n_units_hp, num_groups, i - 1
                     )
                 )
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
-                                                             value_range=dropout.value_range,
-                                                             default_value=dropout.default_value,
-                                                             log=dropout.log)
-            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
-            cs.add_hyperparameter(dropout_hp)
+            if dropout_flag:
+                dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
+                                                                 value_range=dropout.value_range,
+                                                                 default_value=dropout.default_value,
+                                                                 log=dropout.log)
+                dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
+                cs.add_hyperparameter(dropout_hp)
 
-            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
+                dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
 
-            if i > int(min_mlp_layers):
-                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
-                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
+                if i > int(min_mlp_layers):
+                    dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
+                    cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
+                else:
+                    cs.add_condition(dropout_condition_1)
 
         return cs

@@ -124,8 +124,16 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
         # We can have dropout in the network for
         # better generalization
+        dropout_flag = False
+        if any(use_dropout.value_range):
+            dropout_flag = True
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
-        max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameter(use_dropout)
+
+        if dropout_flag:
+            max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+            cs.add_hyperparameter(max_dropout)
+            cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
         cs.add_hyperparameters([use_dropout, max_dropout])
         cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
