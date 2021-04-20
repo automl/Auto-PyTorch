@@ -93,6 +93,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     """
 
     def __init__(
+<<<<<<< HEAD
         self,
         backend: Backend,
         seed: int,
@@ -116,6 +117,31 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         logger_port: int = None,
         all_supported_metrics: bool = True,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+=======
+            self,
+            backend: Backend,
+            seed: int,
+            metric: autoPyTorchMetric,
+            cost_for_crash: float,
+            abort_on_first_run_crash: bool,
+            pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            initial_num_run: int = 1,
+            stats: typing.Optional[Stats] = None,
+            run_obj: str = 'quality',
+            par_factor: int = 1,
+            output_y_hat_optimization: bool = True,
+            include: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            memory_limit: typing.Optional[int] = None,
+            disable_file_output: typing.Union[bool, typing.List] = False,
+            init_params: typing.Dict[str, typing.Any] = None,
+            budget_type: str = None,
+            ta: typing.Optional[typing.Callable] = None,
+            logger_port: int = None,
+            all_supported_metrics: bool = True,
+            pynisher_context: str = 'spawn',
+            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+>>>>>>> Working fit_pipeline method, with test and example
     ):
 
         eval_function = autoPyTorch.evaluation.train_evaluator.eval_function

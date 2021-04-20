@@ -106,6 +106,7 @@ class TabularClassificationTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
 
+<<<<<<< HEAD
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularClassificationPipeline:
         """
         Build pipeline according to current task and for the passed dataset properties
@@ -117,15 +118,73 @@ class TabularClassificationTask(BaseTask):
             TabularClassificationPipeline:
                 Pipeline compatible with the given dataset properties.
         """
+=======
+    def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
+        if not isinstance(dataset, TabularDataset):
+            raise ValueError("Dataset is incompatible for the given task,: {}".format(
+                type(dataset)
+            ))
+        return {'task_type': dataset.task_type,
+                'output_type': dataset.output_type,
+                'issparse': dataset.issparse,
+                'numerical_columns': dataset.numerical_columns,
+                'categorical_columns': dataset.categorical_columns}
+
+    def build_pipeline(self, dataset_properties: Dict[str, Any],
+                       include_components: Optional[Dict] = None,
+                       exclude_components: Optional[Dict] = None,
+                       search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                       ) -> TabularClassificationPipeline:
+>>>>>>> Working fit_pipeline method, with test and example
         return TabularClassificationPipeline(dataset_properties=dataset_properties)
+
+    def _create_dataset(self,
+                        X_train: Union[List, pd.DataFrame, np.ndarray],
+                        y_train: Union[List, pd.DataFrame, np.ndarray],
+                        X_test: Union[List, pd.DataFrame, np.ndarray],
+                        y_test: Union[List, pd.DataFrame, np.ndarray],
+                        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                        dataset_name: Optional[str] = None,
+                        return_only: Optional[bool] = False
+                        ) -> BaseDataset:
+
+        if dataset_name is None:
+            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        InputValidator = TabularInputValidator(
+            is_classification=True,
+            logger_port=self._logger_port,
+        )
+
+        # Fit a input validator to check the provided data
+        # Also, an encoder is fit to both train and test data,
+        # to prevent unseen categories during inference
+        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+
+        dataset = TabularDataset(
+            X=X_train, Y=y_train,
+            X_test=X_test, Y_test=y_test,
+            validator=InputValidator,
+            resampling_strategy=self.resampling_strategy,
+            resampling_strategy_args=self.resampling_strategy_args,
+            dataset_name=dataset_name
+        )
+        if not return_only:
+            self.InputValidator = InputValidator
+            self.dataset = dataset
+
+        return dataset
 
     def search(
         self,
         optimize_metric: str,
-        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Union[List, pd.DataFrame, np.ndarray],
+        y_test: Union[List, pd.DataFrame, np.ndarray],
         dataset_name: Optional[str] = None,
         budget_type: str = 'epochs',
         min_budget: int = 5,
@@ -154,9 +213,17 @@ class TabularClassificationTask(BaseTask):
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
+<<<<<<< HEAD
             optimize_metric (str):
                 name of the metric that is used to evaluate a pipeline.
             budget_type (str):
+=======
+            dataset_name (Optional[str]):
+                Name of the dayaset, if None, random value is used
+            optimize_metric (str): name of the metric that is used to
+                evaluate a pipeline.
+            budget_type (Optional[str]):
+>>>>>>> Working fit_pipeline method, with test and example
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
 
@@ -269,19 +336,8 @@ class TabularClassificationTask(BaseTask):
             self
 
         """
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
-        # we have to create a logger for at this point for the validator
-        self._logger = self._get_logger(dataset_name)
-
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(
-            is_classification=True,
-            logger_port=self._logger_port,
-        )
-
+<<<<<<< HEAD
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
@@ -295,6 +351,13 @@ class TabularClassificationTask(BaseTask):
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
         )
+=======
+        self._create_dataset(X_train=X_train,
+                             y_train=y_train,
+                             X_test=X_test,
+                             y_test=y_test,
+                             dataset_name=dataset_name)
+>>>>>>> Working fit_pipeline method, with test and example
 
         return self._search(
             dataset=self.dataset,

@@ -12,7 +12,11 @@ import typing
 import unittest.mock
 import warnings
 from abc import abstractmethod
+<<<<<<< HEAD
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+=======
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+>>>>>>> Working fit_pipeline method, with test and example
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -27,7 +31,7 @@ import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import DataOrigin, RunHistory
+from smac.runhistory.runhistory import DataOrigin, RunHistory, RunInfo, RunValue
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
@@ -137,6 +141,7 @@ class BaseTask:
         include_components (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components to use.
+<<<<<<< HEAD
         exclude_components (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components not to use.
@@ -144,6 +149,20 @@ class BaseTask:
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
+=======
+        exclude_components (Optional[Dict]): If None, all possible components are used.
+            Otherwise specifies set of components not to use. Incompatible with include
+            components
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]): updates to be made
+            to the hyperparameter search space of the pipeline
+        resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+                (default=HoldoutValTypes.holdout_validation):
+                strategy to split the training data.
+        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+            required for the chosen resampling strategy. If None, uses
+            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            in ```datasets/resampling_strategy.py```.
+>>>>>>> Working fit_pipeline method, with test and example
     """
 
     def __init__(
@@ -233,7 +252,23 @@ class BaseTask:
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
 
     @abstractmethod
+<<<<<<< HEAD
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> BasePipeline:
+=======
+    def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
+        """
+        given a pipeline type, this function returns the
+        dataset properties required by the dataset object
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def build_pipeline(self, dataset_properties: Dict[str, Any],
+                       include_components: Optional[Dict] = None,
+                       exclude_components: Optional[Dict] = None,
+                       search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                       ) -> BasePipeline:
+>>>>>>> Working fit_pipeline method, with test and example
         """
         Build pipeline according to current task
         and for the passed dataset properties
@@ -244,7 +279,23 @@ class BaseTask:
         Returns:
 
         """
-        raise NotImplementedError
+
+        raise NotImplementedError("Function called on BaseTask, this can only be called by "
+                                  "specific task which is a child of the BaseTask")
+
+    @abstractmethod
+    def _create_dataset(self,
+                        X_train: Union[List, pd.DataFrame, np.ndarray],
+                        y_train: Union[List, pd.DataFrame, np.ndarray],
+                        X_test: Union[List, pd.DataFrame, np.ndarray],
+                        y_test: Union[List, pd.DataFrame, np.ndarray],
+                        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                        dataset_name: Optional[str] = None,
+                        return_only: Optional[bool] = False
+                        ) -> BaseDataset:
+        raise NotImplementedError("Function called on BaseTask, this can only be called by "
+                                  "specific task which is a child of the BaseTask")
 
     @property
     def run_history(self) -> RunHistory:
@@ -462,6 +513,13 @@ class BaseTask:
             raise ValueError("Resampling strategy is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
+        if isinstance(self._disable_file_output, List):
+            disabled_file_outputs = self._disable_file_output
+            disable_file_output = False
+        elif isinstance(self._disable_file_output, bool):
+            disable_file_output = self._disable_file_output
+            disabled_file_outputs = []
+
         # If no ensemble is loaded, try to get the best performing model
         if not self.ensemble_:
             self.ensemble_ = self._load_best_individual_model()
@@ -476,7 +534,7 @@ class BaseTask:
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
-        elif 'pipeline' not in self._disable_file_output:
+        elif disable_file_output or 'pipeline' not in disabled_file_outputs:
             model_names = self._backend.list_all_models(self.seed)
 
             if len(model_names) == 0:
@@ -563,7 +621,7 @@ class BaseTask:
             initial_num_run=num_run,
             stats=stats,
             memory_limit=memory_limit,
-            disable_file_output=True if len(self._disable_file_output) > 0 else False,
+            disable_file_output=self._disable_file_output,
             all_supported_metrics=self._all_supported_metrics
         )
 
@@ -647,7 +705,7 @@ class BaseTask:
                     initial_num_run=self._backend.get_next_num_run(),
                     stats=stats,
                     memory_limit=memory_limit,
-                    disable_file_output=True if len(self._disable_file_output) > 0 else False,
+                    disable_file_output=self._disable_file_output,
                     all_supported_metrics=self._all_supported_metrics
                 )
                 dask_futures.append([
@@ -743,7 +801,7 @@ class BaseTask:
         tae_func: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: List = [],
+        disable_file_output: Union[bool, List] = False,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None
@@ -1158,6 +1216,10 @@ class BaseTask:
     def refit(
         self,
         dataset: BaseDataset,
+<<<<<<< HEAD
+=======
+        budget_config: Dict[str, Union[int, str]] = {},
+>>>>>>> Working fit_pipeline method, with test and example
         split_id: int = 0
     ) -> "BaseTask":
         """
@@ -1223,15 +1285,42 @@ class BaseTask:
 
         return self
 
+<<<<<<< HEAD
     def fit(self,
             dataset: BaseDataset,
             pipeline_config: Optional[Configuration] = None,
             split_id: int = 0) -> BasePipeline:
+=======
+    def fit_pipeline(self,
+                     X_train: Union[List, pd.DataFrame, np.ndarray],
+                     y_train: Union[List, pd.DataFrame, np.ndarray],
+                     X_test: Union[List, pd.DataFrame, np.ndarray],
+                     y_test: Union[List, pd.DataFrame, np.ndarray],
+                     dataset_name: Optional[str] = None,
+                     resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes]] = None,
+                     resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                     run_time_limit_secs: int = 60,
+                     memory_limit: Optional[int] = None,
+                     eval_metric: Optional[str] = None,
+                     all_supported_metrics: bool = False,
+                     budget_type: Optional[str] = None,
+                     include_components: Optional[Dict] = None,
+                     exclude_components: Optional[Dict] = None,
+                     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                     budget: float = 50,
+                     configuration: Optional[Configuration] = None,
+                     pipeline_options: Optional[Dict] = None,
+                     disable_file_output: Optional[Union[bool, List]] = False,
+                     return_dataset: bool = True
+                     ) -> Tuple[Optional[BasePipeline], RunInfo, RunValue, Optional[BaseDataset]]:
+
+>>>>>>> Working fit_pipeline method, with test and example
         """
         Fit a pipeline on the given task for the budget.
         A pipeline configuration can be specified if None,
         uses default
 
+<<<<<<< HEAD
         Fit uses the estimator pipeline_config attribute, which the user
         can interact via the get_pipeline_config()/set_pipeline_config()
         methods.
@@ -1244,17 +1333,91 @@ class BaseTask:
             split_id (int: default=0):
                 split id to fit on.
             pipeline_config (Optional[Configuration]):
+=======
+        Args:
+            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
+                A pair of features (X_train) and targets (y_train) used to fit a
+                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
+                be provided to track the generalization performance of each stage.
+            dataset_name (Optional[str]):
+                Name of the dayaset, if None, random value is used.
+            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+                (default=HoldoutValTypes.holdout_validation):
+                strategy to split the training data.
+            resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+                required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            run_time_limit_secs (int), (default=120): Time limit
+                for a single call to the machine learning model.
+                Model fitting will be terminated if the machine
+                learning algorithm runs over the time limit. Set
+                this value high enough so that typical machine
+                learning algorithms can be fit on the training
+                data.
+            memory_limit (Optional[int]), (default=None): Memory
+                limit in MB for the machine learning algorithm. autopytorch
+                will stop fitting the machine learning algorithm if it tries
+                to allocate more than memory_limit MB. If None is provided,
+                no memory limit is set. In case of multi-processing, memory_limit
+                will be per job. This memory limit also applies to the ensemble
+                creation process.
+            eval_metric (str): name of the metric that is used to
+                evaluate a pipeline.
+            all_supported_metrics (bool), (default=True): if True, all
+                metrics supporting current task will be calculated
+                for each pipeline and results will be available via cv_results
+            budget_type (Optional[str]):
+                Type of budget to be used when fitting the pipeline.
+                Either 'epochs' or 'runtime'. If not provided, uses
+                the default in the pipeline config ('epochs')
+            include_components (Optional[Dict]): If None, all possible components are used.
+                Otherwise specifies set of components to use.
+            exclude_components (Optional[Dict]): If None, all possible components are used.
+                Otherwise specifies set of components not to use. Incompatible with include
+                components
+            search_space_updates(Optional[HyperparameterSearchSpaceUpdates]): updates to be made
+                to the hyperparameter search space of the pipeline
+            budget (Optional[float]):
+                Budget to fit a single run of the pipeline. If not
+                provided, uses the default in the pipeline config
+            pipeline_options (Optional[Dict]):
+                Valid config options include "device",
+                "torch_num_threads", "early_stopping", "use_tensorboard_logger",
+                "metrics_during_training"
+            disable_file_output (Optional[Union[bool, List]]):
+                By default, the model, it's predictions and other metadata is stored on disk
+                for each finished configuration. This argument allows the user to skip
+                saving certain file type, for example the model, from being written to disk.
+            configuration: (Optional[Configuration])
+>>>>>>> Working fit_pipeline method, with test and example
                 configuration to fit the pipeline with. If None,
-                uses default
+                uses default.
 
         Returns:
+<<<<<<< HEAD
             BasePipeline:
                 fitted pipeline
+=======
+            (BasePipeline): fitted pipeline
+            (RunInfo): Run information
+            (RunValue): Result of fitting the pipeline
+            (BaseDataset): Dataset created from the given tensors
+>>>>>>> Working fit_pipeline method, with test and example
         """
-        self.dataset_name = dataset.dataset_name
 
-        if self._logger is None:
-            self._logger = self._get_logger(str(self.dataset_name))
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+            self.resampling_strategy_args
+
+        dataset = self._create_dataset(X_train=X_train,
+                                       y_train=y_train,
+                                       X_test=X_test,
+                                       y_test=y_test,
+                                       resampling_strategy=resampling_strategy,
+                                       resampling_strategy_args=resampling_strategy_args,
+                                       dataset_name=dataset_name,
+                                       return_only=True)
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
@@ -1265,21 +1428,112 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
-        # build pipeline
-        pipeline = self.build_pipeline(dataset_properties)
-        if pipeline_config is not None:
-            pipeline.set_hyperparameters(pipeline_config)
+        self._backend._make_internals_directory()
 
+        if self._logger is None:
+            self._logger = self._get_logger(dataset.dataset_name)
+
+        # build pipeline
+        if include_components is None:
+            include_components = self.include_components
+        if exclude_components is None:
+            exclude_components = self.exclude_components
+        if search_space_updates is None:
+            search_space_updates = self.search_space_updates
+
+        pipeline = self.build_pipeline(dataset_properties=dataset_properties,
+                                       include_components=include_components,
+                                       exclude_components=exclude_components,
+                                       search_space_updates=search_space_updates)
+        if configuration is None:
+            configuration = pipeline.get_hyperparameter_search_space().get_default_configuration()
+        configuration.__setattr__('config_id', 0)
+        scenario_mock = unittest.mock.Mock()
+        scenario_mock.wallclock_limit = run_time_limit_secs
+        # This stats object is a hack - maybe the SMAC stats object should
+        # already be generated here!
+        stats = Stats(scenario_mock)
+
+<<<<<<< HEAD
         # initialise fit dictionary
         X = self._get_fit_dictionary(
             dataset_properties=dataset_properties,
             dataset=dataset,
             split_id=split_id)
+=======
+        if memory_limit is None:
+            if hasattr(self, '_memory_limit') and self._memory_limit is not None:
+                memory_limit = self._memory_limit
 
-        fit_and_suppress_warnings(self._logger, pipeline, X, y=None)
+        metric = get_metrics(dataset_properties=dataset_properties,
+                             names=[eval_metric] if eval_metric is not None else None,
+                             all_supported_metrics=False).pop()
+
+        pipeline_options = self.pipeline_options.copy().update(pipeline_options) if pipeline_options is not None \
+            else self.pipeline_options.copy()
+        if budget_type is not None:
+            assert pipeline_options is not None
+            pipeline_options.update({'budget_type': budget_type})
+        if disable_file_output is None:
+            disable_file_output = self._disable_file_output
+        stats.start_timing()
+        tae = ExecuteTaFuncWithQueue(
+            backend=self._backend,
+            seed=self.seed,
+            metric=metric,
+            logger_port=self._logger_port,
+            cost_for_crash=get_cost_of_crash(metric),
+            abort_on_first_run_crash=False,
+            initial_num_run=self._backend.get_next_num_run(),
+            stats=stats,
+            memory_limit=memory_limit,
+            disable_file_output=disable_file_output,
+            all_supported_metrics=all_supported_metrics,
+            budget_type=budget_type,
+            include=include_components,
+            exclude=exclude_components,
+            search_space_updates=search_space_updates,
+            pipeline_config=pipeline_options
+        )
+>>>>>>> Working fit_pipeline method, with test and example
+
+        run_info, run_value = tae.run_wrapper(
+            RunInfo(config=configuration,
+                    budget=budget,
+                    seed=self.seed,
+                    cutoff=run_time_limit_secs,
+                    capped=False,
+                    instance_specific=None,
+                    instance=None)
+        )
+        disabled_file_outputs: List = []
+        if isinstance(disable_file_output, bool):
+            disable_file_output = disable_file_output
+        elif isinstance(disable_file_output, List):
+            disabled_file_outputs = disable_file_output
+        else:
+            raise ValueError('disable_file_output should be either a bool or a list')
+
+        fitted_pipeline: Optional[BasePipeline] = None
+        if disable_file_output or 'pipeline' in disabled_file_outputs:
+            self._logger.warning("File output is disabled. No pipeline can returned")
+        elif run_value.status == StatusType.SUCCESS:
+            if self.resampling_strategy in CrossValTypes:
+                load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
+            else:
+                load_function = self._backend.load_model_by_seed_and_id_and_budget
+            fitted_pipeline = load_function(
+                seed=self.seed,
+                idx=run_info.config.config_id + tae.initial_num_run,
+                budget=float(run_info.budget),
+            )
 
         self._clean_logger()
-        return pipeline
+
+        if not return_dataset:
+            dataset = None  # type: ignore [assignment]
+
+        return fitted_pipeline, run_info, run_value, dataset
 
     def predict(
         self,
@@ -1383,6 +1637,7 @@ class BaseTask:
             self._backend.context.delete_directories(force=False)
 
     def get_incumbent_results(
+<<<<<<< HEAD
         self,
         include_traditional: bool = False
     ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
@@ -1404,6 +1659,17 @@ class BaseTask:
             raise RuntimeError("`search_results` is only available after a search has finished.")
 
         return self._results_manager.get_incumbent_results(metric=self._metric, include_traditional=include_traditional)
+=======
+        self
+    ):
+        pass
+
+    @typing.no_type_check
+    def get_incumbent_config(
+        self
+    ):
+        pass
+>>>>>>> Working fit_pipeline method, with test and example
 
     def get_models_with_weights(self) -> List:
         if self.models_ is None or len(self.models_) == 0 or \

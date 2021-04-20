@@ -329,7 +329,7 @@ class TestTabularClassification:
         except AssertionError as e:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
-            assert 'fully_connected:units_layer' in e.args[0]
+            assert 'fully_connected:units_layer' in e.args[0], e.args[0]
 
     def test_set_choices_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
