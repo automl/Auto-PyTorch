@@ -4,6 +4,7 @@ import json
 import logging
 import math
 import multiprocessing
+import os
 import time
 import traceback
 import typing
@@ -25,6 +26,7 @@ import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.common import replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
@@ -144,7 +146,12 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.exclude = exclude
         self.disable_file_output = disable_file_output
         self.init_params = init_params
-        self.pipeline_config = pipeline_config
+        self.pipeline_config: typing.Dict[str, typing.Union[int, str, float]] = dict()
+        if pipeline_config is None:
+            pipeline_config = replace_string_bool_to_bool(json.load(open(
+                os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
+        self.pipeline_config.update(pipeline_config)
+
         self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
         self.logger_port = logger_port
         if self.logger_port is None:
@@ -314,10 +321,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             # it can be that the target algorithm wrote something into the queue
             #  - then we treat it as a successful run
             try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                info = read_queue(queue)  # type: ignore
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.stdout:
                     additional_run_info['subprocess_stdout'] = obj.stdout
@@ -362,9 +369,9 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             try:
                 info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.exit_status == 0:
                     cost = result
