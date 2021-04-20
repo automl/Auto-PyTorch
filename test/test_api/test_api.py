@@ -435,14 +435,14 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     # directory, but in the temporary directory.
     assert not os.path.exists(os.path.join(os.getcwd(), '.autoPyTorch'))
     assert os.path.exists(os.path.join(
-        backend.temporary_directory, '.autoPyTorch', 'runs', '1_1_1.0',
-        'predictions_ensemble_1_1_1.0.npy')
+        backend.temporary_directory, '.autoPyTorch', 'runs', '1_1_50.0',
+        'predictions_ensemble_1_1_50.0.npy')
     )
 
     model_path = os.path.join(backend.temporary_directory,
                               '.autoPyTorch',
-                              'runs', '1_1_1.0',
-                              '1.1.1.0.model')
+                              'runs', '1_1_50.0',
+                              '1.1.50.0.model')
 
     # Make sure the dummy model complies with scikit learn
     # get/set params
