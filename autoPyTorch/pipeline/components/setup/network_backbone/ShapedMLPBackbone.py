@@ -135,7 +135,4 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
             cs.add_hyperparameter(max_dropout)
             cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
-        cs.add_hyperparameters([use_dropout, max_dropout])
-        cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
-
         return cs
