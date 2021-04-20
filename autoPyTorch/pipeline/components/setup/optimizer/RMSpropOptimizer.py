@@ -108,16 +108,22 @@ class RMSpropOptimizer(BaseOptimizerComponent):
         add_hyperparameter(cs, lr, UniformFloatHyperparameter)
         add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
         add_hyperparameter(cs, momentum, UniformFloatHyperparameter)
-        weight_decay = get_hyperparameter(weight_decay, UniformFloatHyperparameter)
-        use_weight_decay = get_hyperparameter(use_weight_decay, CategoricalHyperparameter)
-        cs.add_hyperparameters([use_weight_decay, weight_decay])
+        weight_decay_flag = False
+        if any(use_weight_decay.value_range):
+            weight_decay_flag = True
 
-        cs.add_condition(
-            CS.EqualsCondition(
-                weight_decay,
-                use_weight_decay,
-                True,
+        use_weight_decay = get_hyperparameter(use_weight_decay, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_weight_decay)
+
+        if weight_decay_flag:
+            weight_decay = get_hyperparameter(weight_decay, UniformFloatHyperparameter)
+            cs.add_hyperparameter(weight_decay)
+            cs.add_condition(
+                CS.EqualsCondition(
+                    weight_decay,
+                    use_weight_decay,
+                    True,
+                )
             )
-        )
 
         return cs
