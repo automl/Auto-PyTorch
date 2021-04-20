@@ -131,6 +131,8 @@ class BaseTask:
             required for the chosen resampling strategy. If None, uses
             the default values provided in DEFAULT_RESAMPLING_PARAMETERS
             in ```datasets/resampling_strategy.py```.
+        task_type (str): The task of the experiment as a string. Currently, supported
+            tasks are 'tabular_classification' and 'tabular_regression'
     """
 
     def __init__(
