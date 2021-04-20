@@ -321,10 +321,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             # it can be that the target algorithm wrote something into the queue
             #  - then we treat it as a successful run
             try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                info = read_queue(queue)  # type: ignore
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.stdout:
                     additional_run_info['subprocess_stdout'] = obj.stdout
@@ -369,9 +369,9 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             try:
                 info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.exit_status == 0:
                     cost = result
