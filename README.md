@@ -12,12 +12,19 @@ Find the documentation [here](https://automl.github.io/Auto-PyTorch/development)
 
 ## Installation
 
-### Pip
+### Manual Installation
 
 We recommend using Anaconda for developing as follows:
 
 ```sh
 # Following commands assume the user is in a cloned directory of Auto-Pytorch
+
+# We also need to initialize the automl_common repository as follows
+# You can find more information about this here:
+# https://github.com/automl/automl_common/
+git submodule update --init --recursive
+
+# Create the environment
 conda create -n autopytorch python=3.8
 conda activate autopytorch
 conda install gxx_linux-64 gcc_linux-64 swig
@@ -25,6 +32,9 @@ cat requirements.txt | xargs -n 1 -L 1 pip install
 python setup.py install
 
 ```
+
+### Pip
+TODO
 
 ## Contributing
 

@@ -88,6 +88,7 @@ def backend(request):
         output,
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
+        prefix='.autoPyTorch'
     )
 
     def get_finalizer(tmp_dir, output_dir):
