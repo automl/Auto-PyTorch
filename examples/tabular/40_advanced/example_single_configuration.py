@@ -28,7 +28,6 @@ import sklearn.metrics
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
-from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
 if __name__ == '__main__':

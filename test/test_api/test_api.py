@@ -33,7 +33,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 # Fixtures
 # ========
