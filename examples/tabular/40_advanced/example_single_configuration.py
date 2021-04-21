@@ -59,11 +59,7 @@ if __name__ == '__main__':
                                     y_train=y_train,
                                     X_test=X_test,
                                     y_test=y_test)
-    dataset_requirements = get_dataset_requirements(
-        info=dataset.get_required_dataset_info())
-    dataset_properties = dataset.get_dataset_properties(dataset_requirements)
-    configuration = estimator.build_pipeline(dataset_properties).\
-        get_hyperparameter_search_space().get_default_configuration()
+    configuration = estimator.get_search_space(dataset).get_default_configuration()
 
     ###########################################################################
     # Fit the configuration
