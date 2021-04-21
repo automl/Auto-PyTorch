@@ -95,7 +95,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
-        backend_api = create(self.tmp_dir, self.output_dir, prefix='.autoPyTorch')
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 
@@ -133,7 +133,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
-        backend_api = create(self.tmp_dir, self.output_dir, prefix='.autoPyTorch')
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 

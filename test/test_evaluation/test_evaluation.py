@@ -106,7 +106,7 @@ class EvaluationTest(unittest.TestCase):
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
         self.assertEqual(info[0].config.config_id, 198)
-        self.assertEqual(info[1].status, StatusType.SUCCESS)
+        self.assertEqual(info[1].status, StatusType.SUCCESS, info)
         self.assertEqual(info[1].cost, 0.5)
         self.assertIsInstance(info[1].time, float)
 

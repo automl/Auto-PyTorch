@@ -1,4 +1,5 @@
 import os
+import pathlib
 import pickle
 import sys
 import unittest
@@ -99,7 +100,11 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         '.autoPyTorch/true_targets_ensemble.npy',
     ]
     for expected_file in expected_files:
-        assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
+        assert os.path.exists(os.path.join(tmp_dir, expected_file)), "{}/{}/{}".format(
+            tmp_dir,
+            [data for data in pathlib.Path(tmp_dir).glob('*')],
+            expected_file,
+        )
 
     # Check that smac was able to find proper models
     succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
