@@ -66,6 +66,7 @@ setuptools.setup(
             "emcee",
             "scikit-optimize",
             "pyDOE",
+            "pytest-forked"
         ],
         "examples": [
             "matplotlib",
