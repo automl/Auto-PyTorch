@@ -165,7 +165,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.output_shape, self.output_type = _get_output_properties(self.train_tensors)
 
         # TODO: Look for a criteria to define small enough to preprocess
-        self.is_small_preprocess = True
+        # False for the regularization cocktails initially
+        self.is_small_preprocess = False
 
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
