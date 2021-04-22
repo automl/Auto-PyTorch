@@ -132,7 +132,7 @@ Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdo
 /home/runner/work/Auto-PyTorch/Auto-PyTorch/examples/tabular/40_advanced/example_single_configuration.py:61: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
 Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
   configuration = estimator.get_search_space(dataset).get_default_configuration()
-{&#39;imputer&#39;: SimpleImputer(), &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7f0381fdf4f0&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7f0381fdf2b0&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7f0381fdfdc0&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(), &#39;preprocessing&#39;: EarlyPreprocessing(), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7f02e002ff10&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7f02e2b70250&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7f02e012d640&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
+{&#39;imputer&#39;: SimpleImputer(), &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7efeb4fd0df0&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7efeb4fd0610&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7efeb4fd09a0&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(), &#39;preprocessing&#39;: EarlyPreprocessing(), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7efeb4a24400&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7efeb6fab2b0&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7efeb6bc47c0&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
   (0): _NoEmbedding()
   (1): Sequential(
     (0): Linear(in_features=73, out_features=200, bias=True)
@@ -143,21 +143,16 @@ Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdo
     (5): ReLU()
     (6): Linear(in_features=200, out_features=200, bias=True)
     (7): ReLU()
-    (8): Linear(in_features=200...
-      (4): Linear(in_features=200, out_features=200, bias=True)
-      (5): ReLU()
-      (6): Linear(in_features=200, out_features=200, bias=True)
-      (7): ReLU()
-      (8): Linear(in_features=200, out_features=200, bias=True)
-    )
-    (2): Sequential(
-      (0): Flatten(start_dim=1, end_dim=-1)
-      (1): Linear(in_features=200, out_features=128, bias=True)
-      (2): ReLU()
-      (3): Linear(in_features=128, out_features=2, bias=True)
-    )
+    (8): Linear(in_features=200, out_features=200, bias=True)
   )
-)]), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7f02e2da0430&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7f02e2ed7430&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7f02c9ee32b0&gt;, &#39;data_loader&#39;: FeatureDataLoader(), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7f02e2b41310&gt;}
+  (2): Sequential(
+    (0): Flatten(start_dim=1, end_dim=-1)
+    (1): Linear(in_features=200, out_features=128, bias=True)
+    (2): ReLU()
+    (3): Linear(in_features=128, out_features=2, bias=True)
+  )
+),
+                 network_snapshots=[]), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7efeb6fa76d0&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7efeb6fa74c0&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7efeb4a83a00&gt;, &#39;data_loader&#39;: FeatureDataLoader(), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7efeb504b670&gt;}
 RunInfo(config=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
@@ -197,7 +192,7 @@ RunInfo(config=Configuration:
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
 , instance=None, instance_specific=None, seed=1, cutoff=54, capped=False, budget=50, source_id=0)
-RunValue(cost=0.058712121212121215, time=41.67447638511658, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1619087680.7183754, endtime=1619087723.7289927, additional_info={&#39;accuracy&#39;: 0.058712121212121215, &#39;duration&#39;: 39.2803316116333, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.040186915887850505}, &#39;test_loss&#39;: 0.056946182728410566, &#39;configuration_origin&#39;: None})
+RunValue(cost=0.05303030303030298, time=19.26019287109375, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1619094060.8486912, endtime=1619094081.4648201, additional_info={&#39;accuracy&#39;: 0.05303030303030298, &#39;duration&#39;: 16.571595430374146, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.029906542056074792}, &#39;test_loss&#39;: 0.05193992490613264, &#39;configuration_origin&#39;: None})
 Passed Configuration: Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
@@ -336,7 +331,7 @@ Network: Sequential(
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Network:&quot;</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;network&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  57.271 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  35.242 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-single-configuration-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_single_configuration.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
