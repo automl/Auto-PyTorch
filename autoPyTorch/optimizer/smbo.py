@@ -97,7 +97,7 @@ class AutoMLSMBO(object):
                  resampling_strategy_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  include: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 disable_file_output: typing.Union[bool, typing.List] = [],
+                 disable_file_output: typing.List = [],
                  smac_scenario_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  get_smac_object_callback: typing.Optional[typing.Callable] = None,
                  all_supported_metrics: bool = True,

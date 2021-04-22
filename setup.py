@@ -48,8 +48,7 @@ setuptools.setup(
             "codecov",
             "pep8",
             "mypy",
-            "openml",
-            "pytest-forked"
+            "openml"
         ],
         "examples": [
             "matplotlib",
