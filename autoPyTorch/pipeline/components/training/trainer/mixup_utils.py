@@ -17,7 +17,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class MixUp:
     def __init__(self, alpha: float,
-                 weighted_loss: bool = False,
+                 weighted_loss: int = 1,
                  random_state: Optional[np.random.RandomState] = None,
                  use_stochastic_weight_averaging: bool = False,
                  use_snapshot_ensemble: bool = False,
@@ -52,9 +52,11 @@ class MixUp:
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict] = None,
-        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
-                                                                             value_range=(True, False),
-                                                                             default_value=True),
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=[1],
+            default_value=1
+        ),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -90,25 +92,45 @@ class MixUp:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
+        snapshot_ensemble_flag = False
+        if any(use_snapshot_ensemble.value_range):
+            snapshot_ensemble_flag = True
+
         use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
-        se_lastk = get_hyperparameter(se_lastk, Constant)
-        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
-        cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
-        cs.add_condition(cond)
+        cs.add_hyperparameter(use_snapshot_ensemble)
+
+        if snapshot_ensemble_flag:
+            se_lastk = get_hyperparameter(se_lastk, Constant)
+            cs.add_hyperparameter(se_lastk)
+            cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
+            cs.add_condition(cond)
+
+        lookahead_flag = False
+        if any(use_lookahead_optimizer.value_range):
+            lookahead_flag = True
 
         use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
         cs.add_hyperparameter(use_lookahead_optimizer)
-        la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
-                                                                    la_alpha=la_alpha)
-        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
-        cs.add_configuration_space(
-            Lookahead.__name__,
-            la_config_space,
-            parent_hyperparameter=parent_hyperparameter
-        )
 
+        if lookahead_flag:
+            la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                        la_alpha=la_alpha)
+            parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
+            cs.add_configuration_space(
+                Lookahead.__name__,
+                la_config_space,
+                parent_hyperparameter=parent_hyperparameter
+            )
+        """
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs
