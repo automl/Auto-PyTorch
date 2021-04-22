@@ -107,7 +107,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             include: typing.Optional[typing.Dict[str, typing.Any]] = None,
             exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
             memory_limit: typing.Optional[int] = None,
-            disable_file_output: typing.Union[bool, typing.List] = False,
+            disable_file_output: bool = False,
             init_params: typing.Dict[str, typing.Any] = None,
             budget_type: str = None,
             ta: typing.Optional[typing.Callable] = None,
