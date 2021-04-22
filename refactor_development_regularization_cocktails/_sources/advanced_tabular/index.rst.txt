@@ -20,6 +20,27 @@ We explain
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how one can fit one of these pipelines, both, with a user defined configurat...">
+
+.. only:: html
+
+ .. figure:: /advanced_tabular/images/thumb/sphx_glr_example_single_configuration_thumb.png
+     :alt: Fit a single configuration
+
+     :ref:`sphx_glr_advanced_tabular_example_single_configuration.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /advanced_tabular/example_single_configuration
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how adjust the configuration space of the search. Currently, there ...">
 
 .. only:: html
