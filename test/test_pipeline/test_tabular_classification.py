@@ -82,7 +82,7 @@ class TestTabularClassification:
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
     @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
-    def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
+    def test_pipeline_score(self, fit_dictionary_tabular_dummy):
         """This test makes sure that the pipeline is able to achieve a decent score on dummy data
         given the default configuration"""
         X = fit_dictionary_tabular_dummy['X_train'].copy()

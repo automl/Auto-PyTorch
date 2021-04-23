@@ -157,7 +157,7 @@ class BaseTask:
             self._backend = backend
         else:
             self._backend = create(
-                prefix='.autoPyTorch',
+                prefix='autoPyTorch',
                 temporary_directory=self._temporary_directory,
                 output_directory=self._output_directory,
                 delete_tmp_folder_after_terminate=delete_tmp_folder_after_terminate,
