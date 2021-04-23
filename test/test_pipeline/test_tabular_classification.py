@@ -417,7 +417,7 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
-def test_pipeline_score(self, fit_dictionary_tabular_dummy):
+def test_pipeline_score(fit_dictionary_tabular_dummy):
     """This test makes sure that the pipeline is able to achieve a decent score on dummy data
     given the default configuration"""
     X = fit_dictionary_tabular_dummy['X_train'].copy()

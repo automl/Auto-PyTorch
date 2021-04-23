@@ -79,44 +79,6 @@ class TestTabularRegression:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-    @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
-    def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
-        """This test makes sure that the pipeline is able to achieve a decent score on dummy data
-        given the default configuration"""
-        X = fit_dictionary_tabular_dummy['X_train'].copy()
-        y = fit_dictionary_tabular_dummy['y_train'].copy()
-
-        # lower the learning rate of the optimizer until seeding properly works
-        # with the default learning rate of 0.01 regression sometimes does not converge
-        pipeline = TabularRegressionPipeline(
-            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
-            search_space_updates=HyperparameterSearchSpaceUpdates([
-                HyperparameterSearchSpaceUpdate("optimizer",
-                                                "AdamOptimizer:lr",
-                                                value_range=[0.0001, 0.001],
-                                                default_value=0.001)
-            ])
-        )
-
-        cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
-        pipeline.set_hyperparameters(config)
-
-        pipeline.fit(fit_dictionary_tabular_dummy)
-
-        # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
-        expected_output_shape = (X.shape[0],
-                                 fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
-
-        prediction = pipeline.predict(X)
-        assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == expected_output_shape
-
-        # we should be able to get a decent score on this dummy data
-        r2_score = metrics.r2(y, prediction)
-        assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
-
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
@@ -315,3 +277,42 @@ class TestTabularRegression:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
             assert 'fully_connected:units_layer' in e.args[0]
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
+def test_pipeline_score(fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+    X = fit_dictionary_tabular_dummy['X_train'].copy()
+    y = fit_dictionary_tabular_dummy['y_train'].copy()
+
+    # lower the learning rate of the optimizer until seeding properly works
+    # with the default learning rate of 0.01 regression sometimes does not converge
+    pipeline = TabularRegressionPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
+        search_space_updates=HyperparameterSearchSpaceUpdates([
+            HyperparameterSearchSpaceUpdate("optimizer",
+                                            "AdamOptimizer:lr",
+                                            value_range=[0.0001, 0.001],
+                                            default_value=0.001)
+        ])
+    )
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    pipeline.fit(fit_dictionary_tabular_dummy)
+
+    # we expect the output to have the same batch size as the test input,
+    # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
+    expected_output_shape = (X.shape[0],
+                             fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
+
+    prediction = pipeline.predict(X)
+    assert isinstance(prediction, np.ndarray)
+    assert prediction.shape == expected_output_shape
+
+    # we should be able to get a decent score on this dummy data
+    r2_score = metrics.r2(y, prediction)
+    assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
