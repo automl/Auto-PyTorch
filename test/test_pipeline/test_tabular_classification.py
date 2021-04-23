@@ -443,4 +443,3 @@ def test_pipeline_score(self, fit_dictionary_tabular_dummy):
     # we should be able to get a decent score on this dummy data
     accuracy = metrics.accuracy(y, prediction.squeeze())
     assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
-
