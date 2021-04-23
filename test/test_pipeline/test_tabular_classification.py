@@ -81,34 +81,6 @@ class TestTabularClassification:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-    @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
-    def test_pipeline_score(self, fit_dictionary_tabular_dummy):
-        """This test makes sure that the pipeline is able to achieve a decent score on dummy data
-        given the default configuration"""
-        X = fit_dictionary_tabular_dummy['X_train'].copy()
-        y = fit_dictionary_tabular_dummy['y_train'].copy()
-        pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
-
-        cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
-        pipeline.set_hyperparameters(config)
-
-        pipeline.fit(fit_dictionary_tabular_dummy)
-
-        # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (X.shape[0],
-                                 fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
-
-        prediction = pipeline.predict(X)
-        assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == expected_output_shape
-
-        # we should be able to get a decent score on this dummy data
-        accuracy = metrics.accuracy(y, prediction.squeeze())
-        assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
-
     @flaky.flaky(max_runs=3)
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
@@ -442,3 +414,33 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
 
     assert val_score >= 0.8, run_summary.performance_tracker['val_metrics']
     assert train_score >= 0.8, run_summary.performance_tracker['train_metrics']
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
+def test_pipeline_score(self, fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+    X = fit_dictionary_tabular_dummy['X_train'].copy()
+    y = fit_dictionary_tabular_dummy['y_train'].copy()
+    pipeline = TabularClassificationPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    pipeline.fit(fit_dictionary_tabular_dummy)
+
+    # we expect the output to have the same batch size as the test input,
+    # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
+    expected_output_shape = (X.shape[0],
+                             fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
+
+    prediction = pipeline.predict(X)
+    assert isinstance(prediction, np.ndarray)
+    assert prediction.shape == expected_output_shape
+
+    # we should be able to get a decent score on this dummy data
+    accuracy = metrics.accuracy(y, prediction.squeeze())
+    assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+
