@@ -17,7 +17,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class MixUp:
     def __init__(self, alpha: float,
-                 weighted_loss: bool = False,
+                 weighted_loss: int = 1,
                  random_state: Optional[np.random.RandomState] = None,
                  use_stochastic_weight_averaging: bool = False,
                  use_snapshot_ensemble: bool = False,
@@ -52,9 +52,11 @@ class MixUp:
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict] = None,
-        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
-                                                                             value_range=(True, False),
-                                                                             default_value=True),
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=[1],
+            default_value=1
+        ),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -119,9 +121,16 @@ class MixUp:
                 la_config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
-
+        """
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs
