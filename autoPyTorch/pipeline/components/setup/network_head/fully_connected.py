@@ -78,7 +78,7 @@ class FullyConnectedHead(NetworkHeadComponent):
             cs.add_hyperparameter(activation_hp)
             cs.add_condition(CS.GreaterThanCondition(activation_hp, num_layers_hp, 1))
 
-        for i in range(0, max_num_layers):
+        for i in range(1, max_num_layers + 1):
             num_units_search_space = HyperparameterSearchSpace(
                 hyperparameter=f"units_layer_{i}",
                 value_range=units_layer.value_range,
