@@ -6,10 +6,10 @@ import torchvision.transforms
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
+    CrossValFuncs,
     CrossValTypes,
-    HoldoutValTypes,
-    get_cross_validators,
-    get_holdout_validators
+    HoldOutFuncs,
+    HoldoutValTypes
 )
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
@@ -60,8 +60,8 @@ class TimeSeriesForecastingDataset(BaseDataset):
                          train_transforms=train_transforms,
                          val_transforms=val_transforms,
                          )
-        self.cross_validators = get_cross_validators(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = get_holdout_validators(HoldoutValTypes.holdout_validation)
+        self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.holdout_validation)
 
 
 def _check_time_series_forecasting_inputs(target_variables: Tuple[int],
@@ -117,13 +117,13 @@ class TimeSeriesClassificationDataset(BaseDataset):
                                   val=val,
                                   task_type="time_series_classification")
         super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = get_cross_validators(
+        self.cross_validators = CrossValFuncs.get_cross_validators(
             CrossValTypes.stratified_k_fold_cross_validation,
             CrossValTypes.k_fold_cross_validation,
             CrossValTypes.shuffle_split_cross_validation,
             CrossValTypes.stratified_shuffle_split_cross_validation
         )
-        self.holdout_validators = get_holdout_validators(
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
             HoldoutValTypes.holdout_validation,
             HoldoutValTypes.stratified_holdout_validation
         )
@@ -135,11 +135,11 @@ class TimeSeriesRegressionDataset(BaseDataset):
                                   val=val,
                                   task_type="time_series_regression")
         super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = get_cross_validators(
+        self.cross_validators = CrossValFuncs.get_cross_validators(
             CrossValTypes.k_fold_cross_validation,
             CrossValTypes.shuffle_split_cross_validation
         )
-        self.holdout_validators = get_holdout_validators(
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
             HoldoutValTypes.holdout_validation
         )
 

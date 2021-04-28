@@ -66,57 +66,56 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     ):
         """ SMAC callback to handle ensemble building
-        Parameters
-        ----------
-        start_time: int
-            the time when this job was started, to account for any latency in job allocation
-        time_left_for_ensemble: int
-            How much time is left for the task. Job should finish within this allocated time
-        backend: util.backend.Backend
-            backend to write and read files
-        dataset_name: str
-            name of dataset
-        task_type: int
-            what type of output is expected. If Binary, we need to argmax the one hot encoding.
-        metrics: List[autoPyTorchMetric],
-            A set of metrics that will be used to get performance estimates
-        opt_metric: str
-            name of the optimization metrics
-        ensemble_size: int
-            maximal size of ensemble (passed to ensemble_selection)
-        ensemble_nbest: int/float
-            if int: consider only the n best prediction
-            if float: consider only this fraction of the best models
-            Both wrt to validation predictions
-            If performance_range_threshold > 0, might return less models
-        max_models_on_disc: Union[float, int]
-           Defines the maximum number of models that are kept in the disc.
-           If int, it must be greater or equal than 1, and dictates the max number of
-           models to keep.
-           If float, it will be interpreted as the max megabytes allowed of disc space. That
-           is, if the number of ensemble candidates require more disc space than this float
-           value, the worst models will be deleted to keep within this budget.
-           Models and predictions of the worst-performing models will be deleted then.
-           If None, the feature is disabled.
-           It defines an upper bound on the models that can be used in the ensemble.
-        seed: int
-            random seed
-        max_iterations: int
-            maximal number of iterations to run this script
-            (default None --> deactivated)
-        precision: [16,32,64,128]
-            precision of floats to read the predictions
-        memory_limit: Optional[int]
-            memory limit in mb. If ``None``, no memory limit is enforced.
-        read_at_most: int
-            read at most n new prediction files in each iteration
-        logger_port: int
-            port in where to publish a msg
-    Returns
-    -------
-        List[Tuple[int, float, float, float]]:
-            A list with the performance history of this ensemble, of the form
-            [[pandas_timestamp, train_performance, val_performance, test_performance], ...]
+        Args:
+            start_time: int
+                the time when this job was started, to account for any latency in job allocation
+            time_left_for_ensemble: int
+                How much time is left for the task. Job should finish within this allocated time
+            backend: util.backend.Backend
+                backend to write and read files
+            dataset_name: str
+                name of dataset
+            task_type: int
+                what type of output is expected. If Binary, we need to argmax the one hot encoding.
+            metrics: List[autoPyTorchMetric],
+                A set of metrics that will be used to get performance estimates
+            opt_metric: str
+                name of the optimization metrics
+            ensemble_size: int
+                maximal size of ensemble (passed to ensemble_selection)
+            ensemble_nbest: int/float
+                if int: consider only the n best prediction
+                if float: consider only this fraction of the best models
+                Both wrt to validation predictions
+                If performance_range_threshold > 0, might return less models
+            max_models_on_disc: Union[float, int]
+            Defines the maximum number of models that are kept in the disc.
+            If int, it must be greater or equal than 1, and dictates the max number of
+            models to keep.
+            If float, it will be interpreted as the max megabytes allowed of disc space. That
+            is, if the number of ensemble candidates require more disc space than this float
+            value, the worst models will be deleted to keep within this budget.
+            Models and predictions of the worst-performing models will be deleted then.
+            If None, the feature is disabled.
+            It defines an upper bound on the models that can be used in the ensemble.
+            seed: int
+                random seed
+            max_iterations: int
+                maximal number of iterations to run this script
+                (default None --> deactivated)
+            precision: [16,32,64,128]
+                precision of floats to read the predictions
+            memory_limit: Optional[int]
+                memory limit in mb. If ``None``, no memory limit is enforced.
+            read_at_most: int
+                read at most n new prediction files in each iteration
+            logger_port: int
+                port in where to publish a msg
+
+        Returns:
+            List[Tuple[int, float, float, float]]:
+                A list with the performance history of this ensemble, of the form
+                [[pandas_timestamp, train_performance, val_performance, test_performance], ...]
         """
         self.start_time = start_time
         self.time_left_for_ensembles = time_left_for_ensembles

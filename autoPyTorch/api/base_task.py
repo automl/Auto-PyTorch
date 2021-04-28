@@ -10,7 +10,6 @@ import tempfile
 import time
 import typing
 import unittest.mock
-import uuid
 import warnings
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Union, cast
@@ -782,13 +781,15 @@ class BaseTask:
                              ":{}".format(self.task_type, dataset.task_type))
 
         # Initialise information needed for the experiment
-        experiment_task_name = 'runSearch'
+        experiment_task_name: str = 'runSearch'
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
         self._dataset_requirements = dataset_requirements
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
         self.dataset_name = dataset.dataset_name
+        assert self.dataset_name is not None
+
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)
         self._all_supported_metrics = all_supported_metrics
@@ -897,7 +898,7 @@ class BaseTask:
                 start_time=time.time(),
                 time_left_for_ensembles=time_left_for_ensembles,
                 backend=copy.deepcopy(self._backend),
-                dataset_name=dataset.dataset_name,
+                dataset_name=str(dataset.dataset_name),
                 output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
                 task_type=STRING_TO_TASK_TYPES[self.task_type],
                 metrics=[self._metric],
@@ -916,7 +917,7 @@ class BaseTask:
             self._stopwatch.stop_task(ensemble_task_name)
 
         # ==> Run SMAC
-        smac_task_name = 'runSMAC'
+        smac_task_name: str = 'runSMAC'
         self._stopwatch.start_task(smac_task_name)
         elapsed_time = self._stopwatch.wall_elapsed(experiment_task_name)
         time_left_for_smac = max(0, total_walltime_limit - elapsed_time)
@@ -928,7 +929,7 @@ class BaseTask:
 
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
-                dataset_name=dataset.dataset_name,
+                dataset_name=str(dataset.dataset_name),
                 backend=self._backend,
                 total_walltime_limit=total_walltime_limit,
                 func_eval_time_limit_secs=func_eval_time_limit_secs,
@@ -1035,11 +1036,11 @@ class BaseTask:
         Returns:
             self
         """
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        self.dataset_name = dataset.dataset_name
 
         if self._logger is None:
-            self._logger = self._get_logger(self.dataset_name)
+            self._logger = self._get_logger(str(self.dataset_name))
 
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
@@ -1105,11 +1106,10 @@ class BaseTask:
         Returns:
             (BasePipeline): fitted pipeline
         """
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+        self.dataset_name = dataset.dataset_name
 
         if self._logger is None:
-            self._logger = self._get_logger(self.dataset_name)
+            self._logger = self._get_logger(str(self.dataset_name))
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
