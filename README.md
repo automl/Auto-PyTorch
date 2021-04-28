@@ -2,10 +2,7 @@
 
 Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
 
-This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
-
-The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799).
+This branch contains the code to reproduce the paper: ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799).
 
 ## Installation
 
@@ -16,16 +13,8 @@ $ cd install/path
 $ git clone https://github.com/automl/Auto-PyTorch.git
 $ cd Auto-PyTorch
 ```
-If you want to contribute to this repository switch to our current develop branch
 
-```sh
-$ git checkout develop
-```
-
-Install pytorch: 
-https://pytorch.org/
-
-Install Auto-PyTorch:
+Instal the requirements:
 
 ```sh
 $ cat requirements.txt | xargs -n 1 -L 1 pip install
@@ -37,7 +26,7 @@ $ python setup.py install
 
 Code for the [paper](https://arxiv.org/abs/2006.13799) is available under `examples/ensemble`.
 
-For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
+For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/TPAMI.2021.3067763/examples/basics.
 
 In a nutshell:
 
@@ -146,6 +135,17 @@ You should have received a copy of the Apache license 2.0
 along with this program (see LICENSE file).
 
 ## Reference
+```bibtex
+@article{zimmer2021auto,
+  title={Auto-Pytorch: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
+  author={Zimmer, Lucas and Lindauer, Marius and Hutter, Frank},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year={2021},
+  publisher={IEEE}
+}
+```
+
+The paper Auto-Pytorch: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL employs the AutoNet implementation as a backbone. Please also consider citing:
 
 ```bibtex
 @incollection{mendoza-automlbook18a,
