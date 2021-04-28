@@ -33,7 +33,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
     def __init__(self, batch_size: int = 64,
                  random_state: Optional[np.random.RandomState] = None) -> None:
-        super().__init__()
+        super().__init__(random_state=random_state)
         self.batch_size = batch_size
         self.random_state = random_state
         self.train_data_loader = None  # type: Optional[torch.utils.data.DataLoader]

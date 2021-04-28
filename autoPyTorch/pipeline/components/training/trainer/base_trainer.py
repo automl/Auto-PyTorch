@@ -164,13 +164,13 @@ class RunSummary(object):
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
-        super().__init__()
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
             self.random_state = check_random_state(1)
         else:
             self.random_state = random_state
+        super().__init__(random_state=self.random_state)
 
         self.weighted_loss: bool = False
 
