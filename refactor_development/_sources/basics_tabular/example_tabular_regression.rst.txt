@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f2ad93eca90> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fd58f4c7e20> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -66,7 +66,7 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019381046295166016, budget=0), TrajEntry(train_perf=0.37169709500142045, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0013527870178222656, budget=0), TrajEntry(train_perf=0.4696092488249799, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       imputer:categorical_strategy, Value: 'most_frequent'
@@ -96,13 +96,13 @@ with AutoPyTorch
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.973564147949219, wallclock_time=9.214993715286255, budget=5.555555555555555)]
-    {'r2': 0.9023839963347217}
+    , ta_runs=1, ta_time_used=3.4625701904296875, wallclock_time=6.740808725357056, budget=5.555555555555555)]
+    {'r2': 0.9158029688846996}
     |    | Preprocessing                              | Estimator                                                       |   Weight |
     |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
     |  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.8  |
     |  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-    |  2 | SimpleImputer,NoEncoder,NoScaler           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 
 
 
@@ -194,7 +194,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  22.534 seconds)
+   **Total running time of the script:** ( 5 minutes  9.969 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_regression.py:
