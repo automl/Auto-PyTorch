@@ -12,6 +12,6 @@
 Releases
 ========
 
-Version 0.0.3
+Version 0.1.0
 ==============
-TODO
+[refactor] Initial version of the new scikit-learn compatible API.
