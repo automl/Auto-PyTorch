@@ -525,7 +525,7 @@ def test_run_end_at(ensemble_backend):
 
         current_time = time.time()
 
-        ensbuilder.run(end_at=current_time + 10, iteration=1)
+        ensbuilder.run(end_at=current_time + 10, iteration=1, pynisher_context='forkserver')
         # 4 seconds left because: 10 seconds - 5 seconds overhead - very little overhead,
         # but then rounded to an integer
         assert pynisher_mock.call_args_list[0][1]["wall_time_in_s"], 4
