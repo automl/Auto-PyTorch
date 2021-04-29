@@ -70,6 +70,7 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
             An optional dictionary that is passed to the pipeline's steps. It complies
             a similar function as the kwargs
     """
+
     def __init__(self, config: str,
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
@@ -140,6 +141,7 @@ class DummyClassificationPipeline(DummyClassifier):
             An optional dictionary that is passed to the pipeline's steps. It complies
             a similar function as the kwargs
     """
+
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None
@@ -207,6 +209,7 @@ class DummyRegressionPipeline(DummyRegressor):
             An optional dictionary that is passed to the pipeline's steps. It complies
             a similar function as the kwargs
     """
+
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None) -> None:
@@ -422,7 +425,11 @@ class AbstractEvaluator(object):
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
         self.dataset_properties = self.datamanager.get_dataset_properties(
-            get_dataset_requirements(self.datamanager.get_required_dataset_info()))
+            get_dataset_requirements(info=self.datamanager.get_required_dataset_info(),
+                                     include=self.include,
+                                     exclude=self.exclude,
+                                     search_space_updates=self.search_space_updates
+                                     ))
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
         if all_supported_metrics:
@@ -623,9 +630,9 @@ class AbstractEvaluator(object):
         return None
 
     def calculate_auxiliary_losses(
-            self,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray,
+        self,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray,
     ) -> Tuple[Optional[float], Optional[float]]:
         """
         A helper function to calculate the performance estimate of the
@@ -663,10 +670,10 @@ class AbstractEvaluator(object):
         return validation_loss, test_loss
 
     def file_output(
-            self,
-            Y_optimization_pred: np.ndarray,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray
+        self,
+        Y_optimization_pred: np.ndarray,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray
     ) -> Tuple[Optional[float], Dict]:
         """
         This method decides what file outputs are written to disk.

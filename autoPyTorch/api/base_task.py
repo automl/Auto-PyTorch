@@ -259,7 +259,10 @@ class BaseTask:
             return self.search_space
         elif dataset is not None:
             dataset_requirements = get_dataset_requirements(
-                info=dataset.get_required_dataset_info())
+                info=dataset.get_required_dataset_info(),
+                include=self.include_components,
+                exclude=self.exclude_components,
+                search_space_updates=self.search_space_updates)
             return get_configuration_space(info=dataset.get_dataset_properties(dataset_requirements),
                                            include=self.include_components,
                                            exclude=self.exclude_components,
@@ -777,7 +780,10 @@ class BaseTask:
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
         dataset_requirements = get_dataset_requirements(
-            info=dataset.get_required_dataset_info())
+            info=dataset.get_required_dataset_info(),
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates)
         self._dataset_requirements = dataset_requirements
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._stopwatch.start_task(experiment_task_name)
@@ -1041,7 +1047,10 @@ class BaseTask:
             self._logger = self._get_logger(str(self.dataset_name))
 
         dataset_requirements = get_dataset_requirements(
-            info=dataset.get_required_dataset_info())
+            info=dataset.get_required_dataset_info(),
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
@@ -1111,7 +1120,10 @@ class BaseTask:
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
-            info=dataset.get_required_dataset_info())
+            info=dataset.get_required_dataset_info(),
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
