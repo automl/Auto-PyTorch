@@ -8,7 +8,7 @@ Manual
 
 This manual shows how to get started with Auto-PyTorch. We recommend going over the examples first.
 There are additional recommendations on how to interact with the API, further below in this manual.
-However, you are welcome to contribute to this documentation but starting a Pull-Request.
+However, you are welcome to contribute to this documentation by making a Pull-Request.
 
 In a nutshell, Auto-PyTorch searches for the best ensemble of both traditional machine learning models and neural networks for a given dataset. It does so via the `search()` method of the different supported task. Currently we support Tabular classification and Tabular Regression. We plan to also support image processing.
 
