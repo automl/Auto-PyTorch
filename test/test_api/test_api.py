@@ -608,7 +608,7 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
     )
 
     pipeline_run_history = RunHistory()
-    pipeline_run_history.load_json('./.tmp_api/runhistory.json', estimator.get_search_space(dataset))
+    pipeline_run_history.load_json('test/test_api/.tmp_api/runhistory.json', estimator.get_search_space(dataset))
 
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
 
