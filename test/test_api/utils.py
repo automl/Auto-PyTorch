@@ -1,3 +1,7 @@
+import os
+
+from smac.runhistory.runhistory import RunHistory, DataOrigin
+
 from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
     DummyClassificationPipeline,
@@ -5,6 +9,19 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     fit_and_suppress_warnings
 )
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
+
+
+def dummy_traditional_classification(self, time_left: int, func_eval_time_limit_secs: int) -> None:
+    run_history = RunHistory()
+    run_history.load_json('./.tmp_api/traditional_run_history.json',
+                          TraditionalTabularClassificationPipeline(dataset_properties={
+                              'numerical_columns': [10]
+                          }).get_hyperparameter_search_space())
+    self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+    run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'),
+                          save_external=True)
+    return
 
 
 # ========

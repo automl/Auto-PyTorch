@@ -4,7 +4,7 @@ import pathlib
 import pickle
 import sys
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
+from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, dummy_traditional_classification
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -24,10 +24,12 @@ from smac.runhistory.runhistory import RunHistory
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
+from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
+from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
@@ -581,22 +583,48 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
+
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
     )
 
-    estimator._do_dummy_prediction = unittest.mock.MagicMock()
-    estimator.search(
-        X_train=X_train, y_train=y_train,
-        X_test=X_test, y_test=y_test,
-        optimize_metric='accuracy',
-        total_walltime_limit=150,
-        func_eval_time_limit_secs=50,
-        enable_traditional_pipeline=True,
-        load_models=False,
+    InputValidator = TabularInputValidator(
+        is_classification=True,
     )
+
+    # Fit a input validator to check the provided data
+    # Also, an encoder is fit to both train and test data,
+    # to prevent unseen categories during inference
+    InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+
+    dataset = TabularDataset(
+        X=X_train, Y=y_train,
+        X_test=X_test, Y_test=y_test,
+        validator=InputValidator,
+        resampling_strategy=estimator.resampling_strategy,
+        resampling_strategy_args=estimator.resampling_strategy_args,
+    )
+
+    pipeline_run_history = RunHistory()
+    pipeline_run_history.load_json('./.tmp_api/runhistory.json', estimator.get_search_space(dataset))
+
+    estimator._do_dummy_prediction = unittest.mock.MagicMock()
+
+    with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
+        with unittest.mock.patch.object(TabularClassificationTask, '_do_traditional_prediction',
+                                        new=dummy_traditional_classification):
+            AutoMLSMBOMock.return_value = (pipeline_run_history, {}, 'epochs')
+            estimator.search(
+                X_train=X_train, y_train=y_train,
+                X_test=X_test, y_test=y_test,
+                optimize_metric='accuracy',
+                total_walltime_limit=150,
+                func_eval_time_limit_secs=50,
+                enable_traditional_pipeline=True,
+                load_models=False,
+            )
     config, results = estimator.get_incumbent_results(include_traditional=include_traditional)
     assert isinstance(config, Configuration)
     assert isinstance(results, dict)
