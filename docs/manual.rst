@@ -8,7 +8,7 @@ Manual
 
 This manual shows how to get started with Auto-PyTorch. We recommend going over the examples first.
 There are additional recommendations on how to interact with the API, further below in this manual.
-However, you are welcome to contribute to this documentation but starting a Pull-Request.
+However, you are welcome to contribute to this documentation by making a Pull-Request.
 
 In a nutshell, Auto-PyTorch searches for the best ensemble of both traditional machine learning models and neural networks for a given dataset. It does so via the `search()` method of the different supported task. Currently we support Tabular classification and Tabular Regression. We plan to also support image processing.
 
@@ -25,7 +25,7 @@ Resource Allocation
 
 Auto-PyTorch allows to control the maximum allowed resident set memory that an estimator can use. By providing the `memory_limit` argument to the `search()` method, one can make sure that neither the individual machine learning models fitted by SMAC nor the final ensemble consume more than `memory_limit` megabytes.
 
-Additionally, one can control the allocated time to search for a model, via the argument `total_walltime_limit` to the `search()` method. The later controls how much time SMAC can search for new configurations to solve the problem at hand. The more time is allocated, the better the final estimator will be.
+Additionally, one can control the allocated time to search for a model, via the argument `total_walltime_limit` to the `search()` method. This argument controls the total time SMAC can use to search for new configurations. The more time is allocated, the better the final estimator will be.
 
 Ensemble Building Process
 =========================
