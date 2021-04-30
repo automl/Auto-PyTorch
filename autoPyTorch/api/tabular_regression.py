@@ -16,6 +16,7 @@ from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
@@ -81,7 +82,9 @@ class TabularRegressionTask(BaseTask):
         delete_output_folder_after_terminate: bool = True,
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy:Union[CrossValTypes,
+                                    HoldoutValTypes,
+                                    NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
@@ -107,7 +110,6 @@ class TabularRegressionTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_REGRESSION],
         )
 
-<<<<<<< HEAD
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
         """
         Build pipeline according to current task and for the passed dataset properties
@@ -120,68 +122,6 @@ class TabularRegressionTask(BaseTask):
                 Pipeline compatible with the given dataset properties.
         """
         return TabularRegressionPipeline(dataset_properties=dataset_properties)
-=======
-    def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
-        if not isinstance(dataset, TabularDataset):
-            raise ValueError("Dataset is incompatible for the given task,: {}".format(
-                type(dataset)
-            ))
-        return {'task_type': dataset.task_type,
-                'output_type': dataset.output_type,
-                'issparse': dataset.issparse,
-                'numerical_columns': dataset.numerical_columns,
-                'categorical_columns': dataset.categorical_columns}
-
-    def build_pipeline(self, dataset_properties: Dict[str, Any],
-                       include_components: Optional[Dict] = None,
-                       exclude_components: Optional[Dict] = None,
-                       search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-                       ) -> TabularRegressionPipeline:
-        return TabularRegressionPipeline(dataset_properties=dataset_properties,
-                                         include=include_components,
-                                         exclude=exclude_components,
-                                         search_space_updates=search_space_updates)
-
-    def _create_dataset(self,
-                        X_train: Union[List, pd.DataFrame, np.ndarray],
-                        y_train: Union[List, pd.DataFrame, np.ndarray],
-                        X_test: Union[List, pd.DataFrame, np.ndarray],
-                        y_test: Union[List, pd.DataFrame, np.ndarray],
-                        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-                        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                        dataset_name: Optional[str] = None,
-                        return_only: Optional[bool] = False
-                        ) -> BaseDataset:
-
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
-
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        InputValidator = TabularInputValidator(
-            is_classification=False,
-            logger_port=self._logger_port,
-        )
-
-        # Fit a input validator to check the provided data
-        # Also, an encoder is fit to both train and test data,
-        # to prevent unseen categories during inference
-        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
-
-        dataset = TabularDataset(
-            X=X_train, Y=y_train,
-            X_test=X_test, Y_test=y_test,
-            validator=InputValidator,
-            resampling_strategy=resampling_strategy,
-            resampling_strategy_args=resampling_strategy_args,
-            dataset_name=dataset_name
-        )
-        if not return_only:
-            self.InputValidator = InputValidator
-            self.dataset = dataset
-
-        return dataset
->>>>>>> Working fit_pipeline method, with test and example
 
     def search(
         self,
@@ -334,7 +274,6 @@ class TabularRegressionTask(BaseTask):
 
         """
 
-<<<<<<< HEAD
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         self.InputValidator = TabularInputValidator(
@@ -355,15 +294,12 @@ class TabularRegressionTask(BaseTask):
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
         )
-=======
-        self._create_dataset(X_train=X_train,
-                             y_train=y_train,
-                             X_test=X_test,
-                             y_test=y_test,
-                             resampling_strategy=self.resampling_strategy,
-                             resampling_strategy_args=self.resampling_strategy_args,
-                             dataset_name=dataset_name)
->>>>>>> Working fit_pipeline method, with test and example
+
+        assert isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)), \
+            "Val Split is required for HPO search. " \
+            "Expected 'self.resampling_strategy' in" \
+            " '(CrossValTypes, HoldoutValTypes) got {}".format(self.resampling_strategy)
+
 
         return self._search(
             dataset=self.dataset,

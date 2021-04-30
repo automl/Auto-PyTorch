@@ -32,6 +32,11 @@ class HoldOutFunc(Protocol):
         ...
 
 
+class NO_RESAMPLING_FN(Protocol):
+    def __call__(self, indices: np.ndarray) -> np.ndarray:
+        ...
+
+
 class CrossValTypes(IntEnum):
     """The type of cross validation
 
@@ -76,8 +81,14 @@ class HoldoutValTypes(IntEnum):
         return getattr(self, self.name) in stratified
 
 
+class NoResamplingStrategyTypes(IntEnum):
+    no_resampling = 8
+    shuffle_no_resampling = 9
+
+
 # TODO: replace it with another way
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
+RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
+
 
 DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]] = {
     HoldoutValTypes.holdout_validation: {
@@ -98,7 +109,13 @@ DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[
     CrossValTypes.time_series_cross_validation: {
         'num_splits': 5,
     },
-}
+    NoResamplingStrategyTypes.no_resampling: {
+        'shuffle': False
+    },
+    NoResamplingStrategyTypes.shuffle_no_resampling: {
+        'shuffle': True
+    }
+}  # type: Dict[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes], Dict[str, Any]]
 
 
 class HoldOutFuncs():
@@ -225,3 +242,55 @@ class CrossValFuncs():
             for cross_val_type in cross_val_types
         }
         return cross_validators
+
+
+def get_no_resampling_validators(*no_resampling: NoResamplingStrategyTypes) -> Dict[str, NO_RESAMPLING_FN]:
+    no_resampling_strategies = {}  # type: Dict[str, NO_RESAMPLING_FN]
+    for strategy in no_resampling:
+        no_resampling_fn = globals()[strategy.name]
+        no_resampling_strategies[strategy.name] = no_resampling_fn
+    return no_resampling_strategies
+
+
+def no_resampling(indices: np.ndarray) -> np.ndarray:
+    """
+    Returns the indices without performing
+    any operation on them. To be used for
+    fitting on the whole dataset.
+    This strategy is not compatible with
+    HPO search.
+    Args:
+        indices:  array of indices
+
+    Returns:
+        np.ndarray: array of indices
+    """
+    return indices
+
+
+def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any) -> np.ndarray:
+    """
+    Returns the indices after shuffling them.
+    To be used for fitting on the whole dataset.
+    This strategy is not compatible with HPO search.
+    Args:
+        indices:  array of indices
+
+    Returns:
+        np.ndarray: shuffled array of indices
+    """
+    if 'random_state' in kwargs:
+        if isinstance(kwargs['random_state'], np.random.RandomState):
+            kwargs['random_state'].shuffle(indices)
+        elif isinstance(kwargs['random_state'], int):
+            np.random.seed(kwargs['random_state'])
+            np.random.shuffle(indices)
+        else:
+            raise ValueError("Illegal value for 'random_state' entered. "
+                             "Expected it to be {} or {} but got {}".format(int,
+                                                                            np.random.RandomState,
+                                                                            type(kwargs['random_state'])))
+    else:
+        np.random.shuffle(indices)
+
+    return indices

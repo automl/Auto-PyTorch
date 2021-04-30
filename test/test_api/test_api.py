@@ -2,18 +2,10 @@ import json
 import os
 import pathlib
 import pickle
-<<<<<<< HEAD
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
 
 import ConfigSpace as CS
-=======
-import sys
-import time
-import tempfile
-import unittest
-
->>>>>>> Working fit_pipeline method, with test and example
 from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
@@ -24,12 +16,7 @@ import pytest
 
 import sklearn
 import sklearn.datasets
-<<<<<<< HEAD
-from sklearn.base import BaseEstimator
-from sklearn.base import clone
-=======
 from sklearn.base import BaseEstimator, clone
->>>>>>> Working fit_pipeline method, with test and example
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
 from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue
@@ -40,13 +27,11 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
-<<<<<<< HEAD
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
-=======
->>>>>>> Working fit_pipeline method, with test and example
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 from test.test_api.api_utils import print_debug_information
