@@ -213,7 +213,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     """
     Base class for training
     Args:
-        weighted_loss (int, default=1): In case for classification, whether to weight
+        weighted_loss (int, default=0): In case for classification, whether to weight
             the loss function according to the distribution of classes in the target
         use_stochastic_weight_averaging (bool, default=True): whether to use stochastic
             weight averaging. Stochastic weight averaging is a simple average of
@@ -228,7 +228,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         random_state:
         **lookahead_config:
     """
-    def __init__(self, weighted_loss: int = 1,
+    def __init__(self, weighted_loss: int = 0,
                  use_stochastic_weight_averaging: bool = True,
                  use_snapshot_ensemble: bool = True,
                  se_lastk: int = 3,

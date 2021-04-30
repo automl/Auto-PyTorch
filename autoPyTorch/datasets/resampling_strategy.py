@@ -110,6 +110,7 @@ class NoResamplingStrategyTypes(IntEnum):
 # TODO: replace it with another way
 ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
+
 DEFAULT_RESAMPLING_PARAMETERS: Dict[
     ResamplingStrategies,
     Dict[str, Any]

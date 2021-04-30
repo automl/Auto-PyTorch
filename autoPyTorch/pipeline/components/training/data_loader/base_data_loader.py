@@ -59,15 +59,15 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
             FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
 
-    def transform(self, X: Dict) -> Dict:
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
         Args:
-            X (np.ndarray): input features
+            X (Dict[str, Any])): 'X' dictionary
 
         Returns:
-            np.ndarray: Transformed features
+            (Dict[str, Any]): the updated 'X' dictionary
         """
         X.update({'train_data_loader': self.train_data_loader,
                   'val_data_loader': self.val_data_loader,

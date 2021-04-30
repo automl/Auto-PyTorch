@@ -727,9 +727,9 @@ class AbstractEvaluator(object):
             y_true, y_hat, self.task_type, metrics, **metric_kwargs)
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
-                  opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],
-                  test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
-                  file_output: bool, status: StatusType, **metric_kwargs: Any
+                  valid_pred: Optional[np.ndarray], test_pred: Optional[np.ndarray],
+                  additional_run_info: Optional[Dict], file_output: bool, status: StatusType,
+                  opt_pred: Optional[np.ndarray],
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -772,6 +772,9 @@ class AbstractEvaluator(object):
             additional_info (Dict):
                 Additional run information, like train/test loss
         """
+
+        assert opt_pred is not None, "Cases where 'opt_pred' is None should be handled " \
+                                     "specifically with special child classes"
 
         self.duration = time.time() - self.starttime
 

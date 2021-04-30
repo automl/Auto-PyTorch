@@ -152,6 +152,11 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+        assert isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)),\
+            "This Evaluator is used for HPO Search. " \
+            "Val Split is required for HPO search. " \
+            "Expected 'self.resampling_strategy' in" \
+            " '(CrossValTypes, HoldoutValTypes)' got {}".format(self.datamanager.resampling_strategy)
 
         if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
             raise ValueError(
@@ -408,7 +413,11 @@ class TrainEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
+<<<<<<< HEAD
 def eval_train_function(
+=======
+def eval_function(
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
     backend: Backend,
     queue: Queue,
     metric: autoPyTorchMetric,
