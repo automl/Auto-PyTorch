@@ -130,7 +130,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                 collate_fn=custom_collate_fn,
             )
 
-        if X['X_test'] is not None:
+        if 'X_test' in X and X['X_test'] is not None:
             self.test_data_loader = self.get_loader(X=X['X_test'],
                                                     y=X['y_test'],
                                                     batch_size=self.batch_size)
