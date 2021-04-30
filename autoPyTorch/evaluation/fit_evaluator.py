@@ -1,5 +1,5 @@
-from multiprocessing.queues import Queue
 import time
+from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
@@ -82,6 +82,7 @@ class FitEvaluator(AbstractEvaluator):
         pipeline = self._get_pipeline()
 
         train_split, test_split = self.splits[split_id]
+        assert test_split is None
         self.Y_actual_train = self.y_train[train_split]
         y_train_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
                                                                         train_indices=train_split,
@@ -112,6 +113,7 @@ class FitEvaluator(AbstractEvaluator):
             additional_run_info=additional_run_info,
             file_output=True,
             status=status,
+            opt_pred=None
         )
 
     def _fit_and_predict(self, pipeline: BaseEstimator, fold: int, train_indices: Union[np.ndarray, List],
@@ -166,7 +168,7 @@ class FitEvaluator(AbstractEvaluator):
                   valid_pred: Optional[np.ndarray],
                   test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
                   file_output: bool, status: StatusType,
-                  opt_pred: Optional[np.ndarray] = None
+                  opt_pred: Optional[np.ndarray]
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -179,7 +181,7 @@ class FitEvaluator(AbstractEvaluator):
 
         if file_output:
             loss_, additional_run_info_ = self.file_output(
-                valid_pred, test_pred,
+                None, valid_pred, test_pred,
             )
         else:
             loss_ = None
@@ -217,9 +219,9 @@ class FitEvaluator(AbstractEvaluator):
 
     def file_output(
         self,
+        Y_optimization_pred: np.ndarray,
         Y_valid_pred: np.ndarray,
         Y_test_pred: np.ndarray,
-        Y_optimization_pred: Optional[np.ndarray] = None,
     ) -> Tuple[Optional[float], Dict]:
 
         # Abort if predictions contain NaNs
@@ -284,13 +286,13 @@ def eval_function(
     include: Optional[Dict[str, Any]],
     exclude: Optional[Dict[str, Any]],
     disable_file_output: Union[bool, List],
+    output_y_hat_optimization: bool = False,
     pipeline_config: Optional[Dict[str, Any]] = None,
     budget_type: str = None,
     init_params: Optional[Dict[str, Any]] = None,
     logger_port: Optional[int] = None,
     all_supported_metrics: bool = True,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-    output_y_hat_optimization: bool = False,
     instance: str = None,
 ) -> None:
     evaluator = FitEvaluator(

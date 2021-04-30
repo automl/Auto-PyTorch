@@ -18,12 +18,12 @@ from autoPyTorch.datasets.resampling_strategy import (
     DEFAULT_RESAMPLING_PARAMETERS,
     HOLDOUT_FN,
     HoldoutValTypes,
+    NO_RESAMPLING_FN,
+    NoResamplingStrategyTypes,
     get_cross_validators,
     get_holdout_validators,
     get_no_resampling_validators,
-    is_stratified,
-    NoResamplingStrategyTypes,
-    NO_RESAMPLING_FN
+    is_stratified
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
 
@@ -119,6 +119,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
         self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
+        self.no_resampling_validators: Dict[str, NO_RESAMPLING_FN] = {}
         self.rng = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy

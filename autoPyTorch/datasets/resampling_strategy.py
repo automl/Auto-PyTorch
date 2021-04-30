@@ -177,7 +177,7 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
     return splits
 
 
-def no_resampling(indices: np.ndarray):
+def no_resampling(indices: np.ndarray) -> np.ndarray:
     """
     Returns the indices without performing
     any operation on them. To be used for
@@ -193,7 +193,7 @@ def no_resampling(indices: np.ndarray):
     return indices
 
 
-def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any):
+def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any) -> np.ndarray:
     """
     Returns the indices after shuffling them.
     To be used for fitting on the whole dataset.

@@ -243,7 +243,9 @@ class BaseTask:
                     y_train: Union[List, pd.DataFrame, np.ndarray],
                     X_test: Union[List, pd.DataFrame, np.ndarray],
                     y_test: Union[List, pd.DataFrame, np.ndarray],
-                    resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+                    resampling_strategy: Optional[Union[CrossValTypes,
+                                                        HoldoutValTypes,
+                                                        NoResamplingStrategyTypes]] = None,
                     resampling_strategy_args: Optional[Dict[str, Any]] = None,
                     dataset_name: Optional[str] = None,
                     return_only: Optional[bool] = False
