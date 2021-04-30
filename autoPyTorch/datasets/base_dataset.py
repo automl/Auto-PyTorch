@@ -121,9 +121,16 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
+<<<<<<< HEAD
         self.cross_validators: Dict[str, CrossValFunc] = {}
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
+=======
+        self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
+        self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
+        self.no_resampling_validators: Dict[str, NO_RESAMPLING_FN] = {}
+        self.rng = np.random.RandomState(seed=seed)
+>>>>>>> Fix mypy and flake
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args

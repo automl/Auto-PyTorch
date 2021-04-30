@@ -249,7 +249,7 @@ def get_no_resampling_validators(*no_resampling: NoResamplingStrategyTypes) -> D
     return no_resampling_strategies
 
 
-def no_resampling(indices: np.ndarray):
+def no_resampling(indices: np.ndarray) -> np.ndarray:
     """
     Returns the indices without performing
     any operation on them. To be used for
@@ -265,7 +265,7 @@ def no_resampling(indices: np.ndarray):
     return indices
 
 
-def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any):
+def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any) -> np.ndarray:
     """
     Returns the indices after shuffling them.
     To be used for fitting on the whole dataset.
