@@ -18,7 +18,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class CutOut:
     def __init__(self, patch_ratio: float,
                  cutout_prob: float,
-                 weighted_loss: int = 1,
+                 weighted_loss: int = 0,
                  random_state: Optional[np.random.RandomState] = None,
                  use_stochastic_weight_averaging: bool = False,
                  use_snapshot_ensemble: bool = False,
