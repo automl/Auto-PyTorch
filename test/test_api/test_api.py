@@ -29,6 +29,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -459,7 +460,8 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
 @pytest.mark.parametrize('openml_id', (40984,))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
-                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2}),
+                          (NoResamplingStrategyTypes.no_resampling, None),
                           )
                          )
 def test_pipeline_fit(openml_id,
@@ -492,6 +494,8 @@ def test_pipeline_fit(openml_id,
     pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                     configuration=configuration,
                                                                     run_time_limit_secs=50,
+                                                                    budget_type='epochs',
+                                                                    budget=10,
                                                                     disable_file_output=disable_file_output
                                                                     )
     assert isinstance(dataset, BaseDataset)
@@ -535,12 +539,12 @@ def test_pipeline_fit(openml_id,
         pickle.dump(pipeline, f)
 
     num_run_dir = estimator._backend.get_numrun_directory(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0)
+        run_info.seed, run_value.additional_info['num_run'], budget=10.0)
 
     cv_model_path = os.path.join(num_run_dir, estimator._backend.get_cv_model_filename(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0))
+        run_info.seed, run_value.additional_info['num_run'], budget=10.0))
     model_path = os.path.join(num_run_dir, estimator._backend.get_model_filename(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0))
+        run_info.seed, run_value.additional_info['num_run'], budget=10.0))
 
     if disable_file_output:
         # No file output is expected
@@ -551,5 +555,5 @@ def test_pipeline_fit(openml_id,
         assert os.path.exists(model_path)
         if resampling_strategy in CrossValTypes:
             assert os.path.exists(cv_model_path)
-        elif resampling_strategy in HoldoutValTypes:
+        elif resampling_strategy in HoldoutValTypes or resampling_strategy in NoResamplingStrategyTypes:
             assert not os.path.exists(cv_model_path)

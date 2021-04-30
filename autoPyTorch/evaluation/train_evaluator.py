@@ -13,6 +13,7 @@ from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT,
 )
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -70,6 +71,11 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+        assert isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)),\
+            "This Evaluator is used for HPO Search. " \
+            "Val Split is required for HPO search. " \
+            "Expected 'self.resampling_strategy' in" \
+            " '(CrossValTypes, HoldoutValTypes)' got {}".format(self.datamanager.resampling_strategy)
 
         self.splits = self.datamanager.splits
         if self.splits is None:

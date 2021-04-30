@@ -20,7 +20,10 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     get_cross_validators,
     get_holdout_validators,
+    get_no_resampling_validators,
     is_stratified,
+    NoResamplingStrategyTypes,
+    NO_RESAMPLING_FN
 )
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
 
@@ -75,7 +78,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetType] = None,
         test_tensors: Optional[BaseDatasetType] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: Union[CrossValTypes,
+                                   HoldoutValTypes,
+                                   NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
@@ -92,7 +97,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data
             test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
                 test data
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+            resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
@@ -137,6 +142,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # Make sure cross validation splits are created once
         self.cross_validators = get_cross_validators(*CrossValTypes)
         self.holdout_validators = get_holdout_validators(*HoldoutValTypes)
+        self.no_resampling_validators = get_no_resampling_validators(*NoResamplingStrategyTypes)
         self.splits = self.get_splits_from_resampling_strategy()
 
         # We also need to be able to transform the data, be it for pre-processing
@@ -204,7 +210,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def _get_indices(self) -> np.ndarray:
         return self.rng.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
-    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
+    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], Optional[List[int]]]]:
         """
         Creates a set of splits based on a resampling strategy provided
 
@@ -235,6 +241,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                     num_splits=cast(int, num_splits),
                 )
             )
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            splits.append((self.no_resampling_validators[self.resampling_strategy.name](self._get_indices()), None))
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
         return splits
@@ -305,7 +313,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         train, val = self.holdout_validators[holdout_val_type.name](val_share, self._get_indices(), **kwargs)
         return train, val
 
-    def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
+    def get_dataset_for_training(self, split_id: int, train: bool) -> Dataset:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
 
@@ -319,8 +327,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
-        return (TransformSubset(self, self.splits[split_id][0], train=True),
-                TransformSubset(self, self.splits[split_id][1], train=False))
+        return TransformSubset(self, self.splits[split_id][0], train=train)
 
     def replace_data(self, X_train: BaseDatasetType, X_test: Optional[BaseDatasetType]) -> 'BaseDataset':
         """
