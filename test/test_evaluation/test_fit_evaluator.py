@@ -120,7 +120,7 @@ class TestFitEvaluator(BaseEvaluatorTest, unittest.TestCase):
         # Should be none as no val preds are mentioned
         self.assertIsNone(evaluator.file_output.call_args[0][0])
         # Number of y_test_preds and Y_test should be the same
-        self.assertEqual(evaluator.file_output.call_args[0][1].shape[0],
+        self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
                          D.test_tensors[1].shape[0])
         self.assertEqual(evaluator.pipeline.fit.call_count, 1)
 
@@ -157,7 +157,7 @@ class TestFitEvaluator(BaseEvaluatorTest, unittest.TestCase):
 
         # Check for not containing NaNs - that the models don't predict nonsense
         # for unseen data
-        D.train_tensors[1][0] = np.NaN
+        D.test_tensors[1][0] = np.NaN
         rval = evaluator.file_output(
             D.train_tensors[1],
             None,
@@ -169,7 +169,7 @@ class TestFitEvaluator(BaseEvaluatorTest, unittest.TestCase):
                 1.0,
                 {
                     'error':
-                    'Model predictions for validation set contains NaNs.'
+                    'Model predictions for test set contains NaNs.'
                 },
             )
         )
