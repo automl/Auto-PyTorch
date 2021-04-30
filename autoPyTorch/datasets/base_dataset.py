@@ -82,7 +82,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
+<<<<<<< HEAD
         resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
+=======
+        resampling_strategy: Union[CrossValTypes,
+                                   HoldoutValTypes,
+                                   NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
@@ -99,7 +105,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data
             test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
                 test data
+<<<<<<< HEAD
             resampling_strategy (RESAMPLING_STRATEGIES: default=HoldoutValTypes.holdout_validation):
+=======
+            resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
+                (default=HoldoutValTypes.holdout_validation):
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
@@ -121,10 +132,17 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
+<<<<<<< HEAD
         self.cross_validators: Dict[str, CrossValFunc] = {}
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
+=======
+        self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
+        self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
+        self.no_resampling_validators: Dict[str, NO_RESAMPLING_FN] = {}
+        self.rng = np.random.RandomState(seed=seed)
+>>>>>>> Fix mypy and flake
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -149,7 +167,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
+<<<<<<< HEAD
         self.no_resampling_validators = NoResamplingFuncs.get_no_resampling_validators(*NoResamplingStrategyTypes)
+=======
+        self.no_resampling_validators = get_no_resampling_validators(*NoResamplingStrategyTypes)
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
 
         self.splits = self.get_splits_from_resampling_strategy()
 
@@ -250,8 +272,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 )
             )
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+<<<<<<< HEAD
             splits.append((self.no_resampling_validators[self.resampling_strategy.name](self.random_state,
                                                                                         self._get_indices()), None))
+=======
+            splits.append((self.no_resampling_validators[self.resampling_strategy.name](self._get_indices()), None))
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
         return splits
@@ -323,7 +349,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.random_state, val_share, self._get_indices(), **kwargs)
         return train, val
 
+<<<<<<< HEAD
     def get_dataset(self, split_id: int, train: bool) -> Dataset:
+=======
+    def get_dataset_for_training(self, split_id: int, train: bool) -> Dataset:
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
 
@@ -338,6 +368,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
+<<<<<<< HEAD
         if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
             raise IndexError(f"self.splits index out of range, got split_id={split_id}"
                              f" (>= num_splits={len(self.splits)})")
@@ -346,6 +377,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             raise ValueError("Specified fold (or subset) does not exist")
 
         return TransformSubset(self, indices, train=train)
+=======
+        return TransformSubset(self, self.splits[split_id][0], train=train)
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
 
     def replace_data(self, X_train: BaseDatasetInputType,
                      X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':

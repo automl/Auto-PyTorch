@@ -382,7 +382,11 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
+<<<<<<< HEAD
                 if X['val_data_loader']:
+=======
+                if 'val_data_loader' in X and X['val_data_loader']:
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -436,10 +440,17 @@ class TrainerChoice(autoPyTorchChoice):
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
+<<<<<<< HEAD
             if X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['val_data_loader']:
                 test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
+=======
+            if 'val_data_loader' in X and X['val_data_loader']:
+                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+            if 'test_data_loader' in X and X['test_data_loader']:
+                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
+>>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -652,8 +663,15 @@ class TrainerChoice(autoPyTorchChoice):
 
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in updates.keys():
-            if key.startswith(Lookahead.__name__):
-                result[key[len(Lookahead.__name__) + 1:]] = updates[key]
+            if Lookahead.__name__ in key:
+                # need to also remove lookahead from the hyperparameter name
+                new_update = HyperparameterSearchSpace(
+                    updates[key].hyperparameter.replace('{}:'.format(Lookahead.__name__), ''),
+                    value_range=updates[key].value_range,
+                    default_value=updates[key].default_value,
+                    log=updates[key].log
+                )
+                result[key.replace('{}:'.format(Lookahead.__name__), '')] = new_update
             else:
                 result[key] = updates[key]
         return result
