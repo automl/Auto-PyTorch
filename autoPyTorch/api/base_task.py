@@ -34,7 +34,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
@@ -123,7 +123,7 @@ class BaseTask:
             components
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]): updates to be made
             to the hyperparameter search space of the pipeline
-        resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+        resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
         resampling_strategy_args (Optional[Dict[str, Any]]): arguments
@@ -149,7 +149,9 @@ class BaseTask:
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
         backend: Optional[Backend] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: Union[CrossValTypes,
+                                   HoldoutValTypes,
+                                   NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None
@@ -1126,7 +1128,9 @@ class BaseTask:
                      X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
                      y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
                      dataset_name: Optional[str] = None,
-                     resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes]] = None,
+                     resampling_strategy: Optional[Union[HoldoutValTypes,
+                                                         CrossValTypes,
+                                                         NoResamplingStrategyTypes]] = None,
                      resampling_strategy_args: Optional[Dict[str, Any]] = None,
                      run_time_limit_secs: int = 60,
                      memory_limit: Optional[int] = None,
@@ -1154,7 +1158,7 @@ class BaseTask:
                 be provided to track the generalization performance of each stage.
             dataset_name (Optional[str]):
                 Name of the dataset, if None, random value is used.
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+            resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
