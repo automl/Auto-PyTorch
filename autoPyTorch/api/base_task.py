@@ -1541,6 +1541,7 @@ class BaseTask(ABC):
             (BaseDataset):
                 Dataset created from the given tensors
         """
+        self.dataset_name = dataset.dataset_name
 
         if dataset is None:
             if (
