@@ -63,6 +63,8 @@ class TestTabularClassification:
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
 
+        fit_dictionary_tabular['epochs'] = 5
+
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         cs = pipeline.get_hyperparameter_search_space()
@@ -89,6 +91,9 @@ class TestTabularClassification:
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
+
+        fit_dictionary_tabular['epochs'] = 5
+
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
@@ -115,6 +120,9 @@ class TestTabularClassification:
         given random combinations of hyperparameters across the pipeline
         And then predict using predict probability
         """
+
+        fit_dictionary_tabular['epochs'] = 5
+
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
@@ -146,6 +154,8 @@ class TestTabularClassification:
         that fit properly work.
         This code is added in light of components not properly added to the fit dicitonary
         """
+
+        fit_dictionary_tabular['epochs'] = 5
 
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
@@ -181,6 +191,8 @@ class TestTabularClassification:
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
 
+        fit_dictionary_tabular['epochs'] = 5
+
         fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularClassificationPipeline(
@@ -192,6 +204,9 @@ class TestTabularClassification:
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
+
+        fit_dictionary_tabular['epochs'] = 5
+
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         for key in ['num_run', 'device', 'split_id', 'torch_num_threads', 'dataset_properties']:
