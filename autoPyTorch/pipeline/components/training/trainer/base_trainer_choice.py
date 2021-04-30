@@ -613,8 +613,15 @@ class TrainerChoice(autoPyTorchChoice):
 
         # iterate over all search space updates of this node and filter the ones out, that have the given prefix
         for key in updates.keys():
-            if key.startswith(Lookahead.__name__):
-                result[key[len(Lookahead.__name__) + 1:]] = updates[key]
+            if Lookahead.__name__ in key:
+                # need to also remove lookahead from the hyperparameter name
+                new_update = HyperparameterSearchSpace(
+                    updates[key].hyperparameter.replace('{}:'.format(Lookahead.__name__), ''),
+                    value_range=updates[key].value_range,
+                    default_value=updates[key].default_value,
+                    log=updates[key].log
+                )
+                result[key.replace('{}:'.format(Lookahead.__name__), '')] = new_update
             else:
                 result[key] = updates[key]
         return result
