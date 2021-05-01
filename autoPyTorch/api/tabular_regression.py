@@ -16,6 +16,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
@@ -64,7 +65,9 @@ class TabularRegressionTask(BaseTask):
             delete_output_folder_after_terminate: bool = True,
             include_components: Optional[Dict] = None,
             exclude_components: Optional[Dict] = None,
-            resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+            resampling_strategy: Union[CrossValTypes,
+                                       HoldoutValTypes,
+                                       NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
             resampling_strategy_args: Optional[Dict[str, Any]] = None,
             backend: Optional[Backend] = None,
             search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
@@ -115,7 +118,9 @@ class TabularRegressionTask(BaseTask):
                     y_train: Union[List, pd.DataFrame, np.ndarray],
                     X_test: Union[List, pd.DataFrame, np.ndarray],
                     y_test: Union[List, pd.DataFrame, np.ndarray],
-                    resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+                    resampling_strategy: Optional[Union[CrossValTypes,
+                                                        HoldoutValTypes,
+                                                        NoResamplingStrategyTypes]] = None,
                     resampling_strategy_args: Optional[Dict[str, Any]] = None,
                     dataset_name: Optional[str] = None,
                     return_only: Optional[bool] = False
@@ -244,12 +249,15 @@ class TabularRegressionTask(BaseTask):
 
         """
 
+        assert isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)), \
+            "Val Split is required for HPO search. " \
+            "Expected 'self.resampling_strategy' in" \
+            " '(CrossValTypes, HoldoutValTypes) got {}".format(self.resampling_strategy)
+
         self.get_dataset(X_train=X_train,
                          y_train=y_train,
                          X_test=X_test,
                          y_test=y_test,
-                         resampling_strategy=self.resampling_strategy,
-                         resampling_strategy_args=self.resampling_strategy_args,
                          dataset_name=dataset_name)
 
         return self._search(

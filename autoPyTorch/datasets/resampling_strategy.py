@@ -30,6 +30,11 @@ class HOLDOUT_FN(Protocol):
         ...
 
 
+class NO_RESAMPLING_FN(Protocol):
+    def __call__(self, indices: np.ndarray) -> np.ndarray:
+        ...
+
+
 class CrossValTypes(IntEnum):
     stratified_k_fold_cross_validation = 1
     k_fold_cross_validation = 2
@@ -43,7 +48,12 @@ class HoldoutValTypes(IntEnum):
     stratified_holdout_validation = 7
 
 
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
+class NoResamplingStrategyTypes(IntEnum):
+    no_resampling = 8
+    shuffle_no_resampling = 9
+
+
+RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
 DEFAULT_RESAMPLING_PARAMETERS = {
     HoldoutValTypes.holdout_validation: {
@@ -64,7 +74,13 @@ DEFAULT_RESAMPLING_PARAMETERS = {
     CrossValTypes.time_series_cross_validation: {
         'num_splits': 3,
     },
-}  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
+    NoResamplingStrategyTypes.no_resampling: {
+        'shuffle': False
+    },
+    NoResamplingStrategyTypes.shuffle_no_resampling: {
+        'shuffle': True
+    }
+}  # type: Dict[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes], Dict[str, Any]]
 
 
 def get_cross_validators(*cross_val_types: CrossValTypes) -> Dict[str, CROSS_VAL_FN]:
@@ -83,7 +99,15 @@ def get_holdout_validators(*holdout_val_types: HoldoutValTypes) -> Dict[str, HOL
     return holdout_validators
 
 
-def is_stratified(val_type: Union[str, CrossValTypes, HoldoutValTypes]) -> bool:
+def get_no_resampling_validators(*no_resampling: NoResamplingStrategyTypes) -> Dict[str, NO_RESAMPLING_FN]:
+    no_resampling_strategies = {}  # type: Dict[str, NO_RESAMPLING_FN]
+    for strategy in no_resampling:
+        no_resampling_fn = globals()[strategy.name]
+        no_resampling_strategies[strategy.name] = no_resampling_fn
+    return no_resampling_strategies
+
+
+def is_stratified(val_type: Union[str, CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]) -> bool:
     if isinstance(val_type, str):
         return val_type.lower().startswith("stratified")
     else:
@@ -151,3 +175,47 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
     cv = TimeSeriesSplit(n_splits=num_splits)
     splits = list(cv.split(indices))
     return splits
+
+
+def no_resampling(indices: np.ndarray) -> np.ndarray:
+    """
+    Returns the indices without performing
+    any operation on them. To be used for
+    fitting on the whole dataset.
+    This strategy is not compatible with
+    HPO search.
+    Args:
+        indices:  array of indices
+
+    Returns:
+        np.ndarray: array of indices
+    """
+    return indices
+
+
+def shuffle_no_resampling(indices: np.ndarray, **kwargs: Any) -> np.ndarray:
+    """
+    Returns the indices after shuffling them.
+    To be used for fitting on the whole dataset.
+    This strategy is not compatible with HPO search.
+    Args:
+        indices:  array of indices
+
+    Returns:
+        np.ndarray: shuffled array of indices
+    """
+    if 'random_state' in kwargs:
+        if isinstance(kwargs['random_state'], np.random.RandomState):
+            kwargs['random_state'].shuffle(indices)
+        elif isinstance(kwargs['random_state'], int):
+            np.random.seed(kwargs['random_state'])
+            np.random.shuffle(indices)
+        else:
+            raise ValueError("Illegal value for 'random_state' entered. "
+                             "Expected it to be {} or {} but got {}".format(int,
+                                                                            np.random.RandomState,
+                                                                            type(kwargs['random_state'])))
+    else:
+        np.random.shuffle(indices)
+
+    return indices

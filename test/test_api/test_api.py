@@ -29,6 +29,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -50,6 +51,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         data_id=int(openml_id),
         return_X_y=True, as_frame=True
     )
+    X, y = X[:200], y[:200]
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
@@ -70,7 +72,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         X_test=X_test, y_test=y_test,
         optimize_metric='accuracy',
         total_walltime_limit=150,
-        func_eval_time_limit_secs=50,
+        func_eval_time_limit_secs=40,
+        budget_type='epochs',
+        budget=10,
         enable_traditional_pipeline=False,
     )
 
@@ -210,6 +214,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         return_X_y=True,
         as_frame=True
     )
+    X, y = X[:200], y[:200]
     # normalize values
     y = (y - y.mean()) / y.std()
 
@@ -240,8 +245,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         X_train=X_train, y_train=y_train,
         X_test=X_test, y_test=y_test,
         optimize_metric='r2',
-        total_walltime_limit=50,
-        func_eval_time_limit_secs=10,
+        total_walltime_limit=150,
+        func_eval_time_limit_secs=40,
         enable_traditional_pipeline=False,
     )
 
@@ -458,8 +463,9 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
 @pytest.mark.parametrize("disable_file_output", [True, False])
 @pytest.mark.parametrize('openml_id', (40984,))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
-                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
-                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.5}),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 4}),
+                          (NoResamplingStrategyTypes.no_resampling, None),
                           )
                          )
 def test_pipeline_fit(openml_id,
@@ -472,6 +478,7 @@ def test_pipeline_fit(openml_id,
         data_id=int(openml_id),
         return_X_y=True, as_frame=True
     )
+    X, y = X[:200], y[:200]
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
@@ -492,6 +499,8 @@ def test_pipeline_fit(openml_id,
     pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                     configuration=configuration,
                                                                     run_time_limit_secs=50,
+                                                                    budget_type='epochs',
+                                                                    budget=30,
                                                                     disable_file_output=disable_file_output
                                                                     )
     assert isinstance(dataset, BaseDataset)
@@ -535,12 +544,12 @@ def test_pipeline_fit(openml_id,
         pickle.dump(pipeline, f)
 
     num_run_dir = estimator._backend.get_numrun_directory(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0)
+        run_info.seed, run_value.additional_info['num_run'], budget=30.0)
 
     cv_model_path = os.path.join(num_run_dir, estimator._backend.get_cv_model_filename(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0))
+        run_info.seed, run_value.additional_info['num_run'], budget=30.0))
     model_path = os.path.join(num_run_dir, estimator._backend.get_model_filename(
-        run_info.seed, run_value.additional_info['num_run'], budget=50.0))
+        run_info.seed, run_value.additional_info['num_run'], budget=30.0))
 
     if disable_file_output:
         # No file output is expected
@@ -551,5 +560,5 @@ def test_pipeline_fit(openml_id,
         assert os.path.exists(model_path)
         if resampling_strategy in CrossValTypes:
             assert os.path.exists(cv_model_path)
-        elif resampling_strategy in HoldoutValTypes:
+        elif resampling_strategy in HoldoutValTypes or resampling_strategy in NoResamplingStrategyTypes:
             assert not os.path.exists(cv_model_path)
