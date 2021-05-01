@@ -93,7 +93,7 @@ class TestTabularClassification:
         """This test makes sure that the pipeline is able to achieve a decent score on dummy data
         given the default configuration"""
 
-        fit_dictionary_tabular_dummy['epochs'] = 5
+        fit_dictionary_tabular_dummy['epochs'] = 15
 
         X = fit_dictionary_tabular_dummy['X_train'].copy()
         y = fit_dictionary_tabular_dummy['y_train'].copy()
