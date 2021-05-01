@@ -29,7 +29,7 @@ configuration, and a randomly sampled one form the configuration space.
 The pipelines that Auto-PyTorch fits are compatible with Scikit-Learn API. You can
 get further documentation about Scikit-Learn models here: <https://scikit-learn.org/stable/getting_started.html`>_
 
-.. GENERATED FROM PYTHON SOURCE LINES 14-86
+.. GENERATED FROM PYTHON SOURCE LINES 14-90
 
 
 
@@ -46,10 +46,10 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
     /home/runner/work/Auto-PyTorch/Auto-PyTorch/examples/tabular/40_advanced/example_single_configuration.py:61: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
     Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
       configuration = estimator.get_search_space(dataset).get_default_configuration()
-    {'imputer': SimpleImputer(), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7efeb4fd0df0>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7efeb4fd0610>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7efeb4fd09a0>, 'tabular_transformer': TabularColumnTransformer(), 'preprocessing': EarlyPreprocessing(), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7efeb4a24400>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7efeb6fab2b0>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7efeb6bc47c0>, 'network': NetworkComponent(network=Sequential(
+    {'imputer': SimpleImputer(), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7fa560b1bfd0>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7fa560c00f70>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7fa55a7cc130>, 'tabular_transformer': TabularColumnTransformer(), 'preprocessing': EarlyPreprocessing(), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7fa559fc7fd0>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7fa560104b80>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7fa5583d6640>, 'network': NetworkComponent(network=Sequential(
       (0): _NoEmbedding()
       (1): Sequential(
-        (0): Linear(in_features=73, out_features=200, bias=True)
+        (0): Linear(in_features=4, out_features=200, bias=True)
         (1): ReLU()
         (2): Linear(in_features=200, out_features=200, bias=True)
         (3): ReLU()
@@ -57,21 +57,26 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         (5): ReLU()
         (6): Linear(in_features=200, out_features=200, bias=True)
         (7): ReLU()
-        (8): Linear(in_features=200, out_features=200, bias=True)
+        (8): Linear(in_features=200,...
+          (4): Linear(in_features=200, out_features=200, bias=True)
+          (5): ReLU()
+          (6): Linear(in_features=200, out_features=200, bias=True)
+          (7): ReLU()
+          (8): Linear(in_features=200, out_features=200, bias=True)
+        )
+        (2): Sequential(
+          (0): Flatten(start_dim=1, end_dim=-1)
+          (1): Linear(in_features=200, out_features=128, bias=True)
+          (2): ReLU()
+          (3): Linear(in_features=128, out_features=3, bias=True)
+        )
       )
-      (2): Sequential(
-        (0): Flatten(start_dim=1, end_dim=-1)
-        (1): Linear(in_features=200, out_features=128, bias=True)
-        (2): ReLU()
-        (3): Linear(in_features=128, out_features=2, bias=True)
-      )
-    ),
-                     network_snapshots=[]), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7efeb6fa76d0>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7efeb6fa74c0>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7efeb4a83a00>, 'data_loader': FeatureDataLoader(), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7efeb504b670>}
+    )]), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7fa55a106970>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7fa559cbc6d0>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7fa55a37ab80>, 'data_loader': FeatureDataLoader(), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7fa5581832e0>}
     RunInfo(config=Configuration:
       data_loader:batch_size, Value: 64
-      encoder:__choice__, Value: 'OneHotEncoder'
+      encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'mean'
       lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
       lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
       lr_scheduler:ReduceLROnPlateau:patience, Value: 10
@@ -96,22 +101,22 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
       optimizer:AdamOptimizer:use_weight_decay, Value: True
       optimizer:AdamOptimizer:weight_decay, Value: 0.0001
       optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'NoScaler'
+      scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
       trainer:StandardTrainer:Lookahead:la_steps, Value: 6
       trainer:StandardTrainer:se_lastk, Constant: 3
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , instance=None, instance_specific=None, seed=1, cutoff=54, capped=False, budget=50, source_id=0)
-    RunValue(cost=0.05303030303030298, time=19.26019287109375, status=<StatusType.SUCCESS: 1>, starttime=1619094060.8486912, endtime=1619094081.4648201, additional_info={'accuracy': 0.05303030303030298, 'duration': 16.571595430374146, 'num_run': 2, 'train_loss': {'accuracy': 0.029906542056074792}, 'test_loss': 0.05193992490613264, 'configuration_origin': None})
+    , instance=None, instance_specific=None, seed=1, cutoff=94, capped=False, budget=50, source_id=0)
+    RunValue(cost=0.09999999999999998, time=8.979756355285645, status=<StatusType.SUCCESS: 1>, starttime=1619879248.0121536, endtime=1619879258.2928019, additional_info={'accuracy': 0.09999999999999998, 'duration': 6.74341893196106, 'num_run': 2, 'train_loss': {'accuracy': 0.0}, 'test_loss': 0.06666666666666665, 'configuration_origin': None})
     Passed Configuration: Configuration:
       data_loader:batch_size, Value: 64
-      encoder:__choice__, Value: 'OneHotEncoder'
+      encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'mean'
       lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
       lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
       lr_scheduler:ReduceLROnPlateau:patience, Value: 10
@@ -136,20 +141,20 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
       optimizer:AdamOptimizer:use_weight_decay, Value: True
       optimizer:AdamOptimizer:weight_decay, Value: 0.0001
       optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'NoScaler'
+      scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
       trainer:StandardTrainer:Lookahead:la_steps, Value: 6
       trainer:StandardTrainer:se_lastk, Constant: 3
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
 
     Network: Sequential(
       (0): _NoEmbedding()
       (1): Sequential(
-        (0): Linear(in_features=73, out_features=200, bias=True)
+        (0): Linear(in_features=4, out_features=200, bias=True)
         (1): ReLU()
         (2): Linear(in_features=200, out_features=200, bias=True)
         (3): ReLU()
@@ -163,7 +168,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         (0): Flatten(start_dim=1, end_dim=-1)
         (1): Linear(in_features=200, out_features=128, bias=True)
         (2): ReLU()
-        (3): Linear(in_features=128, out_features=2, bias=True)
+        (3): Linear(in_features=128, out_features=3, bias=True)
       )
     )
 
@@ -200,9 +205,9 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         # Data Loading
         # ============
 
-        X, y = sklearn.datasets.fetch_openml(data_id=3, return_X_y=True, as_frame=True)
+        X, y = sklearn.datasets.fetch_openml('iris', return_X_y=True, as_frame=True)
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-            X, y, test_size=0.5, random_state=3
+            X, y, test_size=0.8, random_state=3
         )
 
         ############################################################################
@@ -229,12 +234,16 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         # Fit the configuration
         # ==================================
 
-        pipeline, run_info, run_value, dataset = estimator.fit_pipeline(X_train=X_train, y_train=y_train,
-                                                                        dataset_name='kr-vs-kp',
-                                                                        X_test=X_test, y_test=y_test,
-                                                                        disable_file_output=False,
-                                                                        configuration=configuration
-                                                                        )
+        pipeline, run_info, run_value, dataset = estimator.fit_pipeline(
+            X_train=X_train,
+            y_train=y_train,
+            dataset_name='kr-vs-kp',
+            run_time_limit_secs=100,
+            X_test=X_test,
+            y_test=y_test,
+            disable_file_output=False,
+            configuration=configuration,
+        )
 
         # This object complies with Scikit-Learn Pipeline API.
         # https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
@@ -252,7 +261,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  35.242 seconds)
+   **Total running time of the script:** ( 0 minutes  22.352 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_single_configuration.py:

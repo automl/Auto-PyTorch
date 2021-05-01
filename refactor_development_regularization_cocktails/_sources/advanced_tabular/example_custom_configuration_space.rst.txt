@@ -46,7 +46,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7efeb6ade400> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fa5fa61bac0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -85,9 +85,9 @@ the search. Currently, there are two changes that can be made to the space:-
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001983165740966797, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.00165557861328125, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -126,59 +126,19 @@ the search. Currently, there are two changes that can be made to the space:-
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=5.583842515945435, wallclock_time=7.051768779754639, budget=5.555555555555555), TrajEntry(train_perf=0.1871345029239766, incumbent_id=2, incumbent=Configuration:
-      data_loader:batch_size, Value: 409
-      encoder:__choice__, Value: 'OneHotEncoder'
-      feature_preprocessor:TruncatedSVD:target_dim, Value: 4
-      feature_preprocessor:__choice__, Value: 'TruncatedSVD'
-      imputer:categorical_strategy, Value: 'most_frequent'
-      imputer:numerical_strategy, Value: 'constant_zero'
-      lr_scheduler:CosineAnnealingLR:T_max, Value: 53
-      lr_scheduler:__choice__, Value: 'CosineAnnealingLR'
-      network_backbone:MLPBackbone:activation, Value: 'relu'
-      network_backbone:MLPBackbone:dropout_1, Value: 0.7173131362280667
-      network_backbone:MLPBackbone:dropout_2, Value: 0.32527643996037753
-      network_backbone:MLPBackbone:num_groups, Value: 2
-      network_backbone:MLPBackbone:num_units_1, Value: 165
-      network_backbone:MLPBackbone:num_units_2, Value: 244
-      network_backbone:MLPBackbone:use_dropout, Value: True
-      network_backbone:__choice__, Value: 'MLPBackbone'
-      network_embedding:__choice__, Value: 'NoEmbedding'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'tanh'
-      network_head:fully_connected:num_layers, Value: 3
-      network_head:fully_connected:units_layer_1, Value: 256
-      network_head:fully_connected:units_layer_2, Value: 408
-      network_init:OrthogonalInit:bias_strategy, Value: 'Normal'
-      network_init:__choice__, Value: 'OrthogonalInit'
-      optimizer:RMSpropOptimizer:alpha, Value: 0.44965916725624266
-      optimizer:RMSpropOptimizer:lr, Value: 0.0015378712542410064
-      optimizer:RMSpropOptimizer:momentum, Value: 0.7354696550868378
-      optimizer:RMSpropOptimizer:use_weight_decay, Value: True
-      optimizer:RMSpropOptimizer:weight_decay, Value: 3.025630486858573e-06
-      optimizer:__choice__, Value: 'RMSpropOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:RowCutOutTrainer:cutout_prob, Value: 0.589936979878005
-      trainer:RowCutOutTrainer:patch_ratio, Value: 0.40724571391547737
-      trainer:RowCutOutTrainer:use_lookahead_optimizer, Value: False
-      trainer:RowCutOutTrainer:use_snapshot_ensemble, Value: False
-      trainer:RowCutOutTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:RowCutOutTrainer:weighted_loss, Value: True
-      trainer:__choice__, Value: 'RowCutOutTrainer'
-    , ta_runs=13, ta_time_used=87.67640423774719, wallclock_time=120.08723640441895, budget=50.0)]
-    {'accuracy': 0.861271676300578}
-    |    | Preprocessing                                           | Estimator                                                    |   Weight |
-    |---:|:--------------------------------------------------------|:-------------------------------------------------------------|---------:|
-    |  0 | None                                                    | RFClassifier                                                 |     0.28 |
-    |  1 | None                                                    | ExtraTreesClassifier                                         |     0.24 |
-    |  2 | SimpleImputer,OneHotEncoder,NoScaler,PolynomialFeatures | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.2  |
-    |  3 | None                                                    | CatBoostClassifier                                           |     0.18 |
-    |  4 | None                                                    | KNNClassifier                                                |     0.06 |
-    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,TruncSVD     | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,TruncSVD     | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7efeb7182220> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=12.98829174041748, wallclock_time=14.392967700958252, budget=5.555555555555555)]
+    {'accuracy': 0.8554913294797688}
+    |    | Preprocessing                                                     | Estimator                                                 |   Weight |
+    |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+    |  0 | None                                                              | CatBoostClassifier                                        |     0.58 |
+    |  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.2  |
+    |  2 | None                                                              | KNNClassifier                                             |     0.14 |
+    |  3 | None                                                              | RFClassifier                                              |     0.04 |
+    |  4 | None                                                              | LGBMClassifier                                            |     0.02 |
+    |  5 | None                                                              | ExtraTreesClassifier                                      |     0.02 |
+    <smac.runhistory.runhistory.RunHistory object at 0x7fa55a4b5130> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -215,9 +175,9 @@ the search. Currently, there are two changes that can be made to the space:-
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017466545104980469, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017666816711425781, budget=0), TrajEntry(train_perf=0.19883040935672514, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -254,19 +214,21 @@ the search. Currently, there are two changes that can be made to the space:-
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.803942680358887, wallclock_time=6.263315200805664, budget=5.555555555555555)]
-    {'accuracy': 0.8670520231213873}
+    , ta_runs=1, ta_time_used=8.5232412815094, wallclock_time=9.917478799819946, budget=5.555555555555555)]
+    {'accuracy': 0.8728323699421965}
     |    | Preprocessing                                                 | Estimator                                                          |   Weight |
     |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-    |  0 | None                                                          | RFClassifier                                                       |     0.38 |
-    |  1 | None                                                          | ExtraTreesClassifier                                               |     0.22 |
-    |  2 | None                                                          | CatBoostClassifier                                                 |     0.2  |
-    |  3 | None                                                          | KNNClassifier                                                      |     0.1  |
-    |  4 | SimpleImputer,NoEncoder,Normalizer,NoFeaturePreprocessing     | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  5 | None                                                          | SVC                                                                |     0.04 |
-    |  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    |  0 | SimpleImputer,NoEncoder,MinMaxScaler,NoFeaturePreprocessing   | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+    |  1 | None                                                          | RFClassifier                                                       |     0.22 |
+    |  2 | None                                                          | ExtraTreesClassifier                                               |     0.22 |
+    |  3 | None                                                          | KNNClassifier                                                      |     0.12 |
+    |  4 | None                                                          | CatBoostClassifier                                                 |     0.06 |
+    |  5 | None                                                          | LGBMClassifier                                                     |     0.04 |
+    |  6 | SimpleImputer,NoEncoder,Normalizer,PolynomialFeatures         | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+    |  7 | None                                                          | SVC                                                                |     0.02 |
+    |  8 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 
 
 
@@ -395,7 +357,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 11 minutes  51.552 seconds)
+   **Total running time of the script:** ( 11 minutes  24.852 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_custom_configuration_space.py:

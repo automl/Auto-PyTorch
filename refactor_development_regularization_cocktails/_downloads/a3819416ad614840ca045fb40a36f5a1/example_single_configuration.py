@@ -35,9 +35,9 @@ if __name__ == '__main__':
     # Data Loading
     # ============
 
-    X, y = sklearn.datasets.fetch_openml(data_id=3, return_X_y=True, as_frame=True)
+    X, y = sklearn.datasets.fetch_openml('iris', return_X_y=True, as_frame=True)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, test_size=0.5, random_state=3
+        X, y, test_size=0.8, random_state=3
     )
 
     ############################################################################
@@ -64,12 +64,16 @@ if __name__ == '__main__':
     # Fit the configuration
     # ==================================
 
-    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(X_train=X_train, y_train=y_train,
-                                                                    dataset_name='kr-vs-kp',
-                                                                    X_test=X_test, y_test=y_test,
-                                                                    disable_file_output=False,
-                                                                    configuration=configuration
-                                                                    )
+    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(
+        X_train=X_train,
+        y_train=y_train,
+        dataset_name='kr-vs-kp',
+        run_time_limit_secs=100,
+        X_test=X_test,
+        y_test=y_test,
+        disable_file_output=False,
+        configuration=configuration,
+    )
 
     # This object complies with Scikit-Learn Pipeline API.
     # https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
