@@ -501,7 +501,8 @@ def test_pipeline_fit(openml_id,
                                                                     run_time_limit_secs=50,
                                                                     budget_type='epochs',
                                                                     budget=30,
-                                                                    disable_file_output=disable_file_output
+                                                                    disable_file_output=disable_file_output,
+                                                                    eval_metric='balanced_accuracy'
                                                                     )
     assert isinstance(dataset, BaseDataset)
     assert isinstance(run_info, RunInfo)
@@ -511,6 +512,7 @@ def test_pipeline_fit(openml_id,
     assert 'SUCCESS' in str(run_value.status)
 
     if not disable_file_output:
+
         if resampling_strategy in CrossValTypes:
             pytest.skip("Bug, Can't predict with cross validation pipeline")
             assert isinstance(pipeline, BaseEstimator)
@@ -522,11 +524,14 @@ def test_pipeline_fit(openml_id,
             assert isinstance(score, float)
             assert score > 0.8
         else:
-            assert isinstance(pipeline, BasePipeline)
             # To make sure we fitted the model, there should be a
-            # run summary object with accuracy
+            # run summary object
             run_summary = pipeline.named_steps['trainer'].run_summary
             assert run_summary is not None
+            # test to ensure balanced_accuracy is reported during training
+            assert 'balanced_accuracy' in run_summary.performance_tracker['train_metrics'][1].keys()
+
+            assert isinstance(pipeline, BasePipeline)
             X_test = dataset.test_tensors[0]
             preds = pipeline.predict(X_test)
             assert isinstance(preds, np.ndarray)
