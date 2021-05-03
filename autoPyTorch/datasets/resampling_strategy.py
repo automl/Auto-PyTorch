@@ -39,8 +39,10 @@ class HoldOutFunc(Protocol):
         ...
 
 
-class NO_RESAMPLING_FN(Protocol):
-    def __call__(self, indices: np.ndarray) -> np.ndarray:
+class NoResamplingFunc(Protocol):
+    def __call__(self,
+                 random_state: np.random.RandomState,
+                 indices: np.ndarray) -> np.ndarray:
         ...
 
 
@@ -90,7 +92,6 @@ class HoldoutValTypes(IntEnum):
 
 class NoResamplingStrategyTypes(IntEnum):
     no_resampling = 8
-<<<<<<< HEAD
 
     def is_stratified(self) -> bool:
         return False
@@ -98,14 +99,6 @@ class NoResamplingStrategyTypes(IntEnum):
 
 # TODO: replace it with another way
 ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
-=======
-    shuffle_no_resampling = 9
-
-
-# TODO: replace it with another way
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
-
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
 
 DEFAULT_RESAMPLING_PARAMETERS: Dict[
     ResamplingStrategies,
