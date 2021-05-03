@@ -10,6 +10,8 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
+from sklearn.utils import check_random_state
+
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
@@ -34,7 +36,12 @@ class MixUp:
         """
         self.use_stochastic_weight_averaging = use_stochastic_weight_averaging
         self.weighted_loss = weighted_loss
-        self.random_state = random_state
+        if random_state is None:
+            # A trainer components need a random state for
+            # sampling -- for example in MixUp training
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = random_state
         self.use_snapshot_ensemble = use_snapshot_ensemble
         self.se_lastk = se_lastk
         self.use_lookahead_optimizer = use_lookahead_optimizer
