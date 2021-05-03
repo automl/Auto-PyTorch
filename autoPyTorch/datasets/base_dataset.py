@@ -118,7 +118,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.cross_validators: Dict[str, CrossValFunc] = {}
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
-        self.rng = np.random.RandomState(seed=seed)
+        self.random_state = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -205,7 +205,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return self.train_tensors[0].shape[0]
 
     def _get_indices(self) -> np.ndarray:
-        return self.rng.permutation(len(self)) if self.shuffle else np.arange(len(self))
+        return self.random_state.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
         """
@@ -271,7 +271,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             # we need additional information about the data for stratification
             kwargs["stratify"] = self.train_tensors[-1]
         splits = self.cross_validators[cross_val_type.name](
-            num_splits, self._get_indices(), **kwargs)
+            self.random_state, num_splits, self._get_indices(), **kwargs)
         return splits
 
     def create_holdout_val_split(
@@ -305,7 +305,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if holdout_val_type.is_stratified():
             # we need additional information about the data for stratification
             kwargs["stratify"] = self.train_tensors[-1]
-        train, val = self.holdout_validators[holdout_val_type.name](val_share, self._get_indices(), **kwargs)
+        train, val = self.holdout_validators[holdout_val_type.name](
+            self.random_state, val_share, self._get_indices(), **kwargs)
         return train, val
 
     def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
