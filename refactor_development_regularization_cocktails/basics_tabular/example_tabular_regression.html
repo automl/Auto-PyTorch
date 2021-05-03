@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fa5600854c0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f953c49a2b0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -159,7 +159,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002060413360595703, budget=0), TrajEntry(train_perf=0.6386977126789847, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021445751190185547, budget=0), TrajEntry(train_perf=0.5912971934174314, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -196,13 +196,15 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=8.035740375518799, wallclock_time=11.617646217346191, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.9075251804728743}
+, ta_runs=1, ta_time_used=8.131203889846802, wallclock_time=11.532346248626709, budget=5.555555555555555)]
+{&#39;r2&#39;: 0.9104692717311303}
 |    | Preprocessing                              | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
 |  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.58 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.3  |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.32 |
+|  2 | SimpleImputer,OneHotEncoder,Normalizer     | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  3 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  4 | SimpleImputer,NoEncoder,Normalizer         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -287,7 +289,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  24.319 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  24.153 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>

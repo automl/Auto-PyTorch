@@ -122,7 +122,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fa561532460&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f953eafb100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -161,7 +161,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001920938491821289, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0023713111877441406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -200,15 +200,14 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=12.682083368301392, wallclock_time=14.069185256958008, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                                     | Estimator                                                       |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                              |     0.5  |
-|  1 | None                                                              | ExtraTreesClassifier                                            |     0.32 |
-|  2 | None                                                              | KNNClassifier                                                   |     0.08 |
-|  3 | None                                                              | RFClassifier                                                    |     0.06 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+, ta_runs=1, ta_time_used=12.858989953994751, wallclock_time=14.260061264038086, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8786127167630058}
+|    | Preprocessing   | Estimator            |   Weight |
+|---:|:----------------|:---------------------|---------:|
+|  0 | None            | CatBoostClassifier   |     0.4  |
+|  1 | None            | ExtraTreesClassifier |     0.32 |
+|  2 | None            | RFClassifier         |     0.14 |
+|  3 | None            | KNNClassifier        |     0.14 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -279,7 +278,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  0.060 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  8.604 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
