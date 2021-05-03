@@ -36,7 +36,7 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
-from test.test_api.api_utils import print_debug_information
+from test.test_api.api_utils import print_debug_information  # noqa E402
 
 
 CV_NUM_SPLITS = 2
