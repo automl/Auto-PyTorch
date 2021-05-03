@@ -109,7 +109,10 @@ class NoResamplingStrategyTypes(IntEnum):
 
 # TODO: replace it with another way
 ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
+<<<<<<< HEAD
 
+=======
+>>>>>>> Additional metrics during train (#194)
 
 DEFAULT_RESAMPLING_PARAMETERS: Dict[
     ResamplingStrategies,
