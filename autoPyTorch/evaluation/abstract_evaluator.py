@@ -378,6 +378,16 @@ class AbstractEvaluator(object):
             'backend': self.backend,
             'logger_port': logger_port,
         })
+
+        # Update fit dictionary with metrics passed to the evaluator
+        metrics_dict: Dict[str, List[str]] = {'additional_metrics': []}
+        metrics_dict['additional_metrics'].append(self.metric.name)
+        if all_supported_metrics:
+            assert self.additional_metrics is not None
+            for metric in self.additional_metrics:
+                metrics_dict['additional_metrics'].append(metric.name)
+        self.fit_dictionary.update(metrics_dict)
+
         assert self.pipeline_class is not None, "Could not infer pipeline class"
         pipeline_config = pipeline_config if pipeline_config is not None \
             else self.pipeline_class.get_default_pipeline_options()
