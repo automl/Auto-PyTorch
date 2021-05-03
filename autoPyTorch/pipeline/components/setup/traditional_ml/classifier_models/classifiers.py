@@ -1,3 +1,4 @@
+import logging.handlers
 import tempfile
 from typing import Any, Dict, List, Optional, Union
 
@@ -49,8 +50,11 @@ def encode_categoricals(X_train: np.ndarray,
 
 class LGBModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(LGBModel, self).__init__(name="lgb")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(LGBModel, self).__init__(name="lgb",
+                                       logger_port=logger_port,
+                                       random_state=random_state)
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
@@ -73,7 +77,7 @@ class LGBModel(BaseClassifier):
         X_train = np.nan_to_num(X_train)
         X_val = np.nan_to_num(X_val)
 
-        self.model = LGBMClassifier(**self.config)
+        self.model = LGBMClassifier(**self.config, random_state=self.random_state)
         self.model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
 
         pred_train = self.model.predict_proba(X_train)
@@ -116,8 +120,11 @@ class LGBModel(BaseClassifier):
 
 class CatboostModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(CatboostModel, self).__init__(name="catboost")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(CatboostModel, self).__init__(name="catboost",
+                                            logger_port=logger_port,
+                                            random_state=random_state)
         self.config["train_dir"] = tempfile.gettempdir()
 
     def fit(self, X_train: np.ndarray,
@@ -142,7 +149,8 @@ class CatboostModel(BaseClassifier):
         X_train_pooled = Pool(data=X_train, label=y_train, cat_features=categoricals)
         X_val_pooled = Pool(data=X_val, label=y_val, cat_features=categoricals)
 
-        self.model = CatBoostClassifier(**self.config)
+        # CatBoost Cannot handle a random state object, just the seed
+        self.model = CatBoostClassifier(**self.config, random_state=self.random_state.get_state()[1][0])
         self.model.fit(X_train_pooled, eval_set=X_val_pooled, use_best_model=True, early_stopping_rounds=early_stopping)
 
         pred_train = self.model.predict_proba(X_train)
@@ -184,8 +192,11 @@ class CatboostModel(BaseClassifier):
 
 class RFModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(RFModel, self).__init__(name="random_forest")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(RFModel, self).__init__(name="random_forest",
+                                      logger_port=logger_port,
+                                      random_state=random_state)
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
@@ -209,7 +220,7 @@ class RFModel(BaseClassifier):
             self.config["n_estimators"] = 8
             self.config["warm_start"] = True
 
-        self.model = RandomForestClassifier(**self.config)
+        self.model = RandomForestClassifier(**self.config, random_state=self.random_state)
 
         self.model.fit(X_train, y_train)
         if self.config["warm_start"]:
@@ -250,8 +261,11 @@ class RFModel(BaseClassifier):
 
 class ExtraTreesModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(ExtraTreesModel, self).__init__(name="extra_trees")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(ExtraTreesModel, self).__init__(name="extra_trees",
+                                              logger_port=logger_port,
+                                              random_state=random_state)
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
@@ -275,7 +289,7 @@ class ExtraTreesModel(BaseClassifier):
             self.config["n_estimators"] = 8
             self.config["warm_start"] = True
 
-        self.model = ExtraTreesClassifier(**self.config)
+        self.model = ExtraTreesClassifier(**self.config, random_state=self.random_state)
 
         self.model.fit(X_train, y_train)
         if self.config["warm_start"]:
@@ -316,8 +330,11 @@ class ExtraTreesModel(BaseClassifier):
 
 class KNNModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(KNNModel, self).__init__(name="knn")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(KNNModel, self).__init__(name="knn",
+                                       logger_port=logger_port,
+                                       random_state=random_state)
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
@@ -338,6 +355,7 @@ class KNNModel(BaseClassifier):
 
         self.num_classes = len(np.unique(y_train))
 
+        # KNN is deterministic, no random seed needed
         self.model = KNeighborsClassifier(**self.config)
         self.model.fit(X_train, y_train)
 
@@ -376,8 +394,11 @@ class KNNModel(BaseClassifier):
 
 class SVMModel(BaseClassifier):
 
-    def __init__(self) -> None:
-        super(SVMModel, self).__init__(name="svm")
+    def __init__(self, logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 random_state: Optional[np.random.RandomState] = None):
+        super(SVMModel, self).__init__(name="svm",
+                                       logger_port=logger_port,
+                                       random_state=random_state)
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
@@ -392,7 +413,7 @@ class SVMModel(BaseClassifier):
         X_train = np.nan_to_num(X_train)
         X_val = np.nan_to_num(X_val)
 
-        self.model = SVC(**self.config, probability=True)
+        self.model = SVC(**self.config, probability=True, random_state=self.random_state)
 
         self.model.fit(X_train, y_train)
 

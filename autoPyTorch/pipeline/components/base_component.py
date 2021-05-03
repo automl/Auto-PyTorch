@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Optional
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
+import numpy as np
+
 from sklearn.base import BaseEstimator
+from sklearn.utils import check_random_state
 
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
@@ -93,8 +96,12 @@ class ThirdPartyComponents(object):
 class autoPyTorchComponent(BaseEstimator):
     _required_properties: Optional[List[str]] = None
 
-    def __init__(self) -> None:
+    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__()
+        if random_state is None:
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = check_random_state(random_state)
         self._fit_requirements: List[FitRequirement] = list()
         self._cs_updates: Dict[str, HyperparameterSearchSpaceUpdate] = dict()
 

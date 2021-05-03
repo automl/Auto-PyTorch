@@ -1,4 +1,3 @@
-import random
 import typing
 import warnings
 
@@ -120,7 +119,8 @@ def shake_drop_get_bl(
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if not is_training:
-        bl = torch.tensor(1.0) if random.random() <= pl else torch.tensor(0.0)
+        # Move to torch.randn(1) for reproducibility
+        bl = torch.tensor(1.0) if torch.randn(1) <= pl else torch.tensor(0.0)
     if is_training:
         bl = torch.tensor(pl)
 

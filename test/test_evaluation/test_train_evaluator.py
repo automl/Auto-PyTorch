@@ -112,7 +112,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 0.4782608695652174)
+        self.assertEqual(result, 0.5652173913043479)
         self.assertEqual(pipeline_mock.fit.call_count, 1)
         # 3 calls because of train, holdout and test set
         self.assertEqual(pipeline_mock.predict_proba.call_count, 3)
@@ -150,15 +150,17 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 0.463768115942029)
-        self.assertEqual(pipeline_mock.fit.call_count, 3)
+        self.assertEqual(result, 0.46235467431119603)
+        self.assertEqual(pipeline_mock.fit.call_count, 5)
         # 9 calls because of the training, holdout and
-        # test set (3 sets x 3 folds = 9)
-        self.assertEqual(pipeline_mock.predict_proba.call_count, 9)
-        # as the optimisation preds in cv is concatenation of the three folds,
-        # so it is 3*splits
+        # test set (3 sets x 5 folds = 15)
+        self.assertEqual(pipeline_mock.predict_proba.call_count, 15)
+        # as the optimisation preds in cv is concatenation of the 5 folds,
+        # so it is 5*splits
         self.assertEqual(evaluator.file_output.call_args[0][0].shape[0],
-                         3 * len(D.splits[0][1]))
+                         # Notice this - 1: It is because the dataset D
+                         # has shape ((69, )) which is not divisible by 5
+                         5 * len(D.splits[0][1]) - 1, evaluator.file_output.call_args)
         self.assertIsNone(evaluator.file_output.call_args[0][1])
         self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
                          D.test_tensors[1].shape[0])

@@ -45,7 +45,7 @@ class MixUpTrainer(BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        lam = np.random.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
+        lam = self.random_state.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
         batch_size = X.size()[0]
         index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 

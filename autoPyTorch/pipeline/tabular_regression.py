@@ -19,6 +19,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import (
     EncoderChoice
 )
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    base_feature_preprocessor_choice import FeatureProprocessorChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
@@ -187,20 +189,28 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("imputer", SimpleImputer()),
-            ("encoder", EncoderChoice(default_dataset_properties)),
-            ("scaler", ScalerChoice(default_dataset_properties)),
-            ("tabular_transformer", TabularColumnTransformer()),
-            ("preprocessing", EarlyPreprocessing()),
-            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties)),
-            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
-            ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent()),
-            ("network_init", NetworkInitializerChoice(default_dataset_properties)),
-            ("optimizer", OptimizerChoice(default_dataset_properties)),
-            ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
-            ("data_loader", FeatureDataLoader()),
-            ("trainer", TrainerChoice(default_dataset_properties)),
+            ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
+            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
+            ("tabular_transformer", TabularColumnTransformer(random_state=self.random_state)),
+            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
+                                                       random_state=self.random_state)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties,
+                                               random_state=self.random_state)),
+            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network_init", NetworkInitializerChoice(default_dataset_properties,
+                                                      random_state=self.random_state)),
+            ("optimizer", OptimizerChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
+            ("lr_scheduler", SchedulerChoice(default_dataset_properties,
+                                             random_state=self.random_state)),
+            ("data_loader", FeatureDataLoader(random_state=self.random_state)),
+            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 

@@ -18,6 +18,7 @@ from typing_extensions import Protocol
 # Use callback protocol as workaround, since callable with function fields count 'self' as argument
 class CrossValFunc(Protocol):
     def __call__(self,
+                 random_state: np.random.RandomState,
                  num_splits: int,
                  indices: np.ndarray,
                  stratify: Optional[Any]) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -25,7 +26,8 @@ class CrossValFunc(Protocol):
 
 
 class HoldOutFunc(Protocol):
-    def __call__(self, val_share: float, indices: np.ndarray, stratify: Optional[Any]
+    def __call__(self, random_state: np.random.RandomState, val_share: float,
+                 indices: np.ndarray, stratify: Optional[Any]
                  ) -> Tuple[np.ndarray, np.ndarray]:
         ...
 
@@ -85,35 +87,42 @@ DEFAULT_RESAMPLING_PARAMETERS = {
         'val_share': 0.33,
     },
     CrossValTypes.k_fold_cross_validation: {
-        'num_splits': 3,
+        'num_splits': 5,
     },
     CrossValTypes.stratified_k_fold_cross_validation: {
-        'num_splits': 3,
+        'num_splits': 5,
     },
     CrossValTypes.shuffle_split_cross_validation: {
-        'num_splits': 3,
+        'num_splits': 5,
     },
     CrossValTypes.time_series_cross_validation: {
-        'num_splits': 3,
+        'num_splits': 5,
     },
 }  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
 
 
 class HoldOutFuncs():
     @staticmethod
-    def holdout_validation(val_share: float,
+    def holdout_validation(random_state: np.random.RandomState,
+                           val_share: float,
                            indices: np.ndarray,
                            **kwargs: Any
                            ) -> Tuple[np.ndarray, np.ndarray]:
-        train, val = train_test_split(indices, test_size=val_share, shuffle=False)
+        shuffle = kwargs.get('shuffle', True)
+        train, val = train_test_split(indices, test_size=val_share,
+                                      shuffle=shuffle,
+                                      random_state=random_state if shuffle else None,
+                                      )
         return train, val
 
     @staticmethod
-    def stratified_holdout_validation(val_share: float,
+    def stratified_holdout_validation(random_state: np.random.RandomState,
+                                      val_share: float,
                                       indices: np.ndarray,
                                       **kwargs: Any
                                       ) -> Tuple[np.ndarray, np.ndarray]:
-        train, val = train_test_split(indices, test_size=val_share, shuffle=True, stratify=kwargs["stratify"])
+        train, val = train_test_split(indices, test_size=val_share, shuffle=True, stratify=kwargs["stratify"],
+                                      random_state=random_state)
         return train, val
 
     @classmethod
@@ -128,34 +137,38 @@ class HoldOutFuncs():
 
 class CrossValFuncs():
     @staticmethod
-    def shuffle_split_cross_validation(num_splits: int,
+    def shuffle_split_cross_validation(random_state: np.random.RandomState,
+                                       num_splits: int,
                                        indices: np.ndarray,
                                        **kwargs: Any
                                        ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        cv = ShuffleSplit(n_splits=num_splits)
+        cv = ShuffleSplit(n_splits=num_splits, random_state=random_state)
         splits = list(cv.split(indices))
         return splits
 
     @staticmethod
-    def stratified_shuffle_split_cross_validation(num_splits: int,
+    def stratified_shuffle_split_cross_validation(random_state: np.random.RandomState,
+                                                  num_splits: int,
                                                   indices: np.ndarray,
                                                   **kwargs: Any
                                                   ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        cv = StratifiedShuffleSplit(n_splits=num_splits)
+        cv = StratifiedShuffleSplit(n_splits=num_splits, random_state=random_state)
         splits = list(cv.split(indices, kwargs["stratify"]))
         return splits
 
     @staticmethod
-    def stratified_k_fold_cross_validation(num_splits: int,
+    def stratified_k_fold_cross_validation(random_state: np.random.RandomState,
+                                           num_splits: int,
                                            indices: np.ndarray,
                                            **kwargs: Any
                                            ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        cv = StratifiedKFold(n_splits=num_splits)
+        cv = StratifiedKFold(n_splits=num_splits, random_state=random_state)
         splits = list(cv.split(indices, kwargs["stratify"]))
         return splits
 
     @staticmethod
-    def k_fold_cross_validation(num_splits: int,
+    def k_fold_cross_validation(random_state: np.random.RandomState,
+                                num_splits: int,
                                 indices: np.ndarray,
                                 **kwargs: Any
                                 ) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -169,12 +182,14 @@ class CrossValFuncs():
         Returns:
             splits (List[Tuple[List, List]]): list of tuples of training and validation indices
         """
-        cv = KFold(n_splits=num_splits)
+        shuffle = kwargs.get('shuffle', True)
+        cv = KFold(n_splits=num_splits, random_state=random_state if shuffle else None, shuffle=shuffle)
         splits = list(cv.split(indices))
         return splits
 
     @staticmethod
-    def time_series_cross_validation(num_splits: int,
+    def time_series_cross_validation(random_state: np.random.RandomState,
+                                     num_splits: int,
                                      indices: np.ndarray,
                                      **kwargs: Any
                                      ) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -196,7 +211,7 @@ class CrossValFuncs():
                  ([0, 1, 2], [3])]
 
         """
-        cv = TimeSeriesSplit(n_splits=num_splits)
+        cv = TimeSeriesSplit(n_splits=num_splits, random_state=random_state)
         splits = list(cv.split(indices))
         return splits
 

@@ -10,6 +10,8 @@ import numpy as np
 import sklearn.preprocessing
 from sklearn.base import ClassifierMixin
 
+import torch
+
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
@@ -78,6 +80,11 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
+
+        # Because a pipeline is passed to a worker, we need to honor the random seed
+        # in this context. A tabular classification pipeline will implement a torch
+        # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
+        torch.manual_seed(self.random_state.get_state()[1][0])
 
     def _predict_proba(self, X: np.ndarray) -> np.ndarray:
         # Pre-process X
@@ -238,21 +245,28 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("imputer", SimpleImputer()),
-            ("encoder", EncoderChoice(default_dataset_properties)),
-            ("scaler", ScalerChoice(default_dataset_properties)),
-            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties)),
-            ("tabular_transformer", TabularColumnTransformer()),
-            ("preprocessing", EarlyPreprocessing()),
-            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties)),
-            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
-            ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent()),
-            ("network_init", NetworkInitializerChoice(default_dataset_properties)),
-            ("optimizer", OptimizerChoice(default_dataset_properties)),
-            ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
-            ("data_loader", FeatureDataLoader()),
-            ("trainer", TrainerChoice(default_dataset_properties)),
+            ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
+            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
+            ("tabular_transformer", TabularColumnTransformer(random_state=self.random_state)),
+            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
+                                                       random_state=self.random_state)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties,
+                                               random_state=self.random_state)),
+            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network_init", NetworkInitializerChoice(default_dataset_properties,
+                                                      random_state=self.random_state)),
+            ("optimizer", OptimizerChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
+            ("lr_scheduler", SchedulerChoice(default_dataset_properties,
+                                             random_state=self.random_state)),
+            ("data_loader", FeatureDataLoader(random_state=self.random_state)),
+            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 

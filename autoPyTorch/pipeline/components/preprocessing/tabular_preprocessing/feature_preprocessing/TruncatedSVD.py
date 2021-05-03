@@ -26,7 +26,8 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        self.preprocessor['numerical'] = sklearn.decomposition.TruncatedSVD(self.target_dim, algorithm="randomized")
+        self.preprocessor['numerical'] = sklearn.decomposition.TruncatedSVD(self.target_dim, algorithm="randomized",
+                                                                            random_state=self.random_state)
 
         return self
 

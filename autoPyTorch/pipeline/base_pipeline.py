@@ -70,6 +70,10 @@ class BasePipeline(Pipeline):
         self.include = include if include is not None else {}
         self.exclude = exclude if exclude is not None else {}
         self.search_space_updates = search_space_updates
+        if random_state is None:
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = check_random_state(random_state)
 
         if steps is None:
             self.steps = self._get_pipeline_steps(dataset_properties)
@@ -98,10 +102,6 @@ class BasePipeline(Pipeline):
 
         self.set_hyperparameters(self.config, init_params=init_params)
 
-        if random_state is None:
-            self.random_state = check_random_state(1)
-        else:
-            self.random_state = check_random_state(random_state)
         super().__init__(steps=self.steps)
 
         self._additional_run_info = {}  # type: Dict[str, str]

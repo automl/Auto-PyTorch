@@ -74,6 +74,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
         # instantiate model
         self.model = self.build_model(input_shape=input_shape,
+                                      logger_port=X['logger_port'],
                                       output_shape=output_shape)
 
         # train model
@@ -91,7 +92,8 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         return self
 
     @abstractmethod
-    def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> BaseClassifier:
+    def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...],
+                    logger_port: int) -> BaseClassifier:
         """
         This method returns a pytorch model, that is dynamically built using
         a self.config that is model specific, and contains the additional

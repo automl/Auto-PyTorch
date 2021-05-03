@@ -185,7 +185,8 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("model_trainer", ModelChoice(default_dataset_properties)),
+            ("model_trainer", ModelChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
         ])
         return steps
 
