@@ -145,7 +145,7 @@ if __name__ == '__main__':
         x='Timestamp',
         kind='line',
         legend=True,
-        title='Auto-sklearn accuracy over time',
+        title='Auto-PyTorch accuracy over time',
         grid=True,
     )
     plt.show()
