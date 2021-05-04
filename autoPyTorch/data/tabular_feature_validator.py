@@ -174,8 +174,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if self.encoder is not None:
             X = self.encoder.transform(X)
 
-
-
         # Sparse related transformations
         # Not all sparse format support index sorting
         if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
