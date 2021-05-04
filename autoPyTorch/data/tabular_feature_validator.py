@@ -161,16 +161,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X.insert(column_index, column, np.NaN, allow_duplicates=True)
                 X[column] = pd.to_numeric(X[column])
 
+            # Also remove the object dtype for new data
+            if not X.select_dtypes(include='object').empty:
+                X = self.infer_objects(X)
+
             # We also need to fillna on the transformation
             # in case test data is provided
             X = self.impute_nan_in_categories(X)
 
             if self.encoder is not None:
                 X = self.encoder.transform(X)
-
-            # Also remove the object dtype for new data
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
