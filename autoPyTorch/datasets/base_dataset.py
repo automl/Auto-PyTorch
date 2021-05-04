@@ -22,9 +22,9 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldOutFunc,
     HoldOutFuncs,
     HoldoutValTypes,
-    get_no_resampling_validators,
-    NoResamplingStrategyTypes,
-    NO_RESAMPLING_FN
+    NoResamplingFunc,
+    NoResamplingFuncs,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.utils.common import FitRequirement
 
@@ -113,24 +113,19 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = dataset_name
 
-        if self.dataset_name is None:
+        if dataset_name is None:
             self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+        else:
+            self.dataset_name = dataset_name
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
-<<<<<<< HEAD
         self.cross_validators: Dict[str, CrossValFunc] = {}
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
-=======
-        self.cross_validators: Dict[str, CROSS_VAL_FN] = {}
-        self.holdout_validators: Dict[str, HOLDOUT_FN] = {}
-        self.no_resampling_validators: Dict[str, NO_RESAMPLING_FN] = {}
-        self.rng = np.random.RandomState(seed=seed)
->>>>>>> Fix mypy and flake
+        self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -153,7 +148,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
-        self.no_resampling_validators = get_no_resampling_validators(*NoResamplingStrategyTypes)
+        self.no_resampling_validators = NoResamplingFuncs.get_no_resampling_validators(*NoResamplingStrategyTypes)
 
         self.splits = self.get_splits_from_resampling_strategy()
 
@@ -254,7 +249,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 )
             )
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            splits.append((self.no_resampling_validators[self.resampling_strategy.name](self._get_indices()), None))
+            splits.append((self.no_resampling_validators[self.resampling_strategy.name](self.random_state,
+                                                                                        self._get_indices()), None))
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
         return splits

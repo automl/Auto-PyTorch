@@ -1,8 +1,8 @@
 import os
 import pickle
 import sys
-import time
 import tempfile
+import time
 import unittest
 
 from ConfigSpace.configuration_space import Configuration
@@ -34,7 +34,7 @@ from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
-from test.test_api.api_utils import print_debug_information
+from test.test_api.api_utils import print_debug_information  # noqa E402
 
 
 # Fixtures
