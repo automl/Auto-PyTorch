@@ -63,6 +63,8 @@ class BaseFeatureValidator(BaseEstimator):
         self.categories = []  # type: typing.List[typing.List[int]]
         self.categorical_columns: typing.List[int] = []
         self.numerical_columns: typing.List[int] = []
+        # column identifiers may be integers or strings
+        self.null_columns: typing.Set[str] = set()
 
         self._is_fitted = False
 

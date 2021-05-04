@@ -49,9 +49,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # with nan values.
             # Columns that are completely made of NaN values are provided to the pipeline
             # so that later stages decide how to handle them
+
+            # Clear whatever null column markers we had previously
+            self.null_columns.clear()
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
+                        self.null_columns.add(column)
                         X[column] = pd.to_numeric(X[column])
                         # Also note this change in self.dtypes
                         if len(self.dtypes) != 0:
@@ -146,10 +150,23 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = typing.cast(pd.DataFrame, X)
-            if np.any(pd.isnull(X)):
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
+            # If we had null columns in our fit call and we made them numeric, then:
+            # - If the columns are null even in transform, apply the same procedure.
+            # - Otherwise, substitute the values with np.NaN and then make the columns numeric.
+            # If the column is null here, but it was not in fit, it does not matter.
+            for column in self.null_columns:
+                # The column is not null, make it null since it was null in fit.
+                if not X[column].isna().all():
+                    column_index = list(X.columns).index(column)
+                    X.insert(column_index, column, np.NaN, allow_duplicates=True)
+                X[column] = pd.to_numeric(X[column])
+
+            # We also need to fillna on the transformation
+            # in case test data is provided
+            X = self.impute_nan_in_categories(X)
+
+            if self.encoder is not None:
+                X = self.encoder.transform(X)
 
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
@@ -157,22 +174,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
-
-        # Pandas related transformations
-        if hasattr(X, "iloc") and self.encoder is not None:
-            if np.any(pd.isnull(X)):
-                # After above check it means that if there is a NaN
-                # the whole column must be NaN
-                # Make sure it is numerical and let the pipeline handle it
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
-
-            # We also need to fillna on the transformation
-            # in case test data is provided
-            X = self.impute_nan_in_categories(X)
-
-            X = self.encoder.transform(X)
 
         # Sparse related transformations
         # Not all sparse format support index sorting
