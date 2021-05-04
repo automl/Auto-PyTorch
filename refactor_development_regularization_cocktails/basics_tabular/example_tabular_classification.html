@@ -66,6 +66,7 @@
                 <li><a href="../manual.html">Manual</a></li>
                 <li><a href="../examples/index.html">Examples</a></li>
                 <li><a href="../api.html">API</a></li>
+                <li><a href="../dev.html">Dev</a></li>
                 <li><a href="../extending.html">Extending</a></li>
             
             
@@ -122,7 +123,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f953eafb100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fd5b1740100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -161,7 +162,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0023713111877441406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002086639404296875, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -200,14 +201,19 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=12.858989953994751, wallclock_time=14.260061264038086, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing   | Estimator            |   Weight |
-|---:|:----------------|:---------------------|---------:|
-|  0 | None            | CatBoostClassifier   |     0.4  |
-|  1 | None            | ExtraTreesClassifier |     0.32 |
-|  2 | None            | RFClassifier         |     0.14 |
-|  3 | None            | KNNClassifier        |     0.14 |
+, ta_runs=1, ta_time_used=12.011722564697266, wallclock_time=13.502363204956055, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.884393063583815}
+|    | Preprocessing                                                     | Estimator                                                          |   Weight |
+|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.28 |
+|  1 | None                                                              | RFClassifier                                                       |     0.2  |
+|  2 | None                                                              | ExtraTreesClassifier                                               |     0.2  |
+|  3 | None                                                              | CatBoostClassifier                                                 |     0.12 |
+|  4 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.06 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  6 | None                                                              | SVC                                                                |     0.04 |
+|  7 | None                                                              | KNNClassifier                                                      |     0.02 |
+|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -240,7 +246,7 @@ with AutoPyTorch</p>
     <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
         <span class="n">X</span><span class="p">,</span>
         <span class="n">y</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
@@ -251,7 +257,8 @@ with AutoPyTorch</p>
         <span class="n">output_directory</span><span class="o">=</span><span class="s1">&#39;./tmp/autoPyTorch_example_out_01&#39;</span><span class="p">,</span>
         <span class="c1"># To maintain logs of the run, set the next two as False</span>
         <span class="n">delete_tmp_folder_after_terminate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">delete_output_folder_after_terminate</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">delete_output_folder_after_terminate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1">############################################################################</span>
@@ -278,7 +285,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  8.604 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  4.323 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
