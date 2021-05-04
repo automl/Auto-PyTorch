@@ -165,15 +165,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
-            # We also need to fillna on the transformation
-            # in case test data is provided
-            X = self.impute_nan_in_categories(X)
-
-            if self.encoder is not None:
-                X = self.encoder.transform(X)
-
         # Check the data here so we catch problems on new test data
         self._check_data(X)
+        # We also need to fillna on the transformation
+        # in case test data is provided
+        X = self.impute_nan_in_categories(X)
+
+        if self.encoder is not None:
+            X = self.encoder.transform(X)
+
+
 
         # Sparse related transformations
         # Not all sparse format support index sorting
