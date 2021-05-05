@@ -4,6 +4,7 @@ import logging.handlers
 import typing
 
 import ConfigSpace
+from ConfigSpace.configuration_space import Configuration
 
 import dask.distributed
 
@@ -40,6 +41,7 @@ def get_smac_object(
     initial_budget: int,
     max_budget: int,
     dask_client: typing.Optional[dask.distributed.Client],
+    initial_configurations: typing.Optional[typing.List[Configuration]] = None,
 ) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
@@ -53,6 +55,8 @@ def get_smac_object(
         ta_kwargs (typing.Dict[str, typing.Any]): Arguments to the above ta
         n_jobs (int): Amount of cores to use for this task
         dask_client (dask.distributed.Client): User provided scheduler
+        initial_configurations (typing.List[Configuration]): List of initial
+            configurations which smac will run before starting the search process
 
     Returns:
         (SMAC4AC): sequential model algorithm configuration object
@@ -67,7 +71,7 @@ def get_smac_object(
         runhistory2epm=rh2EPM,
         tae_runner=ta,
         tae_runner_kwargs=ta_kwargs,
-        initial_configurations=None,
+        initial_configurations=initial_configurations,
         run_id=seed,
         intensifier=intensifier,
         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
@@ -205,6 +209,21 @@ class AutoMLSMBO(object):
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
+        # read and validate initial configurations
+        with open('greedy_portfolio.json', 'r') as fp:
+            initial_configurations = json.load(fp)
+
+        self.initial_configurations: typing.List[Configuration] = list()
+        for configuration_dict in initial_configurations:
+            try:
+                configuration = Configuration(self.config_space, configuration_dict)
+                self.initial_configurations.append(configuration)
+            except Exception as e:
+                self.logger.warning(f"Failed to convert {configuration_dict} into"
+                                    f" a Configuration with error {e.msg[0]}. "
+                                    f"Therefore, it can't be used as an initial "
+                                    f"configuration as it does not match the current config space. ")
+
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
             del self.datamanager
@@ -314,7 +333,8 @@ class AutoMLSMBO(object):
                                                  n_jobs=self.n_jobs,
                                                  initial_budget=initial_budget,
                                                  max_budget=max_budget,
-                                                 dask_client=self.dask_client)
+                                                 dask_client=self.dask_client,
+                                                 initial_configurations=self.initial_configurations)
         else:
             smac = get_smac_object(scenario_dict=scenario_dict,
                                    seed=seed,
@@ -323,7 +343,8 @@ class AutoMLSMBO(object):
                                    n_jobs=self.n_jobs,
                                    initial_budget=initial_budget,
                                    max_budget=max_budget,
-                                   dask_client=self.dask_client)
+                                   dask_client=self.dask_client,
+                                   initial_configurations=self.initial_configurations)
 
         if self.ensemble_callback is not None:
             smac.register_callback(self.ensemble_callback)
