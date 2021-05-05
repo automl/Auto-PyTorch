@@ -1,11 +1,15 @@
 # Auto-PyTorch
 
-Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
+Copyright (C) 2021  [AutoML Groups Freiburg and Hannover](http://www.automl.org/)
 
-This a very early pre-alpha version of our upcoming Auto-PyTorch.
-So far, Auto-PyTorch supports featurized data (classification, regression) and image data (classification).
+While early AutoML frameworks focused on optimizing traditional ML pipelines and their hyperparameters, another trend in AutoML is to focus on neural architecture search. To bring the best of these two worlds together, we developed **Auto-PyTorch**, which jointly and robustly optimizes the network architecture and the training hyperparameters to enable fully automated deep learning (AutoDL).
 
-The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799).
+Auto-PyTorch is mainly developed to support tabular data (classification, regression), but can also be applied to image data (classification).
+The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below of bibtex ref).
+
+## Alpha Status of Next Release
+
+The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to try to give it a try, check out the `refactor` branch.
 
 ## Installation
 
@@ -173,9 +177,6 @@ along with this program (see LICENSE file).
 }
 ```
 
-**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
-
-
 ## Contact
 
-Auto-PyTorch is developed by the [AutoML Group of the University of Freiburg](http://www.automl.org/).
+Auto-PyTorch is developed by the [AutoML Groups of the University of Freiburg and Hannover](http://www.automl.org/).
