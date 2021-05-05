@@ -157,9 +157,18 @@ class TabularFeatureValidator(BaseFeatureValidator):
             for column in self.null_columns:
                 # The column is not null, make it null since it was null in fit.
                 if not X[column].isna().all():
-                    column_index = list(X.columns).index(column)
-                    X.insert(column_index, column, np.NaN, allow_duplicates=True)
+                    X[column] = np.NaN
                 X[column] = pd.to_numeric(X[column])
+
+            # for the test set, if we have columns with only null values
+            # they will probably have a numeric type. If these columns were not
+            # with only null values in the train set, they should be converted
+            # to the category type.
+            for column in X.columns:
+                if X[column].isna().all():
+                    X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
+
+
 
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
@@ -414,7 +423,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     # In the case train data was interpreted as int
                     # and test data was interpreted as float, because of 0.0
                     # for example, honor training data
-                    X[key] = X[key].applymap(np.int64)
+                    X[key] = X[key].astype(np.int64)
                 else:
                     try:
                         X[key] = X[key].astype(dtype.name)
