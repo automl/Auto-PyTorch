@@ -54,7 +54,7 @@ class SingleThreadedClient(dask.distributed.Client):
         func: typing.Callable,
         *args: typing.List,
         priority: int = 0,
-        **kwargs: typing.Dict,
+        **kwargs: typing.Any,
     ) -> typing.Any:
         return DummyFuture(func(*args, **kwargs))
 
