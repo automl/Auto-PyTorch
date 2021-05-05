@@ -72,7 +72,11 @@ if __name__ == '__main__':
     ############################################################################
     # Build and fit a classifier with include components
     # ==================================================
+    # AutoPyTorch can search for multiple configurations at the same time
+    # if multiple cores are allocated, using the n_jobs argument. By default,
+    # Only 1 core is used while searching for configurations.
     api = TabularClassificationTask(
+        n_jobs=2,
         search_space_updates=get_search_space_updates(),
         include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
                             'encoder': ['OneHotEncoder']}
