@@ -5,11 +5,11 @@ Copyright (C) 2021  [AutoML Groups Freiburg and Hannover](http://www.automl.org/
 While early AutoML frameworks focused on optimizing traditional ML pipelines and their hyperparameters, another trend in AutoML is to focus on neural architecture search. To bring the best of these two worlds together, we developed **Auto-PyTorch**, which jointly and robustly optimizes the network architecture and the training hyperparameters to enable fully automated deep learning (AutoDL).
 
 Auto-PyTorch is mainly developed to support tabular data (classification, regression), but can also be applied to image data (classification).
-The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below of bibtex ref).
+The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below for bibtex ref).
 
 ## Alpha Status of Next Release
 
-The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to try to give it a try, check out the `refactor` branch.
+The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to give it a try, check out the `refactor` branch.
 
 ## Installation
 
@@ -157,7 +157,7 @@ along with this program (see LICENSE file).
   title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
   journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year = {2021},
-  note = { IEEE early access; To appear},
+  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
   pages = {1-12}
 }
 ```
@@ -172,8 +172,7 @@ along with this program (see LICENSE file).
   booktitle = {AutoML: Methods, Sytems, Challenges},
   publisher = {Springer},
   chapter   = {7},
-  pages     = {141--156},
-  note      = {To appear.},
+  pages     = {141--156}
 }
 ```
 
