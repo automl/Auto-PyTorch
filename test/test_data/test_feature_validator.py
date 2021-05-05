@@ -475,8 +475,11 @@ def test_unknown_encode_value():
 )
 @pytest.mark.parametrize('train_data_type', ('numpy', 'pandas', 'list'))
 @pytest.mark.parametrize('test_data_type', ('numpy', 'pandas', 'list'))
-def test_feature_validator_new_data_after_fit(openml_id,
-                                             train_data_type, test_data_type):
+def test_feature_validator_new_data_after_fit(
+    openml_id,
+    train_data_type,
+    test_data_type,
+):
 
     # List is currently not supported as infer_objects
     # cast list objects to type objects

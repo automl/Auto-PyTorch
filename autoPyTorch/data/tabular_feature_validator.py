@@ -168,8 +168,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if X[column].isna().all():
                     X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
 
-
-
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
