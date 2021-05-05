@@ -7,6 +7,8 @@ import unittest.mock
 
 import dask.distributed
 
+from flaky import flaky
+
 import numpy as np
 
 import pandas as pd
@@ -686,6 +688,7 @@ def test_ensemble_builder_process_realrun(dask_client, ensemble_backend):
     assert history[0]['test_mockmetric'] == 0.9
 
 
+@flaky(max_runs=3)
 @unittest.mock.patch('autoPyTorch.ensemble.ensemble_builder.EnsembleBuilder.fit_ensemble')
 def test_ensemble_builder_nbest_remembered(fit_ensemble, ensemble_backend, dask_client):
     """
