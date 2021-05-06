@@ -64,6 +64,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
+            self._check_data(X)
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             if len(self.enc_columns) > 0:
@@ -399,7 +400,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Returns:
             pd.DataFrame
         """
-        return pd.DataFrame(X).infer_objects().convert_dtypes()
+        return pd.DataFrame(X).convert_dtypes()
 
     def infer_objects(self, X: pd.DataFrame) -> pd.DataFrame:
         """
