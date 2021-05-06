@@ -22,6 +22,8 @@ import tempfile as tmp
 import time
 import warnings
 
+# The following variables are not needed for every unix distribution, but are
+# highlighted in here to prevent problems with multiprocessing with scikit-learn.
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
