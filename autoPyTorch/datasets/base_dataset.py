@@ -348,11 +348,17 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
     def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
         """
-        Gets the dataset properties required in the fit dictionary
+        Gets the dataset properties required in the fit dictionary.
+        This depends on the components that are active in the
+        pipeline and returns the properties they need about the dataset.
+        Information of the required properties of each component
+        can be found in their documentation.
         Args:
             dataset_requirements (List[FitRequirement]): List of
                 fit requirements that the dataset properties must
-                contain.
+                contain. This is created using the `get_dataset_requirements
+                function in
+                <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/utils/pipeline.py#L25>`
 
         Returns:
             dataset_properties (Dict[str, Any]):
@@ -362,19 +368,15 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         for dataset_requirement in dataset_requirements:
             dataset_properties[dataset_requirement.name] = getattr(self, dataset_requirement.name)
 
-        # Add task type, output type and issparse to dataset properties as
-        # they are not a dataset requirement in the pipeline
-        dataset_properties.update({'task_type': self.task_type,
-                                   'output_type': self.output_type,
-                                   'issparse': self.issparse,
-                                   'input_shape': self.input_shape,
-                                   'output_shape': self.output_shape
-                                   })
+        # Add the required dataset info to dataset properties as
+        # they might not be a dataset requirement in the pipeline
+        dataset_properties.update(self.get_required_dataset_info())
         return dataset_properties
 
     def get_required_dataset_info(self) -> Dict[str, Any]:
         """
-        Returns a dictionary containing required dataset properties to instantiate a pipeline,
+        Returns a dictionary containing required dataset
+        properties to instantiate a pipeline.
         """
         info = {'output_type': self.output_type,
                 'issparse': self.issparse}

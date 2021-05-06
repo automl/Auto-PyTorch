@@ -112,7 +112,24 @@ class TabularDataset(BaseDataset):
 
     def get_required_dataset_info(self) -> Dict[str, Any]:
         """
-        Returns a dictionary containing required dataset properties to instantiate a pipeline,
+        Returns a dictionary containing required dataset
+        properties to instantiate a pipeline.
+        For a Tabular Dataset this includes-
+            1. 'output_type'- Enum indicating the type of the output for this problem.
+                We currently use the `sklearn type_of_target
+                <https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html>`
+                to infer the output type from the data and we encode it to an
+                Enum for which you can find more info in  `autopytorch/constants.py
+                <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/constants.py>`
+            2. 'issparse'- A flag indicating if the input is in a sparse matrix.
+            3. 'numerical_columns'- a list which contains the column numbers
+                for the numerical columns in the input dataset
+            4. 'categorical_columns'- a list which contains the column numbers
+                for the categorical columns in the input dataset
+            5. 'task_type'- Enum indicating the type of task. For tabular datasets,
+                currently we support 'tabular_classification' and 'tabular_regression'. and we encode it to an
+                Enum for which you can find more info in  `autopytorch/constants.py
+                <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/constants.py>`
         """
         info = super().get_required_dataset_info()
         info.update({
