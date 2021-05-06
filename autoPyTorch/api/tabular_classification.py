@@ -131,6 +131,7 @@ class TabularClassificationTask(BaseTask):
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
+        run_greedy_portfolio: bool = False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -199,6 +200,8 @@ class TabularClassificationTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
+            run_greedy_portfolio (bool), (default=False): If True,
+                runs initial
 
         Returns:
             self

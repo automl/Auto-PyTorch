@@ -1,6 +1,7 @@
 import copy
 import json
 import logging.handlers
+import os
 import typing
 
 import ConfigSpace
@@ -210,8 +211,7 @@ class AutoMLSMBO(object):
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
         # read and validate initial configurations
-        with open('greedy_portfolio.json', 'r') as fp:
-            initial_configurations = json.load(fp)
+        initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__), 'greedy_portfolio.json')))
 
         self.initial_configurations: typing.List[Configuration] = list()
         for configuration_dict in initial_configurations:
@@ -220,7 +220,7 @@ class AutoMLSMBO(object):
                 self.initial_configurations.append(configuration)
             except Exception as e:
                 self.logger.warning(f"Failed to convert {configuration_dict} into"
-                                    f" a Configuration with error {e.msg[0]}. "
+                                    f" a Configuration with error {e}. "
                                     f"Therefore, it can't be used as an initial "
                                     f"configuration as it does not match the current config space. ")
 
