@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.0.3 documentation</title>
+    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.1.0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
@@ -54,7 +54,7 @@
         </button>
         <a class="navbar-brand" href="../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.0.3</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -143,7 +143,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f92f432d4f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fdfa36ef820&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -177,7 +177,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020940303802490234, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017881393432617188, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -211,7 +211,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.8945159912109375, wallclock_time=7.446282625198364, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=5.288862228393555, wallclock_time=6.732654333114624, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 475
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -259,7 +259,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;Normalizer&#39;
   trainer:StandardTrainer:weighted_loss, Value: False
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=12, ta_time_used=167.8572690486908, wallclock_time=197.65661692619324, budget=16.666666666666664)]
+, ta_runs=12, ta_time_used=156.94246363639832, wallclock_time=184.61865401268005, budget=16.666666666666664)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                     | Estimator                                                 |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
@@ -275,7 +275,7 @@ the search space.</p>
 |  9 | SimpleImputer,OneHotEncoder,Normalizer,NoFeaturePreprocessing     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 | 10 | None                                                              | KNNClassifier                                             |     0.02 |
 | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f92c7b660d0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7fdfa36efdc0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -307,7 +307,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016224384307861328, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015912055969238281, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -339,7 +339,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=4.966748952865601, wallclock_time=6.570724964141846, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=4.479249715805054, wallclock_time=5.9228832721710205, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                 | Estimator                                                          |   Weight |
 |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -471,7 +471,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  43.212 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  37.178 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>

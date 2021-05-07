@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visualizing the Results &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../index.html">Start</a></li>
+                <li><a href="../releases.html">Releases</a></li>
+                <li><a href="../installation.html">Installation</a></li>
+                <li><a href="../manual.html">Manual</a></li>
+                <li><a href="../examples/index.html">Examples</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../dev.html">Dev</a></li>
+                <li><a href="../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Visualizing the Results</a></li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-advanced-tabular-example-visualization-py"><span class="std std-ref">here</span></a>
+to download the full example code or to run this example in your browser via Binder</p>
+</div>
+<div class="sphx-glr-example-title section" id="visualizing-the-results">
+<span id="sphx-glr-advanced-tabular-example-visualization-py"></span><h1>Visualizing the Results<a class="headerlink" href="#visualizing-the-results" title="Permalink to this headline">¶</a></h1>
+<p>Auto-Pytorch uses SMAC to fit individual machine learning algorithms
+and then ensembles them together using <a class="reference external" href="https://www.cs.cornell.edu/~caruana/ctp/ct.papers/caruana.icml04.icdm06long.pdf">Ensemble Selection</a>.</p>
+<p>The following examples shows how to visualize both the performance
+of the individual models and their respective ensemble.</p>
+<p>Additionally, as we are compatible with scikit-learn,
+we show how to further interact with <a class="reference external" href="https://scikit-learn.org/stable/inspection.html">Scikit-Learn Inspection</a> support.</p>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Auto-PyTorch accuracy over time" class="sphx-glr-multi-img" src="../_images/sphx_glr_example_visualization_001.png" />
+</li>
+<li><img alt="Permutation Importances (Train set)" class="sphx-glr-multi-img" src="../_images/sphx_glr_example_visualization_002.png" />
+</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1"># The following variables are not needed for every unix distribution, but are</span>
+<span class="c1"># highlighted in here to prevent problems with multiprocessing with scikit-learn.</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;JOBLIB_TEMP_FOLDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OPENBLAS_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MKL_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="kn">import</span> <span class="nn">sklearn.datasets</span>
+<span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
+<span class="kn">from</span> <span class="nn">sklearn.inspection</span> <span class="kn">import</span> <span class="n">permutation_importance</span>
+
+<span class="kn">from</span> <span class="nn">smac.tae</span> <span class="kn">import</span> <span class="n">StatusType</span>
+
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.metrics</span> <span class="kn">import</span> <span class="n">accuracy</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1"># Data Loading</span>
+    <span class="c1"># ============</span>
+
+    <span class="c1"># We will use the iris dataset for this Toy example</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">61</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1"># Build and fit a classifier</span>
+    <span class="c1"># ==========================</span>
+    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">optimize_metric</span><span class="o">=</span><span class="n">accuracy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span>
+    <span class="p">)</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1"># One can also save the model for future inference</span>
+    <span class="c1"># ================================================</span>
+
+    <span class="c1"># For more details on how to deploy a model, please check</span>
+    <span class="c1"># `Scikit-Learn persistence</span>
+    <span class="c1"># &lt;https://scikit-learn.org/stable/modules/model_persistence.html&gt;`_ support.</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;estimator.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">api</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+
+    <span class="c1"># Then let us read it back and use it for our analysis</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;estimator.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">estimator</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+
+    <span class="c1">############################################################################</span>
+    <span class="c1"># Plotting the model performance</span>
+    <span class="c1"># ==============================</span>
+
+    <span class="c1"># We will plot the search incumbent through time.</span>
+
+    <span class="c1"># Collect the performance of individual machine learning algorithms</span>
+    <span class="c1"># found by SMAC</span>
+    <span class="n">individual_performances</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">run_key</span><span class="p">,</span> <span class="n">run_value</span> <span class="ow">in</span> <span class="n">estimator</span><span class="o">.</span><span class="n">run_history</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">run_value</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="n">StatusType</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">:</span>
+            <span class="c1"># Ignore crashed runs</span>
+            <span class="k">continue</span>
+        <span class="n">individual_performances</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;Timestamp&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                    <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">(</span><span class="n">run_value</span><span class="o">.</span><span class="n">endtime</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;single_best_optimization_accuracy&#39;</span><span class="p">:</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">_optimum</span> <span class="o">-</span> <span class="n">run_value</span><span class="o">.</span><span class="n">cost</span><span class="p">,</span>
+            <span class="s1">&#39;single_best_test_accuracy&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">run_value</span><span class="o">.</span><span class="n">additional_info</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span>
+            <span class="n">accuracy</span><span class="o">.</span><span class="n">_optimum</span> <span class="o">-</span> <span class="n">run_value</span><span class="o">.</span><span class="n">additional_info</span><span class="p">[</span><span class="s1">&#39;test_loss&#39;</span><span class="p">],</span>
+        <span class="p">})</span>
+    <span class="n">individual_performance_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">individual_performances</span><span class="p">)</span>
+
+    <span class="c1"># Collect the performance of the ensemble through time</span>
+    <span class="c1"># This ensemble is built from the machine learning algorithms</span>
+    <span class="c1"># found by SMAC</span>
+    <span class="n">ensemble_performance_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">estimator</span><span class="o">.</span><span class="n">ensemble_performance_history</span><span class="p">)</span>
+
+    <span class="c1"># As we are tracking the incumbent, we are interested in the cummax() performance</span>
+    <span class="n">ensemble_performance_frame</span><span class="p">[</span><span class="s1">&#39;ensemble_optimization_accuracy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ensemble_performance_frame</span><span class="p">[</span>
+        <span class="s1">&#39;train_accuracy&#39;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">cummax</span><span class="p">()</span>
+    <span class="n">ensemble_performance_frame</span><span class="p">[</span><span class="s1">&#39;ensemble_test_accuracy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ensemble_performance_frame</span><span class="p">[</span>
+        <span class="s1">&#39;test_accuracy&#39;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">cummax</span><span class="p">()</span>
+    <span class="n">ensemble_performance_frame</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;test_accuracy&#39;</span><span class="p">,</span> <span class="s1">&#39;train_accuracy&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">individual_performance_frame</span><span class="p">[</span><span class="s1">&#39;single_best_optimization_accuracy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">individual_performance_frame</span><span class="p">[</span>
+        <span class="s1">&#39;single_best_optimization_accuracy&#39;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">cummax</span><span class="p">()</span>
+    <span class="n">individual_performance_frame</span><span class="p">[</span><span class="s1">&#39;single_best_test_accuracy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">individual_performance_frame</span><span class="p">[</span>
+        <span class="s1">&#39;single_best_test_accuracy&#39;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">cummax</span><span class="p">()</span>
+
+    <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">ensemble_performance_frame</span><span class="p">,</span>
+        <span class="n">individual_performance_frame</span><span class="p">,</span>
+        <span class="n">on</span><span class="o">=</span><span class="s2">&quot;Timestamp&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;Timestamp&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;ffill&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s1">&#39;Timestamp&#39;</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;line&#39;</span><span class="p">,</span>
+        <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Auto-PyTorch accuracy over time&#39;</span><span class="p">,</span>
+        <span class="n">grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># We then can understand the importance of each input feature using</span>
+    <span class="c1"># a permutation importance analysis. This is done as a proof of concept, to</span>
+    <span class="c1"># showcase that we can leverage of scikit-learn API.</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">permutation_importance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                    <span class="n">scoring</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+                                    <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">sorted_idx</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">importances_mean</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">importances</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+               <span class="n">vert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">sorted_idx</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Permutation Importances (Train set)&quot;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 4 minutes  41.476 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-visualization-py">
+<div class="binder-badge docutils container">
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_visualization.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/891dce186e83b2762165f10ee2ec99ee/example_visualization.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_visualization.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/ed47d0f9eacbdcd05b74852b15d3e8e1/example_visualization.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_visualization.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="../_sources/advanced_tabular/example_visualization.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
