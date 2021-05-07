@@ -71,7 +71,7 @@ along with this program (see LICENSE file).
 
 ## Reference
 
-Please refer to the branc `TPAMI.2021.3067763` to reproduce the paper *Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL*.
+Please refer to the branch `TPAMI.2021.3067763` to reproduce the paper *Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL*.
 
 ```bibtex
   @article{zimmer-tpami21a,
