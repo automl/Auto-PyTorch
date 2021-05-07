@@ -122,6 +122,20 @@ class BaseFeatureValidator(BaseEstimator):
         """
         raise NotImplementedError()
 
+    def _check_data(
+        self,
+        X: SUPPORTED_FEAT_TYPES,
+    ) -> None:
+        """
+        Feature dimensionality and data type checks
+
+        Arguments:
+            X (SUPPORTED_FEAT_TYPES):
+                A set of features that are going to be validated (type and dimensionality
+                checks) and a encoder fitted in the case the data needs encoding
+        """
+        raise NotImplementedError()
+
     def transform(
         self,
         X: SUPPORTED_FEAT_TYPES,
