@@ -162,9 +162,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # with nan values.
             # Columns that are completely made of NaN values are provided to the pipeline
             # so that later stages decide how to handle them
+
+            # Clear whatever null column markers we had previously
+            self.null_columns.clear()
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
+                        self.null_columns.add(column)
                         X[column] = pd.to_numeric(X[column])
                         # Also note this change in self.dtypes
                         if len(self.dtypes) != 0:
@@ -244,11 +248,25 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if ispandas(X) and not issparse(X):
-            if np.any(pd.isnull(X)):
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
+        if hasattr(X, "iloc") and not issparse(X):
+            X = cast(pd.DataFrame, X)
+            # If we had null columns in our fit call and we made them numeric, then:
+            # - If the columns are null even in transform, apply the same procedure.
+            # - Otherwise, substitute the values with np.NaN and then make the columns numeric.
+            # If the column is null here, but it was not in fit, it does not matter.
+            for column in self.null_columns:
+                # The column is not null, make it null since it was null in fit.
+                if not X[column].isna().all():
+                    X[column] = np.NaN
+                X[column] = pd.to_numeric(X[column])
+
+            # for the test set, if we have columns with only null values
+            # they will probably have a numeric type. If these columns were not
+            # with only null values in the train set, they should be converted
+            # to the type that they had during fitting.
+            for column in X.columns:
+                if X[column].isna().all():
+                    X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
 
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
@@ -256,18 +274,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
+        # We also need to fillna on the transformation
+        # in case test data is provided
+        X = self.impute_nan_in_categories(X)
 
-        # Pandas related transformations
-        if ispandas(X) and self.column_transformer is not None:
-            if np.any(pd.isnull(X)):
-                # After above check it means that if there is a NaN
-                # the whole column must be NaN
-                # Make sure it is numerical and let the pipeline handle it
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
-
-            X = self.column_transformer.transform(X)
+        if self.encoder is not None:
+            X = self.encoder.transform(X)
 
         # Sparse related transformations
         # Not all sparse format support index sorting
@@ -557,7 +569,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Returns:
             pd.DataFrame
         """
-        return pd.DataFrame(X).infer_objects().convert_dtypes()
+        return pd.DataFrame(X).convert_dtypes()
 
     def infer_objects(self, X: pd.DataFrame) -> pd.DataFrame:
         """
@@ -575,18 +587,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(self, 'object_dtype_mapping'):
             # Mypy does not process the has attr. This dict is defined below
             for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
-                if 'int' in dtype.name:
-                    # In the case train data was interpreted as int
-                    # and test data was interpreted as float, because of 0.0
-                    # for example, honor training data
-                    X[key] = X[key].applymap(np.int64)
-                else:
-                    try:
-                        X[key] = X[key].astype(dtype.name)
-                    except Exception as e:
-                        # Try inference if possible
-                        self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
-                        pass
+                # honor the training data types
+                try:
+                    X[key] = X[key].astype(dtype.name)
+                except Exception as e:
+                    # Try inference if possible
+                    self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
+                    pass
         else:
             X = X.infer_objects()
             for column in X.columns:
