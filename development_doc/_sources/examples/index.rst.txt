@@ -139,27 +139,6 @@ We explain
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Auto-Pytorch uses SMAC to fit individual machine learning algorithms and then ensembles them to...">
-
-.. only:: html
-
- .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_visualization_thumb.png
-     :alt: Visualizing the Results
-
-     :ref:`sphx_glr_examples_40_advanced_example_visualization.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/40_advanced/example_visualization
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with different resampling ...">
 
 .. only:: html
@@ -178,6 +157,27 @@ We explain
    :hidden:
 
    /examples/40_advanced/example_resampling_strategy
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Auto-Pytorch uses SMAC to fit individual machine learning algorithms and then ensembles them to...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_visualization_thumb.png
+     :alt: Visualizing the Results
+
+     :ref:`sphx_glr_examples_40_advanced_example_visualization.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_visualization
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>
