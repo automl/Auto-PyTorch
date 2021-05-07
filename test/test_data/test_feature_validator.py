@@ -1,4 +1,4 @@
-import copy
+ import copy
 import functools
 
 import numpy as np
@@ -139,9 +139,9 @@ def test_featurevalidator_fitontypeA_transformtypeB(input_data_featuretest):
     if isinstance(input_data_featuretest, pd.DataFrame):
         pytest.skip("Column order change in pandas is not supported")
     elif isinstance(input_data_featuretest, np.ndarray):
-        complementary_type = pd.DataFrame(input_data_featuretest)
+        complementary_type = validator.numpy_array_to_pandas(input_data_featuretest)
     elif isinstance(input_data_featuretest, list):
-        complementary_type = pd.DataFrame(input_data_featuretest)
+        complementary_type, _ = validator.list_to_dataframe(input_data_featuretest)
     elif sparse.issparse(input_data_featuretest):
         complementary_type = sparse.csr_matrix(input_data_featuretest.todense())
     else:
@@ -331,8 +331,11 @@ def test_unknown_encode_value():
 )
 @pytest.mark.parametrize('train_data_type', ('numpy', 'pandas', 'list'))
 @pytest.mark.parametrize('test_data_type', ('numpy', 'pandas', 'list'))
-def test_featurevalidator_new_data_after_fit(openml_id,
-                                             train_data_type, test_data_type):
+def test_feature_validator_new_data_after_fit(
+    openml_id,
+    train_data_type,
+    test_data_type,
+):
 
     # List is currently not supported as infer_objects
     # cast list objects to type objects
@@ -406,3 +409,109 @@ def test_comparator():
         key=functools.cmp_to_key(validator._comparator)
     )
     assert ans == feat_type
+
+
+# Actual checks for the features
+@pytest.mark.parametrize(
+    'input_data_featuretest',
+    (
+        'numpy_numericalonly_nonan',
+        'numpy_numericalonly_nan',
+        'numpy_mixed_nan',
+        'pandas_numericalonly_nan',
+        'sparse_bsr_nonan',
+        'sparse_bsr_nan',
+        'sparse_coo_nonan',
+        'sparse_coo_nan',
+        'sparse_csc_nonan',
+        'sparse_csc_nan',
+        'sparse_csr_nonan',
+        'sparse_csr_nan',
+        'sparse_dia_nonan',
+        'sparse_dia_nan',
+        'sparse_dok_nonan',
+        'sparse_dok_nan',
+        'openml_40981',  # Australian
+    ),
+    indirect=True
+)
+def test_featurevalidator_reduce_precision(input_data_featuretest):
+    X_train, X_test = sklearn.model_selection.train_test_split(
+        input_data_featuretest, test_size=0.1, random_state=1)
+    validator = TabularFeatureValidator(dataset_compression={'memory_allocation': 0, 'methods': ['precision']})
+    validator.fit(X_train=X_train)
+    transformed_X_train = validator.transform(X_train.copy())
+
+    assert validator._reduced_dtype is not None
+    assert megabytes(transformed_X_train) < megabytes(X_train)
+
+    transformed_X_test = validator.transform(X_test.copy())
+    assert megabytes(transformed_X_test) < megabytes(X_test)
+    if hasattr(transformed_X_train, 'iloc'):
+        assert all(transformed_X_train.dtypes == transformed_X_test.dtypes)
+        assert all(transformed_X_train.dtypes == validator._precision)
+    else:
+        assert transformed_X_train.dtype == transformed_X_test.dtype
+    assert transformed_X_test.dtype == validator._reduced_dtype
+
+
+def test_feature_validator_imbalanced_data():
+
+    # Null columns in the train split but not necessarily in the test split
+    train_features = {
+        'A': [np.NaN, np.NaN, np.NaN],
+        'B': [1, 2, 3],
+        'C': [np.NaN, np.NaN, np.NaN],
+        'D': [np.NaN, np.NaN, np.NaN],
+    }
+    test_features = {
+        'A': [3, 4, 5],
+        'B': [6, 5, 7],
+        'C': [np.NaN, np.NaN, np.NaN],
+        'D': ['Blue', np.NaN, np.NaN],
+    }
+
+    X_train = pd.DataFrame.from_dict(train_features)
+    X_test = pd.DataFrame.from_dict(test_features)
+    validator = TabularFeatureValidator()
+    validator.fit(X_train)
+
+    train_feature_types = copy.deepcopy(validator.feat_type)
+    assert train_feature_types == ['numerical', 'numerical', 'numerical', 'numerical']
+    # validator will throw an error if the column types are not the same
+    transformed_X_test = validator.transform(X_test)
+    transformed_X_test = pd.DataFrame(transformed_X_test)
+    null_columns = []
+    for column in transformed_X_test.columns:
+        if transformed_X_test[column].isna().all():
+            null_columns.append(column)
+    assert null_columns == [0, 2, 3]
+
+    # Columns with not all null values in the train split and
+    # completely null on the test split.
+    train_features = {
+        'A': [np.NaN, np.NaN, 4],
+        'B': [1, 2, 3],
+        'C': ['Blue', np.NaN, np.NaN],
+    }
+    test_features = {
+        'A': [np.NaN, np.NaN, np.NaN],
+        'B': [6, 5, 7],
+        'C': [np.NaN, np.NaN, np.NaN],
+    }
+
+    X_train = pd.DataFrame.from_dict(train_features)
+    X_test = pd.DataFrame.from_dict(test_features)
+    validator = TabularFeatureValidator()
+    validator.fit(X_train)
+    train_feature_types = copy.deepcopy(validator.feat_type)
+    assert train_feature_types == ['categorical', 'numerical', 'numerical']
+
+    transformed_X_test = validator.transform(X_test)
+    transformed_X_test = pd.DataFrame(transformed_X_test)
+    null_columns = []
+    for column in transformed_X_test.columns:
+        if transformed_X_test[column].isna().all():
+            null_columns.append(column)
+
+    assert null_columns == [1]
