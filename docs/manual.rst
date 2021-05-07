@@ -16,11 +16,11 @@ We expand the support to image processing tasks in the future.
 
 Examples
 ========
-* `Classification <examples/tabular/20_basics/example_tabular_classification.html>`_
-* `Regression <examples/tabular/20_basics/example_tabular_regression.html>`_
-* `Customizing the search space <examples/tabular/40_advanced/example_custom_configuration_space.html>`_
-* `Changing the resampling strategy <examples/tabular/40_advanced/example_resampling_strategy.html>`_
-* `Visualizing the results <examples/tabular/40_advanced/example_visualization.html>`_
+* `Classification <examples/20_basics/example_tabular_classification.html>`_
+* `Regression <examples/20_basics/example_tabular_regression.html>`_
+* `Customizing the search space <examples/40_advanced/example_custom_configuration_space.html>`_
+* `Changing the resampling strategy <examples/40_advanced/example_resampling_strategy.html>`_
+* `Visualizing the results <examples/40_advanced/example_visualization.html>`_
 
 Resource Allocation
 ===================

@@ -7,7 +7,7 @@ So far, Auto-PyTorch supports tabular data (classification, regression).
 We plan to enable image data and time-series data.
 
 
-Find the documentation [here](https://automl.github.io/Auto-PyTorch/refactor_development)
+Find the documentation [here](https://automl.github.io/Auto-PyTorch/development)
 
 
 ## Installation
@@ -31,7 +31,7 @@ python setup.py install
 If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
 
 ```sh
-$ git checkout refactor_development
+$ git checkout development
 ```
 
 
@@ -71,7 +71,20 @@ along with this program (see LICENSE file).
 
 ## Reference
 
+Please refer to the branch `TPAMI.2021.3067763` to reproduce the paper *Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL*.
+
+```bibtex
+  @article{zimmer-tpami21a,
+  author = {Lucas Zimmer and Marius Lindauer and Frank Hutter},
+  title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year = {2021},
+  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
+  pages = {1-12}
+}
 ```
+
+```bibtex
 @incollection{mendoza-automlbook18a,
   author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
   title     = {Towards Automatically-Tuned Deep Neural Networks},
@@ -81,13 +94,9 @@ along with this program (see LICENSE file).
   booktitle = {AutoML: Methods, Sytems, Challenges},
   publisher = {Springer},
   chapter   = {7},
-  pages     = {141--156},
-  note      = {To appear.},
+  pages     = {141--156}
 }
 ```
-
-**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
-
 
 ## Contact
 
