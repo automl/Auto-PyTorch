@@ -201,7 +201,11 @@ class TabularClassificationTask(BaseTask):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
             run_greedy_portfolio (bool), (default=False): If True,
-                runs initial
+                runs initial configurations present in
+                'autoPyTorch/optimizer/greedy_portfolio.json'.
+                These configurations are the best performing configurations
+                when search was performed on meta training datasets.
+                For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>
 
         Returns:
             self
@@ -248,6 +252,7 @@ class TabularClassificationTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
+            run_greedy_portfolio=run_greedy_portfolio
         )
 
     def predict(

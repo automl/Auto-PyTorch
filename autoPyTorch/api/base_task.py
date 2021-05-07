@@ -702,6 +702,7 @@ class BaseTask:
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
+        run_greedy_portfolio: bool = False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -772,7 +773,12 @@ class BaseTask:
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-
+            run_greedy_portfolio (bool), (default=False): If True,
+                runs initial configurations present in
+                'autoPyTorch/optimizer/greedy_portfolio.json'.
+                These configurations are the best performing configurations
+                when search was performed on meta training datasets.
+                For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>
         Returns:
             self
 
@@ -957,7 +963,8 @@ class BaseTask:
                 # We do not increase the num_run here, this is something
                 # smac does internally
                 start_num_run=self._backend.get_next_num_run(peek=True),
-                search_space_updates=self.search_space_updates
+                search_space_updates=self.search_space_updates,
+                run_greedy_portfolio=run_greedy_portfolio
             )
             try:
                 run_history, self.trajectory, budget_type = \

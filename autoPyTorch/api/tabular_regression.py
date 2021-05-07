@@ -123,6 +123,7 @@ class TabularRegressionTask(BaseTask):
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
+        run_greedy_portfolio: bool = False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -187,7 +188,12 @@ class TabularRegressionTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-
+            run_greedy_portfolio (bool), (default=False): If True,
+                            runs initial configurations present in
+                            'autoPyTorch/optimizer/greedy_portfolio.json'.
+                            These configurations are the best performing configurations
+                            when search was performed on meta training datasets.
+                            For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>
         Returns:
             self
 
@@ -233,6 +239,7 @@ class TabularRegressionTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
+            run_greedy_portfolio=run_greedy_portfolio
         )
 
     def predict(

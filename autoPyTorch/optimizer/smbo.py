@@ -108,7 +108,8 @@ class AutoMLSMBO(object):
                  all_supported_metrics: bool = True,
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
-                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
+                 run_greedy_portfolio: bool = False
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -157,7 +158,9 @@ class AutoMLSMBO(object):
                 Allows to create a user specified SMAC object
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
-
+            run_greedy_portfolio (bool), (default=False): If True,
+                runs initial configurations present in
+                'autoPyTorch/optimizer/greedy_portfolio.json'.
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -213,16 +216,18 @@ class AutoMLSMBO(object):
         # read and validate initial configurations
         initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__), 'greedy_portfolio.json')))
 
-        self.initial_configurations: typing.List[Configuration] = list()
-        for configuration_dict in initial_configurations:
-            try:
-                configuration = Configuration(self.config_space, configuration_dict)
-                self.initial_configurations.append(configuration)
-            except Exception as e:
-                self.logger.warning(f"Failed to convert {configuration_dict} into"
-                                    f" a Configuration with error {e}. "
-                                    f"Therefore, it can't be used as an initial "
-                                    f"configuration as it does not match the current config space. ")
+        self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
+        if run_greedy_portfolio:
+            self.initial_configurations = list()
+            for configuration_dict in initial_configurations:
+                try:
+                    configuration = Configuration(self.config_space, configuration_dict)
+                    self.initial_configurations.append(configuration)
+                except Exception as e:
+                    self.logger.warning(f"Failed to convert {configuration_dict} into"
+                                        f" a Configuration with error {e}. "
+                                        f"Therefore, it can't be used as an initial "
+                                        f"configuration as it does not match the current config space. ")
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
