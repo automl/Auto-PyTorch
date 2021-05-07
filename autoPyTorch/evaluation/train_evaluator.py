@@ -172,10 +172,8 @@ class TrainEvaluator(AbstractEvaluator):
 
             status = StatusType.SUCCESS
 
-            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{}".format(
-                self.num_run,
-                loss
-            ))
+            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{},"
+                              " additional run info:{}".format(self.num_run, loss, additional_run_info))
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,

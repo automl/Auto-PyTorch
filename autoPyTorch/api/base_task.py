@@ -640,7 +640,6 @@ class BaseTask:
                         configuration = additional_info['pipeline_configuration']
                         origin = additional_info['configuration_origin']
                         additional_info.pop('pipeline_configuration')
-                        additional_info.pop('configuration_origin')
                         run_history.add(config=configuration, cost=cost,
                                         time=runtime, status=status, seed=self.seed,
                                         starttime=starttime, endtime=starttime + runtime,
@@ -1281,8 +1280,8 @@ class BaseTask:
         if not include_traditional:
             # traditional classifiers have trainer_configuration in their additional info
             run_history_data = dict(
-                filter(lambda elem: elem[1].additional_info is not None and 'trainer_configuration' not in elem[1].
-                       additional_info,
+                filter(lambda elem: elem[1].additional_info is not None and elem[1].
+                       additional_info['configuration_origin'] != 'traditional',
                        run_history_data.items()))
         sorted_runvalue_by_cost = sorted(run_history_data.items(), key=lambda item: item[1].cost)
         incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]

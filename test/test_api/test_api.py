@@ -608,7 +608,8 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
     )
 
     pipeline_run_history = RunHistory()
-    pipeline_run_history.load_json('test/test_api/.tmp_api/runhistory.json', estimator.get_search_space(dataset))
+    pipeline_run_history.load_json(os.path.join(os.path.dirname(__file__), '.tmp_api/runhistory.json'),
+                                   estimator.get_search_space(dataset))
 
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
 
@@ -628,6 +629,11 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
     config, results = estimator.get_incumbent_results(include_traditional=include_traditional)
     assert isinstance(config, Configuration)
     assert isinstance(results, dict)
+
+    run_history_data = estimator.run_history.data
+    costs = [run_value.cost for run_key, run_value in run_history_data.items() if run_value.additional_info is not None
+             and (run_value.additional_info['configuration_origin'] != 'traditional' or include_traditional)]
+    assert results['opt_loss']['accuracy'] == min(costs)
 
     if not include_traditional:
         assert results['configuration_origin'] != 'traditional'

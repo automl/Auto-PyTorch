@@ -114,7 +114,8 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
                     Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/classifier_configs
         """
         return {'pipeline_configuration': self.configuration,
-                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config(),
+                'configuration_origin': 'traditional'}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return self.pipeline.get_pipeline_representation()
@@ -178,7 +179,7 @@ class DummyClassificationPipeline(DummyClassifier):
         return False
 
     def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
-        return {}
+        return {'configuration_origin': 'DUMMY'}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return {
@@ -237,7 +238,7 @@ class DummyRegressionPipeline(DummyRegressor):
         return False
 
     def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
-        return {}
+        return {'configuration_origin': 'DUMMY'}
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
