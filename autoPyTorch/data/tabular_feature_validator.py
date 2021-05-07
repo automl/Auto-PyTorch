@@ -164,7 +164,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # for the test set, if we have columns with only null values
             # they will probably have a numeric type. If these columns were not
             # with only null values in the train set, they should be converted
-            # to the category type.
+            # to the type that they had during fitting.
             for column in X.columns:
                 if X[column].isna().all():
                     X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
@@ -418,18 +418,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(self, 'object_dtype_mapping'):
             # Mypy does not process the has attr. This dict is defined below
             for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
-                if 'int' in dtype.name:
-                    # In the case train data was interpreted as int
-                    # and test data was interpreted as float, because of 0.0
-                    # for example, honor training data
-                    X[key] = X[key].astype(np.int64)
-                else:
-                    try:
-                        X[key] = X[key].astype(dtype.name)
-                    except Exception as e:
-                        # Try inference if possible
-                        self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
-                        pass
+                # honor the training data types
+                try:
+                    X[key] = X[key].astype(dtype.name)
+                except Exception as e:
+                    # Try inference if possible
+                    self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
+                    pass
         else:
             X = X.infer_objects()
             for column in X.columns:
