@@ -14,11 +14,11 @@ from torch.utils.data import Dataset, Subset
 import torchvision
 
 from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, STRING_TO_OUTPUT_TYPES
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.split_fn import (
     CrossValFunc,
     CrossValFuncs,
     CrossValTypes,
-    DEFAULT_RESAMPLING_PARAMETERS,
+    DEFAULT_SPLIT_PARAMETERS,
     HoldOutFunc,
     HoldOutFuncs,
     HoldoutValTypes
@@ -77,8 +77,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        split_fn: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        split_params: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
         train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -94,13 +94,13 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data
             test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
                 test data
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+            split_fn (Union[CrossValTypes, HoldoutValTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
-            resampling_strategy_args (Optional[Dict[str, Any]]): arguments
-                required for the chosen resampling strategy. If None, uses
-                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-                in ```datasets/resampling_strategy.py```.
+            split_params (Optional[Dict[str, Any]]): arguments
+                required for the chosen splitting function. If None, uses
+                the default values provided in DEFAULT_SPLIT_PARAMETERS
+                in ```datasets/split_fn.py```.
             shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
@@ -120,8 +120,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
+        self.split_fn, self.split_params = split_fn, split_params
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
@@ -140,7 +139,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
-        self.splits = self.get_splits_from_resampling_strategy()
+        self.splits = self.get_splits()
 
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
@@ -178,7 +177,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         the need to dynamically give train/test data with the __getitem__ command.
 
         This method yields a datapoint of the whole data (after a Subset has selected a given
-        item, based on the resampling strategy) and applies a train/testing transformation, if any.
+        item, based on the split function) and applies a train/testing transformation, if any.
 
         Args:
             index (int): what element to yield from all the train/test tensors
@@ -207,39 +206,39 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def _get_indices(self) -> np.ndarray:
         return self.random_state.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
-    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
+    def get_splits(self) -> List[Tuple[List[int], List[int]]]:
         """
-        Creates a set of splits based on a resampling strategy provided
+        Creates a set of splits based on a splitting function provided
 
         Returns
             (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
         """
         splits = []
-        if isinstance(self.resampling_strategy, HoldoutValTypes):
-            val_share = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
+        if isinstance(self.split_fn, HoldoutValTypes):
+            val_share = DEFAULT_SPLIT_PARAMETERS[self.split_fn].get(
                 'val_share', None)
-            if self.resampling_strategy_args is not None:
-                val_share = self.resampling_strategy_args.get('val_share', val_share)
+            if self.split_params is not None:
+                val_share = self.split_params.get('val_share', val_share)
             splits.append(
                 self.create_holdout_val_split(
-                    holdout_val_type=self.resampling_strategy,
+                    holdout_val_type=self.split_fn,
                     val_share=val_share,
                 )
             )
-        elif isinstance(self.resampling_strategy, CrossValTypes):
-            num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
+        elif isinstance(self.split_fn, CrossValTypes):
+            num_splits = DEFAULT_SPLIT_PARAMETERS[self.split_fn].get(
                 'num_splits', None)
-            if self.resampling_strategy_args is not None:
-                num_splits = self.resampling_strategy_args.get('num_splits', num_splits)
+            if self.split_fn is not None:
+                num_splits = self.split_params.get('num_splits', num_splits)
             # Create the split if it was not created before
             splits.extend(
                 self.create_cross_val_splits(
-                    cross_val_type=self.resampling_strategy,
+                    cross_val_type=self.split_fn,
                     num_splits=cast(int, num_splits),
                 )
             )
         else:
-            raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
+            raise ValueError(f"Unsupported split_fn={self.split_fn}")
         return splits
 
     def create_cross_val_splits(

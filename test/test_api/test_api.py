@@ -21,7 +21,7 @@ import torch
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.split_fn import (
     CrossValTypes,
     HoldoutValTypes,
 )
@@ -36,10 +36,10 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 # Test
 # ========
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_tabular_classification(openml_id, resampling_strategy, backend):
+@pytest.mark.parametrize('split_fn', (HoldoutValTypes.holdout_validation,
+                                      CrossValTypes.k_fold_cross_validation,
+                                      ))
+def test_tabular_classification(openml_id, split_fn, backend):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
@@ -57,7 +57,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
-        resampling_strategy=resampling_strategy,
+        split_fn=split_fn,
         include_components=include
     )
 
@@ -72,9 +72,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_classification'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 5
-    assert estimator.resampling_strategy == resampling_strategy
-    assert estimator.dataset.resampling_strategy == resampling_strategy
+    expected_num_splits = 1 if split_fn == HoldoutValTypes.holdout_validation else 5
+    assert estimator.split_fn == split_fn
+    assert estimator.dataset.split_fn == split_fn
     assert len(estimator.dataset.splits) == expected_num_splits
 
     # TODO: check for budget
@@ -123,14 +123,14 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
 
     assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
-    if resampling_strategy == HoldoutValTypes.holdout_validation:
+    if split_fn == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
                                   f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
-    elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
+    elif split_fn == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
@@ -144,7 +144,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
                           torch.nn.Module)
     else:
-        pytest.fail(resampling_strategy)
+        pytest.fail(split_fn)
 
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,
@@ -195,10 +195,10 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_tabular_regression(openml_name, resampling_strategy, backend):
+@pytest.mark.parametrize('split_fn', (HoldoutValTypes.holdout_validation,
+                                      CrossValTypes.k_fold_cross_validation,
+                                      ))
+def test_tabular_regression(openml_name, split_fn, backend):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
@@ -228,7 +228,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     # Search for a good configuration
     estimator = TabularRegressionTask(
         backend=backend,
-        resampling_strategy=resampling_strategy,
+        split_fn=split_fn,
         include_components=include
     )
 
@@ -243,9 +243,9 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_regression'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 5
-    assert estimator.resampling_strategy == resampling_strategy
-    assert estimator.dataset.resampling_strategy == resampling_strategy
+    expected_num_splits = 1 if split_fn == HoldoutValTypes.holdout_validation else 5
+    assert estimator.split_fn == split_fn
+    assert estimator.dataset.split_fn == split_fn
     assert len(estimator.dataset.splits) == expected_num_splits
 
     # TODO: check for budget
@@ -294,14 +294,14 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
 
     assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
-    if resampling_strategy == HoldoutValTypes.holdout_validation:
+    if split_fn == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
                                   f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
-    elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
+    elif split_fn == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
@@ -314,7 +314,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
                           torch.nn.Module)
     else:
-        pytest.fail(resampling_strategy)
+        pytest.fail(split_fn)
 
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,
@@ -387,7 +387,7 @@ def test_tabular_input_support(openml_id, backend):
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
-        resampling_strategy=HoldoutValTypes.holdout_validation,
+        split_fn=HoldoutValTypes.holdout_validation,
         ensemble_size=0,
     )
 
@@ -411,7 +411,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     backend = fit_dictionary_tabular['backend']
     estimator = TabularClassificationTask(
         backend=backend,
-        resampling_strategy=HoldoutValTypes.holdout_validation,
+        split_fn=HoldoutValTypes.holdout_validation,
         ensemble_size=0,
     )
 

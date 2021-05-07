@@ -76,10 +76,7 @@ class HoldoutValTypes(IntEnum):
         return getattr(self, self.name) in stratified
 
 
-# TODO: replace it with another way
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
-
-DEFAULT_RESAMPLING_PARAMETERS = {
+DEFAULT_SPLIT_PARAMETERS = {
     HoldoutValTypes.holdout_validation: {
         'val_share': 0.33,
     },

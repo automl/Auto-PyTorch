@@ -13,7 +13,7 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.split_fn import (
     CrossValTypes,
     HoldoutValTypes,
 )
@@ -72,8 +72,8 @@ class TabularClassificationTask(BaseTask):
         delete_output_folder_after_terminate: bool = True,
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        split_fn: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        split_params: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
@@ -91,8 +91,8 @@ class TabularClassificationTask(BaseTask):
             include_components=include_components,
             exclude_components=exclude_components,
             backend=backend,
-            resampling_strategy=resampling_strategy,
-            resampling_strategy_args=resampling_strategy_args,
+            split_fn=split_fn,
+            split_params=split_params,
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
@@ -226,8 +226,8 @@ class TabularClassificationTask(BaseTask):
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             validator=self.InputValidator,
-            resampling_strategy=self.resampling_strategy,
-            resampling_strategy_args=self.resampling_strategy_args,
+            split_fn=self.split_fn,
+            split_params=self.split_params,
         )
 
         return self._search(

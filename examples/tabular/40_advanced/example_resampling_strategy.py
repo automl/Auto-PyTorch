@@ -1,10 +1,10 @@
 """
 ======================
-Tabular Classification with different resampling strategy
+Tabular Classification with different split function
 ======================
 
 The following example shows how to fit a sample classification model
-with different resampling strategies in AutoPyTorch
+with different splitting functions in AutoPyTorch
 By default, AutoPyTorch uses Holdout Validation with
 a 67% train size split.
 """
@@ -24,7 +24,7 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.split_fn import CrossValTypes, HoldoutValTypes
 
 
 if __name__ == '__main__':
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     )
 
     ############################################################################
-    # Build and fit a classifier with default resampling strategy
+    # Build and fit a classifier with default split function
     # ===========================================================
     api = TabularClassificationTask(
         temporary_directory='./tmp/autoPyTorch_example_tmp_03',
@@ -52,8 +52,8 @@ if __name__ == '__main__':
         # is the default argument setting for TabularClassificationTask.
         # It is explicitly specified in this example for demonstrational
         # purpose.
-        resampling_strategy=HoldoutValTypes.holdout_validation,
-        resampling_strategy_args={'val_share': 0.33}
+        split_fn=HoldoutValTypes.holdout_validation,
+        split_params={'val_share': 0.33}
     )
 
     ############################################################################
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     ############################################################################
 
     ############################################################################
-    # Build and fit a classifier with Cross validation resampling strategy
+    # Build and fit a classifier with Cross validation split function
     # ====================================================================
     api = TabularClassificationTask(
         temporary_directory='./tmp/autoPyTorch_example_tmp_04',
@@ -90,8 +90,8 @@ if __name__ == '__main__':
         # To maintain logs of the run, set the next two as False
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
-        resampling_strategy=CrossValTypes.k_fold_cross_validation,
-        resampling_strategy_args={'num_splits': 3}
+        split_fn=CrossValTypes.k_fold_cross_validation,
+        split_params={'num_splits': 3}
     )
 
     ############################################################################
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     ############################################################################
 
     ############################################################################
-    # Build and fit a classifier with Stratified resampling strategy
+    # Build and fit a classifier with Stratified split function
     # ==============================================================
     api = TabularClassificationTask(
         temporary_directory='./tmp/autoPyTorch_example_tmp_05',
@@ -131,8 +131,8 @@ if __name__ == '__main__':
         # For demonstration purposes, we use
         # Stratified hold out validation. However,
         # one can also use CrossValTypes.stratified_k_fold_cross_validation.
-        resampling_strategy=HoldoutValTypes.stratified_holdout_validation,
-        resampling_strategy_args={'val_share': 0.33}
+        split_fn=HoldoutValTypes.stratified_holdout_validation,
+        split_params={'val_share': 0.33}
     )
 
     ############################################################################

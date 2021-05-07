@@ -17,9 +17,9 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
+from autoPyTorch.datasets.split_fn import (
     CrossValTypes,
-    DEFAULT_RESAMPLING_PARAMETERS,
+    DEFAULT_SPLIT_PARAMETERS,
     HoldoutValTypes,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
@@ -93,8 +93,8 @@ class AutoMLSMBO(object):
                  pipeline_config: typing.Dict[str, typing.Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: typing.Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
-                 resampling_strategy_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
+                 split_fn: typing.Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 split_params: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  include: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
                  disable_file_output: typing.List = [],
@@ -136,10 +136,10 @@ class AutoMLSMBO(object):
                 The ID index to start runs
             seed (int):
                 To make the run deterministic
-            resampling_strategy (str):
+            split_fn (str):
                 What strategy to use for performance validation
-            resampling_strategy_args (typing.Optional[typing.Dict[str, typing.Any]]):
-                Arguments to the resampling strategy -- like number of folds
+            split_params (typing.Optional[typing.Dict[str, typing.Any]]):
+                Arguments to the split function -- like number of folds
             include (typing.Optional[typing.Dict[str, typing.Any]] = None):
                 Optimal Configuration space modifiers
             exclude (typing.Optional[typing.Dict[str, typing.Any]] = None):
@@ -172,10 +172,10 @@ class AutoMLSMBO(object):
         self.dask_client = dask_client
 
         # Evaluation
-        self.resampling_strategy = resampling_strategy
-        if resampling_strategy_args is None:
-            resampling_strategy_args = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy]
-        self.resampling_strategy_args = resampling_strategy_args
+        self.split_fn = split_fn
+        if split_params is None:
+            split_params = DEFAULT_SPLIT_PARAMETERS[split_fn]
+        self.split_params = split_params
 
         # and a bunch of useful limits
         self.worst_possible_result = get_cost_of_crash(self.metric)
@@ -230,8 +230,8 @@ class AutoMLSMBO(object):
 
         # Initialize some SMAC dependencies
 
-        if isinstance(self.resampling_strategy, CrossValTypes):
-            num_splits = self.resampling_strategy_args['num_splits']
+        if isinstance(self.split_fn, CrossValTypes):
+            num_splits = self.split_params['num_splits']
             instances = [[json.dumps({'task_id': self.dataset_name,
                                       'fold': fold_number})]
                          for fold_number in range(num_splits)]

@@ -34,7 +34,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.split_fn import CrossValTypes, HoldoutValTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
@@ -138,8 +138,8 @@ class BaseTask:
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
         backend: Optional[Backend] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        split_fn: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        split_params: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None
     ) -> None:
@@ -180,9 +180,8 @@ class BaseTask:
         # By default try to use the TCP logging port or get a new port
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
 
-        # Store the resampling strategy from the dataset, to load models as needed
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
+        # Store the split function from the dataset, to load models as needed
+        self.split_fn, self.split_params = split_fn, split_params
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
@@ -415,8 +414,8 @@ class BaseTask:
         Returns:
             None
         """
-        if self.resampling_strategy is None:
-            raise ValueError("Resampling strategy is needed to determine what models to load")
+        if self.split_fn is None:
+            raise ValueError("split_fn is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
         # If no ensemble is loaded, try to get the best performing model
@@ -426,10 +425,10 @@ class BaseTask:
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
             self.models_ = self._backend.load_models_by_identifiers(identifiers)
-            if isinstance(self.resampling_strategy, CrossValTypes):
+            if isinstance(self.split_fn, CrossValTypes):
                 self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
 
-            if isinstance(self.resampling_strategy, CrossValTypes):
+            if isinstance(self.split_fn, CrossValTypes):
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
@@ -1171,9 +1170,9 @@ class BaseTask:
         assert self.ensemble_ is not None, "Load models should error out if no ensemble"
         self.ensemble_ = cast(Union[SingleBest, EnsembleSelection], self.ensemble_)
 
-        if isinstance(self.resampling_strategy, HoldoutValTypes):
+        if isinstance(self.split_fn, HoldoutValTypes):
             models = self.models_
-        elif isinstance(self.resampling_strategy, CrossValTypes):
+        elif isinstance(self.split_fn, CrossValTypes):
             models = self.cv_models_
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(

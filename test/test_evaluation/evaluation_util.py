@@ -12,7 +12,7 @@ import sklearn.model_selection
 from sklearn import preprocessing
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
+from autoPyTorch.datasets.split_fn import HoldoutValTypes
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
     accuracy,
@@ -132,7 +132,7 @@ class BaseEvaluatorTest(unittest.TestCase):
                 raise e
 
 
-def get_multiclass_classification_datamanager(resampling_strategy=HoldoutValTypes.holdout_validation):
+def get_multiclass_classification_datamanager(split_fn=HoldoutValTypes.holdout_validation):
     X_train, Y_train, X_test, Y_test = get_dataset('iris')
     indices = list(range(X_train.shape[0]))
     np.random.seed(1)
@@ -145,12 +145,12 @@ def get_multiclass_classification_datamanager(resampling_strategy=HoldoutValType
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
         validator=validator,
-        resampling_strategy=resampling_strategy
+        split_fn=split_fn
     )
     return dataset
 
 
-def get_abalone_datamanager(resampling_strategy=HoldoutValTypes.holdout_validation):
+def get_abalone_datamanager(split_fn=HoldoutValTypes.holdout_validation):
     # https://www.openml.org/d/183
     X, y = sklearn.datasets.fetch_openml(data_id=183, return_X_y=True, as_frame=False)
     y = preprocessing.LabelEncoder().fit_transform(y)
@@ -163,12 +163,12 @@ def get_abalone_datamanager(resampling_strategy=HoldoutValTypes.holdout_validati
         X=X_train, Y=y_train,
         validator=validator,
         X_test=X_test, Y_test=y_test,
-        resampling_strategy=resampling_strategy
+        split_fn=split_fn
     )
     return dataset
 
 
-def get_binary_classification_datamanager(resampling_strategy=HoldoutValTypes.holdout_validation):
+def get_binary_classification_datamanager(split_fn=HoldoutValTypes.holdout_validation):
     X_train, Y_train, X_test, Y_test = get_dataset('iris')
     indices = list(range(X_train.shape[0]))
     np.random.seed(1)
@@ -189,12 +189,12 @@ def get_binary_classification_datamanager(resampling_strategy=HoldoutValTypes.ho
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
         validator=validator,
-        resampling_strategy=resampling_strategy
+        split_fn=split_fn
     )
     return dataset
 
 
-def get_regression_datamanager(resampling_strategy=HoldoutValTypes.holdout_validation):
+def get_regression_datamanager(split_fn=HoldoutValTypes.holdout_validation):
     X_train, Y_train, X_test, Y_test = get_dataset('boston')
     indices = list(range(X_train.shape[0]))
     np.random.seed(1)
@@ -207,12 +207,12 @@ def get_regression_datamanager(resampling_strategy=HoldoutValTypes.holdout_valid
         X=X_train, Y=Y_train,
         X_test=X_test, Y_test=Y_test,
         validator=validator,
-        resampling_strategy=resampling_strategy
+        split_fn=split_fn
     )
     return dataset
 
 
-def get_500_classes_datamanager(resampling_strategy=HoldoutValTypes.holdout_validation):
+def get_500_classes_datamanager(split_fn=HoldoutValTypes.holdout_validation):
     weights = ([0.002] * 475) + ([0.001] * 25)
     X, Y = sklearn.datasets.make_classification(n_samples=1000,
                                                 n_features=20,
@@ -235,7 +235,7 @@ def get_500_classes_datamanager(resampling_strategy=HoldoutValTypes.holdout_vali
         X=X[:700], Y=Y[:700],
         X_test=X[700:], Y_test=Y[710:],
         validator=validator,
-        resampling_strategy=resampling_strategy
+        split_fn=split_fn
     )
 
     return dataset
