@@ -46,7 +46,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
     /home/runner/work/Auto-PyTorch/Auto-PyTorch/examples/tabular/40_advanced/example_single_configuration.py:61: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
     Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
       configuration = estimator.get_search_space(dataset).get_default_configuration()
-    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7FD5B0D19540), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7fd5a93c0c10>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7fd5a934d760>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7fd5a934d5b0>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7FD5B0D19540), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7FD5B0D19540), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7fd5a9f5c940>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7fd5a9f5c520>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7fd5a9373b80>, 'network': NetworkComponent(network=Sequential(
+    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7FC41B486140), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7fc4284cb6a0>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7fc42824be80>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7fc4280c2e80>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7FC41B486140), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7FC41B486140), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7fc41a182400>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7fc41a182880>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7fc419df5970>, 'network': NetworkComponent(network=Sequential(
       (0): _NoEmbedding()
       (1): Sequential(
         (0): Linear(in_features=4, out_features=200, bias=True)
@@ -71,7 +71,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         )
       )
     )],
-                     random_state=RandomState(MT19937) at 0x7FD5B0D19540), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7fd5a852a9d0>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7fd5a852a3a0>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7fd5a93ecfa0>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7FD5B0D19540), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7fd5a93a3f70>}
+                     random_state=RandomState(MT19937) at 0x7FC41B486140), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7fc4198603a0>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7fc41b334fa0>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7fc419c3f910>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7FC41B486140), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7fc419af5280>}
     RunInfo(config=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'NoEncoder'
@@ -111,7 +111,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
     , instance=None, instance_specific=None, seed=1, cutoff=94, capped=False, budget=50, source_id=0)
-    RunValue(cost=0.0, time=8.58319091796875, status=<StatusType.SUCCESS: 1>, starttime=1620133404.6214771, endtime=1620133414.6136925, additional_info={'accuracy': 0.0, 'duration': 6.18346381187439, 'num_run': 2, 'train_loss': {'accuracy': 0.0}, 'test_loss': 0.04166666666666663, 'configuration_origin': None})
+    RunValue(cost=0.0, time=10.016877889633179, status=<StatusType.SUCCESS: 1>, starttime=1620390060.7863224, endtime=1620390072.227629, additional_info={'accuracy': 0.0, 'duration': 7.536605358123779, 'num_run': 2, 'train_loss': {'accuracy': 0.0}, 'test_loss': 0.05833333333333335, 'configuration_origin': None})
     Passed Configuration: Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'NoEncoder'
@@ -261,7 +261,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  23.028 seconds)
+   **Total running time of the script:** ( 0 minutes  26.339 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_single_configuration.py:

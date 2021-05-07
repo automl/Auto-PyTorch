@@ -38,7 +38,7 @@ a 67% train size split.
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fd58cdde160> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc418131dc0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -77,7 +77,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.002063751220703125, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021703243255615234, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -116,18 +116,18 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=12.407997131347656, wallclock_time=13.902787446975708, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=14.107977390289307, wallclock_time=15.564765691757202, budget=5.555555555555555)]
     {'accuracy': 0.8554913294797688}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | None                                                              | CatBoostClassifier                                              |     0.3  |
-    |  1 | None                                                              | SVC                                                             |     0.26 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-    |  3 | None                                                              | RFClassifier                                                    |     0.14 |
-    |  4 | None                                                              | KNNClassifier                                                   |     0.1  |
-    |  5 | None                                                              | LGBMClassifier                                                  |     0.02 |
-    |  6 | None                                                              | ExtraTreesClassifier                                            |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7fd5a93a9a60> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    |  0 | None                                                              | CatBoostClassifier                                              |     0.24 |
+    |  1 | None                                                              | RFClassifier                                                    |     0.16 |
+    |  2 | None                                                              | KNNClassifier                                                   |     0.16 |
+    |  3 | None                                                              | SVC                                                             |     0.14 |
+    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
+    |  5 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
+    |  6 | None                                                              | LGBMClassifier                                                  |     0.04 |
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc41834fdc0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -166,7 +166,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.002003908157348633, budget=0), TrajEntry(train_perf=0.14508612667360554, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019168853759765625, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -205,13 +205,13 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=31.007997512817383, wallclock_time=32.48618125915527, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=32.46082639694214, wallclock_time=33.94291925430298, budget=5.555555555555555)]
     {'accuracy': 0.884393063583815}
     |    | Preprocessing   | Estimator         |   Weight |
     |---:|:----------------|:------------------|---------:|
     |  0 | None            | TabularClassifier |     0.98 |
     |  1 | None            | TabularClassifier |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7fd58c405a90> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc3fd628f10> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -250,7 +250,7 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021321773529052734, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021016597747802734, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -289,18 +289,17 @@ a 67% train size split.
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=12.180507183074951, wallclock_time=13.66404914855957, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=14.132290363311768, wallclock_time=15.614987850189209, budget=5.555555555555555)]
     {'accuracy': 0.8670520231213873}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | None                                                              | LGBMClassifier                                                  |     0.34 |
-    |  1 | None                                                              | KNNClassifier                                                   |     0.22 |
-    |  2 | None                                                              | CatBoostClassifier                                              |     0.14 |
-    |  3 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.08 |
-    |  4 | None                                                              | RFClassifier                                                    |     0.08 |
-    |  5 | None                                                              | ExtraTreesClassifier                                            |     0.06 |
-    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  7 | None                                                              | SVC                                                             |     0.02 |
+    |  0 | None                                                              | LGBMClassifier                                                  |     0.4  |
+    |  1 | None                                                              | CatBoostClassifier                                              |     0.22 |
+    |  2 | None                                                              | KNNClassifier                                                   |     0.2  |
+    |  3 | None                                                              | RFClassifier                                                    |     0.06 |
+    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  5 | None                                                              | ExtraTreesClassifier                                            |     0.04 |
+    |  6 | None                                                              | SVC                                                             |     0.02 |
 
 
 
@@ -464,7 +463,7 @@ a 67% train size split.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  52.307 seconds)
+   **Total running time of the script:** ( 10 minutes  1.561 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_resampling_strategy.py:
