@@ -283,9 +283,9 @@ def test_featurevalidator_fitontypeA_transformtypeB(input_data_featuretest):
     if isinstance(input_data_featuretest, pd.DataFrame):
         pytest.skip("Column order change in pandas is not supported")
     elif isinstance(input_data_featuretest, np.ndarray):
-        complementary_type = pd.DataFrame(input_data_featuretest)
+        complementary_type = validator.numpy_array_to_pandas(input_data_featuretest)
     elif isinstance(input_data_featuretest, list):
-        complementary_type = pd.DataFrame(input_data_featuretest)
+        complementary_type, _ = validator.list_to_dataframe(input_data_featuretest)
     elif sparse.issparse(input_data_featuretest):
         complementary_type = sparse.csr_matrix(input_data_featuretest.todense())
     else:
@@ -475,8 +475,11 @@ def test_unknown_encode_value():
 )
 @pytest.mark.parametrize('train_data_type', ('numpy', 'pandas', 'list'))
 @pytest.mark.parametrize('test_data_type', ('numpy', 'pandas', 'list'))
-def test_featurevalidator_new_data_after_fit(openml_id,
-                                             train_data_type, test_data_type):
+def test_feature_validator_new_data_after_fit(
+    openml_id,
+    train_data_type,
+    test_data_type,
+):
 
     # List is currently not supported as infer_objects
     # cast list objects to type objects
@@ -515,7 +518,7 @@ def test_featurevalidator_new_data_after_fit(openml_id,
     if train_data_type == 'pandas':
         old_dtypes = copy.deepcopy(validator.dtypes)
         validator.dtypes = ['dummy' for dtype in X_train.dtypes]
-        with pytest.raises(ValueError, match=r"hanging the dtype of the features after fit"):
+        with pytest.raises(ValueError, match=r"Changing the dtype of the features after fit"):
             transformed_X = validator.transform(X_test)
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':
@@ -523,3 +526,65 @@ def test_featurevalidator_new_data_after_fit(openml_id,
             X_test = X_test[reversed(columns)]
             with pytest.raises(ValueError, match=r"Changing the column order of the features"):
                 transformed_X = validator.transform(X_test)
+
+
+def test_feature_validator_imbalanced_data():
+
+    # Null columns in the train split but not necessarily in the test split
+    train_features = {
+        'A': [np.NaN, np.NaN, np.NaN],
+        'B': [1, 2, 3],
+        'C': [np.NaN, np.NaN, np.NaN],
+        'D': [np.NaN, np.NaN, np.NaN],
+    }
+    test_features = {
+        'A': [3, 4, 5],
+        'B': [6, 5, 7],
+        'C': [np.NaN, np.NaN, np.NaN],
+        'D': ['Blue', np.NaN, np.NaN],
+    }
+
+    X_train = pd.DataFrame.from_dict(train_features)
+    X_test = pd.DataFrame.from_dict(test_features)
+    validator = TabularFeatureValidator()
+    validator.fit(X_train)
+
+    train_feature_types = copy.deepcopy(validator.feat_type)
+    assert train_feature_types == ['numerical', 'numerical', 'numerical', 'numerical']
+    # validator will throw an error if the column types are not the same
+    transformed_X_test = validator.transform(X_test)
+    transformed_X_test = pd.DataFrame(transformed_X_test)
+    null_columns = []
+    for column in transformed_X_test.columns:
+        if transformed_X_test[column].isna().all():
+            null_columns.append(column)
+    assert null_columns == [0, 2, 3]
+
+    # Columns with not all null values in the train split and
+    # completely null on the test split.
+    train_features = {
+        'A': [np.NaN, np.NaN, 4],
+        'B': [1, 2, 3],
+        'C': ['Blue', np.NaN, np.NaN],
+    }
+    test_features = {
+        'A': [np.NaN, np.NaN, np.NaN],
+        'B': [6, 5, 7],
+        'C': [np.NaN, np.NaN, np.NaN],
+    }
+
+    X_train = pd.DataFrame.from_dict(train_features)
+    X_test = pd.DataFrame.from_dict(test_features)
+    validator = TabularFeatureValidator()
+    validator.fit(X_train)
+    train_feature_types = copy.deepcopy(validator.feat_type)
+    assert train_feature_types == ['categorical', 'numerical', 'numerical']
+
+    transformed_X_test = validator.transform(X_test)
+    transformed_X_test = pd.DataFrame(transformed_X_test)
+    null_columns = []
+    for column in transformed_X_test.columns:
+        if transformed_X_test[column].isna().all():
+            null_columns.append(column)
+
+    assert null_columns == [1]

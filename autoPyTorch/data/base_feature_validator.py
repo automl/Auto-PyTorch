@@ -63,6 +63,8 @@ class BaseFeatureValidator(BaseEstimator):
         self.categories = []  # type: typing.List[typing.List[int]]
         self.categorical_columns: typing.List[int] = []
         self.numerical_columns: typing.List[int] = []
+        # column identifiers may be integers or strings
+        self.null_columns: typing.Set[str] = set()
 
         self._is_fitted = False
 
@@ -119,6 +121,20 @@ class BaseFeatureValidator(BaseEstimator):
         Returns:
             self:
                 The fitted base estimator
+        """
+        raise NotImplementedError()
+
+    def _check_data(
+        self,
+        X: SUPPORTED_FEAT_TYPES,
+    ) -> None:
+        """
+        Feature dimensionality and data type checks
+
+        Arguments:
+            X (SUPPORTED_FEAT_TYPES):
+                A set of features that are going to be validated (type and dimensionality
+                checks) and a encoder fitted in the case the data needs encoding
         """
         raise NotImplementedError()
 
