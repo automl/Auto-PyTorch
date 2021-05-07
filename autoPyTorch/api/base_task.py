@@ -576,6 +576,7 @@ class BaseTask:
         assert self._dask_client is not None
 
         self._logger.info("Starting to create traditional classifier predictions.")
+        starttime = time.time()
 
         # Initialise run history for the traditional classifiers
         run_history = RunHistory()
@@ -649,6 +650,7 @@ class BaseTask:
                         origin = additional_info['configuration_origin']
                         run_history.add(config=configuration, cost=cost,
                                         time=runtime, status=status, seed=self.seed,
+                                        starttime=starttime, endtime=starttime + runtime,
                                         origin=origin)
                     else:
                         if additional_info.get('exitcode') == -6:
