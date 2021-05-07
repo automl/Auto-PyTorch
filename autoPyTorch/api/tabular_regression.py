@@ -92,17 +92,9 @@ class TabularRegressionTask(BaseTask):
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
         delete_output_folder_after_terminate: bool = True,
-<<<<<<< HEAD
         include_components: Optional[Dict[str, Any]] = None,
         exclude_components: Optional[Dict[str, Any]] = None,
         resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
-=======
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
-        resampling_strategy:Union[CrossValTypes,
-                                    HoldoutValTypes,
-                                    NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None

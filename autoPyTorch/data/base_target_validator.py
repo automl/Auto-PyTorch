@@ -130,7 +130,7 @@ class BaseTargetValidator(BaseEstimator):
 
     def transform(
         self,
-        y: Union[SupportedTargetTypes],
+        y: SupportedTargetTypes,
     ) -> np.ndarray:
         """
         Args:
