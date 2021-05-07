@@ -43,11 +43,6 @@ if __name__ == '__main__':
     # Build and fit a classifier with default resampling strategy
     # ===========================================================
     api = TabularClassificationTask(
-        temporary_directory='./tmp/autoPyTorch_example_tmp_03',
-        output_directory='./tmp/autoPyTorch_example_out_03',
-        # To maintain logs of the run, set the next two as False
-        delete_tmp_folder_after_terminate=True,
-        delete_output_folder_after_terminate=True,
         # 'HoldoutValTypes.holdout_validation' with 'val_share': 0.33
         # is the default argument setting for TabularClassificationTask.
         # It is explicitly specified in this example for demonstrational

@@ -16,6 +16,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+import datetime
 import os
 import sys
 import sphinx_bootstrap_theme
@@ -68,9 +69,9 @@ if "dev" in autoPyTorch.__version__:
 
 sphinx_gallery_conf = {
     # path to the examples
-    'examples_dirs': ['../examples/tabular/20_basics', '../examples/tabular/40_advanced'],
+    'examples_dirs': '../examples',
     # path where to save gallery generated examples
-    'gallery_dirs': ['basics_tabular', 'advanced_tabular'],
+    'gallery_dirs': 'examples',
     #TODO: fix back/forward references for the examples.
     #'doc_module': ('autoPyTorch'),
     #'reference_url': {
@@ -107,7 +108,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'AutoPyTorch'
-copyright = u'2014-2019, Machine Learning Professorship Freiburg'
+copyright = u"2014-{}, Machine Learning Professorship Freiburg".format(
+    datetime.datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
