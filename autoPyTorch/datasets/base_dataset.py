@@ -228,7 +228,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         elif isinstance(self.split_fn, CrossValTypes):
             num_splits = DEFAULT_SPLIT_PARAMETERS[self.split_fn].get(
                 'num_splits', None)
-            if self.split_fn is not None:
+            if self.split_params is not None:
                 num_splits = self.split_params.get('num_splits', num_splits)
             # Create the split if it was not created before
             splits.extend(

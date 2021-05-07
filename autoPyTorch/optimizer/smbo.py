@@ -136,7 +136,7 @@ class AutoMLSMBO(object):
                 The ID index to start runs
             seed (int):
                 To make the run deterministic
-            split_fn (str):
+            split_fn (Union[HoldoutValTypes, CrossValTypes]):
                 What strategy to use for performance validation
             split_params (typing.Optional[typing.Dict[str, typing.Any]]):
                 Arguments to the split function -- like number of folds
