@@ -2,6 +2,7 @@ import os
 import pathlib
 import pickle
 import sys
+import time
 import unittest
 
 import numpy as np
@@ -16,7 +17,7 @@ import sklearn.datasets
 from sklearn.base import clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
-from smac.runhistory.runhistory import RunHistory
+from smac.runhistory.runhistory import RunHistory, StatusType
 
 import torch
 
@@ -26,13 +27,90 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
+from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
+# ========
 # Fixtures
 # ========
+class DummyTrainEvaluator(TrainEvaluator):
 
+    def fit_predict_and_loss(self) -> None:
+        self.start_time = time.time()
+        split_id = 0
+        self.logger.info("Starting fit {}".format(split_id))
+
+        pipeline = self._get_pipeline()
+
+        train_split, test_split = self.splits[split_id]
+        self.Y_optimization = self.y_train[test_split]
+        self.Y_actual_train = self.y_train[train_split]
+        y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
+                                                                                    train_indices=train_split,
+                                                                                    test_indices=test_split,
+                                                                                    add_pipeline_to_self=True)
+        train_loss = self._loss(self.y_train[train_split], y_train_pred)
+        loss = self._loss(self.y_train[test_split], y_opt_pred)
+        additional_run_info = pipeline.get_additional_run_info() if hasattr(
+            pipeline, 'get_additional_run_info') else {}
+
+        status = StatusType.SUCCESS
+
+        self.finish_up(
+            loss=loss,
+            train_loss=train_loss,
+            opt_pred=y_opt_pred,
+            valid_pred=y_valid_pred,
+            test_pred=y_test_pred,
+            additional_run_info=additional_run_info,
+            file_output=True,
+            status=status,
+        )
+
+
+# create closure for evaluating an algorithm
+def dummy_eval_function(
+        backend,
+        queue,
+        metric,
+        budget: float,
+        config,
+        seed: int,
+        output_y_hat_optimization: bool,
+        num_run: int,
+        include,
+        exclude,
+        disable_file_output,
+        pipeline_config=None,
+        budget_type=None,
+        init_params=None,
+        logger_port=None,
+        all_supported_metrics=True,
+        search_space_updates=None,
+        instance: str = None,
+) -> None:
+    evaluator = TrainEvaluator(
+        backend=backend,
+        queue=queue,
+        metric=metric,
+        configuration=config,
+        seed=seed,
+        num_run=num_run,
+        output_y_hat_optimization=output_y_hat_optimization,
+        include=include,
+        exclude=exclude,
+        disable_file_output=disable_file_output,
+        init_params=init_params,
+        budget=budget,
+        budget_type=budget_type,
+        logger_port=logger_port,
+        all_supported_metrics=all_supported_metrics,
+        pipeline_config=pipeline_config,
+        search_space_updates=search_space_updates
+    )
+    evaluator.fit_predict_and_loss()
 
 # Test
 # ========
