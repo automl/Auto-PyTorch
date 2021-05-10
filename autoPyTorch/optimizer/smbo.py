@@ -20,7 +20,6 @@ from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
-    DEFAULT_RESAMPLING_PARAMETERS,
     HoldoutValTypes,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager

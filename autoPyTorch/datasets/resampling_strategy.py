@@ -31,14 +31,14 @@ class HoldoutFuncs():
         indices: np.ndarray,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
-    ):
+    ) -> List[Tuple[np.ndarray, np.ndarray]]:
 
         train, val = train_test_split(
             indices, test_size=val_share, shuffle=shuffle,
             random_state=random_state if shuffle else None,
             stratify=labels_to_stratify
         )
-        return train, val
+        return [train, val]
 
 
 class CrossValFuncs():
@@ -177,7 +177,7 @@ class HoldoutValTypes(Enum):
     Additionally, HoldoutValTypes.<function> can be called directly.
     """
 
-    holdout = partial(HoldoutFuncs.holdout_validation)
+    holdout_validation = partial(HoldoutFuncs.holdout_validation)
 
     def __call__(
         self,

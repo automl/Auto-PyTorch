@@ -108,9 +108,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.random_state = np.random.RandomState(seed=seed)
         self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
-        self.shuffle = self.resampling_strategy_args['shuffle']
-        self.is_stratify = self.resampling_strategy.get('stratify', False)
+        self.resampling_strategy_args = resampling_strategy_args if resampling_strategy is not None else {}
+        self.shuffle = self.resampling_strategy_args.get('shuffle', False)
+        self.is_stratify = self.resampling_strategy_args.get('stratify', False)
 
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])

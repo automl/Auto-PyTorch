@@ -45,7 +45,7 @@ class ImageDataset(BaseDataset):
         resampling_strategy_args (Optional[Dict[str, Any]]):
             arguments required for the chosen resampling strategy.
             The details are provided in autoPytorch/datasets/resampling_strategy.py
-        shuffle:  Whether to shuffle the data before performing splits
+        shuffle:  Whether to shuffle the data when performing splits
         seed (int), (default=1): seed to be used for reproducibility.
         train_transforms (Optional[torchvision.transforms.Compose]):
             Additional Transforms to be applied to the training data
