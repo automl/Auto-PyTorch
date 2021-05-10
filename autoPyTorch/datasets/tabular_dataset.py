@@ -50,7 +50,7 @@ class TabularDataset(BaseDataset):
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 arguments required for the chosen resampling strategy.
                 The details are provided in autoPytorch/datasets/resampling_strategy.py
-            shuffle:  Whether to shuffle the data when performing splits
+            shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the training data.
@@ -68,6 +68,7 @@ class TabularDataset(BaseDataset):
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -90,7 +91,7 @@ class TabularDataset(BaseDataset):
         self.num_features = validator.feature_validator.num_features
         self.categories = validator.feature_validator.categories
 
-        super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test),
+        super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test), shuffle=shuffle,
                          resampling_strategy=resampling_strategy,
                          resampling_strategy_args=resampling_strategy_args,
                          seed=seed, train_transforms=train_transforms,

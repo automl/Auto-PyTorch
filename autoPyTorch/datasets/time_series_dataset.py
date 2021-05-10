@@ -41,6 +41,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                  val: Optional[TIME_SERIES_FORECASTING_INPUT] = None,
                  resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 shuffle: Optional[bool] = False,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -68,7 +69,7 @@ class TimeSeriesForecastingDataset(BaseDataset):
                                                           target_variables=target_variables,
                                                           sequence_length=sequence_length,
                                                           n_steps=n_steps)
-        super().__init__(train_tensors=train, val_tensors=val,
+        super().__init__(train_tensors=train, val_tensors=val, shuffle=shuffle,
                          resampling_strategy=resampling_strategy, resampling_strategy_args=resampling_strategy_args,
                          seed=seed,
                          train_transforms=train_transforms,
@@ -128,8 +129,7 @@ class TimeSeriesClassificationDataset(BaseDataset):
         _check_time_series_inputs(train=train,
                                   val=val,
                                   task_type="time_series_classification")
-        resampling_strategy_args = {'shuffle': True}
-        super().__init__(train_tensors=train, val_tensors=val, resampling_strategy_args=resampling_strategy_args)
+        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
 
 
 class TimeSeriesRegressionDataset(BaseDataset):
@@ -137,8 +137,7 @@ class TimeSeriesRegressionDataset(BaseDataset):
         _check_time_series_inputs(train=train,
                                   val=val,
                                   task_type="time_series_regression")
-        resampling_strategy_args = {'shuffle': True}
-        super().__init__(train_tensors=train, val_tensors=val, resampling_strategy_args=resampling_strategy_args)
+        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
 
 
 def _check_time_series_inputs(task_type: str,

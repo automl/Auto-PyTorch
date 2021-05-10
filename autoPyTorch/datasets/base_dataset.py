@@ -71,6 +71,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         test_tensors: Optional[BaseDatasetInputType] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
         train_transforms: Optional[torchvision.transforms.Compose] = None,
         val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -91,7 +92,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 arguments required for the chosen resampling strategy.
                 The details are provided in autoPytorch/datasets/resampling_strategy.py
-            shuffle:  Whether to shuffle the data when performing splits
+            shuffle:  Whether to shuffle the data before performing splits
             seed (int), (default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the training data
@@ -107,12 +108,14 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.random_state = np.random.RandomState(seed=seed)
+        self.shuffle = shuffle
+
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args: Dict[str, Any] = {}
         if resampling_strategy_args is not None:
             self.resampling_strategy_args = resampling_strategy_args
 
-        self.shuffle = self.resampling_strategy_args.get('shuffle', False)
+        self.shuffle_split = self.resampling_strategy_args.get('shuffle', False)
         self.is_stratify = self.resampling_strategy_args.get('stratify', False)
 
         self.task_type: Optional[str] = None
@@ -195,7 +198,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         return self.train_tensors[0].shape[0]
 
     def _get_indices(self) -> np.ndarray:
-        return np.arange(len(self))
+        return self.random_state.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
     def _process_resampling_strategy_args(self) -> None:
         if not any(isinstance(self.resampling_strategy, val_type)
@@ -238,7 +241,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             return self.resampling_strategy(
                 random_state=self.random_state,
                 val_share=val_share,
-                shuffle=self.shuffle,
+                shuffle=self.shuffle_split,
                 indices=self._get_indices(),
                 labels_to_stratify=labels_to_stratify
             )
@@ -248,7 +251,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             return self.resampling_strategy(
                 random_state=self.random_state,
                 num_splits=num_splits,
-                shuffle=self.shuffle,
+                shuffle=self.shuffle_split,
                 indices=self._get_indices(),
                 labels_to_stratify=labels_to_stratify
             )
