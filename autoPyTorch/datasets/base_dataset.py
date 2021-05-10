@@ -233,7 +233,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         labels_to_stratify = self.train_tensors[-1] if self.is_stratify else None
 
         if isinstance(self.resampling_strategy, HoldoutValTypes):
-            val_share = self.resampling_strategy_args['val_share']
+            val_share = self.resampling_strategy_args.get('val_share', None)
 
             return self.resampling_strategy(
                 random_state=self.random_state,
@@ -243,11 +243,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 labels_to_stratify=labels_to_stratify
             )
         elif isinstance(self.resampling_strategy, CrossValTypes):
-            num_splits = self.resampling_strategy_args['num_splits']
+            num_splits = self.resampling_strategy_args.get('num_splits', None)
 
             return self.resampling_strategy(
                 random_state=self.random_state,
-                num_splits=int(num_splits),
+                num_splits=num_splits,
                 shuffle=self.shuffle,
                 indices=self._get_indices(),
                 labels_to_stratify=labels_to_stratify

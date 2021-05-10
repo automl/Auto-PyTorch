@@ -26,19 +26,19 @@ class _ResamplingStrategyArgs(NamedTuple):
 class HoldoutFuncs():
     @staticmethod
     def holdout_validation(
-        random_state: np.random.RandomState,
-        val_share: float,
         indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        val_share: Optional[float] = None,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
 
         train, val = train_test_split(
-            indices, test_size=val_share, shuffle=shuffle,
-            random_state=random_state if shuffle else None,
+            indices, test_size=val_share,
+            shuffle=shuffle, random_state=random_state,
             stratify=labels_to_stratify
         )
-        return [train, val]
+        return [(train, val)]
 
 
 class CrossValFuncs():
@@ -52,9 +52,9 @@ class CrossValFuncs():
 
     @staticmethod
     def k_fold_cross_validation(
-        random_state: np.random.RandomState,
-        num_splits: int,
         indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        num_splits: Optional[int] = None,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -70,21 +70,14 @@ class CrossValFuncs():
 
     @staticmethod
     def time_series(
-        random_state: np.random.RandomState,
-        num_splits: int,
         indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        num_splits: Optional[int] = None,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
         """
         Returns train and validation indices respecting the temporal ordering of the data.
-
-        Args:
-            indices (np.ndarray): array of indices to be split
-            num_splits (int): number of cross validation splits
-
-        Returns:
-            splits (List[Tuple[List, List]]): list of tuples of training and validation indices
 
         Examples:
             >>> indices = np.array([0, 1, 2, 3])
@@ -94,7 +87,7 @@ class CrossValFuncs():
                  ([0, 1, 2], [3])]
 
         """
-        cv = TimeSeriesSplit(n_splits=num_splits, random_state=random_state)
+        cv = TimeSeriesSplit(n_splits=num_splits)
         splits = list(cv.split(indices))
         return splits
 
@@ -122,9 +115,9 @@ class CrossValTypes(Enum):
 
     def __call__(
         self,
-        random_state: np.random.RandomState,
         indices: np.ndarray,
-        num_splits: int = 5,
+        random_state: Optional[np.random.RandomState] = None,
+        num_splits: Optional[int] = None,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -144,8 +137,12 @@ class CrossValTypes(Enum):
                 splits[a split identifier][0: train, 1: val][a data point identifier]
 
         """
+
+        default_num_splits = _ResamplingStrategyArgs().num_splits
+        num_splits = num_splits if num_splits is not None else default_num_splits
+
         return self.value(
-            random_state=random_state,
+            random_state=random_state if shuffle else None,
             num_splits=num_splits,
             indices=indices,
             shuffle=shuffle,
@@ -181,9 +178,9 @@ class HoldoutValTypes(Enum):
 
     def __call__(
         self,
-        random_state: np.random.RandomState,
         indices: np.ndarray,
-        val_share: float = 0.33,
+        random_state: Optional[np.random.RandomState] = None,
+        val_share: Optional[float] = None,
         shuffle: bool = False,
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -203,8 +200,12 @@ class HoldoutValTypes(Enum):
                 splits[a split identifier][0: train, 1: val][a data point identifier]
 
         """
+
+        default_val_share = _ResamplingStrategyArgs().val_share
+        val_share = val_share if val_share is not None else default_val_share
+
         return self.value(
-            random_state=random_state,
+            random_state=random_state if shuffle else None,
             val_share=val_share,
             indices=indices,
             shuffle=shuffle,
