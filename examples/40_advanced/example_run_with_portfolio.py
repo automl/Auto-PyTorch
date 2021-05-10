@@ -54,10 +54,10 @@ if __name__ == '__main__':
         optimize_metric='accuracy',
         total_walltime_limit=300,
         func_eval_time_limit_secs=50,
-        # Setting this option to True
+        # Setting this option to "greedy"
         # will make smac run the configurations
         # present in 'autoPyTorch/optimizer/greedy_portfolio.json'
-        run_greedy_portfolio=True
+        portfolio_selection="greedy"
     )
 
     ############################################################################

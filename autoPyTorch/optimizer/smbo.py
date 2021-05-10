@@ -109,7 +109,7 @@ class AutoMLSMBO(object):
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-                 run_greedy_portfolio: bool = False
+                 portfolio_selection: str = "none"
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -158,7 +158,7 @@ class AutoMLSMBO(object):
                 Allows to create a user specified SMAC object
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
-            run_greedy_portfolio (bool), (default=False): If True,
+            portfolio_selection (str), (default="none"): If "greedy",
                 runs initial configurations present in
                 'autoPyTorch/optimizer/greedy_portfolio.json'.
         """
@@ -217,7 +217,8 @@ class AutoMLSMBO(object):
         initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__), 'greedy_portfolio.json')))
 
         self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
-        if run_greedy_portfolio:
+        assert portfolio_selection in ['none', 'greedy']
+        if portfolio_selection == "greedy":
             self.initial_configurations = list()
             for configuration_dict in initial_configurations:
                 try:
