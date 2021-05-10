@@ -107,8 +107,8 @@ def _prepare_time_series_forecasting_tensor(tensor: TIME_SERIES_FORECASTING_INPU
     population_size, time_series_length, num_features = tensor[0].shape
     num_targets = len(target_variables)
     num_datapoints = time_series_length - sequence_length - n_steps + 1
-    x_tensor = np.zeros((num_datapoints, population_size, sequence_length, num_features), dtype=np.float)
-    y_tensor = np.zeros((num_datapoints, population_size, num_targets), dtype=np.float)
+    x_tensor = np.zeros((num_datapoints, population_size, sequence_length, num_features), dtype=np.float64)
+    y_tensor = np.zeros((num_datapoints, population_size, num_targets), dtype=np.float64)
 
     for p in range(population_size):
         for i in range(num_datapoints):

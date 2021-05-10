@@ -108,7 +108,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.random_state = np.random.RandomState(seed=seed)
         self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args if resampling_strategy is not None else {}
+        self.resampling_strategy_args: Dict[str, Any] = {}
+        if resampling_strategy_args is not None:
+            self.resampling_strategy_args = resampling_strategy_args
+
         self.shuffle = self.resampling_strategy_args.get('shuffle', False)
         self.is_stratify = self.resampling_strategy_args.get('stratify', False)
 
@@ -242,7 +245,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = self.resampling_strategy_args['num_splits']
 
-            return self.create_cross_val_splits(
+            return self.resampling_strategy(
                 random_state=self.random_state,
                 num_splits=int(num_splits),
                 shuffle=self.shuffle,
