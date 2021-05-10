@@ -173,9 +173,7 @@ class AutoMLSMBO(object):
 
         # Evaluation
         self.resampling_strategy = resampling_strategy
-        if resampling_strategy_args is None:
-            resampling_strategy_args = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy]
-        self.resampling_strategy_args = resampling_strategy_args
+        self.resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else {}
 
         # and a bunch of useful limits
         self.worst_possible_result = get_cost_of_crash(self.metric)

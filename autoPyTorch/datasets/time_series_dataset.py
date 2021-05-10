@@ -5,16 +5,31 @@ import numpy as np
 import torchvision.transforms
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.resampling_strategy import (
-    CrossValFuncs,
-    CrossValTypes,
-    HoldOutFuncs,
-    HoldoutValTypes
-)
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
 TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
 TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
+
+
+def _check_prohibited_resampling() -> None:
+    """Check if resampling strategy is suitable for a given task
+
+    Args:
+        task_name (str): Typically the Dataset class name
+        resampling_strategy (Union[CrossValTypes, HoldoutValTypes]):
+            The splitting function
+        args (Union[CrossValTypes, HoldoutValTypes]):
+            The list of cross validation functions and
+            holdout validation functions that are suitable for the given task
+
+    Returns:
+        None
+
+    TODO: Especially, reject shuffle splits
+    """
+
+    pass
 
 
 class TimeSeriesForecastingDataset(BaseDataset):
@@ -26,7 +41,6 @@ class TimeSeriesForecastingDataset(BaseDataset):
                  val: Optional[TIME_SERIES_FORECASTING_INPUT] = None,
                  resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                 shuffle: Optional[bool] = False,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -54,14 +68,12 @@ class TimeSeriesForecastingDataset(BaseDataset):
                                                           target_variables=target_variables,
                                                           sequence_length=sequence_length,
                                                           n_steps=n_steps)
-        super().__init__(train_tensors=train, val_tensors=val, shuffle=shuffle,
+        super().__init__(train_tensors=train, val_tensors=val,
                          resampling_strategy=resampling_strategy, resampling_strategy_args=resampling_strategy_args,
                          seed=seed,
                          train_transforms=train_transforms,
                          val_transforms=val_transforms,
                          )
-        self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.holdout_validation)
 
 
 def _check_time_series_forecasting_inputs(target_variables: Tuple[int],
@@ -116,17 +128,8 @@ class TimeSeriesClassificationDataset(BaseDataset):
         _check_time_series_inputs(train=train,
                                   val=val,
                                   task_type="time_series_classification")
-        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = CrossValFuncs.get_cross_validators(
-            CrossValTypes.stratified_k_fold_cross_validation,
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation,
-            CrossValTypes.stratified_shuffle_split_cross_validation
-        )
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation,
-            HoldoutValTypes.stratified_holdout_validation
-        )
+        resampling_strategy_args = {'shuffle': True}
+        super().__init__(train_tensors=train, val_tensors=val, resampling_strategy_args=resampling_strategy_args)
 
 
 class TimeSeriesRegressionDataset(BaseDataset):
@@ -134,14 +137,8 @@ class TimeSeriesRegressionDataset(BaseDataset):
         _check_time_series_inputs(train=train,
                                   val=val,
                                   task_type="time_series_regression")
-        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = CrossValFuncs.get_cross_validators(
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation
-        )
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation
-        )
+        resampling_strategy_args = {'shuffle': True}
+        super().__init__(train_tensors=train, val_tensors=val, resampling_strategy_args=resampling_strategy_args)
 
 
 def _check_time_series_inputs(task_type: str,

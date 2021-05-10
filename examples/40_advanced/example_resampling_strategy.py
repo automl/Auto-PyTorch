@@ -115,9 +115,9 @@ if __name__ == '__main__':
     api = TabularClassificationTask(
         # For demonstration purposes, we use
         # Stratified hold out validation. However,
-        # one can also use CrossValTypes.stratified_k_fold_cross_validation.
-        resampling_strategy=HoldoutValTypes.stratified_holdout_validation,
-        resampling_strategy_args={'val_share': 0.33}
+        # one can also use CrossValTypes.k_fold_cross_validation.
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        resampling_strategy_args={'val_share': 0.33, 'stratify': True}
     )
 
     ############################################################################
