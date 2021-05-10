@@ -26,6 +26,36 @@ def get_dataset_requirements(info: Dict[str, Any],
                              exclude: Optional[Dict] = None,
                              search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                              ) -> List[FitRequirement]:
+    """
+
+    This function is used to return the dataset
+    property requirements which are needed to fit
+    a pipeline created based on the constraints
+    specified using include, exclude and
+    search_space_updates
+
+    Args:
+        info (Dict[str, Any]):
+             A dictionary that specifies the required information
+             about the dataset to instantiate a pipeline. For more
+             info check the get_required_dataset_info of the
+             appropriate dataset in autoPyTorch/datasets
+        include (Optional[Dict]), (default=None):
+            If None, all possible components are used.
+            Otherwise specifies set of components to use.
+        exclude (Optional[Dict]), (default=None):
+            If None, all possible components are used.
+            Otherwise specifies set of components not to use.
+            Incompatible with include.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
+
+    Returns:
+        List[FitRequirement]:
+            List of requirements that should be in the fit
+            dictionary used to fit the pipeline.
+    """
     task_type: int = STRING_TO_TASK_TYPES[info['task_type']]
     if task_type in REGRESSION_TASKS:
         return _get_regression_dataset_requirements(info,
@@ -87,6 +117,33 @@ def get_configuration_space(info: Dict[str, Any],
                             exclude: Optional[Dict] = None,
                             search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                             ) -> ConfigurationSpace:
+    """
+
+    This function is used to return the configuration
+    space of the pipeline created based on the constraints
+    specified using include, exclude and search_space_updates
+
+    Args:
+        info (Dict[str, Any]):
+             A dictionary that specifies the required information
+             about the dataset to instantiate a pipeline. For more
+             info check the get_required_dataset_info of the
+             appropriate dataset in autoPyTorch/datasets
+        include (Optional[Dict]), (default=None):
+            If None, all possible components are used.
+            Otherwise specifies set of components to use.
+        exclude (Optional[Dict]), (default=None):
+            If None, all possible components are used.
+            Otherwise specifies set of components not to use.
+            Incompatible with include.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
+
+    Returns:
+        ConfigurationSpace
+
+    """
     task_type: int = STRING_TO_TASK_TYPES[info['task_type']]
 
     if task_type in REGRESSION_TASKS:
