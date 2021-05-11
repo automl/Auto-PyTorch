@@ -25,6 +25,9 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
+N_SAMPLES = 200
+
+
 @pytest.fixture(scope="session")
 def callattr_ahead_of_alltests(request):
     """
@@ -191,7 +194,7 @@ def dask_client(request):
 def get_tabular_data(task):
     if task == "classification_numerical_only":
         X, y = make_classification(
-            n_samples=200,
+            n_samples=N_SAMPLES,
             n_features=4,
             n_informative=3,
             n_redundant=1,
@@ -207,18 +210,18 @@ def get_tabular_data(task):
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "classification_numerical_and_categorical":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_only":
-        X, y = make_regression(n_samples=200,
+        X, y = make_regression(n_samples=N_SAMPLES,
                                n_features=4,
                                n_informative=3,
                                n_targets=1,
@@ -240,8 +243,8 @@ def get_tabular_data(task):
             else:
                 X[column] = X[column].fillna(0)
 
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         y = (y - y.mean()) / y.std()
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
@@ -256,8 +259,8 @@ def get_tabular_data(task):
             else:
                 X[column] = X[column].fillna(0)
 
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         y = (y - y.mean()) / y.std()
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
     elif task == 'iris':
@@ -288,7 +291,7 @@ def get_fit_dictionary(X, y, validator, backend):
         'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
-        'epochs': 100,
+        'epochs': 5,
         'torch_num_threads': 1,
         'early_stopping': 10,
         'working_dir': '/tmp',
@@ -326,7 +329,7 @@ def dataset(request):
 @pytest.fixture
 def dataset_traditional_classifier_num_only():
     X, y = make_classification(
-        n_samples=200,
+        n_samples=N_SAMPLES,
         n_features=4,
         n_informative=3,
         n_redundant=1,
@@ -344,7 +347,7 @@ def dataset_traditional_classifier_categorical_only():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
     X = X[categorical_columns]
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    X, y = X[:N_SAMPLES].to_numpy(), y[:N_SAMPLES].to_numpy().astype(np.int)
     return X, y
 
 
@@ -352,7 +355,7 @@ def dataset_traditional_classifier_categorical_only():
 def dataset_traditional_classifier_num_categorical():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     y = y.astype(np.int)
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    X, y = X[:N_SAMPLES].to_numpy(), y[:N_SAMPLES].to_numpy().astype(np.int)
     return X, y
 
 
@@ -456,3 +459,7 @@ def loss_mse():
 @pytest.fixture
 def loss_details(request):
     return request.getfixturevalue(request.param)
+
+@pytest.fixture
+def n_samples():
+    return N_SAMPLES

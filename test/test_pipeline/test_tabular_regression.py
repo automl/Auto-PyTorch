@@ -10,6 +10,7 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import pytest
+import unittest
 
 import torch
 
@@ -114,8 +115,11 @@ class TestTabularRegression:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        # We do not want to make the same early preprocessing operation to the fit dictionary
-        pipeline.fit(fit_dictionary_tabular.copy())
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            # We do not want to make the same early preprocessing operation to the fit dictionary
+            pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 
@@ -279,6 +283,7 @@ class TestTabularRegression:
             assert 'fully_connected:units_layer' in e.args[0]
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
 def test_pipeline_score(fit_dictionary_tabular_dummy):
     """This test makes sure that the pipeline is able to achieve a decent score on dummy data
@@ -296,6 +301,20 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
                                             value_range=[0.0001, 0.001],
                                             default_value=0.001)
         ])
+=======
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ['regression'], indirect=True)
+def test_pipeline_score(fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular_dummy['epochs'] = 50
+
+    X = fit_dictionary_tabular_dummy['X_train'].copy()
+    y = fit_dictionary_tabular_dummy['y_train'].copy()
+
+    pipeline = TabularRegressionPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
+>>>>>>> Reduce time for tests
     )
 
     cs = pipeline.get_hyperparameter_search_space()
@@ -315,4 +334,8 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     # we should be able to get a decent score on this dummy data
     r2_score = metrics.r2(y, prediction)
+<<<<<<< HEAD
     assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+=======
+    assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+>>>>>>> Reduce time for tests

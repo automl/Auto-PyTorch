@@ -165,7 +165,8 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
          _,
          epochs,
          logger) = self.prepare_trainer(StandardTrainer(),
-                                        constants.TABULAR_REGRESSION)
+                                        constants.TABULAR_REGRESSION,
+                                        1000)
 
         # Train the model
         counter = 0
@@ -186,7 +187,8 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
          _,
          epochs,
          logger) = self.prepare_trainer(StandardTrainer(),
-                                        constants.TABULAR_CLASSIFICATION)
+                                        constants.TABULAR_CLASSIFICATION,
+                                        1000)
 
         # Train the model
         counter = 0
@@ -209,7 +211,8 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
          _,
          epochs,
          logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
-                                        constants.TABULAR_CLASSIFICATION)
+                                        constants.TABULAR_CLASSIFICATION,
+                                        1000)
 
         # Train the model
         counter = 0

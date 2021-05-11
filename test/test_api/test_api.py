@@ -27,9 +27,15 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
+from autoPyTorch.evaluation.abstract_evaluator import (
+    DummyClassificationPipeline,
+    DummyRegressionPipeline,
+    fit_and_suppress_warnings
+)
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.constants import REGRESSION_TASKS
 
 
 # ========
@@ -37,37 +43,43 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 # ========
 class DummyTrainEvaluator(TrainEvaluator):
 
-    def fit_predict_and_loss(self) -> None:
-        self.start_time = time.time()
-        split_id = 0
-        self.logger.info("Starting fit {}".format(split_id))
+    def _fit_and_predict(self, pipeline, fold: int, train_indices,
+                         test_indices,
+                         add_pipeline_to_self
+                         ):
 
-        pipeline = self._get_pipeline()
+        if self.task_type in REGRESSION_TASKS:
+            pipeline = DummyRegressionPipeline(config=1)
+        else:
+            pipeline = DummyClassificationPipeline(config=1)
 
-        train_split, test_split = self.splits[split_id]
-        self.Y_optimization = self.y_train[test_split]
-        self.Y_actual_train = self.y_train[train_split]
-        y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
-                                                                                    train_indices=train_split,
-                                                                                    test_indices=test_split,
-                                                                                    add_pipeline_to_self=True)
-        train_loss = self._loss(self.y_train[train_split], y_train_pred)
-        loss = self._loss(self.y_train[test_split], y_opt_pred)
-        additional_run_info = pipeline.get_additional_run_info() if hasattr(
-            pipeline, 'get_additional_run_info') else {}
+        self.indices[fold] = ((train_indices, test_indices))
 
-        status = StatusType.SUCCESS
-
-        self.finish_up(
-            loss=loss,
-            train_loss=train_loss,
-            opt_pred=y_opt_pred,
-            valid_pred=y_valid_pred,
-            test_pred=y_test_pred,
-            additional_run_info=additional_run_info,
-            file_output=True,
-            status=status,
+        X = {'train_indices': train_indices,
+             'val_indices': test_indices,
+             'split_id': fold,
+             'num_run': self.num_run,
+             **self.fit_dictionary}  # fit dictionary
+        y = None
+        fit_and_suppress_warnings(self.logger, pipeline, X, y)
+        self.logger.info("Model fitted, now predicting")
+        (
+            Y_train_pred,
+            Y_opt_pred,
+            Y_valid_pred,
+            Y_test_pred
+        ) = self._predict(
+            pipeline,
+            train_indices=train_indices,
+            test_indices=test_indices,
         )
+
+        if add_pipeline_to_self:
+            self.pipeline = pipeline
+        else:
+            self.pipelines[fold] = pipeline
+
+        return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
 
 
 # create closure for evaluating an algorithm
@@ -112,19 +124,29 @@ def dummy_eval_function(
     )
     evaluator.fit_predict_and_loss()
 
+
+def dummy_do_dummy_prediction():
+    return
+
+
 # Test
 # ========
+@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
+                     new=dummy_eval_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_tabular_classification(openml_id, resampling_strategy, backend):
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, None),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                          ))
+def test_tabular_classification(openml_id, resampling_strategy, backend, resampling_strategy_args, n_samples):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
         data_id=int(openml_id),
         return_X_y=True, as_frame=True
     )
+    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
@@ -137,21 +159,23 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
+        resampling_strategy_args=resampling_strategy_args,
         include_components=include
     )
 
-    estimator.search(
-        X_train=X_train, y_train=y_train,
-        X_test=X_test, y_test=y_test,
-        optimize_metric='accuracy',
-        total_walltime_limit=150,
-        func_eval_time_limit_secs=50,
-        enable_traditional_pipeline=False,
-    )
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='accuracy',
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=5,
+            enable_traditional_pipeline=False,
+        )
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_classification'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 5
+    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 2
     assert estimator.resampling_strategy == resampling_strategy
     assert estimator.dataset.resampling_strategy == resampling_strategy
     assert len(estimator.dataset.splits) == expected_num_splits
@@ -212,7 +236,6 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
-        assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
@@ -223,9 +246,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model, VotingClassifier)
-        assert len(model.estimators_) == 5
-        assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
-                          torch.nn.Module)
+        assert len(model.estimators_) == 2
     else:
         pytest.fail(resampling_strategy)
 
@@ -278,10 +299,13 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
-@pytest.mark.parametrize('resampling_strategy', (HoldoutValTypes.holdout_validation,
-                                                 CrossValTypes.k_fold_cross_validation,
-                                                 ))
-def test_tabular_regression(openml_name, resampling_strategy, backend):
+@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
+                     new=dummy_eval_function)
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, None),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                          ))
+def test_tabular_regression(openml_name, resampling_strategy, backend, resampling_strategy_args, n_samples):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
@@ -289,6 +313,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         return_X_y=True,
         as_frame=True
     )
+    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+
     # normalize values
     y = (y - y.mean()) / y.std()
 
@@ -312,21 +338,23 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
     estimator = TabularRegressionTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
+        resampling_strategy_args=resampling_strategy_args,
         include_components=include
     )
 
-    estimator.search(
-        X_train=X_train, y_train=y_train,
-        X_test=X_test, y_test=y_test,
-        optimize_metric='r2',
-        total_walltime_limit=100,
-        func_eval_time_limit_secs=10,
-        enable_traditional_pipeline=False,
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='r2',
+            total_walltime_limit=35,
+            func_eval_time_limit_secs=5,
+            enable_traditional_pipeline=False,
     )
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_regression'
-    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 5
+    expected_num_splits = 1 if resampling_strategy == HoldoutValTypes.holdout_validation else 2
     assert estimator.resampling_strategy == resampling_strategy
     assert estimator.dataset.resampling_strategy == resampling_strategy
     assert len(estimator.dataset.splits) == expected_num_splits
@@ -383,7 +411,6 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
-        assert isinstance(model.named_steps['network'].get_network(), torch.nn.Module)
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
@@ -393,9 +420,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
         assert isinstance(model, VotingRegressor)
-        assert len(model.estimators_) == 5
-        assert isinstance(model.estimators_[0].named_steps['network'].get_network(),
-                          torch.nn.Module)
+        assert len(model.estimators_) == 2
     else:
         pytest.fail(resampling_strategy)
 
