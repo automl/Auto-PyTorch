@@ -27,11 +27,11 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
         beta = 1.0
-        lam = np.random.beta(beta, beta)
+        lam = self.random_state.beta(beta, beta)
         batch_size, channel, W, H = X.size()
         index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
-        r = np.random.rand(1)
+        r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
 
@@ -40,8 +40,8 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
         cut_rat = np.sqrt(1. - lam)
         cut_w = np.int(W * cut_rat)
         cut_h = np.int(H * cut_rat)
-        cx = np.random.randint(W)
-        cy = np.random.randint(H)
+        cx = self.random_state.randint(W)
+        cy = self.random_state.randint(H)
         bbx1 = np.clip(cx - cut_w // 2, 0, W)
         bby1 = np.clip(cy - cut_h // 2, 0, H)
         bbx2 = np.clip(cx + cut_w // 2, 0, W)
