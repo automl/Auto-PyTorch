@@ -90,7 +90,10 @@ class TestTabularRegression:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
@@ -147,7 +150,10 @@ class TestTabularRegression:
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+                as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
