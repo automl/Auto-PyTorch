@@ -32,9 +32,11 @@ class HoldoutFuncs():
         labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
     ) -> List[Tuple[np.ndarray, np.ndarray]]:
 
+        """ SKLearn requires shuffle=True for stratify """
         train, val = train_test_split(
             indices, test_size=val_share,
-            shuffle=shuffle, random_state=random_state,
+            shuffle=shuffle if labels_to_stratify is None else True,
+            random_state=random_state,
             stratify=labels_to_stratify
         )
         return [(train, val)]
