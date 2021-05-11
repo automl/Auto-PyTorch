@@ -1,4 +1,3 @@
-import random
 import typing
 
 import numpy as np
@@ -28,7 +27,7 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
 
-        r = np.random.rand(1)
+        r = self.random_state.rand(1)
         if r > self.cutout_prob:
             y_a = y
             y_b = y
@@ -39,7 +38,7 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         # It is unlikely that the batch size is lower than the number of features, but
         # be safe
         size = min(X.shape[0], X.shape[1])
-        indices = torch.tensor(random.sample(range(1, size), max(1, np.int(size * self.patch_ratio))))
+        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int(size * self.patch_ratio))))
 
         # We use an ordinal encoder on the tabular data
         # -1 is the conceptual equivalent to 0 in a image, that does not

@@ -1,4 +1,3 @@
-import random
 import typing
 
 import numpy as np
@@ -28,11 +27,11 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
         beta = 1.0
-        lam = np.random.beta(beta, beta)
+        lam = self.random_state.beta(beta, beta)
         batch_size = X.size()[0]
         index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
-        r = np.random.rand(1)
+        r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
 
@@ -40,7 +39,7 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         # It is unlikely that the batch size is lower than the number of features, but
         # be safe
         size = min(X.shape[0], X.shape[1])
-        indices = torch.tensor(random.sample(range(1, size), max(1, np.int(size * lam))))
+        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int(size * lam))))
 
         X[:, indices] = X[index, :][:, indices]
 
