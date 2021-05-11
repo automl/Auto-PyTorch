@@ -5,13 +5,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>autoPyTorch.api.tabular_classification &#8212; AutoPyTorch 0.1.0 documentation</title>
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/gallery-binder.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/gallery-dataframe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
@@ -120,6 +120,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">autoPyTorch.api.base_task</span> <span class="kn">import</span> <span class="n">BaseTask</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.automl_common.common.utils.backend</span> <span class="kn">import</span> <span class="n">Backend</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.constants</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">TABULAR_CLASSIFICATION</span><span class="p">,</span>
     <span class="n">TASK_TYPES_TO_STRING</span><span class="p">,</span>
@@ -132,7 +133,6 @@
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.tabular_dataset</span> <span class="kn">import</span> <span class="n">TabularDataset</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationPipeline</span>
-<span class="kn">from</span> <span class="nn">autoPyTorch.utils.backend</span> <span class="kn">import</span> <span class="n">Backend</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
 
 
@@ -408,7 +408,7 @@
     </p>
     <p>
         &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.1.<br/>
     </p>
   </div>
 </footer>

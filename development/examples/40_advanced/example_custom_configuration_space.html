@@ -3,15 +3,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.1.0 documentation</title>
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/gallery-binder.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/gallery-dataframe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
@@ -118,7 +119,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="tabular-classification-with-custom-configuration-space">
+<section class="sphx-glr-example-title" id="tabular-classification-with-custom-configuration-space">
 <span id="sphx-glr-examples-40-advanced-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how adjust the configuration space of
 the search. Currently, there are two changes that can be made to the space:-
@@ -143,7 +144,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f16fb6925e0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f238292c9a0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -177,7 +178,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019881725311279297, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016999244689941406, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -211,7 +212,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.924399137496948, wallclock_time=7.483955383300781, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=5.410280227661133, wallclock_time=7.019444704055786, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 475
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -259,7 +260,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;Normalizer&#39;
   trainer:StandardTrainer:weighted_loss, Value: False
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=12, ta_time_used=166.8644254207611, wallclock_time=197.1043405532837, budget=16.666666666666664)]
+, ta_runs=12, ta_time_used=147.0560622215271, wallclock_time=174.7362368106842, budget=16.666666666666664)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                     | Estimator                                                 |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
@@ -275,7 +276,7 @@ the search space.</p>
 |  9 | SimpleImputer,OneHotEncoder,Normalizer,NoFeaturePreprocessing     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 | 10 | None                                                              | KNNClassifier                                             |     0.02 |
 | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f16ca634490&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f238292c460&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -307,7 +308,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016286373138427734, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014469623565673828, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -339,7 +340,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.018240690231323, wallclock_time=6.567354679107666, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=4.590234994888306, wallclock_time=6.196410894393921, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                 | Estimator                                                          |   Weight |
 |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -471,7 +472,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  43.644 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  54.345 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -484,7 +485,7 @@ the search space.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
+</section>
 
 
     </div>
@@ -506,7 +507,7 @@ the search space.</p>
     </p>
     <p>
         &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.1.<br/>
     </p>
   </div>
 </footer>
