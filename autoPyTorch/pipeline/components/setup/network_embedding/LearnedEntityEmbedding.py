@@ -89,7 +89,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     Class to learn an embedding for categorical hyperparameters.
     """
 
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None, **kwargs: Any):
+    def __init__(self, random_state: Optional[np.random.RandomState] = None, **kwargs: Any):
         super().__init__(random_state=random_state)
         self.config = kwargs
 

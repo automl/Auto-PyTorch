@@ -11,10 +11,9 @@ from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupCom
 
 
 class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
-        super().__init__()
+    def __init__(self, random_state: Optional[np.random.RandomState] = None):
+        super().__init__(random_state=random_state)
         self.embedding: Optional[nn.Module] = None
-        self.random_state = random_state
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
