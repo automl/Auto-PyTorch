@@ -1,13 +1,12 @@
 import os
 import re
+import unittest
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
-
-import unittest
 
 import numpy as np
 
@@ -80,10 +79,6 @@ class TestTabularClassification:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-<<<<<<< HEAD
-    @flaky.flaky(max_runs=3)
-=======
->>>>>>> Reduce time for tests
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""

@@ -2,7 +2,6 @@ import os
 import pathlib
 import pickle
 import sys
-import time
 import unittest
 
 import numpy as np
@@ -17,12 +16,11 @@ import sklearn.datasets
 from sklearn.base import clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
-from smac.runhistory.runhistory import RunHistory, StatusType
-
-import torch
+from smac.runhistory.runhistory import RunHistory
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
+from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -35,7 +33,6 @@ from autoPyTorch.evaluation.abstract_evaluator import (
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.constants import REGRESSION_TASKS
 
 
 # ========
@@ -350,7 +347,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
             total_walltime_limit=35,
             func_eval_time_limit_secs=5,
             enable_traditional_pipeline=False,
-    )
+        )
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_regression'

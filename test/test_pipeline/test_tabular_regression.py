@@ -1,5 +1,6 @@
 import os
 import re
+import unittest
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -10,7 +11,6 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import pytest
-import unittest
 
 import torch
 
@@ -19,7 +19,6 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_p
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import (
-    HyperparameterSearchSpaceUpdate,
     HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
 )
@@ -283,25 +282,6 @@ class TestTabularRegression:
             assert 'fully_connected:units_layer' in e.args[0]
 
 
-<<<<<<< HEAD
-@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
-def test_pipeline_score(fit_dictionary_tabular_dummy):
-    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
-    given the default configuration"""
-    X = fit_dictionary_tabular_dummy['X_train'].copy()
-    y = fit_dictionary_tabular_dummy['y_train'].copy()
-
-    # lower the learning rate of the optimizer until seeding properly works
-    # with the default learning rate of 0.01 regression sometimes does not converge
-    pipeline = TabularRegressionPipeline(
-        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
-        search_space_updates=HyperparameterSearchSpaceUpdates([
-            HyperparameterSearchSpaceUpdate("optimizer",
-                                            "AdamOptimizer:lr",
-                                            value_range=[0.0001, 0.001],
-                                            default_value=0.001)
-        ])
-=======
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ['regression'], indirect=True)
 def test_pipeline_score(fit_dictionary_tabular_dummy):
     """This test makes sure that the pipeline is able to achieve a decent score on dummy data
@@ -314,7 +294,6 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     pipeline = TabularRegressionPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
->>>>>>> Reduce time for tests
     )
 
     cs = pipeline.get_hyperparameter_search_space()
@@ -334,8 +313,4 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     # we should be able to get a decent score on this dummy data
     r2_score = metrics.r2(y, prediction)
-<<<<<<< HEAD
     assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
-=======
-    assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
->>>>>>> Reduce time for tests

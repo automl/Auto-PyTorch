@@ -460,6 +460,7 @@ def loss_mse():
 def loss_details(request):
     return request.getfixturevalue(request.param)
 
+
 @pytest.fixture
 def n_samples():
     return N_SAMPLES
