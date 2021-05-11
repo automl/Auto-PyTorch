@@ -24,7 +24,7 @@ class GridCutOutTrainer(CutOut, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        r = np.random.rand(1)
+        r = self.random_state.rand(1)
         batch_size, channel, W, H = X.size()
         if r > self.cutout_prob:
             return X, {'y_a': y, 'y_b': y, 'lam': 1}
@@ -34,8 +34,8 @@ class GridCutOutTrainer(CutOut, BaseTrainerComponent):
         cut_rat = np.sqrt(1. - self.patch_ratio)
         cut_w = np.int(W * cut_rat)
         cut_h = np.int(H * cut_rat)
-        cx = np.random.randint(W)
-        cy = np.random.randint(H)
+        cx = self.random_state.randint(W)
+        cy = self.random_state.randint(H)
         bbx1 = np.clip(cx - cut_w // 2, 0, W)
         bby1 = np.clip(cy - cut_h // 2, 0, H)
         bbx2 = np.clip(cx + cut_w // 2, 0, W)
