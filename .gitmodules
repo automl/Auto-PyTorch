@@ -1,0 +1,3 @@
+[submodule "autoPyTorch/automl_common"]
+	path = autoPyTorch/automl_common
+	url = https://github.com/automl/automl_common.git

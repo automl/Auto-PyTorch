@@ -5,10 +5,10 @@ import numpy as np
 
 from smac.runhistory.runhistory import RunHistory
 
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.ensemble.abstract_ensemble import AbstractEnsemble
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.utils.backend import Backend
 
 
 class SingleBest(AbstractEnsemble):

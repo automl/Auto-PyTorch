@@ -20,6 +20,7 @@ import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
 import autoPyTorch.pipeline.traditional_tabular_classification
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     IMAGE_TASKS,
@@ -41,7 +42,6 @@ from autoPyTorch.pipeline.components.training.metrics.utils import (
     calculate_loss,
     get_metrics,
 )
-from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
@@ -399,7 +399,6 @@ class AbstractEvaluator(object):
             name=logger_name,
             port=logger_port,
         )
-        self.backend.setup_logger(name=logger_name, port=logger_port)
 
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None

@@ -11,9 +11,9 @@ import sklearn.dummy
 
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import Backend, BackendContext
 from autoPyTorch.evaluation.abstract_evaluator import AbstractEvaluator
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.utils.backend import Backend, BackendContext
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
@@ -245,6 +245,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
         queue_mock = unittest.mock.Mock()
 
         context = BackendContext(
+            prefix='autoPyTorch',
             temporary_directory=os.path.join(self.working_directory, 'tmp'),
             output_directory=os.path.join(self.working_directory, 'out'),
             delete_tmp_folder_after_terminate=True,
@@ -253,7 +254,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
         with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
             load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
 
-            backend = Backend(context)
+            backend = Backend(context, prefix='autoPyTorch')
 
             ae = AbstractEvaluator(
                 backend=backend,

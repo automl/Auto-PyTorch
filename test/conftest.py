@@ -18,9 +18,9 @@ from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 import torch
 
+from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
-from autoPyTorch.utils.backend import create
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
@@ -88,6 +88,7 @@ def backend(request):
         output,
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
+        prefix='autoPyTorch'
     )
 
     def get_finalizer(tmp_dir, output_dir):

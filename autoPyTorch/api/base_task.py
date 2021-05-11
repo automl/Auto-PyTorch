@@ -28,6 +28,7 @@ from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
@@ -45,7 +46,6 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
-from autoPyTorch.utils.backend import Backend, create
 from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import (
@@ -157,6 +157,7 @@ class BaseTask:
             self._backend = backend
         else:
             self._backend = create(
+                prefix='autoPyTorch',
                 temporary_directory=self._temporary_directory,
                 output_directory=self._output_directory,
                 delete_tmp_folder_after_terminate=delete_tmp_folder_after_terminate,
@@ -776,7 +777,6 @@ class BaseTask:
             self
 
         """
-
         if self.task_type != dataset.task_type:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
@@ -794,6 +794,10 @@ class BaseTask:
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset_name)
+
+        # Setup the logger for the backend
+        self._backend.setup_logger(port=self._logger_port)
+
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output
         self._memory_limit = memory_limit

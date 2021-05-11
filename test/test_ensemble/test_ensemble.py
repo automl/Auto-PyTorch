@@ -7,6 +7,8 @@ import unittest.mock
 
 import dask.distributed
 
+from flaky import flaky
+
 import numpy as np
 
 import pandas as pd
@@ -686,6 +688,7 @@ def test_ensemble_builder_process_realrun(dask_client, ensemble_backend):
     assert history[0]['test_mockmetric'] == 0.9
 
 
+@flaky(max_runs=3)
 @unittest.mock.patch('autoPyTorch.ensemble.ensemble_builder.EnsembleBuilder.fit_ensemble')
 def test_ensemble_builder_nbest_remembered(fit_ensemble, ensemble_backend, dask_client):
     """
@@ -715,10 +718,10 @@ def test_ensemble_builder_nbest_remembered(fit_ensemble, ensemble_backend, dask_
         max_iterations=None,
     )
 
-    manager.build_ensemble(dask_client, unit_test=True)
+    manager.build_ensemble(dask_client, unit_test=True, pynisher_context='fork')
     future = manager.futures[0]
     dask.distributed.wait([future])  # wait for the ensemble process to finish
-    assert future.result() == ([], 5, None, None)
+    assert future.result() == ([], 5, None, None), vars(future.result())
     file_path = os.path.join(ensemble_backend.internals_directory, 'ensemble_read_preds.pkl')
     assert not os.path.exists(file_path)
 
