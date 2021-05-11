@@ -200,7 +200,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def _get_indices(self) -> np.ndarray:
         return self.random_state.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
-    def _process_resampling_strategy_args(self) -> None:
+    def _check_resampling_strategy_args(self) -> None:
         if not any(isinstance(self.resampling_strategy, val_type)
                    for val_type in [HoldoutValTypes, CrossValTypes]):
             raise ValueError(f"resampling_strategy {self.resampling_strategy} is not supported.")
@@ -231,7 +231,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
         """
         # check if the requirements are met and if we can get splits
-        self._process_resampling_strategy_args()
+        self._check_resampling_strategy_args()
 
         labels_to_stratify = self.train_tensors[-1] if self.is_stratify else None
 

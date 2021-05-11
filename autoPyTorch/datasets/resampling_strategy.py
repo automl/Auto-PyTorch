@@ -22,77 +22,6 @@ class _ResamplingStrategyArgs(NamedTuple):
     stratify: bool = False
 
 
-class HoldoutFuncs():
-    @staticmethod
-    def holdout_validation(
-        indices: np.ndarray,
-        random_state: Optional[np.random.RandomState] = None,
-        val_share: Optional[float] = None,
-        shuffle: bool = False,
-        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
-    ) -> List[Tuple[np.ndarray, np.ndarray]]:
-
-        """ SKLearn requires shuffle=True for stratify """
-        train, val = train_test_split(
-            indices, test_size=val_share,
-            shuffle=shuffle if labels_to_stratify is None else True,
-            random_state=random_state,
-            stratify=labels_to_stratify
-        )
-        return [(train, val)]
-
-
-class CrossValFuncs():
-    # (shuffle, is_stratify) -> split_fn
-    _args2split_fn = {
-        (True, True): StratifiedShuffleSplit,
-        (True, False): ShuffleSplit,
-        (False, True): StratifiedKFold,
-        (False, False): KFold,
-    }
-
-    @staticmethod
-    def k_fold_cross_validation(
-        indices: np.ndarray,
-        random_state: Optional[np.random.RandomState] = None,
-        num_splits: Optional[int] = None,
-        shuffle: bool = False,
-        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
-    ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        """
-        Returns:
-            splits (List[Tuple[List, List]]): list of tuples of training and validation indices
-        """
-
-        split_fn = CrossValFuncs._args2split_fn[(shuffle, labels_to_stratify is not None)]
-        cv = split_fn(n_splits=num_splits, random_state=random_state)
-        splits = list(cv.split(indices))
-        return splits
-
-    @staticmethod
-    def time_series(
-        indices: np.ndarray,
-        random_state: Optional[np.random.RandomState] = None,
-        num_splits: Optional[int] = None,
-        shuffle: bool = False,
-        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
-    ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        """
-        Returns train and validation indices respecting the temporal ordering of the data.
-
-        Examples:
-            >>> indices = np.array([0, 1, 2, 3])
-            >>> CrossValFuncs.time_series_cross_validation(3, indices)
-                [([0], [1]),
-                 ([0, 1], [2]),
-                 ([0, 1, 2], [3])]
-
-        """
-        cv = TimeSeriesSplit(n_splits=num_splits)
-        splits = list(cv.split(indices))
-        return splits
-
-
 class CrossValTypes(IntEnum):
     """The type of cross validation
 
@@ -214,3 +143,74 @@ class HoldoutValTypes(IntEnum):
             shuffle=shuffle,
             labels_to_stratify=labels_to_stratify
         )
+
+
+class HoldoutFuncs():
+    @staticmethod
+    def holdout_validation(
+        indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        val_share: Optional[float] = None,
+        shuffle: bool = False,
+        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
+    ) -> List[Tuple[np.ndarray, np.ndarray]]:
+
+        """ SKLearn requires shuffle=True for stratify """
+        train, val = train_test_split(
+            indices, test_size=val_share,
+            shuffle=shuffle if labels_to_stratify is None else True,
+            random_state=random_state,
+            stratify=labels_to_stratify
+        )
+        return [(train, val)]
+
+
+class CrossValFuncs():
+    # (shuffle, is_stratify) -> split_fn
+    _args2split_fn = {
+        (True, True): StratifiedShuffleSplit,
+        (True, False): ShuffleSplit,
+        (False, True): StratifiedKFold,
+        (False, False): KFold,
+    }
+
+    @staticmethod
+    def k_fold_cross_validation(
+        indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        num_splits: Optional[int] = None,
+        shuffle: bool = False,
+        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
+    ) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns:
+            splits (List[Tuple[List, List]]): list of tuples of training and validation indices
+        """
+
+        split_fn = CrossValFuncs._args2split_fn[(shuffle, labels_to_stratify is not None)]
+        cv = split_fn(n_splits=num_splits, random_state=random_state)
+        splits = list(cv.split(indices))
+        return splits
+
+    @staticmethod
+    def time_series(
+        indices: np.ndarray,
+        random_state: Optional[np.random.RandomState] = None,
+        num_splits: Optional[int] = None,
+        shuffle: bool = False,
+        labels_to_stratify: Optional[Union[Tuple[np.ndarray, np.ndarray], Dataset]] = None
+    ) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Returns train and validation indices respecting the temporal ordering of the data.
+
+        Examples:
+            >>> indices = np.array([0, 1, 2, 3])
+            >>> CrossValFuncs.time_series_cross_validation(3, indices)
+                [([0], [1]),
+                 ([0, 1], [2]),
+                 ([0, 1, 2], [3])]
+
+        """
+        cv = TimeSeriesSplit(n_splits=num_splits)
+        splits = list(cv.split(indices))
+        return splits
