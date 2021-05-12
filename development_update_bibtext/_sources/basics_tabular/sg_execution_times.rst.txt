@@ -1,0 +1,14 @@
+
+:orphan:
+
+.. _sphx_glr_basics_tabular_sg_execution_times:
+
+Computation times
+=================
+**11:24.253** total execution time for **basics_tabular** files:
+
++----------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_basics_tabular_example_tabular_classification.py` (``example_tabular_classification.py``) | 06:00.903 | 0.0 MB |
++----------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_basics_tabular_example_tabular_regression.py` (``example_tabular_regression.py``)         | 05:23.350 | 0.0 MB |
++----------------------------------------------------------------------------------------------------------+-----------+--------+

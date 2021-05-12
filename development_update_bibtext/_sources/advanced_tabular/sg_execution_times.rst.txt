@@ -1,0 +1,16 @@
+
+:orphan:
+
+.. _sphx_glr_advanced_tabular_sg_execution_times:
+
+Computation times
+=================
+**26:46.086** total execution time for **advanced_tabular** files:
+
++--------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_advanced_tabular_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:42.541 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_advanced_tabular_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 10:23.989 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_advanced_tabular_example_visualization.py` (``example_visualization.py``)                           | 04:39.556 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------------+-----------+--------+
