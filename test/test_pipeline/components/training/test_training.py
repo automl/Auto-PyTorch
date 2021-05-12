@@ -158,7 +158,7 @@ class TestBaseTrainerComponent(BaseTraining):
         loss, metrics = trainer.evaluate(loader, epoch=1, writer=None)
         assert prev_loss > loss
         assert metrics['accuracy'] > prev_metrics['accuracy']
-        assert metrics['accuracy']>  0.5
+        assert metrics['accuracy'] > 0.5
 
 
 class StandardTrainerTest(BaseTraining):

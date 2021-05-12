@@ -1,5 +1,4 @@
 import logging
-import unittest
 
 from sklearn.datasets import make_classification, make_regression
 
