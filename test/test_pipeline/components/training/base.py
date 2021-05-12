@@ -1,7 +1,6 @@
 import logging
 
 from sklearn.datasets import make_classification, make_regression
-from sklearn.model_selection import ParameterGrid  #, ParameterSampler
 
 import torch
 
