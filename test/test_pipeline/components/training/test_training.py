@@ -30,6 +30,9 @@ sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
 
 
+OVERFIT_EPOCHS = 1000
+
+
 class BaseDataLoaderTest(unittest.TestCase):
     def test_get_set_config_space(self):
         """
@@ -123,7 +126,7 @@ class BaseDataLoaderTest(unittest.TestCase):
 
 class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
 
-    def test_evaluate(self):
+    def test_evaluate(self, n_samples):
         """
         Makes sure we properly evaluate data, returning a proper loss
         and metric
@@ -135,7 +138,8 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(BaseTrainerComponent(),
+         logger) = self.prepare_trainer(n_samples,
+                                        BaseTrainerComponent(),
                                         constants.TABULAR_CLASSIFICATION)
 
         prev_loss, prev_metrics = trainer.evaluate(loader, epoch=1, writer=None)
@@ -157,16 +161,17 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
 
 
 class StandardTrainerTest(BaseTraining, unittest.TestCase):
-    def test_regression_epoch_training(self):
+    def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(StandardTrainer(),
+         logger) = self.prepare_trainer(n_samples,
+                                        StandardTrainer(),
                                         constants.TABULAR_REGRESSION,
-                                        1000)
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
@@ -179,16 +184,17 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
             if counter > epochs:
                 self.fail(f"Could not overfit a dummy regression under {epochs} epochs")
 
-    def test_classification_epoch_training(self):
+    def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(StandardTrainer(),
+         logger) = self.prepare_trainer(n_samples,
+                                        StandardTrainer(),
                                         constants.TABULAR_CLASSIFICATION,
-                                        1000)
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
@@ -203,16 +209,17 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
 
 
 class MixUpTrainerTest(BaseTraining, unittest.TestCase):
-    def test_classification_epoch_training(self):
+    def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
+         logger) = self.prepare_trainer(n_samples,
+                                        MixUpTrainer(alpha=0.5),
                                         constants.TABULAR_CLASSIFICATION,
-                                        1000)
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0

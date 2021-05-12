@@ -444,6 +444,9 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     pipeline.fit(fit_dictionary_tabular_dummy)
 
+    # Ensure that the network is an instance of torch Module
+    assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
+
     # we expect the output to have the same batch size as the test input,
     # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
     expected_output_shape = (X.shape[0],

@@ -20,6 +20,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTr
 class BaseTraining(unittest.TestCase):
 
     def prepare_trainer(self,
+                        n_samples: int,
                         trainer: BaseTrainerComponent,
                         task_type: int,
                         epochs=50):
