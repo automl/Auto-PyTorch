@@ -1,0 +1,16 @@
+
+:orphan:
+
+.. _sphx_glr_examples_40_advanced_sg_execution_times:
+
+Computation times
+=================
+**26:30.635** total execution time for **examples_40_advanced** files:
+
++------------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_40_advanced_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:31.820 | 0.0 MB |
++------------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 10:12.530 | 0.0 MB |
++------------------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_40_advanced_example_visualization.py` (``example_visualization.py``)                           | 04:46.285 | 0.0 MB |
++------------------------------------------------------------------------------------------------------------------------+-----------+--------+

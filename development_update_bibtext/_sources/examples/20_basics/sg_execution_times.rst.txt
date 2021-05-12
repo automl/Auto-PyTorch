@@ -1,0 +1,16 @@
+
+:orphan:
+
+.. _sphx_glr_examples_20_basics_sg_execution_times:
+
+Computation times
+=================
+**11:38.204** total execution time for **examples_20_basics** files:
+
++--------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_20_basics_example_tabular_classification.py` (``example_tabular_classification.py``) | 06:04.872 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_20_basics_example_tabular_regression.py` (``example_tabular_regression.py``)         | 05:23.516 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_20_basics_example_image_classification.py` (``example_image_classification.py``)     | 00:09.816 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------------+-----------+--------+
