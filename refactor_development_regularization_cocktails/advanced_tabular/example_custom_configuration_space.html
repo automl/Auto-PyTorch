@@ -3,16 +3,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -119,7 +118,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-advanced-tabular-example-custom-configuration-space-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<section class="sphx-glr-example-title" id="tabular-classification-with-custom-configuration-space">
+<div class="sphx-glr-example-title section" id="tabular-classification-with-custom-configuration-space">
 <span id="sphx-glr-advanced-tabular-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how adjust the configuration space of
 the search. Currently, there are two changes that can be made to the space:-
@@ -144,7 +143,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fac3963a9d0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fd8ab4db220&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -185,7 +184,7 @@ the search space.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019087791442871094, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001977682113647461, budget=0), TrajEntry(train_perf=0.21052631578947367, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -226,19 +225,19 @@ the search space.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=13.619905710220337, wallclock_time=15.071529388427734, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                                     | Estimator                                                    |   Weight |
-|---:|:------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                           |     0.34 |
-|  1 | None                                                              | RFClassifier                                                 |     0.24 |
-|  2 | SimpleImputer,OneHotEncoder,NoScaler,PolynomialFeatures           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  3 | None                                                              | ExtraTreesClassifier                                         |     0.1  |
-|  4 | None                                                              | LGBMClassifier                                               |     0.08 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  6 | None                                                              | SVC                                                          |     0.02 |
-|  7 | None                                                              | KNNClassifier                                                |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7fac28dcde80&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+, ta_runs=1, ta_time_used=14.220442295074463, wallclock_time=15.671681880950928, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8728323699421965}
+|    | Preprocessing                                                     | Estimator                                                 |   Weight |
+|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+|  0 | None                                                              | RFClassifier                                              |     0.24 |
+|  1 | None                                                              | ExtraTreesClassifier                                      |     0.14 |
+|  2 | None                                                              | LGBMClassifier                                            |     0.12 |
+|  3 | None                                                              | CatBoostClassifier                                        |     0.12 |
+|  4 | None                                                              | SVC                                                       |     0.1  |
+|  5 | None                                                              | KNNClassifier                                             |     0.1  |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7fd8abeaa640&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -277,7 +276,7 @@ the search space.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019690990447998047, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015747547149658203, budget=0), TrajEntry(train_perf=0.1871345029239766, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -316,19 +315,18 @@ the search space.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=8.54720139503479, wallclock_time=9.972944259643555, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                               | Estimator                                                          |   Weight |
-|---:|:------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.3  |
-|  1 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures         | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.28 |
-|  2 | None                                                        | RFClassifier                                                       |     0.16 |
-|  3 | None                                                        | LGBMClassifier                                                     |     0.08 |
-|  4 | None                                                        | CatBoostClassifier                                                 |     0.06 |
-|  5 | None                                                        | SVC                                                                |     0.04 |
-|  6 | None                                                        | KNNClassifier                                                      |     0.04 |
-|  7 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-|  8 | None                                                        | ExtraTreesClassifier                                               |     0.02 |
+, ta_runs=1, ta_time_used=9.06000542640686, wallclock_time=10.521122455596924, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                 | Estimator                                                       |   Weight |
+|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.56 |
+|  1 | None                                                          | RFClassifier                                                    |     0.16 |
+|  2 | None                                                          | ExtraTreesClassifier                                            |     0.08 |
+|  3 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  4 | None                                                          | CatBoostClassifier                                              |     0.06 |
+|  5 | None                                                          | LGBMClassifier                                                  |     0.04 |
+|  6 | None                                                          | SVC                                                             |     0.02 |
+|  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -450,7 +448,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  29.301 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  29.448 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -463,7 +461,7 @@ the search space.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
+</div>
 
 
     </div>
@@ -485,7 +483,7 @@ the search space.</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.1.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
     </p>
   </div>
 </footer>
