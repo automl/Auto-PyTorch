@@ -9,7 +9,7 @@ The newest features in Auto-PyTorch for tabular data are described in the paper 
 
 ## Alpha Status of Next Release
 
-The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to give it a try, check out the `refactor` branch.
+The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to give it a try, check out the `development` branch or it's [documentation](https://automl.github.io/Auto-PyTorch/development/).
 
 ## Installation
 
@@ -20,10 +20,10 @@ $ cd install/path
 $ git clone https://github.com/automl/Auto-PyTorch.git
 $ cd Auto-PyTorch
 ```
-If you want to contribute to this repository switch to our current develop branch
+If you want to contribute to this repository switch to our current development branch
 
 ```sh
-$ git checkout develop
+$ git checkout development
 ```
 
 Install pytorch: 
