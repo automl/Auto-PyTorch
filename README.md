@@ -37,9 +37,6 @@ python setup.py install
 
 ```
 
-### Pip
-TODO
-
 ## Contributing
 
 If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
@@ -47,29 +44,6 @@ If you want to contribute to Auto-PyTorch, clone the repository and checkout our
 ```sh
 $ git checkout development
 ```
-
-
-## Examples
-
-For a detailed tutorial, please refer to the jupyter notebook in https://github.com/automl/Auto-PyTorch/tree/master/examples/basics.
-
-In a nutshell:
-
-```py
-from autoPyTorch import TODO
-```
-
-For ore examples, checkout `examples/`.
-
-
-## Configuration
-
-### Pipeline configuration
-
-### Search space
-
-### Fitting single configurations
-
 
 ## License
 
