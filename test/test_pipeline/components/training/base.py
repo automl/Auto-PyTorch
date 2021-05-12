@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 
 
-class BaseTraining(unittest.TestCase):
+class BaseTraining:
 
     def prepare_trainer(self,
                         n_samples: int,
