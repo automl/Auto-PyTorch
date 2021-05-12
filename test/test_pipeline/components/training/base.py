@@ -1,6 +1,7 @@
 import logging
 
 from sklearn.datasets import make_classification, make_regression
+from sklearn.model_selection import ParameterGrid  #, ParameterSampler
 
 import torch
 
@@ -25,7 +26,7 @@ class BaseTraining:
                         epochs=50):
         if task_type in CLASSIFICATION_TASKS:
             X, y = make_classification(
-                n_samples=500,
+                n_samples=n_samples,
                 n_features=4,
                 n_informative=3,
                 n_redundant=1,
@@ -43,7 +44,7 @@ class BaseTraining:
 
         elif task_type in REGRESSION_TASKS:
             X, y = make_regression(
-                n_samples=500,
+                n_samples=n_samples,
                 n_features=4,
                 n_informative=3,
                 n_targets=1,
