@@ -380,6 +380,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
+        if self.scheduler:
+            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
+                self.scheduler.step(loss)
+            else:
+                self.scheduler.step()
+
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:
@@ -420,11 +426,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
-        if self.scheduler:
-            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-                self.scheduler.step(loss)
-            else:
-                self.scheduler.step()
 
         return loss.item(), outputs
 
