@@ -234,27 +234,22 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self._check_resampling_strategy_args()
 
         labels_to_stratify = self.train_tensors[-1] if self.is_stratify else None
+        kwargs = {}
+        kwargs.update(
+            random_state=self.random_state,
+            shuffle=self.shuffle_split,
+            indices=self._get_indices(),
+            labels_to_stratify=labels_to_stratify
+        )
 
         if isinstance(self.resampling_strategy, HoldoutValTypes):
             val_share = self.resampling_strategy_args.get('val_share', None)
+            return self.resampling_strategy(val_share=val_share, **kwargs)
 
-            return self.resampling_strategy(
-                random_state=self.random_state,
-                val_share=val_share,
-                shuffle=self.shuffle_split,
-                indices=self._get_indices(),
-                labels_to_stratify=labels_to_stratify
-            )
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = self.resampling_strategy_args.get('num_splits', None)
+            return self.resampling_strategy(num_splits=num_splits, **kwargs)
 
-            return self.resampling_strategy(
-                random_state=self.random_state,
-                num_splits=num_splits,
-                shuffle=self.shuffle_split,
-                indices=self._get_indices(),
-                labels_to_stratify=labels_to_stratify
-            )
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
 
