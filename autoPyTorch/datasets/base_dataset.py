@@ -234,7 +234,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self._check_resampling_strategy_args()
 
         labels_to_stratify = self.train_tensors[-1] if self.is_stratify else None
-        kwargs = {}
+        kwargs: Dict[str, Any] = {}
         kwargs.update(
             random_state=self.random_state,
             shuffle=self.shuffle_split,
