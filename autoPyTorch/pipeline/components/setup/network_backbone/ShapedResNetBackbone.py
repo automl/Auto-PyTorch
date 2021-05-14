@@ -40,7 +40,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         )
         if self.config['use_dropout'] and self.config["max_dropout"] > 0.05:
             dropout_shape = get_shaped_neuron_counts(
-                self.config['resnet_shape'], 0, 0, 1000, self.config['num_groups']
+                self.config['dropout_shape'], 0, 0, 1000, self.config['num_groups']
             )
 
             dropout_shape = [
@@ -103,6 +103,13 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                            value_range=(True, False),
                                                                            default_value=False,
                                                                            ),
+        dropout_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout_shape",
+                                                                             value_range=('funnel', 'long_funnel',
+                                                                                          'diamond', 'hexagon',
+                                                                                          'brick', 'triangle',
+                                                                                          'stairs'),
+                                                                             default_value='funnel',
+                                                                             ),
         use_batch_norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_batch_norm",
                                                                               value_range=(True, False),
                                                                               default_value=False,
@@ -160,7 +167,8 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         if dropout_flag:
             max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
-            cs.add_hyperparameter(max_dropout)
+            dropout_shape = get_hyperparameter(dropout_shape, CategoricalHyperparameter)
+            cs.add_hyperparameters([max_dropout, dropout_shape])
             cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
         skip_connection_flag = False
