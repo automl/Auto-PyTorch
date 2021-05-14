@@ -1,6 +1,7 @@
-from enum import IntEnum
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from enum import Enum
 
 import numpy as np
 
@@ -20,9 +21,16 @@ from autoPyTorch.pipeline.components.training.metrics.utils import calculate_sco
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
-class StepUnit(IntEnum):
-    batch = 0
-    epoch = 1
+class StepIntervalUnit(Enum):
+    """
+    By which interval we perform the step for learning rate schedulers.
+
+    Attributes:
+        batch (str): We update every batch evaluation
+        epoch (str): We update every epoch
+    """
+    batch = 'batch'
+    epoch = 'epoch'
 
 
 class BudgetTracker(object):
@@ -192,15 +200,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_unit: Union[str, StepUnit] = StepUnit.batch
+        step_unit: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
-        step_unit_choices = {'batch': StepUnit.batch, 'epoch': StepUnit.epoch}
-        if isinstance(step_unit, str):
-            if step_unit not in step_unit_choices.keys():
-                raise ValueError(f'step_unit must be {list(step_unit_choices.keys())}, but got {step_unit}.')
+        step_unit_types = [str, StepIntervalUnit]
+        if not any(isinstance(step_unit, step_unit_type) for step_unit_type in step_unit_types):
+            raise ValueError(f'step_unit must be {step_unit_types}, but got {type(step_unit)}.')
 
-            step_unit = step_unit_choices[step_unit]
+        if isinstance(step_unit, str):
+            if step_unit not in StepIntervalUnit.__members__.keys():
+                raise ValueError(f'step_unit must be {list(StepIntervalUnit.__members__.keys())}, '
+                                 f'but got {step_unit}.')
+
+            step_unit = StepIntervalUnit.__members__[step_unit]
 
         # Save the device to be used
         self.device = device
@@ -253,10 +265,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def _scheduler_step(
         self,
-        step_type: StepUnit,
+        step_interval: StepIntervalUnit,
         loss: Optional[torch.Tensor] = None
     ) -> None:
-        if self.step_unit != step_type:
+        if self.step_unit != step_interval:
             return
 
         if self.scheduler:
@@ -307,7 +319,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
-        self._scheduler_step(step_type=StepUnit.epoch, loss=loss)
+        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss)
 
         if self.metrics_during_training:
             return loss_sum / N, self._compute_metrics(outputs_data, targets_data)
@@ -349,7 +361,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
-        self._scheduler_step(step_type=StepUnit.batch, loss=loss)
+        self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss)
 
         return loss.item(), outputs
 
