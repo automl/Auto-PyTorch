@@ -1,7 +1,7 @@
 import time
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from enum import Enum
 
 import numpy as np
 
