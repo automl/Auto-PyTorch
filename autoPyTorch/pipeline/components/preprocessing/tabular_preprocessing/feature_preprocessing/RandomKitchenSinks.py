@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
