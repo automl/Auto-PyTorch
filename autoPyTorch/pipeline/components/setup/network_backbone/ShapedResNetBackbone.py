@@ -45,12 +45,12 @@ class ShapedResNetBackbone(ResNetBackbone):
             # n_units for the architecture, since, it is mostly implemented for the
             # output layer, which is part of the head and not of the backbone.
             dropout_shape = get_shaped_neuron_counts(
-                shape=self.config['resnet_shape'],
-                in_feat=0,
-                out_feat=0,
-                max_neurons=self.config["max_dropout"],
-                layer_count=self.config['num_groups'] + 1,
-            )[:-1]
+                self.config['dropout_shape'], 0, 0, 1000, self.config['num_groups']
+            )
+
+            dropout_shape = [
+                dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
+            ]
 
             self.config.update(
                 {"dropout_%d" % (i + 1): dropout for i, dropout in enumerate(dropout_shape)}
@@ -136,6 +136,13 @@ class ShapedResNetBackbone(ResNetBackbone):
         max_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_dropout",
                                                                            value_range=(0, 0.8),
                                                                            default_value=0.5),
+        dropout_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout_shape",
+                                                                             value_range=('funnel', 'long_funnel',
+                                                                                          'diamond', 'hexagon',
+                                                                                          'brick', 'triangle',
+                                                                                          'stairs'),
+                                                                             default_value='funnel',
+                                                                             ),
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
             value_range=(0, 1),
@@ -165,8 +172,10 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         if dropout_flag:
             max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
-            cs.add_hyperparameter(max_dropout)
+            dropout_shape = get_hyperparameter(dropout_shape, CategoricalHyperparameter)
+            cs.add_hyperparameters([dropout_shape, max_dropout])
             cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
+            cs.add_condition(CS.EqualsCondition(dropout_shape, use_dropout, True))
 
         skip_connection_flag = False
         if any(use_skip_connection.value_range):
