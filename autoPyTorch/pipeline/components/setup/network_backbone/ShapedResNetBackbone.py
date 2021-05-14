@@ -168,7 +168,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         if dropout_flag:
             max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
             dropout_shape = get_hyperparameter(dropout_shape, CategoricalHyperparameter)
-            cs.add_hyperparameter([dropout_shape, max_dropout])
+            cs.add_hyperparameters([dropout_shape, max_dropout])
             cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
             cs.add_condition(CS.EqualsCondition(dropout_shape, use_dropout, True))
 
