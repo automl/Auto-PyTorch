@@ -44,7 +44,7 @@ class StandardTrainer(BaseTrainerComponent):
             torch.Tensor: that processes data
             _CriterionPreparationParameters: arguments to the criterion function
         """
-        return X, _CriterionPreparationParameters()
+        return X, _CriterionPreparationParameters(y_a=y)
 
     def criterion_preparation(
         self,
