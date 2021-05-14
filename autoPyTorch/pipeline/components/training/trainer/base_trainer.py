@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
 
 import numpy as np
@@ -31,6 +31,15 @@ class StepIntervalUnit(Enum):
     """
     batch = 'batch'
     epoch = 'epoch'
+
+
+class _CriterionPreparationParameters(NamedTuple):
+    """
+    TODO: Documentation string
+    """
+    y_a: np.ndarray
+    lam: float = 1.0
+    y_b: Optional[np.ndarray] = None
 
 
 class BudgetTracker(object):
@@ -92,18 +101,13 @@ class RunSummary(object):
         self.total_parameter_count = total_parameter_count
         self.trainable_parameter_count = trainable_parameter_count
 
-        # Allow to track the training performance
-        self.performance_tracker['train_loss'] = {}
-
-        # Allow to track the val performance
-        self.performance_tracker['val_loss'] = {}
-
-        # Allow to track the test performance
-        self.performance_tracker['test_loss'] = {}
+        # Allow to track the training, val, test performance
+        for loss_type in ['train_loss', 'val_loss', 'test_loss']:
+            self.performance_tracker[loss_type] = {}
 
         # Allow to track the metrics performance
-        for metric in ['train_metrics', 'val_metrics', 'test_metrics']:
-            self.performance_tracker[metric] = {}
+        for metric_type in ['train_metrics', 'val_metrics', 'test_metrics']:
+            self.performance_tracker[metric_type] = {}
 
     def add_performance(self,
                         epoch: int,
@@ -221,12 +225,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.metrics = metrics
 
         # Weights for the loss function
-        kwargs = {}
+        weight_dict = {}
         if self.weighted_loss:
-            kwargs = self._get_class_weights(criterion, labels)
+            weight_dict = self._get_class_weights(criterion, labels)
 
         # Setup the loss function
-        self.criterion = criterion(**kwargs)
+        self.criterion = criterion(**weight_dict)
         # setup the model
         self.model = model.to(device)
 
@@ -280,8 +284,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
                     ) -> Tuple[float, Dict[str, float]]:
-        '''
-            Trains the model for a single epoch.
+        """
+        Train the model for a single epoch.
 
         Args:
             train_loader (torch.utils.data.DataLoader): generator of features/label
@@ -290,7 +294,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Returns:
             float: training loss
             Dict[str, float]: scores for each desired metric
-        '''
+        """
 
         loss_sum = 0.0
         N = 0
@@ -352,12 +356,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         data = data.float().to(self.device)
         targets = self._cast_targets(targets)
 
-        data, criterion_kwargs = self.data_preparation(data, targets)
+        data, criterion_params = self.data_preparation(data, targets)
 
         # training
         self.optimizer.zero_grad()
         outputs = self.model(data)
-        loss_func = self.criterion_preparation(**criterion_kwargs)
+        loss_func = self.criterion_preparation(criterion_params)
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
@@ -368,8 +372,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def evaluate(self, test_loader: torch.utils.data.DataLoader, epoch: int,
                  writer: Optional[SummaryWriter],
                  ) -> Tuple[float, Dict[str, float]]:
-        '''
-            Evaluates the model in both metrics and criterion
+        """
+        Evaluate the model in both metrics and criterion
 
         Args:
             test_loader (torch.utils.data.DataLoader): generator of features/label
@@ -378,7 +382,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Returns:
             float: test loss
             Dict[str, float]: scores for each desired metric
-        '''
+        """
         self.model.eval()
 
         loss_sum = 0.0
@@ -412,7 +416,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.model.train()
         return loss_sum / N, self._compute_metrics(outputs_data, targets_data)
 
-    def _compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
+    def _compute_metrics(self, outputs_data: List[torch.Tensor], targets_data: List[torch.Tensor]
                          ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
         outputs_data = torch.cat(outputs_data, dim=0).numpy()
@@ -430,8 +434,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return {'weight': weights}
 
-    def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
+                         ) -> Tuple[torch.Tensor, _CriterionPreparationParameters]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -439,27 +443,29 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         alter the data.
 
         Args:
-            X (np.ndarray): The batch training features
-            y (np.ndarray): The batch training labels
+            X (torch.Tensor): The batch training features
+            y (torch.Tensor): The batch training labels
 
         Returns:
-            np.ndarray: that processes data
-            Dict[str, np.ndarray]: arguments to the criterion function
+            torch.Tensor: that processes data
+            _CriterionPreparationParameters: arguments to the criterion function
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
-                              ) -> Callable:  # type: ignore
+    def criterion_preparation(
+        self,
+        criterion_params: _CriterionPreparationParameters
+    ) -> Callable:  # type: ignore
         """
         Depending on the trainer choice, the criterion is not directly applied to the
         traditional y_pred/y_ground_truth pairs, but rather it might have a slight transformation.
         For example, in the case of mixup training, we need to account for the lambda mixup
 
         Args:
-            kwargs (Dict): an expanded dictionary with modifiers to the
-                                  criterion calculation
+            criterion_params (_CriterionPreparationParameters):
+                Modifiers to the criterion calculation
 
         Returns:
-            Callable: a lambda that contains the new criterion calculation recipe
+            Callable: a lambda function that contains the new criterion calculation recipe
         """
-        raise NotImplementedError()
+        raise NotImplementedError

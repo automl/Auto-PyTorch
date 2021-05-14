@@ -1,18 +1,23 @@
-import typing
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 import numpy as np
 
+import torch
+
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
+    BaseTrainerComponent,
+    _CriterionPreparationParameters
+)
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class StandardTrainer(BaseTrainerComponent):
     def __init__(self, weighted_loss: bool = False,
-                 random_state: typing.Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         """
         This class handles the training of a network for a single given epoch.
 
@@ -23,8 +28,8 @@ class StandardTrainer(BaseTrainerComponent):
         super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
 
-    def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
+                         ) -> Tuple[torch.Tensor, _CriterionPreparationParameters]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -32,22 +37,25 @@ class StandardTrainer(BaseTrainerComponent):
         alter the data.
 
         Args:
-            X (np.ndarray): The batch training features
-            y (np.ndarray): The batch training labels
+            X (torch.Tensor): The batch training features
+            y (torch.Tensor): The batch training labels
 
         Returns:
-            np.ndarray: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            torch.Tensor: that processes data
+            _CriterionPreparationParameters: arguments to the criterion function
         """
-        return X, {'y_a': y}
+        return X, _CriterionPreparationParameters()
 
-    def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
-                              ) -> typing.Callable:
+    def criterion_preparation(
+        self,
+        criterion_params: _CriterionPreparationParameters
+    ) -> Callable:
+        y_a = _CriterionPreparationParameters.y_a
         return lambda criterion, pred: criterion(pred, y_a)
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, str]:
         return {
             'shortname': 'StandardTrainer',
             'name': 'StandardTrainer',
@@ -55,7 +63,7 @@ class StandardTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict] = None,
+        dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
                                                                              value_range=(True, False),
                                                                              default_value=True),
