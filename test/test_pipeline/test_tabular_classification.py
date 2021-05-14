@@ -395,7 +395,7 @@ class TestTabularClassification:
     @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
                                               'ReduceLROnPlateau'])
     def test_trainer_cocktails(self, fit_dictionary_tabular, mocker, lr_scheduler, trainer):  # noqa F811
-        fit_dictionary_tabular['epochs'] = 20
+        fit_dictionary_tabular['epochs'] = 45
         fit_dictionary_tabular['early_stopping'] = 20
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
