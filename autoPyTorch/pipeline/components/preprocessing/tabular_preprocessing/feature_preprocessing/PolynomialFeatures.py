@@ -19,13 +19,12 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, degree: int = 2, interaction_only: bool = False,
                  include_bias: bool = False,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         self.degree = degree
         self.interaction_only = interaction_only
         self.include_bias = include_bias
 
-        self.random_state = random_state
-        super().__init__()
+        super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.preprocessor['numerical'] = sklearn.preprocessing.PolynomialFeatures(

@@ -18,11 +18,10 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, target_dim: int = 128,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         self.target_dim = target_dim
 
-        self.random_state = random_state
-        super().__init__()
+        super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 

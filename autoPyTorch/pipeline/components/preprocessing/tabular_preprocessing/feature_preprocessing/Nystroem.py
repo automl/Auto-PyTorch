@@ -23,15 +23,14 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_components: int = 10,
                  kernel: str = 'rbf', degree: int = 3,
                  gamma: float = 0.01, coef0: float = 0.0,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None
+                 random_state: Optional[np.random.RandomState] = None
                  ) -> None:
         self.n_components = n_components
         self.kernel = kernel
         self.degree = degree
         self.gamma = gamma
         self.coef0 = coef0
-        self.random_state = random_state
-        super().__init__()
+        super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 

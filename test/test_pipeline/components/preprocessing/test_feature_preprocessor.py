@@ -14,6 +14,11 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
+@pytest.fixture
+def random_state():
+    return 11
+
+
 @pytest.fixture(params=['TruncatedSVD', 'PolynomialFeatures', 'PowerTransformer',
                         'Nystroem', 'KernelPCA', 'RandomKitchenSinks'])
 def preprocessor(request):
@@ -24,10 +29,10 @@ def preprocessor(request):
                                                     'classification_numerical_and_categorical'], indirect=True)
 class TestFeaturePreprocessors:
 
-    def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor):
+    def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor, random_state):
         preprocessor = FeatureProprocessorChoice(
             dataset_properties=fit_dictionary_tabular['dataset_properties']
-        ).get_components()[preprocessor]()
+        ).get_components()[preprocessor](random_state=random_state)
         configuration = preprocessor. \
             get_hyperparameter_search_space(dataset_properties=fit_dictionary_tabular["dataset_properties"]) \
             .get_default_configuration().get_dictionary()

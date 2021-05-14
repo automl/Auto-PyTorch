@@ -20,12 +20,11 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_components: int = 100,
                  gamma: float = 1.0,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None
+                 random_state: Optional[np.random.RandomState] = None
                  ) -> None:
         self.n_components = n_components
         self.gamma = gamma
-        self.random_state = random_state
-        super().__init__()
+        super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
