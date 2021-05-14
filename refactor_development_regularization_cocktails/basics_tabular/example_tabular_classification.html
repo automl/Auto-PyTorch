@@ -123,7 +123,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff944224040&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fab8b47b040&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -160,9 +160,9 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_lookahead_optimizer, Value: True
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Constant: 1
+  trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002107858657836914, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019805431365966797, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -199,19 +199,19 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_lookahead_optimizer, Value: True
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Constant: 1
+  trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=12.787932872772217, wallclock_time=14.305150032043457, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=13.434267282485962, wallclock_time=14.921254396438599, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                              |     0.46 |
-|  1 | None                                                              | RFClassifier                                                    |     0.24 |
+|  0 | None                                                              | CatBoostClassifier                                              |     0.42 |
+|  1 | None                                                              | RFClassifier                                                    |     0.22 |
 |  2 | None                                                              | ExtraTreesClassifier                                            |     0.14 |
-|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  4 | None                                                              | KNNClassifier                                                   |     0.04 |
-|  5 | None                                                              | LGBMClassifier                                                  |     0.02 |
-|  6 | None                                                              | SVC                                                             |     0.02 |
+|  3 | None                                                              | KNNClassifier                                                   |     0.08 |
+|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  5 | None                                                              | SVC                                                             |     0.04 |
+|  6 | None                                                              | LGBMClassifier                                                  |     0.02 |
 |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
@@ -284,7 +284,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  6.051 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  15.346 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
