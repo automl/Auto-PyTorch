@@ -13,7 +13,7 @@ import torch
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
-    _CriterionPreparationParameters
+    _NewLossParameters
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -32,8 +32,8 @@ class MixUpTrainer(BaseTrainerComponent):
         self.weighted_loss = weighted_loss
         self.alpha = alpha
 
-    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> Tuple[np.ndarray, _CriterionPreparationParameters]:
+    def _data_preprocessing(self, X: torch.Tensor, y: torch.Tensor,
+                            ) -> Tuple[torch.Tensor, _NewLossParameters]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -46,7 +46,7 @@ class MixUpTrainer(BaseTrainerComponent):
 
         Returns:
             torch.Tensor: that processes data
-            _CriterionPreparationParameters: arguments to the criterion function
+            _NewLossParameters: arguments to the new loss function
         """
         lam = self.random_state.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
         batch_size = X.shape[0]
@@ -54,15 +54,15 @@ class MixUpTrainer(BaseTrainerComponent):
 
         mixed_x = lam * X + (1 - lam) * X[index, :]
         y_a, y_b = y, y[index]
-        return mixed_x, _CriterionPreparationParameters(y_a=y_a, y_b=y_b, lam=lam)
+        return mixed_x, _NewLossParameters(y_a=y_a, y_b=y_b, lam=lam)
 
-    def criterion_preparation(
+    def _get_new_loss_fn(
         self,
-        criterion_params: _CriterionPreparationParameters
+        new_loss_params: _NewLossParameters
     ) -> Callable:
-        y_a = criterion_params.y_a
-        y_b = criterion_params.y_b
-        lam = criterion_params.lam
+        y_a = new_loss_params.y_a
+        y_b = new_loss_params.y_b
+        lam = new_loss_params.lam
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod

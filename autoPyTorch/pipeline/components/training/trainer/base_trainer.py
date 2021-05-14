@@ -33,13 +33,13 @@ class StepIntervalUnit(Enum):
     epoch = 'epoch'
 
 
-class _CriterionPreparationParameters(NamedTuple):
+class _NewLossParameters(NamedTuple):
     """
     TODO: Documentation string
     """
-    y_a: np.ndarray
+    y_a: torch.Tensor
     lam: float = 1.0
-    y_b: Optional[np.ndarray] = None
+    y_b: Optional[torch.Tensor] = None
 
 
 class BudgetTracker(object):
@@ -192,7 +192,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         self.weighted_loss: bool = False
 
-    def prepare(
+    def set_training_params(
         self,
         metrics: List[Any],
         model: torch.nn.Module,
@@ -356,13 +356,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         data = data.float().to(self.device)
         targets = self._cast_targets(targets)
 
-        data, criterion_params = self.data_preparation(data, targets)
+        data, new_loss_params = self._data_preprocessing(data, targets)
 
         # training
         self.optimizer.zero_grad()
         outputs = self.model(data)
-        loss_func = self.criterion_preparation(criterion_params)
-        loss = loss_func(self.criterion, outputs)
+        loss_fn = self._get_new_loss_fn(new_loss_params)
+        loss = loss_fn(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
         self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss)
@@ -434,8 +434,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return {'weight': weights}
 
-    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> Tuple[torch.Tensor, _CriterionPreparationParameters]:
+    def _data_preprocessing(self, X: torch.Tensor, y: torch.Tensor,
+                            ) -> Tuple[torch.Tensor, _NewLossParameters]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -448,13 +448,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         Returns:
             torch.Tensor: that processes data
-            _CriterionPreparationParameters: arguments to the criterion function
+            _NewLossParameters: arguments to the new loss function
         """
         raise NotImplementedError
 
-    def criterion_preparation(
+    def _get_new_loss_fn(
         self,
-        criterion_params: _CriterionPreparationParameters
+        new_loss_params: _NewLossParameters
     ) -> Callable:  # type: ignore
         """
         Depending on the trainer choice, the criterion is not directly applied to the
@@ -462,8 +462,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         For example, in the case of mixup training, we need to account for the lambda mixup
 
         Args:
-            criterion_params (_CriterionPreparationParameters):
-                Modifiers to the criterion calculation
+            new_loss_params (_NewLossParameters):
+                Modifiers to the new loss calculation
 
         Returns:
             Callable: a lambda function that contains the new criterion calculation recipe

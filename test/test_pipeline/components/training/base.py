@@ -91,7 +91,7 @@ class BaseTraining:
             max_epochs=epochs,
         )
 
-        trainer.prepare(
+        trainer.set_training_params(
             scheduler=None,
             model=model,
             metrics=metrics,

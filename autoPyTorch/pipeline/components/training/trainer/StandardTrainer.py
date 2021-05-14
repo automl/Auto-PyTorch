@@ -10,7 +10,7 @@ import torch
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
-    _CriterionPreparationParameters
+    _NewLossParameters
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -28,8 +28,8 @@ class StandardTrainer(BaseTrainerComponent):
         super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
 
-    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> Tuple[torch.Tensor, _CriterionPreparationParameters]:
+    def _data_preprocessing(self, X: torch.Tensor, y: torch.Tensor,
+                            ) -> Tuple[torch.Tensor, _NewLossParameters]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -42,15 +42,15 @@ class StandardTrainer(BaseTrainerComponent):
 
         Returns:
             torch.Tensor: that processes data
-            _CriterionPreparationParameters: arguments to the criterion function
+            _NewLossParameters: arguments to the new loss function
         """
-        return X, _CriterionPreparationParameters(y_a=y)
+        return X, _NewLossParameters(y_a=y)
 
-    def criterion_preparation(
+    def _get_new_loss_fn(
         self,
-        criterion_params: _CriterionPreparationParameters
+        new_loss_params: _NewLossParameters
     ) -> Callable:
-        y_a = _CriterionPreparationParameters.y_a
+        y_a = new_loss_params.y_a
         return lambda criterion, pred: criterion(pred, y_a)
 
     @staticmethod
