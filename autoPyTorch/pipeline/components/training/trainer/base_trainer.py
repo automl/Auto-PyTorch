@@ -1,3 +1,4 @@
+from enum import IntEnum
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -17,6 +18,11 @@ from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
+
+
+class StepUnit(IntEnum):
+    batch = 0
+    epoch = 1
 
 
 class BudgetTracker(object):
@@ -185,8 +191,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         metrics_during_training: bool,
         scheduler: _LRScheduler,
         task_type: int,
-        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
+        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        step_unit: Union[str, StepUnit] = StepUnit.batch
     ) -> None:
+
+        step_unit_choices = {'batch': StepUnit.batch, 'epoch': StepUnit.epoch}
+        if isinstance(step_unit, str):
+            if step_unit not in step_unit_choices.keys():
+                raise ValueError(f'step_unit must be {list(step_unit_choices.keys())}, but got {step_unit}.')
+
+            step_unit = step_unit_choices[step_unit]
 
         # Save the device to be used
         self.device = device
@@ -197,7 +211,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # Weights for the loss function
         kwargs = {}
         if self.weighted_loss:
-            kwargs = self.get_class_weights(criterion, labels)
+            kwargs = self._get_class_weights(criterion, labels)
 
         # Setup the loss function
         self.criterion = criterion(**kwargs)
@@ -215,6 +229,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # Scheduler
         self.scheduler = scheduler
+        self.step_unit = step_unit
 
         # task type (used for calculating metrics)
         self.task_type = task_type
@@ -235,6 +250,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         """
         return False
+
+    def _scheduler_step(
+        self,
+        step_type: StepUnit,
+        loss: Optional[torch.Tensor] = None
+    ) -> None:
+        if self.step_unit != step_type:
+            return
+
+        if self.scheduler:
+            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
+                self.scheduler.step(loss)
+            else:
+                self.scheduler.step()
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -278,12 +307,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
+        self._scheduler_step(step_type=StepUnit.epoch, loss=loss)
+
         if self.metrics_during_training:
-            return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
+            return loss_sum / N, self._compute_metrics(outputs_data, targets_data)
         else:
             return loss_sum / N, {}
 
-    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+    def _cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
         if self.task_type in REGRESSION_TASKS:
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
@@ -293,13 +324,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             targets = targets.long().to(self.device)
         return targets
 
-    def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
+    def train_step(self, data: torch.Tensor, targets: torch.Tensor) -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
         Args:
-            data (np.ndarray): input features to the network
-            targets (np.ndarray): ground truth to calculate loss
+            data (torch.Tensor): input features to the network
+            targets (torch.Tensor): ground truth to calculate loss
 
         Returns:
             torch.Tensor: The predictions of the network
@@ -307,7 +338,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        targets = self.cast_targets(targets)
+        targets = self._cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
 
@@ -318,11 +349,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
-        if self.scheduler:
-            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-                self.scheduler.step(loss)
-            else:
-                self.scheduler.step()
+        self._scheduler_step(step_type=StepUnit.batch, loss=loss)
 
         return loss.item(), outputs
 
@@ -352,7 +379,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 batch_size = data.shape[0]
 
                 data = data.float().to(self.device)
-                targets = self.cast_targets(targets)
+                targets = self._cast_targets(targets)
 
                 outputs = self.model(data)
 
@@ -371,17 +398,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     )
 
         self.model.train()
-        return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
+        return loss_sum / N, self._compute_metrics(outputs_data, targets_data)
 
-    def compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
-                        ) -> Dict[str, float]:
+    def _compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
+                         ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
         outputs_data = torch.cat(outputs_data, dim=0).numpy()
         targets_data = torch.cat(targets_data, dim=0).numpy()
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
-    def get_class_weights(self, criterion: Type[torch.nn.Module], labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
-                          ) -> Dict[str, np.ndarray]:
+    def _get_class_weights(self, criterion: Type[torch.nn.Module], labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
+                           ) -> Dict[str, np.ndarray]:
         strategy = get_loss_weight_strategy(criterion)
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
