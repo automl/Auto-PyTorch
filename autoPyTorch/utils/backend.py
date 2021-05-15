@@ -1,13 +1,13 @@
 import glob
 import os
 import pickle
+import re
 import shutil
 import tempfile
 import time
 import uuid
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
-import re
 
 import lockfile
 
