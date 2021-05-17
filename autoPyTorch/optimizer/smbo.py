@@ -160,7 +160,7 @@ class AutoMLSMBO(object):
                 A callback used in this scenario to start ensemble building subtasks
             portfolio_selection (str), (default="none"): If "greedy",
                 runs initial configurations present in
-                'autoPyTorch/optimizer/greedy_portfolio.json'.
+                'autoPyTorch/configs/greedy_portfolio.json'.
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -214,7 +214,8 @@ class AutoMLSMBO(object):
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
         # read and validate initial configurations
-        initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__), 'greedy_portfolio.json')))
+        initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                             '../configs/greedy_portfolio.json')))
 
         self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
         assert portfolio_selection in ['none', 'greedy']

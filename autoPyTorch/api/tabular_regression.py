@@ -193,7 +193,7 @@ class TabularRegressionTask(BaseTask):
                 models after fitting AutoPyTorch.
             portfolio_selection (str), (default="none"): If "greedy",
                 runs initial configurations present in
-                'autoPyTorch/optimizer/greedy_portfolio.json'.
+                'autoPyTorch/configs/greedy_portfolio.json'.
                 These configurations are the best performing configurations
                 when search was performed on meta training datasets.
                 For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
