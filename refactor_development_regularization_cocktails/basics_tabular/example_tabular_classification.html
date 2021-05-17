@@ -123,7 +123,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fb4224441f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f04271b11f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -162,7 +162,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0022788047790527344, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002080678939819336, budget=0), TrajEntry(train_perf=0.14619883040935677, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -201,21 +201,20 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=15.046167373657227, wallclock_time=16.59547519683838, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8728323699421965}
+, ta_runs=1, ta_time_used=15.795269012451172, wallclock_time=17.313618659973145, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                              |     0.4  |
-|  1 | None                                                              | RFClassifier                                                    |     0.2  |
-|  2 | None                                                              | ExtraTreesClassifier                                            |     0.12 |
-|  3 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.08 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  0 | None                                                              | CatBoostClassifier                                              |     0.34 |
+|  1 | None                                                              | RFClassifier                                                    |     0.28 |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  3 | None                                                              | ExtraTreesClassifier                                            |     0.1  |
+|  4 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.04 |
 |  5 | None                                                              | KNNClassifier                                                   |     0.04 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  7 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.02 |
-|  8 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-|  9 | SimpleImputer,OneHotEncoder,NoScaler,PolynomialFeatures           | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.02 |
+|  7 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+|  8 | None                                                              | LGBMClassifier                                                  |     0.02 |
+|  9 | None                                                              | SVC                                                             |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -287,7 +286,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  3.878 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  5.854 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>

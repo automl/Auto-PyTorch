@@ -5,12 +5,12 @@
 
 Computation times
 =================
-**22:30.521** total execution time for **advanced_tabular** files:
+**22:44.755** total execution time for **advanced_tabular** files:
 
 +--------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_advanced_tabular_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:42.049 | 0.0 MB |
+| :ref:`sphx_glr_advanced_tabular_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:51.197 | 0.0 MB |
 +--------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_advanced_tabular_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 10:20.331 | 0.0 MB |
+| :ref:`sphx_glr_advanced_tabular_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 10:27.607 | 0.0 MB |
 +--------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_advanced_tabular_example_single_configuration.py` (``example_single_configuration.py``)             | 00:28.141 | 0.0 MB |
+| :ref:`sphx_glr_advanced_tabular_example_single_configuration.py` (``example_single_configuration.py``)             | 00:25.950 | 0.0 MB |
 +--------------------------------------------------------------------------------------------------------------------+-----------+--------+
