@@ -1,6 +1,6 @@
 import os
 
-from smac.runhistory.runhistory import RunHistory, DataOrigin
+from smac.runhistory.runhistory import DataOrigin, RunHistory
 
 from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
