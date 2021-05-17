@@ -14,7 +14,7 @@ def backbone(request):
     return request.param
 
 
-@pytest.fixture(params=['fully_connected'])
+@pytest.fixture(params=['fully_connected', 'no_head'])
 def head(request):
     return request.param
 
