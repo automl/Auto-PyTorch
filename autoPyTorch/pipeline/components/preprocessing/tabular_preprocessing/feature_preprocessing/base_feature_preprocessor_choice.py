@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
@@ -19,14 +18,16 @@ class FeaturePreprocessorChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing feature_preprocessor component at runtime
     """
-    _preprocessors = find_components(__package__,
-                                     os.path.split(__file__)[0],
-                                     autoPyTorchFeaturePreprocessingComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  autoPyTorchFeaturePreprocessingComponent)
+
     _addons = ThirdPartyComponents(autoPyTorchFeaturePreprocessingComponent)
 
     @classmethod
-    def add_feature_preprocessor(cls, feature_preprocessor: autoPyTorchFeaturePreprocessingComponent) -> None:
+    def add_component(cls, feature_preprocessor: autoPyTorchFeaturePreprocessingComponent) -> None:
         cls._addons.add_component(feature_preprocessor)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +40,7 @@ class FeaturePreprocessorChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all feature preprocessor components available
                 as choices for encoding the categorical columns
         """
-        components: Dict = OrderedDict()
-        components.update(cls._preprocessors)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_hyperparameter_search_space(self,
                                         dataset_properties: Optional[Dict[str, Any]] = None,

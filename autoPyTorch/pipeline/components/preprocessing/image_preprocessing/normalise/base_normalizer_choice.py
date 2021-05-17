@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
@@ -18,15 +17,16 @@ class NormalizerChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing encoding component at runtime
     """
-    _normalizers = find_components(__package__,
-                                   os.path.split(__file__)[0],
-                                   BaseNormalizer)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseNormalizer)
 
     _addons = ThirdPartyComponents(BaseNormalizer)
 
     @classmethod
-    def add_normalizer(cls, normalizer: BaseNormalizer) -> None:
+    def add_component(cls, normalizer: BaseNormalizer) -> None:
         cls._addons.add_component(normalizer)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +39,7 @@ class NormalizerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all BaseNormalise components available
                 as choices for encoding the categorical columns
         """
-        components = OrderedDict()
-        components.update(cls._normalizers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_hyperparameter_search_space(self,
                                         dataset_properties: Optional[Dict[str, Any]] = None,

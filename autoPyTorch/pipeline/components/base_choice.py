@@ -1,5 +1,6 @@
 import re
 import warnings
+from abc import abstractclassmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
@@ -61,7 +62,7 @@ class autoPyTorchChoice(object):
                                  " but got None, to get fit requirements for {}, "
                                  "call get_fit_requirements of the component".format(self.__class__.__name__))
 
-    @classmethod
+    @abstractclassmethod
     def get_components(cls: 'autoPyTorchChoice') -> Dict[str, autoPyTorchComponent]:
         """Returns and ordered dict with the components available
         for current step.
@@ -75,7 +76,12 @@ class autoPyTorchChoice(object):
                 from the module name to the component class
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError
+
+    @abstractclassmethod
+    def add_component(cls: 'autoPyTorchChoice', component: autoPyTorchComponent) -> None:
+        """method to add an addon"""
+        raise NotImplementedError
 
     def get_available_components(
         self,

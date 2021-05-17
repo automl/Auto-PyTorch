@@ -1,4 +1,3 @@
-import collections
 import logging.handlers
 import os
 import tempfile
@@ -44,9 +43,10 @@ class TrainerChoice(autoPyTorchChoice):
     epoch happens, that is, how batches of data are fed and used to train the network.
 
     """
-    _trainers = find_components(__package__,
-                                os.path.split(__file__)[0],
-                                BaseTrainerComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseTrainerComponent)
+
     _addons = ThirdPartyComponents(BaseTrainerComponent)
 
     def __init__(self,
@@ -75,8 +75,9 @@ class TrainerChoice(autoPyTorchChoice):
         return self._fit_requirements
 
     @classmethod
-    def add_trainer(cls, trainer: BaseTrainerComponent) -> None:
+    def add_component(cls, trainer: BaseTrainerComponent) -> None:
         cls._addons.add_component(trainer)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -89,10 +90,7 @@ class TrainerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all components available
                 as choices for learning rate scheduling
         """
-        components = collections.OrderedDict()  # type: Dict[str, autoPyTorchComponent]
-        components.update(cls._trainers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_hyperparameter_search_space(
         self,

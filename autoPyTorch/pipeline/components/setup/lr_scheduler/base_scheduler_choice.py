@@ -17,14 +17,16 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import Ba
 
 
 class SchedulerChoice(autoPyTorchChoice):
-    _schedulers = find_components(__package__,
+    _components = find_components(__package__,
                                   os.path.split(__file__)[0],
                                   BaseLRComponent)
+
     _addons = ThirdPartyComponents(BaseLRComponent)
 
     @classmethod
-    def add_scheduler(cls, scheduler: BaseLRComponent) -> None:
+    def add_component(cls, scheduler: BaseLRComponent) -> None:
         cls._addons.add_component(scheduler)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -37,10 +39,7 @@ class SchedulerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all baseScheduler components available
                 as choices for learning rate scheduling
         """
-        components = OrderedDict()
-        components.update(cls._schedulers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,

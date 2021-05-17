@@ -17,14 +17,16 @@ from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer import BaseO
 
 
 class OptimizerChoice(autoPyTorchChoice):
-    _optimizers = find_components(__package__,
+    _components = find_components(__package__,
                                   os.path.split(__file__)[0],
                                   BaseOptimizerComponent)
+
     _addons = ThirdPartyComponents(BaseOptimizerComponent)
 
     @classmethod
-    def add_optimizer(cls, optimizer: BaseOptimizerComponent) -> None:
+    def add_component(cls, optimizer: BaseOptimizerComponent) -> None:
         cls._addons.add_component(optimizer)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -37,10 +39,7 @@ class OptimizerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all BaseOptimizerComponents  available
                 as choices
         """
-        components = OrderedDict()
-        components.update(cls._optimizers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,

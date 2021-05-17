@@ -19,14 +19,16 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
 
 
 class NetworkHeadChoice(autoPyTorchChoice):
-    _heads = find_components(__package__,
-                             os.path.split(__file__)[0],
-                             NetworkHeadComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  NetworkHeadComponent)
+
     _addons = ThirdPartyComponents(NetworkHeadComponent)
 
     @classmethod
-    def add_head(cls, head: NetworkHeadComponent) -> None:
+    def add_component(cls, head: NetworkHeadComponent) -> None:
         cls._addons.add_component(head)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +41,7 @@ class NetworkHeadChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all basehead components available
                 as choices for learning rate scheduling
         """
-        components = OrderedDict()
-        components.update(cls._heads)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,

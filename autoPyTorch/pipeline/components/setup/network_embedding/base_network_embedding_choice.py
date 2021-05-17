@@ -19,14 +19,16 @@ from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedd
 
 
 class NetworkEmbeddingChoice(autoPyTorchChoice):
-    _embeddings = find_components(__package__,
+    _components = find_components(__package__,
                                   os.path.split(__file__)[0],
                                   NetworkEmbeddingComponent)
+
     _addons = ThirdPartyComponents(NetworkEmbeddingComponent)
 
     @classmethod
-    def add_embedding(cls, embedding: NetworkEmbeddingComponent) -> None:
+    def add_component(cls, embedding: NetworkEmbeddingComponent) -> None:
         cls._addons.add_component(embedding)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +41,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all baseembedding components available
                 as choices for learning rate scheduling
         """
-        components = OrderedDict()
-        components.update(cls._embeddings)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,

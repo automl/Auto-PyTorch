@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
@@ -18,14 +17,16 @@ class EncoderChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing encoding component at runtime
     """
-    _encoders = find_components(__package__,
-                                os.path.split(__file__)[0],
-                                BaseEncoder)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseEncoder)
+
     _addons = ThirdPartyComponents(BaseEncoder)
 
     @classmethod
-    def add_encoder(cls, encoder: BaseEncoder) -> None:
+    def add_component(cls, encoder: BaseEncoder) -> None:
         cls._addons.add_component(encoder)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -38,10 +39,7 @@ class EncoderChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all BaseEncoder components available
                 as choices for encoding the categorical columns
         """
-        components = OrderedDict()
-        components.update(cls._encoders)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_hyperparameter_search_space(self,
                                         dataset_properties: Optional[Dict[str, Any]] = None,

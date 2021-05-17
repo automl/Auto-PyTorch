@@ -19,14 +19,16 @@ from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbon
 
 
 class NetworkBackboneChoice(autoPyTorchChoice):
-    _backbones = find_components(__package__,
-                                 os.path.split(__file__)[0],
-                                 NetworkBackboneComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  NetworkBackboneComponent)
+
     _addons = ThirdPartyComponents(NetworkBackboneComponent)
 
     @classmethod
-    def add_backbone(cls, backbone: NetworkBackboneComponent) -> None:
+    def add_component(cls, backbone: NetworkBackboneComponent) -> None:
         cls._addons.add_component(backbone)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +41,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all basebackbone components available
                 as choices for learning rate scheduling
         """
-        components = OrderedDict()
-        components.update(cls._backbones)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,

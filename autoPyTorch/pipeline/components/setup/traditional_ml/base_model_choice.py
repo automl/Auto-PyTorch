@@ -17,14 +17,16 @@ from autoPyTorch.pipeline.components.setup.traditional_ml.base_model import Base
 
 
 class ModelChoice(autoPyTorchChoice):
-    _models = find_components(__package__,
-                              os.path.split(__file__)[0],
-                              BaseModelComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseModelComponent)
+
     _addons = ThirdPartyComponents(BaseModelComponent)
 
     @classmethod
-    def add_model(cls, model: BaseModelComponent) -> None:
+    def add_component(cls, model: BaseModelComponent) -> None:
         cls._addons.add_component(model)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -35,10 +37,7 @@ class ModelChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all baseNetwork components available
                 as choices
         """
-        components = OrderedDict()
-        components.update(cls._models)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
             self,

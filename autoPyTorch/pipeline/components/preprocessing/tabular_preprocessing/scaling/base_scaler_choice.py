@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
@@ -18,15 +17,16 @@ class ScalerChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing scaling component at runtime
     """
-    _scalers = find_components(__package__,
-                               os.path.split(__file__)[0],
-                               BaseScaler)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseScaler)
 
     _addons = ThirdPartyComponents(BaseScaler)
 
     @classmethod
-    def add_scaler(cls, scaler: BaseScaler) -> None:
+    def add_component(cls, scaler: BaseScaler) -> None:
         cls._addons.add_component(scaler)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +39,7 @@ class ScalerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all BaseScalers components available
                 as choices for scaling
         """
-        components = OrderedDict()
-        components.update(cls._scalers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_hyperparameter_search_space(self,
                                         dataset_properties: Optional[Dict[str, Any]] = None,

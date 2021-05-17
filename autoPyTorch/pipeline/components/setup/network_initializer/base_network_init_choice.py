@@ -19,14 +19,16 @@ from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init
 
 
 class NetworkInitializerChoice(autoPyTorchChoice):
-    _initializers = find_components(__package__,
-                                    os.path.split(__file__)[0],
-                                    BaseNetworkInitializerComponent)
+    _components = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseNetworkInitializerComponent)
+
     _addons = ThirdPartyComponents(BaseNetworkInitializerComponent)
 
     @classmethod
-    def add_network_initializer(cls, initializer: BaseNetworkInitializerComponent) -> None:
+    def add_component(cls, initializer: BaseNetworkInitializerComponent) -> None:
         cls._addons.add_component(initializer)
+        cls._components.update(cls._addons.components)
 
     @classmethod
     def get_components(cls) -> Dict[str, autoPyTorchComponent]:
@@ -39,10 +41,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all BaseInitializerComponent components available
                 as choices
         """
-        components = OrderedDict()
-        components.update(cls._initializers)
-        components.update(cls._addons.components)
-        return components
+        return cls._components
 
     def get_available_components(
         self,
