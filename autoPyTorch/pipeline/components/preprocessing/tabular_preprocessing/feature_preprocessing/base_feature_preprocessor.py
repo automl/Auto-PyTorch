@@ -12,7 +12,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_ta
 class autoPyTorchFeaturePreprocessingComponent(autoPyTorchTabularPreprocessingComponent):
     _required_properties: List[str] = ['handles_sparse']
 
-    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
+    def __init__(self, random_state: Optional[np.random.RandomState] = None):
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training

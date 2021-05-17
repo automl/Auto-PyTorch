@@ -24,7 +24,7 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
                  kernel: str = 'rbf', degree: int = 3,
                  gamma: float = 0.01, coef0: float = 0.0,
                  random_state: Optional[np.random.RandomState] = None
-                 ) -> None:
+                 ):
         self.n_components = n_components
         self.kernel = kernel
         self.degree = degree

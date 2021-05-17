@@ -21,7 +21,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_components: int = 100,
                  gamma: float = 1.0,
                  random_state: Optional[np.random.RandomState] = None
-                 ) -> None:
+                 ):
         self.n_components = n_components
         self.gamma = gamma
         super().__init__(random_state=random_state)
