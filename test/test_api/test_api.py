@@ -8,8 +8,6 @@ from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, 
 
 from ConfigSpace.configuration_space import Configuration
 
-from api_utils import dummy_traditional_classification
-
 import numpy as np
 
 import pandas as pd
