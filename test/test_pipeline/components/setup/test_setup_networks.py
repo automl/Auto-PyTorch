@@ -31,6 +31,9 @@ class TestNetworks:
         """This test makes sure that the pipeline is able to fit
         every combination of network embedding, backbone, head"""
 
+        # increase number of epochs to test for performance
+        fit_dictionary_tabular['epochs'] = 50
+
         include = {'network_backbone': [backbone], 'network_head': [head], 'network_embedding': [embedding]}
 
         if len(fit_dictionary_tabular['dataset_properties']

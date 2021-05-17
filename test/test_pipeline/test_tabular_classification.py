@@ -1,13 +1,12 @@
 import os
 import re
+import unittest
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
-
-import flaky
 
 import numpy as np
 
@@ -53,7 +52,6 @@ class TestTabularClassification:
             elif isinstance(hyperparameter, CategoricalHyperparameter):
                 assert update.value_range == hyperparameter.choices
 
-    @flaky.flaky(max_runs=2)
     def test_pipeline_fit(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
@@ -81,7 +79,6 @@ class TestTabularClassification:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-    @flaky.flaky(max_runs=3)
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
@@ -93,7 +90,10 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of outputs
@@ -117,7 +117,10 @@ class TestTabularClassification:
         pipeline.set_hyperparameters(config)
 
         try:
-            pipeline.fit(fit_dictionary_tabular)
+            with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+                 as patch_train:
+                patch_train.return_value = 1, {}
+                pipeline.fit(fit_dictionary_tabular)
         except Exception as e:
             pytest.fail(f"Failed on config={config} with {e}")
 
@@ -129,7 +132,6 @@ class TestTabularClassification:
         assert isinstance(prediction, np.ndarray)
         assert prediction.shape == expected_output_shape
 
-    @flaky.flaky(max_runs=2)
     def test_pipeline_transform(self, fit_dictionary_tabular):
         """
         In the context of autopytorch, transform expands a fit dictionary with
@@ -144,8 +146,11 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        # We do not want to make the same early preprocessing operation to the fit dictionary
-        pipeline.fit(fit_dictionary_tabular.copy())
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            # We do not want to make the same early preprocessing operation to the fit dictionary
+            pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 
@@ -173,8 +178,10 @@ class TestTabularClassification:
 
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
-
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
@@ -377,6 +384,8 @@ def test_constant_pipeline_iris(fit_dictionary_tabular):
                                              search_space_updates=search_space_updates)
 
     fit_dictionary_tabular['additional_metrics'] = ['balanced_accuracy']
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular['epochs'] = 50
 
     try:
         pipeline.fit(fit_dictionary_tabular)
@@ -422,6 +431,10 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     given the default configuration"""
     X = fit_dictionary_tabular_dummy['X_train'].copy()
     y = fit_dictionary_tabular_dummy['y_train'].copy()
+
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular_dummy['epochs'] = 50
+
     pipeline = TabularClassificationPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
 
@@ -430,6 +443,9 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     pipeline.set_hyperparameters(config)
 
     pipeline.fit(fit_dictionary_tabular_dummy)
+
+    # Ensure that the network is an instance of torch Module
+    assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
     # we expect the output to have the same batch size as the test input,
     # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)

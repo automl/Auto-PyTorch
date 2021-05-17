@@ -1,5 +1,6 @@
 import os
 import re
+import unittest
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -18,7 +19,6 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_p
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import (
-    HyperparameterSearchSpaceUpdate,
     HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
 )
@@ -90,7 +90,10 @@ class TestTabularRegression:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
@@ -114,8 +117,11 @@ class TestTabularRegression:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        # We do not want to make the same early preprocessing operation to the fit dictionary
-        pipeline.fit(fit_dictionary_tabular.copy())
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            # We do not want to make the same early preprocessing operation to the fit dictionary
+            pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 
@@ -144,7 +150,10 @@ class TestTabularRegression:
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+                as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
@@ -279,23 +288,18 @@ class TestTabularRegression:
             assert 'fully_connected:units_layer' in e.args[0]
 
 
-@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["regression"], indirect=True)
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ['regression'], indirect=True)
 def test_pipeline_score(fit_dictionary_tabular_dummy):
     """This test makes sure that the pipeline is able to achieve a decent score on dummy data
     given the default configuration"""
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular_dummy['epochs'] = 50
+
     X = fit_dictionary_tabular_dummy['X_train'].copy()
     y = fit_dictionary_tabular_dummy['y_train'].copy()
 
-    # lower the learning rate of the optimizer until seeding properly works
-    # with the default learning rate of 0.01 regression sometimes does not converge
     pipeline = TabularRegressionPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
-        search_space_updates=HyperparameterSearchSpaceUpdates([
-            HyperparameterSearchSpaceUpdate("optimizer",
-                                            "AdamOptimizer:lr",
-                                            value_range=[0.0001, 0.001],
-                                            default_value=0.001)
-        ])
     )
 
     cs = pipeline.get_hyperparameter_search_space()
@@ -303,6 +307,9 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     pipeline.set_hyperparameters(config)
 
     pipeline.fit(fit_dictionary_tabular_dummy)
+
+    # Ensure that the network is an instance of torch Module
+    assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
     # we expect the output to have the same batch size as the test input,
     # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)

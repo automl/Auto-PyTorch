@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -23,15 +23,14 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_components: int = 10,
                  kernel: str = 'rbf', degree: int = 3,
                  gamma: float = 0.01, coef0: float = 0.0,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None
-                 ) -> None:
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         self.n_components = n_components
         self.kernel = kernel
         self.degree = degree
         self.gamma = gamma
         self.coef0 = coef0
-        self.random_state = random_state
-        super().__init__()
+        super().__init__(random_state=random_state)
 
         self.add_fit_requirements([
             FitRequirement('issparse', (bool,), user_defined=True, dataset_property=True)])

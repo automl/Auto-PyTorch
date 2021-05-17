@@ -6,6 +6,8 @@ import unittest.mock
 
 import numpy as np
 
+import pytest
+
 from sklearn.base import clone
 
 import torch
@@ -28,6 +30,9 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import
 
 sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
+
+
+OVERFIT_EPOCHS = 1000
 
 
 class BaseDataLoaderTest(unittest.TestCase):
@@ -121,9 +126,8 @@ class BaseDataLoaderTest(unittest.TestCase):
                          loader.val_data_loader)
 
 
-class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
-
-    def test_evaluate(self):
+class TestBaseTrainerComponent(BaseTraining):
+    def test_evaluate(self, n_samples):
         """
         Makes sure we properly evaluate data, returning a proper loss
         and metric
@@ -135,11 +139,12 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(BaseTrainerComponent(),
+         logger) = self.prepare_trainer(n_samples,
+                                        BaseTrainerComponent(),
                                         constants.TABULAR_CLASSIFICATION)
 
         prev_loss, prev_metrics = trainer.evaluate(loader, epoch=1, writer=None)
-        self.assertIn('accuracy', prev_metrics)
+        assert 'accuracy' in prev_metrics
 
         # Fit the model
         self.train_model(model,
@@ -151,21 +156,23 @@ class BaseTrainerComponentTest(BaseTraining, unittest.TestCase):
         # Loss and metrics should have improved after fit
         # And the prediction should be better than random
         loss, metrics = trainer.evaluate(loader, epoch=1, writer=None)
-        self.assertGreater(prev_loss, loss)
-        self.assertGreater(metrics['accuracy'], prev_metrics['accuracy'])
-        self.assertGreater(metrics['accuracy'], 0.5)
+        assert prev_loss > loss
+        assert metrics['accuracy'] > prev_metrics['accuracy']
+        assert metrics['accuracy'] > 0.5
 
 
-class StandardTrainerTest(BaseTraining, unittest.TestCase):
-    def test_regression_epoch_training(self):
+class StandardTrainerTest(BaseTraining):
+    def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(StandardTrainer(),
-                                        constants.TABULAR_REGRESSION)
+         logger) = self.prepare_trainer(n_samples,
+                                        StandardTrainer(),
+                                        constants.TABULAR_REGRESSION,
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
@@ -176,17 +183,19 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
             r2 = metrics['r2']
 
             if counter > epochs:
-                self.fail(f"Could not overfit a dummy regression under {epochs} epochs")
+                pytest.fail(f"Could not overfit a dummy regression under {epochs} epochs")
 
-    def test_classification_epoch_training(self):
+    def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(StandardTrainer(),
-                                        constants.TABULAR_CLASSIFICATION)
+         logger) = self.prepare_trainer(n_samples,
+                                        StandardTrainer(),
+                                        constants.TABULAR_CLASSIFICATION,
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
@@ -197,19 +206,21 @@ class StandardTrainerTest(BaseTraining, unittest.TestCase):
             accuracy = metrics['accuracy']
 
             if counter > epochs:
-                self.fail(f"Could not overfit a dummy classification under {epochs} epochs")
+                pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class MixUpTrainerTest(BaseTraining, unittest.TestCase):
-    def test_classification_epoch_training(self):
+class MixUpTrainerTest(BaseTraining):
+    def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(MixUpTrainer(alpha=0.5),
-                                        constants.TABULAR_CLASSIFICATION)
+         logger) = self.prepare_trainer(n_samples,
+                                        MixUpTrainer(alpha=0.5),
+                                        constants.TABULAR_CLASSIFICATION,
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
@@ -220,7 +231,7 @@ class MixUpTrainerTest(BaseTraining, unittest.TestCase):
             accuracy = metrics['accuracy']
 
             if counter > epochs:
-                self.fail(f"Could not overfit a dummy classification under {epochs} epochs")
+                pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
 class TrainerTest(unittest.TestCase):

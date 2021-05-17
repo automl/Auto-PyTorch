@@ -1,5 +1,4 @@
 import logging
-import unittest
 
 from sklearn.datasets import make_classification, make_regression
 
@@ -17,14 +16,16 @@ from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 
 
-class BaseTraining(unittest.TestCase):
+class BaseTraining:
 
     def prepare_trainer(self,
+                        n_samples: int,
                         trainer: BaseTrainerComponent,
-                        task_type: int):
+                        task_type: int,
+                        epochs=50):
         if task_type in CLASSIFICATION_TASKS:
             X, y = make_classification(
-                n_samples=5000,
+                n_samples=n_samples,
                 n_features=4,
                 n_informative=3,
                 n_redundant=1,
@@ -42,7 +43,7 @@ class BaseTraining(unittest.TestCase):
 
         elif task_type in REGRESSION_TASKS:
             X, y = make_regression(
-                n_samples=5000,
+                n_samples=n_samples,
                 n_features=4,
                 n_informative=3,
                 n_targets=1,
@@ -78,7 +79,7 @@ class BaseTraining(unittest.TestCase):
         device = torch.device('cpu')
         logger = logging.getLogger('StandardTrainer - test')
         metrics = get_metrics(dataset_properties)
-        epochs = 1000
+        epochs = epochs
         budget_tracker = BudgetTracker(
             budget_type='epochs',
             max_epochs=epochs,
