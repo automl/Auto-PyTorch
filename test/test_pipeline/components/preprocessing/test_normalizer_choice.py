@@ -18,7 +18,7 @@ class TestNormalizerChoice(unittest.TestCase):
         # Make sure that all hyperparameters are part of the search space
         self.assertListEqual(
             sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(normalizer_choice.get_components().keys()))
+            sorted(list(NormalizerChoice.get_components().keys()))
         )
 
         # Make sure we can properly set some random configs
@@ -31,7 +31,7 @@ class TestNormalizerChoice(unittest.TestCase):
             normalizer_choice.set_hyperparameters(config)
 
             self.assertEqual(normalizer_choice.choice.__class__,
-                             normalizer_choice.get_components()[config_dict['__choice__']])
+                             NormalizerChoice.get_components()[config_dict['__choice__']])
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)

@@ -10,20 +10,14 @@ from sklearn.base import clone
 import torch
 from torch import nn
 
-import autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice as lr_components
-import \
-    autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice as network_initializer_components  # noqa: E501
-import autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice as optimizer_components
 from autoPyTorch import constants
 from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import (
     BaseLRComponent,
     SchedulerChoice
 )
-from autoPyTorch.pipeline.components.setup.network_backbone import base_network_backbone_choice
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head import base_network_head_choice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
@@ -128,16 +122,15 @@ class TestScheduler:
         This also test that we can properly initialize each one
         of them
         """
-        scheduler_choice = SchedulerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        assert len(scheduler_choice.get_components().keys()) == 7
+        assert len(SchedulerChoice.get_components().keys()) == 7
 
         # For every scheduler in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, scheduler in scheduler_choice.get_components().items():
+        for name, scheduler in SchedulerChoice.get_components().items():
             config = scheduler.get_hyperparameter_search_space().sample_configuration()
             estimator = scheduler(**config)
             estimator_clone = clone(estimator)
@@ -168,7 +161,7 @@ class TestScheduler:
 
         # Make sure that all hyperparameters are part of the serach space
         assert sorted(cs.get_hyperparameter('__choice__').choices) == \
-               sorted(list(scheduler_choice.get_components().keys()))
+               sorted(list(SchedulerChoice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -180,7 +173,7 @@ class TestScheduler:
             scheduler_choice.set_hyperparameters(config)
 
             assert scheduler_choice.choice.__class__ == \
-                   scheduler_choice.get_components()[config_dict['__choice__']]
+                   SchedulerChoice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -194,11 +187,11 @@ class TestScheduler:
     def test_scheduler_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        assert len(lr_components._addons.components) == 0
+        assert len(SchedulerChoice._addons.components) == 0
 
         # Then make sure the scheduler can be added and query'ed
-        lr_components.add_scheduler(DummyLR)
-        assert len(lr_components._addons.components) == 1
+        SchedulerChoice.add_scheduler(DummyLR)
+        assert len(SchedulerChoice._addons.components) == 1
         cs = SchedulerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyLR' in str(cs)
 
@@ -212,16 +205,15 @@ class OptimizerTest:
         This also test that we can properly initialize each one
         of them
         """
-        optimizer_choice = OptimizerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        assert len(optimizer_choice.get_components().keys()) == 4
+        assert len(OptimizerChoice.get_components().keys()) == 4
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, optimizer in optimizer_choice.get_components().items():
+        for name, optimizer in OptimizerChoice.get_components().items():
             config = optimizer.get_hyperparameter_search_space().sample_configuration()
             estimator = optimizer(**config)
             estimator_clone = clone(estimator)
@@ -252,7 +244,7 @@ class OptimizerTest:
 
         # Make sure that all hyperparameters are part of the serach space
         assert sorted(cs.get_hyperparameter('__choice__').choices) == \
-               sorted(list(optimizer_choice.get_components().keys()))
+               sorted(list(OptimizerChoice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -263,7 +255,7 @@ class OptimizerTest:
             config_dict = copy.deepcopy(config.get_dictionary())
             optimizer_choice.set_hyperparameters(config)
 
-            assert optimizer_choice.choice.__class__ == optimizer_choice.get_components()[config_dict['__choice__']]
+            assert optimizer_choice.choice.__class__ == OptimizerChoice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -277,20 +269,19 @@ class OptimizerTest:
     def test_optimizer_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        assert len(optimizer_components._addons.components) == 0
+        assert len(OptimizerChoice._addons.components) == 0
 
         # Then make sure the optimizer can be added and query'ed
-        optimizer_components.add_optimizer(DummyOptimizer)
-        assert len(optimizer_components._addons.components) == 1
+        OptimizerChoice.add_optimizer(DummyOptimizer)
+        assert len(OptimizerChoice._addons.components) == 1
         cs = OptimizerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyOptimizer' in str(cs)
 
 
 class TestNetworkBackbone:
     def test_all_backbones_available(self):
-        backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        assert len(backbone_choice.get_components().keys()) == 8
+        assert len(NetworkBackboneChoice.get_components().keys()) == 8
 
     @pytest.mark.parametrize('task_type_input_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64)),
                                                        (constants.IMAGE_REGRESSION, (3, 64, 64)),
@@ -341,11 +332,10 @@ class TestNetworkBackbone:
             loss.backward()
 
     def test_every_backbone_is_valid(self):
-        backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        assert len(backbone_choice.get_components().keys()) == 8
+        assert len(NetworkBackboneChoice.get_components().keys()) == 8
 
-        for name, backbone in backbone_choice.get_components().items():
+        for name, backbone in NetworkBackboneChoice.get_components().items():
             config = backbone.get_hyperparameter_search_space().sample_configuration()
             estimator = backbone(**config)
             estimator_clone = clone(estimator)
@@ -387,7 +377,7 @@ class TestNetworkBackbone:
                 network_backbone_choice.set_hyperparameters(config)
 
                 assert network_backbone_choice.choice.__class__ == \
-                       network_backbone_choice.get_components()[config_dict['__choice__']]
+                       NetworkBackboneChoice.get_components()[config_dict['__choice__']]
 
                 # Then check the choice configuration
                 selected_choice = config_dict.pop('__choice__', None)
@@ -405,25 +395,24 @@ class TestNetworkBackbone:
     def test_add_network_backbone(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        assert len(base_network_backbone_choice._addons.components) == 0
+        assert len(NetworkBackboneChoice._addons.components) == 0
 
         # Then make sure the backbone can be added
-        base_network_backbone_choice.add_backbone(DummyBackbone)
-        assert len(base_network_backbone_choice._addons.components) == 1
+        NetworkBackboneChoice.add_backbone(DummyBackbone)
+        assert len(NetworkBackboneChoice._addons.components) == 1
 
         cs = NetworkBackboneChoice(dataset_properties={}). \
             get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
         assert "DummyBackbone" in str(cs)
 
         # clear addons
-        base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
+        NetworkBackboneChoice._addons = ThirdPartyComponents(NetworkBackboneComponent)
 
 
 class TestNetworkHead:
     def test_all_heads_available(self):
-        network_head_choice = NetworkHeadChoice(dataset_properties={})
 
-        assert len(network_head_choice.get_components().keys()) == 2
+        assert len(NetworkHeadChoice.get_components().keys()) == 2
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
                                                               (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),
@@ -464,13 +453,12 @@ class TestNetworkHead:
         This also test that we can properly initialize each one
         of them
         """
-        network_head_choice = NetworkHeadChoice(dataset_properties={'task_type': 'tabular_classification'})
 
         # For every network in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, network_head in network_head_choice.get_components().items():
+        for name, network_head in NetworkHeadChoice.get_components().items():
             config = network_head.get_hyperparameter_search_space().sample_configuration()
             estimator = network_head(**config)
             estimator_clone = clone(estimator)
@@ -512,7 +500,7 @@ class TestNetworkHead:
                 network_head_choice.set_hyperparameters(config)
 
                 assert network_head_choice.choice.__class__ == \
-                       network_head_choice.get_components()[config_dict['__choice__']]
+                       NetworkHeadChoice.get_components()[config_dict['__choice__']]
 
                 # Then check the choice configuration
                 selected_choice = config_dict.pop('__choice__', None)
@@ -530,18 +518,18 @@ class TestNetworkHead:
     def test_add_network_head(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        assert len(base_network_head_choice._addons.components) == 0
+        assert len(NetworkHeadChoice._addons.components) == 0
 
         # Then make sure the head can be added
-        base_network_head_choice.add_head(DummyHead)
-        assert len(base_network_head_choice._addons.components) == 1
+        NetworkHeadChoice.add_head(DummyHead)
+        assert len(NetworkHeadChoice._addons.components) == 1
 
         cs = NetworkHeadChoice(dataset_properties={}). \
             get_hyperparameter_search_space(dataset_properties={"task_type": "tabular_classification"})
         assert "DummyHead" in str(cs)
 
         # clear addons
-        base_network_head_choice._addons = ThirdPartyComponents(NetworkHeadComponent)
+        NetworkHeadChoice._addons = ThirdPartyComponents(NetworkHeadComponent)
 
 
 class TestNetworkInitializer:
@@ -553,16 +541,15 @@ class TestNetworkInitializer:
         This also test that we can properly initialize each one
         of them
         """
-        network_initializer_choice = NetworkInitializerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        assert len(network_initializer_choice.get_components().keys()) == 5
+        assert len(NetworkInitializerChoice.get_components().keys()) == 5
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, network_initializer in network_initializer_choice.get_components().items():
+        for name, network_initializer in NetworkInitializerChoice.get_components().items():
             config = network_initializer.get_hyperparameter_search_space().sample_configuration()
             estimator = network_initializer(**config)
             estimator_clone = clone(estimator)
@@ -593,7 +580,7 @@ class TestNetworkInitializer:
 
         # Make sure that all hyperparameters are part of the serach space
         assert sorted(cs.get_hyperparameter('__choice__').choices) == \
-               sorted(list(network_initializer_choice.get_components().keys()))
+               sorted(list(NetworkInitializerChoice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -605,7 +592,7 @@ class TestNetworkInitializer:
             network_initializer_choice.set_hyperparameters(config)
 
             assert network_initializer_choice.choice.__class__ == \
-                   network_initializer_choice.get_components()[config_dict['__choice__']]
+                   NetworkInitializerChoice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -619,10 +606,10 @@ class TestNetworkInitializer:
     def test_network_initializer_add(self):
         """Makes sure that a component can be added to the CS"""
         # No third party components to start with
-        assert len(network_initializer_components._addons.components) == 0
+        assert len(NetworkInitializerChoice._addons.components) == 0
 
         # Then make sure the network_initializer can be added and query'ed
-        network_initializer_components.add_network_initializer(DummyNetworkInitializer)
-        assert len(network_initializer_components._addons.components) == 1
+        NetworkInitializerChoice.add_network_initializer(DummyNetworkInitializer)
+        assert len(NetworkInitializerChoice._addons.components) == 1
         cs = NetworkInitializerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyNetworkInitializer' in str(cs)

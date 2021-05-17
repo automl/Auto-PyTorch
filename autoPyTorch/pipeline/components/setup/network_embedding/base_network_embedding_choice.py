@@ -17,20 +17,19 @@ from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedd
     NetworkEmbeddingComponent,
 )
 
-directory = os.path.split(__file__)[0]
-_embeddings = find_components(__package__,
-                              directory,
-                              NetworkEmbeddingComponent)
-_addons = ThirdPartyComponents(NetworkEmbeddingComponent)
-
-
-def add_embedding(embedding: NetworkEmbeddingComponent) -> None:
-    _addons.add_component(embedding)
-
 
 class NetworkEmbeddingChoice(autoPyTorchChoice):
+    _embeddings = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  NetworkEmbeddingComponent)
+    _addons = ThirdPartyComponents(NetworkEmbeddingComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_embedding(cls, embedding: NetworkEmbeddingComponent) -> None:
+        cls._addons.add_component(embedding)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available embedding components
 
         Args:
@@ -41,8 +40,8 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
-        components.update(_embeddings)
-        components.update(_addons.components)
+        components.update(cls._embeddings)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -74,7 +73,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = NetworkEmbeddingChoice.get_components()
 
         if include is not None:
             for incl in include:

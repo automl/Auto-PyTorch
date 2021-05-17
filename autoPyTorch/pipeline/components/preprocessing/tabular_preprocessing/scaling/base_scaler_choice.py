@@ -13,24 +13,23 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler import BaseScaler
 
-scaling_directory = os.path.split(__file__)[0]
-_scalers = find_components(__package__,
-                           scaling_directory,
-                           BaseScaler)
-
-_addons = ThirdPartyComponents(BaseScaler)
-
-
-def add_scaler(scaler: BaseScaler) -> None:
-    _addons.add_component(scaler)
-
 
 class ScalerChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing scaling component at runtime
     """
+    _scalers = find_components(__package__,
+                               os.path.split(__file__)[0],
+                               BaseScaler)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    _addons = ThirdPartyComponents(BaseScaler)
+
+    @classmethod
+    def add_scaler(cls, scaler: BaseScaler) -> None:
+        cls._addons.add_component(scaler)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available scaler components
 
         Args:
@@ -41,8 +40,8 @@ class ScalerChoice(autoPyTorchChoice):
                 as choices for scaling
         """
         components = OrderedDict()
-        components.update(_scalers)
-        components.update(_addons.components)
+        components.update(cls._scalers)
+        components.update(cls._addons.components)
         return components
 
     def get_hyperparameter_search_space(self,

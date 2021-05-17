@@ -14,24 +14,22 @@ from autoPyTorch.pipeline.components.base_component import (
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer import BaseNormalizer
 
 
-normalise_directory = os.path.split(__file__)[0]
-_normalizers = find_components(__package__,
-                               normalise_directory,
-                               BaseNormalizer)
-
-_addons = ThirdPartyComponents(BaseNormalizer)
-
-
-def add_normalizer(normalizer: BaseNormalizer) -> None:
-    _addons.add_component(normalizer)
-
-
 class NormalizerChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing encoding component at runtime
     """
+    _normalizers = find_components(__package__,
+                                   os.path.split(__file__)[0],
+                                   BaseNormalizer)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    _addons = ThirdPartyComponents(BaseNormalizer)
+
+    @classmethod
+    def add_normalizer(cls, normalizer: BaseNormalizer) -> None:
+        cls._addons.add_component(normalizer)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available normalizer components
 
         Args:
@@ -42,8 +40,8 @@ class NormalizerChoice(autoPyTorchChoice):
                 as choices for encoding the categorical columns
         """
         components = OrderedDict()
-        components.update(_normalizers)
-        components.update(_addons.components)
+        components.update(cls._normalizers)
+        components.update(cls._addons.components)
         return components
 
     def get_hyperparameter_search_space(self,

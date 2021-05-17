@@ -34,16 +34,6 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
-trainer_directory = os.path.split(__file__)[0]
-_trainers = find_components(__package__,
-                            trainer_directory,
-                            BaseTrainerComponent)
-_addons = ThirdPartyComponents(BaseTrainerComponent)
-
-
-def add_trainer(trainer: BaseTrainerComponent) -> None:
-    _addons.add_component(trainer)
-
 
 class TrainerChoice(autoPyTorchChoice):
     """This class is an interface to the PyTorch trainer.
@@ -54,6 +44,10 @@ class TrainerChoice(autoPyTorchChoice):
     epoch happens, that is, how batches of data are fed and used to train the network.
 
     """
+    _trainers = find_components(__package__,
+                                os.path.split(__file__)[0],
+                                BaseTrainerComponent)
+    _addons = ThirdPartyComponents(BaseTrainerComponent)
 
     def __init__(self,
                  dataset_properties: Dict[str, Any],
@@ -80,7 +74,12 @@ class TrainerChoice(autoPyTorchChoice):
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_trainer(cls, trainer: BaseTrainerComponent) -> None:
+        cls._addons.add_component(trainer)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available trainer components
 
         Args:
@@ -91,8 +90,8 @@ class TrainerChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = collections.OrderedDict()  # type: Dict[str, autoPyTorchComponent]
-        components.update(_trainers)
-        components.update(_addons.components)
+        components.update(cls._trainers)
+        components.update(cls._addons.components)
         return components
 
     def get_hyperparameter_search_space(

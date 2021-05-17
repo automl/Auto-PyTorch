@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+    base_feature_preprocessor_choice import FeaturePreprocessorChoice
 
 
 class TestFeaturePreprocessorChoice(unittest.TestCase):
@@ -10,13 +10,13 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
         """Make sure that we can setup a valid choice in the feature preprocessor
         choice"""
         dataset_properties = {'numerical_columns': list(range(4)), 'categorical_columns': [5]}
-        feature_preprocessor_choice = FeatureProprocessorChoice(dataset_properties)
+        feature_preprocessor_choice = FeaturePreprocessorChoice(dataset_properties)
         cs = feature_preprocessor_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the search space
         self.assertListEqual(
             sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(feature_preprocessor_choice.get_components().keys()))
+            sorted(list(FeaturePreprocessorChoice.get_components().keys()))
         )
 
         # Make sure we can properly set some random configs
@@ -29,7 +29,7 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
             feature_preprocessor_choice.set_hyperparameters(config)
 
             self.assertEqual(feature_preprocessor_choice.choice.__class__,
-                             feature_preprocessor_choice.get_components()[config_dict['__choice__']])
+                             FeaturePreprocessorChoice.get_components()[config_dict['__choice__']])
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)
@@ -43,7 +43,7 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
     def test_only_categorical(self):
         dataset_properties = {'numerical_columns': [], 'categorical_columns': list(range(4))}
 
-        chooser = FeatureProprocessorChoice(dataset_properties)
+        chooser = FeaturePreprocessorChoice(dataset_properties)
         configspace = chooser.get_hyperparameter_search_space().sample_configuration().get_dictionary()
         self.assertEqual(configspace['__choice__'], 'NoFeaturePreprocessor')
 

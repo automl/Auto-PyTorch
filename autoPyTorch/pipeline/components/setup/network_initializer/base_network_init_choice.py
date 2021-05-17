@@ -17,20 +17,19 @@ from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init
     BaseNetworkInitializerComponent
 )
 
-directory = os.path.split(__file__)[0]
-_initializers = find_components(__package__,
-                                directory,
-                                BaseNetworkInitializerComponent)
-_addons = ThirdPartyComponents(BaseNetworkInitializerComponent)
-
-
-def add_network_initializer(initializer: BaseNetworkInitializerComponent) -> None:
-    _addons.add_component(initializer)
-
 
 class NetworkInitializerChoice(autoPyTorchChoice):
+    _initializers = find_components(__package__,
+                                    os.path.split(__file__)[0],
+                                    BaseNetworkInitializerComponent)
+    _addons = ThirdPartyComponents(BaseNetworkInitializerComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_network_initializer(cls, initializer: BaseNetworkInitializerComponent) -> None:
+        cls._addons.add_component(initializer)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available initializer components
 
         Args:
@@ -41,8 +40,8 @@ class NetworkInitializerChoice(autoPyTorchChoice):
                 as choices
         """
         components = OrderedDict()
-        components.update(_initializers)
-        components.update(_addons.components)
+        components.update(cls._initializers)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -73,7 +72,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = NetworkInitializerChoice.get_components()
 
         if include is not None:
             for incl in include:

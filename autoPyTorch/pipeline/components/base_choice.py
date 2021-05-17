@@ -61,6 +61,7 @@ class autoPyTorchChoice(object):
                                  " but got None, to get fit requirements for {}, "
                                  "call get_fit_requirements of the component".format(self.__class__.__name__))
 
+    @classmethod
     def get_components(cls: 'autoPyTorchChoice') -> Dict[str, autoPyTorchComponent]:
         """Returns and ordered dict with the components available
         for current step.

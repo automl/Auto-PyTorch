@@ -14,23 +14,22 @@ from autoPyTorch.pipeline.components.base_component import (
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 
-preprocessing_directory = os.path.split(__file__)[0]
-_preprocessors = find_components(__package__,
-                                 preprocessing_directory,
-                                 autoPyTorchFeaturePreprocessingComponent)
-_addons = ThirdPartyComponents(autoPyTorchFeaturePreprocessingComponent)
 
-
-def add_feature_preprocessor(feature_preprocessor: autoPyTorchFeaturePreprocessingComponent) -> None:
-    _addons.add_component(feature_preprocessor)
-
-
-class FeatureProprocessorChoice(autoPyTorchChoice):
+class FeaturePreprocessorChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing feature_preprocessor component at runtime
     """
+    _preprocessors = find_components(__package__,
+                                     os.path.split(__file__)[0],
+                                     autoPyTorchFeaturePreprocessingComponent)
+    _addons = ThirdPartyComponents(autoPyTorchFeaturePreprocessingComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_feature_preprocessor(cls, feature_preprocessor: autoPyTorchFeaturePreprocessingComponent) -> None:
+        cls._addons.add_component(feature_preprocessor)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available feature_preprocessor components
 
         Args:
@@ -41,8 +40,8 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                 as choices for encoding the categorical columns
         """
         components: Dict = OrderedDict()
-        components.update(_preprocessors)
-        components.update(_addons.components)
+        components.update(cls._preprocessors)
+        components.update(cls._addons.components)
         return components
 
     def get_hyperparameter_search_space(self,

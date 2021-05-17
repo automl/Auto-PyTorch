@@ -17,20 +17,19 @@ from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbon
     NetworkBackboneComponent,
 )
 
-directory = os.path.split(__file__)[0]
-_backbones = find_components(__package__,
-                             directory,
-                             NetworkBackboneComponent)
-_addons = ThirdPartyComponents(NetworkBackboneComponent)
-
-
-def add_backbone(backbone: NetworkBackboneComponent) -> None:
-    _addons.add_component(backbone)
-
 
 class NetworkBackboneChoice(autoPyTorchChoice):
+    _backbones = find_components(__package__,
+                                 os.path.split(__file__)[0],
+                                 NetworkBackboneComponent)
+    _addons = ThirdPartyComponents(NetworkBackboneComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_backbone(cls, backbone: NetworkBackboneComponent) -> None:
+        cls._addons.add_component(backbone)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
 
         Args:
@@ -41,8 +40,8 @@ class NetworkBackboneChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
-        components.update(_backbones)
-        components.update(_addons.components)
+        components.update(cls._backbones)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -74,7 +73,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = NetworkBackboneChoice.get_components()
 
         if include is not None:
             for incl in include:

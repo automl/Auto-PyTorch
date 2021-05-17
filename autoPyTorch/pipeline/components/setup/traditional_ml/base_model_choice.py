@@ -16,20 +16,18 @@ from autoPyTorch.pipeline.components.base_component import (
 from autoPyTorch.pipeline.components.setup.traditional_ml.base_model import BaseModelComponent
 
 
-directory = os.path.split(__file__)[0]
-_models = find_components(__package__,
-                          directory,
-                          BaseModelComponent)
-_addons = ThirdPartyComponents(BaseModelComponent)
-
-
-def add_model(model: BaseModelComponent) -> None:
-    _addons.add_component(model)
-
-
 class ModelChoice(autoPyTorchChoice):
+    _models = find_components(__package__,
+                              os.path.split(__file__)[0],
+                              BaseModelComponent)
+    _addons = ThirdPartyComponents(BaseModelComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_model(cls, model: BaseModelComponent) -> None:
+        cls._addons.add_component(model)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available model components
         Args:
             None
@@ -38,8 +36,8 @@ class ModelChoice(autoPyTorchChoice):
                 as choices
         """
         components = OrderedDict()
-        components.update(_models)
-        components.update(_addons.components)
+        components.update(cls._models)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -68,7 +66,7 @@ class ModelChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = ModelChoice.get_components()
 
         if include is not None:
             for incl in include:

@@ -15,20 +15,19 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
 
-directory = os.path.split(__file__)[0]
-_schedulers = find_components(__package__,
-                              directory,
-                              BaseLRComponent)
-_addons = ThirdPartyComponents(BaseLRComponent)
-
-
-def add_scheduler(scheduler: BaseLRComponent) -> None:
-    _addons.add_component(scheduler)
-
 
 class SchedulerChoice(autoPyTorchChoice):
+    _schedulers = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseLRComponent)
+    _addons = ThirdPartyComponents(BaseLRComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_scheduler(cls, scheduler: BaseLRComponent) -> None:
+        cls._addons.add_component(scheduler)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available scheduler components
 
         Args:
@@ -39,8 +38,8 @@ class SchedulerChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
-        components.update(_schedulers)
-        components.update(_addons.components)
+        components.update(cls._schedulers)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -72,7 +71,7 @@ class SchedulerChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = SchedulerChoice.get_components()
 
         if include is not None:
             for incl in include:

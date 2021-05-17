@@ -17,20 +17,19 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
     NetworkHeadComponent,
 )
 
-directory = os.path.split(__file__)[0]
-_heads = find_components(__package__,
-                         directory,
-                         NetworkHeadComponent)
-_addons = ThirdPartyComponents(NetworkHeadComponent)
-
-
-def add_head(head: NetworkHeadComponent) -> None:
-    _addons.add_component(head)
-
 
 class NetworkHeadChoice(autoPyTorchChoice):
+    _heads = find_components(__package__,
+                             os.path.split(__file__)[0],
+                             NetworkHeadComponent)
+    _addons = ThirdPartyComponents(NetworkHeadComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_head(cls, head: NetworkHeadComponent) -> None:
+        cls._addons.add_component(head)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available head components
 
         Args:
@@ -41,8 +40,8 @@ class NetworkHeadChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
-        components.update(_heads)
-        components.update(_addons.components)
+        components.update(cls._heads)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -74,7 +73,7 @@ class NetworkHeadChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = NetworkHeadChoice.get_components()
 
         if include is not None:
             for incl in include:

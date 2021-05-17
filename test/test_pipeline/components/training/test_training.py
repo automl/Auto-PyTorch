@@ -232,16 +232,15 @@ class TrainerTest(unittest.TestCase):
         This also test that we can properly initialize each one
         of them
         """
-        trainer_choice = TrainerChoice(dataset_properties={})
 
         # Make sure all components are returned
-        self.assertEqual(len(trainer_choice.get_components().keys()), 2)
+        self.assertEqual(len(TrainerChoice.get_components().keys()), 2)
 
         # For every optimizer in the components, make sure
         # that it complies with the scikit learn estimator.
         # This is important because usually components are forked to workers,
         # so the set/get params methods should recreate the same object
-        for name, trainer in trainer_choice.get_components().items():
+        for name, trainer in TrainerChoice.get_components().items():
             config = trainer.get_hyperparameter_search_space().sample_configuration()
             estimator = trainer(**config)
             estimator_clone = clone(estimator)
@@ -273,7 +272,7 @@ class TrainerTest(unittest.TestCase):
         # Make sure that all hyperparameters are part of the serach space
         self.assertListEqual(
             sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(trainer_choice.get_components().keys()))
+            sorted(list(TrainerChoice.get_components().keys()))
         )
 
         # Make sure we can properly set some random configs
@@ -286,7 +285,7 @@ class TrainerTest(unittest.TestCase):
             trainer_choice.set_hyperparameters(config)
 
             self.assertEqual(trainer_choice.choice.__class__,
-                             trainer_choice.get_components()[config_dict['__choice__']])
+                             TrainerChoice.get_components()[config_dict['__choice__']])
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)

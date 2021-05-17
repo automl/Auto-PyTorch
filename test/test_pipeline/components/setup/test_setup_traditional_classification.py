@@ -58,7 +58,7 @@ class TestModelChoice:
         cs = model_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
 
         # Make sure that all hyperparameters are part of the search space
-        assert sorted(cs.get_hyperparameter('__choice__').choices) == sorted(list(model_choice.get_components().keys()))
+        assert sorted(cs.get_hyperparameter('__choice__').choices) == sorted(list(ModelChoice.get_components().keys()))
 
         # Make sure we can properly set some random configs
         # Whereas just one iteration will make sure the algorithm works,
@@ -69,7 +69,7 @@ class TestModelChoice:
             config_dict = copy.deepcopy(config.get_dictionary())
             model_choice.set_hyperparameters(config)
 
-            assert model_choice.choice.__class__ == model_choice.get_components()[config_dict['__choice__']]
+            assert model_choice.choice.__class__ == ModelChoice.get_components()[config_dict['__choice__']]
 
             # Then check the choice configuration
             selected_choice = config_dict.pop('__choice__', None)

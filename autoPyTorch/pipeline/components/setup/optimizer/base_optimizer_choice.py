@@ -15,20 +15,19 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer import BaseOptimizerComponent
 
-directory = os.path.split(__file__)[0]
-_optimizers = find_components(__package__,
-                              directory,
-                              BaseOptimizerComponent)
-_addons = ThirdPartyComponents(BaseOptimizerComponent)
-
-
-def add_optimizer(optimizer: BaseOptimizerComponent) -> None:
-    _addons.add_component(optimizer)
-
 
 class OptimizerChoice(autoPyTorchChoice):
+    _optimizers = find_components(__package__,
+                                  os.path.split(__file__)[0],
+                                  BaseOptimizerComponent)
+    _addons = ThirdPartyComponents(BaseOptimizerComponent)
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    @classmethod
+    def add_optimizer(cls, optimizer: BaseOptimizerComponent) -> None:
+        cls._addons.add_component(optimizer)
+
+    @classmethod
+    def get_components(cls) -> Dict[str, autoPyTorchComponent]:
         """Returns the available optimizer components
 
         Args:
@@ -39,8 +38,8 @@ class OptimizerChoice(autoPyTorchChoice):
                 as choices
         """
         components = OrderedDict()
-        components.update(_optimizers)
-        components.update(_addons.components)
+        components.update(cls._optimizers)
+        components.update(cls._addons.components)
         return components
 
     def get_available_components(
@@ -71,7 +70,7 @@ class OptimizerChoice(autoPyTorchChoice):
             raise ValueError(
                 "The argument include and exclude cannot be used together.")
 
-        available_comp = self.get_components()
+        available_comp = OptimizerChoice.get_components()
 
         if include is not None:
             for incl in include:

@@ -10,7 +10,7 @@ from sklearn.compose import make_column_transformer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     NoFeaturePreprocessor import NoFeaturePreprocessor
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+    base_feature_preprocessor_choice import FeaturePreprocessorChoice
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -25,9 +25,7 @@ def preprocessor(request):
 class TestFeaturePreprocessors:
 
     def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor):
-        preprocessor = FeatureProprocessorChoice(
-            dataset_properties=fit_dictionary_tabular['dataset_properties']
-        ).get_components()[preprocessor]()
+        preprocessor = FeaturePreprocessorChoice.get_components()[preprocessor]()
         configuration = preprocessor. \
             get_hyperparameter_search_space(dataset_properties=fit_dictionary_tabular["dataset_properties"]) \
             .get_default_configuration().get_dictionary()

@@ -22,7 +22,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encodin
     EncoderChoice
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+    base_feature_preprocessor_choice import FeaturePreprocessorChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
@@ -248,7 +248,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("imputer", SimpleImputer(random_state=self.random_state)),
             ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
-            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
+            ("feature_preprocessor", FeaturePreprocessorChoice(default_dataset_properties,
                                                                random_state=self.random_state)),
             ("tabular_transformer", TabularColumnTransformer(random_state=self.random_state)),
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),

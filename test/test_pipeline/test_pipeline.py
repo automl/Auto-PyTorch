@@ -28,7 +28,8 @@ class DummyComponent(autoPyTorchComponent):
 
 
 class DummyChoice(autoPyTorchChoice):
-    def get_components(self):
+    @classmethod
+    def get_components(cls):
         return {
             'DummyComponent2': DummyComponent,
             'DummyComponent3': DummyComponent,
