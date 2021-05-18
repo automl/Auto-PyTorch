@@ -30334,22 +30334,22 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration:
-  image_augmenter:GaussianBlur:sigma_min, Value: 0.0234546653439216
-  image_augmenter:GaussianBlur:sigma_offset, Value: 1.9419513237876684
-  image_augmenter:GaussianBlur:use_augmenter, Value: True
-  image_augmenter:GaussianNoise:use_augmenter, Value: False
+  image_augmenter:GaussianBlur:use_augmenter, Value: False
+  image_augmenter:GaussianNoise:sigma_offset, Value: 1.6727659863298625
+  image_augmenter:GaussianNoise:use_augmenter, Value: True
   image_augmenter:RandomAffine:use_augmenter, Value: False
-  image_augmenter:RandomCutout:use_augmenter, Value: False
+  image_augmenter:RandomCutout:p, Value: 0.5259508079807516
+  image_augmenter:RandomCutout:use_augmenter, Value: True
   image_augmenter:Resize:use_augmenter, Value: True
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.13952632480424082
-  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.0251962557279774
+  normalizer:__choice__, Value: &#39;ImageNormalizer&#39;
 
 Fitting the pipeline...
 ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        NoNormalizer
+        ImageNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -30414,7 +30414,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.639 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.969 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>

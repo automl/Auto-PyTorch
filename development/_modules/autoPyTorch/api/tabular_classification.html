@@ -126,7 +126,6 @@
     <span class="n">TASK_TYPES_TO_STRING</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_validator</span> <span class="kn">import</span> <span class="n">TabularInputValidator</span>
-<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDataset</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">CrossValTypes</span><span class="p">,</span>
     <span class="n">HoldoutValTypes</span><span class="p">,</span>
@@ -209,17 +208,6 @@
             <span class="n">search_space_updates</span><span class="o">=</span><span class="n">search_space_updates</span><span class="p">,</span>
             <span class="n">task_type</span><span class="o">=</span><span class="n">TASK_TYPES_TO_STRING</span><span class="p">[</span><span class="n">TABULAR_CLASSIFICATION</span><span class="p">],</span>
         <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_get_required_dataset_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">BaseDataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TabularDataset</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dataset is incompatible for the given task,: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-            <span class="p">))</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
-                <span class="s1">&#39;output_type&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">output_type</span><span class="p">,</span>
-                <span class="s1">&#39;issparse&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">issparse</span><span class="p">,</span>
-                <span class="s1">&#39;numerical_columns&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">numerical_columns</span><span class="p">,</span>
-                <span class="s1">&#39;categorical_columns&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">}</span>
 
 <div class="viewcode-block" id="TabularClassificationTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TabularClassificationPipeline</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">TabularClassificationPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">)</span></div>

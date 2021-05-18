@@ -46,7 +46,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fdfb1f9d5b0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f27c9064e80> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -80,7 +80,7 @@ the search. Currently, there are two changes that can be made to the space:-
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001918792724609375, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0021109580993652344, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -114,7 +114,7 @@ the search. Currently, there are two changes that can be made to the space:-
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=5.823081731796265, wallclock_time=7.408823251724243, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=5.5479514598846436, wallclock_time=7.072556257247925, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 475
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -162,7 +162,7 @@ the search. Currently, there are two changes that can be made to the space:-
       scaler:__choice__, Value: 'Normalizer'
       trainer:StandardTrainer:weighted_loss, Value: False
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=12, ta_time_used=157.3441722393036, wallclock_time=187.21530413627625, budget=16.666666666666664)]
+    , ta_runs=12, ta_time_used=162.1864686012268, wallclock_time=191.10616779327393, budget=16.666666666666664)]
     {'accuracy': 0.8554913294797688}
     |    | Preprocessing                                                     | Estimator                                                 |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
@@ -178,7 +178,7 @@ the search. Currently, there are two changes that can be made to the space:-
     |  9 | SimpleImputer,OneHotEncoder,Normalizer,NoFeaturePreprocessing     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
     | 10 | None                                                              | KNNClassifier                                             |     0.02 |
     | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7fdfb0439670> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f27c8496f40> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -210,7 +210,7 @@ the search. Currently, there are two changes that can be made to the space:-
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014994144439697266, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015163421630859375, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -242,16 +242,16 @@ the search. Currently, there are two changes that can be made to the space:-
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.872825860977173, wallclock_time=6.454189777374268, budget=5.555555555555555)]
-    {'accuracy': 0.8554913294797688}
+    , ta_runs=1, ta_time_used=4.391991376876831, wallclock_time=5.802569389343262, budget=5.555555555555555)]
+    {'accuracy': 0.861271676300578}
     |    | Preprocessing                                                 | Estimator                                                          |   Weight |
     |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-    |  0 | None                                                          | CatBoostClassifier                                                 |     0.74 |
+    |  0 | None                                                          | CatBoostClassifier                                                 |     0.72 |
     |  1 | None                                                          | SVC                                                                |     0.08 |
-    |  2 | None                                                          | KNNClassifier                                                      |     0.06 |
-    |  3 | None                                                          | RFClassifier                                                       |     0.04 |
-    |  4 | None                                                          | ExtraTreesClassifier                                               |     0.04 |
-    |  5 | SimpleImputer,NoEncoder,MinMaxScaler,NoFeaturePreprocessing   | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  2 | None                                                          | ExtraTreesClassifier                                               |     0.06 |
+    |  3 | None                                                          | KNNClassifier                                                      |     0.06 |
+    |  4 | None                                                          | RFClassifier                                                       |     0.04 |
+    |  5 | SimpleImputer,NoEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     |  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 
 
@@ -381,7 +381,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 11 minutes  46.297 seconds)
+   **Total running time of the script:** ( 11 minutes  36.696 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:

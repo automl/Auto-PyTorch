@@ -125,7 +125,7 @@ with different resampling strategies in AutoPyTorch
 By default, AutoPyTorch uses Holdout Validation with
 a 67% train size split.</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fdf98d02f10&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f27d8793910&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -157,7 +157,7 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019826889038085938, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020575523376464844, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -189,7 +189,7 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.601769208908081, wallclock_time=7.1488306522369385, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=5.161799430847168, wallclock_time=6.687556028366089, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
@@ -204,7 +204,7 @@ a 67% train size split.</p>
 |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 |  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 | 10 | None                                                              | LGBMClassifier                                                  |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7fdf98a48670&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f27d8b20fa0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -236,7 +236,7 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001867532730102539, budget=0), TrajEntry(train_perf=0.15480222378634426, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017921924591064453, budget=0), TrajEntry(train_perf=0.15480222378634426, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -268,13 +268,13 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=10.49617075920105, wallclock_time=12.081811904907227, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=9.625613927841187, wallclock_time=11.180426359176636, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.884393063583815}
 |    | Preprocessing                                        | Estimator                                                       |   Weight |
 |---:|:-----------------------------------------------------|:----------------------------------------------------------------|---------:|
 |  0 | None                                                 | TabularClassifier                                               |     0.86 |
 |  1 | SimpleImputer,OneHotEncoder,StandardScaler,KernelPCA | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7fdfa8977310&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f27c86db130&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -306,7 +306,7 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0017690658569335938, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020949840545654297, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -338,7 +338,7 @@ a 67% train size split.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.474417209625244, wallclock_time=7.0473034381866455, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=5.248789072036743, wallclock_time=6.759767055511475, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
@@ -492,7 +492,7 @@ a 67% train size split.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  17.687 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  5.650 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-resampling-strategy-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/40_advanced/example_resampling_strategy.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
