@@ -9,7 +9,10 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-      fail-fast:  false
+        include:
+          - python-version: 3.8
+            code-cov: true
+      fail-fast: false
       max-parallel: 2
 
     steps:

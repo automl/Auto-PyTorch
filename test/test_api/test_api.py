@@ -17,6 +17,7 @@ import pytest
 
 import sklearn
 import sklearn.datasets
+from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
@@ -31,6 +32,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
@@ -187,8 +189,11 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
 
     y_pred = estimator.predict(X_test)
-
     assert np.shape(y_pred)[0] == np.shape(X_test)[0]
+
+    # Make sure that predict proba has the expected shape
+    probabilites = estimator.predict_proba(X_test)
+    assert np.shape(probabilites) == (np.shape(X_test)[0], 2)
 
     score = estimator.score(y_pred, y_test)
     assert 'accuracy' in score
@@ -214,6 +219,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
         with open(dump_file, 'rb') as f:
             restored_estimator = pickle.load(f)
         restored_estimator.predict(X_test)
+
+    # Test refit on dummy data
+    estimator.refit(dataset=backend.load_datamanager())
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
@@ -459,6 +467,12 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._disable_file_output = []
     estimator._all_supported_metrics = False
 
+    original_memory_limit = estimator._memory_limit
+    estimator._memory_limit = 500
+    with pytest.raises(ValueError, match=r".*Dummy prediction failed with run state.*"):
+        estimator._do_dummy_prediction()
+
+    estimator._memory_limit = original_memory_limit
     estimator._do_dummy_prediction()
 
     # Ensure that the dummy predictions are not in the current working
@@ -639,3 +653,78 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
 
     if not include_traditional:
         assert results['configuration_origin'] != 'traditional'
+
+
+# TODO: Make faster when https://github.com/automl/Auto-PyTorch/pull/223 is incorporated
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
+def test_do_traditional_pipeline(fit_dictionary_tabular):
+    backend = fit_dictionary_tabular['backend']
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        ensemble_size=0,
+    )
+
+    # Setup pre-requisites normally set by search()
+    estimator._create_dask_client()
+    estimator._metric = accuracy
+    estimator._logger = estimator._get_logger('test')
+    estimator._memory_limit = 5000
+    estimator._time_for_task = 60
+    estimator._disable_file_output = []
+    estimator._all_supported_metrics = False
+
+    estimator._do_traditional_prediction(time_left=60, func_eval_time_limit_secs=30)
+
+    # The models should not be on the current directory
+    assert not os.path.exists(os.path.join(os.getcwd(), '.autoPyTorch'))
+
+    # Then we should have fitted 5 classifiers
+    # Maybe some of them fail (unlikely, but we do not control external API)
+    # but we want to make this test robust
+    at_least_one_model_checked = False
+    for i in range(2, 7):
+        pred_path = os.path.join(
+            backend.temporary_directory, '.autoPyTorch', 'runs', f"1_{i}_50.0",
+            f"predictions_ensemble_1_{i}_50.0.npy"
+        )
+        assert os.path.exists(pred_path)
+
+        model_path = os.path.join(backend.temporary_directory,
+                                  '.autoPyTorch',
+                                  'runs', f"1_{i}_50.0",
+                                  f"1.{i}.50.0.model")
+
+        # Make sure the dummy model complies with scikit learn
+        # get/set params
+        assert os.path.exists(model_path)
+        with open(model_path, 'rb') as model_handler:
+            model = pickle.load(model_handler)
+        clone(model)
+        assert model.config == list(_classifiers.keys())[i - 2]
+        at_least_one_model_checked = True
+    if not at_least_one_model_checked:
+        pytest.fail("Not even one single traditional pipeline was fitted")
+
+    estimator._close_dask_client()
+    estimator._clean_logger()
+
+    del estimator
+
+
+@pytest.mark.parametrize("api_type", [TabularClassificationTask, TabularRegressionTask])
+def test_unsupported_msg(api_type):
+    api = api_type()
+    with pytest.raises(ValueError, match=r".*Dataset is incompatible for the given task.*"):
+        api._get_required_dataset_properties('dummy')
+    with pytest.raises(ValueError, match=r".*is only supported after calling search. Kindly .*"):
+        api.predict(np.ones((10, 10)))
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
+@pytest.mark.parametrize("api_type", [TabularClassificationTask, TabularRegressionTask])
+def test_build_pipeline(api_type, fit_dictionary_tabular):
+    api = api_type()
+    pipeline = api.build_pipeline(fit_dictionary_tabular['dataset_properties'])
+    assert isinstance(pipeline, BaseEstimator)
+    assert len(pipeline.steps) > 0

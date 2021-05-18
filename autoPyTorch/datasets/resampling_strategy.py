@@ -162,7 +162,10 @@ class CrossValFuncs():
                                            indices: np.ndarray,
                                            **kwargs: Any
                                            ) -> List[Tuple[np.ndarray, np.ndarray]]:
-        cv = StratifiedKFold(n_splits=num_splits, random_state=random_state)
+
+        shuffle = kwargs.get('shuffle', True)
+        cv = StratifiedKFold(n_splits=num_splits, shuffle=shuffle,
+                             random_state=random_state if not shuffle else None)
         splits = list(cv.split(indices, kwargs["stratify"]))
         return splits
 
