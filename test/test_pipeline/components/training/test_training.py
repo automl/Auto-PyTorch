@@ -16,6 +16,9 @@ from autoPyTorch import constants
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
+from autoPyTorch.pipeline.components.training.trainer import (
+    TrainerChoice,
+)
 from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import (
     MixUpTrainer
 )
@@ -24,9 +27,6 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent, )
-from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
-    TrainerChoice,
-)
 
 sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)

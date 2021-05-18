@@ -19,8 +19,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice,
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing

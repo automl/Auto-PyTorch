@@ -1,8 +1,9 @@
 import copy
 import unittest
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice
+)
 
 
 class TestFeaturePreprocessorChoice(unittest.TestCase):
