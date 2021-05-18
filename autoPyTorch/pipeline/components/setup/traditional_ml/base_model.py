@@ -1,16 +1,18 @@
 import os
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
 import pandas as pd
 
+from sklearn.utils import check_random_state
+
 import torch
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_classifier import BaseClassifier
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_traditional_learner import BaseTraditionalLearner
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -26,21 +28,24 @@ def enablePrint() -> None:
 
 class BaseModelComponent(autoPyTorchSetupComponent):
     """
-    Provide an abstract interface for traditional classification methods
+    Provide an abstract interface for traditional learner methods
     in Auto-Pytorch
     """
 
     def __init__(
             self,
             random_state: Optional[np.random.RandomState] = None,
-            model: Optional[BaseClassifier] = None,
+            model: Optional[BaseTraditionalLearner] = None,
             device: Optional[torch.device] = None
     ) -> None:
         super(BaseModelComponent, self).__init__()
-        self.random_state = random_state
+        if random_state is None:
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = check_random_state(random_state)
         self.fit_output: Dict[str, Any] = dict()
 
-        self.model: Optional[BaseClassifier] = model
+        self.model: Optional[BaseTraditionalLearner] = model
 
         self.add_fit_requirements([
             FitRequirement('X_train', (np.ndarray, list, pd.DataFrame), user_defined=False, dataset_property=False),
@@ -74,8 +79,10 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
         # instantiate model
         self.model = self.build_model(input_shape=input_shape,
-                                      logger_port=X['logger_port'],
-                                      output_shape=output_shape)
+                                      logger_port=X['logger_port'] if 'logger_port' in X else None,
+                                      output_shape=output_shape,
+                                      task_type=X['dataset_properties']['task_type'],
+                                      output_type=X['dataset_properties']['output_type'])
 
         # train model
         blockPrint()
@@ -87,13 +94,13 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         if 'X_test' in X.keys() and X['X_test'] is not None:
             if isinstance(X['X_test'], pd.DataFrame):
                 X['X_test'] = X['X_test'].to_numpy()
-            test_preds = self.model.predict(X_test=X['X_test'], predict_proba=True)
+            test_preds = self.model.predict(X_test=X['X_test'], predict_proba=self.model.is_classification)
             self.fit_output["test_preds"] = test_preds
         return self
 
     @abstractmethod
     def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...],
-                    logger_port: int) -> BaseClassifier:
+                    logger_port: int, task_type: str, output_type: str) -> BaseTraditionalLearner:
         """
         This method returns a pytorch model, that is dynamically built using
         a self.config that is model specific, and contains the additional
@@ -113,6 +120,12 @@ class BaseModelComponent(autoPyTorchSetupComponent):
             X_test = X_test.to_numpy()
         return self.model.predict(X_test, predict_proba=True)
 
+    def score(self, X_test: Union[pd.DataFrame, np.ndarray], y_test: Union[pd.Series, np.ndarray, List]):
+        assert self.model is not None, "Cant score without fitting first"
+        if isinstance(X_test, pd.DataFrame):
+            X_test = X_test.to_numpy()
+        return self.model.score(X_test, y_test)
+
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         The transform function updates the model in the X dictionary.
@@ -121,7 +134,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         X.update({'results': self.fit_output})
         return X
 
-    def get_model(self) -> BaseClassifier:
+    def get_model(self) -> BaseTraditionalLearner:
         """
         Return the underlying model object.
         Returns:

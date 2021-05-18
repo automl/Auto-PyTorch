@@ -20,6 +20,7 @@ import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
 import autoPyTorch.pipeline.traditional_tabular_classification
+import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
@@ -84,7 +85,7 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
                                                      random_state=self.random_state)
         configuration_space = self.pipeline.get_hyperparameter_search_space()
         default_configuration = configuration_space.get_default_configuration().get_dictionary()
-        default_configuration['model_trainer:tabular_classifier:classifier'] = config
+        default_configuration['model_trainer:tabular_traditional_model:traditional_learner'] = config
         self.configuration = Configuration(configuration_space, default_configuration)
         self.pipeline.set_hyperparameters(self.configuration)
 
@@ -111,7 +112,7 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
             Currently contains
                 1. pipeline_configuration: the configuration of the pipeline, i.e, the traditional model used
                 2. trainer_configuration: the parameters for the traditional model used.
-                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/classifier_configs
+                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/estimator_configs
         """
         return {'pipeline_configuration': self.configuration,
                 'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config(),
@@ -124,6 +125,74 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
     def get_default_pipeline_options() -> Dict[str, Any]:
         return autoPyTorch.pipeline.traditional_tabular_classification. \
             TraditionalTabularClassificationPipeline.get_default_pipeline_options()
+
+
+class MyTraditionalTabularRegressionPipeline(BaseEstimator):
+    """
+    A wrapper class that holds a pipeline for traditional regression.
+    Estimators like CatBoost, and Random Forest are considered traditional machine
+    learning models and are fitted before neural architecture search.
+
+    This class is an interface to fit a pipeline containing a traditional machine
+    learning model, and is the final object that is stored for inference.
+
+    Attributes:
+        dataset_properties (Dict[str, Any]):
+            A dictionary containing dataset specific information
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
+    def __init__(self, config: str,
+                 dataset_properties: Dict[str, Any],
+                 random_state: Optional[Union[int, np.random.RandomState]] = None,
+                 init_params: Optional[Dict] = None):
+        self.config = config
+        self.dataset_properties = dataset_properties
+        self.random_state = random_state
+        self.init_params = init_params
+        self.pipeline = autoPyTorch.pipeline.traditional_tabular_regression.\
+            TraditionalTabularRegressionPipeline(dataset_properties=dataset_properties,
+                                                     random_state=self.random_state)
+        configuration_space = self.pipeline.get_hyperparameter_search_space()
+        default_configuration = configuration_space.get_default_configuration().get_dictionary()
+        default_configuration['model_trainer:tabular_traditional_model:traditional_learner'] = config
+        self.configuration = Configuration(configuration_space, default_configuration)
+        self.pipeline.set_hyperparameters(self.configuration)
+
+    def fit(self, X: Dict[str, Any], y: Any,
+            sample_weight: Optional[np.ndarray] = None) -> object:
+        return self.pipeline.fit(X, y)
+
+    def predict(self, X: Union[np.ndarray, pd.DataFrame],
+                batch_size: int = 1000) -> np.array:
+        return self.pipeline.predict(X, batch_size=batch_size)
+
+    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
+        return False
+
+    def get_additional_run_info(self) -> Dict[str, Any]:  # pylint: disable=R0201
+        """
+        Can be used to return additional info for the run.
+        Returns:
+            Dict[str, Any]:
+            Currently contains
+                1. pipeline_configuration: the configuration of the pipeline, i.e, the traditional model used
+                2. trainer_configuration: the parameters for the traditional model used.
+                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/estimator_configs
+        """
+        return {'pipeline_configuration': self.configuration,
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
+
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return self.pipeline.get_pipeline_representation()
+
+    @staticmethod
+    def get_default_pipeline_options() -> Dict[str, Any]:
+        return autoPyTorch.pipeline.traditional_tabular_classification. \
+            TraditionalTabularRegressionPipeline.get_default_pipeline_options()
 
 
 class DummyClassificationPipeline(DummyClassifier):
@@ -401,8 +470,7 @@ class AbstractEvaluator(object):
             if isinstance(self.configuration, int):
                 self.pipeline_class = DummyRegressionPipeline
             elif isinstance(self.configuration, str):
-                raise ValueError("Only tabular classifications tasks "
-                                 "are currently supported with traditional methods")
+                self.pipeline_class = MyTraditionalTabularRegressionPipeline
             elif isinstance(self.configuration, Configuration):
                 self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
             else:
@@ -415,8 +483,7 @@ class AbstractEvaluator(object):
                 if self.task_type in TABULAR_TASKS:
                     self.pipeline_class = MyTraditionalTabularClassificationPipeline
                 else:
-                    raise ValueError("Only tabular classifications tasks "
-                                     "are currently supported with traditional methods")
+                    raise ValueError("Only tabular tasks are currently supported with traditional methods")
             elif isinstance(self.configuration, Configuration):
                 if self.task_type in TABULAR_TASKS:
                     self.pipeline_class = autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline

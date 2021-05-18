@@ -44,7 +44,7 @@ from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool
@@ -590,7 +590,7 @@ class BaseTask:
         memory_limit = self._memory_limit
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
-        available_classifiers = get_available_classifiers()
+        available_classifiers = get_available_traditional_learners()
         dask_futures = []
 
         total_number_classifiers = len(available_classifiers)
@@ -892,21 +892,18 @@ class BaseTask:
         # ============> Run traditional ml
 
         if enable_traditional_pipeline:
-            if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
-                self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
-            else:
-                traditional_task_name = 'runTraditional'
-                self._stopwatch.start_task(traditional_task_name)
-                elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
-                # We want time for at least 1 Neural network in SMAC
-                time_for_traditional = int(
-                    self._time_for_task - elapsed_time - func_eval_time_limit_secs
-                )
-                self._do_traditional_prediction(
-                    func_eval_time_limit_secs=func_eval_time_limit_secs,
-                    time_left=time_for_traditional,
-                )
-                self._stopwatch.stop_task(traditional_task_name)
+            traditional_task_name = 'runTraditional'
+            self._stopwatch.start_task(traditional_task_name)
+            elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
+            # We want time for at least 1 Neural network in SMAC
+            time_for_traditional = int(
+                self._time_for_task - elapsed_time - func_eval_time_limit_secs
+            )
+            self._do_traditional_prediction(
+                func_eval_time_limit_secs=func_eval_time_limit_secs,
+                time_left=time_for_traditional,
+            )
+            self._stopwatch.stop_task(traditional_task_name)
 
         # ============> Starting ensemble
         elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
