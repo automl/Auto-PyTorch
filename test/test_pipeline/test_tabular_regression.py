@@ -311,15 +311,7 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     # Ensure that the network is an instance of torch Module
     assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-    # we expect the output to have the same batch size as the test input,
-    # and number of outputs per batch sample equal to the number of targets ("output_shape" in dataset_properties)
-    expected_output_shape = (X.shape[0],
-                             fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
-
-    prediction = pipeline.predict(X)
-    assert isinstance(prediction, np.ndarray)
-    assert prediction.shape == expected_output_shape
+    r2_score = pipeline.score(X, y)
 
     # we should be able to get a decent score on this dummy data
-    r2_score = metrics.r2(y, prediction)
     assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"

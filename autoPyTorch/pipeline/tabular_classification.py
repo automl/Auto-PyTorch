@@ -12,6 +12,7 @@ from sklearn.base import ClassifierMixin
 
 import torch
 
+from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
@@ -159,6 +160,33 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         y = sklearn.preprocessing.normalize(y, axis=1, norm='l1')
 
         return y
+
+    def score(self, X: np.ndarray, y: np.ndarray,
+              batch_size: Optional[int] = None,
+              metric_name: str = 'accuracy') -> float:
+        """Scores the fitted estimator on (X, y)
+
+        Args:
+            X (np.ndarray):
+                input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline
+                will be called on small chunks of the data.
+                Useful when calling the predict method on
+                the whole array X results in a MemoryError.
+            y (np.ndarray):
+                Ground Truth labels
+            metric_name (str, default = 'accuracy'):
+                 name of the metric to be calculated
+        Returns:
+            float: score based on the metric name
+        """
+        from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
+        metrics = get_metrics(self.dataset_properties, [metric_name])
+        y_pred = self.predict(X, batch_size=batch_size)
+        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
+                                metrics=metrics)[metric_name]
+        return score
 
     def _get_hyperparameter_search_space(self,
                                          dataset_properties: Dict[str, Any],
