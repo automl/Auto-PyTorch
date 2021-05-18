@@ -8,7 +8,7 @@ from sklearn.base import ClassifierMixin
 
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer_choice import (
+from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise import (
     NormalizerChoice
 )
 from autoPyTorch.pipeline.components.setup.augmentation.image.ImageAugmenter import ImageAugmenter
