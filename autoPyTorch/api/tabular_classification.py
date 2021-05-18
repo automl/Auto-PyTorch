@@ -13,7 +13,6 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -96,17 +95,6 @@ class TabularClassificationTask(BaseTask):
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
-
-    def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
-        if not isinstance(dataset, TabularDataset):
-            raise ValueError("Dataset is incompatible for the given task,: {}".format(
-                type(dataset)
-            ))
-        return {'task_type': dataset.task_type,
-                'output_type': dataset.output_type,
-                'issparse': dataset.issparse,
-                'numerical_columns': dataset.numerical_columns,
-                'categorical_columns': dataset.categorical_columns}
 
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularClassificationPipeline:
         return TabularClassificationPipeline(dataset_properties=dataset_properties)
