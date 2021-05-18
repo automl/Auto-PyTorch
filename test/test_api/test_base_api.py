@@ -1,32 +1,8 @@
-import os
-import pathlib
-import pickle
-import sys
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
 
 import numpy as np
 
-import pandas as pd
-
 import pytest
-
-
-import sklearn
-import sklearn.datasets
-from sklearn.base import clone
-from sklearn.ensemble import VotingClassifier, VotingRegressor
-
-from smac.runhistory.runhistory import RunHistory
-
-from autoPyTorch.api.tabular_classification import TabularClassificationTask
-from autoPyTorch.api.tabular_regression import TabularRegressionTask
-from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
-    HoldoutValTypes,
-)
-from autoPyTorch.optimizer.smbo import AutoMLSMBO
-from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 from autoPyTorch.api.base_task import BaseTask
 
