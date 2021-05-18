@@ -48,7 +48,10 @@ setuptools.setup(
             "codecov",
             "pep8",
             "mypy",
-            "openml"
+            "openml",
+            "emcee",
+            "scikit-optimize",
+            "pyDOE",
         ],
         "examples": [
             "matplotlib",
