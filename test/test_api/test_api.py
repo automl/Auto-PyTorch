@@ -715,8 +715,6 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
 @pytest.mark.parametrize("api_type", [TabularClassificationTask, TabularRegressionTask])
 def test_unsupported_msg(api_type):
     api = api_type()
-    with pytest.raises(ValueError, match=r".*Dataset is incompatible for the given task.*"):
-        api._get_required_dataset_properties('dummy')
     with pytest.raises(ValueError, match=r".*is only supported after calling search. Kindly .*"):
         api.predict(np.ones((10, 10)))
 
