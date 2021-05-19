@@ -1,10 +1,10 @@
+import json
 import os
 import pathlib
 import pickle
 import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
-import json
 
 import numpy as np
 
