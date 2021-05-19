@@ -17,7 +17,7 @@ from sklearn.ensemble import (
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
 
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_traditional_learner import \
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
     BaseTraditionalLearner
 
 
@@ -59,8 +59,7 @@ class LGBModel(BaseTraditionalLearner):
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
         if preprocess:
-            X_test = X_test[:, ~self.all_nan]
-            X_test = np.nan_to_num(X_test)
+            X_test = self._preprocess(X_test)
 
         if predict_proba:
             if not self.is_classification:
@@ -242,16 +241,15 @@ class KNNModel(BaseTraditionalLearner):
                                        output_type=output_type)
 
     def _preprocess(self,
-                    X_train: np.ndarray,
-                    X_val: np.ndarray
-                    ) -> Tuple[np.ndarray, np.ndarray]:
+                    X: np.ndarray
+                    ) -> np.ndarray:
 
-        super(KNNModel, self)._preprocess(X_train, X_val)
-        self.categoricals = np.array([isinstance(X_train[0, ind], str) for ind in range(X_train.shape[1])])
-        X_train = X_train[:, ~self.categoricals] if self.categoricals is not None else X_train
-        X_val = X_val[:, ~self.categoricals] if self.categoricals is not None else X_val
+        super(KNNModel, self)._preprocess(X)
+        if self.categoricals is None:
+            self.categoricals = np.array([isinstance(X[0, ind], str) for ind in range(X.shape[1])])
+        X = X[:, ~self.categoricals] if self.categoricals is not None else X
 
-        return X_train, X_val
+        return X
 
     def _prepare_model(self,
                        X_train: np.ndarray,
@@ -268,15 +266,16 @@ class KNNModel(BaseTraditionalLearner):
             y_train: np.ndarray,
             X_val: np.ndarray,
             y_val: np.ndarray):
+
         self.model.fit(X_train, y_train)
+
+        return self
 
     def predict(self, X_test: np.ndarray,
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
         if preprocess:
-            X_test = X_test[:, ~self.all_nan]
-            X_test = np.nan_to_num(X_test)
-            X_test = X_test[:, ~self.categoricals] if self.categoricals is not None else X_test
+            X_test = self._preprocess(X_test)
         if predict_proba:
             return self.model.predict_proba(X_test)
         y_pred = self.model.predict(X_test)
@@ -324,8 +323,7 @@ class SVMModel(BaseTraditionalLearner):
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
         if preprocess:
-            X_test = X_test[:, ~self.all_nan]
-            X_test = np.nan_to_num(X_test)
+            X_test = self._preprocess(X_test)
         if predict_proba:
             return self.model.predict_proba(X_test)
         y_pred = self.model.predict(X_test)

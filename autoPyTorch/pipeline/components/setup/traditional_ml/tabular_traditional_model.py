@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 from autoPyTorch.pipeline.components.setup.traditional_ml.base_model import BaseModelComponent
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import (
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import (
     BaseTraditionalLearner, get_available_traditional_learners)
 
 

@@ -21,20 +21,23 @@ import sklearn.datasets
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
+from sklearn.utils.multiclass import type_of_target
 
 from smac.runhistory.runhistory import RunHistory
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.constants import CLASSIFICATION_OUTPUTS, STRING_TO_OUTPUT_TYPES
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.evaluation.abstract_evaluator import DummyClassificationPipeline, DummyRegressionPipeline
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
-from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, r2
 
 
 CV_NUM_SPLITS = 2

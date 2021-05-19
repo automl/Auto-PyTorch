@@ -44,7 +44,7 @@ from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_traditional_learners
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
 from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool

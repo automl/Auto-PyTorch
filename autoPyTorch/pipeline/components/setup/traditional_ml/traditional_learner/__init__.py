@@ -3,9 +3,9 @@ from typing import Any, Dict, Type, Union
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
 )
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_traditional_learner import \
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
     BaseTraditionalLearner
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.learners import (
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.learners import (
     CatboostModel,
     ExtraTreesModel,
     KNNModel,

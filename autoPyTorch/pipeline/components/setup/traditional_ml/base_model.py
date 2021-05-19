@@ -12,7 +12,7 @@ from sklearn.utils import check_random_state
 import torch
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models.base_traditional_learner import BaseTraditionalLearner
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import BaseTraditionalLearner
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -62,7 +62,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
             y (Any): not used. To comply with sklearn API
 
         Returns:
-            A instance of self
+            An instance of self
         """
         # Make sure that input dictionary X has the required
         # information to fit this stage
@@ -102,9 +102,10 @@ class BaseModelComponent(autoPyTorchSetupComponent):
     def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...],
                     logger_port: int, task_type: str, output_type: str) -> BaseTraditionalLearner:
         """
-        This method returns a pytorch model, that is dynamically built using
-        a self.config that is model specific, and contains the additional
-        configuration hyperparameters to build a domain specific model
+        This method returns a traditional learner, that is dynamically
+        built using a self.config that is model specific, and contains
+        the additional configuration hyperparameters to build a domain
+        specific model
         """
         raise NotImplementedError()
 
@@ -128,7 +129,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
-        The transform function updates the model in the X dictionary.
+        The transform function updates the model and the results in the fit dictionary.
         """
         X.update({'model': self.model})
         X.update({'results': self.fit_output})
@@ -145,7 +146,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
     def check_requirements(self, X: Dict[str, Any], y: Any = None) -> None:
         """
-        This common utility makes sure that the input dictionary X,
+        This common utility makes sure that the input fit dictionary,
         used to fit a given component class, contains the minimum information
         to fit the given component, and it's parents
         """
