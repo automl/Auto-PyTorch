@@ -126,7 +126,8 @@ class TabularRegressionTask(BaseTask):
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
-        portfolio_selection: str = "none"
+        portfolio_selection: str = "none",
+        portfolio_path: Optional[str] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -197,6 +198,9 @@ class TabularRegressionTask(BaseTask):
                 These configurations are the best performing configurations
                 when search was performed on meta training datasets.
                 For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+            portfolio_path (Optional[str]):
+                Optional argument to specify path to a portfolio file.
+
         Returns:
             self
 
@@ -242,7 +246,8 @@ class TabularRegressionTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
-            portfolio_selection=portfolio_selection
+            portfolio_selection=portfolio_selection,
+            portfolio_path=portfolio_path
         )
 
     def predict(

@@ -705,7 +705,8 @@ class BaseTask:
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
-        portfolio_selection: str = "none"
+        portfolio_selection: str = "none",
+        portfolio_path: Optional[str] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -782,6 +783,8 @@ class BaseTask:
                 These configurations are the best performing configurations
                 when search was performed on meta training datasets.
                 For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+            portfolio_path (Optional[str]):
+                Optional argument to specify path to a portfolio file.
         Returns:
             self
 
@@ -790,6 +793,9 @@ class BaseTask:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
                              ":{}".format(self.task_type, dataset.task_type))
+        if portfolio_selection not in ["none", "greedy"]:
+            raise ValueError("Expected portfolio_selection to be in ['none', 'greedy']"
+                             "got {}".format(portfolio_selection))
 
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
@@ -967,7 +973,8 @@ class BaseTask:
                 # smac does internally
                 start_num_run=self._backend.get_next_num_run(peek=True),
                 search_space_updates=self.search_space_updates,
-                portfolio_selection=portfolio_selection
+                portfolio_selection=portfolio_selection,
+                portfolio_path=portfolio_path
             )
             try:
                 run_history, self.trajectory, budget_type = \

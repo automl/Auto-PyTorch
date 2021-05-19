@@ -4,6 +4,7 @@ import pickle
 import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
+import json
 
 import numpy as np
 
@@ -464,3 +465,50 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._clean_logger()
 
     del estimator
+
+
+@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
+                     new=dummy_eval_function)
+@pytest.mark.parametrize('openml_id', (40981, ))
+def test_greedy(openml_id, backend, n_samples):
+
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        data_id=int(openml_id),
+        return_X_y=True, as_frame=True
+    )
+    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X, y, random_state=1)
+
+    include = None
+    # for python less than 3.7, learned entity embedding
+    # is not able to be stored on disk (only on CI)
+    if sys.version_info < (3, 7):
+        include = {'network_embedding': ['NoEmbedding']}
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        include_components=include
+    )
+
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='accuracy',
+            total_walltime_limit=30,
+            func_eval_time_limit_secs=5,
+            enable_traditional_pipeline=False,
+            portfolio_selection="greedy"
+        )
+
+    successful_config_ids = [run_key.config_id for run_key, run_value in estimator.run_history.data.items(
+    ) if 'SUCCESS' in str(run_value.status)]
+    successful_configs = [estimator.run_history.ids_config[id].get_dictionary() for id in successful_config_ids]
+    portfolio_configs = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                    "../../autoPyTorch/configs/greedy_portfolio.json")))
+    # check if any configs from greedy portfolio were compatible with australian
+    assert any(successful_config in portfolio_configs for successful_config in successful_configs)

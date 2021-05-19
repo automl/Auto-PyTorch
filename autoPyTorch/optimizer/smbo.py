@@ -109,7 +109,8 @@ class AutoMLSMBO(object):
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-                 portfolio_selection: str = "none"
+                 portfolio_selection: str = "none",
+                 portfolio_path: typing.Optional[str] = None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -161,6 +162,8 @@ class AutoMLSMBO(object):
             portfolio_selection (str), (default="none"): If "greedy",
                 runs initial configurations present in
                 'autoPyTorch/configs/greedy_portfolio.json'.
+            portfolio_path (Optional[str]):
+                Optional argument to specify path to a portfolio file.
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -213,13 +216,12 @@ class AutoMLSMBO(object):
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
-        # read and validate initial configurations
-        initial_configurations = json.load(open(os.path.join(os.path.dirname(__file__),
-                                                             '../configs/greedy_portfolio.json')))
-
         self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
-        assert portfolio_selection in ['none', 'greedy']
         if portfolio_selection == "greedy":
+            # read and validate initial configurations
+            portfolio_path = portfolio_path if portfolio_path is not None else \
+                os.path.join(os.path.dirname(__file__), '../configs/greedy_portfolio.json')
+            initial_configurations = json.load(open(portfolio_path))
             self.initial_configurations = list()
             for configuration_dict in initial_configurations:
                 try:
