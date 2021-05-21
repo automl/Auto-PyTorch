@@ -197,7 +197,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     incumbent_config, incumbent_results = estimator.get_incumbent_results()
     assert isinstance(incumbent_config, Configuration)
     assert isinstance(incumbent_results, dict)
-    assert 'opt_loss' in incumbent_results
+    assert 'opt_loss' in incumbent_results, "run history: {}, successful_num_run: {}".format(estimator.run_history.data,
+                                                                                             successful_num_run)
     assert 'train_loss' in incumbent_results
 
     # Check that we can pickle
@@ -265,7 +266,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
             X_test=X_test, y_test=y_test,
             optimize_metric='r2',
             total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
+            func_eval_time_limit_secs=10,
             enable_traditional_pipeline=False,
         )
 
@@ -379,8 +380,9 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     incumbent_config, incumbent_results = estimator.get_incumbent_results()
     assert isinstance(incumbent_config, Configuration)
     assert isinstance(incumbent_results, dict)
-    assert 'opt_loss' in incumbent_results
-    assert 'train_loss' in incumbent_results
+    assert 'opt_loss' in incumbent_results, "run history: {}, successful_num_run: {}".format(estimator.run_history.data,
+                                                                                             successful_num_run)
+    assert 'train_loss' in incumbent_results, estimator.run_history.data
 
     # Check that we can pickle
     # Test pickle
