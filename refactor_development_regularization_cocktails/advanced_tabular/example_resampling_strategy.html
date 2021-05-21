@@ -3,15 +3,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Tabular Classification with different resampling strategy &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -118,14 +119,14 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-advanced-tabular-example-resampling-strategy-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="tabular-classification-with-different-resampling-strategy">
+<section class="sphx-glr-example-title" id="tabular-classification-with-different-resampling-strategy">
 <span id="sphx-glr-advanced-tabular-example-resampling-strategy-py"></span><h1>Tabular Classification with different resampling strategy<a class="headerlink" href="#tabular-classification-with-different-resampling-strategy" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with different resampling strategies in AutoPyTorch
 By default, AutoPyTorch uses Holdout Validation with
 a 67% train size split.</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f0424f56970&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f93a5e55c40&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -164,7 +165,7 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020804405212402344, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002051115036010742, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -203,18 +204,18 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=14.983531713485718, wallclock_time=16.507847785949707, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
+, ta_runs=1, ta_time_used=12.115590572357178, wallclock_time=13.64609694480896, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                              |     0.28 |
-|  1 | None                                                              | LGBMClassifier                                                  |     0.22 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-|  3 | None                                                              | RFClassifier                                                    |     0.12 |
-|  4 | None                                                              | ExtraTreesClassifier                                            |     0.12 |
-|  5 | None                                                              | SVC                                                             |     0.08 |
+|  0 | None                                                              | RFClassifier                                                    |     0.28 |
+|  1 | None                                                              | ExtraTreesClassifier                                            |     0.2  |
+|  2 | None                                                              | CatBoostClassifier                                              |     0.18 |
+|  3 | None                                                              | LGBMClassifier                                                  |     0.16 |
+|  4 | None                                                              | KNNClassifier                                                   |     0.12 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 |  6 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | no embedding,ShapedResNetBackbone,NoHead,nn.Sequential          |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f0424cca160&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f93a5d58070&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -253,7 +254,7 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002246856689453125, budget=0), TrajEntry(train_perf=1.0, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0020253658294677734, budget=0), TrajEntry(train_perf=0.13918253373732403, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -292,17 +293,18 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=32.71918249130249, wallclock_time=34.36233854293823, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=31.310828924179077, wallclock_time=32.82950496673584, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8728323699421965}
-|    | Preprocessing   | Estimator         |   Weight |
-|---:|:----------------|:------------------|---------:|
-|  0 | None            | TabularClassifier |     0.24 |
-|  1 | None            | TabularClassifier |     0.24 |
-|  2 | None            | TabularClassifier |     0.18 |
-|  3 | None            | TabularClassifier |     0.16 |
-|  4 | None            | TabularClassifier |     0.12 |
-|  5 | None            | TabularClassifier |     0.06 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f0414074880&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+|    | Preprocessing                                                     | Estimator                                                       |   Weight |
+|---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | None                                                              | TabularClassifier                                               |     0.28 |
+|  1 | None                                                              | TabularClassifier                                               |     0.18 |
+|  2 | None                                                              | TabularClassifier                                               |     0.16 |
+|  3 | None                                                              | TabularClassifier                                               |     0.12 |
+|  4 | None                                                              | TabularClassifier                                               |     0.12 |
+|  5 | None                                                              | TabularClassifier                                               |     0.08 |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f93a46b2700&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -341,7 +343,7 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002149343490600586, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0019996166229248047, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -380,7 +382,7 @@ a 67% train size split.</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=15.943702936172485, wallclock_time=17.47943615913391, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=12.241821527481079, wallclock_time=13.771500825881958, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.884393063583815}
 |    | Preprocessing                                      | Estimator                                              |   Weight |
 |---:|:---------------------------------------------------|:-------------------------------------------------------|---------:|
@@ -546,7 +548,7 @@ a 67% train size split.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  27.607 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  2.984 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-resampling-strategy-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_resampling_strategy.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -559,7 +561,7 @@ a 67% train size split.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
+</section>
 
 
     </div>
@@ -581,7 +583,7 @@ a 67% train size split.</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.2.<br/>
     </p>
   </div>
 </footer>

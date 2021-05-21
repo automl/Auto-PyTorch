@@ -3,15 +3,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Developer Documentation &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery.css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery-binder.css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery-dataframe.css" />
     <link rel="stylesheet" type="text/css" href="_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
@@ -118,7 +119,7 @@
       </div>
     <div class="body col-md-9 content" role="main">
       
-  <div class="section" id="developer-documentation">
+  <section id="developer-documentation">
 <span id="dev"></span><h1>Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permalink to this headline">¶</a></h1>
 <p>This documentation summarizes how the AutoPyTorch code works, and is meant as a guide for the developers to help contribute to it.</p>
 <p>AutoPyTorch relies on the <a class="reference external" href="https://automl.github.io/SMAC3/master/">SMAC</a> library to build individual models,
@@ -126,7 +127,7 @@ which are later ensembled together using ensemble selection by <a class="referen
 Therefore, there are two main parts of the code: <cite>AutoMLSMBO</cite>,  which acts as an interface to SMAC, and
 <cite>EnsembleBuilder</cite> which opportunistically builds an ensemble of the individual algorithms found by SMAC, at fixed intervals.
 The following sections provides details regarding this two main blocks of code.</p>
-<div class="section" id="building-individual-models">
+<section id="building-individual-models">
 <h2>Building Individual Models<a class="headerlink" href="#building-individual-models" title="Permalink to this headline">¶</a></h2>
 <dl class="simple">
 <dt>AutoPyTorch relies on Scikit-Learn <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a> to build an individual algorithm.</dt><dd><p>In other words, each of the individual models fitted by SMAC is (and comply) with Scikit-Learn pipeline and framework.</p>
@@ -143,21 +144,21 @@ workers, and wait for a worker to be available before continuing searching for m
 the performance of the individual models using the file <cite>runhistory.json</cite> located in this area. Every individual model will be stored in <cite>&lt;temporary_directory&gt;/.autoPyTorch/runs</cite>.
 In this <cite>runs</cite> directory we store the fitted model (during cross-validation we store a single Voting Classifier/Regressor, which is the soft voting outcome of k-Fold cross-validation), the Out-Of-Fold
 predictions that are used to build an ensemble, and also the test predictions of this model in question.</p>
-</div>
-<div class="section" id="building-the-ensemble-model">
+</section>
+<section id="building-the-ensemble-model">
 <h2>Building the ensemble model<a class="headerlink" href="#building-the-ensemble-model" title="Permalink to this headline">¶</a></h2>
 <p>At every smac iteration, we submit a callback to create an ensemble in the case new models are written to disk. If no new models are available, no ensemble selection
 is triggered. We use the OutOfFold predictions to build an ensemble via <cite>EnsembleSelection</cite>. This process is also submitted to Dask. Every new ensemble that is fitted is also
 written to disk, where this object is mainly a container that specifies the weights one should use, to join individual model predictions.</p>
-</div>
-<div class="section" id="the-automl-part">
+</section>
+<section id="the-automl-part">
 <h2>The AutoML Part<a class="headerlink" href="#the-automl-part" title="Permalink to this headline">¶</a></h2>
 <p>The ensemble builder and the individual model constructions are both regulated by the <cite>BaseTask</cite>. This entity fundamentally calls the aforementioned task, and wait until
 the time resource is exhausted.</p>
 <p>We also rely on the <a class="reference external" href="https://automl.github.io/ConfigSpace/master/index.html">ConfigSpace</a> package to build a configuration space and sample configurations from it. A configuration in this context, determines the content of a pipeline (for example, that the final estimator will be a MLP, or that it will have PCA as preprocessing).The set of valid configurations is determined by the configuration space. The configuration space is build using the dataset characteristics, like type
 of features (categorical, numerical) or the target type (classification, regression).</p>
-</div>
-</div>
+</section>
+</section>
 
 
     </div>
@@ -179,7 +180,7 @@ of features (categorical, numerical) or the target type (classification, regress
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.2.<br/>
     </p>
   </div>
 </footer>
