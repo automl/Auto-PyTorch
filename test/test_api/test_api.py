@@ -36,7 +36,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.abstract_evaluator import DummyClassificationPipeline, DummyRegressionPipeline
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
-from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, r2
 
 
@@ -710,7 +710,7 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
         with open(model_path, 'rb') as model_handler:
             model = pickle.load(model_handler)
         clone(model)
-        assert model.config == list(_classifiers.keys())[i - 2]
+        assert model.config == list(_traditional_learners.keys())[i - 2]
         at_least_one_model_checked = True
     if not at_least_one_model_checked:
         pytest.fail("Not even one single traditional pipeline was fitted")
