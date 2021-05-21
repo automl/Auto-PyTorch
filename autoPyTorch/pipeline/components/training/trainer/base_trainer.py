@@ -207,14 +207,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         step_unit: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
-        step_unit_types = [str, StepIntervalUnit]
-        if not any(isinstance(step_unit, step_unit_type) for step_unit_type in step_unit_types):
-            raise ValueError(f'step_unit must be {step_unit_types}, but got {type(step_unit)}.')
+        step_unit_types = (str, StepIntervalUnit)
+        if not isinstance(step_unit, step_unit_types):
+            raise ValueError('step_unit must be either {}, but got {}.'.format(
+                step_unit_types,
+                type(step_unit)
+            ))
 
         if isinstance(step_unit, str):
             if step_unit not in StepIntervalUnit.__members__.keys():
-                raise ValueError(f'step_unit must be {list(StepIntervalUnit.__members__.keys())}, '
-                                 f'but got {step_unit}.')
+                raise ValueError(
+                    'step_unit must be {}, but got {}'.format(
+                        list(StepIntervalUnit.__members__.keys()),
+                        step_unit
+                    ))
 
             step_unit = StepIntervalUnit.__members__[step_unit]
 
