@@ -255,7 +255,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        numerical_columns: Optional[List[int]] = None
     ) -> None:
 
         # Save the device to be used
@@ -311,6 +312,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # task type (used for calculating metrics)
         self.task_type = task_type
+
+        # for cutout trainer, we need the list of numerical columns
+        self.numerical_columns = numerical_columns
 
     def on_epoch_start(self, X: Dict[str, Any], epoch: int) -> None:
         """
