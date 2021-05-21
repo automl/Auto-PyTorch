@@ -35,11 +35,9 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
 
-        # The mixup component mixes up also on the batch dimension
-        # It is unlikely that the batch size is lower than the number of features, but
-        # be safe
-        size = min(X.shape[0], X.shape[1])
-        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int(size * lam))))
+        size = X.shape[1]
+        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int32(size * lam)),
+                                                        replace=False))
 
         X[:, indices] = X[index, :][:, indices]
 
