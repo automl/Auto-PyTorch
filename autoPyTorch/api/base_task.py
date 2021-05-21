@@ -1283,6 +1283,8 @@ class BaseTask:
                 filter(lambda elem: elem[1].additional_info is not None and elem[1].
                        additional_info['configuration_origin'] != 'traditional',
                        run_history_data.items()))
+        run_history_data = dict(
+            filter(lambda elem: 'SUCCESS' in str(elem[1].status), run_history_data.items()))
         sorted_runvalue_by_cost = sorted(run_history_data.items(), key=lambda item: item[1].cost)
         incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]
         incumbent_config = self.run_history.ids_config[incumbent_run_key.config_id]

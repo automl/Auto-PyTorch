@@ -266,7 +266,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
             X_test=X_test, y_test=y_test,
             optimize_metric='r2',
             total_walltime_limit=30,
-            func_eval_time_limit_secs=10,
+            func_eval_time_limit_secs=5,
             enable_traditional_pipeline=False,
         )
 
