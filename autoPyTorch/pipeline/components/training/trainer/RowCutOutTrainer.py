@@ -9,6 +9,8 @@ from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
 
 class RowCutOutTrainer(CutOut, BaseTrainerComponent):
+    NUMERICAL_VALUE = 0
+    CATEGORICAL_VALUE = -1
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
@@ -34,17 +36,26 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             lam = 1
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
-        # The mixup component mixes up also on the batch dimension
-        # It is unlikely that the batch size is lower than the number of features, but
-        # be safe
-        size = min(X.shape[0], X.shape[1])
-        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int(size * self.patch_ratio))))
+        size = X.shape[1]
+        indices = self.random_state.choice(range(1, size), max(1, np.int32(size * self.patch_ratio)),
+                                           replace=False)
 
-        # We use an ordinal encoder on the tabular data
+        if not isinstance(self.numerical_columns, typing.Iterable):
+            raise ValueError("{} requires numerical columns information of {}"
+                             "to prepare data got {}.".format(self.__class__.__name__,
+                                                              typing.Iterable,
+                                                              self.numerical_columns))
+        numerical_indices = torch.tensor(self.numerical_columns)
+        categorical_indices = torch.tensor([index for index in indices if index not in self.numerical_columns])
+
+        # We use an ordinal encoder on the categorical columns of tabular data
         # -1 is the conceptual equivalent to 0 in a image, that does not
         # have color as a feature and hence the network has to learn to deal
-        # without this data
-        X[:, indices.long()] = -1
+        # without this data. For numerical columns we use 0 to cutout the features
+        # similar to the effect that setting 0 as a pixel value in an image.
+        X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
+        X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
+
         lam = 1
         y_a = y
         y_b = y

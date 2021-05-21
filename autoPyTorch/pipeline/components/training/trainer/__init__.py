@@ -347,6 +347,8 @@ class TrainerChoice(autoPyTorchChoice):
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=labels,
             step_interval=X['step_interval']
+            numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
+                'dataset_properties'] else None
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
@@ -385,11 +387,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-<<<<<<< HEAD
-                if X['val_data_loader']:
-=======
                 if 'val_data_loader' in X and X['val_data_loader']:
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -443,17 +441,10 @@ class TrainerChoice(autoPyTorchChoice):
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
-<<<<<<< HEAD
-            if X['val_data_loader']:
-                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
-            if 'test_data_loader' in X and X['val_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
-=======
             if 'val_data_loader' in X and X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['test_data_loader']:
                 test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
