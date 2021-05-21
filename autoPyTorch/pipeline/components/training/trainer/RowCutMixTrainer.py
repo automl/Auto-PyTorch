@@ -39,7 +39,8 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         # It is unlikely that the batch size is lower than the number of features, but
         # be safe
         size = min(X.shape[0], X.shape[1])
-        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int(size * lam))))
+        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int32(size * lam)),
+                                                        replace=False))
 
         X[:, indices] = X[index, :][:, indices]
 
