@@ -9,6 +9,7 @@ import pytest
 from autoPyTorch.pipeline.components.setup.traditional_ml.base_model_choice import ModelChoice
 from autoPyTorch.pipeline.components.setup.traditional_ml.tabular_traditional_model import TabularTraditionalModel
 
+
 # Disable
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')

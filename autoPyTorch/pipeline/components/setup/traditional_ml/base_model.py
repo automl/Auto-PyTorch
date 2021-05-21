@@ -12,7 +12,8 @@ from sklearn.utils import check_random_state
 import torch
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import BaseTraditionalLearner
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
+    BaseTraditionalLearner
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -121,7 +122,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
             X_test = X_test.to_numpy()
         return self.model.predict(X_test, predict_proba=True)
 
-    def score(self, X_test: Union[pd.DataFrame, np.ndarray], y_test: Union[pd.Series, np.ndarray, List]):
+    def score(self, X_test: Union[pd.DataFrame, np.ndarray], y_test: Union[pd.Series, np.ndarray, List]) -> float:
         assert self.model is not None, "Cant score without fitting first"
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()

@@ -14,7 +14,6 @@ import pytest
 
 import torch
 
-from autoPyTorch import metrics
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement

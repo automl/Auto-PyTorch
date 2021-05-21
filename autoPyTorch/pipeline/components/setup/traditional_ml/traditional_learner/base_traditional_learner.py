@@ -2,7 +2,7 @@ import json
 import logging.handlers
 import os as os
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from catboost import CatBoost
 
@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES, REGRESSION_TASKS
+from autoPyTorch.constants import REGRESSION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
@@ -64,7 +64,6 @@ class BaseTraditionalLearner:
 
         self.all_nan: Optional[np.ndarray] = None
         self.num_classes: Optional[int] = None
-        self.categoricals: Optional[List] = None
 
         self.is_classification = STRING_TO_TASK_TYPES[task_type] not in REGRESSION_TASKS
 
@@ -111,7 +110,7 @@ class BaseTraditionalLearner:
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         """
         Abstract method to prepare model. Depending on the
         learner, this function will initialise the underlying
@@ -132,7 +131,7 @@ class BaseTraditionalLearner:
              X_train: np.ndarray,
              y_train: np.ndarray,
              X_val: np.ndarray,
-             y_val: np.ndarray):
+             y_val: np.ndarray) -> None:
         """
         Method that fits the underlying estimator
         Args:
@@ -213,7 +212,9 @@ class BaseTraditionalLearner:
         Returns:
 
         """
-
+        assert self.model is not None, "No model found. Can't " \
+                                       "predict before fitting. " \
+                                       "Call fit before predicting"
         if preprocess:
             X_test = self._preprocess(X_test)
         if predict_proba:

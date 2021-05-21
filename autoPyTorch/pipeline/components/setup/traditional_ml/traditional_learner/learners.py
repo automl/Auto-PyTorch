@@ -1,6 +1,6 @@
 import logging.handlers
 import tempfile
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
@@ -37,7 +37,7 @@ class LGBModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         early_stopping = 150 if X_train.shape[0] > 10000 else max(round(150 * 10000 / X_train.shape[0]), 10)
         self.config["early_stopping_rounds"] = early_stopping
         if not self.is_classification:
@@ -49,15 +49,19 @@ class LGBModel(BaseTraditionalLearner):
             self.model = LGBMClassifier(**self.config, random_state=self.random_state)
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray
-             ):
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray
+             ) -> None:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
 
     def predict(self, X_test: np.ndarray,
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
+        assert self.model is not None, "No model found. Can't " \
+                                       "predict before fitting. " \
+                                       "Call fit before predicting"
         if preprocess:
             X_test = self._preprocess(X_test)
 
@@ -97,7 +101,7 @@ class CatboostModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         if not self.is_classification:
             self.config['eval_metric'] = 'R2'
             # CatBoost Cannot handle a random state object, just the seed
@@ -108,10 +112,11 @@ class CatboostModel(BaseTraditionalLearner):
             self.model = CatBoostClassifier(**self.config, random_state=self.random_state.get_state()[1][0])
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray):
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray) -> None:
 
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         early_stopping = 150 if X_train.shape[0] > 10000 else max(round(150 * 10000 / X_train.shape[0]), 10)
         categoricals = [ind for ind in range(X_train.shape[1]) if isinstance(X_train[0, ind], str)]
 
@@ -144,7 +149,8 @@ class RFModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
+
         self.config["warm_start"] = False
         # TODO: Check if we need to warmstart for regression.
         #  In autogluon, they warm start when usinf daal backend, see
@@ -161,9 +167,10 @@ class RFModel(BaseTraditionalLearner):
             self.model = RandomForestClassifier(**self.config, random_state=self.random_state)
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray):
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray) -> None:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
 
         self.model.fit(X_train, y_train)
         if self.config["warm_start"]:
@@ -194,7 +201,7 @@ class ExtraTreesModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         self.config["warm_start"] = False
 
         if not self.is_classification:
@@ -210,10 +217,10 @@ class ExtraTreesModel(BaseTraditionalLearner):
             self.model = ExtraTreesClassifier(**self.config, random_state=self.random_state)
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray):
-
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray) -> None:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
         if self.config["warm_start"]:
             self.model.n_estimators = self.final_n_estimators
@@ -239,6 +246,7 @@ class KNNModel(BaseTraditionalLearner):
                                        random_state=random_state,
                                        task_type=task_type,
                                        output_type=output_type)
+        self.categoricals: Optional[np.ndarray[bool]] = None
 
     def _preprocess(self,
                     X: np.ndarray
@@ -254,7 +262,7 @@ class KNNModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         if not self.is_classification:
             self.model = KNeighborsRegressor(**self.config)
         else:
@@ -263,17 +271,16 @@ class KNNModel(BaseTraditionalLearner):
             self.model = KNeighborsClassifier(**self.config)
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray):
-
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray) -> None:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
-
-        return self
 
     def predict(self, X_test: np.ndarray,
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         if preprocess:
             X_test = self._preprocess(X_test)
         if predict_proba:
@@ -305,7 +312,7 @@ class SVMModel(BaseTraditionalLearner):
     def _prepare_model(self,
                        X_train: np.ndarray,
                        y_train: np.ndarray
-                       ):
+                       ) -> None:
         if not self.is_classification:
             # Does not take random state.
             self.model = SVR(**self.config)
@@ -313,15 +320,16 @@ class SVMModel(BaseTraditionalLearner):
             self.model = SVC(**self.config, probability=True, random_state=self.random_state)
 
     def _fit(self, X_train: np.ndarray,
-            y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray):
-
+             y_train: np.ndarray,
+             X_val: np.ndarray,
+             y_val: np.ndarray) -> None:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
 
     def predict(self, X_test: np.ndarray,
                 predict_proba: bool = False,
                 preprocess: bool = True) -> np.ndarray:
+        assert self.model is not None, "No model found. Can't fit without preparing the model"
         if preprocess:
             X_test = self._preprocess(X_test)
         if predict_proba:

@@ -155,7 +155,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
         self.init_params = init_params
         self.pipeline = autoPyTorch.pipeline.traditional_tabular_regression.\
             TraditionalTabularRegressionPipeline(dataset_properties=dataset_properties,
-                                                     random_state=self.random_state)
+                                                 random_state=self.random_state)
         configuration_space = self.pipeline.get_hyperparameter_search_space()
         default_configuration = configuration_space.get_default_configuration().get_dictionary()
         default_configuration['model_trainer:tabular_traditional_model:traditional_learner'] = config
@@ -191,7 +191,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
-        return autoPyTorch.pipeline.traditional_tabular_classification. \
+        return autoPyTorch.pipeline.traditional_tabular_regression. \
             TraditionalTabularRegressionPipeline.get_default_pipeline_options()
 
 
