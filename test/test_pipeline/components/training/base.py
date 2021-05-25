@@ -1,6 +1,7 @@
 import logging
 
 from sklearn.datasets import make_classification, make_regression
+from sklearn.preprocessing import StandardScaler
 
 import torch
 
@@ -34,9 +35,11 @@ class BaseTraining:
                 n_repeated=0,
                 n_classes=2,
                 n_clusters_per_class=2,
+                class_sep=3.0,
                 shuffle=True,
                 random_state=0
             )
+            X = StandardScaler().fit_transform(X)
             X = torch.tensor(X, dtype=torch.float)
             y = torch.tensor(y, dtype=torch.long)
             output_type = BINARY
@@ -52,6 +55,7 @@ class BaseTraining:
                 shuffle=True,
                 random_state=0
             )
+            X = StandardScaler().fit_transform(X)
             X = torch.tensor(X, dtype=torch.float)
             y = torch.tensor(y, dtype=torch.float)
             # normalize targets for regression since NNs are better when predicting small outputs

@@ -4,10 +4,10 @@ import numpy as np
 
 import pytest
 
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
 from autoPyTorch.pipeline.traditional_tabular_classification import (
     TraditionalTabularClassificationPipeline,
 )
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular",
