@@ -1271,7 +1271,8 @@ class BaseTask:
         Returns:
 
         """
-        if self.run_history is not None or self.run_history.empty():
+        assert self.run_history is not None, "No Run History found, search has not been called."
+        if self.run_history.empty():
             raise ValueError("Run History is empty. Something went wrong, "
                              "smac was not able to fit any model?")
 
