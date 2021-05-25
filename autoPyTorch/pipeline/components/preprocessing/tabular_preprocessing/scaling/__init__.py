@@ -103,7 +103,7 @@ class ScalerChoice(autoPyTorchChoice):
                                                              default_value=default)
         cs.add_hyperparameter(preprocessor)
 
-        # add only child hyperparameters of early_preprocessor choices
+        # add only child hyperparameters of preprocessor choices
         for name in preprocessor.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_scalers[name].get_hyperparameter_search_space(dataset_properties,  # type:ignore
