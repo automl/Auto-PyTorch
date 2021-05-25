@@ -37,7 +37,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
             None
 
         Returns:
-            Dict[str, autoPyTorchComponent]: all BaseInitializerComponent components available
+            Dict[str, autoPyTorchComponent]: all BaseNetworkInitializerComponents available
                 as choices
         """
         components = OrderedDict()
