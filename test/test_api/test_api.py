@@ -8,6 +8,8 @@ from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, 
 
 from ConfigSpace.configuration_space import Configuration
 
+import ConfigSpace as CS
+
 import numpy as np
 
 import pandas as pd
@@ -101,15 +103,15 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
-        'smac3-output/run_1/configspace.json',
-        'smac3-output/run_1/runhistory.json',
-        'smac3-output/run_1/scenario.txt',
-        'smac3-output/run_1/stats.json',
-        'smac3-output/run_1/train_insts.txt',
-        'smac3-output/run_1/trajectory.json',
+        'smac3-output/run_42/configspace.json',
+        'smac3-output/run_42/runhistory.json',
+        'smac3-output/run_42/scenario.txt',
+        'smac3-output/run_42/stats.json',
+        'smac3-output/run_42/train_insts.txt',
+        'smac3-output/run_42/trajectory.json',
         '.autoPyTorch/datamanager.pkl',
         '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_1',
+        '.autoPyTorch/start_time_42',
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
@@ -224,6 +226,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Test refit on dummy data
     estimator.refit(dataset=backend.load_datamanager())
 
+    # Make sure that a configuration space is stored in the estimator
+    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
@@ -296,15 +301,15 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
-        'smac3-output/run_1/configspace.json',
-        'smac3-output/run_1/runhistory.json',
-        'smac3-output/run_1/scenario.txt',
-        'smac3-output/run_1/stats.json',
-        'smac3-output/run_1/train_insts.txt',
-        'smac3-output/run_1/trajectory.json',
+        'smac3-output/run_42/configspace.json',
+        'smac3-output/run_42/runhistory.json',
+        'smac3-output/run_42/scenario.txt',
+        'smac3-output/run_42/stats.json',
+        'smac3-output/run_42/train_insts.txt',
+        'smac3-output/run_42/trajectory.json',
         '.autoPyTorch/datamanager.pkl',
         '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_1',
+        '.autoPyTorch/start_time_42',
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',

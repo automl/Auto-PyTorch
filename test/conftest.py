@@ -1,3 +1,4 @@
+import logging.handlers
 import os
 import re
 import shutil
@@ -299,6 +300,7 @@ def get_fit_dictionary(X, y, validator, backend):
         'metrics_during_training': True,
         'split_id': 0,
         'backend': backend,
+        'logger_port': logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     }
     backend.save_datamanager(datamanager)
     return fit_dictionary

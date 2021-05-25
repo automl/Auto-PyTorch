@@ -24,18 +24,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 
 
-class Value2Index(object):
-    def __init__(self, values: list):
-        assert all(not (pd.isna(v)) for v in values)
-        self.values = {v: i for i, v in enumerate(values)}
-
-    def __getitem__(self, item: Any) -> int:
-        if pd.isna(item):
-            return 0
-        else:
-            return self.values[item] + 1
-
-
 class TabularDataset(BaseDataset):
     """
         Base class for datasets used in AutoPyTorch
