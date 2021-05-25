@@ -20,6 +20,9 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer import (
+    CoalescerChoice
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
@@ -277,6 +280,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         steps.extend([
             ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("coalescer", CoalescerChoice(default_dataset_properties, random_state=self.random_state)),
             ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
