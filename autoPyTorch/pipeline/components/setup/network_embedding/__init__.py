@@ -37,7 +37,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             None
 
         Returns:
-            Dict[str, autoPyTorchComponent]: all baseembedding components available
+            Dict[str, autoPyTorchComponent]: all NetworkEmbeddingComponents available
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
