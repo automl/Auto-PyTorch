@@ -37,7 +37,7 @@ class NetworkHeadChoice(autoPyTorchChoice):
             None
 
         Returns:
-            Dict[str, autoPyTorchComponent]: all basehead components available
+            Dict[str, autoPyTorchComponent]: all NetworkHeadComponents available
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
