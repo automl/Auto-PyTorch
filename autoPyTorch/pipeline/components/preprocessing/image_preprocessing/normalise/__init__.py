@@ -38,7 +38,7 @@ class NormalizerChoice(autoPyTorchChoice):
             None
 
         Returns:
-            Dict[str, autoPyTorchComponent]: all BaseNormalise components available
+            Dict[str, autoPyTorchComponent]: all BaseNormalizer components available
                 as choices for encoding the categorical columns
         """
         components = OrderedDict()
