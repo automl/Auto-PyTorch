@@ -28,7 +28,7 @@ def add_normalizer(normalizer: BaseNormalizer) -> None:
 
 class NormalizerChoice(autoPyTorchChoice):
     """
-    Allows for dynamically choosing encoding component at runtime
+    Allows for dynamically choosing normalizer component at runtime
     """
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
