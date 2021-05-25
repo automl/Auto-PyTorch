@@ -109,8 +109,7 @@ class AutoMLSMBO(object):
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-                 portfolio_selection: str = "none",
-                 portfolio_path: typing.Optional[str] = None
+                 portfolio_selection: typing.Optional[str] = None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -159,11 +158,15 @@ class AutoMLSMBO(object):
                 Allows to create a user specified SMAC object
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
-            portfolio_selection (str), (default="none"): If "greedy",
-                runs initial configurations present in
-                'autoPyTorch/configs/greedy_portfolio.json'.
-            portfolio_path (Optional[str]):
-                Optional argument to specify path to a portfolio file.
+            portfolio_selection (str), (default=None):
+                This argument controls the initial configurations that
+                AutoPyTorch uses to warm start SMAC for hyperparameter
+                optimization. By default, no warm-starting happens.
+                The user can provide a path to a json file containing
+                configurations, similar to (...herepathtogreedy...).
+                Additionally, the keyword 'greedy' is supported,
+                which would use the default portfolio from
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -217,9 +220,9 @@ class AutoMLSMBO(object):
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
         self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
-        if portfolio_selection == "greedy":
+        if portfolio_selection is not None:
             # read and validate initial configurations
-            portfolio_path = portfolio_path if portfolio_path is not None else \
+            portfolio_path = portfolio_selection if portfolio_selection != "greedy" else \
                 os.path.join(os.path.dirname(__file__), '../configs/greedy_portfolio.json')
             initial_configurations = json.load(open(portfolio_path))
             self.initial_configurations = list()

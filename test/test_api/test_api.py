@@ -470,7 +470,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
                      new=dummy_eval_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
-def test_greedy(openml_id, backend, n_samples):
+def test_portfolio_selection(openml_id, backend, n_samples):
 
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
@@ -502,7 +502,8 @@ def test_greedy(openml_id, backend, n_samples):
             total_walltime_limit=30,
             func_eval_time_limit_secs=5,
             enable_traditional_pipeline=False,
-            portfolio_selection="greedy"
+            portfolio_selection=os.path.join(os.path.dirname(__file__),
+                                             "../../autoPyTorch/configs/greedy_portfolio.json")
         )
 
     successful_config_ids = [run_key.config_id for run_key, run_value in estimator.run_history.data.items(

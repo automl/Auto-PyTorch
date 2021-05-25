@@ -705,8 +705,7 @@ class BaseTask:
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
-        portfolio_selection: str = "none",
-        portfolio_path: Optional[str] = None
+        portfolio_selection: Optional[str] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -777,14 +776,15 @@ class BaseTask:
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            portfolio_selection (str), (default="none"): If "greedy",
-                runs initial configurations present in
-                'autoPyTorch/configs/greedy_portfolio.json'.
-                These configurations are the best performing configurations
-                when search was performed on meta training datasets.
-                For more info refer to `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
-            portfolio_path (Optional[str]):
-                Optional argument to specify path to a portfolio file.
+            portfolio_selection (str), (default=None):
+                This argument controls the initial configurations that
+                AutoPyTorch uses to warm start SMAC for hyperparameter
+                optimization. By default, no warm-starting happens.
+                The user can provide a path to a json file containing
+                configurations, similar to (...herepathtogreedy...).
+                Additionally, the keyword 'greedy' is supported,
+                which would use the default portfolio from
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
         Returns:
             self
 
@@ -793,9 +793,6 @@ class BaseTask:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
                              ":{}".format(self.task_type, dataset.task_type))
-        if portfolio_selection not in ["none", "greedy"]:
-            raise ValueError("Expected portfolio_selection to be in ['none', 'greedy']"
-                             "got {}".format(portfolio_selection))
 
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
@@ -974,7 +971,6 @@ class BaseTask:
                 start_num_run=self._backend.get_next_num_run(peek=True),
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
-                portfolio_path=portfolio_path
             )
             try:
                 run_history, self.trajectory, budget_type = \
