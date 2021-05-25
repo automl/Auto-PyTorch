@@ -82,8 +82,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='accuracy',
-            total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=10,
             enable_traditional_pipeline=False,
         )
 
@@ -280,8 +280,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='r2',
-            total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=10,
             enable_traditional_pipeline=False,
         )
 
