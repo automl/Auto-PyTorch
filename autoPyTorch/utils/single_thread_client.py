@@ -30,8 +30,15 @@ class DummyFuture(dask.distributed.Future):
 
 class SingleThreadedClient(dask.distributed.Client):
     """
-    A class to Mock the Distributed Client class, in case
-    Auto-Sklearn is meant to run in the current Thread.
+    A class to Mock the Distributed Client class.
+
+    Using dask requires a scheduler which submits jobs on a different process. Also,
+    pynisher submits jobs in a further additional process.
+
+    When using a single core, we would prefer using the same main process without any
+    multiprocessing overhead (that is, without the need of a LocalCluster in
+    dask.distributed.Client). In other words, this class enriches the Client() class
+    with the capability to run a future in the same thread (without any deadlock).
     """
     def __init__(self) -> None:
 

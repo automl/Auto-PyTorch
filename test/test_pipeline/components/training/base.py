@@ -23,8 +23,8 @@ class BaseTraining:
                         trainer: BaseTrainerComponent,
                         task_type: int,
                         epochs=50):
+        # make this test reproducible
         torch.manual_seed(1)
-
         if task_type in CLASSIFICATION_TASKS:
             X, y = make_classification(
                 n_samples=n_samples,

@@ -23,5 +23,10 @@ def test_single_thread_client_like_dask_client():
     assert str(future) != ""
     assert str(single_thread_client) != ""
 
+    # Single thread client is an inherited version of dask client
+    # so that futures run in the same thread as the main job.
+    # We carefully selected what methods are inherited, and any other
+    # method should raise a not implemented error to be safe of major
+    # dask client api changes.
     with pytest.raises(NotImplementedError):
         single_thread_client.get_scheduler_logs()
