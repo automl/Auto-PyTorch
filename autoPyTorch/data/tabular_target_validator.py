@@ -194,8 +194,8 @@ class TabularTargetValidator(BaseTargetValidator):
                 A set of features whose dimensionality and data type is going to be checked
         """
 
-        if not isinstance(  # type: ignore[misc]
-                y, (np.ndarray, pd.DataFrame, typing.List, pd.Series)) and not scipy.sparse.issparse(y):
+        if not isinstance(y, (np.ndarray, pd.DataFrame, typing.List, pd.Series)) and not \
+                scipy.sparse.issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
                              "the provided input is of type {}".format(
