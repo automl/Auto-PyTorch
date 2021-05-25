@@ -222,7 +222,8 @@ class autoPyTorchChoice(object):
             (Dict[str, Any])
         """
         assert self.choice is not None, "Can not call transform without initialising the component"
-        return self.choice.transform(X)
+        X = self.choice.transform(X)
+        return X
 
     def check_requirements(self, X: Dict[str, Any], y: Any = None) -> None:
         """

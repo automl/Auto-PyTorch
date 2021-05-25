@@ -213,12 +213,11 @@ class AutoMLSMBO(object):
 
         self.search_space_updates = search_space_updates
 
-        dataset_name_ = "" if dataset_name is None else dataset_name
         if logger_port is None:
             self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
         else:
             self.logger_port = logger_port
-        logger_name = '%s(%d):%s' % (self.__class__.__name__, self.seed, ":" + dataset_name_)
+        logger_name = '%s(%d):%s' % (self.__class__.__name__, self.seed, ":" + self.dataset_name)
         self.logger = get_named_client_logger(name=logger_name,
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))

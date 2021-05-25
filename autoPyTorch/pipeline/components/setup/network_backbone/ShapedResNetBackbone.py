@@ -24,7 +24,7 @@ class ShapedResNetBackbone(ResNetBackbone):
     for shaped number of units per group.
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
+    def build_backbone(self, input_shape: Tuple[int, ...]) -> torch.nn.Sequential:
         layers = list()  # type: List[torch.nn.Module]
         in_features = input_shape[0]
         out_features = self.config["output_dim"]
@@ -71,7 +71,6 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         backbone = torch.nn.Sequential(*layers)
-        self.backbone = backbone
         return backbone
 
     @staticmethod

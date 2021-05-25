@@ -4,7 +4,7 @@ import pkgutil
 import sys
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -127,14 +127,11 @@ class autoPyTorchComponent(BaseEstimator):
         return self._fit_requirements
 
     def add_fit_requirements(self, requirements: List[FitRequirement]) -> None:
-        if self._fit_requirements is not None:
-            self._fit_requirements.extend(requirements)
-        else:
-            self._fit_requirements = requirements
+        self._fit_requirements.extend(requirements)
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None
-                       ) -> Dict[str, Any]:
+                       ) -> Dict[str, Union[str, bool]]:
         """Get the properties of the underlying algorithm.
 
         Args:
@@ -160,7 +157,7 @@ class autoPyTorchComponent(BaseEstimator):
         """
         raise NotImplementedError()
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> "autoPyTorchComponent":
         """The fit function calls the fit function of the underlying
         model and returns `self`.
 

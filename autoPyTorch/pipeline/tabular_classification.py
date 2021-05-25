@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
@@ -213,10 +213,9 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
@@ -264,18 +263,19 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, Any]],
+    ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
+            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+                list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
-
+        steps = []  # type: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
         default_dataset_properties = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
@@ -324,16 +324,16 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         for step_name, step_component in self.steps:
             if step_name in skip_steps:
                 continue
-            properties = {}
+            properties: Dict[str, Union[str, bool]] = {}
             if isinstance(step_component, autoPyTorchChoice) and step_component.choice is not None:
                 properties = step_component.choice.get_properties()
             elif isinstance(step_component, autoPyTorchComponent):
                 properties = step_component.get_properties()
             if 'shortname' in properties:
                 if 'network' in step_name:
-                    estimator.append(properties['shortname'])
+                    estimator.append(str(properties['shortname']))
                 else:
-                    preprocessing.append(properties['shortname'])
+                    preprocessing.append(str(properties['shortname']))
         return {
             'Preprocessing': ','.join(preprocessing),
             'Estimator': ','.join(estimator),

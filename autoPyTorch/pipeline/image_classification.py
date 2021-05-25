@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple
+import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -8,6 +9,7 @@ from sklearn.base import ClassifierMixin
 
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise import (
     NormalizerChoice
 )
@@ -134,7 +136,9 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
         if 'target_type' not in dataset_properties:
             dataset_properties['target_type'] = 'image_classification'
@@ -154,17 +158,19 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, Any]],
+    ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
+            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+                list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
+        steps = []  # type: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
 
         default_dataset_properties = {'target_type': 'image_classification'}
         if dataset_properties is not None:

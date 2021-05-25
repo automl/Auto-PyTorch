@@ -11,7 +11,7 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
 
     def __init__(self,
                  name: str,
-                 score_func: Callable,
+                 score_func: Callable[..., float],
                  optimum: float,
                  worst_possible_result: float,
                  sign: float,

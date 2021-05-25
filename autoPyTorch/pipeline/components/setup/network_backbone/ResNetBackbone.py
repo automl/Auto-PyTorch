@@ -27,7 +27,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     Implementation of a Residual Network backbone
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
+    def build_backbone(self, input_shape: Tuple[int, ...]) -> torch.nn.Sequential:
         layers = list()  # type: List[nn.Module]
         in_features = input_shape[0]
         layers.append(nn.Linear(in_features, self.config["num_units_0"]))
@@ -48,7 +48,6 @@ class ResNetBackbone(NetworkBackboneComponent):
         layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         layers.append(_activations[self.config["activation"]]())
         backbone = nn.Sequential(*layers)
-        self.backbone = backbone
         return backbone
 
     def _add_group(self, in_features: int, out_features: int,

@@ -145,7 +145,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_array_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
-            X = typing.cast(pd.DataFrame, X)
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():

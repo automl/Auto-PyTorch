@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -32,7 +32,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
         ])
         self.network = network
-        self.final_activation = None
+        self.final_activation: Optional[torch.nn.Module] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         """
@@ -134,7 +134,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'nn.Sequential',
             'name': 'torch.nn.Sequential',
@@ -142,7 +142,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
-        string = self.network.__class__.__name__
+        string: str = self.network.__class__.__name__
         info = vars(self)
         # Remove unwanted info
         string += " (" + str(info) + ")"
