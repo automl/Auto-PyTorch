@@ -299,6 +299,7 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     pipeline = TabularRegressionPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
+        random_state=1
     )
 
     cs = pipeline.get_hyperparameter_search_space()
@@ -313,4 +314,4 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     r2_score = pipeline.score(X, y)
 
     # we should be able to get a decent score on this dummy data
-    assert r2_score >= 0.5, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+    assert r2_score >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"

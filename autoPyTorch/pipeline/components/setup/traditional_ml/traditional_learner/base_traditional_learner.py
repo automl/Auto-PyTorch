@@ -42,13 +42,14 @@ class BaseTraditionalLearner:
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  random_state: Optional[np.random.RandomState] = None,
-                 name: str = ''):
+                 name: Optional[str] = None):
 
         self.model: Optional[Union[CatBoost, BaseEstimator]] = None
 
-        self.name = name if len(name) > 0 else self.__class__.__name__
+        self.name = name if name is not None else self.__class__.__name__
         self.logger_port = logger_port
         self.logger = get_named_client_logger(
             name=name,
@@ -68,7 +69,8 @@ class BaseTraditionalLearner:
         self.is_classification = STRING_TO_TASK_TYPES[task_type] not in REGRESSION_TASKS
 
         self.metric = get_metrics(dataset_properties={'task_type': task_type,
-                                                      'output_type': output_type})[0]
+                                                      'output_type': output_type},
+                                  names=[optimize_metric] if optimize_metric is not None else None)[0]
 
     def get_config(self) -> Dict[str, Any]:
         """
@@ -102,7 +104,7 @@ class BaseTraditionalLearner:
             self.all_nan = np.all(pd.isnull(X), axis=0)
 
         X = X[:, ~self.all_nan]
-        X = np.nan_to_num(X)
+        X = np.nan_to_num(X, copy=False)
 
         return X
 

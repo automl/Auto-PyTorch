@@ -101,10 +101,7 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
                 batch_size: int = 1000) -> np.array:
         return self.pipeline.predict(X, batch_size=batch_size)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
-
-    def get_additional_run_info(self) -> Dict[str, Any]:  # pylint: disable=R0201
+    def get_additional_run_info(self) -> Dict[str, Any]:
         """
         Can be used to return additional info for the run.
         Returns:
@@ -170,10 +167,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
                 batch_size: int = 1000) -> np.array:
         return self.pipeline.predict(X, batch_size=batch_size)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
-
-    def get_additional_run_info(self) -> Dict[str, Any]:  # pylint: disable=R0201
+    def get_additional_run_info(self) -> Dict[str, Any]:
         """
         Can be used to return additional info for the run.
         Returns:
@@ -244,9 +238,6 @@ class DummyClassificationPipeline(DummyClassifier):
         new_X = np.ones((X.shape[0], 1))
         return super(DummyClassificationPipeline, self).predict(new_X).astype(np.float32)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
-
     def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
         return {'configuration_origin': 'DUMMY'}
 
@@ -302,9 +293,6 @@ class DummyRegressionPipeline(DummyRegressor):
                 batch_size: int = 1000) -> np.array:
         new_X = np.ones((X.shape[0], 1))
         return super(DummyRegressionPipeline, self).predict(new_X).astype(np.float32)
-
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
 
     def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
         return {'configuration_origin': 'DUMMY'}
@@ -513,6 +501,7 @@ class AbstractEvaluator(object):
             'y_test': self.y_test,
             'backend': self.backend,
             'logger_port': logger_port,
+            'optimize_metric': self.metric.name
         })
         assert self.pipeline_class is not None, "Could not infer pipeline class"
         pipeline_config = pipeline_config if pipeline_config is not None \

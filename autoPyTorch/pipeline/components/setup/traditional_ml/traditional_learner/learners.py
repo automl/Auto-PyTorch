@@ -19,6 +19,9 @@ from sklearn.svm import SVC, SVR
 
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
     BaseTraditionalLearner
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.utils import (
+    AUTOPYTORCH_TO_CATBOOST_METRICS
+)
 
 
 class LGBModel(BaseTraditionalLearner):
@@ -26,13 +29,16 @@ class LGBModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(LGBModel, self).__init__(name="lgb",
                                        logger_port=logger_port,
                                        random_state=random_state,
                                        task_type=task_type,
-                                       output_type=output_type)
+                                       output_type=output_type,
+                                       optimize_metric=optimize_metric)
 
     def _prepare_model(self,
                        X_train: np.ndarray,
@@ -89,13 +95,16 @@ class CatboostModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(CatboostModel, self).__init__(name="catboost",
                                             logger_port=logger_port,
                                             random_state=random_state,
                                             task_type=task_type,
-                                            output_type=output_type)
+                                            output_type=output_type,
+                                            optimize_metric=optimize_metric)
         self.config["train_dir"] = tempfile.gettempdir()
 
     def _prepare_model(self,
@@ -103,11 +112,11 @@ class CatboostModel(BaseTraditionalLearner):
                        y_train: np.ndarray
                        ) -> None:
         if not self.is_classification:
-            self.config['eval_metric'] = 'R2'
+            self.config['eval_metric'] = AUTOPYTORCH_TO_CATBOOST_METRICS.get(self.metric.name, 'R2')
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostRegressor(**self.config, random_state=self.random_state.get_state()[1][0])
         else:
-            self.config['eval_metric'] = 'Accuracy'
+            self.config['eval_metric'] = AUTOPYTORCH_TO_CATBOOST_METRICS.get(self.metric.name, 'Accuracy')
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostClassifier(**self.config, random_state=self.random_state.get_state()[1][0])
 
@@ -138,13 +147,16 @@ class RFModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(RFModel, self).__init__(name="random_forest",
                                       logger_port=logger_port,
                                       random_state=random_state,
                                       task_type=task_type,
-                                      output_type=output_type)
+                                      output_type=output_type,
+                                      optimize_metric=optimize_metric)
 
     def _prepare_model(self,
                        X_train: np.ndarray,
@@ -190,13 +202,16 @@ class ExtraTreesModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(ExtraTreesModel, self).__init__(name="extra_trees",
                                               logger_port=logger_port,
                                               random_state=random_state,
                                               task_type=task_type,
-                                              output_type=output_type)
+                                              output_type=output_type,
+                                              optimize_metric=optimize_metric)
 
     def _prepare_model(self,
                        X_train: np.ndarray,
@@ -239,13 +254,16 @@ class KNNModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(KNNModel, self).__init__(name="knn",
                                        logger_port=logger_port,
                                        random_state=random_state,
                                        task_type=task_type,
-                                       output_type=output_type)
+                                       output_type=output_type,
+                                       optimize_metric=optimize_metric)
         self.categoricals: Optional[np.ndarray[bool]] = None
 
     def _preprocess(self,
@@ -301,13 +319,16 @@ class SVMModel(BaseTraditionalLearner):
     def __init__(self,
                  task_type: str,
                  output_type: str,
+                 optimize_metric: Optional[str] = None,
                  logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-                 random_state: Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
         super(SVMModel, self).__init__(name="svm",
                                        logger_port=logger_port,
                                        random_state=random_state,
                                        task_type=task_type,
-                                       output_type=output_type)
+                                       output_type=output_type,
+                                       optimize_metric=optimize_metric)
 
     def _prepare_model(self,
                        X_train: np.ndarray,

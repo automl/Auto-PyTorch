@@ -1,3 +1,4 @@
+import logging.handlers
 import os
 import sys
 from abc import abstractmethod
@@ -80,10 +81,12 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
         # instantiate model
         self.model = self.build_model(input_shape=input_shape,
-                                      logger_port=X['logger_port'] if 'logger_port' in X else None,
+                                      logger_port=X['logger_port'] if 'logger_port' in X else
+                                      logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                                       output_shape=output_shape,
                                       task_type=X['dataset_properties']['task_type'],
-                                      output_type=X['dataset_properties']['output_type'])
+                                      output_type=X['dataset_properties']['output_type'],
+                                      optimize_metric=X['optimize_metric'] if 'optimize_metric' in X else None)
 
         # train model
         blockPrint()
@@ -100,13 +103,18 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         return self
 
     @abstractmethod
-    def build_model(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...],
-                    logger_port: int, task_type: str, output_type: str) -> BaseTraditionalLearner:
+    def build_model(
+        self,
+        input_shape: Tuple[int, ...],
+        output_shape: Tuple[int, ...],
+        logger_port: int,
+        task_type: str,
+        output_type: str,
+        optimize_metric: Optional[str] = None
+    ) -> BaseTraditionalLearner:
         """
         This method returns a traditional learner, that is dynamically
-        built using a self.config that is model specific, and contains
-        the additional configuration hyperparameters to build a domain
-        specific model
+        built based on the provided configuration.
         """
         raise NotImplementedError()
 
