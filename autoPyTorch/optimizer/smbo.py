@@ -163,7 +163,7 @@ class AutoMLSMBO(object):
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.
                 The user can provide a path to a json file containing
-                configurations, similar to (...herepathtogreedy...).
+                configurations, similar to (autoPyTorch/configs/greedy_portfolio.json).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
