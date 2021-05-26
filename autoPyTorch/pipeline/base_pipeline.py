@@ -209,8 +209,9 @@ class BasePipeline(Pipeline):
             if not isinstance(node, autoPyTorchChoice):
                 updates = node._get_search_space_updates()
 
-            sub_configuration_space = node.get_hyperparameter_search_space(self.dataset_properties,
-                                                                           **updates)  # type: ignore[call-arg]
+            sub_configuration_space = node.get_hyperparameter_search_space(  # type: ignore[call-arg]
+                self.dataset_properties,
+                **updates)
             sub_config_dict = {}
             for param in configuration:
                 if param.startswith('%s:' % node_name):
@@ -369,8 +370,8 @@ class BasePipeline(Pipeline):
             else:
                 cs.add_configuration_space(
                     node_name,
-                    node.get_hyperparameter_search_space(dataset_properties,
-                                                         **node._get_search_space_updates()),  # type: ignore[call-arg]
+                    node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[call-arg]
+                                                         **node._get_search_space_updates()),
                 )
 
         # And now add forbidden parameter configurations
