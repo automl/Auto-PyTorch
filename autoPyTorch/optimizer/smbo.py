@@ -226,7 +226,7 @@ class AutoMLSMBO(object):
                 os.path.join(os.path.dirname(__file__), '../configs/greedy_portfolio.json')
             try:
                 initial_configurations = json.load(open(portfolio_path))
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 raise FileNotFoundError("The path: {} provided for 'portfolio_selection' for "
                                         "the file containing the portfolio configurations "
                                         "does not exist. Please provide a valid path".format(portfolio_path))
