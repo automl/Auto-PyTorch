@@ -52,7 +52,7 @@ class BaseTraditionalLearner:
         self.name = name if name is not None else self.__class__.__name__
         self.logger_port = logger_port
         self.logger = get_named_client_logger(
-            name=name,
+            name=self.name,
             host='localhost',
             port=logger_port,
         )
