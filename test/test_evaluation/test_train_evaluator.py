@@ -112,7 +112,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 0.5652173913043479)
+        self.assertEqual(result, 0.4782608695652174)
         self.assertEqual(pipeline_mock.fit.call_count, 1)
         # 3 calls because of train, holdout and test set
         self.assertEqual(pipeline_mock.predict_proba.call_count, 3)
@@ -150,7 +150,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 0.46235467431119603)
+        self.assertEqual(result, 0.4651019270584489)
         self.assertEqual(pipeline_mock.fit.call_count, 5)
         # 9 calls because of the training, holdout and
         # test set (3 sets x 5 folds = 15)

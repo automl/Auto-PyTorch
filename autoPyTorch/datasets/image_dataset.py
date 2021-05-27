@@ -42,10 +42,9 @@ class ImageDataset(BaseDataset):
         resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
             (default=HoldoutValTypes.holdout_validation):
             strategy to split the training data.
-        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
-            required for the chosen resampling strategy. If None, uses
-            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-            in ```datasets/resampling_strategy.py```.
+        resampling_strategy_args (Optional[Dict[str, Any]]):
+            arguments required for the chosen resampling strategy.
+            The details are provided in autoPytorch/datasets/resampling_strategy.py
         shuffle:  Whether to shuffle the data before performing splits
         seed (int), (default=1): seed to be used for reproducibility.
         train_transforms (Optional[torchvision.transforms.Compose]):
