@@ -33,6 +33,7 @@ from test.test_pipeline.components.training.base import BaseTraining  # noqa (E4
 
 
 OVERFIT_EPOCHS = 1000
+N_SAMPLES = 500
 
 
 class BaseDataLoaderTest(unittest.TestCase):
@@ -162,14 +163,14 @@ class TestBaseTrainerComponent(BaseTraining):
 
 
 class StandardTrainerTest(BaseTraining):
-    def test_regression_epoch_training(self, n_samples):
+    def test_regression_epoch_training(self):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
+         logger) = self.prepare_trainer(N_SAMPLES,
                                         StandardTrainer(),
                                         constants.TABULAR_REGRESSION,
                                         OVERFIT_EPOCHS)
