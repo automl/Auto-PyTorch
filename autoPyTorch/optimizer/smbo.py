@@ -1,7 +1,6 @@
 import copy
 import json
 import logging.handlers
-import os
 import typing
 
 import ConfigSpace
@@ -27,6 +26,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.optimizer.utils import read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import get_named_client_logger
@@ -221,25 +221,8 @@ class AutoMLSMBO(object):
 
         self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
         if portfolio_selection is not None:
-            # read and validate initial configurations
-            portfolio_path = portfolio_selection if portfolio_selection != "greedy" else \
-                os.path.join(os.path.dirname(__file__), '../configs/greedy_portfolio.json')
-            try:
-                initial_configurations = json.load(open(portfolio_path))
-            except FileNotFoundError:
-                raise FileNotFoundError("The path: {} provided for 'portfolio_selection' for "
-                                        "the file containing the portfolio configurations "
-                                        "does not exist. Please provide a valid path".format(portfolio_path))
-            self.initial_configurations = list()
-            for configuration_dict in initial_configurations:
-                try:
-                    configuration = Configuration(self.config_space, configuration_dict)
-                    self.initial_configurations.append(configuration)
-                except Exception as e:
-                    self.logger.warning(f"Failed to convert {configuration_dict} into"
-                                        f" a Configuration with error {e}. "
-                                        f"Therefore, it can't be used as an initial "
-                                        f"configuration as it does not match the current config space. ")
+            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                             portfolio_selection=portfolio_selection)
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
