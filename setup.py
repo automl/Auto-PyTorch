@@ -60,5 +60,5 @@ setuptools.setup(
     },
     test_suite="pytest",
     data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json']),
-                ('portfolio', ['autoPyTorch/optimizer/greedy_portfolio.json'])]
+                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])]
 )
