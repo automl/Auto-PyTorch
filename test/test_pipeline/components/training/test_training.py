@@ -128,7 +128,7 @@ class BaseDataLoaderTest(unittest.TestCase):
 
 
 class TestBaseTrainerComponent(BaseTraining):
-    def test_evaluate(self, n_samples):
+    def test_evaluate(self):
         """
         Makes sure we properly evaluate data, returning a proper loss
         and metric
@@ -140,7 +140,7 @@ class TestBaseTrainerComponent(BaseTraining):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
+         logger) = self.prepare_trainer(N_SAMPLES,
                                         BaseTrainerComponent(),
                                         constants.TABULAR_CLASSIFICATION)
 
@@ -163,14 +163,14 @@ class TestBaseTrainerComponent(BaseTraining):
 
 
 class StandardTrainerTest(BaseTraining):
-    def test_regression_epoch_training(self):
+    def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
          _,
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(N_SAMPLES,
+         logger) = self.prepare_trainer(n_samples,
                                         StandardTrainer(),
                                         constants.TABULAR_REGRESSION,
                                         OVERFIT_EPOCHS)
