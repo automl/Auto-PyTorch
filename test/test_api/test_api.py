@@ -558,7 +558,7 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        include_components = include
+        include_components=include
     )
     with pytest.raises(FileNotFoundError, match=r"The path: .+? provided for 'portfolio_selection' "
                                                 r"for the file containing the portfolio configurations "
