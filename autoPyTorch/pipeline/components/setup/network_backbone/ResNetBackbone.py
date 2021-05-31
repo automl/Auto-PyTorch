@@ -10,6 +10,7 @@ from ConfigSpace.hyperparameters import (
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
@@ -281,6 +282,8 @@ class ResBlock(nn.Module):
             if config["multi_branch_choice"] == 'shake-shake':
                 self.shake_shake_layers = self._build_block(in_features, out_features)
 
+        self.final_layer = nn.Linear(out_features, out_features)
+
     # each block consists of two linear layers with batch norm and activation
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
         layers = list()
@@ -294,10 +297,6 @@ class ResBlock(nn.Module):
         if self.config['use_batch_norm']:
             layers.append(nn.BatchNorm1d(out_features))
         layers.append(self.activation())
-
-        if self.config["use_dropout"]:
-            layers.append(nn.Dropout(self.dropout))
-        layers.append(nn.Linear(out_features, out_features))
 
         return nn.Sequential(*layers)
 
@@ -323,13 +322,22 @@ class ResBlock(nn.Module):
         if self.config["use_skip_connection"]:
             if self.config["multi_branch_choice"] == 'shake-shake':
                 x1 = self.layers(x)
+                if self.config['use_dropout']:
+                    x1 = F.dropout(x1, p=self.dropout, training=self.training)
+                x1 = self.final_layer(x1)
                 x2 = self.shake_shake_layers(x)
                 alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
                 x = shake_shake(x1, x2, alpha, beta)
             else:
                 x = self.layers(x)
+                if self.config['use_dropout']:
+                    x = F.dropout(x, p=self.dropout, training=self.training)
+                x = self.final_layer(x)
         else:
             x = self.layers(x)
+            if self.config['use_dropout']:
+                x = F.dropout(x, p=self.dropout, training=self.training)
+            x = self.final_layer(x)
 
         if self.config["use_skip_connection"]:
             if self.config["multi_branch_choice"] == 'shake-drop':
