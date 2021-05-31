@@ -118,6 +118,27 @@ We explain
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with AutoPyTorch using the...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_run_with_portfolio_thumb.png
+     :alt: Tabular Classification with Greedy Portfolio
+
+     :ref:`sphx_glr_examples_40_advanced_example_run_with_portfolio.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_run_with_portfolio
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how adjust the configuration space of the search. Currently, there ...">
 
 .. only:: html
