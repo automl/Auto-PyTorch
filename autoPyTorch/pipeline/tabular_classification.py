@@ -60,7 +60,18 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
+            build the pipeline. If provided, they won't be dynamically produced.
+        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+            to honor during the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+            to avoid during the creation of the configuration space.
+        random_state (np.random.RandomState): allows to produce reproducible results by
+            setting a seed for randomized settings
+        init_params (Optional[Dict[str, Any]])
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
 
     Attributes:
     Examples

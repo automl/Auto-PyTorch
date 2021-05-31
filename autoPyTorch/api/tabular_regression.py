@@ -47,6 +47,9 @@ class TabularRegressionTask(BaseTask):
         exclude_components (Optional[Dict]): If None, all possible components are used.
             Otherwise specifies set of components not to use. Incompatible with include
             components
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
     """
 
     def __init__(
@@ -111,6 +114,7 @@ class TabularRegressionTask(BaseTask):
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
+        portfolio_selection: Optional[str] = None,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -175,6 +179,15 @@ class TabularRegressionTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
+            portfolio_selection (str), (default=None):
+                This argument controls the initial configurations that
+                AutoPyTorch uses to warm start SMAC for hyperparameter
+                optimization. By default, no warm-starting happens.
+                The user can provide a path to a json file containing
+                configurations, similar to (...herepathtogreedy...).
+                Additionally, the keyword 'greedy' is supported,
+                which would use the default portfolio from
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
 
         Returns:
             self
@@ -221,6 +234,7 @@ class TabularRegressionTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
+            portfolio_selection=portfolio_selection,
         )
 
     def predict(

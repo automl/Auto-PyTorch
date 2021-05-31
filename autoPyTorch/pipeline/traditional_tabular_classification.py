@@ -10,6 +10,7 @@ from sklearn.base import ClassifierMixin
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.traditional_ml.base_model_choice import ModelChoice
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
@@ -19,7 +20,19 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
+            build the pipeline. If provided, they won't be dynamically produced.
+        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+            to honor during the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+            to avoid during the creation of the configuration space.
+        random_state (np.random.RandomState): allows to produce reproducible results by
+            setting a seed for randomized settings
+        init_params (Optional[Dict[str, Any]])
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
+
 
     Attributes:
     """
@@ -32,11 +45,12 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
-            random_state, init_params)
+            random_state, init_params, search_space_updates)
 
     def predict(self, X: np.ndarray, batch_size: Optional[int] = None
                 ) -> np.ndarray:

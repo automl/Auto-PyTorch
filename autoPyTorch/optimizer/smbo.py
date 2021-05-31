@@ -4,6 +4,7 @@ import logging.handlers
 import typing
 
 import ConfigSpace
+from ConfigSpace.configuration_space import Configuration
 
 import dask.distributed
 
@@ -25,6 +26,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.optimizer.utils import read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import get_named_client_logger
@@ -40,6 +42,7 @@ def get_smac_object(
     initial_budget: int,
     max_budget: int,
     dask_client: typing.Optional[dask.distributed.Client],
+    initial_configurations: typing.Optional[typing.List[Configuration]] = None,
 ) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
@@ -53,6 +56,8 @@ def get_smac_object(
         ta_kwargs (typing.Dict[str, typing.Any]): Arguments to the above ta
         n_jobs (int): Amount of cores to use for this task
         dask_client (dask.distributed.Client): User provided scheduler
+        initial_configurations (typing.List[Configuration]): List of initial
+            configurations which smac will run before starting the search process
 
     Returns:
         (SMAC4AC): sequential model algorithm configuration object
@@ -67,7 +72,7 @@ def get_smac_object(
         runhistory2epm=rh2EPM,
         tae_runner=ta,
         tae_runner_kwargs=ta_kwargs,
-        initial_configurations=None,
+        initial_configurations=initial_configurations,
         run_id=seed,
         intensifier=intensifier,
         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
@@ -103,7 +108,8 @@ class AutoMLSMBO(object):
                  all_supported_metrics: bool = True,
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
-                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
+                 portfolio_selection: typing.Optional[str] = None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -152,7 +158,15 @@ class AutoMLSMBO(object):
                 Allows to create a user specified SMAC object
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
-
+            portfolio_selection (str), (default=None):
+                This argument controls the initial configurations that
+                AutoPyTorch uses to warm start SMAC for hyperparameter
+                optimization. By default, no warm-starting happens.
+                The user can provide a path to a json file containing
+                configurations, similar to (autoPyTorch/configs/greedy_portfolio.json).
+                Additionally, the keyword 'greedy' is supported,
+                which would use the default portfolio from
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -204,6 +218,11 @@ class AutoMLSMBO(object):
         self.logger = get_named_client_logger(name=logger_name,
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))
+
+        self.initial_configurations: typing.Optional[typing.List[Configuration]] = None
+        if portfolio_selection is not None:
+            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                             portfolio_selection=portfolio_selection)
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
@@ -314,7 +333,8 @@ class AutoMLSMBO(object):
                                                  n_jobs=self.n_jobs,
                                                  initial_budget=initial_budget,
                                                  max_budget=max_budget,
-                                                 dask_client=self.dask_client)
+                                                 dask_client=self.dask_client,
+                                                 initial_configurations=self.initial_configurations)
         else:
             smac = get_smac_object(scenario_dict=scenario_dict,
                                    seed=seed,
@@ -323,7 +343,8 @@ class AutoMLSMBO(object):
                                    n_jobs=self.n_jobs,
                                    initial_budget=initial_budget,
                                    max_budget=max_budget,
-                                   dask_client=self.dask_client)
+                                   dask_client=self.dask_client,
+                                   initial_configurations=self.initial_configurations)
 
         if self.ensemble_callback is not None:
             smac.register_callback(self.ensemble_callback)

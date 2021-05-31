@@ -33,6 +33,7 @@ from test.test_pipeline.components.training.base import BaseTraining  # noqa (E4
 
 
 OVERFIT_EPOCHS = 1000
+N_SAMPLES = 500
 
 
 class BaseDataLoaderTest(unittest.TestCase):
@@ -127,7 +128,7 @@ class BaseDataLoaderTest(unittest.TestCase):
 
 
 class TestBaseTrainerComponent(BaseTraining):
-    def test_evaluate(self, n_samples):
+    def test_evaluate(self):
         """
         Makes sure we properly evaluate data, returning a proper loss
         and metric
@@ -139,7 +140,7 @@ class TestBaseTrainerComponent(BaseTraining):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
+         logger) = self.prepare_trainer(N_SAMPLES,
                                         BaseTrainerComponent(),
                                         constants.TABULAR_CLASSIFICATION)
 
