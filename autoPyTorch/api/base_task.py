@@ -12,7 +12,7 @@ import typing
 import unittest.mock
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -223,9 +223,7 @@ class BaseTask:
         """
         raise NotImplementedError
 
-    def set_pipeline_config(
-            self,
-            **pipeline_config_kwargs: Any) -> None:
+    def set_pipeline_config(self, **pipeline_config_kwargs: Any) -> None:
         """
         Check whether arguments are valid and
         then sets them to the current pipeline
@@ -259,12 +257,6 @@ class BaseTask:
         """
         return self.pipeline_options
 
-    # def set_search_space(self, search_space: ConfigurationSpace) -> None:
-    #     """
-    #     Update the search space.
-    #     """
-    #     raise NotImplementedError
-    #
     def get_search_space(self, dataset: BaseDataset = None) -> ConfigurationSpace:
         """
         Returns the current search space as ConfigurationSpace object.
@@ -406,9 +398,9 @@ class BaseTask:
             None
         """
         if (
-                hasattr(self, '_is_dask_client_internally_created')
-                and self._is_dask_client_internally_created
-                and self._dask_client
+            hasattr(self, '_is_dask_client_internally_created')
+            and self._is_dask_client_internally_created
+            and self._dask_client
         ):
             self._dask_client.shutdown()
             self._dask_client.close()
@@ -661,10 +653,11 @@ class BaseTask:
                             f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
                         configuration = additional_info['pipeline_configuration']
                         origin = additional_info['configuration_origin']
+                        additional_info.pop('pipeline_configuration')
                         run_history.add(config=configuration, cost=cost,
                                         time=runtime, status=status, seed=self.seed,
                                         starttime=starttime, endtime=starttime + runtime,
-                                        origin=origin)
+                                        origin=origin, additional_info=additional_info)
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(
@@ -710,6 +703,7 @@ class BaseTask:
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
+        tae_func: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
         disable_file_output: List = [],
@@ -777,6 +771,10 @@ class BaseTask:
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
                 [SMAC](https://automl.github.io/SMAC3/master/index.html).
+            tae_func (Optional[Callable]):
+                TargetAlgorithm to be optimised. If None, `eval_function`
+                available in autoPyTorch/evaluation/train_evaluator is used.
+                Must be child class of AbstractEvaluator.
             all_supported_metrics (bool), (default=True): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
@@ -988,7 +986,7 @@ class BaseTask:
             )
             try:
                 run_history, self.trajectory, budget_type = \
-                    _proc_smac.run_smbo()
+                    _proc_smac.run_smbo(func=tae_func)
                 self.run_history.update(run_history, DataOrigin.INTERNAL)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),
@@ -1042,10 +1040,10 @@ class BaseTask:
         return self
 
     def refit(
-            self,
-            dataset: BaseDataset,
-            budget_config: Dict[str, Union[int, str]] = {},
-            split_id: int = 0
+        self,
+        dataset: BaseDataset,
+        budget_config: Dict[str, Union[int, str]] = {},
+        split_id: int = 0
     ) -> "BaseTask":
         """
         Refit all models found with fit to new data.
@@ -1181,10 +1179,10 @@ class BaseTask:
         return pipeline
 
     def predict(
-            self,
-            X_test: np.ndarray,
-            batch_size: Optional[int] = None,
-            n_jobs: int = 1
+        self,
+        X_test: np.ndarray,
+        batch_size: Optional[int] = None,
+        n_jobs: int = 1
     ) -> np.ndarray:
         """Generate the estimator predictions.
         Generate the predictions based on the given examples from the test set.
@@ -1234,9 +1232,9 @@ class BaseTask:
         return predictions
 
     def score(
-            self,
-            y_pred: np.ndarray,
-            y_test: Union[np.ndarray, pd.DataFrame]
+        self,
+        y_pred: np.ndarray,
+        y_test: Union[np.ndarray, pd.DataFrame]
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
@@ -1277,17 +1275,37 @@ class BaseTask:
         if hasattr(self, '_backend'):
             self._backend.context.delete_directories(force=False)
 
-    @typing.no_type_check
     def get_incumbent_results(
-            self
-    ):
-        pass
+        self,
+        include_traditional: bool = False
+    ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
+        """
+        Get Incumbent config and the corresponding results
+        Args:
+            include_traditional: Whether to include results from tradtional pipelines
 
-    @typing.no_type_check
-    def get_incumbent_config(
-            self
-    ):
-        pass
+        Returns:
+
+        """
+        assert self.run_history is not None, "No Run History found, search has not been called."
+        if self.run_history.empty():
+            raise ValueError("Run History is empty. Something went wrong, "
+                             "smac was not able to fit any model?")
+
+        run_history_data = self.run_history.data
+        if not include_traditional:
+            # traditional classifiers have trainer_configuration in their additional info
+            run_history_data = dict(
+                filter(lambda elem: elem[1].additional_info is not None and elem[1].
+                       additional_info['configuration_origin'] != 'traditional',
+                       run_history_data.items()))
+        run_history_data = dict(
+            filter(lambda elem: 'SUCCESS' in str(elem[1].status), run_history_data.items()))
+        sorted_runvalue_by_cost = sorted(run_history_data.items(), key=lambda item: item[1].cost)
+        incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]
+        incumbent_config = self.run_history.ids_config[incumbent_run_key.config_id]
+        incumbent_results = incumbent_run_value.additional_info
+        return incumbent_config, incumbent_results
 
     def get_models_with_weights(self) -> List:
         if self.models_ is None or len(self.models_) == 0 or \
