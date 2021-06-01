@@ -65,7 +65,7 @@ class CoalescerChoice(autoPyTorchChoice):
             raise ValueError("no coalescer found, please add a coalescer")
 
         if default is None:
-            defaults = ['MinorityCoalescer', 'NoCoalescer']
+            defaults = ['NoCoalescer', 'MinorityCoalescer']
             for default_ in defaults:
                 if default_ in available_preprocessors:
                     if include is not None and default_ not in include:
@@ -111,8 +111,10 @@ class CoalescerChoice(autoPyTorchChoice):
 
         # add only child hyperparameters of early_preprocessor choices
         for name in preprocessor.choices:
+            updates = self._get_search_space_updates(prefix=name)
             preprocessor_configuration_space = available_preprocessors[name].\
-                get_hyperparameter_search_space(dataset_properties)
+                get_hyperparameter_search_space(dataset_properties,
+                                                **updates)
             parent_hyperparameter = {'parent': preprocessor, 'value': name}
             cs.add_configuration_space(name, preprocessor_configuration_space,
                                        parent_hyperparameter=parent_hyperparameter)
