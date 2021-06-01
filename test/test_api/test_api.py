@@ -6,9 +6,8 @@ import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, dummy_traditional_classification
 
-from ConfigSpace.configuration_space import Configuration
-
 import ConfigSpace as CS
+from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
 
