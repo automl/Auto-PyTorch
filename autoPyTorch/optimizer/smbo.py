@@ -109,7 +109,7 @@ class AutoMLSMBO(object):
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-                 portfolio_selection: typing.Optional[str] = None
+                 portfolio_selection: typing.Optional[str] = None,
                  pynisher_context: str = 'spawn',
                  ):
         """
