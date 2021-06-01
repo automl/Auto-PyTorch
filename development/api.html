@@ -210,6 +210,17 @@ uses default</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_incumbent_results">
+<span class="sig-name descname"><span class="pre">get_incumbent_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_traditional</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigSpace.configuration_space.Configuration</span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_incumbent_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Incumbent config and the corresponding results
+Args:</p>
+<blockquote>
+<div><p>include_traditional: Whether to include results from tradtional pipelines</p>
+</div></blockquote>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_pipeline_options">
 <span class="sig-name descname"><span class="pre">get_pipeline_options</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_pipeline_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current pipeline configuration.</p>
