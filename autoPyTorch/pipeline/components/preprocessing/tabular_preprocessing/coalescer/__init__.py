@@ -115,8 +115,7 @@ class CoalescerChoice(autoPyTorchChoice):
             # Call arg is ignored on mypy as the search space dynamically
             # provides different args
             preprocessor_configuration_space = available_preprocessors[name].\
-                get_hyperparameter_search_space(dataset_properties,  # type:ignore[call-arg]
-                                                **updates)
+                get_hyperparameter_search_space(dataset_properties, **updates)  # type:ignore
             parent_hyperparameter = {'parent': preprocessor, 'value': name}
             cs.add_configuration_space(name, preprocessor_configuration_space,
                                        parent_hyperparameter=parent_hyperparameter)
