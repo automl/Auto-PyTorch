@@ -1,5 +1,6 @@
 [{"data_loader:batch_size": 60,
  "encoder:__choice__": "OneHotEncoder",
+ "coalescer:__choice__": "NoCoalescer",
  "feature_preprocessor:__choice__": "NoFeaturePreprocessor",
  "imputer:categorical_strategy": "most_frequent",
  "imputer:numerical_strategy": "mean",
