@@ -29,6 +29,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.utils.common import replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
+from autoPyTorch.utils.parallel import preload_modules
 
 
 def fit_predict_try_except_decorator(
@@ -92,29 +93,29 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     """
 
     def __init__(
-            self,
-            backend: Backend,
-            seed: int,
-            metric: autoPyTorchMetric,
-            cost_for_crash: float,
-            abort_on_first_run_crash: bool,
-            pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            initial_num_run: int = 1,
-            stats: typing.Optional[Stats] = None,
-            run_obj: str = 'quality',
-            par_factor: int = 1,
-            output_y_hat_optimization: bool = True,
-            include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            memory_limit: typing.Optional[int] = None,
-            disable_file_output: bool = False,
-            init_params: typing.Dict[str, typing.Any] = None,
-            budget_type: str = None,
-            ta: typing.Optional[typing.Callable] = None,
-            logger_port: int = None,
-            all_supported_metrics: bool = True,
-            pynisher_context: str = 'spawn',
-            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        backend: Backend,
+        seed: int,
+        metric: autoPyTorchMetric,
+        cost_for_crash: float,
+        abort_on_first_run_crash: bool,
+        pynisher_context: str,
+        pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        initial_num_run: int = 1,
+        stats: typing.Optional[Stats] = None,
+        run_obj: str = 'quality',
+        par_factor: int = 1,
+        output_y_hat_optimization: bool = True,
+        include: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        memory_limit: typing.Optional[int] = None,
+        disable_file_output: bool = False,
+        init_params: typing.Dict[str, typing.Any] = None,
+        budget_type: str = None,
+        ta: typing.Optional[typing.Callable] = None,
+        logger_port: int = None,
+        all_supported_metrics: bool = True,
+        search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
@@ -249,6 +250,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     ) -> typing.Tuple[StatusType, float, float, typing.Dict[str, typing.Any]]:
 
         context = multiprocessing.get_context(self.pynisher_context)
+        preload_modules(context)
         queue: multiprocessing.queues.Queue = context.Queue()
 
         if not (instance_specific is None or instance_specific == '0'):

@@ -10,27 +10,26 @@ from sklearn.base import clone
 import torch
 from torch import nn
 
-import autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice as lr_components
-import \
-    autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice as network_initializer_components  # noqa: E501
-import autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice as optimizer_components
+import autoPyTorch.pipeline.components.setup.lr_scheduler as lr_components
+import autoPyTorch.pipeline.components.setup.network_backbone as base_network_backbone_choice
+import autoPyTorch.pipeline.components.setup.network_head as base_network_head_choice
+import autoPyTorch.pipeline.components.setup.network_initializer as network_initializer_components  # noqa: E501
+import autoPyTorch.pipeline.components.setup.optimizer as optimizer_components
 from autoPyTorch import constants
 from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import (
+from autoPyTorch.pipeline.components.setup.lr_scheduler import (
     BaseLRComponent,
     SchedulerChoice
 )
-from autoPyTorch.pipeline.components.setup.network_backbone import base_network_backbone_choice
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head import base_network_head_choice
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
+from autoPyTorch.pipeline.components.setup.network_initializer import (
     BaseNetworkInitializerComponent,
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import (
+from autoPyTorch.pipeline.components.setup.optimizer import (
     BaseOptimizerComponent,
     OptimizerChoice
 )

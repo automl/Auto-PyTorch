@@ -525,7 +525,7 @@ def test_run_end_at(ensemble_backend):
 
         current_time = time.time()
 
-        ensbuilder.run(end_at=current_time + 10, iteration=1)
+        ensbuilder.run(end_at=current_time + 10, iteration=1, pynisher_context='forkserver')
         # 4 seconds left because: 10 seconds - 5 seconds overhead - very little overhead,
         # but then rounded to an integer
         assert pynisher_mock.call_args_list[0][1]["wall_time_in_s"], 4
@@ -718,9 +718,10 @@ def test_ensemble_builder_nbest_remembered(fit_ensemble, ensemble_backend, dask_
         ensemble_memory_limit=1000,
         random_state=0,
         max_iterations=None,
+        pynisher_context='fork',
     )
 
-    manager.build_ensemble(dask_client, unit_test=True, pynisher_context='fork')
+    manager.build_ensemble(dask_client, unit_test=True)
     future = manager.futures[0]
     dask.distributed.wait([future])  # wait for the ensemble process to finish
     assert future.result() == ([], 5, None, None), vars(future.result())

@@ -109,7 +109,8 @@ class AutoMLSMBO(object):
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-                 portfolio_selection: typing.Optional[str] = None
+                 portfolio_selection: typing.Optional[str] = None,
+                 pynisher_context: str = 'spawn',
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -156,6 +157,8 @@ class AutoMLSMBO(object):
                 Additional arguments to the smac scenario
             get_smac_object_callback (typing.Optional[typing.Callable]):
                 Allows to create a user specified SMAC object
+            pynisher_context (str):
+                A string indicating the multiprocessing context to use
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
             portfolio_selection (str), (default=None):
@@ -204,6 +207,7 @@ class AutoMLSMBO(object):
         self.disable_file_output = disable_file_output
         self.smac_scenario_args = smac_scenario_args
         self.get_smac_object_callback = get_smac_object_callback
+        self.pynisher_context = pynisher_context
 
         self.ensemble_callback = ensemble_callback
 
@@ -274,7 +278,8 @@ class AutoMLSMBO(object):
             logger_port=self.logger_port,
             all_supported_metrics=self.all_supported_metrics,
             pipeline_config=self.pipeline_config,
-            search_space_updates=self.search_space_updates
+            search_space_updates=self.search_space_updates,
+            pynisher_context=self.pynisher_context,
         )
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Created TA")

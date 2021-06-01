@@ -36,6 +36,7 @@ from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss, calculate_score
 from autoPyTorch.utils.logging_ import get_named_client_logger
+from autoPyTorch.utils.parallel import preload_modules
 
 Y_ENSEMBLE = 0
 Y_TEST = 1
@@ -64,6 +65,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         ensemble_memory_limit: Optional[int],
         random_state: int,
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+        pynisher_context: str = 'fork',
     ):
         """ SMAC callback to handle ensemble building
         Args:
@@ -111,6 +113,8 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                 read at most n new prediction files in each iteration
             logger_port: int
                 port in where to publish a msg
+            pynisher_context: str
+                The multiprocessing context for pynisher. One of spawn/fork/forkserver.
 
         Returns:
             List[Tuple[int, float, float, float]]:
@@ -135,6 +139,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         self.ensemble_memory_limit = ensemble_memory_limit
         self.random_state = random_state
         self.logger_port = logger_port
+        self.pynisher_context = pynisher_context
 
         # Store something similar to SMAC's runhistory
         self.history = []  # type: List[Dict[str, float]]
@@ -160,7 +165,6 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
     def build_ensemble(
         self,
         dask_client: dask.distributed.Client,
-        pynisher_context: str = 'spawn',
         unit_test: bool = False
     ) -> None:
 
@@ -236,7 +240,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                     iteration=self.iteration,
                     return_predictions=False,
                     priority=100,
-                    pynisher_context=pynisher_context,
+                    pynisher_context=self.pynisher_context,
                     logger_port=self.logger_port,
                     unit_test=unit_test,
                 ))
@@ -585,11 +589,11 @@ class EnsembleBuilder(object):
     def run(
         self,
         iteration: int,
+        pynisher_context: str,
         time_left: Optional[float] = None,
         end_at: Optional[float] = None,
         time_buffer: int = 5,
         return_predictions: bool = False,
-        pynisher_context: str = 'spawn',  # only change for unit testing!
     ) -> Tuple[
         List[Dict[str, float]],
         int,
@@ -655,6 +659,7 @@ class EnsembleBuilder(object):
             if wall_time_in_s < 1:
                 break
             context = multiprocessing.get_context(pynisher_context)
+            preload_modules(context)
 
             safe_ensemble_script = pynisher.enforce_limits(
                 wall_time_in_s=wall_time_in_s,

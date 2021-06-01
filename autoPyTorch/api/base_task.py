@@ -54,7 +54,9 @@ from autoPyTorch.utils.logging_ import (
     setup_logger,
     start_log_server,
 )
+from autoPyTorch.utils.parallel import preload_modules
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
+from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
 
 
@@ -190,7 +192,16 @@ class BaseTask:
 
         self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
 
+        # Single core, local runs should use fork
+        # to prevent the __main__ requirements in
+        # examples. Nevertheless, multi-process runs
+        # have spawn as requirement to reduce the
+        # possibility of a deadlock
         self._dask_client = None
+        self._multiprocessing_context = 'forkserver'
+        if self.n_jobs == 1:
+            self._multiprocessing_context = 'fork'
+            self._dask_client = SingleThreadedClient()
 
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:
@@ -300,7 +311,8 @@ class BaseTask:
         # under the above logging configuration setting
         # We need to specify the logger_name so that received records
         # are treated under the logger_name ROOT logger setting
-        context = multiprocessing.get_context('spawn')
+        context = multiprocessing.get_context(self._multiprocessing_context)
+        preload_modules(context)
         self.stop_logging_server = context.Event()
         port = context.Value('l')  # be safe by using a long
         port.value = -1
@@ -505,6 +517,7 @@ class BaseTask:
         stats = Stats(scenario_mock)
         stats.start_timing()
         ta = ExecuteTaFuncWithQueue(
+            pynisher_context=self._multiprocessing_context,
             backend=self._backend,
             seed=self.seed,
             metric=self._metric,
@@ -599,6 +612,7 @@ class BaseTask:
                 stats = Stats(scenario_mock)
                 stats.start_timing()
                 ta = ExecuteTaFuncWithQueue(
+                    pynisher_context=self._multiprocessing_context,
                     backend=self._backend,
                     seed=self.seed,
                     metric=self._metric,
@@ -929,6 +943,7 @@ class BaseTask:
                 random_state=self.seed,
                 precision=precision,
                 logger_port=self._logger_port,
+                pynisher_context=self._multiprocessing_context,
             )
             self._stopwatch.stop_task(ensemble_task_name)
 
@@ -969,6 +984,7 @@ class BaseTask:
                 start_num_run=self._backend.get_next_num_run(peek=True),
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
+                pynisher_context=self._multiprocessing_context,
             )
             try:
                 run_history, self.trajectory, budget_type = \
@@ -1299,5 +1315,6 @@ class BaseTask:
         self._logger.debug('  System: %s', platform.system())
         self._logger.debug('  Machine: %s', platform.machine())
         self._logger.debug('  Platform: %s', platform.platform())
+        self._logger.debug('  multiprocessing_context: %s', str(self._multiprocessing_context))
         for key, value in vars(self).items():
             self._logger.debug(f"\t{key}->{value}")

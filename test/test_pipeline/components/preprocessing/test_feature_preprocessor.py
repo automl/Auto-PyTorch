@@ -7,10 +7,11 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     NoFeaturePreprocessor import NoFeaturePreprocessor
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 

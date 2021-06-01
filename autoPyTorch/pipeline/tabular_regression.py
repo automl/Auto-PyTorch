@@ -16,27 +16,26 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import (
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice,
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
+from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice import NetworkEmbeddingChoice
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
+from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
+from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
-from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
-    TrainerChoice
-)
+from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
