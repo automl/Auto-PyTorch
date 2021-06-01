@@ -473,12 +473,11 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._disable_file_output = []
     estimator._all_supported_metrics = False
 
-    original_memory_limit = estimator._memory_limit
-    estimator._memory_limit = 500
     with pytest.raises(ValueError, match=r".*Dummy prediction failed with run state.*"):
-        estimator._do_dummy_prediction()
+        with unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function') as dummy:
+            dummy.side_effect = MemoryError
+            estimator._do_dummy_prediction()
 
-    estimator._memory_limit = original_memory_limit
     estimator._do_dummy_prediction()
 
     # Ensure that the dummy predictions are not in the current working
