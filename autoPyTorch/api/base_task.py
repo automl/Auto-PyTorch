@@ -34,6 +34,7 @@ from autoPyTorch.constants import (
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
 )
+from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
@@ -203,6 +204,8 @@ class BaseTask:
             self._multiprocessing_context = 'fork'
             self._dask_client = SingleThreadedClient()
 
+        self.InputValidator: Optional[BaseInputValidator] = None
+
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:
             if not isinstance(self.search_space_updates,
@@ -273,8 +276,8 @@ class BaseTask:
                                            include=self.include_components,
                                            exclude=self.exclude_components,
                                            search_space_updates=self.search_space_updates)
-        raise Exception("No search space initialised and no dataset passed. "
-                        "Can't create default search space without the dataset")
+        raise ValueError("No search space initialised and no dataset passed. "
+                         "Can't create default search space without the dataset")
 
     def _get_logger(self, name: str) -> PicklableClientLogger:
         """

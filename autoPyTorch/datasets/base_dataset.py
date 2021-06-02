@@ -129,7 +129,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
 
-            if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
+            if (
+                self.output_type in STRING_TO_OUTPUT_TYPES
+                and STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS
+            ):
                 self.output_shape = len(np.unique(self.train_tensors[1]))
             else:
                 self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1

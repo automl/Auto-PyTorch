@@ -10,12 +10,15 @@ import numpy as np
 
 import pynisher
 
+import pytest
+
 from smac.runhistory.runhistory import RunInfo
 from smac.stats.stats import Stats
 from smac.tae import StatusType
+from smac.utils.constants import MAXINT
 
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, log_loss
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
@@ -391,3 +394,8 @@ class EvaluationTest(unittest.TestCase):
         self.assertNotIn('exitcode', info[1].additional_info)
         self.assertNotIn('exit_status', info[1].additional_info)
         self.assertNotIn('traceback', info[1])
+
+
+@pytest.mark.parametrize("metric,expected", [(accuracy, 1.0), (log_loss, MAXINT)])
+def test_get_cost_of_crash(metric, expected):
+    assert get_cost_of_crash(metric) == expected

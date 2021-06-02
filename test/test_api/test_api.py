@@ -6,6 +6,7 @@ import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, dummy_traditional_classification
 
+import ConfigSpace as CS
 from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
@@ -17,6 +18,7 @@ import pytest
 
 import sklearn
 import sklearn.datasets
+from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
@@ -31,6 +33,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
@@ -57,7 +60,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     X, y = X.iloc[:n_samples], y.iloc[:n_samples]
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, random_state=1)
+        X, y, random_state=42)
 
     include = None
     # for python less than 3.7, learned entity embedding
@@ -69,7 +72,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
-        include_components=include
+        include_components=include,
+        seed=42,
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -77,8 +81,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='accuracy',
-            total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=10,
             enable_traditional_pipeline=False,
         )
 
@@ -98,15 +102,15 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
-        'smac3-output/run_1/configspace.json',
-        'smac3-output/run_1/runhistory.json',
-        'smac3-output/run_1/scenario.txt',
-        'smac3-output/run_1/stats.json',
-        'smac3-output/run_1/train_insts.txt',
-        'smac3-output/run_1/trajectory.json',
+        'smac3-output/run_42/configspace.json',
+        'smac3-output/run_42/runhistory.json',
+        'smac3-output/run_42/scenario.txt',
+        'smac3-output/run_42/stats.json',
+        'smac3-output/run_42/train_insts.txt',
+        'smac3-output/run_42/trajectory.json',
         '.autoPyTorch/datamanager.pkl',
         '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_1',
+        '.autoPyTorch/start_time_42',
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
@@ -187,8 +191,11 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
 
     y_pred = estimator.predict(X_test)
-
     assert np.shape(y_pred)[0] == np.shape(X_test)[0]
+
+    # Make sure that predict proba has the expected shape
+    probabilites = estimator.predict_proba(X_test)
+    assert np.shape(probabilites) == (np.shape(X_test)[0], 2)
 
     score = estimator.score(y_pred, y_test)
     assert 'accuracy' in score
@@ -214,6 +221,12 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
         with open(dump_file, 'rb') as f:
             restored_estimator = pickle.load(f)
         restored_estimator.predict(X_test)
+
+    # Test refit on dummy data
+    estimator.refit(dataset=backend.load_datamanager())
+
+    # Make sure that a configuration space is stored in the estimator
+    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
@@ -257,7 +270,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
-        include_components=include
+        include_components=include,
+        seed=42,
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -265,8 +279,8 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='r2',
-            total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=10,
             enable_traditional_pipeline=False,
         )
 
@@ -286,15 +300,15 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
-        'smac3-output/run_1/configspace.json',
-        'smac3-output/run_1/runhistory.json',
-        'smac3-output/run_1/scenario.txt',
-        'smac3-output/run_1/stats.json',
-        'smac3-output/run_1/train_insts.txt',
-        'smac3-output/run_1/trajectory.json',
+        'smac3-output/run_42/configspace.json',
+        'smac3-output/run_42/runhistory.json',
+        'smac3-output/run_42/scenario.txt',
+        'smac3-output/run_42/stats.json',
+        'smac3-output/run_42/train_insts.txt',
+        'smac3-output/run_42/trajectory.json',
         '.autoPyTorch/datamanager.pkl',
         '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_1',
+        '.autoPyTorch/start_time_42',
         '.autoPyTorch/ensemble_history.json',
         '.autoPyTorch/ensemble_read_losses.pkl',
         '.autoPyTorch/true_targets_ensemble.npy',
@@ -458,6 +472,11 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._time_for_task = 60
     estimator._disable_file_output = []
     estimator._all_supported_metrics = False
+
+    with pytest.raises(ValueError, match=r".*Dummy prediction failed with run state.*"):
+        with unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function') as dummy:
+            dummy.side_effect = MemoryError
+            estimator._do_dummy_prediction()
 
     estimator._do_dummy_prediction()
 
@@ -639,3 +658,77 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
 
     if not include_traditional:
         assert results['configuration_origin'] != 'traditional'
+
+
+# TODO: Make faster when https://github.com/automl/Auto-PyTorch/pull/223 is incorporated
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
+def test_do_traditional_pipeline(fit_dictionary_tabular):
+    backend = fit_dictionary_tabular['backend']
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        ensemble_size=0,
+    )
+
+    # Setup pre-requisites normally set by search()
+    estimator._create_dask_client()
+    estimator._metric = accuracy
+    estimator._logger = estimator._get_logger('test')
+    estimator._memory_limit = 5000
+    estimator._time_for_task = 60
+    estimator._disable_file_output = []
+    estimator._all_supported_metrics = False
+
+    estimator._do_traditional_prediction(time_left=60, func_eval_time_limit_secs=30)
+
+    # The models should not be on the current directory
+    assert not os.path.exists(os.path.join(os.getcwd(), '.autoPyTorch'))
+
+    # Then we should have fitted 5 classifiers
+    # Maybe some of them fail (unlikely, but we do not control external API)
+    # but we want to make this test robust
+    at_least_one_model_checked = False
+    for i in range(2, 7):
+        pred_path = os.path.join(
+            backend.temporary_directory, '.autoPyTorch', 'runs', f"1_{i}_50.0",
+            f"predictions_ensemble_1_{i}_50.0.npy"
+        )
+        if not os.path.exists(pred_path):
+            continue
+
+        model_path = os.path.join(backend.temporary_directory,
+                                  '.autoPyTorch',
+                                  'runs', f"1_{i}_50.0",
+                                  f"1.{i}.50.0.model")
+
+        # Make sure the dummy model complies with scikit learn
+        # get/set params
+        assert os.path.exists(model_path)
+        with open(model_path, 'rb') as model_handler:
+            model = pickle.load(model_handler)
+        clone(model)
+        assert model.config == list(_classifiers.keys())[i - 2]
+        at_least_one_model_checked = True
+    if not at_least_one_model_checked:
+        pytest.fail("Not even one single traditional pipeline was fitted")
+
+    estimator._close_dask_client()
+    estimator._clean_logger()
+
+    del estimator
+
+
+@pytest.mark.parametrize("api_type", [TabularClassificationTask, TabularRegressionTask])
+def test_unsupported_msg(api_type):
+    api = api_type()
+    with pytest.raises(ValueError, match=r".*is only supported after calling search. Kindly .*"):
+        api.predict(np.ones((10, 10)))
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
+@pytest.mark.parametrize("api_type", [TabularClassificationTask, TabularRegressionTask])
+def test_build_pipeline(api_type, fit_dictionary_tabular):
+    api = api_type()
+    pipeline = api.build_pipeline(fit_dictionary_tabular['dataset_properties'])
+    assert isinstance(pipeline, BaseEstimator)
+    assert len(pipeline.steps) > 0
