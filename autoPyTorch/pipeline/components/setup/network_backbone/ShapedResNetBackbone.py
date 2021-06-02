@@ -61,7 +61,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                     out_features=self.config["num_units_%d" % i],
                     blocks_per_group=self.config["blocks_per_group"],
                     last_block_index=(i - 1) * self.config["blocks_per_group"],
-                    dropout=self.config['use_dropout']
+                    dropout=self.config[f'dropout_{i}'],
                 )
             )
         if self.config['use_batch_norm']:
