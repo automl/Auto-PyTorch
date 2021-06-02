@@ -47,7 +47,6 @@ class ShapedResNetBackbone(ResNetBackbone):
                 self.config['num_groups'] + 2,
             )[:-1]
 
-
             dropout_shape = [
                 dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
             ]

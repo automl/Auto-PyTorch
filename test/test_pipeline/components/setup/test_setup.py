@@ -422,7 +422,6 @@ class TestNetworkBackbone:
 class TestNetworkHead:
     def test_all_heads_available(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
-
         assert len(network_head_choice.get_components().keys()) == 3
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
@@ -441,7 +440,10 @@ class TestNetworkHead:
         if task_type in constants.CLASSIFICATION_TASKS:
             dataset_properties["num_classes"] = output_shape[0]
 
-        cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
+        cs = network_head_choice.get_hyperparameter_search_space(
+            dataset_properties=dataset_properties,
+            exclude=['no_head']
+        )
         # test 10 random configurations
         for i in range(10):
             config = cs.sample_configuration()
