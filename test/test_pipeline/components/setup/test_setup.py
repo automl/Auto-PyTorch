@@ -423,7 +423,7 @@ class TestNetworkHead:
     def test_all_heads_available(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
 
-        assert len(network_head_choice.get_components().keys()) == 2
+        assert len(network_head_choice.get_components().keys()) == 3
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
                                                               (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),

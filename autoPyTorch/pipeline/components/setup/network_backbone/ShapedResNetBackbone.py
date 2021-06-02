@@ -40,8 +40,13 @@ class ShapedResNetBackbone(ResNetBackbone):
         )
         if self.config['use_dropout'] and self.config["max_dropout"] > 0.05:
             dropout_shape = get_shaped_neuron_counts(
-                self.config['dropout_shape'], 0, 0, 1000, self.config['num_groups']
-            )
+                self.config['dropout_shape'],
+                0,
+                self.config["max_dropout"],
+                1000,
+                self.config['num_groups'] + 2,
+            )[:-1]
+
 
             dropout_shape = [
                 dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
@@ -61,7 +66,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                     out_features=self.config["num_units_%d" % i],
                     blocks_per_group=self.config["blocks_per_group"],
                     last_block_index=(i - 1) * self.config["blocks_per_group"],
-                    dropout=self.config[f'dropout_{i}'],
+                    dropout=self.config[f'dropout_{i}'] if self.config['use_dropout'] else None,
                 )
             )
         if self.config['use_batch_norm']:
