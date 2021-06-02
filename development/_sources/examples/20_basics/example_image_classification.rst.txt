@@ -87,26 +87,26 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:use_augmenter, Value: False
-      image_augmenter:GaussianNoise:sigma_offset, Value: 2.6558905363999727
-      image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:rotate, Value: 297
-      image_augmenter:RandomAffine:scale_offset, Value: 0.10167631197409942
-      image_augmenter:RandomAffine:shear, Value: 26
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.018225027710844
+      image_augmenter:GaussianBlur:sigma_min, Value: 2.7815796172433904
+      image_augmenter:GaussianBlur:sigma_offset, Value: 2.2162192719004334
+      image_augmenter:GaussianBlur:use_augmenter, Value: True
+      image_augmenter:GaussianNoise:use_augmenter, Value: False
+      image_augmenter:RandomAffine:rotate, Value: 211
+      image_augmenter:RandomAffine:scale_offset, Value: 0.1303552201986558
+      image_augmenter:RandomAffine:shear, Value: 24
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.1470709970650069
       image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:p, Value: 0.9504486965250005
-      image_augmenter:RandomCutout:use_augmenter, Value: True
-      image_augmenter:Resize:use_augmenter, Value: False
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.48642929026494963
-      normalizer:__choice__, Value: 'NoNormalizer'
+      image_augmenter:RandomCutout:use_augmenter, Value: False
+      image_augmenter:Resize:use_augmenter, Value: True
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.29994917149110223
+      normalizer:__choice__, Value: 'ImageNormalizer'
 
     Fitting the pipeline...
     ________________________________________
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            NoNormalizer
+            ImageNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -178,7 +178,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.588 seconds)
+   **Total running time of the script:** ( 0 minutes  8.362 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
