@@ -64,7 +64,8 @@ class ResNetBackbone(NetworkBackboneComponent):
             out_features (int): output dimensionality for the current block
             blocks_per_group (int): Number of ResNet per group
             last_block_index (int): block index for shake regularization
-            dropout (bool): whether or not use dropout
+            dropout (None, float): dropout value for the group. If none,
+                no dropout is applied.
         """
         blocks = list()
         for i in range(blocks_per_group):
@@ -180,9 +181,7 @@ class ResNetBackbone(NetworkBackboneComponent):
 
         if skip_connection_flag:
 
-            shake_drop_prob_flag = False
-            if 'shake-drop' in multi_branch_choice.value_range:
-                shake_drop_prob_flag = True
+            shake_drop_prob_flag = 'shake-drop' in multi_branch_choice.value_range
 
             mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
             cs.add_hyperparameter(mb_choice)
@@ -290,13 +289,21 @@ class ResBlock(nn.Module):
             if self.config['use_batch_norm']:
                 layers.append(nn.BatchNorm1d(in_features))
             layers.append(self.activation())
+        elif not self.config['use_skip_connection']:
+            # if start norm is not None and skip connection is False
+            # we will never apply the start_norm for the first layer in the block,
+            # which is why we should account for this case.
+            if self.config['use_batch_norm']:
+                layers.append(nn.BatchNorm1d(in_features))
+            layers.append(self.activation())
+
         layers.append(nn.Linear(in_features, out_features))
 
         if self.config['use_batch_norm']:
             layers.append(nn.BatchNorm1d(out_features))
         layers.append(self.activation())
 
-        if self.config["use_dropout"]:
+        if self.dropout is not None:
             layers.append(nn.Dropout(self.dropout))
         layers.append(nn.Linear(out_features, out_features))
 
@@ -321,6 +328,7 @@ class ResBlock(nn.Module):
             if self.config["use_skip_connection"]:
                 residual = self.shortcut(x)
 
+        # TODO make the below code better
         if self.config["use_skip_connection"]:
             if self.config["multi_branch_choice"] == 'shake-shake':
                 x1 = self.layers(x)

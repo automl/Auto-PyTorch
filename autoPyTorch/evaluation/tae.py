@@ -202,12 +202,26 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.search_space_updates = search_space_updates
 
+<<<<<<< HEAD
     def _check_and_get_default_budget(self) -> float:
         budget_type_choices = ('epochs', 'runtime')
         budget_choices = {
             budget_type: float(self.pipeline_config.get(budget_type, np.inf))
             for budget_type in budget_type_choices
         }
+=======
+        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+            eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            eval_function = autoPyTorch.evaluation.fit_evaluator.eval_function
+        else:
+            raise ValueError("resampling strategy must be in "
+                             "(HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes), "
+                             "but got {}.".format(self.resampling_strategy)
+            )
+
+        self.worst_possible_result = cost_for_crash
+>>>>>>> Cocktail hotfixes (#245)
 
         # budget is defined by epochs by default
         budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
@@ -346,6 +360,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         info: Optional[List[RunValue]]
         additional_run_info: Dict[str, Any]
         try:
+            # By default, self.ta is fit_predict_try_except_decorator
             obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
             obj(**obj_kwargs)
         except Exception as e:

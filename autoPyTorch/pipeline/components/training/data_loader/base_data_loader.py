@@ -107,11 +107,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
-<<<<<<< HEAD
         train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
-=======
-        train_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=True)
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -123,13 +119,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             collate_fn=custom_collate_fn,
         )
 
-<<<<<<< HEAD
         if X.get('val_indices', None) is not None:
             val_dataset = datamanager.get_dataset(split_id=X['split_id'], train=False)
-=======
-        if X['val_indices'] is not None:
-            val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=False)
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
             self.val_data_loader = torch.utils.data.DataLoader(
                 val_dataset,
                 batch_size=min(self.batch_size, len(val_dataset)),
