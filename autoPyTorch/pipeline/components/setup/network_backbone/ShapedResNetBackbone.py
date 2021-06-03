@@ -49,10 +49,6 @@ class ShapedResNetBackbone(ResNetBackbone):
                 self.config['num_groups'] + 1,
             )[:-1]
 
-            dropout_shape = [
-                dropout for dropout in dropout_shape
-            ]
-
             self.config.update(
                 {"dropout_%d" % (i + 1): dropout for i, dropout in enumerate(dropout_shape)}
             )
