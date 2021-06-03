@@ -459,7 +459,7 @@ class BaseTask(ABC):
             None
         """
         unknown_keys = []
-        for option, value in pipeline_config_kwargs.items():
+        for option in pipeline_config_kwargs.keys():
             if option in self.pipeline_options.keys():
                 pass
             else:
