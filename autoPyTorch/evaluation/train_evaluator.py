@@ -151,11 +151,13 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
-        assert isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)),\
-            "This Evaluator is used for HPO Search. " \
-            "Val Split is required for HPO search. " \
-            "Expected 'self.resampling_strategy' in" \
-            " '(CrossValTypes, HoldoutValTypes)' got {}".format(self.datamanager.resampling_strategy)
+
+        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            raise ValueError(
+                'TrainEvaluator expect to have (CrossValTypes, HoldoutValTypes) as '
+                'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
+            )
+
 
         if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
             resampling_strategy = self.datamanager.resampling_strategy
