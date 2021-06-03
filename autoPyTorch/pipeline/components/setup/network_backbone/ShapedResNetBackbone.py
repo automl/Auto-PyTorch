@@ -40,7 +40,11 @@ class ShapedResNetBackbone(ResNetBackbone):
         self.config.update(
             {"num_units_%d" % (i): num for i, num in enumerate(neuron_counts)}
         )
-        if self.config['use_dropout'] and self.config["max_dropout"] > 0.05:
+        if self.config['use_dropout']:
+            # the last dropout ("neuron") value is skipped since it will be equal
+            # to output_feat, which is 0. This is also skipped when getting the
+            # nr of units for the architecture, since, it is mostly implemented for the
+            # output layer, which is part of the head and not of the backbone.
             dropout_shape = get_shaped_neuron_counts(
                 self.config['dropout_shape'],
                 0,
