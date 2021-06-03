@@ -20,7 +20,7 @@ class NoHead(NetworkHeadComponent):
     """
 
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
-        layers = [nn.Flatten()]
+        layers = []
         in_features = np.prod(input_shape).item()
         out_features = np.prod(output_shape).item()
         layers.append(_activations[self.config["activation"]]())
@@ -34,8 +34,8 @@ class NoHead(NetworkHeadComponent):
             'shortname': 'NoHead',
             'name': 'NoHead',
             'handles_tabular': True,
-            'handles_image': True,
-            'handles_time_series': True,
+            'handles_image': False,
+            'handles_time_series': False,
         }
 
     @staticmethod
