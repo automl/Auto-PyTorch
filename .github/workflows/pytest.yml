@@ -1,12 +1,6 @@
 name: Tests
 
-on:
-  push:
-  pull_request:
-  schedule:
-    # Every Monday at 7AM UTC
-    - cron: '0 07 * * 1'
-
+on: [push, pull_request]
 
 jobs:
   ubuntu:
