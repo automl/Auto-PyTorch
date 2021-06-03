@@ -34,8 +34,8 @@ class NoHead(NetworkHeadComponent):
             'shortname': 'NoHead',
             'name': 'NoHead',
             'handles_tabular': True,
-            'handles_image': True,
-            'handles_time_series': True,
+            'handles_image': False,
+            'handles_time_series': False,
         }
 
     @staticmethod

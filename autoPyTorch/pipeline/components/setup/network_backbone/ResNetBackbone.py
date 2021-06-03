@@ -292,10 +292,11 @@ class ResBlock(nn.Module):
             layers.append(self.activation())
         else:
             # if start norm is not None and skip connection is None
-            # we will never apply the start_norm for the first block,
+            # we will never apply the start_norm for the first layer in the block,
             # which is why we should account for this case.
             if not self.config['use_skip_connection']:
-                layers.append(nn.BatchNorm1d(in_features))
+                if self.config['use_batch_norm']:
+                    layers.append(nn.BatchNorm1d(in_features))
                 layers.append(self.activation())
 
         layers.append(nn.Linear(in_features, out_features))

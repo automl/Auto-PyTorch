@@ -442,7 +442,6 @@ class TestNetworkHead:
 
         cs = network_head_choice.get_hyperparameter_search_space(
             dataset_properties=dataset_properties,
-            exclude=['no_head']
         )
         # test 10 random configurations
         for i in range(10):
