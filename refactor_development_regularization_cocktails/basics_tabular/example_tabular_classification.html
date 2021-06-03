@@ -124,7 +124,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f93adbb0100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f23b52135e0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -163,7 +163,7 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002053976058959961, budget=0), TrajEntry(train_perf=0.14035087719298245, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016024112701416016, budget=0), TrajEntry(train_perf=0.14619883040935677, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -202,21 +202,18 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=12.114131212234497, wallclock_time=13.615434408187866, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=15.135199308395386, wallclock_time=16.647786617279053, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                     | Estimator                                                       |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                              | CatBoostClassifier                                              |     0.44 |
-|  1 | None                                                              | RFClassifier                                                    |     0.22 |
-|  2 | None                                                              | ExtraTreesClassifier                                            |     0.08 |
-|  3 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.06 |
-|  4 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  5 | None                                                              | KNNClassifier                                                   |     0.04 |
-|  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.02 |
-|  7 | None                                                              | LGBMClassifier                                                  |     0.02 |
-|  8 | None                                                              | SVC                                                             |     0.02 |
-|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  0 | None                                                              | CatBoostClassifier                                              |     0.34 |
+|  1 | None                                                              | RFClassifier                                                    |     0.24 |
+|  2 | None                                                              | ExtraTreesClassifier                                            |     0.12 |
+|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  4 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
+|  5 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,MLPBackbone,NoHead,nn.Sequential                   |     0.04 |
+|  6 | None                                                              | KNNClassifier                                                   |     0.04 |
+|  7 | None                                                              | SVC                                                             |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -288,7 +285,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  9.660 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  57.022 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_classification.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
