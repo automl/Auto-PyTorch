@@ -41,7 +41,7 @@ class ResNetBackbone(NetworkBackboneComponent):
                     out_features=self.config["num_units_%d" % i],
                     blocks_per_group=self.config["blocks_per_group_%d" % i],
                     last_block_index=(i - 1) * self.config["blocks_per_group_%d" % i],
-                    dropout=self.config['use_dropout']
+                    dropout=self.config[f'dropout_{i}'] if self.config['use_dropout'] else None,
                 )
             )
 
@@ -52,7 +52,7 @@ class ResNetBackbone(NetworkBackboneComponent):
         return backbone
 
     def _add_group(self, in_features: int, out_features: int,
-                   blocks_per_group: int, last_block_index: int, dropout: bool
+                   blocks_per_group: int, last_block_index: int, dropout: Optional[float]
                    ) -> nn.Module:
         """
         Adds a group into the main backbone.
@@ -206,7 +206,7 @@ class ResBlock(nn.Module):
         out_features: int,
         blocks_per_group: int,
         block_index: int,
-        dropout: bool,
+        dropout: Optional[float],
         activation: nn.Module
     ):
         super(ResBlock, self).__init__()
