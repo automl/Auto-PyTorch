@@ -30,22 +30,28 @@ class ShapedResNetBackbone(ResNetBackbone):
         out_features = self.config["output_dim"]
 
         # use the get_shaped_neuron_counts to update the number of units
-        neuron_counts = get_shaped_neuron_counts(self.config['resnet_shape'],
-                                                 in_features,
-                                                 out_features,
-                                                 self.config['max_units'],
-                                                 self.config['num_groups'] + 2)[:-1]
+        neuron_counts = get_shaped_neuron_counts(
+            self.config['resnet_shape'],
+            in_features,
+            out_features,
+            self.config['max_units'],
+            self.config['num_groups'] + 2,
+        )[:-1]
         self.config.update(
             {"num_units_%d" % (i): num for i, num in enumerate(neuron_counts)}
         )
-        if self.config['use_dropout'] and self.config["max_dropout"] > 0.05:
+        if self.config['use_dropout']:
+            # the last dropout ("neuron") value is skipped since it will be equal
+            # to output_feat, which is 0. This is also skipped when getting the
+            # nr of units for the architecture, since, it is mostly implemented for the
+            # output layer, which is part of the head and not of the backbone.
             dropout_shape = get_shaped_neuron_counts(
-                self.config['dropout_shape'], 0, 0, 1000, self.config['num_groups']
-            )
-
-            dropout_shape = [
-                dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
-            ]
+                self.config['dropout_shape'],
+                0,
+                0,
+                self.config["max_dropout"],
+                self.config['num_groups'] + 1,
+            )[:-1]
 
             self.config.update(
                 {"dropout_%d" % (i + 1): dropout for i, dropout in enumerate(dropout_shape)}
@@ -61,7 +67,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                     out_features=self.config["num_units_%d" % i],
                     blocks_per_group=self.config["blocks_per_group"],
                     last_block_index=(i - 1) * self.config["blocks_per_group"],
-                    dropout=self.config['use_dropout']
+                    dropout=self.config[f'dropout_{i}'] if self.config['use_dropout'] else None,
                 )
             )
         if self.config['use_batch_norm']:
