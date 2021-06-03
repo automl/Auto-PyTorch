@@ -179,10 +179,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
             eval_function = autoPyTorch.evaluation.fit_evaluator.eval_function
         else:
-            raise ValueError("Unknown resampling strategy specified."
-                             "Expected resampling strategy to be in "
-                             "'(HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes)"
-                             "got {}".format(self.resampling_strategy))
+            raise ValueError("resampling strategy must be in "
+                             "(HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes), "
+                             "but got {}.".format(self.resampling_strategy)
+            )
 
         self.worst_possible_result = cost_for_crash
 
@@ -331,6 +331,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         info: Optional[List[RunValue]]
         additional_run_info: Dict[str, Any]
         try:
+            # By default, self.ta is fit_predict_try_except_decorator
             obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
             obj(**obj_kwargs)
         except Exception as e:

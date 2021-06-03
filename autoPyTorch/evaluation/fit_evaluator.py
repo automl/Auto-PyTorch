@@ -58,10 +58,12 @@ class FitEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
-        assert isinstance(self.datamanager.resampling_strategy, NoResamplingStrategyTypes),\
-            "This Evaluator is used for fitting a pipeline on the whole dataset. " \
-            "Expected 'self.resampling_strategy' to be" \
-            " 'NoResamplingStrategyTypes' got {}".format(self.datamanager.resampling_strategy)
+        if not isinstance(self.datamanager.resampling_strategy, NoResamplingStrategyTypes):
+            raise ValueError(
+                "FitEvaluator needs to be fitted on the whole dataset and resampling_strategy "
+                "must be `NoResamplingStrategyTypes`, but got {}".format(
+                    self.datamanager.resampling_strategy
+                ))
 
         self.splits = self.datamanager.splits
         self.Y_target: Optional[np.ndarray] = None

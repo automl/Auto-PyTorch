@@ -295,10 +295,12 @@ class TabularRegressionTask(BaseTask):
             resampling_strategy_args=self.resampling_strategy_args,
         )
 
-        assert isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)), \
-            "Val Split is required for HPO search. " \
-            "Expected 'self.resampling_strategy' in" \
-            " '(CrossValTypes, HoldoutValTypes) got {}".format(self.resampling_strategy)
+        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            raise ValueError(
+                'Hyperparameter optimization requires a validation split. '
+                'Expected `self.resampling_strategy` to be either '
+                '(CrossValTypes, HoldoutValTypes), but got {}'.format(self.resampling_strategy)
+            )
 
 
         return self._search(
@@ -326,14 +328,14 @@ class TabularRegressionTask(BaseTask):
             batch_size: Optional[int] = None,
             n_jobs: int = 1
     ) -> np.ndarray:
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")
 
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         predicted_values = super().predict(X_test, batch_size=batch_size,
                                            n_jobs=n_jobs)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_values)
+        return self.input_validator.target_validator.inverse_transform(predicted_values)
