@@ -261,6 +261,7 @@ class ResBlock(nn.Module):
         # if the shortcut needs a layer we apply batchnorm and activation to the shortcut
         # as well (start_norm)
         if in_features != out_features:
+
             self.shortcut = nn.Linear(in_features, out_features)
             initial_normalization = list()
             if self.config['use_batch_norm']:
@@ -286,18 +287,11 @@ class ResBlock(nn.Module):
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
         layers = list()
 
+
         if self.start_norm is None:
             if self.config['use_batch_norm']:
                 layers.append(nn.BatchNorm1d(in_features))
             layers.append(self.activation())
-        else:
-            # if start norm is not None and skip connection is None
-            # we will never apply the start_norm for the first layer in the block,
-            # which is why we should account for this case.
-            if not self.config['use_skip_connection']:
-                if self.config['use_batch_norm']:
-                    layers.append(nn.BatchNorm1d(in_features))
-                layers.append(self.activation())
 
         layers.append(nn.Linear(in_features, out_features))
 
@@ -337,13 +331,8 @@ class ResBlock(nn.Module):
                 x2 = self.shake_shake_layers(x)
                 alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
                 x = shake_shake(x1, x2, alpha, beta)
-            else:
+            elif self.config["multi_branch_choice"] == 'shake-drop':
                 x = self.layers(x)
-        else:
-            x = self.layers(x)
-
-        if self.config["use_skip_connection"]:
-            if self.config["multi_branch_choice"] == 'shake-drop':
                 alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
                 bl = shake_drop_get_bl(
                     self.block_index,
@@ -353,8 +342,9 @@ class ResBlock(nn.Module):
                     x.is_cuda,
                 )
                 x = shake_drop(x, alpha, beta, bl)
+            else:
+                x = self.layers(x)
 
-        if self.config["use_skip_connection"]:
             x = x + residual
 
         return x
