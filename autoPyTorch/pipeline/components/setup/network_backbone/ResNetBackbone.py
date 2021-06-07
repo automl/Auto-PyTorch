@@ -1,4 +1,3 @@
-import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
