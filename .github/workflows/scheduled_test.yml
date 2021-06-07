@@ -29,28 +29,6 @@ jobs:
         git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install -e .[test]
-    - name: Store repository status
-      id: status-before
-      run: |
-        echo "::set-output name=BEFORE::$(git status --porcelain -b)"
     - name: Run tests
       run: |
-        if [ ${{ matrix.code-cov }} ]; then codecov='--cov=autoPyTorch --cov-report=xml'; fi
-        python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v $codecov test
-    - name: Check for files left behind by test
-      if: ${{ always() }}
-      run: |
-        before="${{ steps.status-before.outputs.BEFORE }}"
-        after="$(git status --porcelain -b)"
-        if [[ "$before" != "$after" ]]; then
-            echo "git status from before: $before"
-            echo "git status from after: $after"
-            echo "Not all generated files have been deleted!"
-            exit 1
-        fi
-    - name: Upload coverage
-      if: matrix.code-cov && always()
-      uses: codecov/codecov-action@v1
-      with:
-        fail_ci_if_error: true
-        verbose: true
+        python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v test
