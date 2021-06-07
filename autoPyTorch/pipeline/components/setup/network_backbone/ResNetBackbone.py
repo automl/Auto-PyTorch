@@ -287,7 +287,6 @@ class ResBlock(nn.Module):
     def _build_block(self, in_features: int, out_features: int) -> nn.Module:
         layers = list()
 
-
         if self.start_norm is None:
             if self.config['use_batch_norm']:
                 layers.append(nn.BatchNorm1d(in_features))
