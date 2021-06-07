@@ -35,7 +35,15 @@ class StepIntervalUnit(Enum):
 
 class _NewLossParameters(NamedTuple):
     """
-    TODO: Documentation string
+    Parameters for a new loss function.
+
+    Attributes:
+        y_a (torch.Tensor): The main output
+        y_b (torch.Tensor): The output to mix up
+                            (for standard loss function, it is None)
+        lam (float): a mixup coefficient of y_a and y_b
+                     lam accounts for how much percentage input A
+                     contributes.
     """
     y_a: torch.Tensor
     lam: float = 1.0

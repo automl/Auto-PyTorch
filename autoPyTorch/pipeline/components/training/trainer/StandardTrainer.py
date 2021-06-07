@@ -58,7 +58,7 @@ class StandardTrainer(BaseTrainerComponent):
                        ) -> Dict[str, str]:
         return {
             'shortname': 'StandardTrainer',
-            'name': 'StandardTrainer',
+            'name': 'Standard Trainer',
         }
 
     @staticmethod

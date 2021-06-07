@@ -45,6 +45,34 @@ def add_trainer(trainer: BaseTrainerComponent) -> None:
     _addons.add_component(trainer)
 
 
+class _X():
+    __slots__ = (
+        'additional_losses',
+        'additional_metrics',
+        'backend',
+        'budget_type',
+        'dataset_properties',
+        'device',
+        'early_stopping',
+        'epochs'
+        'logger_port',
+        'lr_scheduler',
+        'metrics_during_training',
+        'network',
+        'num_run',
+        'optimizer',
+        'runtime',
+        'split_id',
+        'step_unit',
+        'test_data_loader',
+        'torch_num_threads',
+        'train_data_loader',
+        'use_tensorboard_logger',
+        'val_data_loader',
+        'y_train',
+    )
+
+
 class TrainerChoice(autoPyTorchChoice):
     """This class is an interface to the PyTorch trainer.
 
@@ -262,7 +290,8 @@ class TrainerChoice(autoPyTorchChoice):
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
+            step_unit=X['step_unit']
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(

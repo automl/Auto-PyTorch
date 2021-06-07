@@ -60,9 +60,14 @@ class MixUpTrainer(BaseTrainerComponent):
         self,
         new_loss_params: _NewLossParameters
     ) -> Callable:
+
         y_a = new_loss_params.y_a
         y_b = new_loss_params.y_b
         lam = new_loss_params.lam
+
+        if lam > 1.0 or lam < 0:
+            raise ValueError("The mixup coefficient `lam` must be [0, 1], but got {:.2f}.".format(lam))
+
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod

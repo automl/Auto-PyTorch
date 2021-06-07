@@ -26,7 +26,9 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
-    BaseTrainerComponent, )
+    BaseTrainerComponent,
+    StepIntervalUnit
+)
 
 sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
@@ -160,6 +162,29 @@ class TestBaseTrainerComponent(BaseTraining):
         assert prev_loss > loss
         assert metrics['accuracy'] > prev_metrics['accuracy']
         assert metrics['accuracy'] > 0.5
+
+    def test_scheduler_step(self):
+        trainer = BaseTrainerComponent()
+        model = torch.nn.Linear(1, 1)
+
+        base_lr, factor = 1, 10
+        optimizer = torch.optim.SGD(model.parameters(), lr=base_lr)
+        trainer.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=list(range(1, 5)),
+            gamma=factor
+        )
+
+        target_lr = base_lr
+        for trainer_step_unit in StepIntervalUnit:
+            trainer.step_unit = trainer_step_unit
+            for step_unit in StepIntervalUnit:
+                if step_unit == trainer_step_unit:
+                    target_lr *= factor
+
+                trainer._scheduler_step(step_interval=step_unit)
+                lr = optimizer.param_groups[0]['lr']
+                assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
 
 
 class StandardTrainerTest(BaseTraining):
