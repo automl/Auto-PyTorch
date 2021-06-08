@@ -72,6 +72,7 @@ class ShapedResNetBackbone(ResNetBackbone):
             )
         if self.config['use_batch_norm']:
             layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        layers.append(_activations[self.config["activation"]]())
         backbone = torch.nn.Sequential(*layers)
         self.backbone = backbone
         return backbone

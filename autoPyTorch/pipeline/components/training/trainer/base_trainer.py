@@ -175,7 +175,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     """
     Base class for training
     Args:
-        weighted_loss (bool, default=False): In case for classification, whether to weight
+        weighted_loss (int, default=0): In case for classification, whether to weight
             the loss function according to the distribution of classes in the target
         use_stochastic_weight_averaging (bool, default=True): whether to use stochastic
             weight averaging. Stochastic weight averaging is a simple average of
@@ -190,7 +190,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         random_state:
         **lookahead_config:
     """
-    def __init__(self, weighted_loss: bool = False,
+    def __init__(self, weighted_loss: int = 0,
                  use_stochastic_weight_averaging: bool = True,
                  use_snapshot_ensemble: bool = True,
                  se_lastk: int = 3,
@@ -537,8 +537,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=[True, False],
-            default_value=True),
+            value_range=[1],
+            default_value=1),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -599,9 +599,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 parent_hyperparameter=parent_hyperparameter
             )
 
+        """
         # TODO, decouple the weighted loss from the trainer
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs

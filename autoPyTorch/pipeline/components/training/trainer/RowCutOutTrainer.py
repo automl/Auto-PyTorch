@@ -40,14 +40,14 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         indices = self.random_state.choice(range(1, size), max(1, np.int32(size * self.patch_ratio)),
                                            replace=False)
 
-        if not isinstance(self.numerical_columns, typing.Iterable):
+        """if not isinstance(self.numerical_columns, typing.Iterable):
             raise ValueError("{} requires numerical columns information of {}"
                              "to prepare data got {}.".format(self.__class__.__name__,
                                                               typing.Iterable,
                                                               self.numerical_columns))
         numerical_indices = torch.tensor(self.numerical_columns)
         categorical_indices = torch.tensor([index for index in indices if index not in self.numerical_columns])
-
+    
         # We use an ordinal encoder on the categorical columns of tabular data
         # -1 is the conceptual equivalent to 0 in a image, that does not
         # have color as a feature and hence the network has to learn to deal
@@ -55,7 +55,8 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         # similar to the effect that setting 0 as a pixel value in an image.
         X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
         X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
-
+        """
+        X[:, indices] = 0
         lam = 1
         y_a = y
         y_b = y
