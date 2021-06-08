@@ -27,6 +27,7 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
+    BudgetTracker,
     StepIntervalUnit,
     _NewLossParameters
 )
@@ -187,6 +188,36 @@ class TestBaseTrainerComponent(BaseTraining):
                 lr = optimizer.param_groups[0]['lr']
                 assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
 
+    def test_set_training_params(self):
+        trainer_component = BaseTrainerComponent()
+        params = {
+            'metrics': [],
+            'device': torch.device('cpu'),
+            'task_type': 0,
+            'labels': torch.Tensor([]),
+            'metrics_during_training': False,
+            'budget_tracker': BudgetTracker(budget_type=''),
+            'criterion': torch.nn.CrossEntropyLoss,
+            'optimizer': torch.optim.Adam,
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR,
+            'model': torch.nn.Sequential()
+        }
+
+        for step_unit in [1, 1.0, "dummy"]:
+            try:
+                params.update(step_unit=step_unit)
+                trainer_component.set_training_params(**params)
+            except ValueError:
+                pass
+            except Exception as e:
+                pytest.fail("set_training_params raised an unexpected exception {}.".format(e))
+            else:
+                pytest.fail("set_training_params did not raise an Error although the step_unit is invalid.")
+
+        for step_unit in ["batch", "epoch", StepIntervalUnit.batch, StepIntervalUnit.epoch]:
+            params.update(step_unit=step_unit)
+            trainer_component.set_training_params(**params)
+
 
 class TestStandardTrainer(BaseTraining):
     def test_regression_epoch_training(self, n_samples):
@@ -245,10 +276,13 @@ class TestMixUpTrainer(BaseTraining):
             trainer._get_new_loss_fn(_NewLossParameters(y_a=dummy, y_b=dummy, lam=2.0))
         except ValueError:
             pass
-        except Exception:
-            pytest.fail("MixUpTrainer raised unexpected exception in _get_new_loss_fn().")
+        except Exception as e:
+            pytest.fail("MixUpTrainer raised an unexpected exception {} in _get_new_loss_fn().".format(e))
         else:
             pytest.fail("MixUpTrainer did not raise an Error although the mixup coefficient is invalid.")
+
+        # test if the following succeeds
+        trainer._get_new_loss_fn(_NewLossParameters(y_a=dummy, y_b=dummy, lam=0.5))
 
     def test_classification_epoch_training(self, n_samples):
         (trainer,
