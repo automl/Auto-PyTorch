@@ -27,7 +27,8 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
-    StepIntervalUnit
+    StepIntervalUnit,
+    _NewLossParameters
 )
 
 sys.path.append(os.path.dirname(__file__))
@@ -38,7 +39,7 @@ OVERFIT_EPOCHS = 1000
 N_SAMPLES = 500
 
 
-class BaseDataLoaderTest(unittest.TestCase):
+class TestBaseDataLoader(unittest.TestCase):
     def test_get_set_config_space(self):
         """
         Makes sure that the configuration space of the base data loader
@@ -187,7 +188,7 @@ class TestBaseTrainerComponent(BaseTraining):
                 assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
 
 
-class StandardTrainerTest(BaseTraining):
+class TestStandardTrainer(BaseTraining):
     def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -235,7 +236,20 @@ class StandardTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class MixUpTrainerTest(BaseTraining):
+class TestMixUpTrainer(BaseTraining):
+    def test_get_new_loss_fn(self):
+        trainer = MixUpTrainer(alpha=0.5)
+        dummy = torch.rand(10)
+
+        try:
+            trainer._get_new_loss_fn(_NewLossParameters(y_a=dummy, y_b=dummy, lam=2.0))
+        except ValueError:
+            pass
+        except Exception:
+            pytest.fail("MixUpTrainer raised unexpected exception in _get_new_loss_fn().")
+        else:
+            pytest.fail("MixUpTrainer did not raise an Error although the mixup coefficient is invalid.")
+
     def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -260,7 +274,7 @@ class MixUpTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class TrainerTest(unittest.TestCase):
+class TestTrainer(unittest.TestCase):
     def test_every_trainer_is_valid(self):
         """
         Makes sure that every trainer is a valid estimator.
