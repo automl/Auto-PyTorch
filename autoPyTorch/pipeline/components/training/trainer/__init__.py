@@ -30,6 +30,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BaseTrainerComponent,
     BudgetTracker,
     RunSummary,
+    StepIntervalUnit
 )
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.utils.logging_ import get_named_client_logger
@@ -291,7 +292,7 @@ class TrainerChoice(autoPyTorchChoice):
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
-            step_unit=X['step_unit']
+            step_unit=X.get('step_unit', StepIntervalUnit.batch)
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
