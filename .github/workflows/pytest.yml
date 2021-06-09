@@ -32,8 +32,9 @@ jobs:
         echo "::set-output name=BEFORE::$(git status --porcelain -b)"
     - name: Run tests
       run: |
-        if [ ${{ matrix.code-cov }} ]; then codecov='--cov=autoPyTorch --cov-report=xml --cov-config=.coveragerc
-        --include="autoPyTorch/*"'; fi
+        if [ ${{ matrix.code-cov }} ]; then
+          codecov='--cov=autoPyTorch --cov-report=xml --cov-config=.coveragerc --include="autoPyTorch/*"';
+        fi
         python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v $codecov test
     - name: Check for files left behind by test
       if: ${{ always() }}
