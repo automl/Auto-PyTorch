@@ -20,7 +20,7 @@ from sklearn.svm import SVC, SVR
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
     BaseTraditionalLearner
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.utils import (
-    AUTOPYTORCH_TO_CATBOOST_METRICS
+    AutoPyTorchToCatboostMetrics
 )
 
 
@@ -112,11 +112,11 @@ class CatboostModel(BaseTraditionalLearner):
                        y_train: np.ndarray
                        ) -> None:
         if not self.is_classification:
-            self.config['eval_metric'] = AUTOPYTORCH_TO_CATBOOST_METRICS.get(self.metric.name, 'R2')
+            self.config['eval_metric'] = AutoPyTorchToCatboostMetrics[self.metric.name].value
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostRegressor(**self.config, random_state=self.random_state.get_state()[1][0])
         else:
-            self.config['eval_metric'] = AUTOPYTORCH_TO_CATBOOST_METRICS.get(self.metric.name, 'Accuracy')
+            self.config['eval_metric'] = AutoPyTorchToCatboostMetrics[self.metric.name].value
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostClassifier(**self.config, random_state=self.random_state.get_state()[1][0])
 

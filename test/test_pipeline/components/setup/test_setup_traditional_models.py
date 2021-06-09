@@ -7,7 +7,7 @@ import numpy as np
 
 import pytest
 
-from autoPyTorch.pipeline.components.setup.traditional_ml.base_model_choice import ModelChoice
+from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 from autoPyTorch.pipeline.components.setup.traditional_ml.tabular_traditional_model import TabularTraditionalModel
 
 
@@ -83,52 +83,51 @@ class TestModelChoice:
                                                     "regression_categorical_only",
                                                     "regression_numerical_and_categorical"
                                                     ], indirect=True)
-class TestTraditionalModels:
-    def test_model_fit_predict_score(self, traditional_learner, fit_dictionary_tabular):
+def test_model_fit_predict_score(traditional_learner, fit_dictionary_tabular):
 
-        if len(fit_dictionary_tabular['dataset_properties']['numerical_columns']) == 0 and traditional_learner == 'knn':
-            pytest.skip("knn can not work with categorical only data")
+    if len(fit_dictionary_tabular['dataset_properties']['numerical_columns']) == 0 and traditional_learner == 'knn':
+        pytest.skip("knn can not work with categorical only data")
 
-        model = TabularTraditionalModel(traditional_learner=traditional_learner)
+    model = TabularTraditionalModel(traditional_learner=traditional_learner)
 
-        blockPrint()
-        model.fit(X=fit_dictionary_tabular)
-        enablePrint()
+    blockPrint()
+    model.fit(X=fit_dictionary_tabular)
+    enablePrint()
 
-        assert isinstance(model.fit_output, dict)
-        assert 'val_preds' in model.fit_output.keys()
-        assert isinstance(model.fit_output['val_preds'], list)
-        assert len(model.fit_output['val_preds']) == len(fit_dictionary_tabular['val_indices'])
-        if model.model.is_classification:
-            assert len(model.fit_output['val_preds'][0]) == len(np.unique(fit_dictionary_tabular['y_train']))
-        assert len(np.argwhere(0 > np.array(model.fit_output['val_preds']).all() > 1)) == 0
-        assert 'labels' in model.fit_output.keys()
-        assert len(model.fit_output['labels']) == len(fit_dictionary_tabular['val_indices'])
-        assert 'train_score' in model.fit_output.keys()
-        assert isinstance(model.fit_output['train_score'], float)
-        assert 'val_score' in model.fit_output.keys()
-        assert isinstance(model.fit_output['val_score'], float)
+    assert isinstance(model.fit_output, dict)
+    assert 'val_preds' in model.fit_output.keys()
+    assert isinstance(model.fit_output['val_preds'], list)
+    assert len(model.fit_output['val_preds']) == len(fit_dictionary_tabular['val_indices'])
+    if model.model.is_classification:
+        assert len(model.fit_output['val_preds'][0]) == len(np.unique(fit_dictionary_tabular['y_train']))
+    assert len(np.argwhere(0 > np.array(model.fit_output['val_preds']).all() > 1)) == 0
+    assert 'labels' in model.fit_output.keys()
+    assert len(model.fit_output['labels']) == len(fit_dictionary_tabular['val_indices'])
+    assert 'train_score' in model.fit_output.keys()
+    assert isinstance(model.fit_output['train_score'], float)
+    assert 'val_score' in model.fit_output.keys()
+    assert isinstance(model.fit_output['val_score'], float)
 
-        # Test if traditional model can predict on val set
-        if model.model.is_classification:
-            y_pred = model.predict_proba(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
-        else:
-            y_pred = model.predict(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
+    # Test if traditional model can predict on val set
+    if model.model.is_classification:
+        y_pred = model.predict_proba(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
+    else:
+        y_pred = model.predict(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
 
-        assert np.allclose(y_pred.squeeze(), model.fit_output['val_preds'], atol=1e-04)
-        assert y_pred.shape[0] == len(fit_dictionary_tabular['val_indices'])
-        # Test if classifier can score and
-        # the result is same as in results
-        score = model.score(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']],
-                            fit_dictionary_tabular['y_train'][fit_dictionary_tabular['val_indices']])
-        assert np.allclose(score, model.fit_output['val_score'], atol=1e-6)
+    assert np.allclose(y_pred.squeeze(), model.fit_output['val_preds'], atol=1e-04)
+    assert y_pred.shape[0] == len(fit_dictionary_tabular['val_indices'])
+    # Test if classifier can score and
+    # the result is same as in results
+    score = model.score(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']],
+                        fit_dictionary_tabular['y_train'][fit_dictionary_tabular['val_indices']])
+    assert np.allclose(score, model.fit_output['val_score'], atol=1e-6)
 
-        if sys.version_info >= (3, 7):
-            dump_file = os.path.join(fit_dictionary_tabular['backend'].temporary_directory, 'dump.pkl')
+    if sys.version_info >= (3, 7):
+        dump_file = os.path.join(fit_dictionary_tabular['backend'].temporary_directory, 'dump.pkl')
 
-            with open(dump_file, 'wb') as f:
-                pickle.dump(model, f)
+        with open(dump_file, 'wb') as f:
+            pickle.dump(model, f)
 
-            with open(dump_file, 'rb') as f:
-                restored_estimator = pickle.load(f)
-            restored_estimator.predict(fit_dictionary_tabular['X_train'])
+        with open(dump_file, 'rb') as f:
+            restored_estimator = pickle.load(f)
+        restored_estimator.predict(fit_dictionary_tabular['X_train'])

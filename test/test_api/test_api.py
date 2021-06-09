@@ -32,8 +32,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
-from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
