@@ -119,19 +119,19 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         raise NotImplementedError()
 
     def predict(self, X_test: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        assert self.model is not None, "Cant predict without fitting first"
+        assert self.model is not None, "Can't predict without fitting first"
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()
         return self.model.predict(X_test=X_test).reshape((-1, 1))
 
     def predict_proba(self, X_test: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
-        assert self.model is not None, "Cant predict without fitting first"
+        assert self.model is not None, "Can't predict without fitting first"
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()
         return self.model.predict(X_test, predict_proba=True)
 
     def score(self, X_test: Union[pd.DataFrame, np.ndarray], y_test: Union[pd.Series, np.ndarray, List]) -> float:
-        assert self.model is not None, "Cant score without fitting first"
+        assert self.model is not None, "Can't score without fitting first"
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()
         return self.model.score(X_test, y_test)
