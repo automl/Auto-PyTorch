@@ -36,7 +36,7 @@ with AutoPyTorch using the greedy portfolio
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f7f95b68070> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fe2574d4df0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 60
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -68,7 +68,7 @@ with AutoPyTorch using the greedy portfolio
       trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.00012183189392089844, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.00011754035949707031, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 60
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -100,7 +100,7 @@ with AutoPyTorch using the greedy portfolio
       trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=1, ta_time_used=2.683786153793335, wallclock_time=3.712637186050415, budget=5.555555555555555), TrajEntry(train_perf=0.14619883040935677, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=1.8157505989074707, wallclock_time=2.845674753189087, budget=5.555555555555555), TrajEntry(train_perf=0.14619883040935677, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 255
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -135,24 +135,22 @@ with AutoPyTorch using the greedy portfolio
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=2, ta_time_used=5.276628017425537, wallclock_time=7.543543577194214, budget=5.555555555555555)]
-    {'accuracy': 0.861271676300578}
+    , ta_runs=2, ta_time_used=3.7909843921661377, wallclock_time=6.019847393035889, budget=5.555555555555555)]
+    {'accuracy': 0.884393063583815}
     |    | Preprocessing                                                     | Estimator                                                          |   Weight |
     |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA                  | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.28 |
-    |  1 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.22 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-    |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  4 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer               | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
-    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
+    |  1 | None                                                              | RFClassifier                                                       |     0.18 |
+    |  2 | None                                                              | CatBoostClassifier                                                 |     0.16 |
+    |  3 | SimpleImputer,OneHotEncoder,StandardScaler,KitchenSink            | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
+    |  4 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.08 |
+    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  6 | SimpleImputer,NoEncoder,NoScaler,NoFeaturePreprocessing           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
     |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-    |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    |  8 | None                                                              | ExtraTreesClassifier                                               |     0.04 |
     |  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    | 10 | SimpleImputer,OneHotEncoder,StandardScaler,KitchenSink            | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-    | 11 | None                                                              | CatBoostClassifier                                                 |     0.02 |
-    | 12 | None                                                              | RFClassifier                                                       |     0.02 |
-    | 13 | None                                                              | ExtraTreesClassifier                                               |     0.02 |
+    | 10 | None                                                              | KNNClassifier                                                      |     0.02 |
+    | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 
 
 
@@ -230,7 +228,7 @@ with AutoPyTorch using the greedy portfolio
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  29.149 seconds)
+   **Total running time of the script:** ( 5 minutes  27.277 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_run_with_portfolio.py:

@@ -144,7 +144,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f7f95bf5dc0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe257cbb1f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -178,7 +178,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001163482666015625, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0009920597076416016, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -212,20 +212,22 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.0224523544311523, wallclock_time=4.161332607269287, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.861271676300578}
+, ta_runs=1, ta_time_used=2.0480728149414062, wallclock_time=3.135446548461914, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8786127167630058}
 |    | Preprocessing                                                     | Estimator                                                    |   Weight |
 |---:|:------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.62 |
-|  1 | None                                                              | CatBoostClassifier                                           |     0.12 |
-|  2 | None                                                              | RFClassifier                                                 |     0.06 |
-|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  4 | None                                                              | ExtraTreesClassifier                                         |     0.04 |
-|  5 | None                                                              | SVC                                                          |     0.04 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  8 | None                                                              | KNNClassifier                                                |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f7f95a52be0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.3  |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler,TruncSVD               | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
+|  2 | None                                                              | RFClassifier                                                 |     0.12 |
+|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
+|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  5 | None                                                              | CatBoostClassifier                                           |     0.08 |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  7 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
+|  8 | None                                                              | ExtraTreesClassifier                                         |     0.04 |
+|  9 | None                                                              | SVC                                                          |     0.04 |
+| 10 | SimpleImputer,OneHotEncoder,StandardScaler,TruncSVD               | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe257c7da90&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -257,7 +259,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0010833740234375, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0009729862213134766, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -289,16 +291,54 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=1.9885387420654297, wallclock_time=3.0249810218811035, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8554913294797688}
-|    | Preprocessing                                 | Estimator                                                          |   Weight |
-|---:|:----------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | None                                          | CatBoostClassifier                                                 |     0.66 |
-|  1 | None                                          | SVC                                                                |     0.14 |
-|  2 | SimpleImputer,NoEncoder,MinMaxScaler,Nystroem | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  3 | None                                          | KNNClassifier                                                      |     0.08 |
-|  4 | None                                          | RFClassifier                                                       |     0.02 |
-|  5 | None                                          | ExtraTreesClassifier                                               |     0.02 |
+, ta_runs=1, ta_time_used=1.3713972568511963, wallclock_time=2.403857946395874, budget=5.555555555555555), TrajEntry(train_perf=0.14619883040935677, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 229
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:TruncatedSVD:target_dim, Value: 3
+  feature_preprocessor:__choice__, Value: &#39;TruncatedSVD&#39;
+  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
+  imputer:numerical_strategy, Value: &#39;mean&#39;
+  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.6903687798395896
+  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
+  lr_scheduler:ReduceLROnPlateau:patience, Value: 6
+  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 283
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 8
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 622
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;fully_connected&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
+  network_head:fully_connected:num_layers, Value: 3
+  network_head:fully_connected:units_layer_1, Value: 172
+  network_head:fully_connected:units_layer_2, Value: 491
+  network_init:OrthogonalInit:bias_strategy, Value: &#39;Normal&#39;
+  network_init:__choice__, Value: &#39;OrthogonalInit&#39;
+  optimizer:RMSpropOptimizer:alpha, Value: 0.3735238918248561
+  optimizer:RMSpropOptimizer:lr, Value: 1.192022430983547e-05
+  optimizer:RMSpropOptimizer:momentum, Value: 0.8794827503936549
+  optimizer:RMSpropOptimizer:weight_decay, Value: 0.00035968933734434886
+  optimizer:__choice__, Value: &#39;RMSpropOptimizer&#39;
+  scaler:__choice__, Value: &#39;MinMaxScaler&#39;
+  trainer:StandardTrainer:weighted_loss, Value: False
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=40, ta_time_used=164.50776553153992, wallclock_time=273.82008695602417, budget=50.0)]
+{&#39;accuracy&#39;: 0.815028901734104}
+|    | Preprocessing                                             | Estimator                                                       |   Weight |
+|---:|:----------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.4  |
+|  1 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
+|  2 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD             | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  3 | SimpleImputer,NoEncoder,MinMaxScaler,Nystroem             | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  4 | SimpleImputer,NoEncoder,MinMaxScaler,Nystroem             | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  5 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  6 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  7 | SimpleImputer,NoEncoder,NoScaler,NoFeaturePreprocessing   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  8 | SimpleImputer,NoEncoder,MinMaxScaler,Nystroem             | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | SimpleImputer,NoEncoder,StandardScaler,PowerTransformer   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -424,7 +464,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  52.960 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  11.034 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
