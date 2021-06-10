@@ -16,6 +16,11 @@ from sklearn.ensemble import VotingClassifier
 
 from smac.tae import StatusType
 
+import autoPyTorch.pipeline.image_classification
+import autoPyTorch.pipeline.tabular_classification
+import autoPyTorch.pipeline.tabular_regression
+import autoPyTorch.pipeline.traditional_tabular_classification
+import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
@@ -37,11 +42,6 @@ from autoPyTorch.pipeline.components.training.metrics.utils import (
     calculate_loss,
     get_metrics,
 )
-import autoPyTorch.pipeline.image_classification
-import autoPyTorch.pipeline.tabular_classification
-import autoPyTorch.pipeline.tabular_regression
-import autoPyTorch.pipeline.traditional_tabular_classification
-import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
