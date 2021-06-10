@@ -22,7 +22,10 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler import (
     SchedulerChoice
 )
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResBlock
+from autoPyTorch.pipeline.components.setup.network_backbone.ShapedResNetBackbone import ShapedResNetBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_shaped_neuron_counts
 from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_initializer import (
@@ -33,7 +36,10 @@ from autoPyTorch.pipeline.components.setup.optimizer import (
     BaseOptimizerComponent,
     OptimizerChoice
 )
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpace,
+    HyperparameterSearchSpaceUpdates
+)
 
 
 class DummyLR(BaseLRComponent):
@@ -416,6 +422,58 @@ class TestNetworkBackbone:
 
         # clear addons
         base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
+
+    @pytest.mark.parametrize('resnet_shape', ['funnel', 'long_funnel',
+                                              'diamond', 'hexagon',
+                                              'brick', 'triangle',
+                                              'stairs'])
+    def test_dropout(self, resnet_shape):
+        # ensures that dropout is assigned to the resblock as expected
+        dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[1]}
+        max_dropout = 0.5
+        num_groups = 4
+        config_space = ShapedResNetBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
+                                                                            use_dropout=HyperparameterSearchSpace(
+                                                                                hyperparameter='use_dropout',
+                                                                                value_range=[True],
+                                                                                default_value=True),
+                                                                            max_dropout=HyperparameterSearchSpace(
+                                                                                hyperparameter='max_dropout',
+                                                                                value_range=[max_dropout],
+                                                                                default_value=max_dropout),
+                                                                            resnet_shape=HyperparameterSearchSpace(
+                                                                                hyperparameter='resnet_shape',
+                                                                                value_range=[resnet_shape],
+                                                                                default_value=resnet_shape),
+                                                                            num_groups=HyperparameterSearchSpace(
+                                                                                hyperparameter='num_groups',
+                                                                                value_range=[num_groups],
+                                                                                default_value=num_groups),
+                                                                            blocks_per_group=HyperparameterSearchSpace(
+                                                                                hyperparameter='blocks_per_group',
+                                                                                value_range=[1],
+                                                                                default_value=1
+                                                                            )
+                                                                            )
+
+        config = config_space.sample_configuration().get_dictionary()
+        resnet_backbone = ShapedResNetBackbone(**config)
+        resnet_backbone.build_backbone((100, 5))
+        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config if 'dropout_' in key]
+        dropout_shape = get_shaped_neuron_counts(
+            resnet_shape, 0, 0, 1000, num_groups + 1
+        )[:-1]
+
+        dropout_shape = [
+            dropout / 1000 * max_dropout for dropout in dropout_shape
+        ]
+        blocks_dropout = []
+        for block in resnet_backbone.backbone:
+            if isinstance(block, torch.nn.Sequential):
+                for inner_block in block:
+                    if isinstance(inner_block, ResBlock):
+                        blocks_dropout.append(inner_block.dropout)
+        assert dropout_probabilites == dropout_shape == blocks_dropout
 
 
 class TestNetworkHead:

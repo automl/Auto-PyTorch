@@ -38,10 +38,14 @@ class ShapedResNetBackbone(ResNetBackbone):
         self.config.update(
             {"num_units_%d" % (i): num for i, num in enumerate(neuron_counts)}
         )
-        if self.config['use_dropout'] and self.config["max_dropout"] > 0.05:
+        # we are skipping the last layer, as the function get_shaped_neuron_counts
+        # is built for getting neuron counts, so it will add the out_features to
+        # the last layer. However, in dropout we dont want to have that, we just
+        # want to use the shape and not worry about the output.
+        if self.config['use_dropout']:
             dropout_shape = get_shaped_neuron_counts(
-                self.config['resnet_shape'], 0, 0, 1000, self.config['num_groups']
-            )
+                self.config['resnet_shape'], 0, 0, 1000, self.config['num_groups'] + 1
+            )[:-1]
 
             dropout_shape = [
                 dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
@@ -61,7 +65,7 @@ class ShapedResNetBackbone(ResNetBackbone):
                     out_features=self.config["num_units_%d" % i],
                     blocks_per_group=self.config["blocks_per_group"],
                     last_block_index=(i - 1) * self.config["blocks_per_group"],
-                    dropout=self.config['use_dropout']
+                    dropout=self.config[f'dropout_{i}'] if self.config['use_dropout'] else None
                 )
             )
 
