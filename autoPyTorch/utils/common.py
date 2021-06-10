@@ -1,4 +1,3 @@
-import hashlib
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
