@@ -268,6 +268,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.run_summary = RunSummary(
             total_parameter_count,
             trainable_parameter_count,
+            optimize_metric=None if not X['metrics_during_training'] else X.get('optimize_metric'),
         )
 
         epoch = 1
