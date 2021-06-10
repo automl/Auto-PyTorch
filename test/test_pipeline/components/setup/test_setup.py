@@ -22,9 +22,9 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler import (
     SchedulerChoice
 )
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResBlock
 from autoPyTorch.pipeline.components.setup.network_backbone.ShapedResNetBackbone import ShapedResNetBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_shaped_neuron_counts
 from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
@@ -37,8 +37,8 @@ from autoPyTorch.pipeline.components.setup.optimizer import (
     OptimizerChoice
 )
 from autoPyTorch.utils.hyperparameter_search_space_update import (
-    HyperparameterSearchSpaceUpdates,
-    HyperparameterSearchSpace
+    HyperparameterSearchSpace,
+    HyperparameterSearchSpaceUpdates
 )
 
 
