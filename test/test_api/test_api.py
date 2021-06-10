@@ -228,6 +228,12 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
+    representation = estimator.show_models()
+    assert isinstance(representation, str)
+    assert 'Weight' in representation
+    assert 'Preprocessing' in representation
+    assert 'Estimator' in representation
+
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
@@ -411,6 +417,18 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
         with open(dump_file, 'rb') as f:
             restored_estimator = pickle.load(f)
         restored_estimator.predict(X_test)
+
+        # Test refit on dummy data
+        estimator.refit(dataset=backend.load_datamanager())
+
+        # Make sure that a configuration space is stored in the estimator
+        assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+
+        representation = estimator.show_models()
+        assert isinstance(representation, str)
+        assert 'Weight' in representation
+        assert 'Preprocessing' in representation
+        assert 'Estimator' in representation
 
 
 @pytest.mark.parametrize('openml_id', (
