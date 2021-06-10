@@ -211,7 +211,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         Returns:
             str: name of the pipeline type
         """
-        return "traditional_tabular_classifier"
+        return "traditional_tabular_learner"
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         """

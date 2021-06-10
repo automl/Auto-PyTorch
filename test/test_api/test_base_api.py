@@ -87,3 +87,15 @@ def test_show_models(fit_dictionary_tabular):
     expected = (r"0\s+|\s+SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing\s+"
                 r"|\s+no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential\s+|\s+1")
     assert re.search(expected, api.show_models()) is not None
+
+
+def test_set_pipeline_config():
+    # checks if we can correctly change the pipeline options
+    estimator = BaseTask()
+    pipeline_options = {"device": "cuda",
+                        "budget_type": "epochs",
+                        "min_epochs": 10,
+                        "epochs": 51,
+                        "runtime": 360}
+    estimator.set_pipeline_config(**pipeline_options)
+    assert pipeline_options.items() <= estimator.get_pipeline_options().items()
