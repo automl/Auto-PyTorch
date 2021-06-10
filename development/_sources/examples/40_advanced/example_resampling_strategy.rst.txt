@@ -135,7 +135,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe2576bbbb0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc7dfabae50>
 
 
 
@@ -165,7 +165,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fe2576bb730> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc7dfaba490> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -197,7 +197,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001176595687866211, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011425018310546875, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -229,17 +229,84 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=1.7581501007080078, wallclock_time=2.791592836380005, budget=5.555555555555555)]
-    {'accuracy': 0.861271676300578}
+    , ta_runs=1, ta_time_used=1.8062164783477783, wallclock_time=2.838493585586548, budget=5.555555555555555), TrajEntry(train_perf=0.2222222222222222, incumbent_id=2, incumbent=Configuration:
+      data_loader:batch_size, Value: 191
+      encoder:__choice__, Value: 'OneHotEncoder'
+      feature_preprocessor:RandomKitchenSinks:gamma, Value: 0.0028731655918751197
+      feature_preprocessor:RandomKitchenSinks:n_components, Value: 4
+      feature_preprocessor:__choice__, Value: 'RandomKitchenSinks'
+      imputer:categorical_strategy, Value: 'most_frequent'
+      imputer:numerical_strategy, Value: 'most_frequent'
+      lr_scheduler:CosineAnnealingLR:T_max, Value: 14
+      lr_scheduler:__choice__, Value: 'CosineAnnealingLR'
+      network_backbone:ResNetBackbone:activation, Value: 'tanh'
+      network_backbone:ResNetBackbone:blocks_per_group_0, Value: 1
+      network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
+      network_backbone:ResNetBackbone:blocks_per_group_2, Value: 1
+      network_backbone:ResNetBackbone:blocks_per_group_3, Value: 4
+      network_backbone:ResNetBackbone:blocks_per_group_4, Value: 1
+      network_backbone:ResNetBackbone:blocks_per_group_5, Value: 1
+      network_backbone:ResNetBackbone:blocks_per_group_6, Value: 3
+      network_backbone:ResNetBackbone:blocks_per_group_7, Value: 4
+      network_backbone:ResNetBackbone:blocks_per_group_8, Value: 1
+      network_backbone:ResNetBackbone:blocks_per_group_9, Value: 1
+      network_backbone:ResNetBackbone:max_shake_drop_probability, Value: 0.028959123778947493
+      network_backbone:ResNetBackbone:num_groups, Value: 9
+      network_backbone:ResNetBackbone:num_units_0, Value: 155
+      network_backbone:ResNetBackbone:num_units_1, Value: 243
+      network_backbone:ResNetBackbone:num_units_2, Value: 634
+      network_backbone:ResNetBackbone:num_units_3, Value: 640
+      network_backbone:ResNetBackbone:num_units_4, Value: 567
+      network_backbone:ResNetBackbone:num_units_5, Value: 60
+      network_backbone:ResNetBackbone:num_units_6, Value: 83
+      network_backbone:ResNetBackbone:num_units_7, Value: 553
+      network_backbone:ResNetBackbone:num_units_8, Value: 409
+      network_backbone:ResNetBackbone:num_units_9, Value: 791
+      network_backbone:ResNetBackbone:use_dropout, Value: False
+      network_backbone:ResNetBackbone:use_shake_drop, Value: True
+      network_backbone:ResNetBackbone:use_shake_shake, Value: False
+      network_backbone:__choice__, Value: 'ResNetBackbone'
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.718287545005021
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.8807826377589656
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_2, Value: 0.6998335637072234
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_3, Value: 0.007299455846498049
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_4, Value: 0.7759095461320867
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_5, Value: 0.29827527225127526
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_6, Value: 0.1497940855127735
+      network_embedding:LearnedEntityEmbedding:dimension_reduction_7, Value: 0.644379887286444
+      network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 3
+      network_embedding:__choice__, Value: 'LearnedEntityEmbedding'
+      network_head:__choice__, Value: 'fully_connected'
+      network_head:fully_connected:activation, Value: 'relu'
+      network_head:fully_connected:num_layers, Value: 2
+      network_head:fully_connected:units_layer_1, Value: 310
+      network_init:OrthogonalInit:bias_strategy, Value: 'Normal'
+      network_init:__choice__, Value: 'OrthogonalInit'
+      optimizer:AdamOptimizer:beta1, Value: 0.9117663354722707
+      optimizer:AdamOptimizer:beta2, Value: 0.9594530236003279
+      optimizer:AdamOptimizer:lr, Value: 0.0006173929099299278
+      optimizer:AdamOptimizer:weight_decay, Value: 0.054743681071133435
+      optimizer:__choice__, Value: 'AdamOptimizer'
+      scaler:__choice__, Value: 'NoScaler'
+      trainer:MixUpTrainer:alpha, Value: 0.2872788937756616
+      trainer:MixUpTrainer:weighted_loss, Value: False
+      trainer:__choice__, Value: 'MixUpTrainer'
+    , ta_runs=13, ta_time_used=65.0901837348938, wallclock_time=102.39400458335876, budget=50.0)]
+    {'accuracy': 0.8554913294797688}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA                  | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.34 |
-    |  1 | SimpleImputer,OneHotEncoder,NoScaler,KitchenSink                  | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.28 |
-    |  2 | None                                                              | CatBoostClassifier                                              |     0.18 |
-    |  3 | None                                                              | KNNClassifier                                                   |     0.1  |
-    |  4 | None                                                              | SVC                                                             |     0.04 |
-    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  6 | None                                                              | RFClassifier                                                    |     0.02 |
+    |  0 | SimpleImputer,OneHotEncoder,NoScaler,KitchenSink                  | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.28 |
+    |  1 | None                                                              | SVC                                                             |     0.18 |
+    |  2 | None                                                              | KNNClassifier                                                   |     0.18 |
+    |  3 | SimpleImputer,OneHotEncoder,NoScaler,KitchenSink                  | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.12 |
+    |  4 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+    |  5 | None                                                              | CatBoostClassifier                                              |     0.04 |
+    |  6 | None                                                              | RFClassifier                                                    |     0.04 |
+    |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  8 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    |  9 | SimpleImputer,OneHotEncoder,NoScaler,KitchenSink                  | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+    | 10 | None                                                              | ExtraTreesClassifier                                            |     0.02 |
+    | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 
 
 
@@ -295,7 +362,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe257da56d0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc7df929af0>
 
 
 
@@ -325,7 +392,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fe257da5640> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc7dfd31190> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -357,7 +424,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0010600090026855469, budget=0), TrajEntry(train_perf=0.15480222378634426, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011839866638183594, budget=0), TrajEntry(train_perf=0.15480222378634426, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -389,7 +456,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.848156213760376, wallclock_time=5.881326675415039, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=5.202185869216919, wallclock_time=6.242708921432495, budget=5.555555555555555)]
     {'accuracy': 0.861271676300578}
     |    | Preprocessing                                                     | Estimator                                                          |   Weight |
     |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -456,7 +523,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe25701a790>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc73f98b310>
 
 
 
@@ -485,7 +552,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fe25701a0d0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7fc73f274070> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -517,7 +584,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011398792266845703, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011150836944580078, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -549,7 +616,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=1.7708144187927246, wallclock_time=2.8057868480682373, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=1.862703561782837, wallclock_time=2.899428129196167, budget=5.555555555555555)]
     {'accuracy': 0.8497109826589595}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
@@ -569,7 +636,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  43.301 seconds)
+   **Total running time of the script:** ( 9 minutes  12.150 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:
