@@ -142,8 +142,8 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
     def __str__(self) -> str:
         """ Allow a nice understanding of what components where used """
-        string: str = self.network.__class__.__name__
+        network_name: str = self.network.__class__.__name__
         info = vars(self)
         # Remove unwanted info
-        string += " (" + str(info) + ")"
-        return string
+        network_name += " (" + str(info) + ")"
+        return network_name

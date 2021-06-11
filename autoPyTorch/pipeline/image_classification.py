@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,9 +7,8 @@ import numpy as np
 
 from sklearn.base import ClassifierMixin
 
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise import (
     NormalizerChoice
 )
@@ -127,7 +126,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
+            dataset_properties (Optional[Dict[str, Any]]): Caracteristics
                 of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -137,8 +136,8 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         cs = ConfigurationSpace()
 
         if not isinstance(dataset_properties, dict):
-            warnings.warn('The given dataset_properties argument contains an illegal value.'
-                          'Proceeding with the default value')
+            warnings.warn('Expected dataset_properties to be of type dict, got {}'
+                          'Proceeding with the default value'.format(type(dataset_properties)))
             dataset_properties = dict()
         if 'target_type' not in dataset_properties:
             dataset_properties['target_type'] = 'image_classification'
@@ -161,16 +160,16 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
     def _get_pipeline_steps(
         self,
         dataset_properties: Optional[Dict[str, Any]],
-    ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+            List[Tuple[str, PipelineStepType]]:
                 list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
+        steps = []  # type: List[Tuple[str, PipelineStepType]]
 
         default_dataset_properties = {'target_type': 'image_classification'}
         if dataset_properties is not None:

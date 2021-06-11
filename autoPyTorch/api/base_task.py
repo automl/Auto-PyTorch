@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 import dask
+import dask.distributed
 
 import joblib
 
@@ -711,7 +712,7 @@ class BaseTask:
         disable_file_output: List = [],
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.Distributed.Client] = None
+        dask_client: Optional[dask.distributed.Client] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.

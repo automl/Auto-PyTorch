@@ -24,6 +24,9 @@ from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
+PipelineStepType = Union[autoPyTorchComponent, autoPyTorchChoice]
+
+
 class BasePipeline(Pipeline):
     """Base class for all pipeline objects.
     Notes
@@ -33,7 +36,7 @@ class BasePipeline(Pipeline):
     Args:
         config (Optional[Configuration]):
             Allows to directly specify a configuration space
-        steps (Optional[List[Tuple[str, Union[autoPyTorch, autoPyTorchChoice]]]]):
+        steps (Optional[List[Tuple[str, PipelineStepType]]]):
             the list of steps that build the pipeline. If provided,
              they won't be dynamically produced.
         include (Optional[Dict[str, Any]]):
@@ -52,7 +55,7 @@ class BasePipeline(Pipeline):
 
 
     Attributes:
-        steps (List[Tuple[str, Union[autoPyTorch, autoPyTorchChoice]]]):
+        steps (List[Tuple[str, PipelineStepType]]):
             the steps of the current pipeline
         config (Configuration):
             a configuration to delimit the current component choice
@@ -66,7 +69,7 @@ class BasePipeline(Pipeline):
     def __init__(
             self,
             config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
+            steps: Optional[List[Tuple[str, PipelineStepType]]] = None,
             dataset_properties: Optional[Dict[str, Any]] = None,
             include: Optional[Dict[str, Any]] = None,
             exclude: Optional[Dict[str, Any]] = None,
@@ -211,7 +214,8 @@ class BasePipeline(Pipeline):
 
             sub_configuration_space = node.get_hyperparameter_search_space(  # type: ignore[call-arg]
                 self.dataset_properties,
-                **updates)
+                **updates
+            )
             sub_config_dict = {}
             for param in configuration:
                 if param.startswith('%s:' % node_name):
@@ -308,7 +312,7 @@ class BasePipeline(Pipeline):
             dataset_properties: Dict[str, Any],
             include: Optional[Dict[str, Any]],
             exclude: Optional[Dict[str, Any]],
-            pipeline: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
+            pipeline: List[Tuple[str, PipelineStepType]]
     ) -> ConfigurationSpace:
         if include is None:
             include = self.include
@@ -371,7 +375,8 @@ class BasePipeline(Pipeline):
                 cs.add_configuration_space(
                     node_name,
                     node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[call-arg]
-                                                         **node._get_search_space_updates()),
+                                                         **node._get_search_space_updates()
+                                                         )
                 )
 
         # And now add forbidden parameter configurations
@@ -467,13 +472,13 @@ class BasePipeline(Pipeline):
                                                                  get_hyperparameter_names(), update.hyperparameter))
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]
-                            ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+                            ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoices.
 
         Returns:
-            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]: list of steps sequentially exercised
+            List[Tuple[str, PipelineStepType]]: list of steps sequentially exercised
                 by the pipeline.
         """
         raise NotImplementedError()

@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,9 +7,8 @@ import numpy as np
 
 from sklearn.base import ClassifierMixin
 
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -148,7 +147,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
+            dataset_properties (Optional[Dict[str, Any]]): Characteristics
                 of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -185,17 +184,17 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
     def _get_pipeline_steps(
         self,
         dataset_properties: Optional[Dict[str, Any]],
-    ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+            List[Tuple[str, PipelineStepType]]:
                 list of steps sequentially exercised
                 by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
+        steps = []  # type: List[Tuple[str, PipelineStepType]]
 
         default_dataset_properties = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:

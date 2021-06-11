@@ -12,7 +12,7 @@ from sklearn.base import RegressorMixin
 import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
@@ -201,16 +201,16 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     def _get_pipeline_steps(
         self,
         dataset_properties: Optional[Dict[str, Any]]
-    ) -> List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]:
+            List[Tuple[str, PipelineStepType]]:
                 list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]
+        steps = []  # type: List[Tuple[str, PipelineStepType]]
 
         default_dataset_properties = {'target_type': 'tabular_regression'}
         if dataset_properties is not None:
