@@ -205,15 +205,12 @@ class BaseTask:
 
         self.InputValidator: Optional[BaseInputValidator] = None
 
-
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:
             if not isinstance(self.search_space_updates,
                               HyperparameterSearchSpaceUpdates):
                 raise ValueError("Expected search space updates to be of instance"
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
-
-        self.InputValidator: Optional[BaseInputValidator] = None
 
     @abstractmethod
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> BasePipeline:
