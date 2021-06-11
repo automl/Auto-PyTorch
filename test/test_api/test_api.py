@@ -33,6 +33,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
+from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
@@ -228,11 +229,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
-    representation = estimator.show_models()
-    assert isinstance(representation, str)
-    assert 'Weight' in representation
-    assert 'Preprocessing' in representation
-    assert 'Estimator' in representation
+    # test fit on dummy data
+    assert isinstance(estimator.fit(dataset=backend.load_datamanager()), BasePipeline)
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
