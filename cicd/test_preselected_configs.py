@@ -100,28 +100,28 @@ def get_fit_dictionary(openml_task_id):
 
 
 @pytest.mark.parametrize(
-    'openml_task_id,configuration,scorer,expected_performance',
+    'openml_task_id,configuration,scorer,lower_bound_score',
     (
         # Australian
-        (146818, 0, balanced_accuracy, 0.8571428571428572),
-        (146818, 1, roc_auc, 0.923735119047619),
-        (146818, 2, balanced_accuracy, 0.84375),
-        (146818, 3, balanced_accuracy, 0.8705357142857143),
+        (146818, 0, balanced_accuracy, 0.85),
+        (146818, 1, roc_auc, 0.90),
+        (146818, 2, balanced_accuracy, 0.80),
+        (146818, 3, balanced_accuracy, 0.85),
         # credit-g
-        (31, 0, accuracy, 0.7866666666666666),
-        (31, 1, accuracy, 0.7866666666666666),
-        (31, 2, accuracy, 0.7733333333333333),
-        (31, 3, accuracy, 0.7266666666666667),
-        (31, 4, accuracy, 0.7533333333333333),
+        (31, 0, accuracy, 0.75),
+        (31, 1, accuracy, 0.75),
+        (31, 2, accuracy, 0.75),
+        (31, 3, accuracy, 0.70),
+        (31, 4, accuracy, 0.70),
         # segment
-        (146822, 'default', accuracy, 0.9481268011527377),
+        (146822, 'default', accuracy, 0.90),
         # kr-vs-kp
-        (3, 'default', accuracy, 0.9666666666666667),
+        (3, 'default', accuracy, 0.90),
         # vehicle
-        (53, 'default', accuracy, 0.7795275590551181),
+        (53, 'default', accuracy, 0.75),
     ),
 )
-def test_can_properly_fit_a_config(openml_task_id, configuration, scorer, expected_performance):
+def test_can_properly_fit_a_config(openml_task_id, configuration, scorer, lower_bound_score):
 
     fit_dictionary = get_fit_dictionary(openml_task_id)
     fit_dictionary['additional_metrics'] = [scorer.name]
@@ -153,7 +153,7 @@ def test_can_properly_fit_a_config(openml_task_id, configuration, scorer, expect
     train_data, target_data = fit_dictionary['backend'].load_datamanager().train_tensors
     predictions = pipeline.predict(train_data[val_indices])
     score = scorer(fit_dictionary['y_train'][val_indices], predictions)
-    assert pytest.approx(score) == expected_performance
+    assert pytest.approx(score) >= lower_bound_score
 
     # Check that we reverted to the best score
     run_summary = pipeline.named_steps['trainer'].run_summary
