@@ -295,17 +295,6 @@ class KNNModel(BaseTraditionalLearner):
         assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
 
-    def predict(self, X_test: np.ndarray,
-                predict_proba: bool = False,
-                preprocess: bool = True) -> np.ndarray:
-        assert self.model is not None, "No model found. Can't fit without preparing the model"
-        if preprocess:
-            X_test = self._preprocess(X_test)
-        if predict_proba:
-            return self.model.predict_proba(X_test)
-        y_pred = self.model.predict(X_test)
-        return y_pred
-
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return {
@@ -346,17 +335,6 @@ class SVMModel(BaseTraditionalLearner):
              y_val: np.ndarray) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
-
-    def predict(self, X_test: np.ndarray,
-                predict_proba: bool = False,
-                preprocess: bool = True) -> np.ndarray:
-        assert self.model is not None, "No model found. Can't fit without preparing the model"
-        if preprocess:
-            X_test = self._preprocess(X_test)
-        if predict_proba:
-            return self.model.predict_proba(X_test)
-        y_pred = self.model.predict(X_test)
-        return y_pred
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:

@@ -90,6 +90,8 @@ def test_model_fit_predict_score(traditional_learner, fit_dictionary_tabular):
 
     model = TabularTraditionalModel(traditional_learner=traditional_learner)
 
+    assert isinstance(model.get_properties(), dict)
+
     blockPrint()
     model.fit(X=fit_dictionary_tabular)
     enablePrint()
@@ -113,6 +115,8 @@ def test_model_fit_predict_score(traditional_learner, fit_dictionary_tabular):
         y_pred = model.predict_proba(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
     else:
         y_pred = model.predict(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
+        with pytest.raises(ValueError, match="Can't predict probabilities for a regressor"):
+            model.predict_proba(fit_dictionary_tabular['X_train'][fit_dictionary_tabular['val_indices']])
 
     assert np.allclose(y_pred.squeeze(), model.fit_output['val_preds'], atol=1e-04)
     assert y_pred.shape[0] == len(fit_dictionary_tabular['val_indices'])
