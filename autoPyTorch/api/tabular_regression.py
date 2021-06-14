@@ -187,7 +187,11 @@ class TabularRegressionTask(BaseTask):
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`.
+                Although portfolio selection is supported for tabular
+                regression, the portfolio has been built using
+                classification datasets. We will update a portfolio
+                to cover tabular regression datasets.
 
         Returns:
             self

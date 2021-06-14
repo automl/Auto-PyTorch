@@ -62,10 +62,10 @@ autosectionlabel_prefix_document = True
 # Sphinx-gallery configuration.
 
 # get current branch
-binder_branch = 'refactor_development'
+binder_branch = 'development'
 import autoPyTorch
 if "dev" in autoPyTorch.__version__:
-    binder_branch = "refactor_development"
+    binder_branch = "development"
 
 sphinx_gallery_conf = {
     # path to the examples
