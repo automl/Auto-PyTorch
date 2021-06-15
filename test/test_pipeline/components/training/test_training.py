@@ -26,7 +26,10 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
-    BaseTrainerComponent, )
+    BaseTrainerComponent,
+    BudgetTracker,
+    StepIntervalUnit
+)
 
 sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
@@ -36,7 +39,7 @@ OVERFIT_EPOCHS = 1000
 N_SAMPLES = 500
 
 
-class BaseDataLoaderTest(unittest.TestCase):
+class TestBaseDataLoader(unittest.TestCase):
     def test_get_set_config_space(self):
         """
         Makes sure that the configuration space of the base data loader
@@ -160,9 +163,62 @@ class TestBaseTrainerComponent(BaseTraining):
         assert prev_loss > loss
         assert metrics['accuracy'] > prev_metrics['accuracy']
         assert metrics['accuracy'] > 0.5
+    
+    def test_scheduler_step(self):
+        trainer = BaseTrainerComponent()
+        model = torch.nn.Linear(1, 1)
+
+        base_lr, factor = 1, 10
+        optimizer = torch.optim.SGD(model.parameters(), lr=base_lr)
+        trainer.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=list(range(1, 5)),
+            gamma=factor
+        )
+
+        target_lr = base_lr
+        for trainer_step_unit in StepIntervalUnit:
+            trainer.step_unit = trainer_step_unit
+            for step_unit in StepIntervalUnit:
+                if step_unit == trainer_step_unit:
+                    target_lr *= factor
+
+                trainer._scheduler_step(step_interval=step_unit)
+                lr = optimizer.param_groups[0]['lr']
+                assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
+
+    def test_prepare(self):
+        trainer_component = BaseTrainerComponent()
+        params = {
+            'metrics': [],
+            'device': torch.device('cpu'),
+            'task_type': 0,
+            'labels': torch.Tensor([]),
+            'metrics_during_training': False,
+            'budget_tracker': BudgetTracker(budget_type=''),
+            'criterion': torch.nn.CrossEntropyLoss,
+            'optimizer': torch.optim.Adam,
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR,
+            'model': torch.nn.Sequential()
+        }
+
+        for step_unit in [1, 1.0, "dummy"]:
+            try:
+                params.update(step_unit=step_unit)
+                trainer_component.prepare(**params)
+            except ValueError:
+                pass
+            except Exception as e:
+                pytest.fail("set_training_params raised an unexpected exception {}.".format(e))
+            else:
+                pytest.fail("set_training_params did not raise an Error although the step_unit is invalid.")
+
+        for step_unit in ["batch", "epoch", StepIntervalUnit.batch, StepIntervalUnit.epoch]:
+            params.update(step_unit=step_unit)
+            trainer_component.prepare(**params)
 
 
-class StandardTrainerTest(BaseTraining):
+class TestStandardTrainer(BaseTraining):
     def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -210,7 +266,7 @@ class StandardTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class MixUpTrainerTest(BaseTraining):
+class TestMixUpTrainer(BaseTraining):
     def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -235,7 +291,7 @@ class MixUpTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class TrainerTest(unittest.TestCase):
+class TestTrainer(unittest.TestCase):
     def test_every_trainer_is_valid(self):
         """
         Makes sure that every trainer is a valid estimator.
