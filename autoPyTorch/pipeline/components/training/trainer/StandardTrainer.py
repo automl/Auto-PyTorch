@@ -5,6 +5,8 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 import numpy as np
 
+import torch
+
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
@@ -24,8 +26,8 @@ class StandardTrainer(BaseTrainerComponent):
         super().__init__(random_state=random_state)
         self.weighted_loss = weighted_loss
 
-    def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
+                         ) -> typing.Tuple[torch.Tensor, typing.Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -33,16 +35,17 @@ class StandardTrainer(BaseTrainerComponent):
         alter the data.
 
         Args:
-            X (np.ndarray): The batch training features
-            y (np.ndarray): The batch training labels
+            X (torch.Tensor): The batch training features
+            y (torch.Tensor): The batch training labels
 
         Returns:
-            np.ndarray: that processes data
+            torch.Tensor: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
+                                          TODO: Fix this typing. It is not np.ndarray.
         """
         return X, {'y_a': y}
 
-    def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
+    def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
                               ) -> typing.Callable:
         return lambda criterion, pred: criterion(pred, y_a)
 
@@ -51,7 +54,7 @@ class StandardTrainer(BaseTrainerComponent):
                        ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'StandardTrainer',
-            'name': 'StandardTrainer',
+            'name': 'Standard Trainer',
         }
 
     @staticmethod
