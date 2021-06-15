@@ -236,7 +236,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
             step_unit = StepIntervalUnit.__members__[step_unit]
 
-
         # Save the device to be used
         self.device = device
 
@@ -285,7 +284,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         """
         return False
-    
+
     def _scheduler_step(
         self,
         step_interval: StepIntervalUnit,
@@ -299,7 +298,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 self.scheduler.step(loss)
             else:
                 self.scheduler.step()
-
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -342,7 +340,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     loss,
                     epoch * len(train_loader) + step,
                 )
-        
+
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss)
 
         if self.metrics_during_training:
