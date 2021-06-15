@@ -33,8 +33,6 @@ python setup.py install
 
 ```
 
-NOTE: If you would like to use `ipython`, you need to run `unset _CONDA_PYTHON_SYSCONFIGDATA_NAME` after all the installation.
-
 ## Contributing
 
 If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
