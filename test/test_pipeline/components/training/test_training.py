@@ -163,7 +163,7 @@ class TestBaseTrainerComponent(BaseTraining):
         assert prev_loss > loss
         assert metrics['accuracy'] > prev_metrics['accuracy']
         assert metrics['accuracy'] > 0.5
-    
+
     def test_scheduler_step(self):
         trainer = BaseTrainerComponent()
         model = torch.nn.Linear(1, 1)

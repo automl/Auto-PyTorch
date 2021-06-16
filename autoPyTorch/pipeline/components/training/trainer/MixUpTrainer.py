@@ -48,7 +48,7 @@ class MixUpTrainer(BaseTrainerComponent):
                                           TODO: Fix this typing. It is not np.ndarray.
         """
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         lam = self.random_state.beta(self.alpha, self.alpha) if self.alpha > 0. else 1.
         batch_size = X.shape[0]
         index = torch.randperm(batch_size).to(device)
