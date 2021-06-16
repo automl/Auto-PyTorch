@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -8,6 +8,7 @@ import numpy as np
 
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
@@ -33,7 +34,8 @@ class FullyConnectedHead(NetworkHeadComponent):
         return nn.Sequential(*layers)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'FullyConnectedHead',
             'name': 'FullyConnectedHead',
@@ -44,7 +46,7 @@ class FullyConnectedHead(NetworkHeadComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_layers",
                                                                           value_range=(1, 4),
                                                                           default_value=2),

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -100,7 +101,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="min_unique_values_for_embedding",
             value_range=(3, 7),
@@ -113,7 +114,8 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
         cs = ConfigurationSpace()
         add_hyperparameter(cs, min_unique_values_for_embedding, UniformIntegerHyperparameter)
         if dataset_properties is not None:
-            for i in range(len(dataset_properties['categorical_columns'])):
+            for i in range(len(dataset_properties['categorical_columns'])
+                           if isinstance(dataset_properties['categorical_columns'], List) else 0):
                 ee_dimensions_search_space = HyperparameterSearchSpace(hyperparameter="dimension_reduction_" + str(i),
                                                                        value_range=dimension_reduction.value_range,
                                                                        default_value=dimension_reduction.default_value,
@@ -122,7 +124,8 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'embedding',
             'name': 'LearnedEntityEmbedding',

@@ -20,5 +20,8 @@ repos:
         name: flake8 autoPyTorch
         files: autoPyTorch/.*
       - id: flake8
+        additional_dependencies:
+          - flake8-print==3.1.4
+          - flake8-import-order
         name: flake8 test
         files: test/.*

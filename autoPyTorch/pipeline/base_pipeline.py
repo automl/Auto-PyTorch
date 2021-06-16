@@ -13,6 +13,7 @@ from sklearn.utils.validation import check_random_state
 
 import torch
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.create_searchspace_util import (
@@ -70,7 +71,7 @@ class BasePipeline(Pipeline):
             self,
             config: Optional[Configuration] = None,
             steps: Optional[List[Tuple[str, PipelineStepType]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             include: Optional[Dict[str, Any]] = None,
             exclude: Optional[Dict[str, Any]] = None,
             random_state: Optional[np.random.RandomState] = None,
@@ -265,7 +266,7 @@ class BasePipeline(Pipeline):
         return self.named_steps['network'].get_network()
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -309,7 +310,7 @@ class BasePipeline(Pipeline):
     def _get_base_search_space(
             self,
             cs: ConfigurationSpace,
-            dataset_properties: Dict[str, Any],
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
             include: Optional[Dict[str, Any]],
             exclude: Optional[Dict[str, Any]],
             pipeline: List[Tuple[str, PipelineStepType]]
@@ -471,7 +472,7 @@ class BasePipeline(Pipeline):
                                                                      dataset_properties=self.dataset_properties).
                                                                  get_hyperparameter_names(), update.hyperparameter))
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]
+    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
                             ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.

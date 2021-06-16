@@ -7,6 +7,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -47,7 +48,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: List[str] = None,
         exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -59,7 +60,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             to honor when creating the configuration space
          exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
              to remove from the configuration space
-         dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
+         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Caracteristics
              of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -95,13 +96,13 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             if entry == NetworkEmbeddingChoice or hasattr(entry, 'get_components'):
                 continue
 
-            task_type = dataset_properties['task_type']
+            task_type = str(dataset_properties['task_type'])
             properties = entry.get_properties()
-            if 'tabular' in task_type and not properties['handles_tabular']:
+            if 'tabular' in task_type and not bool(properties['handles_tabular']):
                 continue
-            elif 'image' in task_type and not properties['handles_image']:
+            elif 'image' in task_type and not bool(properties['handles_image']):
                 continue
-            elif 'time_series' in task_type and not properties['handles_time_series']:
+            elif 'time_series' in task_type and not bool(properties['handles_time_series']):
                 continue
 
             components_dict[name] = entry
@@ -110,7 +111,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
@@ -118,7 +119,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
             default (Optional[str]): Default embedding to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
@@ -138,7 +139,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        if len(available_embedding) == 0 and 'tabular' in dataset_properties['task_type']:
+        if len(available_embedding) == 0 and 'tabular' in str(dataset_properties['task_type']):
             raise ValueError("No embedding found")
 
         if available_embedding == 0:
@@ -153,6 +154,7 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                 if default_ in available_embedding:
                     default = default_
                     break
+
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -161,7 +163,8 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_embedding,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['categorical_columns']) == 0:
+            if len(dataset_properties['categorical_columns']) \
+                    if isinstance(dataset_properties['categorical_columns'], List) else 0 == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 if 'NoEmbedding' not in choice_hyperparameter.value_range:
                     raise ValueError("Provided {} in choices, however, the dataset "
@@ -170,7 +173,8 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                                                       choice_hyperparameter.value_range,
                                                       default_value=choice_hyperparameter.default_value)
         else:
-            if len(dataset_properties['categorical_columns']) == 0:
+            if len(dataset_properties['categorical_columns']) \
+                    if isinstance(dataset_properties['categorical_columns'], List) else 0 == 0:
                 default = 'NoEmbedding'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, the dataset "

@@ -1316,7 +1316,7 @@ class BaseTask:
             self._load_models()
 
         assert self.ensemble_ is not None
-        models_with_weights: List = self.ensemble_.get_models_with_weights(self.models_)
+        models_with_weights: List[Tuple[float, BasePipeline]] = self.ensemble_.get_models_with_weights(self.models_)
         return models_with_weights
 
     def show_models(self) -> str:

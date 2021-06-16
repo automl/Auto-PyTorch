@@ -17,7 +17,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -98,7 +98,7 @@ class TabularDataset(BaseDataset):
         if STRING_TO_TASK_TYPES[self.task_type] in CLASSIFICATION_TASKS:
             self.num_classes: int = len(np.unique(self.train_tensors[1]))
 
-    def get_required_dataset_info(self) -> Dict[str, Any]:
+    def get_required_dataset_info(self) -> Dict[str, BaseDatasetPropertiesType]:
         """
         Returns a dictionary containing required dataset
         properties to instantiate a pipeline.
@@ -120,6 +120,7 @@ class TabularDataset(BaseDataset):
                 <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/constants.py>`
         """
         info = super().get_required_dataset_info()
+        assert self.task_type is not None, "Expected value for task type but got None"
         info.update({
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,

@@ -26,6 +26,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.utils.common import FitRequirement
 
 BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
+BaseDatasetPropertiesType = Union[int, float, str, List, bool]
 
 
 def check_valid_data(data: Any) -> None:
@@ -125,7 +126,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
-
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
 
@@ -349,7 +349,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.test_tensors = (X_test, self.test_tensors[1])
         return self
 
-    def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
+    def get_dataset_properties(
+        self, dataset_requirements: List[FitRequirement]
+    ) -> Dict[str, BaseDatasetPropertiesType]:
         """
         Gets the dataset properties required in the fit dictionary.
         This depends on the components that are active in the
@@ -364,7 +366,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/utils/pipeline.py#L25>`
 
         Returns:
-            dataset_properties (Dict[str, Any]):
+            dataset_properties (Dict[str, BaseDatasetPropertiesType]):
                 Dict of the dataset properties.
         """
         dataset_properties = dict()
@@ -376,11 +378,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_properties.update(self.get_required_dataset_info())
         return dataset_properties
 
-    def get_required_dataset_info(self) -> Dict[str, Any]:
+    def get_required_dataset_info(self) -> Dict[str, BaseDatasetPropertiesType]:
         """
         Returns a dictionary containing required dataset
         properties to instantiate a pipeline.
         """
-        info = {'output_type': self.output_type,
-                'issparse': self.issparse}
+        info: Dict[str, BaseDatasetPropertiesType] = {'output_type': self.output_type,
+                                                      'issparse': self.issparse}
         return info

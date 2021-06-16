@@ -12,7 +12,7 @@ import torch
 import torchvision
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.utils.common import (
     FitRequirement,
@@ -251,7 +251,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         batch_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="batch_size",
                                                                           value_range=(32, 320),
                                                                           default_value=64)

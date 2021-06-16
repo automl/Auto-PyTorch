@@ -11,6 +11,7 @@ from scipy.sparse import csr_matrix
 import torch
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.utils.common import FitRequirement
 
@@ -55,12 +56,12 @@ class autoPyTorchPreprocessingComponent(autoPyTorchComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         """Return the configuration space of this classification algorithm.
 
         Args:
-            dataset_properties (Optional[Dict[str, Union[str, int]]): Describes the dataset
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]): Describes the dataset
                to work on
 
         Returns:

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -9,6 +9,7 @@ import numpy as np
 
 from sklearn.impute import SimpleImputer as SklearnSimpleImputer
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.base_imputer import BaseImputer
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -41,7 +42,8 @@ class SimpleImputer(BaseImputer):
             instance of self
         """
         self.check_requirements(X, y)
-        if len(X['dataset_properties']['categorical_columns']) != 0:
+        if len(X['dataset_properties']['categorical_columns']) \
+                if isinstance(X['dataset_properties']['categorical_columns'], List) else 0 != 0:
             if self.categorical_strategy == 'constant_!missing!':
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy='constant',
                                                                         # Train data is numpy
@@ -55,7 +57,8 @@ class SimpleImputer(BaseImputer):
             else:
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy=self.categorical_strategy,
                                                                         copy=False)
-        if len(X['dataset_properties']['numerical_columns']) != 0:
+        if len(X['dataset_properties']['numerical_columns']) \
+                if isinstance(X['dataset_properties']['numerical_columns'], List) else 0 != 0:
             if self.numerical_strategy == 'constant_zero':
                 self.preprocessor['numerical'] = SklearnSimpleImputer(strategy='constant',
                                                                       fill_value=0,
@@ -67,7 +70,7 @@ class SimpleImputer(BaseImputer):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, Any]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         numerical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='numerical_strategy',
                                                                                   value_range=("mean", "median",
                                                                                                "most_frequent",
@@ -83,16 +86,19 @@ class SimpleImputer(BaseImputer):
         cs = ConfigurationSpace()
         assert dataset_properties is not None, "To create hyperparameter search space" \
                                                ", dataset_properties should not be None"
-        if len(dataset_properties['numerical_columns']) != 0:
+        if len(dataset_properties['numerical_columns']) \
+                if isinstance(dataset_properties['numerical_columns'], List) else 0 != 0:
             add_hyperparameter(cs, numerical_strategy, CategoricalHyperparameter)
 
-        if len(dataset_properties['categorical_columns']) != 0:
+        if len(dataset_properties['categorical_columns']) \
+                if isinstance(dataset_properties['categorical_columns'], List) else 0 != 0:
             add_hyperparameter(cs, categorical_strategy, CategoricalHyperparameter)
 
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'SimpleImputer',
             'name': 'Simple Imputer',

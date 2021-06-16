@@ -11,6 +11,7 @@ import numpy as np
 import sklearn.decomposition
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
@@ -33,14 +34,14 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'PolynomialFeatures',
                 'name': 'PolynomialFeatures',
                 'handles_sparse': True}
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         degree: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='degree',
                                                                       value_range=(2, 3),
                                                                       default_value=2,

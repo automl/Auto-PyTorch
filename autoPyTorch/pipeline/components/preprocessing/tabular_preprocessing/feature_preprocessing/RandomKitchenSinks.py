@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -12,6 +12,7 @@ import numpy as np
 import sklearn.kernel_approximation
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
@@ -34,7 +35,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         n_components: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='n_components',
                                                                             value_range=(0.5, 0.9),
                                                                             default_value=0.5,
@@ -47,7 +48,8 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
         cs = ConfigurationSpace()
 
         if dataset_properties is not None:
-            n_features = len(dataset_properties['numerical_columns'])
+            n_features = len(dataset_properties['numerical_columns']) \
+                if isinstance(dataset_properties['numerical_columns'], List) else 0
             if n_features == 1:
                 log = False
             else:
@@ -70,7 +72,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'KitchenSink',
                 'name': 'Random Kitchen Sinks',
                 'handles_sparse': True

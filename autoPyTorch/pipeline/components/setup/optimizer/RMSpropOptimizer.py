@@ -9,6 +9,7 @@ import numpy as np
 
 from torch.optim import RMSprop
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer import BaseOptimizerComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -69,7 +70,8 @@ class RMSpropOptimizer(BaseOptimizerComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RMSprop',
             'name': 'RMSprop Optimizer',
@@ -77,7 +79,7 @@ class RMSpropOptimizer(BaseOptimizerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="lr",
                                                                   value_range=(1e-5, 1e-1),
                                                                   default_value=1e-2,

@@ -4,9 +4,9 @@ import numpy as np
 
 import torch.tensor
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer import (
     BaseNormalizer
-
 )
 
 
@@ -48,7 +48,7 @@ class NoNormalizer(BaseNormalizer):
         return X
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {
             'shortname': 'no-normalize',

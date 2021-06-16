@@ -9,6 +9,7 @@ import numpy as np
 
 from sklearn.preprocessing import Normalizer as SklearnNormalizer
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler import BaseScaler
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -38,7 +39,7 @@ class Normalizer(BaseScaler):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, Any]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         norm: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="norm",
                                                                     value_range=("mean_abs", "mean_squared", "max"),
                                                                     default_value="mean_squared",
@@ -49,7 +50,8 @@ class Normalizer(BaseScaler):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'Normalizer',
             'name': 'Normalizer',

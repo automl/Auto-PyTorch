@@ -9,6 +9,7 @@ from ConfigSpace.hyperparameters import (
 
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
@@ -58,7 +59,7 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
         return backbone
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
             'shortname': 'ConvNetImageBackbone',
             'name': 'ConvNetImageBackbone',
@@ -69,7 +70,7 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
                                                                           value_range=(2, 8),
                                                                           default_value=4,

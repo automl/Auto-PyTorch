@@ -13,6 +13,7 @@ from sklearn.base import ClassifierMixin
 import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
@@ -79,7 +80,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         self,
         config: Optional[Configuration] = None,
         steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
@@ -108,16 +109,10 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             return proba
 
         else:
-            all_proba = []
-
-            for k in range(self.dataset_properties['output_shape']):
-                proba_k = pred[:, k, :self.dataset_properties['output_shape'][k]]
-                normalizer = proba_k.sum(axis=1)[:, np.newaxis]
-                normalizer[normalizer == 0.0] = 1.0
-                proba_k /= normalizer
-                all_proba.append(proba_k)
-
-            return all_proba
+            raise ValueError("Expected output_shape to be integer, got {},"
+                             "Tabular Classification only supports 'binary' and 'multiclass' outputs"
+                             "got {}".format(type(self.dataset_properties['output_shape']),
+                                             self.dataset_properties['output_type']))
 
     def predict_proba(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """predict_proba.
@@ -189,7 +184,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         return score
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -204,7 +199,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Characteristics
                 of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -265,7 +260,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
     def _get_pipeline_steps(
         self,
-        dataset_properties: Optional[Dict[str, Any]],
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]],
     ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
@@ -276,7 +271,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 list of steps sequentially exercised by the pipeline.
         """
         steps = []  # type: List[Tuple[str, PipelineStepType]]
-        default_dataset_properties = {'target_type': 'tabular_classification'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 

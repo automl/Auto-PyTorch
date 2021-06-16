@@ -31,7 +31,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS,
 )
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.evaluation.utils import (
     VotingRegressorWrapper,
     convert_multioutput_multiclass_to_multilabel
@@ -63,7 +63,7 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
     learning model, and is the final object that is stored for inference.
 
     Attributes:
-        dataset_properties (Dict[str, Any]):
+        dataset_properties (Dict[str, BaseDatasetPropertiesType]):
             A dictionary containing dataset specific information
         random_state (Optional[np.random.RandomState]):
             Object that contains a seed and allows for reproducible results
@@ -73,8 +73,8 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
     """
 
     def __init__(self, config: str,
-                 dataset_properties: Dict[str, Any],
-                 random_state: Optional[np.random.RandomState] = None,
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
+                 random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None):
         self.config = config
         self.dataset_properties = dataset_properties
@@ -197,8 +197,6 @@ class DummyClassificationPipeline(DummyClassifier):
     worst performing model. In case of failure, at least this model will be fitted.
 
     Attributes:
-        dataset_properties (Dict[str, Any]):
-            A dictionary containing dataset specific information
         random_state (Optional[Union[int, np.random.RandomState]]):
             Object that contains a seed and allows for reproducible results
         init_params  (Optional[Dict]):
@@ -262,8 +260,6 @@ class DummyRegressionPipeline(DummyRegressor):
     worst performing model. In case of failure, at least this model will be fitted.
 
     Attributes:
-        dataset_properties (Dict[str, Any]):
-            A dictionary containing dataset specific information
         random_state (Optional[Union[int, np.random.RandomState]]):
             Object that contains a seed and allows for reproducible results
         init_params  (Optional[Dict]):

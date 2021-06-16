@@ -13,6 +13,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
@@ -130,7 +131,7 @@ class autoPyTorchComponent(BaseEstimator):
         self._fit_requirements.extend(requirements)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
         """Get the properties of the underlying algorithm.
 
@@ -144,7 +145,7 @@ class autoPyTorchComponent(BaseEstimator):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         """Return the configuration space of this classification algorithm.
 

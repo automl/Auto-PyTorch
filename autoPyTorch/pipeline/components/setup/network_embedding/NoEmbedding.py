@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 
 
@@ -28,13 +29,14 @@ class NoEmbedding(NetworkEmbeddingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'no embedding',
             'name': 'NoEmbedding',

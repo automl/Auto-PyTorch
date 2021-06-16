@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,6 +10,7 @@ from ConfigSpace.hyperparameters import (
 
 import torch
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResNetBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
@@ -74,7 +75,8 @@ class ShapedResNetBackbone(ResNetBackbone):
         return backbone
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ShapedResNetBackbone',
             'name': 'ShapedResidualNetworkBackbone',
@@ -85,7 +87,7 @@ class ShapedResNetBackbone(ResNetBackbone):
 
     @staticmethod
     def get_hyperparameter_search_space(  # type: ignore[override]
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         resnet_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="resnet_shape",
                                                                             value_range=('funnel', 'long_funnel',
                                                                                          'diamond', 'hexagon',

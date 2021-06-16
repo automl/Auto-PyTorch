@@ -7,6 +7,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -47,7 +48,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: List[str] = None,
         exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -95,13 +96,13 @@ class NetworkBackboneChoice(autoPyTorchChoice):
             if entry == NetworkBackboneChoice or hasattr(entry, 'get_components'):
                 continue
 
-            task_type = dataset_properties['task_type']
+            task_type = str(dataset_properties['task_type'])
             properties = entry.get_properties()
-            if 'tabular' in task_type and not properties['handles_tabular']:
+            if 'tabular' in task_type and not bool(properties['handles_tabular']):
                 continue
-            elif 'image' in task_type and not properties['handles_image']:
+            elif 'image' in task_type and not bool(properties['handles_image']):
                 continue
-            elif 'time_series' in task_type and not properties['handles_time_series']:
+            elif 'time_series' in task_type and not bool(properties['handles_time_series']):
                 continue
 
             # target_type = dataset_properties['target_type']
@@ -116,7 +117,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,

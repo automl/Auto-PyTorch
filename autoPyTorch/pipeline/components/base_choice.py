@@ -9,6 +9,7 @@ import numpy as np
 
 from sklearn.utils import check_random_state
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
@@ -18,7 +19,7 @@ class autoPyTorchChoice(object):
     """Allows for the dynamically generation of components as pipeline steps.
 
     Args:
-        dataset_properties (Dict[str, Union[str, int]]): Describes the dataset
+        dataset_properties (Dict[str, Union[str, BaseDatasetPropertiesType]]): Describes the dataset
             to work on
         random_state (Optional[np.random.RandomState]): allows to produce reproducible
             results by setting a seed for randomized settings
@@ -29,7 +30,7 @@ class autoPyTorchChoice(object):
         choice (autoPyTorchComponent): the choice of components for this stage
     """
     def __init__(self,
-                 dataset_properties: Dict[str, Any],
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
                  random_state: Optional[np.random.RandomState] = None
                  ):
 
@@ -78,7 +79,7 @@ class autoPyTorchChoice(object):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -87,7 +88,7 @@ class autoPyTorchChoice(object):
         user specification
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
             exclude: Optional[Dict[str, Any]]: which components to skip
@@ -168,7 +169,7 @@ class autoPyTorchChoice(object):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
@@ -176,7 +177,7 @@ class autoPyTorchChoice(object):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
             default: (Optional[str]) : Default component to use in hyperparameters
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
@@ -241,7 +242,7 @@ class autoPyTorchChoice(object):
         if y is not None:
             warnings.warn("Provided y argument, yet only X is required")
 
-    def _check_dataset_properties(self, dataset_properties: Dict[str, Any]) -> None:
+    def _check_dataset_properties(self, dataset_properties: Dict[str, BaseDatasetPropertiesType]) -> None:
         """
         A mechanism in code to ensure the correctness of the initialised dataset properties.
         Args:

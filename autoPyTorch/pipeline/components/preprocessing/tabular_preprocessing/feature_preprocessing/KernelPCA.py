@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -14,6 +14,7 @@ import numpy as np
 import sklearn.decomposition
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
@@ -46,7 +47,7 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         n_components: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='n_components',
                                                                             value_range=(0.5, 0.9),
                                                                             default_value=0.5,
@@ -72,7 +73,8 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
         cs = ConfigurationSpace()
 
         if dataset_properties is not None:
-            n_features = len(dataset_properties['numerical_columns'])
+            n_features = len(dataset_properties['numerical_columns']) if isinstance(
+                dataset_properties['numerical_columns'], List) else 0
             if n_features == 1:
                 log = False
             else:
@@ -116,7 +118,7 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'KernelPCA',
                 'name': 'Kernel Principal Component Analysis',
                 'handles_sparse': True

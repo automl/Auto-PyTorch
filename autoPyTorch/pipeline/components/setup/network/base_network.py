@@ -8,6 +8,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 
@@ -127,14 +128,15 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         return torch.cat(Y_batch_preds, 0).cpu().numpy()
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         **kwargs: Any
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'nn.Sequential',
             'name': 'torch.nn.Sequential',

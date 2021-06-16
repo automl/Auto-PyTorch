@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,6 +10,7 @@ from ConfigSpace.hyperparameters import (
 
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
@@ -66,7 +67,8 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
             layers.append(nn.Dropout(dropout))
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ShapedMLPBackbone',
             'name': 'ShapedMLPBackbone',
@@ -77,7 +79,7 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                           value_range=(1, 15),
                                                                           default_value=5,

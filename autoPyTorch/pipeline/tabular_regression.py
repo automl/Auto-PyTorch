@@ -12,6 +12,7 @@ from sklearn.base import RegressorMixin
 import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
@@ -79,7 +80,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     def __init__(self,
                  config: Optional[Configuration] = None,
                  steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
                  random_state: Optional[np.random.RandomState] = None,
@@ -118,12 +119,12 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, [metric_name])
         y_pred = self.predict(X, batch_size=batch_size)
-        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
-                                metrics=metrics)[metric_name]
-        return score
+        r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
+                             metrics=metrics)['r2']
+        return r2
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -138,7 +139,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Characteristics
                 of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -200,7 +201,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
 
     def _get_pipeline_steps(
         self,
-        dataset_properties: Optional[Dict[str, Any]]
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
     ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
@@ -212,7 +213,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         """
         steps = []  # type: List[Tuple[str, PipelineStepType]]
 
-        default_dataset_properties = {'target_type': 'tabular_regression'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_regression'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 

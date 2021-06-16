@@ -10,6 +10,7 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
@@ -41,7 +42,7 @@ class ZeroPadAndCrop(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         percent: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='percent',
                                                                        value_range=(0, 0.5),
                                                                        default_value=0.1,
@@ -53,6 +54,6 @@ class ZeroPadAndCrop(BaseImageAugmenter):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'ZeroPadAndCrop'}

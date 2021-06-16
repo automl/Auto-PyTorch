@@ -11,6 +11,7 @@ import imgaug.augmenters as iaa
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     find_components,
@@ -107,7 +108,8 @@ class ImageAugmenter(BaseImageAugmenter):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         available_augmenters = get_components()  # type: Dict[str, BaseImageAugmenter]
@@ -124,7 +126,7 @@ class ImageAugmenter(BaseImageAugmenter):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'ImageAugmenter'}
 

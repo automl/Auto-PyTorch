@@ -7,6 +7,7 @@ import numpy as np
 
 from sklearn.base import ClassifierMixin
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise import (
@@ -62,7 +63,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         self,
         config: Optional[Configuration] = None,
         steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
@@ -77,12 +78,15 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         """predict_proba.
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
+            X (np.ndarray):
+                input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline
                 will be called on small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
         Returns:
-            np.ndarray: Probabilities of the target being certain class
+            np.ndarray:
+                Probabilities of the target being certain class
         """
         if batch_size is None:
             return super().predict_proba(X)
@@ -111,7 +115,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
                 return y
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -126,8 +130,8 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Any]]): Caracteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices of components
 
         Returns:
             cs (Configuration): The configuration space describing
@@ -159,7 +163,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
 
     def _get_pipeline_steps(
         self,
-        dataset_properties: Optional[Dict[str, Any]],
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]],
     ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
@@ -171,7 +175,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         steps = []  # type: List[Tuple[str, PipelineStepType]]
 
-        default_dataset_properties = {'target_type': 'image_classification'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'image_classification'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 

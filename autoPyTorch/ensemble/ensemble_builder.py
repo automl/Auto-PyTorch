@@ -59,7 +59,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         ensemble_nbest: int,
         max_models_on_disc: Union[float, int],
         seed: int,
-        precision: Union[int, str],
+        precision: int,
         max_iterations: Optional[int],
         read_at_most: int,
         ensemble_memory_limit: Optional[int],
@@ -91,21 +91,21 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                 Both wrt to validation predictions
                 If performance_range_threshold > 0, might return less models
             max_models_on_disc: Union[float, int]
-            Defines the maximum number of models that are kept in the disc.
-            If int, it must be greater or equal than 1, and dictates the max number of
-            models to keep.
-            If float, it will be interpreted as the max megabytes allowed of disc space. That
-            is, if the number of ensemble candidates require more disc space than this float
-            value, the worst models will be deleted to keep within this budget.
-            Models and predictions of the worst-performing models will be deleted then.
-            If None, the feature is disabled.
-            It defines an upper bound on the models that can be used in the ensemble.
+                Defines the maximum number of models that are kept in the disc.
+                If int, it must be greater or equal than 1, and dictates the max number of
+                models to keep.
+                If float, it will be interpreted as the max megabytes allowed of disc space. That
+                is, if the number of ensemble candidates require more disc space than this float
+                value, the worst models will be deleted to keep within this budget.
+                Models and predictions of the worst-performing models will be deleted then.
+                If None, the feature is disabled.
+                It defines an upper bound on the models that can be used in the ensemble.
             seed: int
                 random seed
             max_iterations: int
                 maximal number of iterations to run this script
                 (default None --> deactivated)
-            precision: [16,32,64,128]
+            precision (int): [16,32,64,128]
                 precision of floats to read the predictions
             memory_limit: Optional[int]
                 memory limit in mb. If ``None``, no memory limit is enforced.

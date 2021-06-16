@@ -1,10 +1,11 @@
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -46,7 +47,7 @@ class ScalerChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, Any]] = None,
+                                        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
                                         include: Optional[List[str]] = None,
                                         exclude: Optional[List[str]] = None) -> ConfigurationSpace:
@@ -78,7 +79,8 @@ class ScalerChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_scalers,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['numerical_columns']) == 0:
+            if len(dataset_properties['numerical_columns']) \
+                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 if 'NoScaler' not in choice_hyperparameter.value_range:
                     raise ValueError("Provided {} in choices, however, the dataset "
@@ -89,7 +91,8 @@ class ScalerChoice(autoPyTorchChoice):
                                                          default_value=choice_hyperparameter.default_value)
         else:
             # add only no scaler to choice hyperparameters in case the dataset is only categorical
-            if len(dataset_properties['numerical_columns']) == 0:
+            if len(dataset_properties['numerical_columns']) \
+                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
                 default = 'NoScaler'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, "
@@ -116,7 +119,7 @@ class ScalerChoice(autoPyTorchChoice):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _check_dataset_properties(self, dataset_properties: Dict[str, Any]) -> None:
+    def _check_dataset_properties(self, dataset_properties: Dict[str, BaseDatasetPropertiesType]) -> None:
         """
         A mechanism in code to ensure the correctness of the fit dictionary
         It recursively makes sure that the children and parent level requirements
