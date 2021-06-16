@@ -1,6 +1,6 @@
 import logging.handlers
 import tempfile
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
