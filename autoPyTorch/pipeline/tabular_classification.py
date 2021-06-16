@@ -179,7 +179,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, [metric_name])
         y_pred = self.predict(X, batch_size=batch_size)
-        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
+        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
                                 metrics=metrics)[metric_name]
         return score
 

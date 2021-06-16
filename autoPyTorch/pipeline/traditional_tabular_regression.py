@@ -7,7 +7,7 @@ import numpy as np
 
 from sklearn.base import RegressorMixin
 
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.base_pipeline import BaseDatasetPropertiesType, BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 
@@ -103,10 +103,9 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
@@ -129,18 +128,21 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
+            List[Tuple[str, PipelineStepType]]: list of steps sequentially exercised
                 by the pipeline.
         """
         steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
 
-        default_dataset_properties = {'target_type': 'tabular_regression'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_regression'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 

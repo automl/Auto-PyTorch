@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -7,6 +7,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
+from autoPyTorch.pipeline.base_pipeline import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.traditional_ml.base_model import BaseModelComponent
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import (
     BaseTraditionalLearner, get_available_traditional_learners)
@@ -29,20 +30,26 @@ class TabularTraditionalModel(BaseModelComponent):
         self._traditional_learners = get_available_traditional_learners()
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             "shortname": "TabularTraditionalModel",
             "name": "Tabular Traditional Model",
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None,
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         **kwargs: Any) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         traditional_learners: Dict[str, Type[BaseTraditionalLearner]] = get_available_traditional_learners()
         # Remove knn if data is all categorical
-        if dataset_properties is not None and len(dataset_properties['numerical_columns']) == 0:
-            del traditional_learners['knn']
+
+        if dataset_properties is not None:
+            numerical_columns = dataset_properties['numerical_columns'] \
+                if isinstance(dataset_properties['numerical_columns'], List) else []
+            if len(numerical_columns) == 0:
+                del traditional_learners['knn']
         learner_hp = CategoricalHyperparameter("traditional_learner", choices=traditional_learners.keys())
         cs.add_hyperparameters([learner_hp])
 
