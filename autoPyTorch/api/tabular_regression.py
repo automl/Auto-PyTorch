@@ -106,7 +106,7 @@ class TabularRegressionTask(BaseTask):
         budget: Optional[float] = None,
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
-        enable_traditional_pipeline: bool = False,
+        enable_traditional_pipeline: bool = True,
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
@@ -151,7 +151,7 @@ class TabularRegressionTask(BaseTask):
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
-            enable_traditional_pipeline (bool), (default=False):
+            enable_traditional_pipeline (bool), (default=True):
                 Not enabled for regression. This flag is here to comply
                 with the API.
             memory_limit (Optional[int]), (default=4096): Memory
@@ -187,7 +187,11 @@ class TabularRegressionTask(BaseTask):
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`.
+                Although portfolio selection is supported for tabular
+                regression, the portfolio has been built using
+                classification datasets. We will update a portfolio
+                to cover tabular regression datasets.
 
         Returns:
             self

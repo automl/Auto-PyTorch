@@ -9,6 +9,8 @@ import numpy as np
 
 from sklearn.base import RegressorMixin
 
+import torch
+
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
@@ -88,23 +90,37 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
-    def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
+        # Because a pipeline is passed to a worker, we need to honor the random seed
+        # in this context. A tabular regression pipeline will implement a torch
+        # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
+        torch.manual_seed(self.random_state.get_state()[1][0])
+
+    def score(self, X: np.ndarray, y: np.ndarray,
+              batch_size: Optional[int] = None,
+              metric_name: str = 'r2') -> float:
         """Scores the fitted estimator on (X, y)
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
-                predict method on the whole array X results in a MemoryError.
+            X (np.ndarray):
+                input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline will be
+                called on small chunks of the data. Useful when
+                calling the predict method on the whole array X
+                results in a MemoryError.
+            y (np.ndarray):
+                Ground Truth labels
+            metric_name (str, default = 'r2'):
+                 name of the metric to be calculated
         Returns:
-            np.ndarray: coefficient of determination R^2 of the prediction
+            float: score based on the metric name
         """
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
-        metrics = get_metrics(self.dataset_properties, ['r2'])
+        metrics = get_metrics(self.dataset_properties, [metric_name])
         y_pred = self.predict(X, batch_size=batch_size)
-        r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
-                             metrics=metrics)['r2']
-        return r2
+        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
+                                metrics=metrics)[metric_name]
+        return score
 
     def _get_hyperparameter_search_space(self,
                                          dataset_properties: Dict[str, Any],

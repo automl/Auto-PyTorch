@@ -33,7 +33,8 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
-from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import _classifiers
+from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
@@ -228,6 +229,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
+    # test fit on dummy data
+    assert isinstance(estimator.fit(dataset=backend.load_datamanager()), BasePipeline)
+
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
@@ -411,6 +415,18 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
         with open(dump_file, 'rb') as f:
             restored_estimator = pickle.load(f)
         restored_estimator.predict(X_test)
+
+        # Test refit on dummy data
+        estimator.refit(dataset=backend.load_datamanager())
+
+        # Make sure that a configuration space is stored in the estimator
+        assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+
+        representation = estimator.show_models()
+        assert isinstance(representation, str)
+        assert 'Weight' in representation
+        assert 'Preprocessing' in representation
+        assert 'Estimator' in representation
 
 
 @pytest.mark.parametrize('openml_id', (
@@ -707,7 +723,7 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
         with open(model_path, 'rb') as model_handler:
             model = pickle.load(model_handler)
         clone(model)
-        assert model.config == list(_classifiers.keys())[i - 2]
+        assert model.config == list(_traditional_learners.keys())[i - 2]
         at_least_one_model_checked = True
     if not at_least_one_model_checked:
         pytest.fail("Not even one single traditional pipeline was fitted")

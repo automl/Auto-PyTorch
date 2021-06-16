@@ -1,4 +1,3 @@
-import hashlib
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -76,26 +75,6 @@ class HyperparameterSearchSpace(NamedTuple):
             self.hyperparameter, self.value_range, self.default_value, self.log)
 
 
-def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: str = "") -> Dict[str, Any]:
-    """
-    Replace the prefix in all keys with the specified replacement string (the empty string by
-    default to remove the prefix from the key). The functions makes sure that the prefix is a proper config
-    prefix by checking if it ends with ":", if not it appends ":" to the prefix.
-
-    :param config: config dictionary where the prefixed of the keys should be replaced
-    :param prefix: prefix to be replaced in each key
-    :param replace: the string to replace the prefix with
-    :return: updated config dictionary
-    """
-    # make sure that prefix ends with the config separator ":"
-    if not prefix.endswith(":"):
-        prefix = prefix + ":"
-    # only replace first occurrence of the prefix
-    return {k.replace(prefix, replace, 1): v
-            for k, v in config.items() if
-            k.startswith(prefix)}
-
-
 def custom_collate_fn(batch: List) -> List[Optional[torch.tensor]]:
     """
     In the case of not providing a y tensor, in a
@@ -140,40 +119,6 @@ def replace_string_bool_to_bool(dictionary: Dict[str, Any]) -> Dict[str, Any]:
             elif item.lower() == "false":
                 dictionary[key] = False
     return dictionary
-
-
-def hash_array_or_matrix(X: Union[np.ndarray, pd.DataFrame]) -> str:
-    """
-    Creates a hash for a given array.
-    Used for dataset name in case none is specified
-    Args:
-        X: (Union[np.ndarray, pd.DataFrame])
-            data
-
-    Returns:
-        (str): hash of the data as string
-    """
-    m = hashlib.md5()
-
-    if hasattr(X, "iloc"):
-        X = X.to_numpy()
-
-    if scipy.sparse.issparse(X):
-        m.update(X.indices)
-        m.update(X.indptr)
-        m.update(X.data)
-        m.update(str(X.shape).encode('utf8'))
-    else:
-        if X.flags['C_CONTIGUOUS']:
-            m.update(X.data)
-            m.update(str(X.shape).encode('utf8'))
-        else:
-            X_tmp = np.ascontiguousarray(X.T)
-            m.update(X_tmp.data)
-            m.update(str(X_tmp.shape).encode('utf8'))
-
-    hash = m.hexdigest()
-    return hash
 
 
 def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
