@@ -114,8 +114,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                                              default_value=default)
             else:
                 # Truncated SVD requires n_features > n_components
-                if len(dataset_properties['numerical_columns']) if isinstance(
-                        dataset_properties['numerical_columns'], List) else 0 == 1:
+                if len(numerical_columns) == 1:
                     del available_['TruncatedSVD']
                 preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                              list(available_.keys()),
