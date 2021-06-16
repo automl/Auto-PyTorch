@@ -1,4 +1,10 @@
 import setuptools
+import sys
+if sys.version_info < (3, 7):
+    raise ValueError(
+        'Unsupported Python version %d.%d.%d found. Auto-PyTorch requires Python '
+        '3.7 or higher.' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    )
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -27,10 +33,12 @@ setuptools.setup(
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Programming Language :: Python :: 3",
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         "License :: OSI Approved :: BSD License",
     ],
-    python_requires='>=3',
+    python_requires='>=3.7',
     platforms=['Linux'],
     install_requires=requirements,
     include_package_data=True,

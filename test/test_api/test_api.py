@@ -2,7 +2,6 @@ import json
 import os
 import pathlib
 import pickle
-import sys
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, dummy_traditional_classification
 
@@ -63,17 +62,11 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=42)
 
-    include = None
-    # for python less than 3.7, learned entity embedding
-    # is not able to be stored on disk (only on CI)
-    if sys.version_info < (3, 7):
-        include = {'network_embedding': ['NoEmbedding']}
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
-        include_components=include,
         seed=42,
     )
 
@@ -210,18 +203,14 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert 'train_loss' in incumbent_results
 
     # Check that we can pickle
-    # Test pickle
-    # This can happen on python greater than 3.6
-    # as older python do not control the state of the logger
-    if sys.version_info >= (3, 7):
-        dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
+    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
-        with open(dump_file, 'wb') as f:
-            pickle.dump(estimator, f)
+    with open(dump_file, 'wb') as f:
+        pickle.dump(estimator, f)
 
-        with open(dump_file, 'rb') as f:
-            restored_estimator = pickle.load(f)
-        restored_estimator.predict(X_test)
+    with open(dump_file, 'rb') as f:
+        restored_estimator = pickle.load(f)
+    restored_estimator.predict(X_test)
 
     # Test refit on dummy data
     estimator.refit(dataset=backend.load_datamanager())
@@ -264,17 +253,11 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
-    include = None
-    # for python less than 3.7, learned entity embedding
-    # is not able to be stored on disk (only on CI)
-    if sys.version_info < (3, 7):
-        include = {'network_embedding': ['NoEmbedding']}
     # Search for a good configuration
     estimator = TabularRegressionTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
-        include_components=include,
         seed=42,
     )
 
@@ -403,30 +386,26 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     assert 'train_loss' in incumbent_results, estimator.run_history.data
 
     # Check that we can pickle
-    # Test pickle
-    # This can happen on python greater than 3.6
-    # as older python do not control the state of the logger
-    if sys.version_info >= (3, 7):
-        dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
+    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
-        with open(dump_file, 'wb') as f:
-            pickle.dump(estimator, f)
+    with open(dump_file, 'wb') as f:
+        pickle.dump(estimator, f)
 
-        with open(dump_file, 'rb') as f:
-            restored_estimator = pickle.load(f)
-        restored_estimator.predict(X_test)
+    with open(dump_file, 'rb') as f:
+        restored_estimator = pickle.load(f)
+    restored_estimator.predict(X_test)
 
-        # Test refit on dummy data
-        estimator.refit(dataset=backend.load_datamanager())
+    # Test refit on dummy data
+    estimator.refit(dataset=backend.load_datamanager())
 
-        # Make sure that a configuration space is stored in the estimator
-        assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+    # Make sure that a configuration space is stored in the estimator
+    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
-        representation = estimator.show_models()
-        assert isinstance(representation, str)
-        assert 'Weight' in representation
-        assert 'Preprocessing' in representation
-        assert 'Estimator' in representation
+    representation = estimator.show_models()
+    assert isinstance(representation, str)
+    assert 'Weight' in representation
+    assert 'Preprocessing' in representation
+    assert 'Estimator' in representation
 
 
 @pytest.mark.parametrize('openml_id', (
@@ -536,16 +515,10 @@ def test_portfolio_selection(openml_id, backend, n_samples):
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
-    include = None
-    # for python less than 3.7, learned entity embedding
-    # is not able to be stored on disk (only on CI)
-    if sys.version_info < (3, 7):
-        include = {'network_embedding': ['NoEmbedding']}
     # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        include_components=include
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -584,16 +557,9 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
-    include = None
-    # for python less than 3.7, learned entity embedding
-    # is not able to be stored on disk (only on CI)
-    if sys.version_info < (3, 7):
-        include = {'network_embedding': ['NoEmbedding']}
-        # Search for a good configuration
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        include_components=include
     )
     with pytest.raises(FileNotFoundError, match=r"The path: .+? provided for 'portfolio_selection' "
                                                 r"for the file containing the portfolio configurations "

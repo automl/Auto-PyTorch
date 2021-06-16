@@ -690,8 +690,6 @@ def test_ensemble_builder_process_realrun(dask_client, ensemble_backend):
 
 @flaky(max_runs=3)
 @unittest.mock.patch('autoPyTorch.ensemble.ensemble_builder.EnsembleBuilder.fit_ensemble')
-@pytest.mark.skipif(sys.version_info >= (3, 7),
-                    reason="Causes out-of-memory Errors in CI")
 def test_ensemble_builder_nbest_remembered(fit_ensemble, ensemble_backend, dask_client):
     """
     Makes sure ensemble builder returns the size of the ensemble that pynisher allowed
