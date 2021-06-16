@@ -1,5 +1,7 @@
 import flaky
 
+import numpy as np
+
 import pytest
 
 import torch
@@ -66,9 +68,10 @@ class TestNetworks:
         assert 'accuracy' in run_summary.performance_tracker['train_metrics'][1]
 
         # Make sure default pipeline achieves a good score for dummy datasets
-        epoch2loss = run_summary.performance_tracker['val_loss']
-        best_loss = min(list(epoch2loss.values()))
-        epoch_where_best = list(epoch2loss.keys())[list(epoch2loss.values()).index(best_loss)]
+        epoch_where_best = int(np.argmax(
+            [run_summary.performance_tracker['val_metrics'][e]['accuracy']
+             for e in range(1, len(run_summary.performance_tracker['val_metrics']) + 1)]
+        )) + 1  # Epochs start at 1
         score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['accuracy']
 
         assert score >= 0.8, run_summary.performance_tracker['val_metrics']
