@@ -42,8 +42,9 @@ class SimpleImputer(BaseImputer):
             instance of self
         """
         self.check_requirements(X, y)
-        if len(X['dataset_properties']['categorical_columns']) \
-                if isinstance(X['dataset_properties']['categorical_columns'], List) else 0 != 0:
+        categorical_columns = X['dataset_properties']['categorical_columns'] \
+            if isinstance(X['dataset_properties']['categorical_columns'], List) else []
+        if len(categorical_columns) != 0:
             if self.categorical_strategy == 'constant_!missing!':
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy='constant',
                                                                         # Train data is numpy
@@ -57,8 +58,9 @@ class SimpleImputer(BaseImputer):
             else:
                 self.preprocessor['categorical'] = SklearnSimpleImputer(strategy=self.categorical_strategy,
                                                                         copy=False)
-        if len(X['dataset_properties']['numerical_columns']) \
-                if isinstance(X['dataset_properties']['numerical_columns'], List) else 0 != 0:
+        numerical_columns = X['dataset_properties']['numerical_columns'] \
+            if isinstance(X['dataset_properties']['numerical_columns'], List) else []
+        if len(numerical_columns) != 0:
             if self.numerical_strategy == 'constant_zero':
                 self.preprocessor['numerical'] = SklearnSimpleImputer(strategy='constant',
                                                                       fill_value=0,

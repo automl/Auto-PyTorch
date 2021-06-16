@@ -83,6 +83,9 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                         continue
                     default = default_
                     break
+
+        numerical_columns = dataset_properties['numerical_columns'] \
+            if isinstance(dataset_properties['numerical_columns'], List) else []
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -91,8 +94,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['numerical_columns']) \
-                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
+            if len(numerical_columns) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 assert 'NoFeaturePreprocessor' in choice_hyperparameter.value_range, \
                     "Provided {} in choices, however, the dataset " \
@@ -102,8 +104,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                                          default_value=choice_hyperparameter.default_value)
         else:
             # add only no feature preprocessor to choice hyperparameters in case the dataset is only categorical
-            if len(dataset_properties['numerical_columns']) \
-                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
+            if len(numerical_columns) == 0:
                 default = 'NoFeaturePreprocessor'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, "

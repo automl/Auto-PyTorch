@@ -71,6 +71,9 @@ class ScalerChoice(autoPyTorchChoice):
                 if default_ in available_scalers:
                     default = default_
                     break
+
+        numerical_columns = dataset_properties['numerical_columns']\
+            if isinstance(dataset_properties['numerical_columns'], List) else []
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -79,8 +82,7 @@ class ScalerChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_scalers,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['numerical_columns']) \
-                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
+            if len(numerical_columns) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 if 'NoScaler' not in choice_hyperparameter.value_range:
                     raise ValueError("Provided {} in choices, however, the dataset "
@@ -91,8 +93,7 @@ class ScalerChoice(autoPyTorchChoice):
                                                          default_value=choice_hyperparameter.default_value)
         else:
             # add only no scaler to choice hyperparameters in case the dataset is only categorical
-            if len(dataset_properties['numerical_columns']) \
-                    if isinstance(dataset_properties['numerical_columns'], List) else 0 == 0:
+            if len(numerical_columns) == 0:
                 default = 'NoScaler'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, "

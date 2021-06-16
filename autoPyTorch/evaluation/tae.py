@@ -34,9 +34,9 @@ from autoPyTorch.utils.parallel import preload_modules
 
 def fit_predict_try_except_decorator(
         ta: typing.Callable,
-        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> typing.Optional[typing.Any]:
+        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> None:
     try:
-        return ta(queue=queue, **kwargs)
+        ta(queue=queue, **kwargs)
     except Exception as e:
         if isinstance(e, (MemoryError, pynisher.TimeoutException)):
             # Re-raise the memory error to let the pynisher handle that correctly
@@ -55,7 +55,6 @@ def fit_predict_try_except_decorator(
                    'status': StatusType.CRASHED,
                    'final_queue_element': True}, block=True)
         queue.close()
-        return None
 
 
 def get_cost_of_crash(metric: autoPyTorchMetric) -> float:
