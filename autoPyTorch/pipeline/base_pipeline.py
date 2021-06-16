@@ -57,7 +57,12 @@ class BasePipeline(Pipeline):
 
     Attributes:
         steps (List[Tuple[str, PipelineStepType]]):
-            the steps of the current pipeline
+            the steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
         config (Configuration):
             a configuration to delimit the current component choice
         random_state (Optional[np.random.RandomState]):

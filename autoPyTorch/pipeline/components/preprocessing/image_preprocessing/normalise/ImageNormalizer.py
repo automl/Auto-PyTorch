@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-import torch.tensor
+import torch
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer import BaseNormalizer
@@ -31,7 +31,7 @@ class ImageNormalizer(BaseNormalizer):
         self.std = X['dataset_properties']['std']
         return self
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
         """
         Makes the autoPyTorchPreprocessingComponent Callable. Calling the component
         calls the transform function of the underlying early_preprocessor and
