@@ -293,6 +293,7 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     given the default configuration"""
     # increase number of epochs to test for performance
     fit_dictionary_tabular_dummy['epochs'] = 50
+    fit_dictionary_tabular_dummy['early_stopping'] = 30
 
     X = fit_dictionary_tabular_dummy['X_train'].copy()
     y = fit_dictionary_tabular_dummy['y_train'].copy()
