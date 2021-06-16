@@ -838,6 +838,8 @@ class BaseTask:
         self._metric = get_metrics(
             names=[optimize_metric], dataset_properties=dataset_properties)[0]
 
+        self.pipeline_options['optimize_metric'] = optimize_metric
+
         self.search_space = self.get_search_space(dataset)
 
         budget_config: Dict[str, Union[float, str]] = {}
