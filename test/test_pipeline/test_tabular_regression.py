@@ -300,7 +300,7 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     pipeline = TabularRegressionPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
-        random_state=1
+        random_state=2
     )
 
     cs = pipeline.get_hyperparameter_search_space()
