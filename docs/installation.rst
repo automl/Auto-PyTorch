@@ -21,6 +21,11 @@ Installing Auto-Pytorch
 
 .. code:: bash
 
+    # We also need to initialize the automl_common repository as follows
+    # You can find more information about this here:
+    # https://github.com/automl/automl_common/
+    git submodule update --init --recursive
+
     conda create -n autopytorch python=3.8
     conda activate autopytorch
     For Linux:
