@@ -109,10 +109,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = dataset_name
-
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+        self.dataset_name: str = dataset_name if dataset_name is not None else str(uuid.uuid1(clock_seq=os.getpid()))
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)

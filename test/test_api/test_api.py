@@ -714,3 +714,46 @@ def test_build_pipeline(api_type, fit_dictionary_tabular):
     pipeline = api.build_pipeline(fit_dictionary_tabular['dataset_properties'])
     assert isinstance(pipeline, BaseEstimator)
     assert len(pipeline.steps) > 0
+
+
+@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
+                     new=dummy_eval_function)
+@pytest.mark.parametrize('dataset_name', ('iris',))
+def test_fit_ensemble(backend, n_samples, dataset_name):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        name=dataset_name,
+        return_X_y=True, as_frame=True
+    )
+    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X, y, random_state=42)
+
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        seed=42,
+        ensemble_size=0,
+    )
+
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric='accuracy',
+            total_walltime_limit=40,
+            func_eval_time_limit_secs=10,
+            enable_traditional_pipeline=False,
+        )
+
+    estimator.fit_ensemble(ensemble_size=2)
+    assert isinstance(estimator.ensemble_performance_history, list)
+    assert 'train_accuracy' in estimator.ensemble_performance_history[0]
+    assert 'test_accuracy' in estimator.ensemble_performance_history[0]
+
+    assert os.path.exists(os.path.join(estimator._backend.internals_directory, 'ensembles'))
+    assert len(os.listdir(os.path.join(estimator._backend.internals_directory, 'ensembles'))) > 0
+    assert any(['.ensemble' in file for file in os.listdir(os.path.join(
+        estimator._backend.internals_directory, 'ensembles'))])
+    assert any(['ensemble_' or '_ensemble.npy' in os.listdir(estimator._backend.internals_directory)])
