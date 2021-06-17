@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-import torch.tensor
+import torch
 
 from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer import (
     BaseNormalizer
@@ -34,16 +34,16 @@ class NoNormalizer(BaseNormalizer):
         X.update({'normalise': self})
         return X
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
         """
         Makes the autoPyTorchPreprocessingComponent Callable. Calling the component
         calls the transform function of the underlying early_preprocessor and
         returns the transformed array.
         Args:
-            X (Union[np.ndarray, torch.tensor]): input data tensor
+            X (Union[np.ndarray, torch.Tensor]): input data tensor
 
         Returns:
-            Union[np.ndarray, torch.tensor]: Transformed data tensor
+            Union[np.ndarray, torch.Tensor]: Transformed data tensor
         """
         return X
 
