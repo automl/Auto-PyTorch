@@ -274,7 +274,7 @@ def fit_and_return_ensemble(
     ensemble_nbest: int,
     max_models_on_disc: Union[float, int],
     seed: int,
-    precision: Union[int, str],
+    precision: int,
     memory_limit: Optional[int],
     read_at_most: int,
     random_state: int,
@@ -324,7 +324,7 @@ def fit_and_return_ensemble(
            It defines an upper bound on the models that can be used in the ensemble.
         seed: int
             random seed
-        precision: [16,32,64,128]
+        precision (int): [16,32,64,128]
             precision of floats to read the predictions
         memory_limit: Optional[int]
             memory limit in mb. If ``None``, no memory limit is enforced.
@@ -1506,15 +1506,7 @@ class EnsembleBuilder(object):
                 )
 
     def _read_np_fn(self, path: str) -> np.ndarray:
-
-        # Support for string precision
-        if isinstance(self.precision, str):
-            precision = int(self.precision)
-            self.logger.warning("Interpreted str-precision as {}".format(
-                precision
-            ))
-        else:
-            precision = self.precision
+        precision = self.precision
 
         if path.endswith("gz"):
             fp = gzip.open(path, 'rb')
