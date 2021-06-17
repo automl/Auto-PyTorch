@@ -51,6 +51,7 @@ class DummyLR(BaseLRComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',
@@ -67,6 +68,7 @@ class DummyOptimizer(BaseOptimizerComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',
@@ -83,6 +85,7 @@ class DummyNetworkInitializer(BaseNetworkInitializerComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',

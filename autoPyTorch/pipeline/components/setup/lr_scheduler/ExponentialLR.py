@@ -2,16 +2,17 @@ from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
 
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -27,13 +28,13 @@ class ExponentialLR(BaseLRComponent):
     def __init__(
         self,
         gamma: float,
+        step_unit: Union[str, StepIntervalUnit],
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__()
+        super().__init__(step_unit)
         self.gamma = gamma
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -70,8 +71,15 @@ class ExponentialLR(BaseLRComponent):
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
                                                                      value_range=(0.7, 0.9999),
                                                                      default_value=0.9,
-                                                                     )
+                                                                     ),
+        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
+                                                                         value_range=StepIntervalUnitChoices,
+                                                                         default_value=StepIntervalUnit.batch.name
+                                                                         )
     ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
+        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+
         return cs

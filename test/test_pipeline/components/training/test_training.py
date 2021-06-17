@@ -52,7 +52,7 @@ class TestBaseDataLoader(unittest.TestCase):
         self.assertEqual(cs.get_hyperparameter('batch_size').default_value, 64)
 
         # Make sure we can properly set some random configs
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             loader.set_hyperparameters(config)
@@ -143,9 +143,9 @@ class TestBaseTrainerComponent(BaseTraining):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(N_SAMPLES,
-                                        BaseTrainerComponent(),
-                                        constants.TABULAR_CLASSIFICATION)
+         _) = self.prepare_trainer(N_SAMPLES,
+                                   BaseTrainerComponent(),
+                                   constants.TABULAR_CLASSIFICATION)
 
         prev_loss, prev_metrics = trainer.evaluate(loader, epoch=1, writer=None)
         assert 'accuracy' in prev_metrics
@@ -226,16 +226,16 @@ class TestStandardTrainer(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        StandardTrainer(),
-                                        constants.TABULAR_REGRESSION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   StandardTrainer(),
+                                   constants.TABULAR_REGRESSION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         r2 = 0
         while r2 < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             r2 = metrics['r2']
 
@@ -249,16 +249,16 @@ class TestStandardTrainer(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        StandardTrainer(),
-                                        constants.TABULAR_CLASSIFICATION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   StandardTrainer(),
+                                   constants.TABULAR_CLASSIFICATION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -274,16 +274,16 @@ class TestMixUpTrainer(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        MixUpTrainer(alpha=0.5),
-                                        constants.TABULAR_CLASSIFICATION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   MixUpTrainer(alpha=0.5),
+                                   constants.TABULAR_CLASSIFICATION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -316,7 +316,7 @@ class TestTrainer(unittest.TestCase):
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 self.assertIn(k, estimator_clone_params)
 
             # Make sure the params getter of estimator are honored
@@ -348,7 +348,7 @@ class TestTrainer(unittest.TestCase):
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             trainer_choice.set_hyperparameters(config)

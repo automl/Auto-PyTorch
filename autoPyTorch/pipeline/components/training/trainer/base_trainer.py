@@ -32,6 +32,9 @@ class StepIntervalUnit(Enum):
     epoch = 'epoch'
 
 
+StepIntervalUnitChoices = [step_unit.name for step_unit in StepIntervalUnit]
+
+
 class BudgetTracker(object):
     def __init__(self,
                  budget_type: str,
@@ -227,14 +230,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             ))
 
         if isinstance(step_unit, str):
-            if step_unit not in StepIntervalUnit.__members__.keys():
+            if not hasattr(StepIntervalUnit, step_unit):
                 raise ValueError(
                     'step_unit must be {}, but got {}'.format(
                         list(StepIntervalUnit.__members__.keys()),
                         step_unit
                     ))
 
-            step_unit = StepIntervalUnit.__members__[step_unit]
+            step_unit = getattr(StepIntervalUnit, step_unit)
 
         # Save the device to be used
         self.device = device

@@ -10,10 +10,10 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -39,16 +39,16 @@ class CyclicLR(BaseLRComponent):
         base_lr: float,
         mode: str,
         step_size_up: int,
+        step_unit: Union[str, StepIntervalUnit],
         max_lr: float = 0.1,
         random_state: Optional[np.random.RandomState] = None
     ):
-        super().__init__()
+        super().__init__(step_unit)
         self.base_lr = base_lr
         self.mode = mode
         self.max_lr = max_lr
         self.step_size_up = step_size_up
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -108,7 +108,11 @@ class CyclicLR(BaseLRComponent):
         max_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='max_lr',
                                                                       value_range=(1e-3, 1e-1),
                                                                       default_value=0.1,
-                                                                      )
+                                                                      ),
+        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
+                                                                         value_range=StepIntervalUnitChoices,
+                                                                         default_value=StepIntervalUnit.batch.name
+                                                                         )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -116,5 +120,6 @@ class CyclicLR(BaseLRComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
         add_hyperparameter(cs, step_size_up, UniformIntegerHyperparameter)
         add_hyperparameter(cs, max_lr, UniformFloatHyperparameter)
+        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
 
         return cs
