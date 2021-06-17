@@ -222,7 +222,7 @@ def get_tabular_data(task):
         validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_only":
-        X, y = make_regression(n_samples=3*N_SAMPLES,
+        X, y = make_regression(n_samples=3 * N_SAMPLES,
                                n_features=4,
                                n_informative=3,
                                n_targets=1,
