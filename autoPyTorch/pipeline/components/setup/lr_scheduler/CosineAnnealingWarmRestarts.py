@@ -19,7 +19,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class CosineAnnealingWarmRestarts(BaseLRComponent):
     """
     Set the learning rate of each parameter group using a cosine annealing schedule,
-    where \eta_{max}ηmax is set to the initial lr, T_{cur} is the number of epochs
+    where eta_{max}ηmax is set to the initial lr, T_{cur} is the number of epochs
     since the last restart and T_{i} is the number of epochs between two warm
     restarts in SGDR
 
