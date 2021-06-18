@@ -1,6 +1,7 @@
 import collections
 import logging.handlers
 import os
+import shutil
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
@@ -348,6 +349,16 @@ class TrainerChoice(autoPyTorchChoice):
             )
             self.save_model_for_ensemble()
 
+        # As training have finished, load the best weight
+        if self.checkpoint_dir is not None:
+            best_path = os.path.join(self.checkpoint_dir, 'best.pth')
+            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+            # We will stop the training. Load the last best performing weights
+            X['network'].load_state_dict(torch.load(best_path))
+
+            # Clean the temp dir
+            shutil.rmtree(self.checkpoint_dir)
+
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
 
         # Tag as fitted
@@ -385,12 +396,6 @@ class TrainerChoice(autoPyTorchChoice):
             torch.save(X['network'].state_dict(), best_path)
 
         if epochs_since_best > X['early_stopping']:
-            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
-            # We will stop the training. Load the last best performing weights
-            X['network'].load_state_dict(torch.load(best_path))
-
-            # Let the tempfile module clean the temp dir
-            self.checkpoint_dir = None
             return True
 
         return False
