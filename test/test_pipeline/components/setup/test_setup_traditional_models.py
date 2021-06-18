@@ -126,12 +126,11 @@ def test_model_fit_predict_score(traditional_learner, fit_dictionary_tabular):
                         fit_dictionary_tabular['y_train'][fit_dictionary_tabular['val_indices']])
     assert np.allclose(score, model.fit_output['val_score'], atol=1e-6)
 
-    if sys.version_info >= (3, 7):
-        dump_file = os.path.join(fit_dictionary_tabular['backend'].temporary_directory, 'dump.pkl')
+    dump_file = os.path.join(fit_dictionary_tabular['backend'].temporary_directory, 'dump.pkl')
 
-        with open(dump_file, 'wb') as f:
-            pickle.dump(model, f)
+    with open(dump_file, 'wb') as f:
+        pickle.dump(model, f)
 
-        with open(dump_file, 'rb') as f:
-            restored_estimator = pickle.load(f)
-        restored_estimator.predict(fit_dictionary_tabular['X_train'])
+    with open(dump_file, 'rb') as f:
+        restored_estimator = pickle.load(f)
+    restored_estimator.predict(fit_dictionary_tabular['X_train'])
