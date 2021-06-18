@@ -1072,11 +1072,17 @@ class BaseTask:
             self
         """
 
-        self.dataset_name = dataset.dataset_name
-
         if self._logger is None:
             self._logger = self._get_logger(str(self.dataset_name))
 
+        if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
+            self._load_models()
+
+        # Refit is not applicable when ensemble_size is set to zero.
+        if self.ensemble_ is None:
+            raise ValueError("Refit can only be called if 'ensemble_size != 0'")
+
+        self.dataset_name = dataset.dataset_name
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
             include=self.include_components,
@@ -1085,26 +1091,20 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
-        X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
-                                  'backend': self._backend,
-                                  'X_train': dataset.train_tensors[0],
-                                  'y_train': dataset.train_tensors[1],
-                                  'X_test': dataset.test_tensors[0] if dataset.test_tensors is not None else None,
-                                  'y_test': dataset.test_tensors[1] if dataset.test_tensors is not None else None,
-                                  'train_indices': dataset.splits[split_id][0],
-                                  'val_indices': dataset.splits[split_id][1],
-                                  'split_id': split_id,
-                                  'num_run': self._backend.get_next_num_run(),
-                                  })
-        X.update({**self.pipeline_options, **budget_config})
-        if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
-            self._load_models()
-
-        # Refit is not applicable when ensemble_size is set to zero.
-        if self.ensemble_ is None:
-            raise ValueError("Refit can only be called if 'ensemble_size != 0'")
-
         for identifier in self.models_:
+            X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
+                                      'backend': self._backend,
+                                      'X_train': dataset.train_tensors[0].copy(),
+                                      'y_train': dataset.train_tensors[1].copy(),
+                                      'X_test': dataset.test_tensors[0] if dataset.test_tensors is not None else None,
+                                      'y_test': dataset.test_tensors[1] if dataset.test_tensors is not None else None,
+                                      'train_indices': dataset.splits[split_id][0],
+                                      'val_indices': dataset.splits[split_id][1],
+                                      'split_id': split_id,
+                                      'num_run': self._backend.get_next_num_run(),
+                                      })
+            X.update({**self.pipeline_options, **budget_config})
+
             model = self.models_[identifier]
             # this updates the model inplace, it can then later be used in
             # predict method
