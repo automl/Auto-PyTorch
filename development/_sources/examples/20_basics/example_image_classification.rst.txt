@@ -53,8 +53,6 @@ Image Classification
     19.9%    39.8%    59.7%    79.6%    99.5%    119.3%
     Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
-    Processing...
-    Done!
     Pipeline CS:
      ________________________________________ 
     Configuration space object:
@@ -88,17 +86,11 @@ Image Classification
      ________________________________________ 
     Configuration:
       image_augmenter:GaussianBlur:use_augmenter, Value: False
-      image_augmenter:GaussianNoise:sigma_offset, Value: 2.2167939735095414
-      image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:rotate, Value: 32
-      image_augmenter:RandomAffine:scale_offset, Value: 0.21992528764167255
-      image_augmenter:RandomAffine:shear, Value: 10
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.3741519768349007
-      image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:p, Value: 0.7598328080896313
-      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:GaussianNoise:use_augmenter, Value: False
+      image_augmenter:RandomAffine:use_augmenter, Value: False
+      image_augmenter:RandomCutout:use_augmenter, Value: False
       image_augmenter:Resize:use_augmenter, Value: False
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.40737331917856867
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.20738957470432307
       normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
@@ -178,7 +170,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.302 seconds)
+   **Total running time of the script:** ( 0 minutes  7.763 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
@@ -193,7 +185,7 @@ Image Classification
   .. container:: binder-badge
 
     .. image:: images/binder_badge_logo.svg
-      :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb
+      :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb
       :alt: Launch binder
       :width: 150 px
 

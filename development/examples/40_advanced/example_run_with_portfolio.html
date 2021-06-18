@@ -124,7 +124,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch using the greedy portfolio</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fc73f380df0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f94d3f9e460&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 60
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -156,7 +156,7 @@ with AutoPyTorch using the greedy portfolio</p>
   trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00010919570922851562, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=9.489059448242188e-05, budget=0), TrajEntry(train_perf=0.2222222222222222, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 60
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -188,7 +188,42 @@ with AutoPyTorch using the greedy portfolio</p>
   trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=1, ta_time_used=1.983841896057129, wallclock_time=3.0144827365875244, budget=5.555555555555555), TrajEntry(train_perf=0.19298245614035092, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=2.0646045207977295, wallclock_time=3.0974857807159424, budget=5.555555555555555), TrajEntry(train_perf=0.20467836257309946, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 255
+  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
+  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
+  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  imputer:numerical_strategy, Value: &#39;mean&#39;
+  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
+  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
+  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 2
+  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.7662454727603789
+  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.30409463597128383
+  network_backbone:ShapedResNetBackbone:max_units, Value: 41
+  network_backbone:ShapedResNetBackbone:num_groups, Value: 4
+  network_backbone:ShapedResNetBackbone:output_dim, Value: 200
+  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;funnel&#39;
+  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
+  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
+  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;fully_connected&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
+  network_head:fully_connected:num_layers, Value: 2
+  network_head:fully_connected:units_layer_1, Value: 128
+  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;XavierInit&#39;
+  optimizer:AdamOptimizer:beta1, Value: 0.9
+  optimizer:AdamOptimizer:beta2, Value: 0.9
+  optimizer:AdamOptimizer:lr, Value: 0.011526647986073339
+  optimizer:AdamOptimizer:weight_decay, Value: 0.031290291410446765
+  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  scaler:__choice__, Value: &#39;StandardScaler&#39;
+  trainer:StandardTrainer:weighted_loss, Value: True
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=2, ta_time_used=4.125375986099243, wallclock_time=6.362864017486572, budget=5.555555555555555), TrajEntry(train_perf=0.18128654970760238, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 299
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -221,43 +256,8 @@ with AutoPyTorch using the greedy portfolio</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=4, ta_time_used=8.355929374694824, wallclock_time=13.018919467926025, budget=5.555555555555555), TrajEntry(train_perf=0.18128654970760238, incumbent_id=3, incumbent=Configuration:
-  data_loader:batch_size, Value: 183
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 2
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.27204101593048097
-  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.4412292309825137
-  network_backbone:ShapedResNetBackbone:max_units, Value: 354
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 1
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 200
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.001780112494729604
-  optimizer:AdamOptimizer:weight_decay, Value: 0.004224029178574147
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=5, ta_time_used=10.356622695922852, wallclock_time=16.245516777038574, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=4, incumbent=Configuration:
-  data_loader:batch_size, Value: 150
+, ta_runs=4, ta_time_used=8.550555944442749, wallclock_time=13.231273412704468, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=4, incumbent=Configuration:
+  data_loader:batch_size, Value: 163
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
@@ -266,14 +266,13 @@ with AutoPyTorch using the greedy portfolio</p>
   lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
   network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
   network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 1
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.7133813761319248
-  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.2808341606307928
-  network_backbone:ShapedResNetBackbone:max_units, Value: 314
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 1
+  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.6341848343636569
+  network_backbone:ShapedResNetBackbone:max_units, Value: 171
+  network_backbone:ShapedResNetBackbone:num_groups, Value: 3
   network_backbone:ShapedResNetBackbone:output_dim, Value: 200
   network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;funnel&#39;
   network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
+  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: False
   network_backbone:ShapedResNetBackbone:use_shake_shake, Value: False
   network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
   network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
@@ -285,28 +284,29 @@ with AutoPyTorch using the greedy portfolio</p>
   network_init:__choice__, Value: &#39;XavierInit&#39;
   optimizer:AdamOptimizer:beta1, Value: 0.9
   optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.003106362796390374
-  optimizer:AdamOptimizer:weight_decay, Value: 0.010492136888557045
+  optimizer:AdamOptimizer:lr, Value: 0.002654293880282279
+  optimizer:AdamOptimizer:weight_decay, Value: 0.010374059713414468
   optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=8, ta_time_used=16.065211534500122, wallclock_time=25.715967893600464, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8670520231213873}
+, ta_runs=7, ta_time_used=14.86873459815979, wallclock_time=23.349610328674316, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing                                                     | Estimator                                                          |   Weight |
 |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | None                                                              | ExtraTreesClassifier                                               |     0.18 |
-|  1 | None                                                              | RFClassifier                                                       |     0.16 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  3 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.12 |
-|  4 | None                                                              | CatBoostClassifier                                                 |     0.1  |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  7 | SimpleImputer,NoEncoder,NoScaler,NoFeaturePreprocessing           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
+|  0 | None                                                              | RFLearner                                                          |     0.22 |
+|  1 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.2  |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  3 | None                                                              | CBLearner                                                          |     0.08 |
+|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,KitchenSink            | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  6 | None                                                              | KNNLearner                                                         |     0.06 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 11 | None                                                              | KNNClassifier                                                      |     0.02 |
+|  9 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.04 |
+| 10 | None                                                              | ETLearner                                                          |     0.04 |
+| 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+| 12 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -377,10 +377,10 @@ with AutoPyTorch using the greedy portfolio</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  34.778 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  32.708 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
-<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
 </div>
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/6e1b08ae2c5784892d9641cc2992248d/example_run_with_portfolio.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_run_with_portfolio.py</span></code></a></p>

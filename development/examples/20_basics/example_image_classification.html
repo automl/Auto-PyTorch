@@ -30299,8 +30299,6 @@ Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labe
 119.3%
 Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
-Processing...
-Done!
 Pipeline CS:
  ________________________________________
 Configuration space object:
@@ -30334,17 +30332,11 @@ Pipeline Random Config:
  ________________________________________
 Configuration:
   image_augmenter:GaussianBlur:use_augmenter, Value: False
-  image_augmenter:GaussianNoise:sigma_offset, Value: 2.2167939735095414
-  image_augmenter:GaussianNoise:use_augmenter, Value: True
-  image_augmenter:RandomAffine:rotate, Value: 32
-  image_augmenter:RandomAffine:scale_offset, Value: 0.21992528764167255
-  image_augmenter:RandomAffine:shear, Value: 10
-  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.3741519768349007
-  image_augmenter:RandomAffine:use_augmenter, Value: True
-  image_augmenter:RandomCutout:p, Value: 0.7598328080896313
-  image_augmenter:RandomCutout:use_augmenter, Value: True
+  image_augmenter:GaussianNoise:use_augmenter, Value: False
+  image_augmenter:RandomAffine:use_augmenter, Value: False
+  image_augmenter:RandomCutout:use_augmenter, Value: False
   image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.40737331917856867
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.20738957470432307
   normalizer:__choice__, Value: &#39;NoNormalizer&#39;
 
 Fitting the pipeline...
@@ -30417,10 +30409,10 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.302 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.763 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
-<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
 </div>
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/aadb4b239ce5d2908c9c7c2ba1b19df1/example_image_classification.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_image_classification.py</span></code></a></p>
