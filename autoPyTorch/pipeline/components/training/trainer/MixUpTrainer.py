@@ -11,6 +11,7 @@ import numpy as np
 import torch
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -58,8 +59,8 @@ class MixUpTrainer(BaseTrainerComponent):
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, str]:
+    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'MixUpTrainer',
             'name': 'MixUp Regularized Trainer',
@@ -67,7 +68,7 @@ class MixUpTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict] = None,
+        dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None,
         alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="alpha",
                                                                      value_range=(0, 1),
                                                                      default_value=0.2),
@@ -79,6 +80,6 @@ class MixUpTrainer(BaseTrainerComponent):
         cs = ConfigurationSpace()
         add_hyperparameter(cs, alpha, UniformFloatHyperparameter)
         if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+            if STRING_TO_TASK_TYPES[str(dataset_properties['task_type'])] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
         return cs

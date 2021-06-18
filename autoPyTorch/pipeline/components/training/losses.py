@@ -35,7 +35,7 @@ losses = dict(classification=dict(
         L1Loss=dict(
             module=L1Loss, supported_output_types=[CONTINUOUS])))
 
-default_losses = dict(classification=CrossEntropyLoss, regression=MSELoss)
+default_losses: Dict[str, Type[Loss]] = dict(classification=CrossEntropyLoss, regression=MSELoss)
 
 
 def get_default(task: int) -> Type[Loss]:

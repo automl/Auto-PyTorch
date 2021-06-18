@@ -8,6 +8,7 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -133,7 +134,7 @@ class InceptionTimeBackbone(NetworkBackboneComponent):
         return backbone
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
             'shortname': 'InceptionTimeBackbone',
             'name': 'InceptionTimeBackbone',
@@ -144,7 +145,7 @@ class InceptionTimeBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
                                                                           value_range=(1, 10),
                                                                           default_value=5,

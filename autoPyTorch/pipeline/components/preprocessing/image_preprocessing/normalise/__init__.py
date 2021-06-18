@@ -1,10 +1,11 @@
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -47,7 +48,7 @@ class NormalizerChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, Any]] = None,
+                                        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
                                         include: Optional[List[str]] = None,
                                         exclude: Optional[List[str]] = None) -> ConfigurationSpace:

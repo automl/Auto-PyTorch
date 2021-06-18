@@ -7,6 +7,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -47,7 +48,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: List[str] = None,
         exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -59,7 +60,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
             to honor when creating the configuration space
          exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
              to remove from the configuration space
-         dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
+         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Caracteristics
              of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -103,7 +104,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
@@ -111,7 +112,7 @@ class NetworkInitializerChoice(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
             default (Optional[str]): Default component to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.

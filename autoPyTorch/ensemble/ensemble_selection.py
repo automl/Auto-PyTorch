@@ -149,9 +149,9 @@ class EnsembleSelection(AbstractEnsemble):
             if len(predictions) == 1:
                 break
 
-        self.indices_ = order
-        self.trajectory_ = trajectory
-        self.train_loss_ = trajectory[-1]
+        self.indices_: List[int] = order
+        self.trajectory_: List[float] = trajectory
+        self.train_loss_: float = trajectory[-1]
 
     def _calculate_weights(self) -> None:
         """

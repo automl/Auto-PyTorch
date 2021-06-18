@@ -95,7 +95,6 @@ class BaseTargetValidator(BaseEstimator):
                                      np.shape(y_test)
                                  ))
             if isinstance(y_train, pd.DataFrame):
-                y_train = typing.cast(pd.DataFrame, y_train)
                 y_test = typing.cast(pd.DataFrame, y_test)
                 if y_train.columns.tolist() != y_test.columns.tolist():
                     raise ValueError(

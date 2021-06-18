@@ -4,6 +4,7 @@ import numpy as np
 
 from sklearn.preprocessing import OneHotEncoder as OHE
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder import BaseEncoder
 
 
@@ -28,7 +29,9 @@ class OneHotEncoder(BaseEncoder):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'OneHotEncoder',
             'name': 'One Hot Encoder',

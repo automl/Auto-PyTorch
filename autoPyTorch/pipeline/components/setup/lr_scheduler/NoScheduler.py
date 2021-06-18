@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -6,6 +6,7 @@ import numpy as np
 
 from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
 
 
@@ -40,14 +41,15 @@ class NoScheduler(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'NoScheduler',
             'name': 'No LR Scheduling',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs

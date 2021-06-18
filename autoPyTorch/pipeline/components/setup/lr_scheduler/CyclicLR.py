@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -12,6 +12,7 @@ import numpy as np
 import torch.optim.lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
@@ -80,7 +81,8 @@ class CyclicLR(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'CyclicLR',
             'name': 'Cyclic Learning Rate Scheduler',
@@ -88,7 +90,7 @@ class CyclicLR(BaseLRComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         base_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='base_lr',
                                                                        value_range=(1e-6, 1e-1),
                                                                        default_value=0.01,

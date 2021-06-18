@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -8,6 +8,7 @@ import pandas as pd
 
 from scipy.sparse import csr_matrix
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, preprocess
 from autoPyTorch.utils.common import FitRequirement
@@ -46,13 +47,14 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         **kwargs: Any
     ) -> ConfigurationSpace:
         return ConfigurationSpace()
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'EarlyPreprocessing',
             'name': 'Early Preprocessing Node',

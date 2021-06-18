@@ -36,7 +36,7 @@ def fit_predict_try_except_decorator(
         ta: typing.Callable,
         queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> None:
     try:
-        return ta(queue=queue, **kwargs)
+        ta(queue=queue, **kwargs)
     except Exception as e:
         if isinstance(e, (MemoryError, pynisher.TimeoutException)):
             # Re-raise the memory error to let the pynisher handle that correctly
@@ -147,13 +147,15 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.exclude = exclude
         self.disable_file_output = disable_file_output
         self.init_params = init_params
+
+        self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
+
         self.pipeline_config: typing.Dict[str, typing.Union[int, str, float]] = dict()
         if pipeline_config is None:
             pipeline_config = replace_string_bool_to_bool(json.load(open(
                 os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
         self.pipeline_config.update(pipeline_config)
 
-        self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
         self.logger_port = logger_port
         if self.logger_port is None:
             self.logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
@@ -237,7 +239,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             run_info = run_info._replace(cutoff=int(np.ceil(run_info.cutoff)))
 
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
-        return super().run_wrapper(run_info=run_info)
+        run_info, run_value = super().run_wrapper(run_info=run_info)
+        return run_info, run_value
 
     def run(
             self,

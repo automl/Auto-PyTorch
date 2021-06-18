@@ -1,6 +1,6 @@
 import logging.handlers
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Dict, Optional, Union
 
 from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
@@ -17,6 +17,7 @@ from sklearn.ensemble import (
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.svm import SVC, SVR
 
+from autoPyTorch.pipeline.base_pipeline import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.base_traditional_learner import \
     BaseTraditionalLearner
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner.utils import (
@@ -83,7 +84,9 @@ class LGBModel(BaseTraditionalLearner):
         return y_pred
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'LGBMLearner',
             'name': 'Light Gradient Boosting Machine Learner',
@@ -135,7 +138,9 @@ class CatboostModel(BaseTraditionalLearner):
         self.model.fit(X_train_pooled, eval_set=X_val_pooled, use_best_model=True, early_stopping_rounds=early_stopping)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'CBLearner',
             'name': 'Categorical Boosting Learner',
@@ -190,7 +195,9 @@ class RFModel(BaseTraditionalLearner):
             self.model.fit(X_train, y_train)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RFLearner',
             'name': 'Random Forest Learner',
@@ -242,7 +249,9 @@ class ExtraTreesModel(BaseTraditionalLearner):
             self.model.fit(X_train, y_train)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ETLearner',
             'name': 'ExtraTreesLearner',
@@ -296,7 +305,9 @@ class KNNModel(BaseTraditionalLearner):
         self.model.fit(X_train, y_train)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'KNNLearner',
             'name': 'K Nearest Neighbors Learner',
@@ -337,7 +348,9 @@ class SVMModel(BaseTraditionalLearner):
         self.model.fit(X_train, y_train)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'SVMLearner',
             'name': 'Support Vector Machine Learner',

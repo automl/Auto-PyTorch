@@ -12,11 +12,12 @@ import typing
 import unittest.mock
 import warnings
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 import dask
+import dask.distributed
 
 import joblib
 
@@ -38,7 +39,6 @@ from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
-from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -198,7 +198,7 @@ class BaseTask:
         # examples. Nevertheless, multi-process runs
         # have spawn as requirement to reduce the
         # possibility of a deadlock
-        self._dask_client = None
+        self._dask_client: Optional[dask.distributed.Client] = None
         self._multiprocessing_context = 'forkserver'
         if self.n_jobs == 1:
             self._multiprocessing_context = 'fork'
@@ -711,7 +711,8 @@ class BaseTask:
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
-        portfolio_selection: Optional[str] = None
+        portfolio_selection: Optional[str] = None,
+        dask_client: Optional[dask.distributed.Client] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -857,10 +858,11 @@ class BaseTask:
         # If no dask client was provided, we create one, so that we can
         # start a ensemble process in parallel to smbo optimize
         if (
-            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs is not None and self.n_jobs > 1)
+            dask_client is None and (self.ensemble_size > 0 or self.n_jobs > 1)
         ):
             self._create_dask_client()
         else:
+            self._dask_client = dask_client
             self._is_dask_client_internally_created = False
 
         # Handle time resource allocation
@@ -1206,7 +1208,6 @@ class BaseTask:
 
         # Mypy assert
         assert self.ensemble_ is not None, "Load models should error out if no ensemble"
-        self.ensemble_ = cast(Union[SingleBest, EnsembleSelection], self.ensemble_)
 
         if isinstance(self.resampling_strategy, HoldoutValTypes):
             models = self.models_
@@ -1315,7 +1316,8 @@ class BaseTask:
             self._load_models()
 
         assert self.ensemble_ is not None
-        return self.ensemble_.get_models_with_weights(self.models_)
+        models_with_weights: List[Tuple[float, BasePipeline]] = self.ensemble_.get_models_with_weights(self.models_)
+        return models_with_weights
 
     def show_models(self) -> str:
         df = []
@@ -1323,7 +1325,8 @@ class BaseTask:
             representation = model.get_pipeline_representation()
             representation.update({'Weight': weight})
             df.append(representation)
-        return pd.DataFrame(df).to_markdown()
+        models_markdown: str = pd.DataFrame(df).to_markdown()
+        return models_markdown
 
     def _print_debug_info_to_log(self) -> None:
         """

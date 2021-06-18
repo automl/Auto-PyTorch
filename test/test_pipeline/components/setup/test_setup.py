@@ -458,7 +458,7 @@ class TestNetworkBackbone:
 
         config = config_space.sample_configuration().get_dictionary()
         resnet_backbone = ShapedResNetBackbone(**config)
-        resnet_backbone.build_backbone((100, 5))
+        backbone = resnet_backbone.build_backbone((100, 5))
         dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config if 'dropout_' in key]
         dropout_shape = get_shaped_neuron_counts(
             resnet_shape, 0, 0, 1000, num_groups + 1
@@ -468,7 +468,7 @@ class TestNetworkBackbone:
             dropout / 1000 * max_dropout for dropout in dropout_shape
         ]
         blocks_dropout = []
-        for block in resnet_backbone.backbone:
+        for block in backbone:
             if isinstance(block, torch.nn.Sequential):
                 for inner_block in block:
                     if isinstance(inner_block, ResBlock):

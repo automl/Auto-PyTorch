@@ -7,6 +7,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -45,7 +46,7 @@ class OptimizerChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: List[str] = None,
         exclude: List[str] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -101,7 +102,7 @@ class OptimizerChoice(autoPyTorchChoice):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,

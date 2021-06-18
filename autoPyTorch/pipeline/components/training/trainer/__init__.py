@@ -18,6 +18,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -56,7 +57,7 @@ class TrainerChoice(autoPyTorchChoice):
     """
 
     def __init__(self,
-                 dataset_properties: Dict[str, Any],
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
                  random_state: Optional[np.random.RandomState] = None
                  ):
 
@@ -97,7 +98,7 @@ class TrainerChoice(autoPyTorchChoice):
 
     def get_hyperparameter_search_space(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         default: Optional[str] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
@@ -105,7 +106,7 @@ class TrainerChoice(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
             default (Optional[str]): Default scheduler to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.

@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
@@ -12,7 +12,8 @@ from sklearn.base import RegressorMixin
 import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
@@ -79,7 +80,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     def __init__(self,
                  config: Optional[Configuration] = None,
                  steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
                  random_state: Optional[np.random.RandomState] = None,
@@ -118,12 +119,12 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, [metric_name])
         y_pred = self.predict(X, batch_size=batch_size)
-        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
-                                metrics=metrics)[metric_name]
-        return score
+        r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
+                             metrics=metrics)['r2']
+        return r2
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -138,7 +139,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
                 to honor when creating the configuration space
             exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Characteristics
                 of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -146,10 +147,9 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
@@ -199,18 +199,21 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
+            List[Tuple[str, PipelineStepType]]:
+                list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
+        steps = []  # type: List[Tuple[str, PipelineStepType]]
 
-        default_dataset_properties = {'target_type': 'tabular_regression'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_regression'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 
@@ -258,16 +261,16 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
         for step_name, step_component in self.steps:
             if step_name in skip_steps:
                 continue
-            properties = {}
+            properties: Dict[str, Union[str, bool]] = {}
             if isinstance(step_component, autoPyTorchChoice) and step_component.choice is not None:
                 properties = step_component.choice.get_properties()
             elif isinstance(step_component, autoPyTorchComponent):
                 properties = step_component.get_properties()
             if 'shortname' in properties:
                 if 'network' in step_name:
-                    estimator.append(properties['shortname'])
+                    estimator.append(str(properties['shortname']))
                 else:
-                    preprocessing.append(properties['shortname'])
+                    preprocessing.append(str(properties['shortname']))
         return {
             'Preprocessing': ','.join(preprocessing),
             'Estimator': ','.join(estimator),

@@ -4,7 +4,7 @@ import pkgutil
 import sys
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -13,6 +13,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
@@ -127,14 +128,11 @@ class autoPyTorchComponent(BaseEstimator):
         return self._fit_requirements
 
     def add_fit_requirements(self, requirements: List[FitRequirement]) -> None:
-        if self._fit_requirements is not None:
-            self._fit_requirements.extend(requirements)
-        else:
-            self._fit_requirements = requirements
+        self._fit_requirements.extend(requirements)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
-                       ) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         """Get the properties of the underlying algorithm.
 
         Args:
@@ -147,7 +145,7 @@ class autoPyTorchComponent(BaseEstimator):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         """Return the configuration space of this classification algorithm.
 
@@ -160,7 +158,7 @@ class autoPyTorchComponent(BaseEstimator):
         """
         raise NotImplementedError()
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> "autoPyTorchComponent":
         """The fit function calls the fit function of the underlying
         model and returns `self`.
 

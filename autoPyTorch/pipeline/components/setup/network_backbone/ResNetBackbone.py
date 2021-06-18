@@ -11,6 +11,7 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import (
     _activations,
@@ -27,7 +28,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     Implementation of a Residual Network backbone
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
+    def build_backbone(self, input_shape: Tuple[int, ...]) -> torch.nn.Sequential:
         layers = list()  # type: List[nn.Module]
         in_features = input_shape[0]
         layers.append(nn.Linear(in_features, self.config["num_units_0"]))
@@ -48,7 +49,6 @@ class ResNetBackbone(NetworkBackboneComponent):
         layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
         layers.append(_activations[self.config["activation"]]())
         backbone = nn.Sequential(*layers)
-        self.backbone = backbone
         return backbone
 
     def _add_group(self, in_features: int, out_features: int,
@@ -83,7 +83,8 @@ class ResNetBackbone(NetworkBackboneComponent):
         return nn.Sequential(*blocks)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ResNetBackbone',
             'name': 'ResidualNetworkBackbone',
@@ -94,7 +95,7 @@ class ResNetBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                           value_range=(1, 15),
                                                                           default_value=5,

@@ -122,4 +122,4 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         Returns:
             str: Name of the backbone
         """
-        return cls.get_properties()["shortname"]
+        return str(cls.get_properties()["shortname"])

@@ -5,6 +5,7 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
 
 
@@ -19,6 +20,6 @@ class VerticalFlip(BaseImageAugmenter):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'VerticalFlip'}

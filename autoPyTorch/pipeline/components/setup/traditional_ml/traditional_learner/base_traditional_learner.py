@@ -72,14 +72,14 @@ class BaseTraditionalLearner:
                                                       'output_type': output_type},
                                   names=[optimize_metric] if optimize_metric is not None else None)[0]
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> Dict[str, Union[int, str, float, bool]]:
         """
         Load the parameters for the classifier model from ../estimator_configs/modelname.json.
         """
         dirname = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(dirname, "../estimator_configs", self.name + ".json")
         with open(config_path, "r") as f:
-            config = json.load(f)
+            config: Dict[str, Union[int, str, float, bool]] = json.load(f)
         for k, v in config.items():
             if v == "True":
                 config[k] = True

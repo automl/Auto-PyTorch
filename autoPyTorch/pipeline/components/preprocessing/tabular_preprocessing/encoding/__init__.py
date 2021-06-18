@@ -1,10 +1,11 @@
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -46,7 +47,7 @@ class EncoderChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, Any]] = None,
+                                        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
                                         include: Optional[List[str]] = None,
                                         exclude: Optional[List[str]] = None) -> ConfigurationSpace:
@@ -75,6 +76,8 @@ class EncoderChoice(autoPyTorchChoice):
                     default = default_
                     break
 
+        categorical_columns = dataset_properties['categorical_columns'] \
+            if isinstance(dataset_properties['categorical_columns'], List) else []
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -83,7 +86,7 @@ class EncoderChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_preprocessors,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['categorical_columns']) == 0:
+            if len(choice_hyperparameter) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 assert 'NoEncoder' in choice_hyperparameter.value_range, \
                     "Provided {} in choices, however, the dataset " \
@@ -94,7 +97,7 @@ class EncoderChoice(autoPyTorchChoice):
                                                          default_value=choice_hyperparameter.default_value)
         else:
             # add only no encoder to choice hyperparameters in case the dataset is only numerical
-            if len(dataset_properties['categorical_columns']) == 0:
+            if len(categorical_columns) == 0:
                 default = 'NoEncoder'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, the dataset "
@@ -121,7 +124,7 @@ class EncoderChoice(autoPyTorchChoice):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _check_dataset_properties(self, dataset_properties: Dict[str, Any]) -> None:
+    def _check_dataset_properties(self, dataset_properties: Dict[str, BaseDatasetPropertiesType]) -> None:
         """
         A mechanism in code to ensure the correctness of the fit dictionary
         It recursively makes sure that the children and parent level requirements

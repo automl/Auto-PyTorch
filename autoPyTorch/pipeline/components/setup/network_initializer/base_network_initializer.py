@@ -10,6 +10,7 @@ import numpy as np
 
 import torch
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
@@ -73,7 +74,7 @@ class BaseNetworkInitializerComponent(autoPyTorchSetupComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         bias_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bias_strategy",
                                                                              value_range=('Zero', 'Normal'),
                                                                              default_value='Normal')

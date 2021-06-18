@@ -1,7 +1,7 @@
 import warnings
 from abc import ABCMeta
 from collections import Counter
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -13,6 +13,7 @@ from sklearn.utils.validation import check_random_state
 
 import torch
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.create_searchspace_util import (
@@ -24,6 +25,9 @@ from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
+PipelineStepType = Union[autoPyTorchComponent, autoPyTorchChoice]
+
+
 class BasePipeline(Pipeline):
     """Base class for all pipeline objects.
     Notes
@@ -31,14 +35,19 @@ class BasePipeline(Pipeline):
     This class should not be instantiated, only subclassed.
 
     Args:
-        config (Optional[Configuration]): Allows to directly specify a configuration space
-        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
-            build the pipeline. If provided, they won't be dynamically produced.
-        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
-            to honor during the creation of the configuration space.
-        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        config (Optional[Configuration]):
+            Allows to directly specify a configuration space
+        steps (Optional[List[Tuple[str, PipelineStepType]]]):
+            the list of steps that build the pipeline. If provided,
+             they won't be dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations to honor during
+            the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to avoid during the creation of the configuration space.
-        random_state (np.random.RandomState): allows to produce reproducible results by
+        random_state (np.random.RandomState):
+            allows to produce reproducible results by
             setting a seed for randomized settings
         init_params (Optional[Dict[str, Any]])
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
@@ -47,9 +56,17 @@ class BasePipeline(Pipeline):
 
 
     Attributes:
-        steps (List[Tuple[str, autoPyTorchChoice]]]): the steps of the current pipeline
-        config (Configuration): a configuration to delimit the current component choice
-        random_state (Optional[np.random.RandomState]): allows to produce reproducible
+        steps (List[Tuple[str, PipelineStepType]]):
+            the steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            a configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            allows to produce reproducible
                results by setting a seed for randomized settings
 
     """
@@ -58,8 +75,8 @@ class BasePipeline(Pipeline):
     def __init__(
             self,
             config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
+            steps: Optional[List[Tuple[str, PipelineStepType]]] = None,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             include: Optional[Dict[str, Any]] = None,
             exclude: Optional[Dict[str, Any]] = None,
             random_state: Optional[np.random.RandomState] = None,
@@ -155,18 +172,6 @@ class BasePipeline(Pipeline):
         self._final_estimator.fit(X, y, **fit_params)
         return self
 
-    def get_max_iter(self) -> int:
-        if self.estimator_supports_iterative_fit():
-            return self._final_estimator.get_max_iter()
-        else:
-            raise NotImplementedError()
-
-    def configuration_fully_fitted(self) -> bool:
-        return self._final_estimator.configuration_fully_fitted()
-
-    def get_current_iter(self) -> int:
-        return self._final_estimator.get_current_iter()
-
     def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
@@ -213,8 +218,10 @@ class BasePipeline(Pipeline):
             if not isinstance(node, autoPyTorchChoice):
                 updates = node._get_search_space_updates()
 
-            sub_configuration_space = node.get_hyperparameter_search_space(self.dataset_properties,
-                                                                           **updates)
+            sub_configuration_space = node.get_hyperparameter_search_space(  # type: ignore[call-arg]
+                self.dataset_properties,
+                **updates
+            )
             sub_config_dict = {}
             for param in configuration:
                 if param.startswith('%s:' % node_name):
@@ -264,7 +271,7 @@ class BasePipeline(Pipeline):
         return self.named_steps['network'].get_network()
 
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -308,16 +315,13 @@ class BasePipeline(Pipeline):
     def _get_base_search_space(
             self,
             cs: ConfigurationSpace,
-            dataset_properties: Dict[str, Any],
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
             include: Optional[Dict[str, Any]],
             exclude: Optional[Dict[str, Any]],
-            pipeline: List[Tuple[str, autoPyTorchChoice]]
+            pipeline: List[Tuple[str, PipelineStepType]]
     ) -> ConfigurationSpace:
         if include is None:
-            if self.include is None:
-                include = {}
-            else:
-                include = self.include
+            include = self.include
 
         keys = [pair[0] for pair in pipeline]
         for key in include:
@@ -326,10 +330,7 @@ class BasePipeline(Pipeline):
                                  'of %s' % (key, keys))
 
         if exclude is None:
-            if self.exclude is None:
-                exclude = {}
-            else:
-                exclude = self.exclude
+            exclude = self.exclude
 
         keys = [pair[0] for pair in pipeline]
         for key in exclude:
@@ -358,30 +359,31 @@ class BasePipeline(Pipeline):
         for node_idx, n_ in enumerate(pipeline):
             node_name, node = n_
 
-            is_choice = isinstance(node, autoPyTorchChoice)
-
             # if the node isn't a choice we can add it immediately because it
             #  must be active (if it wasn't, np.sum(matches) would be zero
-            if not is_choice:
-                # for mypy
-                assert not isinstance(node, autoPyTorchChoice)
-                cs.add_configuration_space(
-                    node_name,
-                    node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[arg-type]
-                                                         **node._get_search_space_updates()),
-                )
-            # If the node is a choice, we have to figure out which of its
-            #  choices are actually legal choices
-            else:
+            if isinstance(node, autoPyTorchChoice):
                 choices_list = find_active_choices(
                     matches, node, node_idx,
                     dataset_properties,
                     include.get(node_name),
                     exclude.get(node_name)
                 )
-                sub_config_space = node.get_hyperparameter_search_space(
+
+                # ignore type check here as mypy is not able to infer
+                # that isinstance(node, autoPyTorchChooice) = True
+                sub_config_space = node.get_hyperparameter_search_space(  # type: ignore[call-arg]
                     dataset_properties, include=choices_list)
                 cs.add_configuration_space(node_name, sub_config_space)
+
+            # If the node is a choice, we have to figure out which of its
+            #  choices are actually legal choices
+            else:
+                cs.add_configuration_space(
+                    node_name,
+                    node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[call-arg]
+                                                         **node._get_search_space_updates()
+                                                         )
+                )
 
         # And now add forbidden parameter configurations
         # According to matches
@@ -475,14 +477,14 @@ class BasePipeline(Pipeline):
                                                                      dataset_properties=self.dataset_properties).
                                                                  get_hyperparameter_names(), update.hyperparameter))
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
+                            ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoices.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoices]]: list of steps sequentially exercised
+            List[Tuple[str, PipelineStepType]]: list of steps sequentially exercised
                 by the pipeline.
         """
         raise NotImplementedError()

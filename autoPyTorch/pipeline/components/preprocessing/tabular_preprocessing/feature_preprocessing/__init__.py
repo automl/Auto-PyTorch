@@ -1,10 +1,11 @@
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -46,7 +47,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, Any]] = None,
+                                        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
                                         include: Optional[List[str]] = None,
                                         exclude: Optional[List[str]] = None) -> ConfigurationSpace:
@@ -82,6 +83,9 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                         continue
                     default = default_
                     break
+
+        numerical_columns = dataset_properties['numerical_columns'] \
+            if isinstance(dataset_properties['numerical_columns'], List) else []
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -90,7 +94,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_,
                                                                choice_hyperparameter.value_range))
-            if len(dataset_properties['numerical_columns']) == 0:
+            if len(numerical_columns) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 assert 'NoFeaturePreprocessor' in choice_hyperparameter.value_range, \
                     "Provided {} in choices, however, the dataset " \
@@ -100,7 +104,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                                          default_value=choice_hyperparameter.default_value)
         else:
             # add only no feature preprocessor to choice hyperparameters in case the dataset is only categorical
-            if len(dataset_properties['numerical_columns']) == 0:
+            if len(numerical_columns) == 0:
                 default = 'NoFeaturePreprocessor'
                 if include is not None and default not in include:
                     raise ValueError("Provided {} in include, however, "
@@ -110,7 +114,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                                              default_value=default)
             else:
                 # Truncated SVD requires n_features > n_components
-                if len(dataset_properties['numerical_columns']) == 1:
+                if len(numerical_columns) == 1:
                     del available_['TruncatedSVD']
                 preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                              list(available_.keys()),

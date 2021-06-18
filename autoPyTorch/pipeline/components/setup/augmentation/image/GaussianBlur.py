@@ -12,6 +12,7 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
@@ -31,7 +32,7 @@ class GaussianBlur(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
                                                                              value_range=(True, False),
                                                                              default_value=True,
@@ -57,6 +58,6 @@ class GaussianBlur(BaseImageAugmenter):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'GaussianBlur'}

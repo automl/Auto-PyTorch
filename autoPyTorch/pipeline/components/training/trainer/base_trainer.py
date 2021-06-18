@@ -119,7 +119,6 @@ class RunSummary(object):
         self.performance_tracker['test_metrics'][epoch] = test_metrics
 
     def get_best_epoch(self, loss_type: str = 'val_loss') -> int:
-
         # If we compute validation scores, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
@@ -130,21 +129,21 @@ class RunSummary(object):
             ]
             # Some metrics maximize, other minimize!
             opt_func = np.argmax if scorer._sign > 0 else np.argmin
-            return opt_func(
+            return int(opt_func(
                 [self.performance_tracker['val_metrics'][e][self.optimize_metric]
                  for e in range(1, len(self.performance_tracker['val_metrics']) + 1)]
-            ) + 1  # Epochs start at 1
+            )) + 1  # Epochs start at 1
         else:
-            return np.argmin(
+            return int(np.argmin(
                 [self.performance_tracker[loss_type][e]
-                 for e in range(1, len(self.performance_tracker[loss_type]) + 1)]
-            ) + 1  # Epochs start at 1
+                 for e in range(1, len(self.performance_tracker[loss_type]) + 1)],
+            )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
         if 'train_loss' not in self.performance_tracker:
             return 0
         else:
-            return max(self.performance_tracker['train_loss'].keys())
+            return int(max(self.performance_tracker['train_loss'].keys()))
 
     def repr_last_epoch(self) -> str:
         """

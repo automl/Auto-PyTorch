@@ -205,4 +205,4 @@ def add_hyperparameter(cs: ConfigurationSpace,
     Returns:
         None
     """
-    return cs.add_hyperparameter(get_hyperparameter(hyperparameter, hyperparameter_type))
+    cs.add_hyperparameter(get_hyperparameter(hyperparameter, hyperparameter_type))
