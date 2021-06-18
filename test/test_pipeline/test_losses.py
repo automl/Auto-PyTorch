@@ -1,3 +1,5 @@
+import numpy as np
+
 import pytest
 
 import torch
@@ -5,7 +7,11 @@ from torch import nn
 from torch.nn.modules.loss import _Loss as Loss
 
 from autoPyTorch.pipeline.components.training.losses import get_loss, losses
-from autoPyTorch.utils.implementations import get_loss_weight_strategy
+from autoPyTorch.utils.implementations import (
+    LossWeightStrategyWeighted,
+    LossWeightStrategyWeightedBinary,
+    get_loss_weight_strategy,
+)
 
 
 @pytest.mark.parametrize('output_type', ['multiclass',
@@ -66,3 +72,70 @@ def test_loss_dict():
             assert isinstance(loss['module'](), Loss)
             assert 'supported_output_types' in loss.keys()
             assert isinstance(loss['supported_output_types'], list)
+
+
+@pytest.mark.parametrize('target,expected_weights', [
+    (
+        # Expected 4 classes where first one is majority one
+        np.array([[1, 0, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]),
+        # We reduce the contribution of the first class which has double elements
+        np.array([0.5, 1., 1., 1.]),
+    ),
+    (
+        # Expected 2 classes -- multilable format
+        np.array([[1, 0], [1, 0], [1, 0], [0, 1]]),
+        # We reduce the contribution of the first class which 3 to 1 ratio
+        np.array([2 / 3, 2]),
+    ),
+    (
+        # Expected 2 classes -- (-1, 1) format
+        np.array([[1], [1], [1], [0]]),
+        # We reduce the contribution of the second class, which has a 3 to 1 ratio
+        np.array([2, 2 / 3]),
+    ),
+    (
+        # Expected 2 classes -- single column
+        # We have to reduce the contribution of the second class with 5 to 1 ratio
+        np.array([1, 1, 1, 1, 1, 0]),
+        # We reduce the contribution of the first class which has double elements
+        np.array([3, 6 / 10]),
+    ),
+])
+def test_lossweightstrategyweighted(target, expected_weights):
+    weights = LossWeightStrategyWeighted()(target)
+    np.testing.assert_array_equal(weights, expected_weights)
+    assert nn.CrossEntropyLoss(weight=torch.Tensor(weights))(
+        torch.zeros(target.shape[0], len(weights)).float(),
+        torch.from_numpy(target.argmax(1)).long() if len(target.shape) > 1
+        else torch.from_numpy(target).long()
+    ) > 0
+
+
+@pytest.mark.parametrize('target,expected_weights', [
+    (
+        # Expected 2 classes -- multilable format
+        np.array([[1, 0], [1, 0], [1, 0], [0, 1]]),
+        # We reduce the contribution of the first class which 3 to 1 ratio
+        np.array([1 / 3, 3]),
+    ),
+    (
+        # Expected 2 classes -- (-1, 1) format
+        np.array([[1], [1], [1], [0]]),
+        # We reduce the contribution of the second class, which has a 3 to 1 ratio
+        np.array([1 / 3]),
+    ),
+    (
+        # Expected 2 classes -- single column
+        # We have to reduce the contribution of the second class with 5 to 1 ratio
+        np.array([1, 1, 1, 1, 1, 0]),
+        # We reduce the contribution of the first class which has double elements
+        np.array([0.2]),
+    ),
+])
+def test_lossweightstrategyweightedbinary(target, expected_weights):
+    weights = LossWeightStrategyWeightedBinary()(target)
+    np.testing.assert_array_equal(weights, expected_weights)
+    assert nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(weights))(
+        torch.from_numpy(target).float(),
+        torch.from_numpy(target).float(),
+    ) > 0

@@ -25,17 +25,17 @@ class LossWeightStrategyWeighted():
     def __call__(self, y: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         if isinstance(y, torch.Tensor):
             y = y.detach().cpu().numpy() if y.is_cuda else y.numpy()
-        if isinstance(y[0], str):
-            y = y.astype('float64')
         counts = np.sum(y, axis=0)
         total_weight = y.shape[0]
 
-        if len(y.shape) > 1:
+        if len(y.shape) > 1 and y.shape[1] != 1:
+            # In this case, the second axis represents classes
             weight_per_class = total_weight / y.shape[1]
             weights = (np.ones(y.shape[1]) * weight_per_class) / np.maximum(counts, 1)
         else:
+            # Numpy unique return the sorted classes. This is desirable as
+            # weights recieved by PyTorch is a sorted list of classes
             classes, counts = np.unique(y, axis=0, return_counts=True)
-            classes, counts = classes[::-1], counts[::-1]
             weight_per_class = total_weight / classes.shape[0]
             weights = (np.ones(classes.shape[0]) * weight_per_class) / counts
 
@@ -50,10 +50,8 @@ class LossWeightStrategyWeightedBinary():
     def __call__(self, y: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         if isinstance(y, torch.Tensor):
             y = y.detach().cpu().numpy() if y.is_cuda else y.numpy()
-        if isinstance(y[0], str):
-            y = y.astype('float64')
         counts_one = np.sum(y, axis=0)
-        counts_zero = counts_one + (-y.shape[0])
+        counts_zero = y.shape[0] - counts_one
         weights = counts_zero / np.maximum(counts_one, 1)
 
         return np.array(weights)
