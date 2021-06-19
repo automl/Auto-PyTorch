@@ -4,7 +4,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -15,13 +15,8 @@ class BaseLRComponent(autoPyTorchSetupComponent):
     def __init__(self, step_unit: Union[str, StepIntervalUnit]) -> None:
         super().__init__()
         self.scheduler = None  # type: Optional[_LRScheduler]
-        if isinstance(step_unit, str) and not hasattr(StepIntervalUnit, step_unit):
-            raise ValueError('step_unit must either {}, but got {}'.format(
-                StepIntervalUnitChoices,
-                step_unit
-            ))
 
-        self.step_unit = step_unit
+        self.step_unit = step_unit if isinstance(step_unit, str) else step_unit.name
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])

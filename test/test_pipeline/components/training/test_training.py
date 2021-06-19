@@ -187,35 +187,51 @@ class TestBaseTrainerComponent(BaseTraining):
                 lr = optimizer.param_groups[0]['lr']
                 assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
 
-    def test_prepare(self):
-        trainer_component = BaseTrainerComponent()
+    def test_train_step(self):
+        device = torch.device('cpu')
+        model = torch.nn.Linear(1, 1).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1)
+        data, targets = torch.Tensor([1.]).to(device), torch.Tensor([1.]).to(device)
+        ms = [3, 5, 6]
         params = {
             'metrics': [],
-            'device': torch.device('cpu'),
-            'task_type': 0,
+            'device': device,
+            'task_type': constants.TABULAR_REGRESSION,
             'labels': torch.Tensor([]),
             'metrics_during_training': False,
             'budget_tracker': BudgetTracker(budget_type=''),
-            'criterion': torch.nn.CrossEntropyLoss,
-            'optimizer': torch.optim.Adam,
-            'scheduler': torch.optim.lr_scheduler.MultiStepLR,
-            'model': torch.nn.Sequential()
+            'criterion': torch.nn.MSELoss,
+            'optimizer': optimizer,
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=ms, gamma=2),
+            'model': model,
+            'step_unit': StepIntervalUnit.epoch
         }
+        trainer = StandardTrainer()
+        trainer.prepare(**params)
 
-        for step_unit in [1, 1.0, "dummy"]:
-            try:
-                params.update(step_unit=step_unit)
-                trainer_component.prepare(**params)
-            except ValueError:
-                pass
-            except Exception as e:
-                pytest.fail("set_training_params raised an unexpected exception {}.".format(e))
-            else:
-                pytest.fail("set_training_params did not raise an Error although the step_unit is invalid.")
+        for _ in range(10):
+            trainer.train_step(
+                data=data,
+                targets=targets
+            )
+            lr = optimizer.param_groups[0]['lr']
+            assert lr == 1
 
-        for step_unit in ["batch", "epoch", StepIntervalUnit.batch, StepIntervalUnit.epoch]:
-            params.update(step_unit=step_unit)
-            trainer_component.prepare(**params)
+        params.update(step_unit=StepIntervalUnit.batch)
+        trainer = StandardTrainer()
+        trainer.prepare(**params)
+
+        target_lr = 1
+        for i in range(10):
+            trainer.train_step(
+                data=data,
+                targets=targets
+            )
+            if i + 1 in ms:
+                target_lr *= 2
+
+            lr = optimizer.param_groups[0]['lr']
+            assert lr == target_lr
 
 
 class TestStandardTrainer(BaseTraining):

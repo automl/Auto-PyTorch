@@ -222,21 +222,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         step_unit: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
-        step_unit_types = (str, StepIntervalUnit)
-        if not isinstance(step_unit, step_unit_types):
-            raise ValueError('step_unit must be either {}, but got {}.'.format(
-                step_unit_types,
-                type(step_unit)
-            ))
-
-        if isinstance(step_unit, str):
-            if not hasattr(StepIntervalUnit, step_unit):
-                raise ValueError(
-                    'step_unit must be {}, but got {}'.format(
-                        list(StepIntervalUnit.__members__.keys()),
-                        step_unit
-                    ))
-
+        if isinstance(step_unit, str) and hasattr(StepIntervalUnit, step_unit):
             step_unit = getattr(StepIntervalUnit, step_unit)
 
         # Save the device to be used
