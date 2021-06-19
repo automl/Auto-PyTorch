@@ -1,11 +1,15 @@
-from typing import Any, Dict, Optional, Union
+from abc import abstractstaticmethod
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from ConfigSpace.configuration_space import ConfigurationSpace
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 
 
 class BaseLRComponent(autoPyTorchSetupComponent):
@@ -56,3 +60,17 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         """ Allow a nice understanding of what components where used """
         string = self.scheduler.__class__.__name__
         return string
+    
+    @abstractstaticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        *args: Tuple[HyperparameterSearchSpace]
+    ) -> ConfigurationSpace:
+        """ TODO: Create _DefaultHyperparameterSearchSpace class for each scheduler """
+
+        raise NotImplementedError
