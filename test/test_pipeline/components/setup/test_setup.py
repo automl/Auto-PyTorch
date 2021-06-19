@@ -210,11 +210,11 @@ class TestScheduler:
         assert len(lr_components._addons.components) == 1
         cs = SchedulerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyLR' in str(cs)
-    
+
     def test_schduler_init(self):
         for step_interval in StepIntervalUnitChoices:
             DummyLR(step_interval=step_interval)
-        
+
         for step_interval in ['Batch', 'foo']:
             try:
                 DummyLR(step_interval=step_interval)
@@ -223,7 +223,8 @@ class TestScheduler:
             except Exception as e:
                 pytest.fail("The initialization of lr_scheduler raised an unexpected exception {}.".format(e))
             else:
-                pytest.fail("The initialization of lr_scheduler did not raise an Error although the step_unit is invalid.")
+                pytest.fail("The initialization of lr_scheduler did not raise an Error "
+                            "although the step_unit is invalid.")
 
 
 class OptimizerTest:
