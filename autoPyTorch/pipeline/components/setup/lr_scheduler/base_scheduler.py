@@ -4,7 +4,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -12,11 +12,17 @@ class BaseLRComponent(autoPyTorchSetupComponent):
     """Provide an abstract interface for schedulers
     in Auto-Pytorch"""
 
-    def __init__(self, step_unit: Union[str, StepIntervalUnit]) -> None:
+    def __init__(self, step_interval: Union[str, StepIntervalUnit]) -> None:
         super().__init__()
         self.scheduler = None  # type: Optional[_LRScheduler]
 
-        self.step_unit = step_unit if isinstance(step_unit, str) else step_unit.name
+        if isinstance(step_interval, str) and step_interval not in StepIntervalUnitChoices:
+            raise ValueError('step_interval must be either {}, but got {}.'.format(
+                StepIntervalUnitChoices,
+                step_interval
+            ))
+
+        self.step_interval = step_interval if isinstance(step_interval, str) else step_interval.name
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])
@@ -31,11 +37,11 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         """
 
         # This processing is an ad-hoc handling of the dependencies because of ConfigSpace and unittest
-        step_unit = getattr(StepIntervalUnit, self.step_unit) if isinstance(self.step_unit, str) else self.step_unit
+        step_interval = getattr(StepIntervalUnit, self.step_interval)
 
         X.update(
             lr_scheduler=self.scheduler,
-            step_unit=step_unit
+            step_interval=step_interval
         )
         return X
 

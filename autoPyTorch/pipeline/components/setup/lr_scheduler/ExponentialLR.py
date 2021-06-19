@@ -28,11 +28,11 @@ class ExponentialLR(BaseLRComponent):
     def __init__(
         self,
         gamma: float,
-        step_unit: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit],
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.gamma = gamma
         self.random_state = random_state
 
@@ -72,14 +72,14 @@ class ExponentialLR(BaseLRComponent):
                                                                      value_range=(0.7, 0.9999),
                                                                      default_value=0.9,
                                                                      ),
-        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
-                                                                         value_range=StepIntervalUnitChoices,
-                                                                         default_value=StepIntervalUnit.batch.name
-                                                                         )
+        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
+                                                                             value_range=StepIntervalUnitChoices,
+                                                                             default_value=StepIntervalUnit.batch.name
+                                                                             )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

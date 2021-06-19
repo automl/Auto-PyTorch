@@ -34,10 +34,10 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         self,
         T_0: int,
         T_mult: int,
-        step_unit: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit],
         random_state: Optional[np.random.RandomState] = None,
     ):
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.T_0 = T_0
         self.T_mult = T_mult
         self.random_state = random_state
@@ -83,15 +83,15 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
                                                                       value_range=(1.0, 2.0),
                                                                       default_value=1.0,
                                                                       ),
-        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
-                                                                         value_range=StepIntervalUnitChoices,
-                                                                         default_value=StepIntervalUnit.batch.name
-                                                                         )
+        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
+                                                                             value_range=StepIntervalUnitChoices,
+                                                                             default_value=StepIntervalUnit.batch.name
+                                                                             )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, T_0, UniformIntegerHyperparameter)
         add_hyperparameter(cs, T_mult, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

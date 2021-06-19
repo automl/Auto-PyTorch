@@ -39,11 +39,11 @@ class CyclicLR(BaseLRComponent):
         base_lr: float,
         mode: str,
         step_size_up: int,
-        step_unit: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit],
         max_lr: float = 0.1,
         random_state: Optional[np.random.RandomState] = None
     ):
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.base_lr = base_lr
         self.mode = mode
         self.max_lr = max_lr
@@ -109,10 +109,10 @@ class CyclicLR(BaseLRComponent):
                                                                       value_range=(1e-3, 1e-1),
                                                                       default_value=0.1,
                                                                       ),
-        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
-                                                                         value_range=StepIntervalUnitChoices,
-                                                                         default_value=StepIntervalUnit.batch.name
-                                                                         )
+        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
+                                                                             value_range=StepIntervalUnitChoices,
+                                                                             default_value=StepIntervalUnit.batch.name
+                                                                             )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -120,6 +120,6 @@ class CyclicLR(BaseLRComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
         add_hyperparameter(cs, step_size_up, UniformIntegerHyperparameter)
         add_hyperparameter(cs, max_lr, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

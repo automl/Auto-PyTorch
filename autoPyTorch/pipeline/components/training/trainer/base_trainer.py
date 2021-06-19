@@ -32,7 +32,7 @@ class StepIntervalUnit(Enum):
     epoch = 'epoch'
 
 
-StepIntervalUnitChoices = [step_unit.name for step_unit in StepIntervalUnit]
+StepIntervalUnitChoices = [step_interval.name for step_interval in StepIntervalUnit]
 
 
 class BudgetTracker(object):
@@ -219,11 +219,11 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_unit: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
-        if isinstance(step_unit, str) and hasattr(StepIntervalUnit, step_unit):
-            step_unit = getattr(StepIntervalUnit, step_unit)
+        if isinstance(step_interval, str) and hasattr(StepIntervalUnit, step_interval):
+            step_interval = getattr(StepIntervalUnit, step_interval)
 
         # Save the device to be used
         self.device = device
@@ -252,7 +252,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # Scheduler
         self.scheduler = scheduler
-        self.step_unit = step_unit
+        self.step_interval = step_interval
 
         # task type (used for calculating metrics)
         self.task_type = task_type
@@ -279,7 +279,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         step_interval: StepIntervalUnit,
         loss: Optional[torch.Tensor] = None
     ) -> None:
-        if self.step_unit != step_interval:
+        if self.step_interval != step_interval:
             return
 
         if self.scheduler:

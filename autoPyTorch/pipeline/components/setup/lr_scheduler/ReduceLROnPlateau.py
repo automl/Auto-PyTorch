@@ -39,10 +39,10 @@ class ReduceLROnPlateau(BaseLRComponent):
         mode: str,
         factor: float,
         patience: int,
-        step_unit: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit],
         random_state: Optional[np.random.RandomState] = None,
     ):
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.mode = mode
         self.factor = factor
         self.patience = patience
@@ -94,10 +94,10 @@ class ReduceLROnPlateau(BaseLRComponent):
                                                                       value_range=(0.01, 0.9),
                                                                       default_value=0.1,
                                                                       ),
-        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
-                                                                         value_range=StepIntervalUnitChoices,
-                                                                         default_value=StepIntervalUnit.batch.name
-                                                                         )
+        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
+                                                                             value_range=StepIntervalUnitChoices,
+                                                                             default_value=StepIntervalUnit.batch.name
+                                                                             )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -105,6 +105,6 @@ class ReduceLROnPlateau(BaseLRComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
         add_hyperparameter(cs, patience, UniformIntegerHyperparameter)
         add_hyperparameter(cs, factor, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

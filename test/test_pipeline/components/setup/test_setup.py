@@ -36,6 +36,7 @@ from autoPyTorch.pipeline.components.setup.optimizer import (
     BaseOptimizerComponent,
     OptimizerChoice
 )
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
 from autoPyTorch.utils.hyperparameter_search_space_update import (
     HyperparameterSearchSpace,
     HyperparameterSearchSpaceUpdates
@@ -43,8 +44,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
 
 
 class DummyLR(BaseLRComponent):
-    def __init__(self, random_state=None):
-        pass
+    def __init__(self, step_interval: StepIntervalUnit, random_state=None):
+        super().__init__(step_interval=step_interval)
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
@@ -152,7 +153,7 @@ class TestScheduler:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -182,7 +183,7 @@ class TestScheduler:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             scheduler_choice.set_hyperparameters(config)
@@ -209,6 +210,20 @@ class TestScheduler:
         assert len(lr_components._addons.components) == 1
         cs = SchedulerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyLR' in str(cs)
+    
+    def test_schduler_init(self):
+        for step_interval in StepIntervalUnitChoices:
+            DummyLR(step_interval=step_interval)
+        
+        for step_interval in ['Batch', 'foo']:
+            try:
+                DummyLR(step_interval=step_interval)
+            except ValueError:
+                pass
+            except Exception as e:
+                pytest.fail("The initialization of lr_scheduler raised an unexpected exception {}.".format(e))
+            else:
+                pytest.fail("The initialization of lr_scheduler did not raise an Error although the step_unit is invalid.")
 
 
 class OptimizerTest:
@@ -236,7 +251,7 @@ class OptimizerTest:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -266,7 +281,7 @@ class OptimizerTest:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             optimizer_choice.set_hyperparameters(config)
@@ -336,7 +351,7 @@ class TestNetworkBackbone:
         cs = network_backbone_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
 
         # test 10 random configurations
-        for i in range(10):
+        for _ in range(10):
             config = cs.sample_configuration()
             network_backbone_choice.set_hyperparameters(config)
             backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
@@ -360,7 +375,7 @@ class TestNetworkBackbone:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -389,7 +404,7 @@ class TestNetworkBackbone:
             # Whereas just one iteration will make sure the algorithm works,
             # doing five iterations increase the confidence. We will be able to
             # catch component specific crashes
-            for i in range(5):
+            for _ in range(5):
                 config = cs.sample_configuration()
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_backbone_choice.set_hyperparameters(config)
@@ -503,7 +518,7 @@ class TestNetworkHead:
 
         cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
         # test 10 random configurations
-        for i in range(10):
+        for _ in range(10):
             config = cs.sample_configuration()
             network_head_choice.set_hyperparameters(config)
             head = network_head_choice.choice.build_head(input_shape=input_shape,
@@ -537,7 +552,7 @@ class TestNetworkHead:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -566,7 +581,7 @@ class TestNetworkHead:
             # Whereas just one iteration will make sure the algorithm works,
             # doing five iterations increase the confidence. We will be able to
             # catch component specific crashes
-            for i in range(5):
+            for _ in range(5):
                 config = cs.sample_configuration()
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_head_choice.set_hyperparameters(config)
@@ -629,7 +644,7 @@ class TestNetworkInitializer:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -659,7 +674,7 @@ class TestNetworkInitializer:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             network_initializer_choice.set_hyperparameters(config)

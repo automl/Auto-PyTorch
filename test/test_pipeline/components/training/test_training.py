@@ -177,13 +177,13 @@ class TestBaseTrainerComponent(BaseTraining):
         )
 
         target_lr = base_lr
-        for trainer_step_unit in StepIntervalUnit:
-            trainer.step_unit = trainer_step_unit
-            for step_unit in StepIntervalUnit:
-                if step_unit == trainer_step_unit:
+        for trainer_step_interval in StepIntervalUnit:
+            trainer.step_interval = trainer_step_interval
+            for step_interval in StepIntervalUnit:
+                if step_interval == trainer_step_interval:
                     target_lr *= factor
 
-                trainer._scheduler_step(step_interval=step_unit)
+                trainer._scheduler_step(step_interval=step_interval)
                 lr = optimizer.param_groups[0]['lr']
                 assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
 
@@ -204,7 +204,7 @@ class TestBaseTrainerComponent(BaseTraining):
             'optimizer': optimizer,
             'scheduler': torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=ms, gamma=2),
             'model': model,
-            'step_unit': StepIntervalUnit.epoch
+            'step_interval': StepIntervalUnit.epoch
         }
         trainer = StandardTrainer()
         trainer.prepare(**params)
@@ -217,7 +217,7 @@ class TestBaseTrainerComponent(BaseTraining):
             lr = optimizer.param_groups[0]['lr']
             assert lr == 1
 
-        params.update(step_unit=StepIntervalUnit.batch)
+        params.update(step_interval=StepIntervalUnit.batch)
         trainer = StandardTrainer()
         trainer.prepare(**params)
 

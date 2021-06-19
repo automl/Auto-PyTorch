@@ -27,11 +27,11 @@ class CosineAnnealingLR(BaseLRComponent):
     def __init__(
         self,
         T_max: int,
-        step_unit: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit],
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.T_max = T_max
         self.random_state = random_state
 
@@ -71,14 +71,14 @@ class CosineAnnealingLR(BaseLRComponent):
                                                                      value_range=(10, 500),
                                                                      default_value=200,
                                                                      ),
-        step_unit: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_unit',
-                                                                         value_range=StepIntervalUnitChoices,
-                                                                         default_value=StepIntervalUnit.batch.name
-                                                                         )
+        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
+                                                                             value_range=StepIntervalUnitChoices,
+                                                                             default_value=StepIntervalUnit.batch.name
+                                                                             )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, T_max, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, step_unit, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

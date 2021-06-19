@@ -16,11 +16,11 @@ class NoScheduler(BaseLRComponent):
     """
     def __init__(
         self,
-        step_unit: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__(step_unit)
+        super().__init__(step_interval)
         self.random_state = random_state
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
