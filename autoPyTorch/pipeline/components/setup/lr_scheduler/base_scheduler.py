@@ -1,15 +1,11 @@
-from abc import abstractstaticmethod
-from typing import Any, Dict, Optional, Tuple, Union
-
-from ConfigSpace.configuration_space import ConfigurationSpace
+from typing import Any, Dict, Optional, Union
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.utils.common import FitRequirement
 
 
 class BaseLRComponent(autoPyTorchSetupComponent):
