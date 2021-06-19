@@ -1,5 +1,5 @@
 from abc import abstractstaticmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -60,17 +60,3 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         """ Allow a nice understanding of what components where used """
         string = self.scheduler.__class__.__name__
         return string
-    
-    @abstractstaticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> Dict[str, Union[str, bool]]:
-        raise NotImplementedError
-
-    @abstractstaticmethod
-    def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        *args: Tuple[HyperparameterSearchSpace]
-    ) -> ConfigurationSpace:
-        """ TODO: Create _DefaultHyperparameterSearchSpace class for each scheduler """
-
-        raise NotImplementedError
