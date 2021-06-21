@@ -99,8 +99,8 @@ class CoalescerChoice(autoPyTorchChoice):
             if len(dataset_properties['categorical_columns']) == 0:
                 default = 'NoCoalescer'
                 if include is not None and default not in include:
-                    raise ValueError("Provided {} in include, however, the dataset "
-                                     "is incompatible with it".format(include))
+                    raise ValueError("Provided coalescer {} are incompatible with "
+                                     "the dataset without categorical columns.".format(include))
                 preprocessor = CSH.CategoricalHyperparameter('__choice__',
                                                              ['NoCoalescer'],
                                                              default_value=default)
