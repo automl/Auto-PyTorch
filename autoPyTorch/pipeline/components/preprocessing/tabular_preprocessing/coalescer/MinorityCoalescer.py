@@ -17,7 +17,7 @@ class MinorityCoalescer(BaseCoalescer):
     Groups together classes in a categorical feature if the frequency
     of occurrence is less than minimum_fraction
     """
-    def __init__(self, minimum_fraction: float, random_state: Optional[Union[np.random.RandomState, int]] = None):
+    def __init__(self, minimum_fraction: float, random_state: np.random.RandomState):
         super().__init__()
         self.minimum_fraction = minimum_fraction
         self.random_state = random_state

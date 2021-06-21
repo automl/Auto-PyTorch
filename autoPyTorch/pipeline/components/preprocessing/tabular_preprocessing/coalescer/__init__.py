@@ -62,7 +62,9 @@ class CoalescerChoice(autoPyTorchChoice):
                                                                 exclude=exclude)
 
         if len(available_preprocessors) == 0:
-            raise ValueError("no coalescer found, please add a coalescer")
+            raise ValueError("No coalescer found, please add a coalescer via the include "
+                             "argument of the pipeline. Additionally, coalescer as a step "
+                             "can be removed as a pipeline step. ")
 
         if default is None:
             defaults = ['NoCoalescer', 'MinorityCoalescer']
@@ -79,10 +81,10 @@ class CoalescerChoice(autoPyTorchChoice):
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
             if not set(choice_hyperparameter.value_range).issubset(available_preprocessors):
-                raise ValueError("Expected given update for {} to have "
-                                 "choices in {} got {}".format(self.__class__.__name__,
-                                                               available_preprocessors,
-                                                               choice_hyperparameter.value_range))
+                raise ValueError("The update for {} was expected to be a subset of {} "
+                                 "but was {}".format(self.__class__.__name__,
+                                                     available_preprocessors,
+                                                     choice_hyperparameter.value_range))
             if len(dataset_properties['categorical_columns']) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 assert 'MinorityCoalescer' in choice_hyperparameter.value_range, \

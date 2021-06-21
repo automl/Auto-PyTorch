@@ -10,18 +10,20 @@ class NoCoalescer(BaseCoalescer):
     Don't perform NoCoalescer on categorical features
     """
     def __init__(self,
-                 random_state: Optional[Union[np.random.RandomState, int]] = None
+                 random_state: np.random.RandomState,
                  ):
         super().__init__()
         self.random_state = random_state
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseCoalescer:
+    def fit(self, X: Dict[str, Any], y: Optional[Any] = None) -> BaseCoalescer:
         """
-        The fit function calls the fit function of the underlying model
-        and returns the transformed array.
+        As no coalescing happens, the input fit dictionary is unchanged.
+
         Args:
-            X (np.ndarray): input features
-            y (Optional[np.ndarray]): input labels
+        X (Dict[str, Any]):
+            input fit dictionary
+        y (Optional[Any]):
+            Parameter to comply with scikit-learn API. Not used.
 
         Returns:
             instance of self
@@ -32,7 +34,7 @@ class NoCoalescer(BaseCoalescer):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Adds the self into the 'X' dictionary and returns it.
+        Add self into the 'X' dictionary and return the modified dict.
         Args:
             X (Dict[str, Any]): 'X' dictionary
 

@@ -24,7 +24,7 @@ class TestCoalescerChoice(unittest.TestCase):
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             coalescer_choice.set_hyperparameters(config)

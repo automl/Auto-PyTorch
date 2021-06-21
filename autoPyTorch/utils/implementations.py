@@ -68,19 +68,46 @@ class LossWeightStrategyWeightedBinary():
 
 
 class MinorityCoalescing(BaseEstimator, TransformerMixin):
-    """ Group together categories which occurence is less than a specified
+    """ Group together categories which occurrence is less than a specified
     minimum fraction. Coalesced categories get index of one.
     """
 
     def __init__(self, minimum_fraction: Optional[float] = None):
         self.minimum_fraction = minimum_fraction
 
-    def check_X(self, X: np.array) -> None:
+    def check_X(self, X: Union[np.ndarray, sparse.csr_matrix]) -> None:
+        """
+        This estimator takes as input a set of features coming in a tabular fashion.
+        The classes in the columns, i.e.features, are coalesced together, if the ratio of
+        occurrence of each class is less than self.minimum_fraction.
+
+        Those classes with low occurrence frequency are coalesced into a new class: -2.
+        The classification pipeline shifts the classes to be positive through encoding.
+        The imputation tags missing elements as -1. Then the coalescer can use -2 as a
+        'coalesced' indicator.
+
+        Failure can only happen if the pipeline failed to fit encoding/imputation.
+
+        Args:
+        X (np.ndarray):
+            The input features from the user, likely transformed by an encoder and imputator.
+        """
         X_data = X.data if sparse.issparse(X) else X
         if np.nanmin(X_data) <= -2:
-            raise ValueError("X needs to contain only integers greater than -2.")
+            raise ValueError("The input features to the MinorityCoalescing "
+                             "need to contain only integers greater than -2.")
 
-    def fit(self, X: np.array, y: Optional[np.ndarray] = None) -> 'MinorityCoalescing':
+    def fit(self, X: Union[np.ndarray, sparse.csr_matrix],
+            y: Optional[np.ndarray] = None) -> 'MinorityCoalescing':
+        """
+        Trains the estimator to identify low frequency classes on the input train data.
+
+        Args:
+        X (Union[np.ndarray, sparse.csr_matrix]):
+            The input features from the user, likely transformed by an encoder and imputator.
+        y (Optional[np.ndarray]):
+            Optional labels for the given task, not used by this estimator.
+        """
         self.check_X(X)
 
         if self.minimum_fraction is None:
@@ -106,10 +133,18 @@ class MinorityCoalescing(BaseEstimator, TransformerMixin):
                 if fraction >= self.minimum_fraction:
                     do_not_coalesce[-1].add(unique_value)
 
-        self.do_not_coalesce_ = do_not_coalesce
+        self._do_not_coalesce = do_not_coalesce
         return self
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Union[np.ndarray, sparse.csr_matrix]) -> Union[np.ndarray,
+                                                                          sparse.csr_matrix]:
+        """
+        Coalesces categories with low frequency on the input array X.
+
+        Args:
+        X (Union[np.ndarray, sparse.csr_matrix]):
+            The input features from the user, likely transformed by an encoder and imputator.
+        """
         self.check_X(X)
 
         if self.minimum_fraction is None:
@@ -121,7 +156,7 @@ class MinorityCoalescing(BaseEstimator, TransformerMixin):
                 indptr_end = X.indptr[column + 1]
                 unique = np.unique(X.data[indptr_start:indptr_end])
                 for unique_value in unique:
-                    if unique_value not in self.do_not_coalesce_[column]:
+                    if unique_value not in self._do_not_coalesce[column]:
                         indptr_start = X.indptr[column]
                         indptr_end = X.indptr[column + 1]
                         X.data[indptr_start:indptr_end][
@@ -129,7 +164,7 @@ class MinorityCoalescing(BaseEstimator, TransformerMixin):
             else:
                 unique = np.unique(X[:, column])
                 unique_values = [unique_value for unique_value in unique
-                                 if unique_value not in self.do_not_coalesce_[column]]
+                                 if unique_value not in self._do_not_coalesce[column]]
                 mask = np.isin(X[:, column], unique_values)
                 # The imputer uses -1 for unknown categories
                 # Then -2 means coalesced categories
