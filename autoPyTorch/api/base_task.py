@@ -786,7 +786,7 @@ class BaseTask:
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
             precision (int), (default=32): Numeric precision used when loading
-                ensemble data. Can be either '16', '32' or '64'.
+                ensemble data. Can be either 16, 32 or 64.
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
@@ -931,12 +931,12 @@ class BaseTask:
             self._logger.info("Starting ensemble")
             ensemble_task_name = 'ensemble'
             self._stopwatch.start_task(ensemble_task_name)
-            proc_ensemble = self._fit_ensemble(time_left_for_ensembles=time_left_for_ensembles,
-                                               ensemble_size=self.ensemble_size,
-                                               ensemble_nbest=self.ensemble_nbest,
-                                               precision=precision,
-                                               optimize_metric=self.opt_metric
-                                               )
+            proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
+                                                        ensemble_size=self.ensemble_size,
+                                                        ensemble_nbest=self.ensemble_nbest,
+                                                        precision=precision,
+                                                        optimize_metric=self.opt_metric
+                                                        )
 
         # ==> Run SMAC
         smac_task_name: str = 'runSMAC'
@@ -1174,14 +1174,32 @@ class BaseTask:
     def fit_ensemble(
         self,
         ensemble_nbest: Optional[int] = None,
-        ensemble_size: Optional[int] = None,
+        ensemble_size: int = 50,
         precision: int = 32
     ) -> 'BaseTask':
+        """
+        Enables post-hoc fitting of the ensemble after the `search()`
+        method is finished. This method creates an ensemble using all
+        the models stored on disk during the smbo run
+        Args:
+            ensemble_nbest (Optional[int]):
+                only consider the ensemble_nbest models to build the ensemble.
+                If None, uses the value stored in class attribute `ensemble_nbest`.
+            ensemble_size (int) (default=50):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
 
+        Returns:
+            self
+        """
         # Make sure that input is valid
         if self.dataset is None or self.opt_metric is None:
-            raise ValueError("fit_ensemble() can only be called after fit. Please call the "
-                             "estimator search() method prior to fit_ensemble().")
+            raise ValueError("fit_ensemble() can only be called after `search()`. "
+                             "Please call the `search()` method of {} prior to "
+                             "fit_ensemble().".format(self.__class__.__name__))
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset.dataset_name)
@@ -1192,11 +1210,11 @@ class BaseTask:
         else:
             self._is_dask_client_internally_created = False
 
-        manager = self._fit_ensemble(
+        manager = self._init_ensemble_builder(
             time_left_for_ensembles=self._time_for_task,
             optimize_metric=self.opt_metric,
             precision=precision if precision is not None else self.precision,
-            ensemble_size=ensemble_size if ensemble_size is not None else self.ensemble_size,
+            ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest if ensemble_nbest is not None else self.ensemble_nbest,
         )
 
@@ -1204,15 +1222,15 @@ class BaseTask:
         future = manager.futures.pop()
         result = future.result()
         if result is None:
-            raise ValueError("Error building the ensemble - please check the log file and command "
-                             "line output for error messages.")
+            raise ValueError("Errors occurred while building the ensemble - please"
+                             " check the log file and command line output for error messages.")
         self.ensemble_performance_history, _, _, _ = result
 
         self._load_models()
         self._close_dask_client()
         return self
 
-    def _fit_ensemble(
+    def _init_ensemble_builder(
         self,
         time_left_for_ensembles: float,
         optimize_metric: str,
@@ -1220,11 +1238,31 @@ class BaseTask:
         ensemble_size: int,
         precision: int = 32,
     ) -> EnsembleBuilderManager:
+        """
+        Initializes an `EnsembleBuilderManager`.
 
+        Args:
+            time_left_for_ensembles (float):
+                Time (in seconds) allocated to building the ensemble
+            optimize_metric (str):
+                Name of the metric to optimize the ensemble.
+            ensemble_nbest (int):
+                only consider the ensemble_nbest models to build the ensemble.
+            ensemble_size (int):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
+
+        Returns:
+            EnsembleBuilderManager
+
+        """
         assert self._logger is not None, "logger should be initialised to fit ensemble"
         if self.dataset is None:
-            raise ValueError("ensemble can only be fitted after fit. Please call the "
-                             "estimator search() method prior to fit_ensemble().")
+            raise ValueError("ensemble can only be initialised after or during `search()`. "
+                             "Please call the `search()` method of {}.".format(self.__class__.__name__))
 
         self._logger.info("Starting ensemble")
         ensemble_task_name = 'ensemble'

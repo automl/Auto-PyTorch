@@ -757,3 +757,18 @@ def test_fit_ensemble(backend, n_samples, dataset_name):
     assert any(['.ensemble' in file for file in os.listdir(os.path.join(
         estimator._backend.internals_directory, 'ensembles'))])
     assert any(['ensemble_' or '_ensemble.npy' in os.listdir(estimator._backend.internals_directory)])
+
+
+@pytest.mark.parametrize('dataset_name', ('iris',))
+def test_fit_ensemble_failure(backend, n_samples, dataset_name):
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        seed=42,
+        ensemble_size=0,
+    )
+
+    with pytest.raises(ValueError,
+                       match=r"fit_ensemble\(\) can only be called after `search\(\)`. "
+                             r"Please call the `search\(\)` method of [A-Z|a-z]+ prior to fit_ensemble\(\)."):
+        estimator.fit_ensemble(ensemble_size=2)
