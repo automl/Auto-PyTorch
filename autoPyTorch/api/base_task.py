@@ -1213,7 +1213,7 @@ class BaseTask:
         manager = self._init_ensemble_builder(
             time_left_for_ensembles=self._time_for_task,
             optimize_metric=self.opt_metric,
-            precision=precision if precision is not None else self.precision,
+            precision=precision,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest if ensemble_nbest is not None else self.ensemble_nbest,
         )
