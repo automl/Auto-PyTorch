@@ -81,16 +81,11 @@ class StepLR(BaseLRComponent):
         step_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_size',
                                                                          value_range=(1, 10),
                                                                          default_value=5,
-                                                                         ),
-        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
-                                                                             value_range=StepIntervalUnitChoices,
-                                                                             default_value=StepIntervalUnit.batch.name
-                                                                             )
+                                                                         )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, step_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

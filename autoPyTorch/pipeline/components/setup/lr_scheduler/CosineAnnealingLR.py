@@ -70,15 +70,10 @@ class CosineAnnealingLR(BaseLRComponent):
         T_max: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_max',
                                                                      value_range=(10, 500),
                                                                      default_value=200,
-                                                                     ),
-        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
-                                                                             value_range=StepIntervalUnitChoices,
-                                                                             default_value=StepIntervalUnit.batch.name
-                                                                             )
+                                                                     )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, T_max, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

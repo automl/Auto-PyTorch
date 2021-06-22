@@ -93,11 +93,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='factor',
                                                                       value_range=(0.01, 0.9),
                                                                       default_value=0.1,
-                                                                      ),
-        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
-                                                                             value_range=StepIntervalUnitChoices,
-                                                                             default_value=StepIntervalUnit.batch.name
-                                                                             )
+                                                                      )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
@@ -105,6 +101,5 @@ class ReduceLROnPlateau(BaseLRComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
         add_hyperparameter(cs, patience, UniformIntegerHyperparameter)
         add_hyperparameter(cs, factor, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs

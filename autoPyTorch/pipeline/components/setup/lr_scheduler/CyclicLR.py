@@ -108,11 +108,7 @@ class CyclicLR(BaseLRComponent):
         max_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='max_lr',
                                                                       value_range=(1e-3, 1e-1),
                                                                       default_value=0.1,
-                                                                      ),
-        step_interval: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_interval',
-                                                                             value_range=StepIntervalUnitChoices,
-                                                                             default_value=StepIntervalUnit.batch.name
-                                                                             )
+                                                                      )
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -120,6 +116,5 @@ class CyclicLR(BaseLRComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
         add_hyperparameter(cs, step_size_up, UniformIntegerHyperparameter)
         add_hyperparameter(cs, max_lr, UniformFloatHyperparameter)
-        add_hyperparameter(cs, step_interval, CategoricalHyperparameter)
 
         return cs
