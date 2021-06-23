@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  schedule:
+    # Every Truesday at 7AM UTC
+    # TODO teporary set to every day just for the PR
+    #- cron: '0 07 * * 2'
+    - cron: '0 07 * * *'
+
+
+jobs:
+  ubuntu:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+      fail-fast:  false
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: development
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install test dependencies
+      run: |
+        git submodule update --init --recursive
+        python -m pip install --upgrade pip
+        pip install -e .[test]
+    - name: Run tests
+      run: |
+        python -m pytest --durations=200 cicd/test_preselected_configs.py -vs
