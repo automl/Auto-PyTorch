@@ -336,7 +336,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
-        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss.item())
+        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
