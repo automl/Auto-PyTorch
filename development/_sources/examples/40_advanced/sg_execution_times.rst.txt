@@ -5,14 +5,14 @@
 
 Computation times
 =================
-**29:48.611** total execution time for **examples_40_advanced** files:
+**30:10.457** total execution time for **examples_40_advanced** files:
 
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:10.947 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 11:01.658 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 08:53.917 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 09:05.971 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_run_with_portfolio.py` (``example_run_with_portfolio.py``)                 | 05:27.028 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_run_with_portfolio.py` (``example_run_with_portfolio.py``)                 | 05:40.441 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_visualization.py` (``example_visualization.py``)                           | 04:16.720 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_visualization.py` (``example_visualization.py``)                           | 04:22.387 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+

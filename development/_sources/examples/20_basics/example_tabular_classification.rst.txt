@@ -133,7 +133,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbad8a9fe50>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f24a2487790>
 
 
 
@@ -162,7 +162,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fbad8700d00> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f24a28b75e0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -194,7 +194,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012018680572509766, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001142740249633789, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -226,7 +226,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=2.6238467693328857, wallclock_time=3.7349350452423096, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=2.5311670303344727, wallclock_time=3.724580764770508, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 224
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:Nystroem:kernel, Value: 'cosine'
@@ -284,7 +284,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'NoScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=12, ta_time_used=91.2751853466034, wallclock_time=108.97508549690247, budget=16.666666666666664)]
+    , ta_runs=12, ta_time_used=91.15209937095642, wallclock_time=107.83699369430542, budget=16.666666666666664)]
     {'accuracy': 0.8670520231213873}
     |    | Preprocessing                                               | Estimator                                                          |   Weight |
     |---:|:------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -303,7 +303,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  39.154 seconds)
+   **Total running time of the script:** ( 5 minutes  40.459 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
