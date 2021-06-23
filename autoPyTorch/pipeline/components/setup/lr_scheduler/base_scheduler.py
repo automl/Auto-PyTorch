@@ -29,7 +29,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
 
     @property
     def step_interval(self) -> StepIntervalUnit:
-        return self._step_interval
+        return getattr(StepIntervalUnit, self._step_interval)
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
