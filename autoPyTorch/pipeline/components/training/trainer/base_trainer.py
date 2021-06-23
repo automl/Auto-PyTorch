@@ -224,9 +224,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
-        if isinstance(step_interval, str) and hasattr(StepIntervalUnit, step_interval):
-            step_interval = getattr(StepIntervalUnit, step_interval)
-
         # Save the device to be used
         self.device = device
 

@@ -22,10 +22,14 @@ class BaseLRComponent(autoPyTorchSetupComponent):
                 step_interval
             ))
 
-        self.step_interval = step_interval if isinstance(step_interval, str) else step_interval.name
+        self._step_interval = step_interval if isinstance(step_interval, str) else step_interval.name
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])
+
+    @property
+    def step_interval(self) -> StepIntervalUnit:
+        return self._step_interval
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
