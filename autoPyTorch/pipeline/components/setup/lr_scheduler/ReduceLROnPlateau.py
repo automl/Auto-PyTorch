@@ -31,7 +31,11 @@ class ReduceLROnPlateau(BaseLRComponent):
         factor (float): Factor by which the learning rate will be reduced. new_lr = lr * factor.
         patience (int): Number of epochs with no improvement after which learning
             rate will be reduced.
+        step_interval (str): step should be called after validation in the case of ReduceLROnPlateau
         random_state (Optional[np.random.RandomState]): random state
+    
+    Reference:
+        https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
     """
 
     def __init__(
@@ -39,7 +43,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         mode: str,
         factor: float,
         patience: int,
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.valid,
         random_state: Optional[np.random.RandomState] = None,
     ):
         super().__init__(step_interval)

@@ -27,9 +27,11 @@ class StepIntervalUnit(Enum):
     Attributes:
         batch (str): We update every batch evaluation
         epoch (str): We update every epoch
+        valid (str): We update every validation
     """
     batch = 'batch'
     epoch = 'epoch'
+    valid = 'valid'
 
 
 StepIntervalUnitChoices = [step_interval.name for step_interval in StepIntervalUnit]
@@ -277,22 +279,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def _scheduler_step(
         self,
         step_interval: StepIntervalUnit,
-        loss: Optional[torch.Tensor] = None
+        loss: Optional[float] = None
     ) -> None:
 
         if self.step_interval != step_interval:
             return
-        
-        if not self.scheduler:
-            # skip if no scheduler defined
+
+        if not self.scheduler: # skip if no scheduler defined
             return
 
-        if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-            # https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
-            # step should be called after validation in the case of ReduceLROnPlateau 
-            return
-
-        self.scheduler.step()
+        try:
+            """ Some schedulers might use metrics """
+            self.scheduler.step(metrics=loss)
+        except TypeError:
+            self.scheduler.step()
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -336,7 +336,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
-        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss)
+        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss.item())
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
@@ -378,7 +378,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
-        self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss)
+        self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss.item())
 
         return loss.item(), outputs
 
@@ -426,10 +426,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                         epoch * len(test_loader) + step,
                     )
 
-        if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-            # https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
-            # step should be called after validation in the case of ReduceLROnPlateau
-            self.scheduler.step(loss_sum / N)
+        self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
 
         self.model.train()
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
