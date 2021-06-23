@@ -250,7 +250,6 @@ class TrainerChoice(autoPyTorchChoice):
 
         # Support additional user metrics
         metrics = get_metrics(dataset_properties=X['dataset_properties'])
-        print(type(metrics[0]))
         if 'additional_metrics' in X:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
         if 'optimize_metric' in X and 'optimize_metric' not in [m.name for m in metrics]:
