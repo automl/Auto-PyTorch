@@ -2,7 +2,6 @@ from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
     UniformFloatHyperparameter,
 )
 
@@ -12,7 +11,7 @@ import torch.optim.lr_scheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 

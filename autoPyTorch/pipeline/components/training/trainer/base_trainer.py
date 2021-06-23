@@ -279,14 +279,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         step_interval: StepIntervalUnit,
         loss: Optional[torch.Tensor] = None
     ) -> None:
+
         if self.step_interval != step_interval:
             return
+        
+        if not self.scheduler:
+            # skip if no scheduler defined
+            return
 
-        if self.scheduler:
-            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-                self.scheduler.step(loss)
-            else:
-                self.scheduler.step()
+        if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
+            # https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+            # step should be called after validation in the case of ReduceLROnPlateau 
+            return
+
+        self.scheduler.step()
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -419,6 +425,11 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                         loss.item(),
                         epoch * len(test_loader) + step,
                     )
+
+        if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
+            # https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+            # step should be called after validation in the case of ReduceLROnPlateau
+            self.scheduler.step(loss_sum / N)
 
         self.model.train()
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
