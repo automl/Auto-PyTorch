@@ -15,21 +15,24 @@ class BaseLRComponent(autoPyTorchSetupComponent):
     def __init__(self, step_interval: Union[str, StepIntervalUnit]):
         super().__init__()
         self.scheduler = None  # type: Optional[_LRScheduler]
+        self._step_interval: StepIntervalUnit
 
-        if isinstance(step_interval, str) and step_interval not in StepIntervalUnitChoices:
-            raise ValueError('step_interval must be either {}, but got {}.'.format(
-                StepIntervalUnitChoices,
-                step_interval
-            ))
+        if isinstance(step_interval, str):
+            if step_interval not in StepIntervalUnitChoices:
+                raise ValueError('step_interval must be either {}, but got {}.'.format(
+                    StepIntervalUnitChoices,
+                    step_interval
+                ))
+            self._step_interval = getattr(StepIntervalUnit, step_interval)
 
-        self._step_interval = step_interval if isinstance(step_interval, str) else step_interval.name
+        self._step_interval = step_interval
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])
 
     @property
     def step_interval(self) -> StepIntervalUnit:
-        return getattr(StepIntervalUnit, self._step_interval)
+        return self._step_interval
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -40,12 +43,9 @@ class BaseLRComponent(autoPyTorchSetupComponent):
             (Dict[str, Any]): the updated 'X' dictionary
         """
 
-        # This processing is an ad-hoc handling of the dependencies because of ConfigSpace and unittest
-        step_interval = getattr(StepIntervalUnit, self._step_interval)
-
         X.update(
             lr_scheduler=self.scheduler,
-            step_interval=step_interval
+            step_interval=self.step_interval
         )
         return X
 
