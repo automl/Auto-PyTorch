@@ -39,7 +39,7 @@ class CyclicLR(BaseLRComponent):
         base_lr: float,
         mode: str,
         step_size_up: int,
-        step_interval: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         max_lr: float = 0.1,
         random_state: Optional[np.random.RandomState] = None
     ):

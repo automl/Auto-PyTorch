@@ -4,7 +4,7 @@ torchvision
 tensorboard
 scikit-learn>=0.24.0,<0.25.0
 numpy
-scipy
+scipy>=0.14.1,<1.7.0
 lockfile
 imgaug>=0.4.0
 ConfigSpace>=0.4.14,<0.5

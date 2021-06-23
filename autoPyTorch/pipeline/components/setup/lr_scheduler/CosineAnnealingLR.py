@@ -27,7 +27,7 @@ class CosineAnnealingLR(BaseLRComponent):
     def __init__(
         self,
         T_max: int,
-        step_interval: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 

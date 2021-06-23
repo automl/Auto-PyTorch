@@ -12,7 +12,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
     """Provide an abstract interface for schedulers
     in Auto-Pytorch"""
 
-    def __init__(self, step_interval: Union[str, StepIntervalUnit]) -> None:
+    def __init__(self, step_interval: Union[str, StepIntervalUnit]):
         super().__init__()
         self.scheduler = None  # type: Optional[_LRScheduler]
 

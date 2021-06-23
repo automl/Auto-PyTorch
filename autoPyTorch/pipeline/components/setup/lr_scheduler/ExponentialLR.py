@@ -28,7 +28,7 @@ class ExponentialLR(BaseLRComponent):
     def __init__(
         self,
         gamma: float,
-        step_interval: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 

@@ -39,7 +39,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         mode: str,
         factor: float,
         patience: int,
-        step_interval: Union[str, StepIntervalUnit],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None,
     ):
         super().__init__(step_interval)
