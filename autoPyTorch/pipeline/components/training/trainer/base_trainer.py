@@ -285,7 +285,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if self.step_interval != step_interval:
             return
 
-        if not self.scheduler: # skip if no scheduler defined
+        if not self.scheduler:  # skip if no scheduler defined
             return
 
         try:

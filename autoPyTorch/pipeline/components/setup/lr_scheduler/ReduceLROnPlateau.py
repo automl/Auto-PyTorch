@@ -33,7 +33,7 @@ class ReduceLROnPlateau(BaseLRComponent):
             rate will be reduced.
         step_interval (str): step should be called after validation in the case of ReduceLROnPlateau
         random_state (Optional[np.random.RandomState]): random state
-    
+
     Reference:
         https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
     """
