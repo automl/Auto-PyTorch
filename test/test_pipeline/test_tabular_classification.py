@@ -450,3 +450,35 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 
     # we should be able to get a decent score on this dummy data
     assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
+def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+
+    # Convert the training to runtime
+    fit_dictionary_tabular_dummy.pop('epochs', None)
+    fit_dictionary_tabular_dummy['budget_type'] = 'runtime'
+    fit_dictionary_tabular_dummy['runtime'] = 3
+    fit_dictionary_tabular_dummy['early_stopping'] = -1
+
+    pipeline = TabularClassificationPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    pipeline.fit(fit_dictionary_tabular_dummy)
+    run_summary = pipeline.named_steps['trainer'].run_summary
+    budget_tracker = pipeline.named_steps['trainer'].budget_tracker
+    assert budget_tracker.budget_type == 'runtime'
+    assert budget_tracker.max_runtime == 3
+    assert budget_tracker.is_max_time_reached()
+
+    # There is no epoch limitation
+    assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
+
+    # More than 200 epochs would have pass in 3 seconds for this dataset
+    assert len(run_summary.performance_tracker['start_time']) > 100

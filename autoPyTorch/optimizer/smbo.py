@@ -111,6 +111,8 @@ class AutoMLSMBO(object):
                  search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
                  portfolio_selection: typing.Optional[str] = None,
                  pynisher_context: str = 'spawn',
+                 min_budget: int = 5,
+                 max_budget: int = 50,
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -169,7 +171,22 @@ class AutoMLSMBO(object):
                 configurations, similar to (autoPyTorch/configs/greedy_portfolio.json).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>_`
+            min_budget (int):
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                min_budget states the minimum resource allocation a pipeline should have
+                so that we can compare and quickly discard bad performing models.
+                For example, if the budget_type is epochs, and min_epochs=5, then we will
+                run every pipeline to a minimum of 5 epochs before performance comparison.
+            max_budget (int):
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                max_budget states the maximum resource allocation a pipeline is going to
+                be ran. For example, if the budget_type is epochs, and max_epochs=50,
+                then the pipeline training will be terminated after 50 epochs.
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -208,6 +225,8 @@ class AutoMLSMBO(object):
         self.smac_scenario_args = smac_scenario_args
         self.get_smac_object_callback = get_smac_object_callback
         self.pynisher_context = pynisher_context
+        self.min_budget = min_budget
+        self.max_budget = max_budget
 
         self.ensemble_callback = ensemble_callback
 
@@ -326,17 +345,14 @@ class AutoMLSMBO(object):
                     )
             scenario_dict.update(self.smac_scenario_args)
 
-        initial_budget = self.pipeline_config['min_epochs']
-        max_budget = self.pipeline_config['epochs']
-
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,
                                                  seed=seed,
                                                  ta=ta,
                                                  ta_kwargs=ta_kwargs,
                                                  n_jobs=self.n_jobs,
-                                                 initial_budget=initial_budget,
-                                                 max_budget=max_budget,
+                                                 initial_budget=self.min_budget,
+                                                 max_budget=self.max_budget,
                                                  dask_client=self.dask_client,
                                                  initial_configurations=self.initial_configurations)
         else:
@@ -345,8 +361,8 @@ class AutoMLSMBO(object):
                                    ta=ta,
                                    ta_kwargs=ta_kwargs,
                                    n_jobs=self.n_jobs,
-                                   initial_budget=initial_budget,
-                                   max_budget=max_budget,
+                                   initial_budget=self.min_budget,
+                                   max_budget=self.max_budget,
                                    dask_client=self.dask_client,
                                    initial_configurations=self.initial_configurations)
 

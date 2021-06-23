@@ -202,7 +202,6 @@ class BaseTask:
         self._multiprocessing_context = 'forkserver'
         if self.n_jobs == 1:
             self._multiprocessing_context = 'fork'
-            self._dask_client = SingleThreadedClient()
 
         self.InputValidator: Optional[BaseInputValidator] = None
 
@@ -698,8 +697,9 @@ class BaseTask:
         self,
         optimize_metric: str,
         dataset: BaseDataset,
-        budget_type: Optional[str] = None,
-        budget: Optional[float] = None,
+        budget_type: str = 'epochs',
+        min_budget: int = 5,
+        max_budget: int = 50,
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
@@ -728,13 +728,36 @@ class BaseTask:
                 Providing X_train, y_train and dataset together is not supported.
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline.
-            budget_type (Optional[str]):
+            budget_type (str):
                 Type of budget to be used when fitting the pipeline.
-                Either 'epochs' or 'runtime'. If not provided, uses
-                the default in the pipeline config ('epochs')
-            budget (Optional[float]):
-                Budget to fit a single run of the pipeline. If not
-                provided, uses the default in the pipeline config
+                It can be one of:
+                + 'epochs': The training of each pipeline will be terminated after
+                  a number of epochs have passed. This number of epochs is determined by the
+                  budget argument of this method.
+                + 'runtime': The training of each pipeline will be terminated after
+                  a number of seconds have passed. This number of seconds is determined by the
+                  budget argument of this method. The overall fitting time of a pipeline is
+                  controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                  time to train a pipeline, but it does not consider the overall time it takes
+                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                min_budget will refer to seconds.
+            min_budget (int):
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                min_budget states the minimum resource allocation a pipeline should have
+                so that we can compare and quickly discard bad performing models.
+                For example, if the budget_type is epochs, and min_epochs=5, then we will
+                run every pipeline to a minimum of 5 epochs before performance comparison.
+            max_budget (int):
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                max_budget states the maximum resource allocation a pipeline is going to
+                be ran. For example, if the budget_type is epochs, and max_epochs=50,
+                then the pipeline training will be terminated after 50 epochs.
             total_walltime_limit (int), (default=100): Time limit
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
@@ -843,23 +866,27 @@ class BaseTask:
 
         self.search_space = self.get_search_space(dataset)
 
-        budget_config: Dict[str, Union[float, str]] = {}
-        if budget_type is not None and budget is not None:
-            budget_config['budget_type'] = budget_type
-            budget_config[budget_type] = budget
-        elif budget_type is not None or budget is not None:
-            raise ValueError(
-                "budget type was not specified in budget_config"
-            )
+        # Incorporate budget to pipeline config
+        if budget_type not in ('epochs', 'runtime'):
+            raise ValueError("Budget type must be one ('epochs', 'runtime')"
+                             f" yet {budget_type} was provided")
+        self.pipeline_options['budget_type'] = budget_type
+
+        # Here the budget is set to max because the SMAC intensifier can be:
+        # Hyperband: in this case the budget is determined on the fly and overwritten
+        #            by the ExecuteTaFuncWithQueue
+        # SimpleIntensifier (and others): in this case, we use max_budget as a target
+        #                                 budget, and hece the below line is honored
+        self.pipeline_options[budget_type] = max_budget
 
         if self.task_type is None:
             raise ValueError("Cannot interpret task type from the dataset")
 
         # If no dask client was provided, we create one, so that we can
         # start a ensemble process in parallel to smbo optimize
-        if (
-            dask_client is None and (self.ensemble_size > 0 or self.n_jobs > 1)
-        ):
+        if self.n_jobs == 1:
+            self._dask_client = SingleThreadedClient()
+        elif dask_client is None:
             self._create_dask_client()
         else:
             self._dask_client = dask_client
@@ -878,7 +905,7 @@ class BaseTask:
 
         # Make sure that at least 2 models are created for the ensemble process
         num_models = time_left_for_modelfit // func_eval_time_limit_secs
-        if num_models < 2:
+        if num_models < 2 and self.ensemble_size > 0:
             func_eval_time_limit_secs = time_left_for_modelfit // 2
             self._logger.warning(
                 "Capping the func_eval_time_limit_secs to {} to have "
@@ -978,7 +1005,9 @@ class BaseTask:
                 all_supported_metrics=self._all_supported_metrics,
                 smac_scenario_args=smac_scenario_args,
                 get_smac_object_callback=get_smac_object_callback,
-                pipeline_config={**self.pipeline_options, **budget_config},
+                pipeline_config=self.pipeline_options,
+                min_budget=min_budget,
+                max_budget=max_budget,
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
                 # We do not increase the num_run here, this is something
@@ -1046,7 +1075,6 @@ class BaseTask:
     def refit(
         self,
         dataset: BaseDataset,
-        budget_config: Dict[str, Union[int, str]] = {},
         split_id: int = 0
     ) -> "BaseTask":
         """
@@ -1058,14 +1086,16 @@ class BaseTask:
         This methods fits all models found during a call to fit on the data
         given. This method may also be used together with holdout to avoid
         only using 66% of the training data to fit the final model.
+
+        Refit uses the estimator pipeline_config attribute, which the user
+        can interact via the get_pipeline_config()/set_pipeline_config()
+        methods.
+
         Args:
             dataset: (Dataset)
                 The argument that will provide the dataset splits. It can either
                 be a dictionary with the splits, or the dataset object which can
                 generate the splits based on different restrictions.
-            budget_config: (Optional[Dict[str, Union[int, str]]])
-                can contain keys from 'budget_type' and the budget
-                specified using 'epochs' or 'runtime'.
             split_id: (int)
                 split id to fit on.
         Returns:
@@ -1096,7 +1126,7 @@ class BaseTask:
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
-        X.update({**self.pipeline_options, **budget_config})
+        X.update(self.pipeline_options)
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
             self._load_models()
 
@@ -1120,21 +1150,22 @@ class BaseTask:
 
     def fit(self,
             dataset: BaseDataset,
-            budget_config: Dict[str, Union[int, str]] = {},
             pipeline_config: Optional[Configuration] = None,
             split_id: int = 0) -> BasePipeline:
         """
         Fit a pipeline on the given task for the budget.
         A pipeline configuration can be specified if None,
         uses default
+
+        Fit uses the estimator pipeline_config attribute, which the user
+        can interact via the get_pipeline_config()/set_pipeline_config()
+        methods.
+
         Args:
             dataset: (Dataset)
                 The argument that will provide the dataset splits. It can either
                 be a dictionary with the splits, or the dataset object which can
                 generate the splits based on different restrictions.
-            budget_config: (Optional[Dict[str, Union[int, str]]])
-                can contain keys from 'budget_type' and the budget
-                specified using 'epochs' or 'runtime'.
             split_id: (int) (default=0)
                 split id to fit on.
             pipeline_config: (Optional[Configuration])
@@ -1175,7 +1206,7 @@ class BaseTask:
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
-        X.update({**self.pipeline_options, **budget_config})
+        X.update(self.pipeline_options)
 
         fit_and_suppress_warnings(self._logger, pipeline, X, y=None)
 
