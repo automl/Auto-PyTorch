@@ -153,7 +153,7 @@ def test_can_properly_fit_a_config(openml_task_id, configuration, scorer, lower_
     train_data, target_data = fit_dictionary['backend'].load_datamanager().train_tensors
     predictions = pipeline.predict(train_data[val_indices])
     score = scorer(fit_dictionary['y_train'][val_indices], predictions)
-    assert pytest.approx(score) >= lower_bound_score
+    assert score >= lower_bound_score
 
     # Check that we reverted to the best score
     run_summary = pipeline.named_steps['trainer'].run_summary
