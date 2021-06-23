@@ -97,7 +97,6 @@ def test_set_pipeline_config():
     estimator = BaseTask()
     pipeline_options = {"device": "cuda",
                         "budget_type": "epochs",
-                        "min_epochs": 10,
                         "epochs": 51,
                         "runtime": 360}
     estimator.set_pipeline_config(**pipeline_options)

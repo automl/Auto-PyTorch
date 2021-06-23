@@ -749,14 +749,14 @@ class BaseTask:
                 running the top performing pipelines on max_budget.
                 min_budget states the minimum resource allocation a pipeline should have
                 so that we can compare and quickly discard bad performing models.
-                For example, if the budget_type is epochs, and min_epochs=5, then we will
+                For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
             max_budget (int):
                 Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 max_budget states the maximum resource allocation a pipeline is going to
-                be ran. For example, if the budget_type is epochs, and max_epochs=50,
+                be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
             total_walltime_limit (int), (default=100): Time limit
                 in seconds for the search of appropriate models.
