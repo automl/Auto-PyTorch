@@ -16,6 +16,7 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
 
+
 directory = os.path.split(__file__)[0]
 _schedulers = find_components(__package__,
                               directory,

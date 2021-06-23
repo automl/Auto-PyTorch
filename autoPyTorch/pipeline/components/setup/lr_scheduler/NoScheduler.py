@@ -4,10 +4,9 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
-from torch.optim.lr_scheduler import _LRScheduler
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 
 
 class NoScheduler(BaseLRComponent):
@@ -17,12 +16,12 @@ class NoScheduler(BaseLRComponent):
     """
     def __init__(
         self,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__()
+        super().__init__(step_interval)
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

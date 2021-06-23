@@ -10,10 +10,10 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -31,7 +31,11 @@ class ReduceLROnPlateau(BaseLRComponent):
         factor (float): Factor by which the learning rate will be reduced. new_lr = lr * factor.
         patience (int): Number of epochs with no improvement after which learning
             rate will be reduced.
+        step_interval (str): step should be called after validation in the case of ReduceLROnPlateau
         random_state (Optional[np.random.RandomState]): random state
+
+    Reference:
+        https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
     """
 
     def __init__(
@@ -39,14 +43,14 @@ class ReduceLROnPlateau(BaseLRComponent):
         mode: str,
         factor: float,
         patience: int,
-        random_state: Optional[np.random.RandomState] = None
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.valid,
+        random_state: Optional[np.random.RandomState] = None,
     ):
-        super().__init__()
+        super().__init__(step_interval)
         self.mode = mode
         self.factor = factor
         self.patience = patience
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -93,7 +97,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='factor',
                                                                       value_range=(0.01, 0.9),
                                                                       default_value=0.1,
-                                                                      ),
+                                                                      )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

@@ -10,10 +10,10 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -39,16 +39,16 @@ class CyclicLR(BaseLRComponent):
         base_lr: float,
         mode: str,
         step_size_up: int,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         max_lr: float = 0.1,
         random_state: Optional[np.random.RandomState] = None
     ):
-        super().__init__()
+        super().__init__(step_interval)
         self.base_lr = base_lr
         self.mode = mode
         self.max_lr = max_lr
         self.step_size_up = step_size_up
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

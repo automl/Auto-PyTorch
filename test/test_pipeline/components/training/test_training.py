@@ -26,7 +26,10 @@ from autoPyTorch.pipeline.components.training.trainer.StandardTrainer import (
     StandardTrainer
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
-    BaseTrainerComponent, )
+    BaseTrainerComponent,
+    BudgetTracker,
+    StepIntervalUnit
+)
 
 sys.path.append(os.path.dirname(__file__))
 from test.test_pipeline.components.training.base import BaseTraining  # noqa (E402: module level import not at top of file)
@@ -36,7 +39,7 @@ OVERFIT_EPOCHS = 1000
 N_SAMPLES = 500
 
 
-class BaseDataLoaderTest(unittest.TestCase):
+class TestBaseDataLoader(unittest.TestCase):
     def test_get_set_config_space(self):
         """
         Makes sure that the configuration space of the base data loader
@@ -49,7 +52,7 @@ class BaseDataLoaderTest(unittest.TestCase):
         self.assertEqual(cs.get_hyperparameter('batch_size').default_value, 64)
 
         # Make sure we can properly set some random configs
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             loader.set_hyperparameters(config)
@@ -140,9 +143,9 @@ class TestBaseTrainerComponent(BaseTraining):
          loader,
          criterion,
          epochs,
-         logger) = self.prepare_trainer(N_SAMPLES,
-                                        BaseTrainerComponent(),
-                                        constants.TABULAR_CLASSIFICATION)
+         _) = self.prepare_trainer(N_SAMPLES,
+                                   BaseTrainerComponent(),
+                                   constants.TABULAR_CLASSIFICATION)
 
         prev_loss, prev_metrics = trainer.evaluate(loader, epoch=1, writer=None)
         assert 'accuracy' in prev_metrics
@@ -161,8 +164,77 @@ class TestBaseTrainerComponent(BaseTraining):
         assert metrics['accuracy'] > prev_metrics['accuracy']
         assert metrics['accuracy'] > 0.5
 
+    def test_scheduler_step(self):
+        trainer = BaseTrainerComponent()
+        model = torch.nn.Linear(1, 1)
 
-class StandardTrainerTest(BaseTraining):
+        base_lr, factor = 1, 10
+        optimizer = torch.optim.SGD(model.parameters(), lr=base_lr)
+        trainer.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=list(range(1, 5)),
+            gamma=factor
+        )
+
+        target_lr = base_lr
+        for trainer_step_interval in StepIntervalUnit:
+            trainer.step_interval = trainer_step_interval
+            for step_interval in StepIntervalUnit:
+                if step_interval == trainer_step_interval:
+                    target_lr *= factor
+
+                trainer._scheduler_step(step_interval=step_interval)
+                lr = optimizer.param_groups[0]['lr']
+                assert target_lr - 1e-6 <= lr <= target_lr + 1e-6
+
+    def test_train_step(self):
+        device = torch.device('cpu')
+        model = torch.nn.Linear(1, 1).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1)
+        data, targets = torch.Tensor([1.]).to(device), torch.Tensor([1.]).to(device)
+        ms = [3, 5, 6]
+        params = {
+            'metrics': [],
+            'device': device,
+            'task_type': constants.TABULAR_REGRESSION,
+            'labels': torch.Tensor([]),
+            'metrics_during_training': False,
+            'budget_tracker': BudgetTracker(budget_type=''),
+            'criterion': torch.nn.MSELoss,
+            'optimizer': optimizer,
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=ms, gamma=2),
+            'model': model,
+            'step_interval': StepIntervalUnit.epoch
+        }
+        trainer = StandardTrainer()
+        trainer.prepare(**params)
+
+        for _ in range(10):
+            trainer.train_step(
+                data=data,
+                targets=targets
+            )
+            lr = optimizer.param_groups[0]['lr']
+            assert lr == 1
+
+        params.update(step_interval=StepIntervalUnit.batch)
+        trainer = StandardTrainer()
+        trainer.prepare(**params)
+
+        target_lr = 1
+        for i in range(10):
+            trainer.train_step(
+                data=data,
+                targets=targets
+            )
+            if i + 1 in ms:
+                target_lr *= 2
+
+            lr = optimizer.param_groups[0]['lr']
+            assert lr == target_lr
+
+
+class TestStandardTrainer(BaseTraining):
     def test_regression_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -170,16 +242,16 @@ class StandardTrainerTest(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        StandardTrainer(),
-                                        constants.TABULAR_REGRESSION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   StandardTrainer(),
+                                   constants.TABULAR_REGRESSION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         r2 = 0
         while r2 < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             r2 = metrics['r2']
 
@@ -193,16 +265,16 @@ class StandardTrainerTest(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        StandardTrainer(),
-                                        constants.TABULAR_CLASSIFICATION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   StandardTrainer(),
+                                   constants.TABULAR_CLASSIFICATION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -210,7 +282,7 @@ class StandardTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class MixUpTrainerTest(BaseTraining):
+class TestMixUpTrainer(BaseTraining):
     def test_classification_epoch_training(self, n_samples):
         (trainer,
          _,
@@ -218,16 +290,16 @@ class MixUpTrainerTest(BaseTraining):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(n_samples,
-                                        MixUpTrainer(alpha=0.5),
-                                        constants.TABULAR_CLASSIFICATION,
-                                        OVERFIT_EPOCHS)
+         _) = self.prepare_trainer(n_samples,
+                                   MixUpTrainer(alpha=0.5),
+                                   constants.TABULAR_CLASSIFICATION,
+                                   OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0
         accuracy = 0
         while accuracy < 0.7:
-            loss, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
+            _, metrics = trainer.train_epoch(loader, epoch=1, writer=None)
             counter += 1
             accuracy = metrics['accuracy']
 
@@ -235,7 +307,7 @@ class MixUpTrainerTest(BaseTraining):
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
 
-class TrainerTest(unittest.TestCase):
+class TestTrainer(unittest.TestCase):
     def test_every_trainer_is_valid(self):
         """
         Makes sure that every trainer is a valid estimator.
@@ -260,7 +332,7 @@ class TrainerTest(unittest.TestCase):
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 self.assertIn(k, estimator_clone_params)
 
             # Make sure the params getter of estimator are honored
@@ -292,7 +364,7 @@ class TrainerTest(unittest.TestCase):
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             trainer_choice.set_hyperparameters(config)

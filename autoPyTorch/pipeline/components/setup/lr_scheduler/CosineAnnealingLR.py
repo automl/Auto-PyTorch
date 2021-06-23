@@ -8,10 +8,10 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -26,13 +26,13 @@ class CosineAnnealingLR(BaseLRComponent):
     def __init__(
         self,
         T_max: int,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__()
+        super().__init__(step_interval)
         self.T_max = T_max
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -71,6 +71,8 @@ class CosineAnnealingLR(BaseLRComponent):
                                                                      default_value=200,
                                                                      )
     ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
         add_hyperparameter(cs, T_max, UniformIntegerHyperparameter)
+
         return cs

@@ -14,6 +14,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 
 from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
@@ -203,7 +204,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         metrics_during_training: bool,
         scheduler: _LRScheduler,
         task_type: int,
-        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
+        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
         # Save the device to be used
@@ -233,6 +235,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # Scheduler
         self.scheduler = scheduler
+        self.step_interval = step_interval
 
         # task type (used for calculating metrics)
         self.task_type = task_type
@@ -254,11 +257,29 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         return False
 
+    def _scheduler_step(
+        self,
+        step_interval: StepIntervalUnit,
+        loss: Optional[float] = None
+    ) -> None:
+
+        if self.step_interval != step_interval:
+            return
+
+        if not self.scheduler:  # skip if no scheduler defined
+            return
+
+        try:
+            """ Some schedulers might use metrics """
+            self.scheduler.step(metrics=loss)
+        except TypeError:
+            self.scheduler.step()
+
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
                     ) -> Tuple[float, Dict[str, float]]:
-        '''
-            Trains the model for a single epoch.
+        """
+        Train the model for a single epoch.
 
         Args:
             train_loader (torch.utils.data.DataLoader): generator of features/label
@@ -267,7 +288,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Returns:
             float: training loss
             Dict[str, float]: scores for each desired metric
-        '''
+        """
 
         loss_sum = 0.0
         N = 0
@@ -296,6 +317,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
+        self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
+
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:
@@ -311,13 +334,13 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             targets = targets.long().to(self.device)
         return targets
 
-    def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
+    def train_step(self, data: torch.Tensor, targets: torch.Tensor) -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
         Args:
-            data (np.ndarray): input features to the network
-            targets (np.ndarray): ground truth to calculate loss
+            data (torch.Tensor): input features to the network
+            targets (torch.Tensor): ground truth to calculate loss
 
         Returns:
             torch.Tensor: The predictions of the network
@@ -336,19 +359,15 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
-        if self.scheduler:
-            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-                self.scheduler.step(loss)
-            else:
-                self.scheduler.step()
+        self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss.item())
 
         return loss.item(), outputs
 
     def evaluate(self, test_loader: torch.utils.data.DataLoader, epoch: int,
                  writer: Optional[SummaryWriter],
                  ) -> Tuple[float, Dict[str, float]]:
-        '''
-            Evaluates the model in both metrics and criterion
+        """
+        Evaluate the model in both metrics and criterion
 
         Args:
             test_loader (torch.utils.data.DataLoader): generator of features/label
@@ -357,7 +376,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Returns:
             float: test loss
             Dict[str, float]: scores for each desired metric
-        '''
+        """
         self.model.eval()
 
         loss_sum = 0.0
@@ -388,10 +407,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                         epoch * len(test_loader) + step,
                     )
 
+        self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
+
         self.model.train()
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
 
-    def compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
+    def compute_metrics(self, outputs_data: List[torch.Tensor], targets_data: List[torch.Tensor]
                         ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
         outputs_data = torch.cat(outputs_data, dim=0).numpy()
@@ -399,7 +420,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
     def get_class_weights(self, criterion: Type[torch.nn.Module], labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
-                          ) -> Dict[str, np.ndarray]:
+                          ) -> Dict[str, torch.Tensor]:
         strategy = get_loss_weight_strategy(criterion)
         weights = strategy(y=labels)
         weights = torch.from_numpy(weights)
@@ -409,8 +430,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return {'weight': weights}
 
-    def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
+                         ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -418,16 +439,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         alter the data.
 
         Args:
-            X (np.ndarray): The batch training features
-            y (np.ndarray): The batch training labels
+            X (torch.Tensor): The batch training features
+            y (torch.Tensor): The batch training labels
 
         Returns:
-            np.ndarray: that processes data
+            torch.Tensor: that processes data
             Dict[str, np.ndarray]: arguments to the criterion function
+                                   TODO: Fix this typing. It is not np.ndarray.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
+    def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
                               ) -> Callable:  # type: ignore
         """
         Depending on the trainer choice, the criterion is not directly applied to the
@@ -439,6 +461,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                                   criterion calculation
 
         Returns:
-            Callable: a lambda that contains the new criterion calculation recipe
+            Callable: a lambda function that contains the new criterion calculation recipe
         """
-        raise NotImplementedError()
+        raise NotImplementedError
