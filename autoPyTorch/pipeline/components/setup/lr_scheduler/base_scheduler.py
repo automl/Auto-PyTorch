@@ -41,7 +41,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         """
 
         # This processing is an ad-hoc handling of the dependencies because of ConfigSpace and unittest
-        step_interval = getattr(StepIntervalUnit, self.step_interval)
+        step_interval = getattr(StepIntervalUnit, self._step_interval)
 
         X.update(
             lr_scheduler=self.scheduler,
