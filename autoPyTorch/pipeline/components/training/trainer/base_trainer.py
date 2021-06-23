@@ -1,5 +1,4 @@
 import time
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
@@ -15,26 +14,11 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 
 from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
-
-
-class StepIntervalUnit(Enum):
-    """
-    By which interval we perform the step for learning rate schedulers.
-    Attributes:
-        batch (str): We update every batch evaluation
-        epoch (str): We update every epoch
-        valid (str): We update every validation
-    """
-    batch = 'batch'
-    epoch = 'epoch'
-    valid = 'valid'
-
-
-StepIntervalUnitChoices = [step_interval.name for step_interval in StepIntervalUnit]
 
 
 class BudgetTracker(object):

@@ -19,7 +19,11 @@ from autoPyTorch import constants
 from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents
 from autoPyTorch.pipeline.components.setup.lr_scheduler import (
     BaseLRComponent,
-    SchedulerChoice
+    SchedulerChoice,
+)
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import (
+    StepIntervalUnit,
+    StepIntervalUnitChoices
 )
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResBlock
@@ -36,7 +40,6 @@ from autoPyTorch.pipeline.components.setup.optimizer import (
     BaseOptimizerComponent,
     OptimizerChoice
 )
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit, StepIntervalUnitChoices
 from autoPyTorch.utils.hyperparameter_search_space_update import (
     HyperparameterSearchSpace,
     HyperparameterSearchSpaceUpdates

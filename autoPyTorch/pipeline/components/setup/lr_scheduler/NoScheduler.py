@@ -6,7 +6,7 @@ import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import StepIntervalUnit
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 
 
 class NoScheduler(BaseLRComponent):
