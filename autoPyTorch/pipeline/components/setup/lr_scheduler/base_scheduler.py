@@ -24,8 +24,8 @@ class BaseLRComponent(autoPyTorchSetupComponent):
                     step_interval
                 ))
             self._step_interval = getattr(StepIntervalUnit, step_interval)
-
-        self._step_interval = step_interval
+        else:
+            self._step_interval = step_interval
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])
