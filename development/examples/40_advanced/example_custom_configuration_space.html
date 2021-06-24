@@ -144,7 +144,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fb23fbb5220&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f89e2bb8b80&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -178,7 +178,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012600421905517578, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012447834014892578, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -212,7 +212,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=2.526561737060547, wallclock_time=3.7836062908172607, budget=5.555555555555555), TrajEntry(train_perf=0.16959064327485385, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=3.0579957962036133, wallclock_time=4.182862997055054, budget=5.555555555555555), TrajEntry(train_perf=0.16959064327485385, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 304
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:TruncatedSVD:target_dim, Value: 3
@@ -269,7 +269,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: False
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=15, ta_time_used=135.22247219085693, wallclock_time=90.2474479675293, budget=16.666666666666664), TrajEntry(train_perf=0.1228070175438597, incumbent_id=3, incumbent=Configuration:
+, ta_runs=15, ta_time_used=181.75644302368164, wallclock_time=114.93735456466675, budget=16.666666666666664), TrajEntry(train_perf=0.29239766081871343, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 443
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:RandomKitchenSinks:gamma, Value: 0.0005818110620252736
@@ -315,18 +315,16 @@ the search space.</p>
   scaler:__choice__, Value: &#39;MinMaxScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=29, ta_time_used=320.0316972732544, wallclock_time=199.40835666656494, budget=50.0)]
-{&#39;accuracy&#39;: 0.8497109826589595}
+, ta_runs=29, ta_time_used=439.8835029602051, wallclock_time=272.2762305736542, budget=50.0)]
+{&#39;accuracy&#39;: 0.861271676300578}
 |    | Preprocessing                                                     | Estimator                                                    |   Weight |
 |---:|:------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink              | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.44 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.2  |
-|  2 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
-|  3 | None                                                              | RFLearner                                                    |     0.1  |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,TruncSVD               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
-|  5 | None                                                              | CBLearner                                                    |     0.06 |
-|  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink              | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7fb23f5e17c0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.6  |
+|  1 | None                                                              | CBLearner                                                    |     0.32 |
+|  2 | None                                                              | SVMLearner                                                   |     0.04 |
+|  3 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink              | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  4 | None                                                              | KNNLearner                                                   |     0.02 |
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f89e1e6ae20&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -358,7 +356,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012235641479492188, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00115966796875, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -390,22 +388,19 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=1.6288909912109375, wallclock_time=2.7278854846954346, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=2.00250506401062, wallclock_time=3.0983431339263916, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.8554913294797688}
 |    | Preprocessing                                                 | Estimator                                                          |   Weight |
 |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,StandardScaler,KitchenSink            | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.2  |
-|  1 | None                                                          | CBLearner                                                          |     0.2  |
-|  2 | None                                                          | RFLearner                                                          |     0.16 |
+|  0 | SimpleImputer,NoEncoder,MinMaxScaler,Nystroem                 | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.26 |
+|  1 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
+|  2 | None                                                          | CBLearner                                                          |     0.1  |
 |  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
-|  4 | SimpleImputer,NoEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
-|  6 | None                                                          | ETLearner                                                          |     0.04 |
-|  7 | None                                                          | KNNLearner                                                         |     0.04 |
-|  8 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  9 | SimpleImputer,NoEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 10 | SimpleImputer,NoEncoder,StandardScaler,PowerTransformer       | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 11 | None                                                          | SVMLearner                                                         |     0.02 |
+|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
+|  5 | SimpleImputer,NoEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  6 | SimpleImputer,NoEncoder,NoScaler,NoFeaturePreprocessing       | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
+|  7 | None                                                          | RFLearner                                                          |     0.08 |
+|  8 | None                                                          | SVMLearner                                                         |     0.08 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -531,7 +526,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 10 minutes  59.056 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  16.211 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
