@@ -102,6 +102,11 @@ def custom_collate_fn(batch: List) -> List[Optional[torch.tensor]]:
     return items
 
 
+def dict_repr(d: Dict[Any, Any]) -> str:
+    """ Display long message in dict as it is. """
+    return "\n".join(["{}: {}".format(k, v) for k, v in d.items()])
+
+
 def replace_string_bool_to_bool(dictionary: Dict[str, Any]) -> Dict[str, Any]:
     """
     Utility function to replace string-type bool to
