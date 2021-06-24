@@ -395,7 +395,7 @@ class TrainerChoice(autoPyTorchChoice):
         if epochs_since_best == 0:
             torch.save(X['network'].state_dict(), best_path)
 
-        return epochs_since_best > X['early_stopping']
+        return epochs_since_best > cast(int, X['early_stopping'])
 
     def eval_valid_each_epoch(self, X: Dict[str, Any]) -> bool:
         """
