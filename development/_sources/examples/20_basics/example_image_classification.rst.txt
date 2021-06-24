@@ -85,18 +85,19 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:use_augmenter, Value: False
-      image_augmenter:GaussianNoise:sigma_offset, Value: 0.7272934391753253
+      image_augmenter:GaussianBlur:sigma_min, Value: 1.2308317406823488
+      image_augmenter:GaussianBlur:sigma_offset, Value: 2.745973527153216
+      image_augmenter:GaussianBlur:use_augmenter, Value: True
+      image_augmenter:GaussianNoise:sigma_offset, Value: 0.8698005723626088
       image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:rotate, Value: 242
-      image_augmenter:RandomAffine:scale_offset, Value: 0.2584028727200122
-      image_augmenter:RandomAffine:shear, Value: 3
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.34457716170609315
+      image_augmenter:RandomAffine:rotate, Value: 359
+      image_augmenter:RandomAffine:scale_offset, Value: 0.21881911068658175
+      image_augmenter:RandomAffine:shear, Value: 17
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.15493019000449781
       image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:p, Value: 0.5328138149752291
-      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:RandomCutout:use_augmenter, Value: False
       image_augmenter:Resize:use_augmenter, Value: True
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.23066642776799157
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.07061960693116581
       normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
@@ -176,7 +177,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.192 seconds)
+   **Total running time of the script:** ( 0 minutes  5.624 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
