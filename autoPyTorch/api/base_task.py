@@ -660,7 +660,7 @@ class BaseTask:
                                 "Please increase the 'ml_memory_limit' and try again.\n"
                                 "If you still get the problem, please open an issue\n"
                                 "and paste the additional info.\n"
-                                "Additional output:\n{}".format(cls, str(status), dict_repr(additional_info))
+                                "Additional info:\n{}".format(cls, str(status), dict_repr(additional_info))
                             )
                         else:
                             self._logger.error(
