@@ -415,6 +415,25 @@ class BaseTask:
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
+    def _cleanup(self) -> None:
+        """
+
+        Closes the different servers created during api search.
+
+        Returns:
+                None
+        """
+        if self._logger is not None:
+            self._logger.info("Closing the dask infrastructure")
+            self._close_dask_client()
+            self._logger.info("Finished closing the dask infrastructure")
+
+            # Clean up the logger
+            self._logger.info("Starting to clean up the logger")
+            self._clean_logger()
+        else:
+            self._close_dask_client()
+
     def _load_models(self) -> bool:
 
         """
@@ -1017,18 +1036,12 @@ class BaseTask:
                 pd.DataFrame(self.ensemble_performance_history).to_json(
                     os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
-        self._logger.info("Closing the dask infrastructure")
-        self._close_dask_client()
-        self._logger.info("Finished closing the dask infrastructure")
-
         if load_models:
             self._logger.info("Loading models...")
             self._load_models()
             self._logger.info("Finished loading models...")
 
-        # Clean up the logger
-        self._logger.info("Starting to clean up the logger")
-        self._clean_logger()
+        self._cleanup()
 
         return self
 
@@ -1103,7 +1116,7 @@ class BaseTask:
             # the ordering of the data.
             fit_and_suppress_warnings(self._logger, model, X, y=None)
 
-        self._clean_logger()
+        self._cleanup()
 
         return self
 
@@ -1168,14 +1181,15 @@ class BaseTask:
 
         fit_and_suppress_warnings(self._logger, pipeline, X, y=None)
 
-        self._clean_logger()
+        self._cleanup()
         return pipeline
 
     def fit_ensemble(
         self,
-        ensemble_nbest: Optional[int] = None,
+        ensemble_nbest: int = 50,
         ensemble_size: int = 50,
-        precision: int = 32
+        precision: int = 32,
+        load_models: bool = True
     ) -> 'BaseTask':
         """
         Enables post-hoc fitting of the ensemble after the `search()`
@@ -1215,7 +1229,7 @@ class BaseTask:
             optimize_metric=self.opt_metric,
             precision=precision,
             ensemble_size=ensemble_size,
-            ensemble_nbest=ensemble_nbest if ensemble_nbest is not None else self.ensemble_nbest,
+            ensemble_nbest=ensemble_nbest,
         )
 
         manager.build_ensemble(self._dask_client)
@@ -1226,8 +1240,9 @@ class BaseTask:
                              " check the log file and command line output for error messages.")
         self.ensemble_performance_history, _, _, _ = result
 
-        self._load_models()
-        self._close_dask_client()
+        if load_models:
+            self._load_models()
+        self._cleanup()
         return self
 
     def _init_ensemble_builder(
@@ -1259,7 +1274,8 @@ class BaseTask:
             EnsembleBuilderManager
 
         """
-        assert self._logger is not None, "logger should be initialised to fit ensemble"
+        if self._logger is None:
+            raise ValueError("logger should be initialised to fit ensemble")
         if self.dataset is None:
             raise ValueError("ensemble can only be initialised after or during `search()`. "
                              "Please call the `search()` method of {}.".format(self.__class__.__name__))
@@ -1346,7 +1362,7 @@ class BaseTask:
 
         predictions = self.ensemble_.predict(all_predictions)
 
-        self._clean_logger()
+        self._cleanup()
 
         return predictions
 
@@ -1383,10 +1399,7 @@ class BaseTask:
         return self.__dict__
 
     def __del__(self) -> None:
-        # Clean up the logger
-        self._clean_logger()
-
-        self._close_dask_client()
+        self._cleanup()
 
         # When a multiprocessing work is done, the
         # objects are deleted. We don't want to delete run areas

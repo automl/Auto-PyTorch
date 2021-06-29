@@ -494,8 +494,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     with open(model_path, 'rb') as model_handler:
         clone(pickle.load(model_handler))
 
-    estimator._close_dask_client()
-    estimator._clean_logger()
+    estimator._cleanup()
 
     del estimator
 
@@ -694,8 +693,7 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
     if not at_least_one_model_checked:
         pytest.fail("Not even one single traditional pipeline was fitted")
 
-    estimator._close_dask_client()
-    estimator._clean_logger()
+    estimator._cleanup()
 
     del estimator
 
@@ -757,6 +755,11 @@ def test_fit_ensemble(backend, n_samples, dataset_name):
     assert any(['.ensemble' in file for file in os.listdir(os.path.join(
         estimator._backend.internals_directory, 'ensembles'))])
     assert any(['ensemble_' or '_ensemble.npy' in os.listdir(estimator._backend.internals_directory)])
+
+    preds = estimator.predict(X_test)
+    assert isinstance(preds, np.ndarray)
+
+    assert len(estimator.ensemble_performance_history) > 0
 
 
 @pytest.mark.parametrize('dataset_name', ('iris',))
