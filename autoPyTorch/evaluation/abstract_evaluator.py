@@ -323,6 +323,9 @@ class AbstractEvaluator(object):
         # If the budget is epochs, we want to limit that in the fit dictionary
         if self.budget_type == 'epochs':
             self.fit_dictionary['epochs'] = budget
+        if self.budget_type == 'dataset_size':
+            if self.task_type in TIMESERIES_TASKS:
+                self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / budget))
 
         self.num_run = 0 if num_run is None else num_run
 

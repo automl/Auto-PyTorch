@@ -89,6 +89,10 @@ class TimeSeriesForecastingTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
         )
         self.n_prediction_steps = n_prediction_steps
+        # here fraction of subset could be number of images, tabular data or resolution of time-series datasets.
+        #TODO if budget type dataset_size is applied to all datasets, we will put it to configs
+        self.pipeline_options.update({"min_fraction_subset": 0.1,
+                                      "fraction_subset": 1.0})
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):
@@ -140,7 +144,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 evaluate a pipeline.
             budget_type (Optional[str]):
                 Type of budget to be used when fitting the pipeline.
-                Either 'epochs' or 'runtime'. If not provided, uses
+                Either 'epochs' or 'runtime' or 'dataset_size'. If not provided, uses
                 the default in the pipeline config ('epochs')
             budget (Optional[float]):
                 Budget to fit a single run of the pipeline. If not

@@ -301,9 +301,17 @@ class AutoMLSMBO(object):
                         self.smac_scenario_args[arg]
                     )
             scenario_dict.update(self.smac_scenario_args)
-
-        initial_budget = self.pipeline_config['min_epochs']
-        max_budget = self.pipeline_config['epochs']
+        budget_type = self.pipeline_config['budget_type']
+        if budget_type == 'epochs':
+            initial_budget = self.pipeline_config['min_epochs']
+            max_budget = self.pipeline_config['epochs']
+        elif budget_type == 'dataset_size':
+            initial_budget = self.pipeline_config.get('min_fraction_subset', 0.1)
+            max_budget = self.pipeline_config.get('fraction_subset', 1.0)
+        else:
+            raise ValueError("Illegal value for budget type, must be one of "
+                             "('epochs', 'runtime'), but is : %s" %
+                             budget_type)
 
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,

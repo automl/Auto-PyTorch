@@ -701,7 +701,6 @@ class BaseTask:
             self
 
         """
-
         if self.task_type != dataset.task_type:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
@@ -736,12 +735,16 @@ class BaseTask:
 
         budget_config: Dict[str, Union[float, str]] = {}
         if budget_type is not None and budget is not None:
+            # budget type is specified by the user
             budget_config['budget_type'] = budget_type
             budget_config[budget_type] = budget
         elif budget_type is not None or budget is not None:
             raise ValueError(
                 "budget type was not specified in budget_config"
             )
+        else:
+            # TODO do meta learning here to determine the fiedlity to use?
+            pass
 
         if self.task_type is None:
             raise ValueError("Cannot interpret task type from the dataset")
@@ -754,6 +757,7 @@ class BaseTask:
             self._create_dask_client()
         else:
             self._is_dask_client_internally_created = False
+
 
         # ============> Run dummy predictions
         num_run = 1
