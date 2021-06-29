@@ -309,7 +309,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         """
         if X['is_cyclic_scheduler']:
-            if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
+            if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 1 and epoch != 1:
                 if self.use_stochastic_weight_averaging:
                     assert self.swa_model is not None, "SWA model can't be none when" \
                                                        " stochastic weight averaging is enabled"
