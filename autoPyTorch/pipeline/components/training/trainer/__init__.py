@@ -252,7 +252,7 @@ class TrainerChoice(autoPyTorchChoice):
         metrics = get_metrics(dataset_properties=X['dataset_properties'])
         if 'additional_metrics' in X:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
-        if 'optimize_metric' in X and 'optimize_metric' not in [m.name for m in metrics]:
+        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
         self.choice.prepare(
