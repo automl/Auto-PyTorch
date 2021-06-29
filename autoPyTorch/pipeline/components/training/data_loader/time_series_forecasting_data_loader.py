@@ -92,11 +92,8 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         Returns:
             A instance of self
         """
-        fraction_subset = X.get('fraction_subset', 1.0)
-        self.sample_interval = int(np.ceil(1.0 / fraction_subset))
-        print("!"*50)
-        print(self.sample_interval)
-        print("#"*50)
+        sample_interval = X.get('sample_interval', 1)
+        self.sample_interval = sample_interval
         self.tail_length = (self.sequence_length * self.sample_interval) + self.n_prediction_steps - 1
 
         # Make sure there is an optimizer
