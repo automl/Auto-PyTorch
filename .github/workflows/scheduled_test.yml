@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  schedule:
+    # Every Monday at 7AM UTC
+    - cron: '0 07 * * 1'
+
+
+jobs:
+  ubuntu:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+      fail-fast:  false
+      max-parallel: 2
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: development
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install test dependencies
+      run: |
+        git submodule update --init --recursive
+        python -m pip install --upgrade pip
+        pip install -e .[test]
+    - name: Run tests
+      run: |
+        python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v test
