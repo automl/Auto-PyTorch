@@ -47,7 +47,7 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score, get_metrics
-from autoPyTorch.utils.common import FitRequirement, replace_string_bool_to_bool
+from autoPyTorch.utils.common import FitRequirement, dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import (
     PicklableClientLogger,
@@ -525,39 +525,28 @@ class BaseTask:
             all_supported_metrics=self._all_supported_metrics
         )
 
-        status, cost, runtime, additional_info = ta.run(num_run, cutoff=self._time_for_task)
+        status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
         if status == StatusType.SUCCESS:
             self._logger.info("Finished creating dummy predictions.")
         else:
             if additional_info.get('exitcode') == -6:
-                self._logger.error(
-                    "Dummy prediction failed with run state %s. "
-                    "The error suggests that the provided memory limits were too tight. Please "
-                    "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                    "problem, please open an issue and paste the additional output. "
-                    "Additional output: %s.",
-                    str(status), str(additional_info),
-                )
+                err_msg = "Dummy prediction failed with run state {},\n" \
+                          "because the provided memory limits were too tight.\n" \
+                          "Please increase the 'ml_memory_limit' and try again.\n" \
+                          "If you still get the problem, please open an issue and\n" \
+                          "paste the additional info.\n" \
+                          "Additional info:\n{}.".format(str(status), dict_repr(additional_info))
+                self._logger.error(err_msg)
                 # Fail if dummy prediction fails.
-                raise ValueError(
-                    "Dummy prediction failed with run state %s. "
-                    "The error suggests that the provided memory limits were too tight. Please "
-                    "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                    "problem, please open an issue and paste the additional output. "
-                    "Additional output: %s." %
-                    (str(status), str(additional_info)),
-                )
+                raise ValueError(err_msg)
 
             else:
-                self._logger.error(
-                    "Dummy prediction failed with run state %s and additional output: %s.",
-                    str(status), str(additional_info),
+                err_msg = "Dummy prediction failed with run state {} and additional info:\n{}.".format(
+                    str(status), dict_repr(additional_info)
                 )
+                self._logger.error(err_msg)
                 # Fail if dummy prediction fails.
-                raise ValueError(
-                    "Dummy prediction failed with run state %s and additional output: %s."
-                    % (str(status), str(additional_info))
-                )
+                raise ValueError(err_msg)
 
     def _do_traditional_prediction(self, time_left: int, func_eval_time_limit_secs: int) -> None:
         """
@@ -652,7 +641,9 @@ class BaseTask:
                     status, cost, runtime, additional_info = future.result()
                     if status == StatusType.SUCCESS:
                         self._logger.info(
-                            f"Fitting {cls} took {runtime}s, performance:{cost}/{additional_info}")
+                            "Fitting {} took {} [sec] and got performance: {}.\n"
+                            "additional info:\n{}".format(cls, runtime, cost, dict_repr(additional_info))
+                        )
                         configuration = additional_info['pipeline_configuration']
                         origin = additional_info['configuration_origin']
                         additional_info.pop('pipeline_configuration')
@@ -663,17 +654,18 @@ class BaseTask:
                     else:
                         if additional_info.get('exitcode') == -6:
                             self._logger.error(
-                                "Traditional prediction for %s failed with run state %s. "
-                                "The error suggests that the provided memory limits were too tight. Please "
-                                "increase the 'ml_memory_limit' and try again. If this does not solve your "
-                                "problem, please open an issue and paste the additional output. "
-                                "Additional output: %s.",
-                                cls, str(status), str(additional_info),
+                                "Traditional prediction for {} failed with run state {},\n"
+                                "because the provided memory limits were too tight.\n"
+                                "Please increase the 'ml_memory_limit' and try again.\n"
+                                "If you still get the problem, please open an issue\n"
+                                "and paste the additional info.\n"
+                                "Additional info:\n{}".format(cls, str(status), dict_repr(additional_info))
                             )
                         else:
                             self._logger.error(
-                                "Traditional prediction for %s failed with run state %s and additional output: %s.",
-                                cls, str(status), str(additional_info),
+                                "Traditional prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
+                                    cls, str(status), dict_repr(additional_info)
+                                )
                             )
 
             # In the case of a serial execution, calling submit halts the run for a resource

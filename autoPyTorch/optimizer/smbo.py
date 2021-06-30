@@ -300,7 +300,7 @@ class AutoMLSMBO(object):
             pynisher_context=self.pynisher_context,
         )
         ta = ExecuteTaFuncWithQueue
-        self.logger.info("Created TA")
+        self.logger.info("Finish creating Target Algorithm (TA) function")
 
         startup_time = self.watcher.wall_elapsed(self.dataset_name)
         total_walltime_limit = self.total_walltime_limit - startup_time - 5

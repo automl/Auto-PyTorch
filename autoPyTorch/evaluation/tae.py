@@ -26,7 +26,7 @@ import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.utils.common import replace_string_bool_to_bool
+from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.parallel import preload_modules
@@ -459,7 +459,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         empty_queue(queue)
         self.logger.debug(
-            'Finished function evaluation %s. Status: %s, Cost: %f, Runtime: %f, Additional %s',
-            str(num_run), status, cost, runtime, additional_run_info,
+            "Finish function evaluation {}.\n"
+            "Status: {}, Cost: {}, Runtime: {},\n"
+            "Additional information:\n{}".format(
+                str(num_run),
+                status,
+                cost,
+                runtime,
+                dict_repr(additional_run_info)
+            )
         )
         return status, cost, runtime, additional_run_info

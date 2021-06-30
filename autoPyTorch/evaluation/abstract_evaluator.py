@@ -42,7 +42,7 @@ from autoPyTorch.pipeline.components.training.metrics.utils import (
     calculate_loss,
     get_metrics,
 )
-from autoPyTorch.utils.common import subsampler
+from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements
@@ -537,7 +537,7 @@ class AbstractEvaluator(object):
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
         self.pipeline: Optional[BaseEstimator] = None
-        self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(self.fit_dictionary))
+        self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
     def _get_pipeline(self) -> BaseEstimator:
