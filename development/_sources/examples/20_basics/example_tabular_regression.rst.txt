@@ -125,7 +125,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f8aaace4880>
+    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f48dfd18d00>
 
 
 
@@ -157,7 +157,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f8aaada68b0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f48e345cbe0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -188,7 +188,7 @@ Print the final ensemble performance
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014433860778808594, budget=0), TrajEntry(train_perf=4.940860613424574, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0013155937194824219, budget=0), TrajEntry(train_perf=4.940860613424574, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -219,7 +219,7 @@ Print the final ensemble performance
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=1.7743275165557861, wallclock_time=3.002695322036743, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=1.8480315208435059, wallclock_time=3.0527870655059814, budget=5.555555555555555), TrajEntry(train_perf=1.0, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 165
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -245,7 +245,7 @@ Print the final ensemble performance
       optimizer:__choice__, Value: 'SGDOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=5, ta_time_used=13.114794254302979, wallclock_time=19.58250379562378, budget=5.555555555555555), TrajEntry(train_perf=1.0799881026204055, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=5, ta_time_used=13.620249032974243, wallclock_time=20.430951833724976, budget=5.555555555555555), TrajEntry(train_perf=1.0799881026204055, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 68
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:KernelPCA:kernel, Value: 'cosine'
@@ -276,7 +276,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'MinMaxScaler'
       trainer:MixUpTrainer:alpha, Value: 0.3907472004119521
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=10, ta_time_used=34.464011669158936, wallclock_time=46.46885395050049, budget=16.666666666666664), TrajEntry(train_perf=0.28945761605598963, incumbent_id=4, incumbent=Configuration:
+    , ta_runs=10, ta_time_used=36.47500991821289, wallclock_time=48.76981735229492, budget=16.666666666666664), TrajEntry(train_perf=0.28945761605598963, incumbent_id=4, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -307,7 +307,7 @@ Print the final ensemble performance
       optimizer:__choice__, Value: 'AdamOptimizer'
       scaler:__choice__, Value: 'StandardScaler'
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=12, ta_time_used=38.52357006072998, wallclock_time=52.670743465423584, budget=16.666666666666664)]
+    , ta_runs=12, ta_time_used=40.92501258850098, wallclock_time=55.36291861534119, budget=16.666666666666664)]
     {'r2': 0.9223648131866926}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
@@ -321,7 +321,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  43.464 seconds)
+   **Total running time of the script:** ( 5 minutes  51.950 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_regression.py:
