@@ -166,23 +166,23 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="n">logging_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
-            <span class="n">ensemble_nbest</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
-            <span class="n">max_models_on_disc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
-            <span class="n">temporary_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">output_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">delete_tmp_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="n">delete_output_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">holdout_validation</span><span class="p">,</span>
-            <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Backend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">logging_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">ensemble_nbest</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">max_models_on_disc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">temporary_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">delete_tmp_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">delete_output_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">holdout_validation</span><span class="p">,</span>
+        <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Backend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
@@ -215,8 +215,9 @@
         <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">budget_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">budget_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;epochs&#39;</span><span class="p">,</span>
+        <span class="n">min_budget</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">max_budget</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">func_eval_time_limit_secs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">enable_traditional_pipeline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -242,13 +243,36 @@
 <span class="sd">                be provided to track the generalization performance of each stage.</span>
 <span class="sd">            optimize_metric (str): name of the metric that is used to</span>
 <span class="sd">                evaluate a pipeline.</span>
-<span class="sd">            budget_type (Optional[str]):</span>
+<span class="sd">            budget_type (str):</span>
 <span class="sd">                Type of budget to be used when fitting the pipeline.</span>
-<span class="sd">                Either &#39;epochs&#39; or &#39;runtime&#39;. If not provided, uses</span>
-<span class="sd">                the default in the pipeline config (&#39;epochs&#39;)</span>
-<span class="sd">            budget (Optional[float]):</span>
-<span class="sd">                Budget to fit a single run of the pipeline. If not</span>
-<span class="sd">                provided, uses the default in the pipeline config</span>
+<span class="sd">                It can be one of:</span>
+<span class="sd">                + &#39;epochs&#39;: The training of each pipeline will be terminated after</span>
+<span class="sd">                  a number of epochs have passed. This number of epochs is determined by the</span>
+<span class="sd">                  budget argument of this method.</span>
+<span class="sd">                + &#39;runtime&#39;: The training of each pipeline will be terminated after</span>
+<span class="sd">                  a number of seconds have passed. This number of seconds is determined by the</span>
+<span class="sd">                  budget argument of this method. The overall fitting time of a pipeline is</span>
+<span class="sd">                  controlled by func_eval_time_limit_secs. &#39;runtime&#39; only controls the allocated</span>
+<span class="sd">                  time to train a pipeline, but it does not consider the overall time it takes</span>
+<span class="sd">                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).</span>
+<span class="sd">                budget_type will determine the units of min_budget/max_budget. If budget_type==&#39;epochs&#39;</span>
+<span class="sd">                is used, min_budget will refer to epochs whereas if budget_type==&#39;runtime&#39; then</span>
+<span class="sd">                min_budget will refer to seconds.</span>
+<span class="sd">            min_budget (int):</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_` to</span>
+<span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
+<span class="sd">                running the top performing pipelines on max_budget.</span>
+<span class="sd">                min_budget states the minimum resource allocation a pipeline should have</span>
+<span class="sd">                so that we can compare and quickly discard bad performing models.</span>
+<span class="sd">                For example, if the budget_type is epochs, and min_budget=5, then we will</span>
+<span class="sd">                run every pipeline to a minimum of 5 epochs before performance comparison.</span>
+<span class="sd">            max_budget (int):</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_` to</span>
+<span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
+<span class="sd">                running the top performing pipelines on max_budget.</span>
+<span class="sd">                max_budget states the maximum resource allocation a pipeline is going to</span>
+<span class="sd">                be ran. For example, if the budget_type is epochs, and max_budget=50,</span>
+<span class="sd">                then the pipeline training will be terminated after 50 epochs.</span>
 <span class="sd">            total_walltime_limit (int), (default=100): Time limit</span>
 <span class="sd">                in seconds for the search of appropriate models.</span>
 <span class="sd">                By increasing this value, autopytorch has a higher</span>
@@ -340,7 +364,8 @@
             <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
             <span class="n">optimize_metric</span><span class="o">=</span><span class="n">optimize_metric</span><span class="p">,</span>
             <span class="n">budget_type</span><span class="o">=</span><span class="n">budget_type</span><span class="p">,</span>
-            <span class="n">budget</span><span class="o">=</span><span class="n">budget</span><span class="p">,</span>
+            <span class="n">min_budget</span><span class="o">=</span><span class="n">min_budget</span><span class="p">,</span>
+            <span class="n">max_budget</span><span class="o">=</span><span class="n">max_budget</span><span class="p">,</span>
             <span class="n">total_walltime_limit</span><span class="o">=</span><span class="n">total_walltime_limit</span><span class="p">,</span>
             <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="n">func_eval_time_limit_secs</span><span class="p">,</span>
             <span class="n">enable_traditional_pipeline</span><span class="o">=</span><span class="n">enable_traditional_pipeline</span><span class="p">,</span>
