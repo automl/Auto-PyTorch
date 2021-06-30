@@ -515,6 +515,12 @@ class AbstractEvaluator(object):
         # If the budget is epochs, we want to limit that in the fit dictionary
         if self.budget_type == 'epochs':
             self.fit_dictionary['epochs'] = budget
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'runtime':
+            self.fit_dictionary['runtime'] = budget
+            self.fit_dictionary.pop('epochs', None)
+        else:
+            raise ValueError(f"Unsupported budget type {self.budget_type} provided")
 
         self.num_run = 0 if num_run is None else num_run
 

@@ -242,7 +242,7 @@ class TrainerChoice(autoPyTorchChoice):
         if X["torch_num_threads"] > 0:
             torch.set_num_threads(X["torch_num_threads"])
 
-        budget_tracker = BudgetTracker(
+        self.budget_tracker = BudgetTracker(
             budget_type=X['budget_type'],
             max_runtime=X['runtime'] if 'runtime' in X else None,
             max_epochs=X['epochs'] if 'epochs' in X else None,
@@ -260,7 +260,7 @@ class TrainerChoice(autoPyTorchChoice):
             metrics=metrics,
             criterion=get_loss(X['dataset_properties'],
                                name=additional_losses),
-            budget_tracker=budget_tracker,
+            budget_tracker=self.budget_tracker,
             optimizer=X['optimizer'],
             device=get_device_from_fit_dictionary(X),
             metrics_during_training=X['metrics_during_training'],
@@ -322,7 +322,10 @@ class TrainerChoice(autoPyTorchChoice):
             self.logger.debug(self.run_summary.repr_last_epoch())
 
             # Reached max epoch on next iter, don't even go there
-            if budget_tracker.is_max_epoch_reached(epoch + 1):
+            if (
+                    self.budget_tracker.is_max_epoch_reached(epoch + 1)
+                    or self.budget_tracker.is_max_time_reached()
+            ):
                 break
 
             epoch += 1

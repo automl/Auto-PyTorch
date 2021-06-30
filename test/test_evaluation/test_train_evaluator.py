@@ -87,6 +87,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_holdout(self, pipeline_mock):
+        pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 50}
         # Binary iris, contains 69 train samples, 31 test samples
         D = get_binary_classification_datamanager()
         pipeline_mock.predict_proba.side_effect = \
@@ -99,7 +100,8 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0)
+        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
+                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 
@@ -137,7 +139,8 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0)
+        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
+                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 
@@ -241,7 +244,8 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         configuration = unittest.mock.Mock(spec=Configuration)
         queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(self.backend_mock, queue_, configuration=configuration, metric=accuracy, budget=0)
+        evaluator = TrainEvaluator(self.backend_mock, queue_, configuration=configuration, metric=accuracy, budget=0,
+                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
 
         evaluator.fit_predict_and_loss()
         Y_optimization_pred = self.backend_mock.save_numrun_to_dir.call_args_list[0][1][

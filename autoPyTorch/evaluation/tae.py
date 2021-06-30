@@ -209,9 +209,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 )
         else:
             if run_info.budget == 0:
-                run_info = run_info._replace(budget=self.pipeline_config[self.budget_type])
-            elif run_info.budget <= 0 or run_info.budget > 100:
-                raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
+                # SMAC can return budget zero for intensifiers that don't have a concept
+                # of budget, for example a simple bayesian optimization intensifier.
+                # Budget determines how our pipeline trains, which can be via runtime or epochs
+                epochs_budget = self.pipeline_config.get('epochs', np.inf)
+                runtime_budget = self.pipeline_config.get('runtime', np.inf)
+                run_info = run_info._replace(budget=min(epochs_budget, runtime_budget))
+            elif run_info.budget <= 0:
+                raise ValueError('Illegal value for budget, must be greater than zero but is %f' %
                                  run_info.budget)
             if self.budget_type not in ('epochs', 'runtime'):
                 raise ValueError("Illegal value for budget type, must be one of "
