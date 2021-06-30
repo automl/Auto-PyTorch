@@ -249,15 +249,15 @@ class TrainerChoice(autoPyTorchChoice):
         )
 
         # Support additional user metrics
-        additional_metrics = X['additional_metrics'] if 'additional_metrics' in X else None
-        if 'optimize_metric' in X:
-            additional_metrics = additional_metrics.append(X['optimize_metric']) if additional_metrics is not None \
-                else [X['optimize_metric']]
+        metrics = get_metrics(dataset_properties=X['dataset_properties'])
+        if 'additional_metrics' in X:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
+        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
         self.choice.prepare(
             model=X['network'],
-            metrics=get_metrics(dataset_properties=X['dataset_properties'],
-                                names=additional_metrics),
+            metrics=metrics,
             criterion=get_loss(X['dataset_properties'],
                                name=additional_losses),
             budget_tracker=budget_tracker,
