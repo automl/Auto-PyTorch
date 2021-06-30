@@ -1275,7 +1275,7 @@ class BaseTask:
 
         """
         if self._logger is None:
-            raise ValueError("logger should be initialised to fit ensemble")
+            raise ValueError("logger should be initialized to fit ensemble")
         if self.dataset is None:
             raise ValueError("ensemble can only be initialised after or during `search()`. "
                              "Please call the `search()` method of {}.".format(self.__class__.__name__))
