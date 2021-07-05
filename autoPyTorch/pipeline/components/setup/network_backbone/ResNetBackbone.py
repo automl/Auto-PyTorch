@@ -261,20 +261,19 @@ class ResBlock(nn.Module):
         # if the shortcut needs a layer we apply batchnorm and activation to the shortcut
         # as well (start_norm)
         if in_features != out_features:
-            import numpy as np
-            np.save('./reached_in_out.npy', np.array([1,1]))
-            self.shortcut = nn.Linear(in_features, out_features)
-            initial_normalization = list()
-            if self.config['use_batch_norm']:
+            if self.config["use_skip_connection"]:
+                self.shortcut = nn.Linear(in_features, out_features)
+                initial_normalization = list()
+                if self.config['use_batch_norm']:
+                    initial_normalization.append(
+                        nn.BatchNorm1d(in_features)
+                    )
                 initial_normalization.append(
-                    nn.BatchNorm1d(in_features)
+                    self.activation()
                 )
-            initial_normalization.append(
-                self.activation()
-            )
-            self.start_norm = nn.Sequential(
-                *initial_normalization
-            )
+                self.start_norm = nn.Sequential(
+                    *initial_normalization
+                )
 
         self.block_index = block_index
         self.num_blocks = blocks_per_group * self.config["num_groups"]
