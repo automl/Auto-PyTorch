@@ -41,6 +41,7 @@ class CrossValTypes(IntEnum):
 class HoldoutValTypes(IntEnum):
     holdout_validation = 6
     stratified_holdout_validation = 7
+    time_series_hold_out_validation = 8
 
 
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
@@ -51,6 +52,9 @@ DEFAULT_RESAMPLING_PARAMETERS = {
     },
     HoldoutValTypes.stratified_holdout_validation: {
         'val_share': 0.33,
+    },
+    HoldoutValTypes.time_series_hold_out_validation: {
+    'val_share': 0.33
     },
     CrossValTypes.k_fold_cross_validation: {
         'num_splits': 3,
@@ -135,6 +139,22 @@ def k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any)
     return splits
 
 
+# TODO DO we move these under autoPyTorch/datasets/time_series_dataset.py?
+def time_series_hold_out_validation(val_share: float, indices: np.ndarray, **kwargs: Any) \
+        -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Return holdout indices respecting hte temporal ordering of the data
+    Args:
+        val_share:
+        indices: List of all possible indices
+        **kwargs:
+
+    Returns:
+    """
+    train, val = train_test_split(indices, test_size=val_share, shuffle=False)
+    return train, val
+
+
 def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any) \
         -> List[Tuple[np.ndarray, np.ndarray]]:
     """
@@ -144,10 +164,12 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
         [0, 1] [2]
         [0, 1, 2] [3]
 
-    :param indices: array of indices to be split
+    :param indices: array of indices to be split, seq_length
     :param num_splits: number of cross validation splits
     :return: list of tuples of training and validation indices
     """
+    # TODO: we use gap=n_prediction_step here, we need to consider if we want to implement n_prediction_step here or
+    # under DATALOADER!!!
     cv = TimeSeriesSplit(n_splits=num_splits)
     splits = list(cv.split(indices))
     return splits

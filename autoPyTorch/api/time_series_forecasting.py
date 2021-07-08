@@ -63,11 +63,10 @@ class TimeSeriesForecastingTask(BaseTask):
         delete_output_folder_after_terminate: bool = True,
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        n_prediction_steps: int = 1,
     ):
         super().__init__(
             seed=seed,
@@ -88,7 +87,6 @@ class TimeSeriesForecastingTask(BaseTask):
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
         )
-        self.n_prediction_steps = n_prediction_steps
         # here fraction of subset could be number of images, tabular data or resolution of time-series datasets.
         #TODO if budget type dataset_size is applied to all datasets, we will put it to configs
         self.pipeline_options.update({"min_fraction_subset": 0.1,
@@ -112,6 +110,7 @@ class TimeSeriesForecastingTask(BaseTask):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         #target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+        n_prediction_steps: int= 1,
         dataset_name: Optional[str] = None,
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
@@ -217,7 +216,7 @@ class TimeSeriesForecastingTask(BaseTask):
             validator=self.InputValidator,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-            n_prediction_steps=self.n_prediction_steps,
+            n_prediction_steps=n_prediction_steps,
         )
 
         if traditional_per_total_budget > 0.:

@@ -35,7 +35,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
 
     def __init__(self,
                  batch_size: int = 64,
-                 sequence_length: int = 1,
+                 window_size: int = 1,
                  #sample_interval: int = 1,
                  upper_sequence_length: int = np.iinfo(np.int32).max,
                  n_prediction_steps: int = 1) -> None:
@@ -50,13 +50,13 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             n_prediction_steps: how many stpes to predict in advance
         """
         super().__init__(batch_size=batch_size)
-        self.sequence_length: int = sequence_length
+        self.window_size: int = window_size
         self.upper_seuqnce_length = upper_sequence_length
         self.n_prediction_steps = n_prediction_steps
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
-        self.tail_length = (self.sequence_length * self.sample_interval) + self.n_prediction_steps - 1
+        self.tail_length = (self.window_size * self.sample_interval) + self.n_prediction_steps - 1
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """The transform function calls the transform function of the
@@ -94,7 +94,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         """
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
-        self.tail_length = (self.sequence_length * self.sample_interval) + self.n_prediction_steps - 1
+        self.tail_length = (self.window_size * self.sample_interval) + self.n_prediction_steps - 1
 
         # Make sure there is an optimizer
         self.check_requirements(X, y)
@@ -150,65 +150,109 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         update the dataset to build time sequence
         """
         num_features = datamanager.num_features
-        population_size = datamanager.population_size
-        num_target = datamanager.num_target
+        num_sequences = datamanager.num_sequences
+        num_targets = datamanager.num_target
 
         X_train, y_train = datamanager.train_tensors
         val_tensors = datamanager.val_tensors
         test_tensors = datamanager.test_tensors
         n_prediction_steps = datamanager.n_prediction_steps
+        sequence_lengths_train = datamanager.sequence_lengths_train
+        sequence_lengths_val = datamanager.sequence_lengths_val
+        sequence_lengths_test = datamanager.sequence_lengths_test
 
-        X_train = X_train.reshape([-1, population_size, num_features])
-        y_train = y_train.reshape([-1, population_size, num_target])
-
-        time_series_length = X_train.shape[0]
-        self.population_size = population_size
+        self.num_sequences = num_sequences
         self.num_features = num_features
-        num_datapoints_train = time_series_length - (self.sequence_length - 1) * self.sample_interval - n_prediction_steps + 1
-        num_targets = y_train.shape[-1]
+        #X_train = X_train.reshape([-1, population_size, num_features])
+        #y_train = y_train.reshape([-1, population_size, num_target])
 
-        y_train = y_train[-num_datapoints_train:, :]
+        X_train_pieces = [[] for _ in range(num_sequences)]
+        y_train_pieces = [[] for _ in range(num_sequences)]
+
+        X_val_pieces = [[] for _ in range(num_sequences)]
+        y_val_pieces = [[] for _ in range(num_sequences)]
+
+        X_test_pieces = [[] for _ in range(num_sequences)]
+        y_test_pieces = [[] for _ in range(num_sequences)]
+
+        X_val_tail = [[] for _ in range(num_sequences)]
+        num_data_points_seqs = [0] * num_sequences
+        start_idx_train = 0
+        start_idx_test = 0
+        start_idx_val = 0
+        for i, seq_length_train in enumerate(sequence_lengths_train):
+            end_idx_train = start_idx_train + seq_length_train
+            num_datapoints_train = seq_length_train - (self.window_size - 1) * self.sample_interval - n_prediction_steps + 1
+
+            X_train_tmp = X_train[start_idx_train: end_idx_train]
+            y_train_tmp = y_train[start_idx_train: end_idx_train]
+
+            y_train_tmp = y_train_tmp[-num_datapoints_train:]
+            if test_tensors is not None:
+                end_idx_test = start_idx_test + sequence_lengths_test[i]
+                X_test_tmp  = test_tensors[0][start_idx_test: end_idx_test]
+                y_test_tmp = test_tensors[1][start_idx_test: end_idx_test]
+
+                if val_tensors is not None:
+                    end_idx_val = start_idx_val + sequence_lengths_val[i]
+                    X_val_tmp = val_tensors[0][start_idx_val: end_idx_val]
+                    y_val_tmp = val_tensors[1][start_idx_val: end_idx_val]
+                    num_datapoints_val = sequence_lengths_val[i]
+
+                    X_val_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_val_tmp])
+                    X_test_tmp = np.concatenate([X_val_tmp[-self.tail_length:], X_test_tmp])
+                    X_val_tmp, y_val_tmp = self._ser2seq(X_val_tmp, y_val_tmp, num_datapoints_val, num_features, num_targets)
+
+                    X_val_pieces[i] = X_val_tmp
+                    y_val_pieces[i] = y_val_tmp
+
+                num_datapoints_test = sequence_lengths_test[i]
+
+                X_test_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_test_tmp])
+                X_val_tail[i] = X_test_tmp[-self.tail_length:] if self.tail_length > 1 \
+                    else np.zeros((0, num_features)).astype(dtype=X_test_tmp.dtype)
+
+                X_test_tmp, y_test_tmp = self._ser2seq(X_test_tmp, y_test_tmp, num_datapoints_test, num_features, num_targets)
+                X_test_pieces[i] = X_test_tmp
+                y_test_pieces[i] = y_test_tmp
+                datamanager.test_tensors = test_tensors
+
+            elif val_tensors is not None:
+                end_idx_val = start_idx_val + sequence_lengths_val[i]
+                X_val_tmp = val_tensors[0][start_idx_val: end_idx_val]
+                y_val_tmp = val_tensors[1][start_idx_val: end_idx_val]
+                num_datapoints_val = sequence_lengths_val[i]
+                X_val_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_val_tmp])
+
+                # used for prediction
+                X_val_tail[i] = X_val_tmp[-self.tail_length:] if self.tail_length > 1 \
+                    else np.zeros((0, num_features)).astype(dtype=X_val_tmp.dtype)
+                X_val_tmp, y_val_tmp = self._ser2seq(X_val_tmp, y_val_tmp, num_datapoints_val, num_features, num_targets)
+
+                X_val_pieces[i] = X_val_tmp
+                y_val_pieces[i] = y_val_tmp
+            else:
+                X_val_tail[i] = X_train_tmp[-self.tail_length:] if self.tail_length > 1 \
+                    else np.zeros((0, num_features)).astype(dtype=X_train_tmp.dtype)
+
+            X_train_tmp, y_train_tmp = self._ser2seq(X_train_tmp, y_train_tmp,
+                                                     num_datapoints_train, num_features, num_targets)
+            X_train_pieces[i] = X_train_tmp
+            y_train_pieces[i] = y_train_tmp
+
+            num_data_points_seqs[i] = num_datapoints_train
+
+        train_tensors = (np.concatenate(X_train_pieces), np.concatenate(y_train_pieces))
         if test_tensors is not None:
-            X_test, y_test = test_tensors
-
-            X_test = X_test.reshape([-1, population_size, num_features])
-            y_test = y_test.reshape([-1, population_size, num_target])
-
-            if val_tensors is not None:
-                X_val, y_val = val_tensors
-
-                X_val = X_val.reshape([-1, population_size, num_features])
-                y_val = y_val.reshape([-1, population_size, num_target])
-
-                num_datapoints_val = X_val.shape[0]
-
-                X_val = np.concatenate([X_train[-self.tail_length:], X_val])
-                X_test = np.concatenate([X_val[-self.tail_length:], X_test])
-                val_tensors = self._ser2seq(X_val, y_val, num_datapoints_val, num_features, num_targets)
-                datamanager.val_tensors = val_tensors
-
-            num_datapoints_test = X_test.shape[0]
-
-            X_test = np.concatenate([X_train[-self.tail_length:], X_test])
-            self.X_val_tail = X_test[-self.tail_length:] if self.tail_length > 1 \
-                else np.zeros((0, population_size, num_features)).astype(dtype=X_test.dtype)
-
-            test_tensors = self._ser2seq(X_test, y_test, num_datapoints_test, num_features, num_targets)
+            test_tensors = (np.concatenate(X_test_pieces), np.concatenate(y_test_pieces))
             datamanager.test_tensors = test_tensors
-
-        elif val_tensors is not None:
-            X_val, y_val = val_tensors
-            X_val = np.concatenate([X_train[-self.tail_length:], X_val])
-
-            # used for prediction
-            self.X_val_tail = X_val[-self.tail_length:]
-            val_tensors = self._ser2seq(X_val, y_val, num_datapoints_train, num_features, num_targets)
+        if val_tensors is not None:
+            val_tensors = (np.concatenate(X_val_pieces), np.concatenate(y_val_pieces))
             datamanager.val_tensors = val_tensors
-        else:
-            self.X_val_tail = X_train[-self.tail_length:]
+        self.X_val_tail = X_val_tail
 
-        train_tensors = self._ser2seq(X_train, y_train, num_datapoints_train, num_features, num_targets)
         datamanager.train_tensors = train_tensors
+        datamanager.update_sequence_lengths_train(num_data_points_seqs)
         datamanager.splits = datamanager.get_splits_from_resampling_strategy()
         return datamanager
 
@@ -228,9 +272,9 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             y_in_trans: transformed input target array with shape
             [num_datapoints * population_size, num_targets]
         """
-        X_in = np.concatenate([np.roll(X_in, shift=i * self.sample_interval, axis=0) for i in range(0, -self.sequence_length, -1)],
-                              axis=2).astype(np.float32)[:num_datapoints]
-        X_in = X_in.reshape((-1, self.sequence_length, num_features))
+        X_in = np.concatenate([np.roll(X_in, shift=i * self.sample_interval, axis=0) for i in range(0, -self.window_size, -1)],
+                              axis=1).astype(np.float32)[:num_datapoints]
+        X_in = X_in.reshape((-1, self.window_size, num_features))
         y_in = y_in.reshape((-1, num_targets))
         return X_in, y_in
 
@@ -240,28 +284,15 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
         """
-        if X.ndim == 3:
-            X_shape = X.shape
-            if X_shape[-1] != self.num_features:
-                raise ValueError("the features of test data is incompatible with the training data")
-            if X_shape[1] == self.population_size:
-                num_points_X_in = X_shape[0]
-            elif X_shape[0] == self.population_size:
-                num_points_X_in = X_shape[1]
-                X = np.swapaxes(X, 0, 1)
-            elif X_shape[1] == 1:
-                X = X.reshape([-1, self.population_size, self.num_features])
-                num_points_X_in = X_shape[0]
-            else:
-                raise ValueError("test shape is incompatible with the training shape")
-        else:
-            raise ValueError(
-                "The test data for time series forecasting has to be a three-dimensional tensor of shape PxLxM.")
+        if len(X) != len(self.X_val_tail):
+            raise ValueError(f"Training data has {len(self.X_val_tail)} sequences but test data has {len(X)} sequences")
+        for i in range(len(X)):
+            num_points_X_in = np.shape(X[i])[0]
+            X_tmp = np.concatenate([self.X_val_tail[i], X[i]])
+            X[i] = np.concatenate([np.roll(X_tmp, shift=i * self.sample_interval, axis=0) for i in range(0, -self.window_size, -1)],
+                           axis=1).astype(np.float32)[:num_points_X_in]
 
-        X = np.concatenate([self.X_val_tail, X])
-        X = np.concatenate([np.roll(X, shift=i * self.sample_interval, axis=0) for i in range(0, -self.sequence_length, -1)],
-                           axis=2).astype(np.float32)[:num_points_X_in]
-        X = X.reshape((-1, self.sequence_length, self.num_features))
+        X = np.concatenate(X)
 
 
         dataset = BaseDataset(
@@ -306,26 +337,26 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         batch_size: Tuple[Tuple, int] = ((32, 320), 64),
-                                        sequence_length: Tuple[Tuple, int] = ((1, 20), 1)
+                                        window_size: Tuple[Tuple, int] = ((1, 20), 1)
                                         ) -> ConfigurationSpace:
         batch_size = UniformIntegerHyperparameter(
             "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])
-        if "upper_sequence_length" not in dataset_properties:
+        if "upper_window_size" not in dataset_properties:
             warnings.warn('max_sequence_length is not given in dataset property , might exists the risk of selecting '
                           'length that is greater than the maximal allowed length of the dataset')
-            upper_sequence_length = min(np.iinfo(np.int32).max, sequence_length[0][1])
+            upper_window_size = min(np.iinfo(np.int32).max, window_size[0][1])
         else:
-            upper_sequence_length = min(dataset_properties["upper_sequence_length"], sequence_length[0][1])
-        if sequence_length[0][0] >= upper_sequence_length:
-            warnings.warn("the lower bound of sequence length is greater than the upper bound")
-            sequence_length = Constant("sequence_length", upper_sequence_length)
+            upper_window_size = min(dataset_properties["upper_window_size"], window_size[0][1])
+        if window_size[0][0] >= upper_window_size:
+            warnings.warn("the lower bound of window size is greater than the upper bound")
+            window_size = Constant("window_size", upper_window_size)
         else:
-            sequence_length = UniformIntegerHyperparameter("sequence_length",
-                                                           lower=sequence_length[0][0],
-                                                           upper=upper_sequence_length,
-                                                           default_value=sequence_length[1])
+            window_size = UniformIntegerHyperparameter("window_size",
+                                                       lower=window_size[0][0],
+                                                       upper=upper_window_size,
+                                                       default_value=window_size[1])
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([batch_size, sequence_length])
+        cs.add_hyperparameters([batch_size, window_size])
         return cs
 
     def __str__(self) -> str:

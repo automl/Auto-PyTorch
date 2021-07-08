@@ -45,11 +45,14 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
 
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
+        # TODO consider how to handle the inconsistency between Transformer and Datasets
+        X_train = X['backend'].load_datamanager().train_tensors[0]
+        """
         if 'X_train' in X:
             X_train = subsampler(X['X_train'], X['train_indices'])
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
-
+        """
         self.preprocessor.fit(X_train)
         return self
 

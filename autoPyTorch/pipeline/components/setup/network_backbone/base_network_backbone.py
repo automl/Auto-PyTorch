@@ -17,6 +17,7 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
 from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.constants import TIMESERIES_FORECASTING, TASK_TYPES_TO_STRING
 
 
 class NetworkBackboneComponent(autoPyTorchComponent):
@@ -50,13 +51,16 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         """
         self.check_requirements(X, y)
         X_train = X['X_train']
-
-        if X["dataset_properties"]["is_small_preprocess"]:
-            input_shape = X_train.shape[1:]
+        if X["dataset_properties"]["task_type"] == TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]:
+            input_shape = X["dataset_properties"]['input_shape']
         else:
-            # get input shape by transforming first two elements of the training set
-            transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
-            input_shape = transforms(X_train[:1, ...]).shape[1:]
+
+            if X["dataset_properties"]["is_small_preprocess"]:
+                input_shape = X_train.shape[1:]
+            else:
+                # get input shape by transforming first two elements of the training set
+                transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
+                input_shape = transforms(X_train[:1, ...]).shape[1:]
 
         self.input_shape = input_shape
 
