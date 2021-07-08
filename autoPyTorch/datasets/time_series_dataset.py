@@ -163,8 +163,8 @@ class TimeSeriesForecastingDataset(BaseDataset):
 
             for seq_idx, seq_length in enumerate(self.sequence_lengths_test):
                 end_idx = start_idx + seq_length
-                X_test_flatten[start_idx: end_idx] = np.array(X[seq_idx])
-                y_test_flatten[start_idx: end_idx] = np.array(Y[seq_idx])
+                X_test_flatten[start_idx: end_idx] = np.array(X_test[seq_idx])
+                y_test_flatten[start_idx: end_idx] = np.array(Y_test[seq_idx])
                 start_idx = end_idx
             test_tensors = (X_test_flatten, y_test_flatten)
         else:

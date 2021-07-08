@@ -62,7 +62,11 @@ class TimeSeriesForecastingTargetValidator(TabularTargetValidator):
                 num_target_train[seq_idx] = np.shape(y_train[seq_idx])[-1]
 
         if y_test is not None:
-            self._check_data(y_test[0])
+            y_test_first_seq = np.array(y_train[0])
+            if len(y_test_first_seq.shape) == 1:
+                y_test_first_seq = np.expand_dims(y_test_first_seq, -1)
+
+            self._check_data(y_test_first_seq)
             if len(y_train) != len(y_test):
                 raise ValueError("Training test must have the same amount of sequences as test set!")
             if len(np.shape(y_train[1])) == 1:
