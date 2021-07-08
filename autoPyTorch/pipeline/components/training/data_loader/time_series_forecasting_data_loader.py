@@ -119,6 +119,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
+        X['backend'].save_datamanager(datamanager, overwrite=True)
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
         self.datamanager = datamanager
@@ -337,7 +338,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
                                         batch_size: Tuple[Tuple, int] = ((32, 320), 64),
-                                        window_size: Tuple[Tuple, int] = ((1, 20), 1)
+                                        window_size: Tuple[Tuple, int] = ((20, 50), 25)
                                         ) -> ConfigurationSpace:
         batch_size = UniformIntegerHyperparameter(
             "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])
@@ -349,11 +350,19 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             upper_window_size = min(dataset_properties["upper_window_size"], window_size[0][1])
         if window_size[0][0] >= upper_window_size:
             warnings.warn("the lower bound of window size is greater than the upper bound")
-            window_size = Constant("window_size", upper_window_size)
-        else:
+            window_size = UniformIntegerHyperparameter("window_size",
+                                                       lower=1,
+                                                       upper=upper_window_size,
+                                                       default_value=1)
+        elif window_size[0][0] <= upper_window_size < window_size[0][1]:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
                                                        upper=upper_window_size,
+                                                       default_value=1)
+        else:
+            window_size = UniformIntegerHyperparameter("window_size",
+                                                       lower=window_size[0][0],
+                                                       upper=window_size[0][1],
                                                        default_value=window_size[1])
         cs = ConfigurationSpace()
         cs.add_hyperparameters([batch_size, window_size])

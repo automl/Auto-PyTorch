@@ -303,12 +303,12 @@ class Backend(object):
     def _get_datamanager_pickle_filename(self) -> str:
         return os.path.join(self.internals_directory, 'datamanager.pkl')
 
-    def save_datamanager(self, datamanager: BaseDataset) -> str:
+    def save_datamanager(self, datamanager: BaseDataset, overwrite=False) -> str:
         self._make_internals_directory()
         filepath = self._get_datamanager_pickle_filename()
 
         with lockfile.LockFile(filepath):
-            if not os.path.exists(filepath):
+            if not os.path.exists(filepath) or overwrite:
                 with tempfile.NamedTemporaryFile('wb', dir=os.path.dirname(
                         filepath), delete=False) as fh:
                     pickle.dump(datamanager, fh, -1)
