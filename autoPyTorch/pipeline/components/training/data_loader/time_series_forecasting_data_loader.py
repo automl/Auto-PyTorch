@@ -349,11 +349,15 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         else:
             upper_window_size = min(dataset_properties["upper_window_size"], window_size[0][1])
         if window_size[0][0] >= upper_window_size:
-            warnings.warn("the lower bound of window size is greater than the upper bound")
-            window_size = UniformIntegerHyperparameter("window_size",
-                                                       lower=1,
-                                                       upper=upper_window_size,
-                                                       default_value=1)
+            if upper_window_size == 1:
+                warnings.warn("window size is fixed as 1")
+                window_size = Constant("window_size", value=1)
+            else:
+                warnings.warn("the lower bound of window size is greater than the upper bound")
+                window_size = UniformIntegerHyperparameter("window_size",
+                                                           lower=1,
+                                                           upper=upper_window_size,
+                                                           default_value=1)
         elif window_size[0][0] <= upper_window_size < window_size[0][1]:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
