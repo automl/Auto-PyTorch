@@ -94,7 +94,7 @@ shake_drop = ShakeDropFunction.apply
 
 def shake_get_alpha_beta(is_training: bool, is_cuda: bool
                          ) -> typing.Tuple[torch.tensor, torch.tensor]:
-    if is_training:
+    if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 

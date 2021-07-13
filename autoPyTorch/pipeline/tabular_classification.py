@@ -91,12 +91,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
         if isinstance(self.dataset_properties['output_shape'], int):
-            proba = pred[:, :self.dataset_properties['output_shape']]
-            normalizer = proba.sum(axis=1)[:, np.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
-            proba /= normalizer
-
-            return proba
+          return pred
 
         else:
             all_proba = []
@@ -147,8 +142,8 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         # Neural networks might not be fit to produce a [0-1] output
         # For instance, after small number of epochs.
-        y = np.clip(y, 0, 1)
-        y = sklearn.preprocessing.normalize(y, axis=1, norm='l1')
+        # y = np.clip(y, 0, 1)
+        # y = sklearn.preprocessing.normalize(y, axis=1, norm='l1')
 
         return y
 
