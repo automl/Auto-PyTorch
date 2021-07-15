@@ -118,10 +118,10 @@ def shake_drop_get_bl(
 ) -> torch.tensor:
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
-    if not is_training:
+    if is_training:
         # Move to torch.randn(1) for reproducibility
         bl = torch.tensor(1.0) if torch.randn(1) <= pl else torch.tensor(0.0)
-    if is_training:
+    else:
         bl = torch.tensor(pl)
 
     if is_cuda:
