@@ -131,13 +131,14 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         # Batch prediction
         Y_batch_preds = list()
 
-        for i, (X_batch, Y_batch) in enumerate(loader):
-            # Predict on batch
-            X_batch = X_batch.float().to(self.device)
-            Y_batch_pred = network(X_batch)
-            if self.final_activation is not None:
-                Y_batch_pred = self.final_activation(Y_batch_pred)
-            Y_batch_preds.append(Y_batch_pred.detach().cpu())
+        with torch.no_grad():
+            for i, (X_batch, Y_batch) in enumerate(loader):
+                # Predict on batch
+                X_batch = X_batch.float().to(self.device)
+                Y_batch_pred = network(X_batch)
+                if self.final_activation is not None:
+                    Y_batch_pred = self.final_activation(Y_batch_pred)
+                Y_batch_preds.append(Y_batch_pred.detach().cpu())
 
         return torch.cat(Y_batch_preds, 0)
 
