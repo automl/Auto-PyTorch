@@ -1468,5 +1468,6 @@ class BaseTask:
         self._logger.debug('  System: %s', platform.system())
         self._logger.debug('  Machine: %s', platform.machine())
         self._logger.debug('  Platform: %s', platform.platform())
+        self._logger.debug(f" Workers: {self._dask_client.dashboard_link}")
         for key, value in vars(self).items():
             self._logger.debug(f"\t{key}->{value}")

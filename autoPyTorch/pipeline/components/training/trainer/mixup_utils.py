@@ -51,6 +51,8 @@ class MixUp:
                                 f'{Lookahead.__name__}:la_alpha': 0.6}
         self.lookahead_config = lookahead_config
         self.alpha = alpha
+        self.batch_fit_times = []
+        self.data_loading_times = []
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
                               ) -> Callable:

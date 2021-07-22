@@ -676,6 +676,7 @@ class AbstractEvaluator(object):
 
         if self.output_type == MULTICLASS and \
                 prediction.shape[1] < num_classes:
+            self.logger.debug("Reached this function")
             if Y_train is None:
                 raise ValueError('Y_train must not be None!')
             classes = list(np.unique(Y_train))

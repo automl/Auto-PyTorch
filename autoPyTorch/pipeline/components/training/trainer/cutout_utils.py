@@ -53,6 +53,8 @@ class CutOut:
         self.lookahead_config = lookahead_config
         self.patch_ratio = patch_ratio
         self.cutout_prob = cutout_prob
+        self.batch_fit_times = []
+        self.data_loading_times = []
 
     def criterion_preparation(self, y_a: np.ndarray, y_b: np.ndarray = None, lam: float = 1.0
                               ) -> Callable:

@@ -61,9 +61,9 @@ class BasePipeline(Pipeline):
             exclude: Optional[Dict[str, Any]] = None,
             random_state: Optional[np.random.RandomState] = None,
             init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            verbose=True
     ):
-
         self.init_params = init_params if init_params is not None else {}
         self.dataset_properties = dataset_properties if \
             dataset_properties is not None else {}
@@ -102,7 +102,7 @@ class BasePipeline(Pipeline):
 
         self.set_hyperparameters(self.config, init_params=init_params)
 
-        super().__init__(steps=self.steps)
+        super().__init__(steps=self.steps, verbose=verbose)
 
         self._additional_run_info = {}  # type: Dict[str, str]
 
