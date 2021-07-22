@@ -94,7 +94,7 @@ shake_drop = ShakeDropFunction.apply
 
 def shake_get_alpha_beta(is_training: bool, is_cuda: bool
                          ) -> typing.Tuple[torch.tensor, torch.tensor]:
-    if not is_training:
+    if is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
@@ -118,7 +118,7 @@ def shake_drop_get_bl(
 ) -> torch.tensor:
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
-    if is_training:
+    if not is_training:
         # Move to torch.randn(1) for reproducibility
         bl = torch.tensor(1.0) if torch.randn(1) <= pl else torch.tensor(0.0)
     else:
