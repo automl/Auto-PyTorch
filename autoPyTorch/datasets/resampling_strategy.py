@@ -54,7 +54,7 @@ DEFAULT_RESAMPLING_PARAMETERS = {
         'val_share': 0.33,
     },
     HoldoutValTypes.time_series_hold_out_validation: {
-    'val_share': 0.33
+    'val_share': 0.2
     },
     CrossValTypes.k_fold_cross_validation: {
         'num_splits': 3,
@@ -151,7 +151,10 @@ def time_series_hold_out_validation(val_share: float, indices: np.ndarray, **kwa
 
     Returns:
     """
-    train, val = train_test_split(indices, test_size=val_share, shuffle=False)
+    # TODO consider how we handle test size properly
+    test_size = int(val_share * len(indices))
+    cv = TimeSeriesSplit(n_splits=2, test_size=test_size, gap=kwargs['n_prediction_steps'])
+    train, val = list(cv.split(indices))[-1]
     return train, val
 
 
@@ -170,6 +173,6 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
     """
     # TODO: we use gap=n_prediction_step here, we need to consider if we want to implement n_prediction_step here or
     # under DATALOADER!!!
-    cv = TimeSeriesSplit(n_splits=num_splits)
+    cv = TimeSeriesSplit(n_splits=num_splits, gap=kwargs['n_prediction_steps'])
     splits = list(cv.split(indices))
     return splits

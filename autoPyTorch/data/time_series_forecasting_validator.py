@@ -8,6 +8,7 @@ from autoPyTorch.data.time_series_forecasting_feature_validator import TimeSerie
 from autoPyTorch.data.time_series_forecasting_target_validator import TimeSeriesForecastingTargetValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
+# TODO create a minxin class to perform same operations on both feature and target validators
 
 class TimeSeriesForecastingInputValidator(TimeSeriesInputValidator):
     """

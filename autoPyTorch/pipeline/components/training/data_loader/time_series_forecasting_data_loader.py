@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional, Tuple
 
+from torch.utils.data.sampler import SubsetRandomSampler
+
 from autoPyTorch.pipeline.components.training.data_loader.time_series_data_loader import TimeSeriesDataLoader
 
 
@@ -18,21 +20,65 @@ import warnings
 
 
 from autoPyTorch.datasets.base_dataset import BaseDataset
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
-from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.utils.backend import Backend
-from autoPyTorch.utils.common import FitRequirement, custom_collate_fn
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
+from autoPyTorch.utils.common import  custom_collate_fn
+from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 
 
-class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
-    """This class is an interface to the PyTorch Dataloader.
+class ExpandTransformTimeSeries(object):
+    """Expand Dimensionality so tabular transformations see
+       a 2d Array, unlike the ExpandTransform defined under tabular dataset, the dimension is expanded
+       along the last axis
+    """
+    def __call__(self, data: np.ndarray) -> np.ndarray:
+        if len(data.shape) <= 1:
+            data = np.expand_dims(data, axis=-1)
+        return data
+
+
+class SequenceBuilder(object):
+    """build a time sequence token from the given time sequence
+    it requires two hyperparameters: sample_interval and window size
+    let's assume we have a time sequence
+    x = [0 1 2 3 4 5 6 7 8 9 10].with window_size=3 and sample resolution=2
+    then the extracted time series is [6, 8, 10] (or x[-5,-3,-1])
+    if window_size=3 and sample_resolution=3
+    then the extracted token is [4, 7, 10] (or x[-7,-4,-1])
+
+    Parameters
+    ----------
+    sample_interval : int, default=1
+        sample resolution
+
+    window_size : int, default=1
+        sliding window size
+    """
+    def __init__(self, sample_interval: int = 1, window_size: int = 1):
+        """
+        initialization
+        Args:
+            sample_interval: int: sample resolution
+            window_size: int: the size of the sliding window
+        """
+        self.sample_interval = sample_interval
+        self.window_size = window_size
+
+    def __call__(self, data: np.ndarray) -> np.ndarray:
+        sample_indices = np.arange(-1 - self.sample_interval * (self.window_size - 1), 0, step=self.sample_interval)
+        try:
+            return data[sample_indices]
+        except IndexError:
+            raise ValueError("the length of the time sequence token is larger than the possible, please check the "
+                             "sampler setting or reduce the window size")
+
+
+class TimeSeriesForecastingDataLoader(FeatureDataLoader):
+    """This class is an interface to read time sequence data
 
     It gives the possibility to read various types of mapped
     datasets as described in:
     https://pytorch.org/docs/stable/data.html
-
     """
-
     def __init__(self,
                  batch_size: int = 64,
                  window_size: int = 1,
@@ -56,30 +102,7 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
-        self.tail_length = (self.window_size * self.sample_interval) + self.n_prediction_steps - 1
-
-    def transform(self, X: np.ndarray) -> np.ndarray:
-        """The transform function calls the transform function of the
-        underlying model and returns the transformed array.
-
-        Args:
-            X (np.ndarray): input features
-
-        Returns:
-            np.ndarray: Transformed features
-        """
-        X.update({'train_data_loader': self.train_data_loader,
-                  'val_data_loader': self.val_data_loader,
-                  'X_train': self.datamanager.train_tensors[0],
-                  'y_train': self.datamanager.train_tensors[1]})
-        if self.datamanager.val_tensors is not None and 'X_val' in X:
-            X.update({'X_val': self.datamanager.val_tensors[0],
-                      'y_val': self.datamanager.val_tensors[1]})
-        if self.datamanager.test_tensors is not None and 'X_test' in X:
-            X.update({'X_test': self.datamanager.test_tensors[0],
-                      'y_test': self.datamanager.test_tensors[1]})
-
-        return X
+        self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -94,15 +117,15 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         """
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
-        self.tail_length = (self.window_size * self.sample_interval) + self.n_prediction_steps - 1
 
+        self.window_size = 5
+
+        self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
-        datamanager = X['backend'].load_datamanager()
-        datamanager = self._update_dataset(datamanager)
-
+        datamanager = X['backend'].load_datamanager() # type: TimeSeriesForecastingDataset
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
@@ -114,24 +137,42 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
             self.val_transform,
             train=False,
         )
-
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
-        X['backend'].save_datamanager(datamanager, overwrite=True)
+
+        self.n_prediction_steps = datamanager.n_prediction_steps
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
-        self.datamanager = datamanager
+        train_split, test_split = datamanager.splits[X['split_id']]
+        valid_indices = []
+        idx_start = 0
+        # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size
+        # we need to drop the first part of each sequence
+        for seq_idx, seq_length in enumerate(datamanager.sequence_lengths):
+            idx_end = idx_start + seq_length
+            full_sequence = np.arange(idx_start, idx_end)[self.subseq_length:]
+            valid_indices.append(full_sequence)
+            idx_start = idx_end
+
+        valid_indices = np.hstack([valid_idx for valid_idx in valid_indices])
+        _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
+
+        # test_indices not required as testsets usually lies on the trail of hte sequence
+        #_, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
+
+        sampler_train = SubsetRandomSampler(indices=sampler_indices_train)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=min(self.batch_size, len(train_dataset)),
-            shuffle=True,
+            shuffle=False,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', True),
             collate_fn=custom_collate_fn,
+            sampler=sampler_train,
         )
 
         self.val_data_loader = torch.utils.data.DataLoader(
@@ -146,138 +187,34 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
 
         return self
 
-    def _update_dataset(self, datamanager: TimeSeriesForecastingDataset):
+    def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
         """
-        update the dataset to build time sequence
-        """
-        num_features = datamanager.num_features
-        num_sequences = datamanager.num_sequences
-        num_targets = datamanager.num_target
+        Method to build a transformation that can pre-process input data
 
-        X_train, y_train = datamanager.train_tensors
-        val_tensors = datamanager.val_tensors
-        test_tensors = datamanager.test_tensors
-        n_prediction_steps = datamanager.n_prediction_steps
-        sequence_lengths_train = datamanager.sequence_lengths_train
-        sequence_lengths_val = datamanager.sequence_lengths_val
-        sequence_lengths_test = datamanager.sequence_lengths_test
+        Args:
+            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
+            mode (str): train/val/test
 
-        self.num_sequences = num_sequences
-        self.num_features = num_features
-        #X_train = X_train.reshape([-1, population_size, num_features])
-        #y_train = y_train.reshape([-1, population_size, num_target])
-
-        X_train_pieces = [[] for _ in range(num_sequences)]
-        y_train_pieces = [[] for _ in range(num_sequences)]
-
-        X_val_pieces = [[] for _ in range(num_sequences)]
-        y_val_pieces = [[] for _ in range(num_sequences)]
-
-        X_test_pieces = [[] for _ in range(num_sequences)]
-        y_test_pieces = [[] for _ in range(num_sequences)]
-
-        X_val_tail = [[] for _ in range(num_sequences)]
-        num_data_points_seqs = [0] * num_sequences
-        start_idx_train = 0
-        start_idx_test = 0
-        start_idx_val = 0
-        for i, seq_length_train in enumerate(sequence_lengths_train):
-            end_idx_train = start_idx_train + seq_length_train
-            num_datapoints_train = seq_length_train - (self.window_size - 1) * self.sample_interval - n_prediction_steps + 1
-
-            X_train_tmp = X_train[start_idx_train: end_idx_train]
-            y_train_tmp = y_train[start_idx_train: end_idx_train]
-
-            y_train_tmp = y_train_tmp[-num_datapoints_train:]
-            if test_tensors is not None:
-                end_idx_test = start_idx_test + sequence_lengths_test[i]
-                X_test_tmp  = test_tensors[0][start_idx_test: end_idx_test]
-                y_test_tmp = test_tensors[1][start_idx_test: end_idx_test]
-
-                if val_tensors is not None:
-                    end_idx_val = start_idx_val + sequence_lengths_val[i]
-                    X_val_tmp = val_tensors[0][start_idx_val: end_idx_val]
-                    y_val_tmp = val_tensors[1][start_idx_val: end_idx_val]
-                    num_datapoints_val = sequence_lengths_val[i]
-
-                    X_val_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_val_tmp])
-                    X_test_tmp = np.concatenate([X_val_tmp[-self.tail_length:], X_test_tmp])
-                    X_val_tmp, y_val_tmp = self._ser2seq(X_val_tmp, y_val_tmp, num_datapoints_val, num_features, num_targets)
-
-                    X_val_pieces[i] = X_val_tmp
-                    y_val_pieces[i] = y_val_tmp
-
-                num_datapoints_test = sequence_lengths_test[i]
-
-                X_test_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_test_tmp])
-                X_val_tail[i] = X_test_tmp[-self.tail_length:] if self.tail_length > 1 \
-                    else np.zeros((0, num_features)).astype(dtype=X_test_tmp.dtype)
-
-                X_test_tmp, y_test_tmp = self._ser2seq(X_test_tmp, y_test_tmp, num_datapoints_test, num_features, num_targets)
-                X_test_pieces[i] = X_test_tmp
-                y_test_pieces[i] = y_test_tmp
-                datamanager.test_tensors = test_tensors
-
-            elif val_tensors is not None:
-                end_idx_val = start_idx_val + sequence_lengths_val[i]
-                X_val_tmp = val_tensors[0][start_idx_val: end_idx_val]
-                y_val_tmp = val_tensors[1][start_idx_val: end_idx_val]
-                num_datapoints_val = sequence_lengths_val[i]
-                X_val_tmp = np.concatenate([X_train_tmp[-self.tail_length:], X_val_tmp])
-
-                # used for prediction
-                X_val_tail[i] = X_val_tmp[-self.tail_length:] if self.tail_length > 1 \
-                    else np.zeros((0, num_features)).astype(dtype=X_val_tmp.dtype)
-                X_val_tmp, y_val_tmp = self._ser2seq(X_val_tmp, y_val_tmp, num_datapoints_val, num_features, num_targets)
-
-                X_val_pieces[i] = X_val_tmp
-                y_val_pieces[i] = y_val_tmp
-            else:
-                X_val_tail[i] = X_train_tmp[-self.tail_length:] if self.tail_length > 1 \
-                    else np.zeros((0, num_features)).astype(dtype=X_train_tmp.dtype)
-
-            X_train_tmp, y_train_tmp = self._ser2seq(X_train_tmp, y_train_tmp,
-                                                     num_datapoints_train, num_features, num_targets)
-            X_train_pieces[i] = X_train_tmp
-            y_train_pieces[i] = y_train_tmp
-
-            num_data_points_seqs[i] = num_datapoints_train
-
-        train_tensors = (np.concatenate(X_train_pieces), np.concatenate(y_train_pieces))
-        if test_tensors is not None:
-            test_tensors = (np.concatenate(X_test_pieces), np.concatenate(y_test_pieces))
-            datamanager.test_tensors = test_tensors
-        if val_tensors is not None:
-            val_tensors = (np.concatenate(X_val_pieces), np.concatenate(y_val_pieces))
-            datamanager.val_tensors = val_tensors
-        self.X_val_tail = X_val_tail
-
-        datamanager.train_tensors = train_tensors
-        datamanager.update_sequence_lengths_train(num_data_points_seqs)
-        datamanager.splits = datamanager.get_splits_from_resampling_strategy()
-        return datamanager
-
-    def _ser2seq(self, X_in, y_in, num_datapoints, num_features, num_targets):
-        """
-        build a sliding window transformer for the given data
-         Args:
-            X_in (np.ndarray): input feature array to be transformed with shape
-             [time_series_length, population_size, num_features]
-            y_in (np.ndarray): input target array with shape [time_series_length, population_size, num_targets]
-            num_datapoints: number of actual data points stored in the dataset
-            num_features: number of features
-            num_targets: number of targets
         Returns:
-            X_in_trans: transformed input featuer array with shpae
-            [num_datapoints * population_size, sequence_length, num_features]
-            y_in_trans: transformed input target array with shape
-            [num_datapoints * population_size, num_targets]
+            A composition of transformations
         """
-        X_in = np.concatenate([np.roll(X_in, shift=i * self.sample_interval, axis=0) for i in range(0, -self.window_size, -1)],
-                              axis=1).astype(np.float32)[:num_datapoints]
-        X_in = X_in.reshape((-1, self.window_size, num_features))
-        y_in = y_in.reshape((-1, num_targets))
-        return X_in, y_in
+
+        if mode not in ['train', 'val', 'test']:
+            raise ValueError("Unsupported mode provided {}. ".format(mode))
+
+        candidate_transformations = []  # type: List[Callable]
+
+        candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
+                                                          window_size=self.window_size)))
+        candidate_transformations.append((ExpandTransformTimeSeries()))
+
+        if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
+            candidate_transformations.extend(X['preprocess_transforms'])
+
+        # Transform to tensor
+        candidate_transformations.append(torch.from_numpy)
+
+        return torchvision.transforms.Compose(candidate_transformations)
 
     def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
                    ) -> torch.utils.data.DataLoader:
@@ -285,19 +222,12 @@ class TimeSeriesForecastingDataLoader(TimeSeriesDataLoader):
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
         """
-        if len(X) != len(self.X_val_tail):
-            raise ValueError(f"Training data has {len(self.X_val_tail)} sequences but test data has {len(X)} sequences")
-        for i in range(len(X)):
-            num_points_X_in = np.shape(X[i])[0]
-            X_tmp = np.concatenate([self.X_val_tail[i], X[i]])
-            X[i] = np.concatenate([np.roll(X_tmp, shift=i * self.sample_interval, axis=0) for i in range(0, -self.window_size, -1)],
-                           axis=1).astype(np.float32)[:num_points_X_in]
+        X = X[-self.subseq_length - self.n_prediction_steps:]
+        if y is not None:
+            y = y[-self.subseq_length - self.n_prediction_steps:]
 
-        X = np.concatenate(X)
-
-
-        dataset = BaseDataset(
-            train_tensors=(X, y),
+        dataset = TimeSeriesSequence(
+            X=X, Y=y,
             # This dataset is used for loading test data in a batched format
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
