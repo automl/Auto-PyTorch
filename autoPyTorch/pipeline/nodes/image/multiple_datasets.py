@@ -36,6 +36,7 @@ class MultipleDatasets(SubPipelineNode):
         max_steps = math.floor((math.log(pipeline_config['max_budget']) - math.log(pipeline_config['min_budget'])) / math.log(pipeline_config['eta']))
         current_step = max_steps - math.floor((math.log(pipeline_config['max_budget']) - math.log(budget)) / math.log(pipeline_config['eta'])) if budget > 1e-10 else 0
         n_datasets = math.floor(math.pow(max_datasets, current_step/max(1, max_steps)) + 1e-10)
+        n_datasets = max(n_datasets,1)
         
         # refit can cause issues with different budget
         if max_steps == 0 or n_datasets > max_datasets or not pipeline_config['increase_number_of_trained_datasets']:
@@ -107,9 +108,9 @@ class MultipleDatasets(SubPipelineNode):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption('dataset_order', default=None, type=int, list=True, info="Order in which datasets are considered."),
+            ConfigOption('dataset_order', default=None, type=int, list=True),
 
             #autonet.refit sets this to false to avoid refit budget issues
-            ConfigOption('increase_number_of_trained_datasets', default=True, type=to_bool, info="Wether to increase the number of considered datasets with each successive halfing iteration.") 
+            ConfigOption('increase_number_of_trained_datasets', default=True, type=to_bool) 
         ]
         return options

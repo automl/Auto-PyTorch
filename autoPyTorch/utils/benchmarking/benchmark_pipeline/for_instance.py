@@ -25,11 +25,11 @@ class ForInstance(SubPipelineNode):
         ]
         return options
 
-    @staticmethod
-    def get_instances(benchmark_config, instances_must_exist=True, instance_slice=None):
+    def get_instances(self, benchmark_config, instances_must_exist=True, instance_slice=None):
         # get list of instances
         instances = []
         if os.path.isfile(benchmark_config["instances"]):
+
             with open(benchmark_config["instances"], "r") as instances_file:
                 if os.path.splitext(benchmark_config['instances'])[1] == '.json':
                     import json
@@ -40,7 +40,7 @@ class ForInstance(SubPipelineNode):
                         if line.strip().startswith("openml"):
                             instances.append(line.strip())
                             continue
-
+                            
                         if line.strip().startswith("["):
                             datasets = [make_path(path, benchmark_config["dataset_root"]) for path in line.strip(' []\n').split(',')]
                             instances.append(datasets if benchmark_config['multiple_datasets_indices'] is None else [datasets[i] for i in benchmark_config['multiple_datasets_indices']])
@@ -61,8 +61,7 @@ class ForInstance(SubPipelineNode):
             return instances[instance_slice]
         return instances
 
-    @staticmethod
-    def parse_slice(splice_string):
+    def parse_slice(self, splice_string):
         if (splice_string is None):
             return None
 
@@ -88,4 +87,4 @@ def make_path(path, root):
         path = os.path.join(root, path)
     if os.path.exists(path):
         return os.path.abspath(path)
-    return None
+    raise Exception('Invalid dataset path: ' + str(path))

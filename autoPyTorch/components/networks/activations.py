@@ -19,5 +19,5 @@ def get_activation(name, inplace=False):
     if name not in all_activations:
         raise ValueError('Activation ' + str(name) + ' not defined')
     activation = all_activations[name]
-    activation_kwargs = { 'inplace': True } if 'inplace' in inspect.getfullargspec(activation)[0] else dict()
+    activation_kwargs = { 'inplace': True } if 'inplace' in inspect.getargspec(activation)[0] else dict()
     return activation(**activation_kwargs)

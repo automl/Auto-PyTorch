@@ -42,3 +42,10 @@ def get_layer_params(in_size, out_size, kernel_size):
 
 def _get_out_size(in_size, kernel_size, stride, padding):
     return int(math.floor((in_size - kernel_size + 2 * padding) / stride + 1))
+
+def get_layers(network, layer_list):
+    for layer in network.children():
+        if type(layer) == nn.Sequential:
+            get_layers(layer, layer_list)
+        else:
+            layer_list.append(layer)

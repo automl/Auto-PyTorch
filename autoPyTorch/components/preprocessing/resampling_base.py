@@ -28,7 +28,7 @@ class ResamplingMethodBase():
     def __init__(self, hyperparameter_config):
         pass
 
-    def resample(self, X, y, target_size_strategy, seed):
+    def resample(self, X, y, target_size_strategy):
         """Fit preprocessor with X and y.
         
         Arguments:
@@ -45,5 +45,5 @@ class ResamplingMethodBase():
 
 
 class ResamplingMethodNone(ResamplingMethodBase):
-    def resample(self, X, y, target_size_strategy, seed):
+    def resample(self, X, y, target_size_strategy):
         return X, y

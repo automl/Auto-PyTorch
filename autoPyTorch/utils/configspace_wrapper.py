@@ -8,12 +8,12 @@ class ConfigWrapper(object):
     delimiter = ':'
 
     def __init__(self, config_prefix, config):
-        """A wrapper for hyperparameter configs that are specified with a prefix (add_configspace(prefix=...)).
+        """A wrapper for hyperparamater configs that are specified with a prefix (add_configspace(prefix=...)).
         The wrapper will provide key access without having to know/specify the prefix of the respective hyperparameter.
         
         Arguments:
             config_prefix {string} -- prefix of keys
-            config {dict} -- hyperparameter config
+            config {dict} -- hyperparamater config
         """
 
         self.config_prefix = config_prefix + ConfigWrapper.delimiter
@@ -38,11 +38,3 @@ class ConfigWrapper(object):
 
     def update(self, update_dict):
         self.config.update({"%s%s" % (self.config_prefix, key) : value for key, value in update_dict.items()})
-    
-    def get_dictionary(self):
-        result = dict()
-        config = self.config if isinstance(self.config, dict) else self.config.get_dictionary()
-        for key, value in config.items():
-            if key.startswith(self.config_prefix):
-                result[key[len(self.config_prefix):]] = value
-        return result

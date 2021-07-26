@@ -70,6 +70,9 @@ class ConfigFileParser():
                 value = value.strip("[]")
                 if not value.strip():
                     values = []
+                elif value == 'None':
+                    config[key] = None
+                    continue
                 else:
                     values = list(map(lambda x: x.strip("'\" "), value.split(",")))
                 
@@ -79,9 +82,7 @@ class ConfigFileParser():
                 type_list = option.type if isinstance(option.type, list) else [option.type]
                 for type_conversion in type_list:
                     # convert relative directories to absolute ones
-                    if type_conversion == "directory" and value == "None":
-                        value = None
-                    elif type_conversion == "directory" and not os.path.isabs(value):
+                    if type_conversion == "directory" and not os.path.isabs(value):
                         value = os.path.abspath(os.path.join(autonet_home, value))
                     elif isinstance(type_conversion, dict):
                         value = type_conversion[value]
@@ -156,9 +157,9 @@ class ConfigFileParser():
                     if (value not in choices):
                         raise ValueError("Config option " + option_name + " has been assigned with value '" + str(value) + "', only values in " + str(choices) + " are allowed")
 
-    def print_help(self, base_config=None, max_column_width=40):
+    def print_help(self, max_column_width=40):
         columns = ["name", "default", "choices", "type"]
-        default = self.set_defaults(base_config or {})
+        default = self.set_defaults({})
         column_width = {c: len(c) for c in columns}
         format_string = dict()
         num_lines = dict()
@@ -199,7 +200,6 @@ class ConfigFileParser():
                 print()
             if option.info is not None:
                 print("\tinfo:", option.info)
-            print("-" * sum(map(lambda x: min(x, max_column_width) + 1, column_width.values())))
     
     @staticmethod
     def get_autonet_home():

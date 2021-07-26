@@ -5,7 +5,6 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 import ConfigSpace.conditions as CSC
 
-from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
 
 
@@ -42,22 +41,15 @@ class FastICA(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_info=None,
-        n_components=(10,2000),
-        algorithm=('parallel', 'deflation'),
-        whiten=(True, False),
-        fun=('logcosh', 'exp', 'cube'),
-    ):
+    def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigSpace.ConfigurationSpace()
 
-        n_components_hp = get_hyperparameter(CSH.UniformIntegerHyperparameter, "n_components", n_components)
-        algorithm_hp = get_hyperparameter(CSH.CategoricalHyperparameter, 'algorithm', algorithm)
-        whiten_hp = get_hyperparameter(CSH.CategoricalHyperparameter, 'whiten', whiten)
-        fun_hp = get_hyperparameter(CSH.CategoricalHyperparameter, 'fun', fun)
+        n_components = CSH.UniformIntegerHyperparameter("n_components", lower=10, upper=2000)
+        algorithm = CSH.CategoricalHyperparameter('algorithm', ['parallel', 'deflation'])
+        whiten = CSH.CategoricalHyperparameter('whiten', [True, False])
+        fun = CSH.CategoricalHyperparameter('fun', ['logcosh', 'exp', 'cube'])
+        cs.add_hyperparameters([n_components, algorithm, whiten, fun])
 
-        if True in whiten:
-            cs.add_hyperparameters([n_components_hp, algorithm_hp, whiten_hp, fun_hp])
-            cs.add_condition(CSC.EqualsCondition(n_components_hp, whiten_hp, True))
+        cs.add_condition(CSC.EqualsCondition(n_components, whiten, True))
 
         return cs

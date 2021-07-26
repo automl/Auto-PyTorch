@@ -8,12 +8,10 @@ import numpy as np
 
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
-from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter, add_hyperparameter
 
 import torch
 import scipy.sparse
 from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.data.dataset import Subset
 from torch.utils.data.sampler import SubsetRandomSampler
 
 
@@ -25,7 +23,6 @@ class CreateDataLoader(PipelineNode):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         # prepare data
-        drop_last = hyperparameter_config['batch_size'] < train_indices.shape[0]
         X, Y = to_dense(X), to_dense(Y)
         X, Y = torch.from_numpy(X).float(), torch.from_numpy(Y)
 
@@ -35,13 +32,14 @@ class CreateDataLoader(PipelineNode):
             batch_size=hyperparameter_config['batch_size'], 
             sampler=SubsetRandomSampler(train_indices),
             shuffle=False,
-            drop_last=drop_last)
-            
+            drop_last=True)
+
         valid_loader = None
         if valid_indices is not None:
             valid_loader = DataLoader(
-                dataset=Subset(train_dataset, valid_indices),
-                batch_size=hyperparameter_config['batch_size'],
+                dataset=train_dataset,
+                batch_size=hyperparameter_config['batch_size'], 
+                sampler=SubsetRandomSampler(valid_indices),
                 shuffle=False,
                 drop_last=False)
 
@@ -55,17 +53,15 @@ class CreateDataLoader(PipelineNode):
 
         return {'predict_loader': predict_loader}
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, **pipeline_config):
         import ConfigSpace
         import ConfigSpace.hyperparameters as CSH
 
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        batch_size_range = self._get_search_space_updates().get('batch_size', ((32, 500), True))
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'batch_size', batch_size_range)
-        self._check_search_space_updates('batch_size')
-        return cs
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('batch_size', lower=32, upper=500, log=True))
+        return self._apply_user_updates(cs)
 
     
 def to_dense(matrix):

@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from torchvision.transforms import *
-from .augmentation_transforms import *
 
 import random
 import math
@@ -101,6 +100,54 @@ class Cutout(object):
 
         return img
 
+# class AutoAugment(object):
+    
+#     def __init__(self):
+#         pass
+
+#     def __call__(self, img):
+#         """
+#         Args:
+#             img (Tensor): Tensor image of size (C, H, W).
+#         """
+#         policies = {'Policy_0':  [Posterize(0.4, 8),    Rotate(0.6,9)],
+#                     'Policy_1':  [Solarize(0.6, 5),     AutoContrast(0.6, 5)],
+#                     'Policy_2':  [Equalize(0.8, 8),     Equalize(0.6, 3)], 
+#                     'Policy_3':  [Posterize(0.6, 7),    Posterize(0.6, 3)],
+#                     'Policy_4':  [Equalize(0.4, 7),     Solarize(0.2, 4)],
+#                     'Policy_5':  [Equalize(0.4, 4),     Rotate(0.8, 8)],
+#                     'Policy_6':  [Solarize(0.6, 3),     Equalize(0.6, 7)],
+#                     'Policy_7':  [Posterize(0.8, 5),    Equalize(1.0, 2)],
+#                     'Policy_8':  [Rotate(0.2, 3),       Solarize(0.6, 8)],
+#                     'Policy_9':  [Equalize(0.6, 8),     Posterize(0.4, 6)],
+#                     'Policy_10': [Rotate(0.8, 8),       Color(0.4, 0)],
+#                     'Policy_11': [Rotate(0.4, 9),       Equalize(0.6, 2)],
+#                     'Policy_12': [Equalize(0.0, 7),     Equalize(0.8, 8)],
+#                     'Policy_13': [Invert(0.6, 4),       Equalize(1.0, 8)],
+#                     'Policy_14': [Color(0.6, 4),        Contrast(1.0, 8)],
+#                     'Policy_15': [Rotate(0.8, 8),       Color(1.0, 2)],
+#                     'Policy_16': [Color(0.8, 8),        Solarize(0.8, 7)],
+#                     'Policy_17': [Sharpness(0.4, 7),    Invert(0.6, 8)],
+#                     'Policy_18': [ShearX(0.6, 5),       Equalize(1.0, 9)],
+#                     'Policy_19': [Color(0.4, 0),        Equalize(0.6, 3)],
+#                     'Policy_20': [Equalize(0.4, 7),     Solarize(0.2, 4)],
+#                     'Policy_21': [Solarize(0.6, 5),     AutoContrast(0.6, 5)],
+#                     'Policy_22': [Invert(0.6, 4),       Equalize(1.0, 8)],
+#                     'Policy_23': [Color(0.6, 4),        Contrast(1.0, 8)],
+#                     'Policy_24': [Equalize(0.8, 8),     Equalize(0.6, 3)],
+#                     }
+
+                    
+
+#         policy = random.choice([policies['Policy_%d'%i] for i in range(25)])
+
+#         for op in policy:
+#             img = op(img)
+
+#         return img
+
+
+from .augmentation_transforms import *
 
 class AutoAugment(object):
     
@@ -116,33 +163,67 @@ class AutoAugment(object):
         #
         # ImageNet policies proposed in https://arxiv.org/abs/1805.09501
         #
+        #policies = [
+        #    [('Posterize', 0.4, 8),    ('Rotate', 0.6,9)],
+        #    [('Solarize', 0.6, 5),     ('AutoContrast', 0.6, 5)],
+        #    [('Equalize', 0.8, 8),     ('Equalize', 0.6, 3)], 
+        #    [('Posterize', 0.6, 7),    ('Posterize', 0.6, 3)],
+        #    [('Equalize', 0.4, 7),     ('Solarize', 0.2, 4)],
+        #    [('Equalize', 0.4, 4),     ('Rotate', 0.8, 8)],
+        #    [('Solarize', 0.6, 3),     ('Equalize', 0.6, 7)],
+        #    [('Posterize', 0.8, 5),    ('Equalize', 1.0, 2)],
+        #    [('Rotate', 0.2, 3),       ('Solarize', 0.6, 8)],
+        #    [('Equalize', 0.6, 8),     ('Posterize', 0.4, 6)],
+        #    [('Rotate', 0.8, 8),       ('Color', 0.4, 0)],
+        #    [('Rotate', 0.4, 9),       ('Equalize', 0.6, 2)],
+        #    [('Equalize', 0.0, 7),     ('Equalize', 0.8, 8)],
+        #    [('Invert', 0.6, 4),       ('Equalize', 1.0, 8)],
+        #    [('Color', 0.6, 4),        ('Contrast', 1.0, 8)],
+        #    [('Rotate', 0.8, 8),       ('Color', 1.0, 2)],
+        #    [('Color', 0.8, 8),        ('Solarize', 0.8, 7)],
+        #    [('Sharpness', 0.4, 7),    ('Invert', 0.6, 8)],
+        #    [('ShearX', 0.6, 5),       ('Equalize', 1.0, 9)],
+        #    [('Color', 0.4, 0),        ('Equalize', 0.6, 3)],
+        #    [('Equalize', 0.4, 7),     ('Solarize', 0.2, 4)],
+        #    [('Solarize', 0.6, 5),     ('AutoContrast', 0.6, 5)],
+        #    [('Invert', 0.6, 4),       ('Equalize', 1.0, 8)],
+        #    [('Color', 0.6, 4),        ('Contrast', 1.0, 8)],
+        #    [('Equalize', 0.8, 8),     ('Equalize', 0.6, 3)],
+        #]
+
+        # Cifar policies
         policies = [
-            [('Posterize', 0.4, 8),    ('Rotate', 0.6,9)],
-            [('Solarize', 0.6, 5),     ('AutoContrast', 0.6, 5)],
-            [('Equalize', 0.8, 8),     ('Equalize', 0.6, 3)], 
-            [('Posterize', 0.6, 7),    ('Posterize', 0.6, 3)],
-            [('Equalize', 0.4, 7),     ('Solarize', 0.2, 4)],
-            [('Equalize', 0.4, 4),     ('Rotate', 0.8, 8)],
-            [('Solarize', 0.6, 3),     ('Equalize', 0.6, 7)],
-            [('Posterize', 0.8, 5),    ('Equalize', 1.0, 2)],
-            [('Rotate', 0.2, 3),       ('Solarize', 0.6, 8)],
-            [('Equalize', 0.6, 8),     ('Posterize', 0.4, 6)],
-            [('Rotate', 0.8, 8),       ('Color', 0.4, 0)],
-            [('Rotate', 0.4, 9),       ('Equalize', 0.6, 2)],
-            [('Equalize', 0.0, 7),     ('Equalize', 0.8, 8)],
-            [('Invert', 0.6, 4),       ('Equalize', 1.0, 8)],
-            [('Color', 0.6, 4),        ('Contrast', 1.0, 8)],
-            [('Rotate', 0.8, 8),       ('Color', 1.0, 2)],
-            [('Color', 0.8, 8),        ('Solarize', 0.8, 7)],
-            [('Sharpness', 0.4, 7),    ('Invert', 0.6, 8)],
-            [('ShearX', 0.6, 5),       ('Equalize', 1.0, 9)],
-            [('Color', 0.4, 0),        ('Equalize', 0.6, 3)],
-            [('Equalize', 0.4, 7),     ('Solarize', 0.2, 4)],
-            [('Solarize', 0.6, 5),     ('AutoContrast', 0.6, 5)],
-            [('Invert', 0.6, 4),       ('Equalize', 1.0, 8)],
-            [('Color', 0.6, 4),        ('Contrast', 1.0, 8)],
-            [('Equalize', 0.8, 8),     ('Equalize', 0.6, 3)],
+            [('Invert', 0.1, 7),        ('Contrast', 0.2, 6)],
+            [('Rotate', 0.7, 2),        ('TranslateX', 0.3, 9)],
+            [('Sharpness', 0.8, 1),     ('Sharpness', 0.9, 3)],
+            [('ShearY', 0.5, 8),        ('TranslateY', 0.7, 9)],
+            [('AutoContrast', 0.5, 8),  ('Equalize', 0.9, 2)],
+
+            [('ShearY', 0.2, 7),        ('Posterize', 0.3, 7)],
+            [('Color', 0.4, 3),         ('Brightness', 0.6, 7)],
+            [('Sharpness', 0.3, 9),     ('Brightness', 0.7, 9)],
+            [('Equalize', 0.6, 5),      ('Equalize', 0.5, 1)],
+            [('Contrast', 0.6, 7),      ('Sharpness', 0.6, 5)],
+
+            [('Color', 0.7, 7),         ('TranslateX', 0.5, 8)],
+            [('Equalize', 0.3, 7),      ('AutoContrast', 0.4, 8)],
+            [('TranslateY', 0.4, 3),    ('Sharpness', 0.2, 6)],
+            [('Brightness', 0.9, 6),    ('Color', 0.2, 8)],
+            [('Solarize', 0.5, 2),      ('Invert', 0.0, 3)],
+
+            [('Equalize', 0.2, 0),      ('AutoContrast', 0.6, 0)],
+            [('Equalize', 0.2, 8),      ('Equalize', 0.8, 4)],
+            [('Color', 0.9, 9),         ('Equalize', 0.6, 6)],
+            [('AutoContrast', 0.8, 4),  ('Solarize', 0.2, 8)],
+            [('Brightness', 0.1, 3),    ('Color', 0.7, 0)],
+
+            [('Solarize', 0.4, 5),      ('AutoContrast', 0.9, 3)],
+            [('TranslateY', 0.9, 9),    ('TranslateY', 0.8, 9)],
+            [('AutoContrast', 0.9, 2),  ('Solarize',0.8, 3)],
+            [('Equalize', 0.8, 8),      ('Invert', 0.1, 3)],
+            [('TranslateY', 0.7, 9),    ('AutoContrast', 0.9, 1)],
         ]
+
 
         policy = random.choice(policies)
 

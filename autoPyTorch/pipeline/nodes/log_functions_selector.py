@@ -4,7 +4,6 @@ __license__ = "BSD"
 
 import inspect
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
-from autoPyTorch.pipeline.nodes.metric_selector import default_minimize_transform, no_transform
 
 from autoPyTorch.utils.config.config_option import ConfigOption
 
@@ -17,7 +16,7 @@ class LogFunctionsSelector(PipelineNode):
     def fit(self, pipeline_config):
         return {'log_functions': [self.log_functions[log_function] for log_function in pipeline_config["additional_logs"]]}
 
-    def add_log_function(self, name, log_function, loss_transform=False):
+    def add_log_function(self, name, log_function):
         """Add a log function, will be called with the current trained network and the current training epoch
         
         Arguments:
@@ -27,11 +26,8 @@ class LogFunctionsSelector(PipelineNode):
 
         if (not hasattr(log_function, '__call__')):
             raise ValueError("log function has to be a function")
-
-        if isinstance(loss_transform, bool):
-            loss_transform = default_minimize_transform if loss_transform else no_transform
-
-        self.log_functions[name] = AutoNetLog(name, log_function, loss_transform)
+        self.log_functions[name] = log_function
+        log_function.__name__ = name
 
     def remove_log_function(self, name):
         del self.log_functions[name]
@@ -41,16 +37,3 @@ class LogFunctionsSelector(PipelineNode):
             ConfigOption(name="additional_logs", default=[], type=str, list=True, choices=list(self.log_functions.keys())),
         ]
         return options
-
-
-class AutoNetLog():
-    def __init__(self, name, log, loss_transform):
-        self.loss_transform = loss_transform
-        self.log = log
-        self.name = name
-
-    def __call__(self, *args):
-        return self.log(*args)
-
-    def get_loss_value(self, *args):
-        return self.loss_transform(self.__call__(*args))

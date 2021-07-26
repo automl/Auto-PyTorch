@@ -19,11 +19,11 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from autoPyTorch.utils.configspace_wrapper import ConfigWrapper
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
-from autoPyTorch.components.training.image.base_training import BaseTrainingTechnique, BaseBatchLossComputationTechnique
+from autoPyTorch.training.base_training import BaseTrainingTechnique, BaseBatchLossComputationTechnique
 
-from autoPyTorch.components.training.image.trainer import Trainer
-from autoPyTorch.components.training.image.checkpoints.save_load import save_checkpoint, load_checkpoint, get_checkpoint_dir
-from autoPyTorch.components.training.image.checkpoints.load_specific import load_model #, load_optimizer, load_scheduler
+from autoPyTorch.training.trainer import Trainer
+from autoPyTorch.training.checkpoints.save_load import save_checkpoint, load_checkpoint, get_checkpoint_dir
+from autoPyTorch.training.checkpoints.load_specific import load_model #, load_optimizer, load_scheduler
 
 torch.backends.cudnn.benchmark = True
 
@@ -41,7 +41,7 @@ class SimpleTrainNode(PipelineNode):
     def fit(self, hyperparameter_config, pipeline_config,
             train_loader, valid_loader,
             network, optimizer, lr_scheduler,
-            optimize_metric, additional_metrics,
+            train_metric, additional_metrics,
             log_functions,
             budget,
             loss_function,
@@ -59,6 +59,14 @@ class SimpleTrainNode(PipelineNode):
             pipeline_config["cuda"] = False
 
         device = torch.device('cuda' if pipeline_config['cuda'] else 'cpu')
+
+
+#        # Prevent CUDA OOM errors by returning large loss (Resnets only atm)
+#        if device=="cuda" and hyperparameter_config["NetworkSelectorDatasetInfo:network"]=="resnet":
+#            if self.resnet_criterion(hyperparameter_config):
+#                bad_loss = 100 if pipeline_config["minimize"] else 0
+#                return {'loss': bad_loss, 'info': {}}
+
 
         checkpoint_path = get_checkpoint_dir(working_directory)
         checkpoint = None
@@ -88,13 +96,13 @@ class SimpleTrainNode(PipelineNode):
         logs = []
         epoch = 0
 
-        optimize_metrics = []
-        val_metrics = [optimize_metric] + additional_metrics
+        train_metrics = []
+        val_metrics = [train_metric] + additional_metrics
         if pipeline_config['evaluate_on_train_data']:
-            optimize_metrics = val_metrics
+            train_metrics = val_metrics
         elif valid_loader is None:
             self.logger.warning('No valid data specified and train process should not evaluate on train data! Will ignore \"evaluate_on_train_data\" and evaluate on train data!')
-            optimize_metrics = val_metrics
+            train_metrics = val_metrics
         
         trainer = Trainer(
             model=network,
@@ -132,27 +140,34 @@ class SimpleTrainNode(PipelineNode):
             
             # train
             tmp = time.time()
-            optimize_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader, optimize_metrics)
+            train_metric_results, train_loss, stop_training = trainer.train(epoch + 1, train_loader, train_metrics)
 
             log['train_loss'] = train_loss
-            for i, metric in enumerate(optimize_metrics):
-                log['train_' + metric.name] = optimize_metric_results[i]
+            for i, metric in enumerate(train_metrics):
+                log['train_' + metric.__name__] = train_metric_results[i]
             epoch_train_time += time.time() - tmp
 
             # evaluate
             tmp = time.time()
+            #if batch_loss_name=="mixup":
+            #    full_train_metrics_results = trainer.evaluate(train_loader, val_metrics, epoch=epoch + 1)
+
+            #    for i, metric in enumerate(val_metrics):
+            #        log['true_train_' + metric.__name__] = full_train_metrics_results[i]
             if valid_loader is not None:
                 valid_metric_results = trainer.evaluate(valid_loader, val_metrics, epoch=epoch + 1)
 
                 for i, metric in enumerate(val_metrics):
-                    log['val_' + metric.name] = valid_metric_results[i]
+                    log['val_' + metric.__name__] = valid_metric_results[i]
             val_time += time.time() - tmp
 
             # additional los - e.g. test evaluation
             tmp = time.time()
             for func in log_functions:
-                log[func.name] = func(network, epoch + 1)
+                log[func.__name__] = func(network, epoch + 1)
             log_time += time.time() - tmp
+
+            print("TRAINER: log at epoch", epoch, ":", log)
 
             log['epochs'] = epoch + 1
             log['model_parameters'] = model_params
@@ -180,6 +195,10 @@ class SimpleTrainNode(PipelineNode):
                 for name, value in log.items():
                     tl.log_value(worker_path + name, float(value), epoch)
                 last_log_time = time.time()
+
+            #if epoch in None:
+            #    intermediate_cp_path = checkpoint_path.split("_")[:-1] + "_" + str(int(epoch)) + '.pt'
+            #    _ = save_checkpoint(intermediate_cp_path, config_id, epoch, network, optimizer, lr_scheduler)
             
 
         # wrap up
@@ -187,9 +206,9 @@ class SimpleTrainNode(PipelineNode):
 
         self.logger.debug("Finished Training")
 
-        opt_metric_name = 'train_' + optimize_metric.name
+        opt_metric_name = 'train_' + train_metric.__name__
         if valid_loader is not None:
-            opt_metric_name = 'val_' + optimize_metric.name
+            opt_metric_name = 'val_' + train_metric.__name__
 
         if pipeline_config["minimize"]:
             final_log = min(logs, key=lambda x:x[opt_metric_name])
@@ -238,7 +257,7 @@ class SimpleTrainNode(PipelineNode):
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    def predict(self, pipeline_config, network, predict_loader, dataset_info, optimize_metric):
+    def predict(self, pipeline_config, network, predict_loader, dataset_info, train_metric):
 
         if not torch.cuda.is_available():
             pipeline_config["cuda"] = False
@@ -248,7 +267,7 @@ class SimpleTrainNode(PipelineNode):
         device = torch.device('cuda:0' if pipeline_config['cuda'] else 'cpu')
 
         if dataset_info.default_dataset:
-            metric_results = Trainer(None, network, None, None, None, None, None, device).evaluate(predict_loader, [optimize_metric])
+            metric_results = Trainer(None, network, None, None, None, None, None, device).evaluate(predict_loader, [train_metric])
             return { 'score': metric_results[0] }
         else:
             Y = predict(network, predict_loader, None, device)
@@ -274,20 +293,34 @@ class SimpleTrainNode(PipelineNode):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        hp_batch_loss_computation = cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", sorted(self.batch_loss_computation_techniques.keys())))
+        hp_batch_loss_computation = cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", list(self.batch_loss_computation_techniques.keys())))
 
         for name, technique in self.batch_loss_computation_techniques.items():
             parent = {'parent': hp_batch_loss_computation, 'value': name} if hp_batch_loss_computation is not None else None
             cs.add_configuration_space(prefix=name, configuration_space=technique.get_hyperparameter_search_space(**pipeline_config),
                 delimiter=ConfigWrapper.delimiter, parent_hyperparameter=parent)
 
-        possible_loss_comps = sorted(list(set(pipeline_config["batch_loss_computation_techniques"]).intersection(self.batch_loss_computation_techniques.keys())))
+        possible_loss_comps = sorted(set(pipeline_config["batch_loss_computation_techniques"]).intersection(self.batch_loss_computation_techniques.keys()))
+        self._update_hyperparameter_range('batch_loss_computation_technique', possible_loss_comps, check_validity=False, override_if_already_modified=False)
 
-        if 'batch_loss_computation_techniques' not in pipeline_config.keys():
-            cs.add_hyperparameter(CSH.CategoricalHyperparameter("batch_loss_computation_technique", possible_loss_comps))
-            self._check_search_space_updates()
+        return self._apply_user_updates(cs)
 
-        return cs
+#    def resnet_criterion(self, config):
+#        nr_main_blocks = config["NetworkSelectorDatasetInfo:resnet:nr_main_blocks"]
+#        nr_res_blocks = ["NetworkSelectorDatasetInfo:resnet:nr_residual_blocks_" + str(mb) for mb in range(1, nr_main_blocks+1)]
+#        nr_res_branches = ["NetworkSelectorDatasetInfo:resnet:res_branches_" + str(mb) for mb in range(1, nr_main_blocks+1)]
+#
+#        limit = 8
+#        total_blocks = 0
+#
+#        for n_subblocks, n_res_branches in zip(nr_res_blocks, nr_res_branches):
+#            total_blocks += n_subblocks * n_res_branches
+#
+#        criterion = total_blocks>limit
+#        if criterion:
+#            print("ResNet too large", total_blocks, ">", limit)
+#
+#        return criterion
 
     def get_pipeline_config_options(self):
         options = [
@@ -295,7 +328,7 @@ class SimpleTrainNode(PipelineNode):
                 type=str, list=True, choices=list(self.batch_loss_computation_techniques.keys())),
             ConfigOption("minimize", default=self.default_minimize_value, type=to_bool, choices=[True, False]),
             ConfigOption("cuda", default=True, type=to_bool, choices=[True, False]),
-            ConfigOption("save_checkpoints", default=False, type=to_bool, choices=[True, False], info="Wether to save state dicts as checkpoints."),
+            ConfigOption("save_checkpoints", default=False, type=to_bool, choices=[True, False]),
             ConfigOption("tensorboard_min_log_interval", default=30, type=int),
             ConfigOption("tensorboard_images_count", default=0, type=int),
             ConfigOption("evaluate_on_train_data", default=True, type=to_bool),
@@ -309,12 +342,7 @@ class SimpleTrainNode(PipelineNode):
 
 def predict(network, test_loader, metrics, device, move_network=True):
     """ predict batchwise """
-    # Build DataLoader
-    if move_network:
-        if torch.cuda.device_count() > 1:
-            network = nn.DataParallel(network)
-        network = network.to(device)
-
+    
     # Batch prediction
     network.eval()
     if metrics is not None:
@@ -326,7 +354,12 @@ def predict(network, test_loader, metrics, device, move_network=True):
         X_batch = Variable(X_batch).to(device)
         batch_size = X_batch.size(0)
 
-        Y_batch_pred = network(X_batch).detach().cpu()
+        out = network(X_batch)
+        # in case of auxiliary head
+        if isinstance(out, tuple):
+            Y_batch_pred = out[0].detach().cpu()
+        else:
+            Y_batch_pred = out.detach().cpu()
 
         if metrics is None:
             # Infer prediction shape

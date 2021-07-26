@@ -2,8 +2,6 @@ from autoPyTorch.core.autonet_classes.autonet_image_classification import AutoNe
 
 
 class AutoNetImageClassificationMultipleDatasets(AutoNetImageClassification):
-    preset_folder_name = "image_classification_multiple_datasets"
-
     @classmethod
     def get_default_pipeline(cls):
         from autoPyTorch.pipeline.base.pipeline import Pipeline
@@ -21,27 +19,29 @@ class AutoNetImageClassificationMultipleDatasets(AutoNetImageClassification):
         from autoPyTorch.pipeline.nodes.image.create_image_dataloader import CreateImageDataLoader
         from autoPyTorch.pipeline.nodes.image.create_dataset_info import CreateDatasetInfo
         from autoPyTorch.pipeline.nodes.image.simple_train_node import SimpleTrainNode
+
         from autoPyTorch.pipeline.nodes.image.multiple_datasets import MultipleDatasets
         from autoPyTorch.pipeline.nodes.image.image_dataset_reader import ImageDatasetReader
-
+        
+        
         # build the pipeline
         pipeline = Pipeline([
             AutoNetSettingsNoShuffle(),
             OptimizationAlgorithmNoTimeLimit([
-
+                
                 MultipleDatasets([
 
                     ImageDatasetReader(),
                     CreateDatasetInfo(),
                     CrossValidationIndices([
-
+                        
                         NetworkSelectorDatasetInfo(),
                         OptimizerSelector(),
                         SimpleLearningrateSchedulerSelector(),
-
+                        
                         LogFunctionsSelector(),
                         MetricSelector(),
-
+                        
                         LossModuleSelectorIndices(),
 
                         ImageAugmentation(),

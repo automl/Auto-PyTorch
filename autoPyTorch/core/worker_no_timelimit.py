@@ -4,7 +4,7 @@ import time
 import random
 from hpbandster.core.worker import Worker
 
-from autoPyTorch.components.training.image.budget_types import BudgetTypeTime
+from autoPyTorch.training.budget_types import BudgetTypeTime
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
@@ -56,14 +56,11 @@ class ModuleWorkerNoTimeLimit(Worker):
         if self.guarantee_limits and self.budget_type == 'time':
             import pynisher
 
-            limit_train = pynisher.enforce_limits(mem_in_mb=self.pipeline_config['memory_limit_mb'], wall_time_in_s=int(budget * 4))(self.optimize_pipeline)
-            result = limit_train(config, budget, config_id, random.getstate())
+            limit_train = pynisher.enforce_limits(wall_time_in_s=int(budget * 4))(self.optimize_pipeline)
+            result, randomstate = limit_train(config, budget, config_id, random.getstate())
 
-            if (limit_train.exit_status == pynisher.TimeoutException):
-                raise Exception("Time limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
             if (limit_train.exit_status == pynisher.MemorylimitException):
-                result = {"loss": 100000, "info":{}}
-                return result
+                raise Exception("Memory limit reached. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
             elif (limit_train.exit_status != 0):
                 self.autonet_logger.info('Exception occurred using config:\n' + str(config))
                 raise Exception("Exception in train pipeline. Took " + str((time.time()-start_time)) + " seconds with budget " + str(budget))
@@ -74,10 +71,7 @@ class ModuleWorkerNoTimeLimit(Worker):
         random.setstate(randomstate)
 
         loss = result['loss']
-        if 'losses' in result.keys():
-            losses = result['losses']
-        else:
-            losses = loss
+        losses = result['losses']
         info = result['info']
 
         self.autonet_logger.debug("Result: " + str(loss) + " info: " + str(info))
@@ -96,6 +90,18 @@ class ModuleWorkerNoTimeLimit(Worker):
                         'Budget: ' + str(round(budget)) + '/' + str(round(self.pipeline_config['max_budget'])) + sep + \
                         'Used time: ' + str(round((time.time()-start_time))) + 'sec (' + str(round((time.time()-start_time)/budget, 2)) + 'x)' + sep + \
                         'ID: ' + str(config_id) + '\n')
+
+            # full log over workers
+            if self.pipeline_config['task_id'] > -1:
+                log_file_full = os.path.join(self.working_directory, 'results_full.log')
+                sep = '\t'
+                with open(log_file_full, 'a+') as f:
+                    f.write('Result: ' + str(round(loss, 2)) + sep + \
+                            'Budget: ' + str(round(budget)) + '/' + str(round(self.pipeline_config['max_budget'])) + sep + \
+                            'Used time: ' + str(round((time.time()-start_time))) + 'sec (' + str(round((time.time()-start_time)/budget, 2)) + 'x)' + sep + \
+                            'ID: ' + str(config_id) + '\n')
+
+
 
         return  {
                     'loss': loss,
@@ -122,7 +128,13 @@ class ModuleWorkerNoTimeLimit(Worker):
                 import tensorboard_logger as tl
                 tl.log_value('Exceptions/' + str(e), budget, int(time.time()))
             #self.autonet_logger.exception('Exception occurred')
-            raise e
+            if not isinstance(e, RuntimeError):
+                raise e
+        
+        self.autonet_logger.info("Runtime error occured during pipeline fitting. Returning bad loss.")
+        return {'loss': 0, 'info': {}}, random.getstate()
+
+
 
 def module_exists(module_name):
     try:

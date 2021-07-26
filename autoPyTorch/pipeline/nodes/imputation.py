@@ -17,46 +17,36 @@ class Imputation(PipelineNode):
 
     strategies = ["mean", "median", "most_frequent"]
 
-    def fit(self, hyperparameter_config, X, train_indices, dataset_info):
+    def fit(self, hyperparameter_config, X_train, X_valid, categorical_features):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
-        if dataset_info.is_sparse:
-            return {'imputation_preprocessor': None, 'all_nan_columns': None}
-
-        # delete all nan columns
-        all_nan = np.all(np.isnan(X), axis=0)
-        X = X[:, ~all_nan]
-        dataset_info.categorical_features = [dataset_info.categorical_features[i] for i, is_nan in enumerate(all_nan) if not is_nan]
-
-        
         strategy = hyperparameter_config['strategy']
-        fill_value = int(np.nanmax(X)) + 1 if not dataset_info.is_sparse else 0
+        fill_value = int(np.nanmax(X_train)) + 1 if not scipy.sparse.issparse(X_train) else 0
         numerical_imputer = SimpleImputer(strategy=strategy, copy=False)
         categorical_imputer = SimpleImputer(strategy='constant', copy=False, fill_value=fill_value)
         transformer = ColumnTransformer(
-            transformers=[('numerical_imputer', numerical_imputer, [i for i, c in enumerate(dataset_info.categorical_features) if not c]),
-                          ('categorical_imputer', categorical_imputer,  [i for i, c in enumerate(dataset_info.categorical_features) if c])])
-        transformer.fit(X[train_indices])
-        X = transformer.transform(X)
+            transformers=[('numerical_imputer', numerical_imputer, [i for i, c in enumerate(categorical_features) if not c]),
+                          ('categorical_imputer', categorical_imputer,  [i for i, c in enumerate(categorical_features) if c])])
+        transformer.fit(X_train)
         
-        dataset_info.categorical_features = sorted(dataset_info.categorical_features)
-        return { 'X': X, 'imputation_preprocessor': transformer, 'dataset_info': dataset_info , 'all_nan_columns': all_nan}
+        X_train = transformer.transform(X_train)
+        if (X_valid is not None):
+            X_valid = transformer.transform(X_valid)
+        
+        categorical_features = sorted(categorical_features)
+        return { 'X_train': X_train, 'X_valid': X_valid, 'imputation_preprocessor': transformer, 'categorical_features': categorical_features }
 
 
-    def predict(self, X, imputation_preprocessor, all_nan_columns):
-        if imputation_preprocessor is None:
-            return dict()
-        X = X[:, ~all_nan_columns]
-        X = imputation_preprocessor.transform(X)
-        return { 'X': X }
+    def predict(self, X, imputation_preprocessor):
+        return { 'X': imputation_preprocessor.transform(X) }
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    @staticmethod
+    def get_hyperparameter_search_space(**pipeline_config):
 
-        possible_strategies = sorted(set(Imputation.strategies).intersection(pipeline_config['imputation_strategies']))
+        possible_strategies = set(Imputation.strategies).intersection(pipeline_config['imputation_strategies'])
 
         cs = ConfigSpace.ConfigurationSpace()
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter("strategy", sorted(possible_strategies)))
-        self._check_search_space_updates()
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter("strategy", possible_strategies))
         return cs
 
     def get_pipeline_config_options(self):
@@ -64,3 +54,4 @@ class Imputation(PipelineNode):
             ConfigOption(name='imputation_strategies', default=Imputation.strategies, type=str, list=True, choices=Imputation.strategies)
         ]
         return options
+        

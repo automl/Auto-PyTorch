@@ -20,10 +20,11 @@ from autoPyTorch.pipeline.base.pipeline import Pipeline
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 
 from autoPyTorch.core.hpbandster_extensions.bohb_ext import BOHBExt
+from autoPyTorch.core.hpbandster_extensions.bohb_multi_kde_ext import BOHBMultiKDEExt
 from autoPyTorch.core.hpbandster_extensions.hyperband_ext import HyperBandExt
 from autoPyTorch.core.worker_no_timelimit import ModuleWorkerNoTimeLimit
 
-from autoPyTorch.components.training.image.budget_types import BudgetTypeTime, BudgetTypeEpochs
+from autoPyTorch.training.budget_types import BudgetTypeTime, BudgetTypeEpochs
 import copy
 
 from autoPyTorch.utils.modify_config_space import remove_constant_hyperparameter
@@ -65,6 +66,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         self.algorithms = dict()
         self.algorithms["bohb"] = BOHBExt
         self.algorithms["hyperband"] = HyperBandExt
+        self.algorithms["bohb_multi_kde"] = BOHBMultiKDEExt
 
         self.logger = logging.getLogger('autonet')
 
@@ -73,6 +75,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
     def fit(self, pipeline_config, X_train, Y_train, X_valid, Y_valid, refit=None):
         res = None
 
+                
         config_space = self.pipeline.get_hyperparameter_search_space(**pipeline_config)
         config_space, constants = remove_constant_hyperparameter(config_space)
         config_space.seed(pipeline_config['random_seed'])
@@ -90,8 +93,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         # Get permutations
         self.permutations = self.get_permutations(n_budgets)
 
-        self.logger.debug('BOHB-ConfigSpace:\n' + str(config_space))
-        self.logger.debug('Constant Hyperparameter:\n' + str(pprint.pformat(constants)))
+        self.logger.info('BOHB-ConfigSpace:\n' + str(config_space))
+        self.logger.info('Constant Hyperparameter:\n' + str(pprint.pformat(constants)))
 
         run_id, task_id = pipeline_config['run_id'], pipeline_config['task_id']
 
@@ -123,6 +126,7 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
             if task_id in [1, -1]:
                 self.run_optimization_algorithm(pipeline_config, config_space, constants, run_id, ns_host, ns_port, NS, task_id)
             
+
             res = self.parse_results(pipeline_config["result_logger_dir"])
 
         except Exception as e:
@@ -132,9 +136,9 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
             self.clean_up(pipeline_config, ns_credentials_dir, tmp_models_dir)
 
         if (res):
-            return {'loss': res[0], 'optimized_hyperparameter_config': res[1], 'budget': res[2], 'info': dict()}
+            return {'final_metric_score': res[0], 'optimized_hyperparamater_config': res[1], 'budget': res[2]}
         else:
-            return {'optimized_hyperparameter_config': dict(), 'budget': 0, 'loss': float('inf'), 'info': dict()}
+            return {'final_metric_score': None, 'optimized_hyperparamater_config': dict(), 'budget': 0}
 
     def predict(self, pipeline_config, X):
         return self.sub_pipeline.predict_pipeline(pipeline_config=pipeline_config, X=X)
@@ -145,16 +149,16 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
             ConfigOption("task_id", default=-1, type=int, info="ID for each worker, if you run AutoNet on a cluster. Set to -1, if you run it locally. "),
             ConfigOption("algorithm", default="bohb", type=str, choices=list(self.algorithms.keys())),
             ConfigOption("budget_type", default="time", type=str, choices=['time', 'epochs']),
-            ConfigOption("min_budget", default=lambda c: 120 if c['budget_type'] == 'time' else 5, type=float, depends=True, info="Min budget for fitting configurations."),
-            ConfigOption("max_budget", default=lambda c: 6000 if c['budget_type'] == 'time' else 150, type=float, depends=True, info="Max budget for fitting configurations."),
+            ConfigOption("min_budget", default=lambda c: 120 if c['budget_type'] == 'time' else 5, type=float, depends=True),
+            ConfigOption("max_budget", default=lambda c: 6000 if c['budget_type'] == 'time' else 150, type=float, depends=True),
             ConfigOption("max_runtime", 
                 default=lambda c: ((-int(np.log(c["min_budget"] / c["max_budget"]) / np.log(c["eta"])) + 1) * c["max_budget"])
                         if c["budget_type"] == "time" else float("inf"),
-                type=float, depends=True, info="Total time for the run."),
+                type=float, depends=True),
             ConfigOption("num_iterations", 
                 default=lambda c:  (-int(np.log(c["min_budget"] / c["max_budget"]) / np.log(c["eta"])) + 1)
                         if c["budget_type"] == "epochs" else float("inf"),
-                type=float, depends=True, info="Number of successive halving iterations"),
+                type=float, depends=True),
             ConfigOption("eta", default=3, type=float, info='eta parameter of Hyperband.'),
             ConfigOption("min_workers", default=1, type=int),
             ConfigOption("working_dir", default=".", type="directory"),
@@ -248,6 +252,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         while not os.path.isdir(ns_credentials_dir):
             time.sleep(5)
         host = nic_name_to_host(network_interface_name)
+
+        self.logger.info("[AutoNet] Starting worker with ID " +str(task_id))
         
         worker = ModuleWorkerNoTimeLimit(   pipeline=self.sub_pipeline, pipeline_config=pipeline_config,
                                             constant_hyperparameter=constant_hyperparameter,
@@ -278,7 +284,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         reduce_runtime = pipeline_config["max_budget"] if pipeline_config["budget_type"] == "time" else 0
         
         HB.wait_for_workers(min_num_workers)
-        self.logger.debug('Workers are ready!')
+        self.logger.info('[AutoNet] Workers are ready!')
+        self.logger.info('[AutoNet] Running with ' + str(min_num_workers) + ' workers')
 
         thread_read_write.append('runs.log', "{0}: {1} | {2}-{3}\n".format(
             str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
@@ -308,7 +315,9 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
         full_config.update(constants)
         full_config.update(refit["hyperparameter_config"])
 
-        self.logger.debug('Refit-Config:\n' + str(pprint.pformat(full_config)))
+        self.logger.info('Refit-Config:\n' + str(pprint.pformat(full_config)))
+        self.logger.info("Budget tpye: " + pipeline_config['budget_type'])
+
 
         class Job():
             pass
@@ -337,8 +346,8 @@ class OptimizationAlgorithmNoTimeLimit(SubPipelineNode):
 
         result_logger(job)
 
-        return {'loss': res['loss'] if res else float('inf'),
-                'optimized_hyperparameter_config': full_config,
+        return {'final_metric_score': res['loss'] if res else float('inf'),
+                'optimized_hyperparamater_config': full_config,
                 'budget': refit['budget'],
                 'info': res['info'] if res else dict()}
 

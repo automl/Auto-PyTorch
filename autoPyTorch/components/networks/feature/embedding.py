@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter, add_hyperparameter
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
@@ -77,23 +76,16 @@ class LearnedEntityEmbedding(nn.Module):
          return layers
 
     @staticmethod
-    def get_config_space(
-        categorical_features=None,
-        min_unique_values_for_embedding=((3, 300), True),
-        dimension_reduction=(0, 1),
-        **kwargs
-    ):
+    def get_config_space(categorical_features=None):
         # dimension of entity embedding layer is a hyperparameter
         if categorical_features is None or not any(categorical_features):
             return CS.ConfigurationSpace()
         cs = CS.ConfigurationSpace()
-        min_hp = get_hyperparameter(CSH.UniformIntegerHyperparameter, "min_unique_values_for_embedding", min_unique_values_for_embedding)
+        min_hp = CSH.UniformIntegerHyperparameter("min_unique_values_for_embedding", lower=3, upper=300, default_value=3, log=True)
         cs.add_hyperparameter(min_hp)
         for i in range(len([x for x in categorical_features if x])):
-            ee_dimensions_hp = get_hyperparameter(CSH.UniformFloatHyperparameter, "dimension_reduction_" + str(i),
-                kwargs.pop("dimension_reduction_" + str(i), dimension_reduction))
-            cs.add_hyperparameter(ee_dimensions_hp)
-        assert len(kwargs) == 0, "Invalid hyperparameter updates for learned embedding: %s" % str(kwargs)
+            ee_dimensions = CSH.UniformFloatHyperparameter("dimension_reduction_" + str(i), lower=0, upper=1, default_value=1, log=False)
+            cs.add_hyperparameter(ee_dimensions)
         return cs
 
 class NoEmbedding(nn.Module):

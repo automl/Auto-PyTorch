@@ -17,7 +17,7 @@ class LossModuleSelectorIndices(LossModuleSelector):
     def fit(self, hyperparameter_config, pipeline_config, X, Y, train_indices, dataset_info):
 
         if Y.shape[0] == dataset_info.y_shape[0]:
-            return super(LossModuleSelectorIndices, self).fit(hyperparameter_config, pipeline_config, X=np.zeros((Y.shape[0], 1)), Y=Y, train_indices=train_indices)
+            return super(LossModuleSelectorIndices, self).fit(hyperparameter_config, pipeline_config, X_train=np.zeros((Y.shape[0], 1)), Y_train=Y[train_indices])
 
         print(Y.shape[0], dataset_info.y_shape[0])
 

@@ -1,7 +1,8 @@
 
 from autoPyTorch.utils.config.config_option import ConfigOption
+from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
-import traceback
+import traceback, os
 
 class ForAutoNetConfig(SubPipelineNode):
     def fit(self, pipeline_config, autonet, instance, data_manager, run_id, task_id):
@@ -17,26 +18,24 @@ class ForAutoNetConfig(SubPipelineNode):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("autonet_configs", default=None, type='directory', list=True, required=True),
+            ConfigOption("autonet_configs", default=None, type=str, list=True, required=True),
             ConfigOption("autonet_config_root", default=ConfigFileParser.get_autonet_home(), type='directory'),
             ConfigOption("autonet_config_slice", default=None, type=str)
         ]
         return options
 
-    @staticmethod
-    def get_config_files(pipeline_config, parse_slice=True):
+    def get_config_files(self, pipeline_config):
         config_files = pipeline_config['autonet_configs']
         if pipeline_config['autonet_config_root'] is not None:
             config_files = [os.path.join(pipeline_config['autonet_config_root'], config) if not os.path.isabs(config) else config for config in config_files]
 
-        autonet_config_slice = ForAutoNetConfig.parse_slice(pipeline_config['autonet_config_slice'])
-        if autonet_config_slice is not None and parse_slice:
-            return config_files[autonet_config_slice]
+        autonet_config_slice = self.parse_slice(pipeline_config['autonet_config_slice'])
+        if autonet_config_slice is not None:
+            return sorted(config_files)[autonet_config_slice]
 
-        return config_files
+        return sorted(config_files)
 
-    @staticmethod
-    def parse_slice(splice_string):
+    def parse_slice(self, splice_string):
         if (splice_string is None):
             return None
 

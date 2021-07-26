@@ -27,7 +27,7 @@ class PreprocessorBase():
         return X
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_info=None):
+    def get_hyperparameter_search_space():
         return ConfigSpace.ConfigurationSpace()
 
 

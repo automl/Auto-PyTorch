@@ -48,7 +48,7 @@ class BaseNet(nn.Module):
             self.load_state_dict(self.best_parameters)
 
     @staticmethod
-    def get_config_space():
+    def get_config_space(**kwargs):
         return ConfigSpace.ConfigurationSpace()
     
 
@@ -66,7 +66,6 @@ class BaseFeatureNet(BaseNet):
         x = self.embedding(x)
         return super(BaseFeatureNet, self).forward(x)
 
-
 class BaseImageNet(BaseNet):
     def __init__(self, config, in_features, out_features, final_activation):
         super(BaseImageNet, self).__init__(config, in_features, out_features, final_activation)
@@ -79,3 +78,4 @@ class BaseImageNet(BaseNet):
             self.channels = in_features[0]
             self.iw = in_features[1]
             self.ih = in_features[2]
+

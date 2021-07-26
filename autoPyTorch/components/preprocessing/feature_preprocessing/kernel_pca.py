@@ -6,7 +6,6 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 import ConfigSpace.conditions as CSC
 
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
 
 
@@ -54,26 +53,18 @@ class KernelPCA(PreprocessorBase):
             return X_new
 
     @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_info=None,
-        kernel=('poly', 'rbf', 'sigmoid', 'cosine'),
-        n_components=(10, 2000),
-        gamma=((3.0517578125e-05, 8), True),
-        degree=(2, 5),
-        coef0=(-1, 1)
-    ):
+    def get_hyperparameter_search_space(dataset_properties=None):
+        n_components = CSH.UniformIntegerHyperparameter("n_components", 10, 2000, default_value=100)
+        kernel = CSH.CategoricalHyperparameter('kernel', ['poly', 'rbf', 'sigmoid', 'cosine'], 'rbf')
+        gamma = CSH.UniformFloatHyperparameter("gamma", 3.0517578125e-05, 8, log=True, default_value=1.0)
+        degree = CSH.UniformIntegerHyperparameter('degree', 2, 5, 3)
+        coef0 = CSH.UniformFloatHyperparameter("coef0", -1, 1, default_value=0)
         cs = ConfigSpace.ConfigurationSpace()
-        kernel_hp = add_hyperparameter(cs, CSH.CategoricalHyperparameter, 'kernel', kernel)
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, "n_components", n_components)
+        cs.add_hyperparameters([n_components, kernel, degree, gamma, coef0])
 
-        if "poly" in kernel:
-            degree_hp = add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'degree', degree)
-            cs.add_condition(CSC.EqualsCondition(degree_hp, kernel_hp, "poly"))
-        if set(["poly", "sigmoid"]) & set(kernel):
-            coef0_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "coef0", coef0)
-            cs.add_condition(CSC.InCondition(coef0_hp, kernel_hp, list(set(["poly", "sigmoid"]) & set(kernel))))
-        if set(["poly", "rbf", "sigmoid"]) & set(kernel):
-            gamma_hp = add_hyperparameter(cs, CSH.UniformFloatHyperparameter, "gamma", gamma)
-            cs.add_condition(CSC.InCondition(gamma_hp, kernel_hp, list(set(["poly", "rbf", "sigmoid"]) & set(kernel))))
+        degree_depends_on_poly = CSC.EqualsCondition(degree, kernel, "poly")
+        coef0_condition = CSC.InCondition(coef0, kernel, ["poly", "sigmoid"])
+        gamma_condition = CSC.InCondition(gamma, kernel, ["poly", "rbf"])
+        cs.add_conditions([degree_depends_on_poly, coef0_condition, gamma_condition])
         return cs
 

@@ -9,9 +9,10 @@ class ForRun(SubPipelineNode):
             try:
                 logging.getLogger('benchmark').info("Start run " + str(run_id) + "_" + str(run_number))
                 self.sub_pipeline.fit_pipeline(pipeline_config=pipeline_config,
-                    data_manager=data_manager, instance=instance,
+                    data_manager=data_manager, instance=instance, autonet=autonet, 
                     run_number=run_number, run_id=run_id, task_id=task_id)
             except Exception as e:
+                print("Exception for (run_id, task_id): ", run_id, task_id)
                 print(e)
                 traceback.print_exc()
         return dict()
@@ -23,8 +24,7 @@ class ForRun(SubPipelineNode):
         ]
         return options
 
-    @staticmethod
-    def parse_range(range_string, fallback):
+    def parse_range(self, range_string, fallback):
         if (range_string is None):
             return range(fallback)
 

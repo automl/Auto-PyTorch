@@ -63,10 +63,10 @@ class DARTSWorker(Worker):
             config_space.add_hyperparameter(CSH.CategoricalHyperparameter('inputs_node_reduce_{}'.format(i),
                                                                           pred_nodes[str(i)]))
 
-        config_space.add_hyperparameter(CSH.Constant('layers', 20))
-        config_space.add_hyperparameter(CSH.Constant('init_channels', 36))
-        config_space.add_hyperparameter(CSH.Constant('drop_path_prob', 0.1))
-        config_space.add_hyperparameter(CSH.CategoricalHyperparameter('auxiliary', [False]))
+        config_space.add_hyperparameter(CSH.UniformIntegerHyperparameter('layers', lower=5, upper=20))
+        config_space.add_hyperparameter(CSH.UniformIntegerHyperparameter('init_channels', lower=8, upper=50, log=True))
+        config_space.add_hyperparameter(CSH.Constant('drop_path_prob', 0.2))
+        config_space.add_hyperparameter(CSH.CategoricalHyperparameter('auxiliary', [True, False]))
 
         # now we define the conditions constraining the inclusion of the edges
         # on the optimization in order to be consistent with the DARTS original
@@ -110,5 +110,3 @@ class DARTSWorker(Worker):
                                                       values=['0_4', '1_4', '2_4', '3_4']))
 
         return config_space
-
-

@@ -4,18 +4,16 @@
 File which contains the optimizers.
 """
 
-from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter, add_hyperparameter
-
 import torch.optim as optim
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 
+from autoPyTorch.components.optimizer.optimizer_config import CSConfig
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
-
 
 class AutoNetOptimizerBase(object):
     def __new__(cls, params, config):
@@ -26,6 +24,7 @@ class AutoNetOptimizerBase(object):
 
     @staticmethod
     def get_config_space(*args, **kwargs):
+        # currently no use but might come in handy in the future
         return CS.ConfigurationSpace()
 
 
@@ -35,13 +34,12 @@ class AdamOptimizer(AutoNetOptimizerBase):
         return optim.Adam(params=params, lr=config['learning_rate'], weight_decay=config['weight_decay'])
     
     @staticmethod
-    def get_config_space(
-        learning_rate=((1e-4, 0.1), True),
-        weight_decay=(1e-5, 0.1)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        config = CSConfig['adam_opt']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('learning_rate', lower=config['learning_rate'][0], upper=config['learning_rate'][1], log=True))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('weight_decay', lower=config['weight_decay'][0], upper=config['weight_decay'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetOptimizerBase.get_config_space(*args, **kwargs))
         return cs
 
 
@@ -51,31 +49,28 @@ class AdamWOptimizer(AutoNetOptimizerBase):
         return optim.AdamW(params=params, lr=config['learning_rate'], weight_decay=config['weight_decay'])
     
     @staticmethod
-    def get_config_space(
-        learning_rate=((1e-4, 0.1), True),
-        weight_decay=(1e-5, 0.1)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        config = CSConfig['adamw_opt']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('learning_rate', lower=config['learning_rate'][0], upper=config['learning_rate'][1], log=True))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('weight_decay', lower=config['weight_decay'][0], upper=config['weight_decay'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetOptimizerBase.get_config_space(*args, **kwargs))
         return cs
 
 
 class SgdOptimizer(AutoNetOptimizerBase):
     
     def _get_optimizer(self, params, config):
-        return optim.SGD(params=params, lr=config['learning_rate'], momentum=config['momentum'], weight_decay=config['weight_decay'])
+        return optim.SGD(params=params, lr=config['learning_rate'], momentum=config['momentum'], weight_decay=config['weight_decay'], nesterov=True)
     
     @staticmethod
-    def get_config_space(
-        learning_rate=((1e-4, 0.1), True),
-        momentum=((0.1, 0.999), False),
-        weight_decay=(1e-5, 0.1)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'momentum', momentum)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
+        config = CSConfig['sgd_opt']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('learning_rate', lower=config['learning_rate'][0], upper=config['learning_rate'][1], log=True))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('momentum', lower=config['momentum'][0], upper=config['momentum'][1], log=False))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('weight_decay', lower=config['weight_decay'][0], upper=config['weight_decay'][1], log=True))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetOptimizerBase.get_config_space(*args, **kwargs))
         return cs
 
 
@@ -85,15 +80,12 @@ class RMSpropOptimizer(AutoNetOptimizerBase):
         return optim.RMSprop(params=params, lr=config['learning_rate'], momentum=config['momentum'], weight_decay=config['weight_decay'], centered=False)
     
     @staticmethod
-    def get_config_space(
-        learning_rate=((1e-4, 0.1), True),
-        momentum=((0.1, 0.99), True),
-        weight_decay=(1e-5, 0.1),
-        alpha=(0.1,0.99)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'learning_rate', learning_rate)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'momentum', momentum)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'weight_decay', weight_decay)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'alpha', alpha)
+        config = CSConfig['rmsprop_opt']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('learning_rate', lower=config['learning_rate'][0], upper=config['learning_rate'][1], log=True))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('momentum', lower=config['momentum'][0], upper=config['momentum'][1], log=False))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('weight_decay', lower=config['weight_decay'][0], upper=config['weight_decay'][1], log=True))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('alpha', lower=config['alpha'][0], upper=config['alpha'][1], log=False))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetOptimizerBase.get_config_space(*args, **kwargs))
         return cs

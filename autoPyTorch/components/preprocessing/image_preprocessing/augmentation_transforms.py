@@ -28,8 +28,12 @@ from PIL import ImageOps, ImageEnhance, ImageFilter, Image
 
 IMAGE_SIZE = 32
 # What is the dataset mean and std of the images on the training set
-MEANS = [0.49139968, 0.48215841, 0.44653091]
-STDS = [0.24703223, 0.24348513, 0.26158784]
+# IMAGENET
+#MEANS = [0.49139968, 0.48215841, 0.44653091]
+#STDS = [0.24703223, 0.24348513, 0.26158784]
+# CIFAR
+MEAN = [0.49139968, 0.48215827, 0.44653124]
+STD = [0.24703233, 0.24348505, 0.26158768]
 PARAMETER_MAX = 10  # What is the max 'level' a transform could be predicted
 
 

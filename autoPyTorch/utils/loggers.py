@@ -79,7 +79,7 @@ class tensorboard_logger(object):
             refit_config = dict()
             refit_config['budget'] = budget
             refit_config['seed'] = self.seed
-            
+
             refit_config['incumbent_config_path'] = os.path.join(self.incumbent_configs_dir, 'config_' + str(budget) + '.json')
             with open(refit_config['incumbent_config_path'], 'w+') as f:
                 f.write(json.dumps(full_config, indent=4, sort_keys=True))
@@ -87,7 +87,7 @@ class tensorboard_logger(object):
             with open(os.path.join(self.incumbent_configs_dir, 'result_' + str(budget) + '.json'), 'w+') as f:
                 f.write(json.dumps([job.id, job.kwargs['budget'], job.timestamps, job.result, job.exception], indent=4, sort_keys=True))
 
-            checkpoints, refit_config['dataset_order'] = get_checkpoints(result['info']) or ([],None)
+            checkpoints, refit_config['dataset_order'] = get_checkpoints(result['info'])
             refit_config['incumbent_checkpoint_paths'] = []
             for i, checkpoint in enumerate(checkpoints):
                 dest = os.path.join(self.incumbent_configs_dir, 'checkpoint_' + str(budget) + '_' + str(i) + '.pt' if len(checkpoints) > 1 else 'checkpoint_' + str(budget) + '.pt')
@@ -126,7 +126,7 @@ class tensorboard_logger(object):
                             round(budget / len(result['info'])))
                         })
 
-        if self.keep_only_incumbent_checkpoints and get_checkpoints(result['info']):
+        if self.keep_only_incumbent_checkpoints:
             for checkpoint in get_checkpoints(result['info'])[0]:
                 if os.path.exists(checkpoint):
                     os.remove(checkpoint)
@@ -217,3 +217,4 @@ def get_refit_config(directory):
     _, refit_configs, _, _ = get_incumbents(directory)
     refit_config = max(refit_configs, key=lambda x: x[0]) #get config of max budget
     return refit_config[1]
+    

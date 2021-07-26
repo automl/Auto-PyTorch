@@ -5,10 +5,6 @@ import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
 
-import ConfigSpace
-from autoPyTorch.components.networks.base_net import BaseImageNet
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
 from autoPyTorch.components.networks.base_net import BaseImageNet
 
 class _DenseLayer(nn.Sequential):
@@ -121,8 +117,6 @@ class DenseNet(BaseImageNet):
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
 
-        self.layers = nn.Sequential(self.features)
-
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
@@ -141,31 +135,21 @@ class DenseNet(BaseImageNet):
         from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 
         cs = CS.ConfigurationSpace()
-        growth_rate_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'growth_rate', growth_rate_range)
-        cs.add_hyperparameter(growth_rate_hp)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'growth_rate', growth_rate_range)
         # add_hyperparameter(cs,   CSH.UniformFloatHyperparameter, 'bn_size', [2, 4])
         # add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'num_init_features', num_init_features, log=True)
         # add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'bottleneck', [True, False])
 
-        blocks_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'blocks', nr_blocks)
-        cs.add_hyperparameter(blocks_hp)
+        blocks =        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'blocks', nr_blocks)
         use_dropout =   add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'use_dropout', [True, False])
         dropout =       add_hyperparameter(cs,   CSH.UniformFloatHyperparameter, 'dropout', [0.0, 1.0])
         cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
-        if type(nr_blocks[0]) == int:
-            min_blocks = nr_blocks[0]
-            max_blocks = nr_blocks[1]
-        else:
-            min_blocks = nr_blocks[0][0]
-            max_blocks = nr_blocks[0][1]
-
-        for i in range(1, max_blocks+1):
-            layer_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'layer_in_block_%d' % i, layer_range[i-1])
-            cs.add_hyperparameter(layer_hp)
+        for i in range(1, nr_blocks[1]+1):
+            layer =         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'layer_in_block_%d' % i, layer_range[i-1])
             
-            if i > min_blocks:
-                cs.add_condition(CS.GreaterThanCondition(layer_hp, blocks_hp, i-1))
+            if i > nr_blocks[0]:
+                cs.add_condition(CS.GreaterThanCondition(layer, blocks, i-1))
 
         return cs
 

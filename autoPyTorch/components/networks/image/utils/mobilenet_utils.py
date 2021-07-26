@@ -1,18 +1,3 @@
-# Copyright 2019 Ross Wightman
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 """ Generic EfficientNets
 A generic class with building blocks to support a variety of models with efficient architectures:
 * EfficientNet (B0-B7)
@@ -35,6 +20,7 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 from .conv2d_helpers import select_conv2d
 
@@ -68,7 +54,6 @@ _BN_ARGS_PT = dict(momentum=_BN_MOMENTUM_PT_DEFAULT, eps=_BN_EPS_PT_DEFAULT)
 # NOTE: momentum varies btw .99 and .9997 depending on source
 # .99 in official TF TPU impl
 # .9997 (/w .999 in search space) for paper
-# HERE CHANGED TO WORK WITH PYTORCH
 _BN_MOMENTUM_TF_DEFAULT = 1 - 0.99
 _BN_EPS_TF_DEFAULT = 1e-3
 _BN_ARGS_TF = dict(momentum=_BN_MOMENTUM_TF_DEFAULT, eps=_BN_EPS_TF_DEFAULT)

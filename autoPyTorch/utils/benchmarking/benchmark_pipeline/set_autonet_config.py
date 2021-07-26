@@ -1,19 +1,20 @@
-import os
+
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
 
 class SetAutoNetConfig(PipelineNode):
 
-    def fit(self, pipeline_config, autonet, autonet_config_file, data_manager, instance):
+    def fit(self, pipeline_config, autonet, autonet_config_file, data_manager):
         parser = autonet.get_autonet_config_file_parser()
         config = parser.read(autonet_config_file)
 
-        if ('additional_logs' not in config):
-            config['additional_logs'] = ['test_result' if not pipeline_config['enable_ensemble'] else 'test_predictions_for_ensemble']
+        print("SetAutoNetConfig: additional logs ommited")
+        #if ('additional_logs' not in config):
+        #    config['additional_logs'] = ['test_result']
 
         if (pipeline_config['use_dataset_metric'] and data_manager.metric is not None):
-            config['optimize_metric'] = data_manager.metric
+            config['train_metric'] = data_manager.metric
         if (pipeline_config['use_dataset_max_runtime'] and data_manager.max_runtime is not None):
             config['max_runtime'] = data_manager.max_runtime
 
@@ -26,6 +27,14 @@ class SetAutoNetConfig(PipelineNode):
         
         if data_manager.categorical_features:
             config['categorical_features'] = data_manager.categorical_features
+
+        # if 'refit_config' in pipeline_config and pipeline_config['refit_config'] is not None:
+        #     import json
+        #     with open(pipeline_config['refit_config'], 'r') as f:
+        #         refit_hyper_config = json.load(f)
+        #     if 'incumbent_config_path' in refit_hyper_config:
+        #         config['random_seed'] = refit_hyper_config['seed']
+        #         config['dataset_order'] = refit_hyper_config['dataset_order']
 
         # Note: PrepareResultFolder will make a small run dependent update of the autonet_config
         autonet.update_autonet_config(**config)

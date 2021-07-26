@@ -32,4 +32,3 @@ class SingleDataset(SubPipelineNode):
             ConfigOption('increase_number_of_trained_datasets', default=False, type=to_bool, info="Only used for multiple datasets.")
         ]
         return options
-

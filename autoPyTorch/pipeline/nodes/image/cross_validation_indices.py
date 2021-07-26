@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.base.sub_pipeline_node import SubPipelineNode
 from autoPyTorch.pipeline.base.pipeline import Pipeline
 
 from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
-from autoPyTorch.components.training.image.budget_types import BudgetTypeTime
+from autoPyTorch.training.budget_types import BudgetTypeTime
 from sklearn.model_selection import StratifiedShuffleSplit
 
 import time

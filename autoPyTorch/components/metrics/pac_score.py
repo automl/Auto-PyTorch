@@ -4,7 +4,11 @@ import scipy as sp
 from sklearn.metrics.classification import _check_targets, type_of_target
 
 
-def pac_metric(solution, prediction):
+def pac_metric(y_true, y_pred):
+    return _pac_score(y_true.cpu().numpy(), y_pred.cpu().numpy()) * 100
+
+
+def _pac_score(solution, prediction):
     """
     Probabilistic Accuracy based on log_loss metric.
     We assume the solution is in {0, 1} and prediction in [0, 1].

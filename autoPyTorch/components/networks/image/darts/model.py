@@ -4,6 +4,15 @@ from .operations import *
 from .utils import drop_path
 
 
+#class Swish(nn.Module):
+#    def __init__(self, inplace=False):
+#        super(Swish, self).__init__()
+#        self.inplace = inplace
+#
+#    def forward(self, x):
+#        return x * torch.sigmoid(x)
+
+
 class Cell(nn.Module):
 
   def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
@@ -153,7 +162,7 @@ class NetworkCIFAR(BaseImageNet):
           logits_aux = self.auxiliary_head(s1)
     out = self.global_pooling(s1)
     logits = self.classifier(out.view(out.size(0),-1))
-    return logits#, logits_aux
+    return logits, logits_aux
 
 
 
@@ -226,10 +235,19 @@ class DARTSImageNet(NetworkCIFAR): # use cifar10 base as we train ImageNet mostl
     super(DARTSImageNet, self).__init__(config['init_channels'], out_features, config['layers'], config['auxiliary'], genotype)
 
   def forward(self, x):
-    x = super(DARTSImageNet, self).forward(x)
 
-    if not self.training and self.final_activation is not None:
-      x = self.final_activation(x)
+    if self._auxiliary:
+        x, x_aux = super(DARTSImageNet, self).forward(x)
+
+        if not self.training and self.final_activation is not None:
+            x = self.final_activation(x)
+        return x, x_aux
+
+    else:
+        x = super(DARTSImageNet, self).forward(x)
+
+        if not self.training and self.final_activation is not None:
+            x = self.final_activation(x)
     return x
 
   @staticmethod

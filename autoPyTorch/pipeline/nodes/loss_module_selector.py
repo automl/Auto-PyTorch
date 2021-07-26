@@ -19,16 +19,17 @@ class LossModuleSelector(PipelineNode):
         super(LossModuleSelector, self).__init__()
         self.loss_modules = dict()
 
-    def fit(self, hyperparameter_config, pipeline_config, X, Y, train_indices):
+    def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         weights = None
-        loss_module = self.loss_modules[hyperparameter_config["loss_module"]]
+        loss_module_name = hyperparameter_config["loss_module"]
+
+        loss_module = self.loss_modules[loss_module_name]
         if (loss_module.weight_strategy != None):
-            weights = loss_module.weight_strategy(pipeline_config, X[train_indices], Y[train_indices])
+            weights = loss_module.weight_strategy(pipeline_config, X_train, Y_train)
             weights = torch.from_numpy(weights).float()
 
-        # pass weights to loss module
         loss = loss_module.module
         if "pos_weight" in inspect.getfullargspec(loss)[0] and weights is not None and inspect.isclass(loss):
             loss = loss(pos_weight=weights)
@@ -48,19 +49,23 @@ class LossModuleSelector(PipelineNode):
             weight_strategy {function} -- callable that computes label weights
         """
 
+        if (not issubclass(loss_module, _Loss)):
+            raise ValueError("loss module has to be a subclass of torch.nn.modules.loss._Loss (all pytorch loss modules)")
         self.loss_modules[name] = AutoNetLossModule(loss_module, weight_strategy, requires_target_class_labels)
 
     def remove_loss_module(self, name):
         del self.loss_modules[name]
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_loss_modules = set(pipeline_config["loss_modules"]).intersection(self.loss_modules.keys())
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter('loss_module', sorted(possible_loss_modules)))
-        self._check_search_space_updates(self.loss_modules.keys(), "*")
-        return cs
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter('loss_module', list(self.loss_modules.keys())))
+
+        possible_loss_modules = sorted(set(pipeline_config["loss_modules"]).intersection(self.loss_modules.keys()))
+        self._update_hyperparameter_range('loss_module', possible_loss_modules, check_validity=False, override_if_already_modified=False)
+
+        return self._apply_user_updates(cs)
         
 
     def get_pipeline_config_options(self):

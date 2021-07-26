@@ -1,18 +1,20 @@
 import sklearn.metrics as metrics
+import time
+import torch
 import numpy as np
 
 # classification metrics
-def accuracy(y_true, y_pred):
-    return np.mean(y_true == y_pred) * 100
+def accuracy(y_pred, y_true):
+    return metrics.accuracy_score(undo_ohe(y_true).cpu(), undo_ohe(y_pred).cpu()) * 100
 
-def auc_metric(y_true, y_pred):
-    return (2 * metrics.roc_auc_score(y_true, y_pred) - 1)
-
-def cross_entropy(y_true, y_pred):
-    if y_true==1:
-        return -np.log(y_pred)
-    else:
-        return -np.log(1-y_pred)
+def cross_entropy(y_pred, y_true):
+    y_pred = y_pred.cpu()
+    y_true = undo_ohe(y_true).cpu()
+    #try:
+    #    loss = metrics.log_loss(y_true, y_pred, labels=np.arange(max(y_pred))
+    #except:
+    #    print(y_pred, y_true)
+    return metrics.log_loss(y_true, y_pred, labels=np.arange(len(y_pred[0])))
 
 def top1(y_pred, y_true):
     return topN(y_pred, y_true, 1)
@@ -37,15 +39,19 @@ def topN(output, target, topk):
         correct_k = correct[:topk].view(-1).float().sum(0, keepdim=True)
         return correct_k.mul_(100.0 / batch_size).item()
 
+def auc_metric(y_true, y_pred):
+    return (2 * metrics.roc_auc_score(y_true.cpu().numpy(), y_pred.cpu().numpy()) - 1) * 100
 
-# multilabel metrics
+
+# multilabel metric
 def multilabel_accuracy(y_true, y_pred):
-    return np.mean(y_true == (y_pred > 0.5))
+    return (y_true.long() == (y_pred > 0.5).long()).float().mean().item() * 100
 
+# regression metric
+def mean_distance(y_true, y_pred):
+    return (y_true - y_pred).abs().mean().item()
 
-# regression metrics
-def mae(y_true, y_pred):
-    return np.mean(np.abs(y_true - y_pred))
-
-def rmse(y_true, y_pred):
-    return np.sqrt(np.mean((y_true - y_pred)**2))
+def undo_ohe(y):
+    if len(y.shape) == 1:
+        return y
+    return y.max(1)[1]

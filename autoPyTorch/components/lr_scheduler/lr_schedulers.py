@@ -4,35 +4,21 @@
 This file contains the different learning rate schedulers of AutoNet.
 """
 
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
-import numpy as np
-import math
 import torch
 import torch.optim.lr_scheduler as lr_scheduler
-from torch.optim import Optimizer
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+
+from autoPyTorch.components.lr_scheduler.lr_schedulers_config import CSConfig
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
 __version__ = "0.0.1"
 __license__ = "BSD"
 
-
 class AutoNetLearningRateSchedulerBase(object):
-    def __new__(cls, optimizer, config):
-        """Get a new instance of the scheduler
-        
-        Arguments:
-            cls {class} -- Type of scheduler
-            optimizer {Optmizer} -- A PyTorch Optimizer
-            config {dict} -- Sampled lr_scheduler config
-        
-        Returns:
-            AutoNetLearningRateSchedulerBase -- The learning rate scheduler object
-        """
-        scheduler = cls._get_scheduler(cls, optimizer, config)
+    def __new__(cls, params, config):
+        scheduler = cls._get_scheduler(cls, params, config)
         if not hasattr(scheduler, "allows_early_stopping"):
             scheduler.allows_early_stopping = True
         if not hasattr(scheduler, "snapshot_before_restart"):
@@ -43,272 +29,135 @@ class AutoNetLearningRateSchedulerBase(object):
         raise ValueError('Override the method _get_scheduler and do not call the base class implementation')
 
     @staticmethod
-    def get_config_space():
+    def get_config_space(*args, **kwargs):
+        # currently no use but might come in handy in the future
         return CS.ConfigurationSpace()
-
 
 class SchedulerNone(AutoNetLearningRateSchedulerBase):
 
     def _get_scheduler(self, optimizer, config):
-        return NoScheduling(optimizer=optimizer)
-
+        return NoScheduling()
 
 class SchedulerStepLR(AutoNetLearningRateSchedulerBase):
-    """
-    Step learning rate scheduler
-    """
 
     def _get_scheduler(self, optimizer, config):
         return lr_scheduler.StepLR(optimizer=optimizer, step_size=config['step_size'], gamma=config['gamma'], last_epoch=-1)
     
     @staticmethod
-    def get_config_space(
-        step_size=(1, 10),
-        gamma=(0.001, 0.9)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'step_size', step_size)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'gamma', gamma)
+        config = CSConfig['step_lr']
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('step_size', lower=config['step_size'][0], upper=config['step_size'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('gamma', lower=config['gamma'][0], upper=config['gamma'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
-
 class SchedulerExponentialLR(AutoNetLearningRateSchedulerBase):
-    """
-    Exponential learning rate scheduler
-    """
-
+    
     def _get_scheduler(self, optimizer, config):
         return lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=config['gamma'], last_epoch=-1)
     
     @staticmethod
-    def get_config_space(
-        gamma=(0.8, 0.9999)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'gamma', gamma)
+        config = CSConfig['exponential_lr']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('gamma', lower=config['gamma'][0], upper=config['gamma'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
-
 class SchedulerReduceLROnPlateau(AutoNetLearningRateSchedulerBase):
-    """
-    Reduce LR on plateau learning rate scheduler
-    """
     
     def _get_scheduler(self, optimizer, config):
-        return lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, 
-                                              factor=config['factor'], 
-                                              patience=config['patience'])
-
+        return lr_scheduler.ReduceLROnPlateau(  optimizer=optimizer, 
+                                                factor=config['factor'], 
+                                                patience=config['patience'])
+    
     @staticmethod
-    def get_config_space(
-        factor=(0.05, 0.5),
-        patience=(3, 10)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'factor', factor)
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'patience', patience)
+        config = CSConfig['reduce_on_plateau']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('factor', lower=config['factor'][0], upper=config['factor'][1]))
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('patience', lower=config['patience'][0], upper=config['patience'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
 
 class SchedulerAdaptiveLR(AutoNetLearningRateSchedulerBase):
-    """
-    Adaptive cosine learning rate scheduler
-    """
     
     def _get_scheduler(self, optimizer, config):
-        return AdaptiveLR(optimizer=optimizer,
-                          T_max=config['T_max'],
-                          T_mul=config['T_mult'],
-                          patience=config['patience'],
-                          threshold=config['threshold'])
-
+        from .adaptive_learningrate import AdaptiveLR
+        return AdaptiveLR(optimizer=optimizer, T_max=config['T_max'], T_mul=config['T_mult'], patience=config['patience'], threshold=config['threshold'])
+    
     @staticmethod
-    def get_config_space(
-        T_max=(300,1000),
-        patience=(2,5),
-        T_mult=(1.0,2.0),
-        threshold=(0.001, 0.5)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'patience', patience)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'threshold', threshold)
+        config = CSConfig['adaptive_cosine_lr'] 
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=config['T_max'][0], upper=config['T_max'][1]))
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('patience', lower=config['patience'][0], upper=config['patience'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('T_mult', lower=config['T_mult'][0], upper=config['T_mult'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('threshold', lower=config['threshold'][0], upper=config['threshold'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
-
-
-class AdaptiveLR(object):
-
-    def __init__(self, optimizer, mode='min', T_max=30, T_mul=2.0, eta_min=0, patience=3, threshold=0.1, min_lr=0, eps=1e-8, last_epoch=-1):
-
-        if not isinstance(optimizer, Optimizer):
-            raise TypeError('{} is not an Optimizer'.format(
-                type(optimizer).__name__))
-
-        self.optimizer = optimizer
-
-        if last_epoch == -1:
-            for group in optimizer.param_groups:
-                group.setdefault('initial_lr', group['lr'])
-        else:
-            for i, group in enumerate(optimizer.param_groups):
-                if 'initial_lr' not in group:
-                    raise KeyError("param 'initial_lr' is not specified "
-                                   "in param_groups[{}] when resuming an optimizer".format(i))
-
-        self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
-        self.last_epoch = last_epoch
-
-        if isinstance(min_lr, list) or isinstance(min_lr, tuple):
-            if len(min_lr) != len(optimizer.param_groups):
-                raise ValueError("expected {} min_lrs, got {}".format(
-                    len(optimizer.param_groups), len(min_lr)))
-            self.min_lrs = list(min_lr)
-        else:
-            self.min_lrs = [min_lr] * len(optimizer.param_groups)
-
-        self.T_max = T_max
-        self.T_mul = T_mul
-        self.eta_min = eta_min
-        self.current_base_lrs = self.base_lrs
-        self.metric_values = []
-        self.threshold = threshold
-        self.patience = patience
-        self.steps = 0
-        
-    def step(self, metrics, epoch=None):
-        if epoch is None:
-            epoch = self.last_epoch + 1
-        self.last_epoch = epoch
-        
-        self.metric_values.append(metrics)
-        if len(self.metric_values) > self.patience:
-            self.metric_values = self.metric_values[1:]
-
-        if max(self.metric_values) - metrics > self.threshold:
-            self.current_base_lrs = self.get_lr()
-            self.steps = 0
-        else:
-            self.steps += 1
-        
-        self.last_metric_value = metrics
-
-        for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            param_group['lr'] = lr
-
-    def get_lr(self):
-        '''
-        Override this method to the existing get_lr() of the parent class
-        '''
-        if self.steps >= self.T_max:
-            self.T_max = self.T_max * self.T_mul
-            self.current_base_lrs = self.base_lrs
-            self.metric_values = []
-            self.steps = 0
-
-        return [self.eta_min + (base_lr - self.eta_min) *
-                        (1 + math.cos(math.pi * self.steps / self.T_max)) / 2
-                        for base_lr in self.current_base_lrs]                    
-
 
 class SchedulerCyclicLR(AutoNetLearningRateSchedulerBase):
-    """
-    Cyclic learning rate scheduler
-    """
 
     def _get_scheduler(self, optimizer, config):
-        maf = config['max_factor']
-        mif = config['min_factor']
-        cl = config['cycle_length']
-        r = maf - mif
-        def l(epoch):
-            if int(epoch//cl) % 2 == 1:
-                lr = mif + (r * (float(epoch % cl)/float(cl)))
-            else:
-                lr = maf - (r * (float(epoch % cl)/float(cl)))
-            return lr
-            
-        return lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=l, last_epoch=-1)
+        from autoPyTorch.components.lr_scheduler.cyclic import CyclicLR
+        return CyclicLR(optimizer=optimizer, 
+                        min_factor=config['min_factor'], 
+                        max_factor=config['max_factor'], 
+                        cycle_length=config['cycle_length'], 
+                        last_epoch=-1)
     
     @staticmethod
-    def get_config_space(
-        max_factor=(1.0, 2),
-        min_factor=(0.001, 1.0),
-        cycle_length=(3, 10)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'max_factor', max_factor)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'min_factor', min_factor)
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'cycle_length', cycle_length)
+        config = CSConfig['cyclic_lr']
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('max_factor', lower=config['max_factor'][0], upper=config['max_factor'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('min_factor', lower=config['min_factor'][0], upper=config['min_factor'][1]))
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('cycle_length', lower=config['cycle_length'][0], upper=config['cycle_length'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
-
-class CosineAnnealingToFlatLR(lr_scheduler.CosineAnnealingLR):
-
-    def __init__(self, *args, **kwargs):
-        super(CosineAnnealingToFlatLR, self).__init__(*args, **kwargs)
-
-    def get_lr(self):
-        if self.last_epoch > self.T_max:
-            return [self.eta_min for base_lr in self.base_lrs]
-        return super(CosineAnnealingToFlatLR, self).get_lr()
-
-
 class SchedulerCosineAnnealingLR(AutoNetLearningRateSchedulerBase):
-    """
-    Cosine annealing learning rate scheduler
-    """
 
     def _get_scheduler(self, optimizer, config):
-        return CosineAnnealingToFlatLR(optimizer=optimizer, T_max=config['T_max'], eta_min=config['eta_min'], last_epoch=-1)
+        return lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=config['T_max'], eta_min=config['eta_min'], last_epoch=-1)
 
     @staticmethod
-    def get_config_space(
-            T_max=(10,500),
-            eta_min=(1e-8, 1e-8)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'eta_min', eta_min)
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=10, upper=1000))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('eta_min', lower=0.0, upper=0.01))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
 
 class SchedulerCosineAnnealingWithRestartsLR(AutoNetLearningRateSchedulerBase):
-    """
-    Cosine annealing learning rate scheduler with warm restarts
-    """
 
     def _get_scheduler(self, optimizer, config):
-        scheduler = CosineAnnealingWithRestartsLR(optimizer, T_max=config['T_max'], T_mult=config['T_mult'],last_epoch=-1)
+        scheduler = CosineAnnealingWithRestartsLR(optimizer, T_max=config['T_max'], T_mult=config['T_mult'], last_epoch=-1)
         scheduler.allows_early_stopping = False
         scheduler.snapshot_before_restart = True
         return scheduler
     
     @staticmethod
-    def get_config_space(
-        T_max=(1, 20),
-        T_mult=(1.0, 2.0)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult)
+        config = CSConfig['cosine_annealing_with_restarts_lr']
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=config['T_max'][0], upper=config['T_max'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('T_mult', lower=config['T_mult'][0], upper=config['T_mult'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
 
 class NoScheduling():
-    def __init__(self, optimizer):
-        self.optimizer = optimizer
 
-    def step(self, epoch):
+    def step(self, epoch=None):
         return
-    
-    def get_lr(self):
-        try:
-            return [self.optimizer.defaults["lr"]]
-        except:
-            return [None]
 
 
+import math
 class CosineAnnealingWithRestartsLR(torch.optim.lr_scheduler._LRScheduler):
 
     r"""Copyright: pytorch
@@ -361,63 +210,173 @@ class CosineAnnealingWithRestartsLR(torch.optim.lr_scheduler._LRScheduler):
     def get_lr(self):
         if self.step_n >= self.restart_every:
             self.restart()
-        return [self.cosine(base_lr) for base_lr in self.base_lrs]  
+        return [self.cosine(base_lr) for base_lr in self.base_lrs] 
 
     def needs_checkpoint(self):
         return self.step_n + 1 >= self.restart_every
 
 
 class SchedulerAlternatingCosineLR(AutoNetLearningRateSchedulerBase):
-    """
-    Alternating cosine learning rate scheduler
-    """
     
     def _get_scheduler(self, optimizer, config):
+        from .alternating_cosine import AlternatingCosineLR
         scheduler = AlternatingCosineLR(optimizer, T_max=config['T_max'], T_mul=config['T_mult'], amplitude_reduction=config['amp_reduction'], last_epoch=-1)
         return scheduler
     
     @staticmethod
-    def get_config_space(
-        T_max=(1, 20),
-        T_mult=(1.0, 2.0),
-        amp_reduction=(0.1,1)
-    ):
+    def get_config_space(*args, **kwargs):
         cs = CS.ConfigurationSpace()
-        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'T_max', T_max)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'T_mult', T_mult)
-        add_hyperparameter(cs, CSH.UniformFloatHyperparameter, 'amp_reduction', amp_reduction)
+        config = CSConfig['alternating_cosine_lr']
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=config['T_max'][0], upper=config['T_max'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('T_mult', lower=config['T_mult'][0], upper=config['T_mult'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('amp_reduction', lower=config['amp_reduction'][0], upper=config['amp_reduction'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
+        return cs
+
+class SchedulerCustomLR(AutoNetLearningRateSchedulerBase):
+    
+    def _get_scheduler(self, optimizer, config):
+        scheduler = CustomScheduler(optimizer, T_max=config['T_max'], T_mult=config['T_mult'], min_loss_increase=0.0001, loss_array_size=100, last_epoch=-1)
+        scheduler.allows_early_stopping = False
+        scheduler.snapshot_before_restart = True
+        return scheduler
+    
+    @staticmethod
+    def get_config_space(*args, **kwargs):
+        cs = CS.ConfigurationSpace()
+        config = CSConfig['custom_lr']
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('T_max', lower=config['T_max'][0], upper=config['T_max'][1]))
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('T_mult', lower=config['T_mult'][0], upper=config['T_mult'][1]))
+        cs.add_configuration_space(prefix='', delimiter='', configuration_space=AutoNetLearningRateSchedulerBase.get_config_space(*args, **kwargs))
         return cs
 
 
-class AlternatingCosineLR(torch.optim.lr_scheduler._LRScheduler):
-    def __init__(self, optimizer, T_max, T_mul=1, amplitude_reduction=0.9, eta_min=0, last_epoch=-1):
-        '''
-        Here last_epoch actually means last_step since the
-        learning rate is decayed after each batch step.
-        '''
+import numpy as np
+from queue import Queue
 
+# class CustomScheduler(torch.optim.lr_scheduler._LRScheduler):
+    
+#     def __init__(self, optimizer, T_max, T_mult, min_loss_increase, loss_array_size, amplitude_reduction=0.9, eta_min=0, last_epoch=-1):
+#         self.T_max = T_max
+#         self.T_mult = T_mult
+#         self.restart_every = T_max
+#         self.eta_min = eta_min
+#         self.restarts = 0
+#         self.restarted_at = 0
+#         self.losses = []
+#         self.base_lr_mult = 1
+#         self.losses_max_length = loss_array_size
+#         self.next_amplitude_reduction = amplitude_reduction
+#         self.max_amplitude_reduction = amplitude_reduction
+#         self.min_loss_increase = min_loss_increase
+#         super(CustomScheduler, self).__init__(optimizer, last_epoch)
+    
+#     def restart(self):
+#         self.restart_every *= self.T_mult
+#         self.restarted_at = self.last_epoch
+    
+#     def cosine(self, base_lr):
+#         return base_lr * self.base_lr_mult
+    
+#     def step(self, epoch=None, loss=float('inf')):
+
+#         if len(self.losses) >= self.losses_max_length:
+#             avg = np.sum(self.losses) / len(self.losses)
+#             if avg - loss < self.min_loss_increase:
+#                 self.base_lr_mult *= self.max_amplitude_reduction
+
+#                 self.losses = []
+#                 if self.base_lr_mult < 0.01:
+#                     self.base_lr_mult = 1
+
+#                     print('restart')
+
+#                 print('descrease step', loss, ' - ', avg, 'mult', self.base_lr_mult)
+#             else:
+#                 self.losses = self.losses[1:]
+
+#         self.losses.append(loss)
+#         super(CustomScheduler, self).step(epoch=epoch)
+
+#     # @property
+#     # def step_n(self):
+#     #     return self.last_epoch - self.restarted_at
+
+#     def get_lr(self):
+#         # if self.step_n >= self.restart_every:
+#         #     self.restart_every *= self.T_mult
+#         #     self.restarted_at = self.last_epoch + self.restart_every
+
+#         #     self.base_lr_mult *= self.next_amplitude_reduction
+#         #     self.next_amplitude_reduction = self.max_amplitude_reduction
+            
+#         #     self.losses = []
+#         #     print('half_restart, amp:', self.restart_every, ' - ', self.base_lr_mult)
+
+#         return [base_lr * self.base_lr_mult for base_lr in self.base_lrs]  
+
+
+class CustomScheduler(torch.optim.lr_scheduler._LRScheduler):
+    
+    def __init__(self, optimizer, T_max, T_mult, min_loss_increase, loss_array_size, amplitude_reduction=0.9, eta_min=0, last_epoch=-1):
         self.T_max = T_max
-        self.T_mul = T_mul
+        self.T_mult = T_mult
+        self.restart_every = T_max
         self.eta_min = eta_min
-        self.cumulative_time = 0
-        self.amplitude_mult = amplitude_reduction
+        self.restarts = 0
+        self.restarted_at = 0
+        self.losses = []
         self.base_lr_mult = 1
-        self.frequency_mult = 1
-        self.time_offset = 0
-        self.last_step = 0
-        super(AlternatingCosineLR, self).__init__(optimizer, last_epoch)
+        self.losses_max_length = loss_array_size
+        self.next_amplitude_reduction = amplitude_reduction
+        self.max_amplitude_reduction = amplitude_reduction
+        self.min_loss_increase = min_loss_increase
+        super(CustomScheduler, self).__init__(optimizer, last_epoch)
+    
+    def restart(self):
+        self.restart_every *= self.T_mult
+        self.restarted_at = self.last_epoch
+    
+    def cosine(self, base_lr):
+        return self.eta_min + (base_lr * self.base_lr_mult - self.eta_min) * (1 + math.cos(math.pi * self.step_n / self.restart_every)) / 2
+    
+    def step(self, epoch=None, loss=float('inf')):
+
+        if len(self.losses) >= self.losses_max_length:
+            avg = np.sum(self.losses) / len(self.losses)
+            if avg - loss < self.min_loss_increase:
+
+                self.restarted_at = self.last_epoch
+                self.losses = []
+
+                if self.base_lr_mult < self.next_amplitude_reduction:
+                    self.next_amplitude_reduction = self.base_lr_mult #(1 + self.base_lr_mult) / 2
+
+                self.next_amplitude_reduction *= self.max_amplitude_reduction
+
+                self.base_lr_mult = 1
+                # print('restart', loss, ' - ', avg)
+            else:
+                #self.restart_every += 1
+
+                self.losses = self.losses[1:]
+
+        self.losses.append(loss)
+        super(CustomScheduler, self).step(epoch=epoch)
+
+    @property
+    def step_n(self):
+        return self.last_epoch - self.restarted_at
 
     def get_lr(self):
-        '''
-        Override this method to the existing get_lr() of the parent class
-        '''
-        if self.last_epoch >= self.T_max:
-            self.T_max = self.T_max * self.T_mul
-            self.time_offset = self.T_max / 2
-            self.last_epoch = 0
-            self.base_lr_mult *= self.amplitude_mult
-            self.frequency_mult = 2
-            self.cumulative_time = 0
-        return [self.eta_min + (base_lr * self.base_lr_mult - self.eta_min) *
-                        (1 + math.cos(math.pi * (self.time_offset + self.cumulative_time) / self.T_max * self.frequency_mult)) / 2
-                        for base_lr in self.base_lrs]
+        if self.step_n >= self.restart_every:
+            self.restart_every *= self.T_mult
+            self.restarted_at = self.last_epoch + self.restart_every
+
+            self.base_lr_mult *= self.next_amplitude_reduction
+            self.next_amplitude_reduction = self.max_amplitude_reduction
+            
+            self.losses = []
+            # print('half_restart, amp:', self.restart_every, ' - ', self.base_lr_mult)
+
+        return [self.cosine(base_lr) for base_lr in self.base_lrs]  

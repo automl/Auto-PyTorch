@@ -1,9 +1,7 @@
 from autoPyTorch.core.autonet_classes.autonet_feature_data import AutoNetFeatureData
 
 class AutoNetClassification(AutoNetFeatureData):
-    preset_folder_name = "feature_classification"
 
-    # OVERRIDE
     @staticmethod
     def _apply_default_pipeline_settings(pipeline):
         from autoPyTorch.pipeline.nodes.network_selector import NetworkSelector
@@ -18,8 +16,7 @@ class AutoNetClassification(AutoNetFeatureData):
             TargetSizeStrategyAverageSample, TargetSizeStrategyDownsample, TargetSizeStrategyMedianSample, TargetSizeStrategyUpsample
 
         import torch.nn as nn
-        from sklearn.model_selection import StratifiedKFold
-        from autoPyTorch.components.metrics import accuracy, auc_metric, pac_metric, balanced_accuracy, cross_entropy
+        from autoPyTorch.components.metrics.standard_metrics import accuracy
         from autoPyTorch.components.preprocessing.loss_weight_strategies import LossWeightStrategyWeighted
 
         AutoNetFeatureData._apply_default_pipeline_settings(pipeline)
@@ -33,16 +30,7 @@ class AutoNetClassification(AutoNetFeatureData):
         loss_selector.add_loss_module('cross_entropy_weighted', nn.CrossEntropyLoss, LossWeightStrategyWeighted(), True)
 
         metric_selector = pipeline[MetricSelector.get_name()]
-        metric_selector.add_metric('accuracy', accuracy, loss_transform=True,
-                                   requires_target_class_labels=True)
-        metric_selector.add_metric('auc_metric', auc_metric, loss_transform=True,
-                                   requires_target_class_labels=False)
-        metric_selector.add_metric('pac_metric', pac_metric, loss_transform=True,
-                                   requires_target_class_labels=False)
-        metric_selector.add_metric('balanced_accuracy', balanced_accuracy, loss_transform=True,
-                                   requires_target_class_labels=True)
-        metric_selector.add_metric('cross_entropy', cross_entropy, loss_transform=True,
-                                   requires_target_class_labels=False)
+        metric_selector.add_metric('accuracy', accuracy)
 
         resample_selector = pipeline[ResamplingStrategySelector.get_name()]
         resample_selector.add_over_sampling_method('random', RandomOverSamplingWithReplacement)
@@ -57,12 +45,9 @@ class AutoNetClassification(AutoNetFeatureData):
         train_node.default_minimize_value = False
         
         cv = pipeline[CrossValidation.get_name()]
-        cv.add_cross_validator("stratified_k_fold", StratifiedKFold, flatten)
+        cv.use_stratified_cv_split_default = True
 
         one_hot_encoding_node = pipeline[OneHotEncoding.get_name()]
         one_hot_encoding_node.encode_Y = True
 
         return pipeline
-
-def flatten(x):
-    return x.reshape((-1, ))

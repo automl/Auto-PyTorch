@@ -47,11 +47,16 @@ class CreateDatasetInfo(PipelineNode):
             Y_train = np.array([])
 
         elif len(X_train.shape) == 1:
-            if 'max_class_size' not in pipeline_config.keys():
+            if 'max_class_size' not in pipeline_config:
                 pipeline_config['max_class_size'] = None # backwards compatibility
             
             if "file_extensions" not in pipeline_config.keys():
                 pipeline_config['file_extensions'] = ['.png', '.jpg', '.JPEG', '.pgm']
+
+            #if "CIFAR_32" in X_train[0]:
+            #    manual_shape = [3,32,32]
+            #else:
+            #    manual_shape = pipeline_config['images_shape']
 
             X_train, Y_train = self.add_subpaths(X_train, Y_train, 
                 pipeline_config['images_root_folders'], pipeline_config['file_extensions'], pipeline_config['max_class_size'] or float('inf'))
@@ -77,8 +82,8 @@ class CreateDatasetInfo(PipelineNode):
     def get_pipeline_config_options(self):
         options = [
             ConfigOption(name="file_extensions", default=['.png', '.jpg', '.JPEG', '.pgm'], type=str, list=True),
-            ConfigOption(name="images_shape", default=[3, 32, 32], type=int, list=True, info="Image size input to the networks, images will be rescaled to this."),
-            ConfigOption(name="images_root_folders", default=[ConfigFileParser.get_autonet_home()], type='directory', list=True, info="Directory relative to which image paths are given."),
+            ConfigOption(name="images_shape", default=[3, 32, 32], type=int, list=True),
+            ConfigOption(name="images_root_folders", default=[ConfigFileParser.get_autonet_home()], type='directory', list=True),
             ConfigOption(name="max_class_size", default=None, type=int),
         ]
         return options

@@ -22,21 +22,23 @@ class NetworkSelector(PipelineNode):
         self.final_activations = dict()
         self.default_final_activation = None
 
-    def fit(self, hyperparameter_config, pipeline_config, X, Y, embedding):
+    def fit(self, hyperparameter_config, pipeline_config, X_train, Y_train, embedding=None):
         config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
-        network_type = self.networks[config["network"]]
-        network_config = ConfigWrapper(config["network"], config)
+        network_name = config['network'] if 'network' in config else pipeline_config['networks'][0]
+
+        network_type = self.networks[network_name]
+        network_config = ConfigWrapper(network_name, config)
         activation = self.final_activations[pipeline_config["final_activation"]]
 
-        in_features = X.shape[1:] if not embedding else (embedding.num_out_feats, )
+        in_features = X_train.shape[1:] if not embedding else (embedding.num_out_feats, )
         if len(in_features) == 1:
             # feature data
             in_features = in_features[0]
 
         torch.manual_seed(pipeline_config["random_seed"]) 
         network = network_type( config=network_config, 
-                                in_features=in_features, out_features=Y.shape[1],
+                                in_features=in_features, out_features=Y_train.shape[1], 
                                 embedding=embedding, final_activation=activation)
         return {'network': network}
 
@@ -71,25 +73,24 @@ class NetworkSelector(PipelineNode):
         if (not self.default_final_activation or is_default_final_activation):
             self.default_final_activation = name
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
-        possible_networks = set(pipeline_config["networks"]).intersection(self.networks.keys())
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", sorted(possible_networks)))
+        selector = None
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("network", list(self.networks.keys())))
         
-        network_list = list()
         for network_name, network_type in self.networks.items():
-            if (network_name not in possible_networks):
-                continue
-            network_list.append(network_name)
-            network_cs = network_type.get_config_space(
-                **self._get_search_space_updates(prefix=network_name))
-            cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter, 
-                                       parent_hyperparameter={'parent': selector, 'value': network_name})
-        self._check_search_space_updates((possible_networks, "*"))
+            network_cs = network_type.get_config_space(user_updates=self._get_user_hyperparameter_range_updates(prefix=network_name))
 
-        return cs
+            parent = {'parent': selector, 'value': network_name}
+            cs.add_configuration_space(prefix=network_name, configuration_space=network_cs, delimiter=ConfigWrapper.delimiter, 
+                                       parent_hyperparameter=parent)
+
+        possible_networks = sorted(set(pipeline_config["networks"]).intersection(self.networks.keys()))
+        self._update_hyperparameter_range('network', possible_networks, check_validity=False, override_if_already_modified=False)
+
+        return self._apply_user_updates(cs)
 
     def get_pipeline_config_options(self):
         options = [

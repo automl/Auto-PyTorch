@@ -18,7 +18,7 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
     """
 
     self.wait_for_workers(min_n_workers)
-
+    
     iteration_kwargs.update({'result_logger': self.result_logger})
 
     if self.time_ref is None:
@@ -30,29 +30,26 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
     self.thread_cond.acquire()
 
     start_time = time.time()
-
     while True:
-
         self._queue_wait()
 
-        # Check if timelimit is reached
         if (runtime < time.time() - start_time):
+            # timelimit reached -> finish
             self.logger.info('HBMASTER: Timelimit reached: wait for remaining %i jobs'%self.num_running_jobs)
             break
-        
+
         next_run = None
         # find a new run to schedule
         for i in self.active_iterations():
             next_run = self.iterations[i].get_next_run()
             if not next_run is None: break
 
-        if next_run is not None:
+        if not next_run is None:
             self.logger.debug('HBMASTER: schedule new run for iteration %i'%i)
-            self._submit_job(*next_run)
+            self._submit_job(*next_run)												# Submits configs for one iteration of one SH run
             continue
         elif n_iterations > 0:
-            next_HPB_iter = len(self.iterations) + (self.iterations[0].HPB_iter if len(self.iterations) > 0 else 0)
-            self.iterations.append(self.get_next_iteration(next_HPB_iter, iteration_kwargs))
+            self.iterations.append(self.get_next_iteration(len(self.iterations), iteration_kwargs))				# Gets configs for one whole SH run
             n_iterations -= 1
             continue
 
@@ -76,13 +73,13 @@ def run_with_time(self, runtime=1, n_iterations=float("inf"), min_n_workers=1, i
                 self.iterations[job.id[0]].register_result(job) # register dummy job - will be interpreted as canceled job
                 n_canceled += 1
                 break
-
-    self.logger.debug('HBMASTER: Canceled %i remaining runs'%n_canceled)
+    
+    self.logger.info('HBMASTER: Canceled %i remaining runs'%n_canceled)
 
     # wait for remaining jobs
     while self.num_running_jobs > 0:
         self.thread_cond.wait(60)
-        self.logger.debug('HBMASTER: Job finished: wait for remaining %i jobs'%self.num_running_jobs)
+        self.logger.info('HBMASTER: Job finished: wait for remaining %i jobs'%self.num_running_jobs)
 
     self.thread_cond.release()
     

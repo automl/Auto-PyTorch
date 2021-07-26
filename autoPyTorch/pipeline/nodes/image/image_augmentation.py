@@ -69,34 +69,33 @@ class ImageAugmentation(PipelineNode):
             if hyperparameter_config['fastautoaugment'] and hyperparameter_config['autoaugment']:
                 # fast autoaugment and autoaugment
                 transform_list.extend([
-                    FastAutoAugment(),
-                    AutoAugment(),
                     transforms.Resize(image_size),
                     transforms.RandomCrop(image_size, padding=4),
-                    transforms.RandomHorizontalFlip()
+                    transforms.RandomHorizontalFlip(),
+                    FastAutoAugment(),
+                    AutoAugment()
                 ])
             elif hyperparameter_config['fastautoaugment']:
                 # fast autoaugment
                 transform_list.extend([
-                    FastAutoAugment(),
                     transforms.Resize(image_size),
                     transforms.RandomCrop(image_size, padding=4),
-                    transforms.RandomHorizontalFlip()
+                    transforms.RandomHorizontalFlip(),
+                    FastAutoAugment()
                 ])
             elif hyperparameter_config['autoaugment']:
                 # autoaugment
                 transform_list.extend([
-                    AutoAugment(),
                     transforms.Resize(image_size),
                     transforms.RandomCrop(image_size, padding=4),
-                    transforms.RandomHorizontalFlip()
+                    transforms.RandomHorizontalFlip(),
+                    AutoAugment()
                 ])
             else:
-                # default augment color, rotation, size
+                # default
                 transform_list.extend([
-                    transforms.ColorJitter(brightness=0.196, saturation=0.196, hue=0.141),
-                    transforms.RandomAffine(degrees=10, shear=0.1, fillcolor=127),
-                    transforms.RandomResizedCrop(image_size, scale=(0.533, 1), ratio=(0.75, 1.25)),
+                    transforms.Resize(image_size),
+                    transforms.RandomCrop(image_size, padding=4),
                     transforms.RandomHorizontalFlip()
                 ])
         else:
@@ -116,9 +115,7 @@ class ImageAugmentation(PipelineNode):
 
         # cutout
         if hyperparameter_config['cutout']:
-            n_holes = hyperparameter_config['cutout_holes']
-            transform_list.append(Cutout(n_holes=1, length=hyperparameter_config['length'], probability=1))
-
+            transform_list.append(Cutout(n_holes=hyperparameter_config['cutout_holes'], length=hyperparameter_config['cutout_length'], probability=1))
 
         train_transform = transforms.Compose(transform_list)
 
@@ -155,7 +152,7 @@ class ImageAugmentation(PipelineNode):
         fastautoaugment = cs.add_hyperparameter(CSH.CategoricalHyperparameter('fastautoaugment', [True, False]))
 
         cutout = cs.add_hyperparameter(CSH.CategoricalHyperparameter('cutout', [True, False]))
-        cutout_length = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('length', lower=0, upper=20, log=False))
+        cutout_length = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('cutout_length', lower=0, upper=25, log=False))
         cutout_holes = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('cutout_holes', lower=1, upper=3, log=False))
 
         cs.add_condition(CS.EqualsCondition(cutout_length, cutout, True))
@@ -164,7 +161,7 @@ class ImageAugmentation(PipelineNode):
         cs.add_condition(CS.EqualsCondition(autoaugment, augment, True))
         cs.add_condition(CS.EqualsCondition(fastautoaugment, augment, True))
 
-        return cs
+        return self._apply_user_updates(cs)
 
     def compute_mean_std(self, pipeline_config, hyperparameter_config, X, Y, train_indices, dataset_info):
         log = logging.getLogger('autonet')
@@ -210,12 +207,10 @@ class ImageAugmentation(PipelineNode):
                 std = std + data.std(2).sum(0)
                 nb_samples += batch_samples
 
-        if nb_samples > 0.:
-            mean /= nb_samples
-            std /= nb_samples
-            mean, std = mean.numpy().tolist(), std.numpy().tolist()
-        else:
-            mean, std = [mean], [std]
+        mean /= nb_samples
+        std /= nb_samples
+
+        mean, std = mean.numpy().tolist(), std.numpy().tolist()
 
         log.debug('MEAN: ' + str(mean) + ' -- STD: ' + str(std))
         

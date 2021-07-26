@@ -1,4 +1,0 @@
-embeddings=[none]
-lr_scheduler=[cosine_annealing,plateau]
-networks=[shapedresnet]
-preprocessors=[none,truncated_svd,power_transformer]

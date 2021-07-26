@@ -10,7 +10,6 @@ import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 from sklearn.compose import ColumnTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
-from scipy.sparse.csr import csr_matrix
 
 class NormalizationStrategySelector(PipelineNode):
     def __init__(self):
@@ -18,7 +17,7 @@ class NormalizationStrategySelector(PipelineNode):
 
         self.normalization_strategies = {'none': None}
 
-    def fit(self, hyperparameter_config, X, train_indices, dataset_info):
+    def fit(self, hyperparameter_config, X_train, X_valid, categorical_features):
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
         normalizer_name = hyperparameter_config['normalization_strategy']
@@ -26,21 +25,21 @@ class NormalizationStrategySelector(PipelineNode):
         if normalizer_name == 'none':
             return {'normalizer': None}
 
-        if isinstance(X, csr_matrix):
-            normalizer = self.normalization_strategies[normalizer_name](with_mean=False)
-        else:
-            normalizer = self.normalization_strategies[normalizer_name]()
+        normalizer = self.normalization_strategies[normalizer_name]()
+
+        transformer = ColumnTransformer(
+            transformers=[("normalize", normalizer, [i for i, c in enumerate(categorical_features) if not c])],
+            remainder='passthrough'
+        )
+        transformer.fit(X_train)
+
+        X_train = transformer.transform(X_train)
+        if (X_valid is not None):
+            X_valid = transformer.transform(X_valid)
         
-        transformer = ColumnTransformer(transformers=[("normalize", normalizer, [i for i, c in enumerate(dataset_info.categorical_features) if not c])],
-                                        remainder='passthrough')
+        categorical_features = sorted(categorical_features)
 
-        transformer.fit(X[train_indices])
-
-        X = transformer.transform(X)
-        
-        dataset_info.categorical_features = sorted(dataset_info.categorical_features)
-
-        return {'X': X, 'normalizer': transformer, 'dataset_info': dataset_info}
+        return {'X_train': X_train, 'X_valid': X_valid, 'normalizer': transformer, 'categorical_features': categorical_features}
 
     def predict(self, X, normalizer):
         if normalizer is None:
@@ -70,12 +69,11 @@ class NormalizationStrategySelector(PipelineNode):
         ]
         return options
     
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
 
         possible_normalization_strategies = set(pipeline_config["normalization_strategies"]).intersection(self.normalization_strategies.keys())
-        cs.add_hyperparameter(CSH.CategoricalHyperparameter("normalization_strategy", sorted(possible_normalization_strategies)))
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter("normalization_strategy", possible_normalization_strategies))
 
-        self._check_search_space_updates()
-        return cs
+        return self._apply_user_updates(cs)

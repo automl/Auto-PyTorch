@@ -1,16 +1,36 @@
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+import math
+
 from torch.autograd import Variable
 
-import ConfigSpace
 from autoPyTorch.components.networks.base_net import BaseImageNet
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
 from autoPyTorch.components.networks.image.utils.utils import initialize_weights
 from autoPyTorch.components.networks.image.utils.shakeshakeblock import shake_shake, generate_alpha_beta
 from autoPyTorch.components.networks.image.utils.shakedrop import shake_drop, generate_alpha_beta_single
+
+
+#class Swish(nn.Module):
+#
+#    def __init__(self, inplace=False):
+#        super(Swish, self).__init__()
+#        self.inplace = inplace
+#
+#    def forward(self, x):
+#        if self.inplace:
+#            return x.mul_(x.sigmoid())
+#        else:
+#            return x * x.sigmoid()
+
+
+#def swish(x, inplace=False):
+#    if inplace:
+#        return x.mul_(x.sigmoid())
+#    else:
+#        return x * x.sigmoid()
+
 
 class SkipConnection(nn.Module):
     def __init__(self, in_channels, out_channels, stride):
@@ -42,6 +62,7 @@ class SkipConnection(nn.Module):
 
     def forward(self, x):
         out1 = F.relu(x, inplace=False)
+        #out1 = swish(x, inplace=False)
         out1 = self.s1(out1)
 
         out2 = F.pad(x[:, :, 1:, 1:], (0, 1, 0, 1))
@@ -61,6 +82,8 @@ class ResidualBranch(nn.Module):
 
         self.residual_branch.add_module('Branch_{}:ReLU_1'.format(branch_index),
                                         nn.ReLU(inplace=False))
+        #self.residual_branch.add_module('Branch_{}:Swish_1'.format(branch_index),
+        #                                Swish(inplace=False))
         self.residual_branch.add_module('Branch_{}:Conv_1'.format(branch_index),
                                         nn.Conv2d(in_channels,
                                                   out_channels,
@@ -72,6 +95,8 @@ class ResidualBranch(nn.Module):
                                         nn.BatchNorm2d(out_channels))
         self.residual_branch.add_module('Branch_{}:ReLU_2'.format(branch_index),
                                         nn.ReLU(inplace=False))
+        #self.residual_branch.add_module('Branch_{}:Swish_2'.format(branch_index),
+        #                                Swish(inplace=False))
         self.residual_branch.add_module('Branch_{}:Conv_2'.format(branch_index),
                                         nn.Conv2d(out_channels,
                                                   out_channels,
@@ -147,6 +172,33 @@ class ResidualGroup(nn.Module):
         return self.group(x)
 
 
+class AuxiliaryHead(nn.Module):
+
+  def __init__(self, C, num_classes):
+    """assuming input size 16x16, 260 channels"""
+    super(AuxiliaryHead, self).__init__()
+    self.features = nn.Sequential(
+      nn.ReLU(inplace=True),
+      #Swish(inplace=True),
+      nn.AvgPool2d(5, stride=3, padding=0, count_include_pad=False), # image size = 4 x 4
+      nn.Conv2d(C, 128, 1, bias=False),
+      nn.BatchNorm2d(128),
+      nn.ReLU(inplace=True),
+      #Swish(inplace=True),
+      nn.Conv2d(128, 768, 2, bias=False), # size 2 x 2
+      nn.BatchNorm2d(768),
+      nn.ReLU(inplace=True),
+      #Swish(inplace=True),
+      nn.AdaptiveAvgPool2d(1),
+    )
+    self.classifier = nn.Linear(768, num_classes)
+
+  def forward(self, x):
+    x = self.features(x)
+    x = self.classifier(x.view(x.size(0),-1))
+    return x
+
+
 class ResNet(BaseImageNet):
     def __init__(self, config, in_features, out_features, final_activation, **kwargs):
         super(ResNet, self).__init__(config, in_features, out_features, final_activation)
@@ -156,6 +208,7 @@ class ResNet(BaseImageNet):
         self.nr_main_blocks = config['nr_main_blocks']
         config.initial_filters = config['initial_filters']
         config.death_rate = config['death_rate']
+        self._auxiliary = config['auxiliary']
 
         config.forward_shake = True
         config.backward_shake = True
@@ -204,6 +257,7 @@ class ResNet(BaseImageNet):
 
         if im_size > 200:
             self.model.add_module('ReLU_0', nn.ReLU(inplace=True))
+            #self.model.add_module('Swish_0', Swish(inplace=True))
             self.model.add_module('Pool_0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         feature_maps_in = int(round(config.initial_filters * self.widen_factors['Group_1']))
@@ -232,63 +286,63 @@ class ResNet(BaseImageNet):
                                                 2, # if main_block_nr > self.nr_main_blocks - division_steps else 1, 
                                                 shake_config))
 
+            if main_block_nr==2 and self._auxiliary:
+                self.auxiliary_head = AuxiliaryHead(feature_maps_out, out_features)
+
             #image_size = math.floor((image_size+1)/2.0) if main_block_nr > self.nr_main_blocks - division_steps else image_size
             feature_maps_in = feature_maps_out
 
         self.feature_maps_out = feature_maps_in
         self.model.add_module('ReLU_0', nn.ReLU(inplace=True))
+        #self.model.add_module('Swish_0', Swish(inplace=True))
         self.model.add_module('AveragePool', nn.AdaptiveAvgPool2d(1))
         self.fc = nn.Linear(self.feature_maps_out, out_features)
 
         self.apply(initialize_weights)
 
-        self.layers = nn.Sequential(self.model)
-
     def forward(self, x):
-        x = self.model(x)
+        if self._auxiliary:
+            x = self.model[0:4](x)
+            x_aux = self.auxiliary_head(x)
+            x = self.model[4:](x)
+
+        else:
+            x = self.model(x)
         x = x.view(-1, self.feature_maps_out)
         x = self.fc(x)
         if not self.training and self.final_activation is not None:
             x = self.final_activation(x)
-        return x
+
+        if self._auxiliary:
+            return x, x_aux
+        else:
+            return x
 
     @staticmethod
-    def get_config_space(   nr_main_blocks=[1, 8], nr_residual_blocks=([1, 16], True), initial_filters=([8, 32], True), widen_factor=([0.5, 4], True), 
-                            res_branches=([1, 5], False), filters_size=[3, 3], **kwargs):
+    def get_config_space(   nr_main_blocks=[1, 8], nr_residual_blocks=[1, 16], initial_filters=[8, 32], widen_factor=[0.5, 4], 
+                            res_branches=[1, 5], filters_size=[3, 3], **kwargs):
                             
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH
 
         cs = CS.ConfigurationSpace()
 
-        nr_main_blocks_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, "nr_main_blocks", nr_main_blocks)
-        cs.add_hyperparameter(nr_main_blocks_hp)
-        initial_filters_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, "initial_filters", initial_filters)
-        cs.add_hyperparameter(initial_filters_hp)
+        main_blocks = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('nr_main_blocks', lower=nr_main_blocks[0], upper=nr_main_blocks[1]))
+        cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('initial_filters', lower=initial_filters[0], upper=initial_filters[1], log=True))
         # add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'nr_convs', nr_convs, log=True)
-        death_rate_hp = get_hyperparameter(ConfigSpace.UniformFloatHyperparameter, "death_rate", ([0,1], False))
-        cs.add_hyperparameter(death_rate_hp)
-
-        if type(nr_main_blocks[0]) is int:
-            main_blocks_min = nr_main_blocks[0]
-            main_blocks_max = nr_main_blocks[1]
-        else:
-            main_blocks_min = nr_main_blocks[0][0]
-            main_blocks_max = nr_main_blocks[0][1]
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter('death_rate', lower=0, upper=1, log=False))
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter('auxiliary', [False, True]))
 	    
-        for i in range(1, main_blocks_max + 1):
-            blocks_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'nr_residual_blocks_%d' % i, nr_residual_blocks)
-            blocks = cs.add_hyperparameter(blocks_hp)
-            widen_hp = get_hyperparameter(ConfigSpace.UniformFloatHyperparameter, 'widen_factor_%d' % i, widen_factor)
-            widen = cs.add_hyperparameter(widen_hp)
-            branches_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'res_branches_%d' % i, res_branches)
-            branches = cs.add_hyperparameter(branches_hp)
+        for i in range(1, nr_main_blocks[1] + 1):
+            blocks = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('nr_residual_blocks_%d' % i, lower=nr_residual_blocks[0], upper=nr_residual_blocks[1], log=True))
+            widen = cs.add_hyperparameter(CSH.UniformFloatHyperparameter('widen_factor_%d' % i, lower=widen_factor[0], upper=widen_factor[1], log=True))
+            branches = cs.add_hyperparameter(CSH.UniformIntegerHyperparameter('res_branches_%d' % i, lower=res_branches[0], upper=res_branches[1], log=False))
             # filters = add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'filters_size_%d' % i, filters_size, log=False)
 
-            if i > main_blocks_min:
-                cs.add_condition(CS.GreaterThanCondition(blocks_hp, nr_main_blocks_hp, i-1))
-                cs.add_condition(CS.GreaterThanCondition(widen_hp, nr_main_blocks_hp, i-1))
-                cs.add_condition(CS.GreaterThanCondition(branches_hp, nr_main_blocks_hp, i-1))
+            if i > nr_main_blocks[0]:
+                cs.add_condition(CS.GreaterThanCondition(blocks, main_blocks, i-1))
+                cs.add_condition(CS.GreaterThanCondition(widen, main_blocks, i-1))
+                cs.add_condition(CS.GreaterThanCondition(branches, main_blocks, i-1))
                 # cs.add_condition(CS.GreaterThanCondition(filters, main_blocks, i-1))
 
         return cs

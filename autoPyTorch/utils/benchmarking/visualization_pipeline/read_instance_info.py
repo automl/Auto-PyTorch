@@ -1,5 +1,5 @@
 from autoPyTorch.pipeline.base.pipeline_node import PipelineNode
-from autoPyTorch.utils.config.config_option import ConfigOption, to_bool, to_tuple
+from autoPyTorch.utils.config.config_option import ConfigOption, to_bool
 from autoPyTorch.utils.config.config_file_parser import ConfigFileParser
 from autoPyTorch.data_management.data_manager import DataManager
 from autoPyTorch.utils.benchmarking.benchmark_pipeline.prepare_result_folder import get_run_result_dir
@@ -17,7 +17,7 @@ class ReadInstanceInfo(ReadInstanceData):
             ConfigOption(name='is_multilabel', type=to_bool, required=True),
             ConfigOption(name='num_features', type=int, required=True),
             ConfigOption(name='categorical_features', type=bool, required=True, list=True),
-            ConfigOption(name='instance_shape', type=to_tuple, required=True)
+            ConfigOption(name='instance_shape', type=[ast.literal_eval, lambda x: isinstance(x, tuple)], required=True)
         ])
         instance_info = instance_file_config_parser.read(os.path.join(run_result_dir, 'instance.info'))
         instance_info = instance_file_config_parser.set_defaults(instance_info)

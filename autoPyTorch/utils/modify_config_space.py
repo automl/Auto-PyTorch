@@ -1,3 +1,4 @@
+
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import copy
@@ -12,6 +13,9 @@ def remove_constant_hyperparameter(cs):
             constants[hyper.name] = value
         else:
             hyperparameter_to_add.append(copy.copy(hyper))
+    
+    # print(constants)
+    # print(cs)
 
     for name in constants:
         truncate_hyperparameter(cs, cs.get_hyperparameter(name))
@@ -69,11 +73,14 @@ def update_conditions(config_space, parent):
     possible_values, is_value_range = get_hyperparameter_values(parent)
     children = [config_space.get_hyperparameter(name) for name in config_space._children[parent.name]]
 
+    # print('Root', parent.name, '- Range:', possible_values)
     for child in children:
         if child.name not in config_space._children[parent.name]:
             # already cut
             continue
+        # print('Child', child.name)
         condition = config_space._children[parent.name][child.name]
+        # print('Condition', condition)
 
         if isinstance(condition, CSC.AbstractConjunction):
             is_and = isinstance(condition, CSC.AndConjunction)
@@ -83,8 +90,10 @@ def update_conditions(config_space, parent):
             for subcondition in condition.components:
                 if subcondition.parent.name != parent.name:
                     new_subconditions.append(subcondition)
+                    # print('Parent does not match', subcondition.parent)
                     continue
                 substate = get_condition_state(subcondition, possible_values, is_value_range)
+                # print('Subcondition', subcondition, ' - state:', substate)
                 if substate == 0 and is_and and state == 2:
                     state = 0
 
@@ -108,9 +117,12 @@ def update_conditions(config_space, parent):
                         new_condition.value = cond.value
                         config_space._children[grand_parent][child.name] = new_condition
                         config_space._parents[child.name][grand_parent] = new_condition
+                        # print('Add new condition', new_condition)
 
             if len(new_subconditions) == 0:
                 state = 1 if is_and else 0 # either everything was false or true
+
+            # print('Conjunction', condition, '- state:', state, '\n   > remaining conditions', new_subconditions)
 
             if state == 2:
 
@@ -118,6 +130,7 @@ def update_conditions(config_space, parent):
                     condition = new_subconditions[0]
                     config_space._children[condition.parent.name][child.name] = new_subconditions[0]
                     config_space._parents[child.name][condition.parent.name] = new_subconditions[0]
+                    # print('Reduced conjunction to condition', new_subconditions[0])
                 else:
                     condition.__init__(*new_subconditions)
 
@@ -125,8 +138,11 @@ def update_conditions(config_space, parent):
                         config_space._children[subcondition.parent.name][child.name] = condition
                         config_space._parents[child.name][subcondition.parent.name] = condition
 
+                
+
         else:
             state = get_condition_state(condition, possible_values, is_value_range)
+            # print('Condition state:', state)
 
         if state == 1:
             del config_space._children[parent.name][child.name]
@@ -142,6 +158,7 @@ def update_conditions(config_space, parent):
                 new_condition.value = cond.value
                 config_space._children[grand_parent][child.name] = new_condition
                 config_space._parents[child.name][grand_parent] = new_condition
+                # print('Add new condition', new_condition)
 
             if len(config_space._parents[child.name]) == 0:
                 config_space._conditionals.remove(child.name)
@@ -153,6 +170,7 @@ def update_conditions(config_space, parent):
     
 def truncate_hyperparameter(config_space, hyper):
     if hyper.name not in config_space._hyperparameters:
+        # print('Tried to truncate but not in hyperparameters', hyper)
         return
 
     parent_names = list(config_space._parents[hyper.name].keys())
@@ -161,11 +179,15 @@ def truncate_hyperparameter(config_space, hyper):
 
     del config_space._parents[hyper.name]
     del config_space._hyperparameters[hyper.name]
+    # del config_space._hyperparameter_idx[hyper]
 
     if hyper.name in config_space._conditionals:
         config_space._conditionals.remove(hyper.name)
 
+    # print('Truncate', hyper)
+
     child_names = list(config_space._children[hyper.name].keys())
+    # print('Has children:', child_names)
     for child_name in child_names:
         truncate_hyperparameter(config_space, config_space.get_hyperparameter(child_name))
 

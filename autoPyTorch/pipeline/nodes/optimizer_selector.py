@@ -19,11 +19,13 @@ class OptimizerSelector(PipelineNode):
 
         self.optimizer = dict()
 
-    def fit(self, hyperparameter_config, network):
+    def fit(self, hyperparameter_config, pipeline_config, network):
         config = ConfigWrapper(self.get_name(), hyperparameter_config)
 
-        optimizer_type = self.optimizer[config["optimizer"]]
-        optimizer_config = ConfigWrapper(config["optimizer"], config)
+        optimizer_name = config['optimizer']
+
+        optimizer_type = self.optimizer[optimizer_name]
+        optimizer_config = ConfigWrapper(optimizer_name, config)
         
         return {'optimizer': optimizer_type(network.parameters(), optimizer_config)}
 
@@ -35,23 +37,24 @@ class OptimizerSelector(PipelineNode):
     def remove_optimizer(self, name):
         del self.optimizer[name]
 
-    def get_hyperparameter_search_space(self, dataset_info=None, **pipeline_config):
+    def get_hyperparameter_search_space(self, **pipeline_config):
         pipeline_config = self.pipeline.get_pipeline_config(**pipeline_config)
         cs = ConfigSpace.ConfigurationSpace()
-        
-        possible_optimizer = set(pipeline_config["optimizer"]).intersection(self.optimizer.keys())
-        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("optimizer", sorted(possible_optimizer)))
+
+        selector = None
+        selector = cs.add_hyperparameter(CSH.CategoricalHyperparameter("optimizer", list(self.optimizer.keys())))
         
         for optimizer_name, optimizer_type in self.optimizer.items():
-            if (optimizer_name not in possible_optimizer):
-                continue
-            optimizer_cs = optimizer_type.get_config_space(
-                **self._get_search_space_updates(prefix=optimizer_name))
-            cs.add_configuration_space( prefix=optimizer_name, configuration_space=optimizer_cs, delimiter=ConfigWrapper.delimiter, 
-                                        parent_hyperparameter={'parent': selector, 'value': optimizer_name})
+            optimizer_cs = optimizer_type.get_config_space()
 
-        self._check_search_space_updates(possible_optimizer, "*")
-        return cs
+            parent = {'parent': selector, 'value': optimizer_name}
+            cs.add_configuration_space( prefix=optimizer_name, configuration_space=optimizer_cs, delimiter=ConfigWrapper.delimiter, 
+                                        parent_hyperparameter=parent)
+
+        possible_optimizer = sorted(set(pipeline_config["optimizer"]).intersection(self.optimizer.keys()))
+        self._update_hyperparameter_range('optimizer', possible_optimizer, check_validity=False, override_if_already_modified=False)
+
+        return self._apply_user_updates(cs)
 
     def get_pipeline_config_options(self):
         options = [

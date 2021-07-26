@@ -1,7 +1,6 @@
 import ConfigSpace
 import ConfigSpace.hyperparameters as CSH
 
-from autoPyTorch.utils.config_space_hyperparameter import get_hyperparameter
 from autoPyTorch.components.preprocessing.preprocessor_base import PreprocessorBase
 
 class RandomKitchenSinks(PreprocessorBase):
@@ -22,13 +21,9 @@ class RandomKitchenSinks(PreprocessorBase):
         return self.preprocessor.transform(X)
 
     @staticmethod
-    def get_hyperparameter_search_space(
-        dataset_info=None,
-        n_components=((50, 10000), True),
-        gamma=((3.0517578125e-05, 8), True),
-    ):
-        n_components_hp = get_hyperparameter(CSH.UniformIntegerHyperparameter, "n_components", n_components)
-        gamma_hp = get_hyperparameter(CSH.UniformFloatHyperparameter, "gamma", gamma)
+    def get_hyperparameter_search_space(dataset_properties=None):
+        gamma = CSH.UniformFloatHyperparameter("gamma", 3.0517578125e-05, 8, default_value=1.0, log=True)
+        n_components = CSH.UniformIntegerHyperparameter("n_components", 50, 10000, default_value=100, log=True)
         cs = ConfigSpace.ConfigurationSpace()
-        cs.add_hyperparameters([gamma_hp, n_components_hp])
+        cs.add_hyperparameters([gamma, n_components])
         return cs

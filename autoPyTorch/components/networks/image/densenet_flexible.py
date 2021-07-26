@@ -8,10 +8,6 @@ import torch
 import torch.nn as nn
 import math
 
-import ConfigSpace
-from autoPyTorch.components.networks.base_net import BaseImageNet
-from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter, get_hyperparameter
-
 import inspect
 from autoPyTorch.components.networks.base_net import BaseImageNet
 from autoPyTorch.utils.modules import Reshape
@@ -155,8 +151,6 @@ class DenseNetFlexible(BaseImageNet):
                 self.matrix_init(m.bias, config['linear_bias_init'])
 
         # logger.debug(print(self))
-
-        self.layers = nn.Sequential(self.features)
     
     def matrix_init(self, matrix, init_type):
         if init_type == 'kaiming_normal':
@@ -193,54 +187,35 @@ class DenseNetFlexible(BaseImageNet):
         from autoPyTorch.utils.config_space_hyperparameter import add_hyperparameter
 
         cs = CS.ConfigurationSpace()
-        growth_rate_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'growth_rate', growth_rate_range)
-        first_conv_kernel_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'first_conv_kernel', kernel_range)
-        first_pool_kernel_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'first_pool_kernel', kernel_range)
-        conv_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'conv_init', conv_init)
-        batchnorm_weight_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'batchnorm_weight_init', batchnorm_weight_init)
-        batchnorm_bias_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'batchnorm_bias_init', batchnorm_bias_init)
-        linear_bias_init_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'linear_bias_init', linear_bias_init)
-        first_activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'first_activation', sorted(set(activations).intersection(all_activations)))
-        blocks_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'blocks', nr_blocks)
-
-        cs.add_hyperparameter(growth_rate_hp)
-        cs.add_hyperparameter(first_conv_kernel_hp)
-        cs.add_hyperparameter(first_pool_kernel_hp)
-        cs.add_hyperparameter(conv_init_hp)
-        cs.add_hyperparameter(batchnorm_weight_init_hp)
-        cs.add_hyperparameter(batchnorm_bias_init_hp)
-        cs.add_hyperparameter(linear_bias_init_hp)
-        cs.add_hyperparameter(first_activation_hp)
-        cs.add_hyperparameter(blocks_hp)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'growth_rate', growth_rate_range)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'first_conv_kernel', kernel_range)
+        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'first_pool_kernel', kernel_range)
         add_hyperparameter(cs,   CSH.UniformFloatHyperparameter, 'channel_reduction', [0.1, 0.9])
         add_hyperparameter(cs,   CSH.UniformFloatHyperparameter, 'last_image_size', [0, 1])
         add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'bottleneck', [True, False])
+        add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'conv_init', conv_init)
+        add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'batchnorm_weight_init', batchnorm_weight_init)
+        add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'batchnorm_bias_init', batchnorm_bias_init)
+        add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'linear_bias_init', linear_bias_init)
+        add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'first_activation', set(activations).intersection(all_activations))
+
+        blocks =        add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'blocks', nr_blocks)
         use_dropout =   add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'use_dropout', [True, False])
 
-        if type(nr_blocks[0]) == int:
-            min_blocks = nr_blocks[0]
-            max_blocks = nr_blocks[1]
-        else:
-            min_blocks = nr_blocks[0][0]
-            max_blocks = nr_blocks[0][1]
-
-        for i in range(1, max_blocks+1):
-            layer_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'layer_in_block_%d' % i, layer_range)
-            pool_kernel_hp = get_hyperparameter(ConfigSpace.UniformIntegerHyperparameter, 'pool_kernel_%d' % i, kernel_range)
-            activation_hp = get_hyperparameter(ConfigSpace.CategoricalHyperparameter, 'activation_%d' % i, sorted(set(activations).intersection(all_activations)))
-            cs.add_hyperparameter(layer_hp)
-            cs.add_hyperparameter(pool_kernel_hp)
-            cs.add_hyperparameter(activation_hp)
+        for i in range(1, nr_blocks[1]+1):
+            layer =         add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'layer_in_block_%d' % i, layer_range)
+            pool_kernel =   add_hyperparameter(cs, CSH.UniformIntegerHyperparameter, 'pool_kernel_%d' % i, kernel_range)
             dropout =       add_hyperparameter(cs,   CSH.UniformFloatHyperparameter, 'dropout_%d' % i, [0.0, 1.0])
             conv_kernel =   add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'conv_kernel_%d' % i, [3, 5, 7])
+            activation =    add_hyperparameter(cs,    CSH.CategoricalHyperparameter, 'activation_%d' % i, set(activations).intersection(all_activations))
 
             
-            if i > min_blocks:
-                cs.add_condition(CS.GreaterThanCondition(layer_hp, blocks_hp, i-1))
-                cs.add_condition(CS.GreaterThanCondition(conv_kernel, blocks_hp, i-1))
-                cs.add_condition(CS.GreaterThanCondition(pool_kernel_hp, blocks_hp, i-1))
-                cs.add_condition(CS.GreaterThanCondition(activation_hp, blocks_hp, i-1))
-                cs.add_condition(CS.AndConjunction(CS.EqualsCondition(dropout, use_dropout, True), CS.GreaterThanCondition(dropout, blocks_hp, i-1)))
+            if i > nr_blocks[0]:
+                cs.add_condition(CS.GreaterThanCondition(layer, blocks, i-1))
+                cs.add_condition(CS.GreaterThanCondition(conv_kernel, blocks, i-1))
+                cs.add_condition(CS.GreaterThanCondition(pool_kernel, blocks, i-1))
+                cs.add_condition(CS.GreaterThanCondition(activation, blocks, i-1))
+                cs.add_condition(CS.AndConjunction(CS.EqualsCondition(dropout, use_dropout, True), CS.GreaterThanCondition(dropout, blocks, i-1)))
             else:
                 cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 

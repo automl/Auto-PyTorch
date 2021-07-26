@@ -18,9 +18,6 @@ from autoPyTorch.data_management.image_loader import ImageFilelist, XYDataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import datasets, models, transforms
 
-from autoPyTorch.utils.transforms import transform_int64
-
-
 class CreateImageDataLoader(CreateDataLoader):
 
     def fit(self, pipeline_config, hyperparameter_config, X, Y, train_indices, valid_indices, train_transform, valid_transform, dataset_info):
@@ -30,26 +27,25 @@ class CreateImageDataLoader(CreateDataLoader):
 
         torch.manual_seed(pipeline_config["random_seed"])
         hyperparameter_config = ConfigWrapper(self.get_name(), hyperparameter_config)
-        to_int64 = transform_int64
 
         if dataset_info.default_dataset:
             train_dataset = dataset_info.default_dataset(root=pipeline_config['default_dataset_download_dir'], train=True, download=True, transform=train_transform)
             if valid_indices is not None:
                 valid_dataset = dataset_info.default_dataset(root=pipeline_config['default_dataset_download_dir'], train=True, download=True, transform=valid_transform)
         elif len(X.shape) > 1:
-            train_dataset = XYDataset(X, Y, transform=train_transform, target_transform=to_int64)
-            valid_dataset = XYDataset(X, Y, transform=valid_transform, target_transform=to_int64)
+            train_dataset = XYDataset(X, Y, transform=train_transform, target_transform=lambda y: y.astype(np.int64))
+            valid_dataset = XYDataset(X, Y, transform=valid_transform, target_transform=lambda y: y.astype(np.int64))
         else:
-            train_dataset = ImageFilelist(X, Y, transform=train_transform, target_transform=to_int64, cache_size=pipeline_config['dataloader_cache_size_mb'] * 1000, image_size=dataset_info.x_shape[2:])
+            train_dataset = ImageFilelist(X, Y, transform=train_transform, target_transform=lambda y: y.astype(np.int64), cache_size=pipeline_config['dataloader_cache_size_mb'] * 1000, image_size=dataset_info.x_shape[2:])
             if valid_indices is not None:
-                valid_dataset = ImageFilelist(X, Y, transform=valid_transform, target_transform=to_int64, cache_size=0, image_size=dataset_info.x_shape[2:])
+                valid_dataset = ImageFilelist(X, Y, transform=valid_transform, target_transform=lambda y: y.astype(np.int64), cache_size=0, image_size=dataset_info.x_shape[2:])
                 valid_dataset.cache = train_dataset.cache
 
         train_loader = DataLoader(
             dataset=train_dataset,
             batch_size=int(hyperparameter_config['batch_size']),
             sampler=SubsetRandomSampler(train_indices),
-            drop_last=True,
+            drop_last=False,
             pin_memory=True,
             num_workers=pipeline_config['dataloader_worker'])
 
@@ -67,7 +63,7 @@ class CreateImageDataLoader(CreateDataLoader):
 
     def get_pipeline_config_options(self):
         options = [
-            ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory', info="Directory default datasets will be downloaded to."),
+            ConfigOption("default_dataset_download_dir", default=ConfigFileParser.get_autonet_home(), type='directory'),
             ConfigOption("dataloader_worker", default=1, type=int),
             ConfigOption("dataloader_cache_size_mb", default=0, type=int)
         ]
