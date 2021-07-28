@@ -8,12 +8,12 @@ statsmodels==0.12.1
 scikit-learn==0.23.0
 imbalanced-learn==0.7.0
 imblearn==0.0
-ConfigSpace==0.4.17
+ConfigSpace==0.4.12
 pynisher==0.6.3
 hpbandster==0.7.4
 fasteners==0.16
-torch==1.7.1
-torchvision==0.8.2
+torch==1.5.0
+torchvision==0.6.0
 tensorboard-logger==0.1.0
 openml==0.11.0
 lightgbm==3.1.1
