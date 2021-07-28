@@ -112,8 +112,8 @@ class TimeSeriesSequence(BaseDataset):
         Returns:
             A transformed single point prediction
         """
-        if index == -1:
-            index = self.__len__()
+        if index < 0 :
+            index = self.__len__() + 1 - index
 
         if hasattr(self.train_tensors[0], 'loc'):
             X = self.train_tensors[0].iloc[:index + 1]
@@ -129,14 +129,14 @@ class TimeSeriesSequence(BaseDataset):
         Y = self.train_tensors[1]
         if Y is not None:
             # Y = Y[:index + self.n_prediction_steps]
-            Y = Y[index]
+            Y = Y[index + self.n_prediction_steps]
         else:
             Y = None
 
         return X, Y
 
     def __len__(self) -> int:
-        return self.train_tensors[0].shape[0]
+        return self.train_tensors[0].shape[0] - self.n_prediction_steps
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
         """
@@ -352,6 +352,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                               **sequences_kwargs)
                 sequence_datasets.append(sequence)
                 idx_start_train = idx_end_train
+
+                self.sequence_lengths[seq_idx] = len(sequence)
         else:
             for seq_idx, (seq_length_train, seq_length_test) in enumerate(zip(self.sequence_lengths, sequence_lengths_test)):
                 idx_end_train = idx_start_train + seq_length_train
@@ -365,6 +367,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                               **sequences_kwargs)
                 sequence_datasets.append(sequence)
                 idx_start_train = idx_end_train
+
+                self.sequence_lengths[seq_idx] = len(sequence)
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
