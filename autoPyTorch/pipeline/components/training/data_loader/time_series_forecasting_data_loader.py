@@ -19,7 +19,7 @@ import torchvision
 import warnings
 
 
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.utils.common import  custom_collate_fn
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
@@ -166,7 +166,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=min(self.batch_size, len(train_dataset)),
+            batch_size=min(self.batch_size, len(sampler_indices_train)),
             shuffle=False,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
@@ -184,7 +184,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
-
         return self
 
     def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
@@ -222,7 +221,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
         """
+        # TODO any better way to deal with prediction data loader for multiple sequences
         X = X[-self.subseq_length - self.n_prediction_steps:]
+
         if y is not None:
             y = y[-self.subseq_length - self.n_prediction_steps:]
 
@@ -232,8 +233,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
         )
+
+        test_seq_indices = np.arange(len(X))[self.subseq_length:]
+
+        dataset_test = TransformSubset(dataset, indices=test_seq_indices, train=False)
+
         return torch.utils.data.DataLoader(
-            dataset,
+            dataset_test,
             batch_size=min(batch_size, len(dataset)),
             shuffle=False,
             collate_fn=custom_collate_fn,
@@ -287,12 +293,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 window_size = UniformIntegerHyperparameter("window_size",
                                                            lower=1,
                                                            upper=upper_window_size,
-                                                           default_value=1)
+                                                           default_value=(upper_window_size + 1)// 2)
         elif window_size[0][0] <= upper_window_size < window_size[0][1]:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
                                                        upper=upper_window_size,
-                                                       default_value=1)
+                                                       default_value=(window_size[0][0] + upper_window_size) // 2)
         else:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],

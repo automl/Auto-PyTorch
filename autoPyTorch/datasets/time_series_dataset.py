@@ -387,6 +387,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])
 
+            if self.output_type in ["binary", "multiclass"]:
+                self.output_type = "continuous"
+
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.output_shape = len(np.unique(self.train_tensors[1]))
             else:
@@ -405,6 +408,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
+
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
