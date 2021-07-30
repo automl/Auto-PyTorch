@@ -118,8 +118,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
 
-        self.window_size = 5
-
         self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         # Make sure there is an optimizer
         self.check_requirements(X, y)
@@ -222,7 +220,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
         """
+        # TODO any better way to deal with prediction data loader for multiple sequences
         X = X[-self.subseq_length - self.n_prediction_steps:]
+
         if y is not None:
             y = y[-self.subseq_length - self.n_prediction_steps:]
 
@@ -287,12 +287,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 window_size = UniformIntegerHyperparameter("window_size",
                                                            lower=1,
                                                            upper=upper_window_size,
-                                                           default_value=1)
+                                                           default_value=(upper_window_size + 1)// 2)
         elif window_size[0][0] <= upper_window_size < window_size[0][1]:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
                                                        upper=upper_window_size,
-                                                       default_value=1)
+                                                       default_value=(window_size[0][0] + upper_window_size) // 2)
         else:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
