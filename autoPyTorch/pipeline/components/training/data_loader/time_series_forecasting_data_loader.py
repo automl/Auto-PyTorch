@@ -19,7 +19,7 @@ import torchvision
 import warnings
 
 
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.utils.common import  custom_collate_fn
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
@@ -164,7 +164,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=min(self.batch_size, len(train_dataset)),
+            batch_size=min(self.batch_size, len(sampler_indices_train)),
             shuffle=False,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
@@ -182,7 +182,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
-
         return self
 
     def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
@@ -232,8 +231,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
         )
+
+        test_seq_indices = np.arange(len(X))[self.subseq_length:]
+
+        dataset_test = TransformSubset(dataset, indices=test_seq_indices, train=False)
+
         return torch.utils.data.DataLoader(
-            dataset,
+            dataset_test,
             batch_size=min(batch_size, len(dataset)),
             shuffle=False,
             collate_fn=custom_collate_fn,
