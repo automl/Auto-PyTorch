@@ -349,6 +349,7 @@ class TrainerChoice(autoPyTorchChoice):
             trainable_parameter_count,
         )
 
+        self.logger.debug(f"transforms :{X['preprocess_transforms']}")
         epoch = 1
 
         while True:
