@@ -9,12 +9,60 @@ from pandas.api.types import is_numeric_dtype
 import scipy.sparse
 
 import sklearn.utils
-from sklearn import preprocessing
+
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
+
+
+def _create_column_transformer(preprocessors: typing.Dict, numerical_columns, categorical_columns):
+    numerical_pipeline = 'drop'
+    categorical_pipeline = 'drop'
+    if len(numerical_columns) > 0:
+        numerical_pipeline = make_pipeline(*preprocessors['numerical'])
+    if len(categorical_columns) > 0:
+        categorical_pipeline = make_pipeline(*preprocessors['categorical'])
+
+    return ColumnTransformer([
+        ('categorical_pipeline', categorical_pipeline, categorical_columns),
+        ('numerical_pipeline', numerical_pipeline, numerical_columns)],
+        remainder='passthrough'
+    )
+
+
+def get_tabular_preprocessors():
+    preprocessors = dict()
+    preprocessors['numerical'] = list()
+    preprocessors['categorical'] = list()
+
+    preprocessors['categorical'].append(SimpleImputer(strategy='constant',
+                  # Train data is numpy
+                  # as of this point, where
+                  # Ordinal Encoding is using
+                  # for categorical. Only
+                  # Numbers are allowed
+                  # fill_value='!missing!',
+                  fill_value=-1,
+                  copy=False))
+
+    # preprocessors['categorical'].append(("ordinal-encoder", OrdinalEncoder(
+    #      handle_unknown='use_encoded_value',
+    #      unknown_value=-1)))
+    preprocessors['categorical'].append(OneHotEncoder(
+        categories='auto',
+        sparse=False,
+        handle_unknown='ignore'))
+    preprocessors['numerical'].append(SimpleImputer(strategy='median',
+                                                                  copy=False))
+    preprocessors['numerical'].append(StandardScaler(with_mean=True, with_std=True, copy=False))
+
+    return preprocessors
 
 
 class TabularFeatureValidator(BaseFeatureValidator):
@@ -43,73 +91,50 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = typing.cast(pd.DataFrame, X)
-            # Treat a column with all instances a NaN as numerical
-            # This will prevent doing encoding to a categorical column made completely
-            # out of nan values -- which will trigger a fail, as encoding is not supported
-            # with nan values.
-            # Columns that are completely made of NaN values are provided to the pipeline
-            # so that later stages decide how to handle them
-
-            # Clear whatever null column markers we had previously
-            self.null_columns.clear()
-            if np.any(pd.isnull(X)):
-                for column in X.columns:
-                    if X[column].isna().all():
-                        self.null_columns.add(column)
-                        X[column] = pd.to_numeric(X[column])
-                        # Also note this change in self.dtypes
-                        if len(self.dtypes) != 0:
-                            self.dtypes[list(X.columns).index(column)] = X[column].dtype
 
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
             self._check_data(X)
-            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
+            categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
-            if len(self.enc_columns) > 0:
-                X = self.impute_nan_in_categories(X)
+            preprocessors = get_tabular_preprocessors()
+            self.column_transformer = _create_column_transformer(preprocessors=preprocessors,
+                                                                 numerical_columns=numerical_columns,
+                                                                 categorical_columns=categorical_columns)
 
-                self.encoder = ColumnTransformer(
-                    [
-                        ("encoder",
-                         preprocessing.OrdinalEncoder(
-                             handle_unknown='use_encoded_value',
-                             unknown_value=-1,
-                         ), self.enc_columns)],
-                    remainder="passthrough"
-                )
+            # Mypy redefinition
+            assert self.column_transformer is not None
+            self.column_transformer.fit(X)
 
-                # Mypy redefinition
-                assert self.encoder is not None
-                self.encoder.fit(X)
+            # The column transformer reoders the feature types - we therefore need to change
+            # it as well
+            # This means columns are shifted to the right
+            def comparator(cmp1: str, cmp2: str) -> int:
+                if (
+                    cmp1 == 'categorical' and cmp2 == 'categorical'
+                    or cmp1 == 'numerical' and cmp2 == 'numerical'
+                ):
+                    return 0
+                elif cmp1 == 'categorical' and cmp2 == 'numerical':
+                    return -1
+                elif cmp1 == 'numerical' and cmp2 == 'categorical':
+                    return 1
+                else:
+                    raise ValueError((cmp1, cmp2))
 
-                # The column transformer reoders the feature types - we therefore need to change
-                # it as well
-                # This means columns are shifted to the right
-                def comparator(cmp1: str, cmp2: str) -> int:
-                    if (
-                        cmp1 == 'categorical' and cmp2 == 'categorical'
-                        or cmp1 == 'numerical' and cmp2 == 'numerical'
-                    ):
-                        return 0
-                    elif cmp1 == 'categorical' and cmp2 == 'numerical':
-                        return -1
-                    elif cmp1 == 'numerical' and cmp2 == 'categorical':
-                        return 1
-                    else:
-                        raise ValueError((cmp1, cmp2))
+            self.feat_type = sorted(
+                feat_type,
+                key=functools.cmp_to_key(comparator)
+            )
 
-                self.feat_type = sorted(
-                    self.feat_type,
-                    key=functools.cmp_to_key(comparator)
-                )
-
+            if len(categorical_columns) > 0:
+                print(self.column_transformer.named_transformers_['categorical_pipeline'].named_steps)
                 self.categories = [
                     # We fit an ordinal encoder, where all categorical
                     # columns are shifted to the left
                     list(range(len(cat)))
-                    for cat in self.encoder.transformers_[0][1].categories_
+                    for cat in self.column_transformer.named_transformers_['categorical_pipeline'].named_steps['onehotencoder'].categories_
                 ]
 
             for i, type_ in enumerate(self.feat_type):
@@ -151,23 +176,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = typing.cast(pd.DataFrame, X)
-            # If we had null columns in our fit call and we made them numeric, then:
-            # - If the columns are null even in transform, apply the same procedure.
-            # - Otherwise, substitute the values with np.NaN and then make the columns numeric.
-            # If the column is null here, but it was not in fit, it does not matter.
-            for column in self.null_columns:
-                # The column is not null, make it null since it was null in fit.
-                if not X[column].isna().all():
-                    X[column] = np.NaN
-                X[column] = pd.to_numeric(X[column])
-
-            # for the test set, if we have columns with only null values
-            # they will probably have a numeric type. If these columns were not
-            # with only null values in the train set, they should be converted
-            # to the type that they had during fitting.
-            for column in X.columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
 
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
@@ -177,10 +185,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self._check_data(X)
         # We also need to fillna on the transformation
         # in case test data is provided
-        X = self.impute_nan_in_categories(X)
-
-        if self.encoder is not None:
-            X = self.encoder.transform(X)
+        X = self.column_transformer.transform(X)
 
         # Sparse related transformations
         # Not all sparse format support index sorting
@@ -254,7 +259,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             # Define the column to be encoded here as the feature validator is fitted once
             # per estimator
-            enc_columns, _ = self._get_columns_to_encode(X)
+            # enc_columns, _ = self._get_columns_to_encode(X)
 
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
@@ -279,10 +284,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
             else:
                 self.dtypes = dtypes
 
-    def _get_columns_to_encode(
+    def _get_columns_info(
         self,
         X: pd.DataFrame,
-    ) -> typing.Tuple[typing.List[str], typing.List[str]]:
+    ) -> typing.Tuple[typing.List[str], typing.List[str], typing.List[str]]:
         """
         Return the columns to be encoded from a pandas dataframe
 
@@ -297,8 +302,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 Type of each column numerical/categorical
         """
         # Register if a column needs encoding
-        enc_columns = []
-
+        numerical_columns = []
+        categorical_columns = []
         # Also, register the feature types for the estimator
         feat_type = []
 
@@ -306,7 +311,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         for i, column in enumerate(X.columns):
             if X[column].dtype.name in ['category', 'bool']:
 
-                enc_columns.append(column)
+                categorical_columns.append(column)
                 feat_type.append('categorical')
             # Move away from np.issubdtype as it causes
             # TypeError: data type not understood in certain pandas types
@@ -348,7 +353,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     )
             else:
                 feat_type.append('numerical')
-        return enc_columns, feat_type
+                numerical_columns.append(column)
+        return categorical_columns, numerical_columns, feat_type
 
     def list_to_dataframe(
         self,
@@ -432,60 +438,4 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[column] = X[column].astype('category')
             self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
-        return X
-
-    def impute_nan_in_categories(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        impute missing values before encoding,
-        remove once sklearn natively supports
-        it in ordinal encoding. Sklearn issue:
-        "https://github.com/scikit-learn/scikit-learn/issues/17123)"
-
-        Arguments:
-            X (pd.DataFrame):
-                data to be interpreted.
-
-        Returns:
-            pd.DataFrame
-        """
-
-        # To be on the safe side, map always to the same missing
-        # value per column
-        if not hasattr(self, 'dict_nancol_to_missing'):
-            self.dict_missing_value_per_col: typing.Dict[str, typing.Any] = {}
-
-        # First make sure that we do not alter the type of the column which cause:
-        # TypeError: '<' not supported between instances of 'int' and 'str'
-        # in the encoding
-        for column in self.enc_columns:
-            if X[column].isna().any():
-                if column not in self.dict_missing_value_per_col:
-                    try:
-                        float(X[column].dropna().values[0])
-                        can_cast_as_number = True
-                    except Exception:
-                        can_cast_as_number = False
-                    if can_cast_as_number:
-                        # In this case, we expect to have a number as category
-                        # it might be string, but its value represent a number
-                        missing_value: typing.Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
-                                                                                   str) else -1
-                    else:
-                        missing_value = 'Missing!'
-
-                    # Make sure this missing value is not seen before
-                    # Do this check for categorical columns
-                    # else modify the value
-                    if hasattr(X[column], 'cat'):
-                        while missing_value in X[column].cat.categories:
-                            if isinstance(missing_value, str):
-                                missing_value += '0'
-                            else:
-                                missing_value += missing_value
-                    self.dict_missing_value_per_col[column] = missing_value
-
-                # Convert the frame in place
-                X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
-                                             inplace=True)
-                X.fillna({column: self.dict_missing_value_per_col[column]}, inplace=True)
         return X
