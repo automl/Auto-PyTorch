@@ -96,7 +96,7 @@ class TimeSeriesRegressionTask(BaseTask):
             ))
         return dataset.get_required_dataset_info()
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
+    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TimeSeriesRegressionPipeline:
         return TimeSeriesRegressionPipeline(dataset_properties=dataset_properties)
 
     def search(self,

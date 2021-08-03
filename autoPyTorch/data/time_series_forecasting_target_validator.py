@@ -57,22 +57,30 @@ class TimeSeriesForecastingTargetValidator(TabularTargetValidator):
                 self.target_validators[seq_idx].fit(y_train_seq, y_test_seq)
 
                 out_dimensionality[seq_idx] = self.target_validators[seq_idx].out_dimensionality
-                type_of_target[seq_idx] = self.target_validators[seq_idx].type_of_target
+                target_type = self.target_validators[seq_idx].type_of_target
+                if target_type in ['multiclass', "binary"]:
+                    # for time series forecasting problems, we only support regression
+                    type_of_target[seq_idx] = "continuous"
+                else:
+                    type_of_target[seq_idx] = target_type
 
         else:
             for seq_idx, y_train_seq in enumerate(y_train):
                 self.target_validators[seq_idx].fit(y_train_seq)
 
                 out_dimensionality[seq_idx] = self.target_validators[seq_idx].out_dimensionality
-                type_of_target[seq_idx] = self.target_validators[seq_idx].type_of_target
+                target_type = self.target_validators[seq_idx].type_of_target
+                if target_type in ['multiclass', "binary"]:
+                    # for time series forecasting problems, we only support regression
+                    type_of_target[seq_idx] = "continuous"
+                else:
+                    type_of_target[seq_idx] = target_type
 
         if not np.all(np.asarray(out_dimensionality) == out_dimensionality[0]):
             raise ValueError(f"All the sequence needs to have the same out_dimensionality!")
-        # TODO consider how to handle "continuous" and "multiple_classes" data type
-        """
         if not np.all(np.asarray(type_of_target) == type_of_target[0]):
             raise ValueError(f"All the sequence needs to have the same type_of_target!")
-        """
+
 
         self.out_dimensionality = out_dimensionality[0]
         self.type_of_target = type_of_target[0]
