@@ -16,7 +16,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
 
@@ -41,6 +41,10 @@ def get_tabular_preprocessors():
     preprocessors['numerical'] = list()
     preprocessors['categorical'] = list()
 
+    preprocessors['categorical'].append(OneHotEncoder(
+        categories='auto',
+        sparse=False,
+        handle_unknown='ignore'))
     preprocessors['categorical'].append(SimpleImputer(strategy='constant',
                   # Train data is numpy
                   # as of this point, where
@@ -51,13 +55,10 @@ def get_tabular_preprocessors():
                   fill_value=-1,
                   copy=False))
 
-    # preprocessors['categorical'].append(("ordinal-encoder", OrdinalEncoder(
-    #      handle_unknown='use_encoded_value',
-    #      unknown_value=-1)))
-    preprocessors['categorical'].append(OneHotEncoder(
-        categories='auto',
-        sparse=False,
-        handle_unknown='ignore'))
+    preprocessors['categorical'].append(OrdinalEncoder(
+         handle_unknown='use_encoded_value',
+         unknown_value=-1))
+
     preprocessors['numerical'].append(SimpleImputer(strategy='median',
                                                                   copy=False))
     preprocessors['numerical'].append(StandardScaler(with_mean=True, with_std=True, copy=False))
@@ -98,6 +99,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self._check_data(X)
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
+            self.enc_columns = categorical_columns
+            if len(categorical_columns) >= 0:
+                X = self.impute_nan_in_categories(X)
             preprocessors = get_tabular_preprocessors()
             self.column_transformer = _create_column_transformer(preprocessors=preprocessors,
                                                                  numerical_columns=numerical_columns,
@@ -185,6 +189,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self._check_data(X)
         # We also need to fillna on the transformation
         # in case test data is provided
+        if len(self.categorical_columns) >= 0:
+            X = self.impute_nan_in_categories(X)
         X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -438,4 +444,58 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[column] = X[column].astype('category')
             self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
+        return X
+
+    def impute_nan_in_categories(self, X: pd.DataFrame, categorical_columns=None) -> pd.DataFrame:
+        """
+        impute missing values before encoding,
+        remove once sklearn natively supports
+        it in ordinal encoding. Sklearn issue:
+        "https://github.com/scikit-learn/scikit-learn/issues/17123)"
+        Arguments:
+            X (pd.DataFrame):
+                data to be interpreted.
+        Returns:
+            pd.DataFrame
+        """
+
+        # To be on the safe side, map always to the same missing
+        # value per column
+        if not hasattr(self, 'dict_nancol_to_missing'):
+            self.dict_missing_value_per_col: typing.Dict[str, typing.Any] = {}
+
+        # First make sure that we do not alter the type of the column which cause:
+        # TypeError: '<' not supported between instances of 'int' and 'str'
+        # in the encoding
+        for column in self.enc_columns:
+            if X[column].isna().any():
+                if column not in self.dict_missing_value_per_col:
+                    try:
+                        float(X[column].dropna().values[0])
+                        can_cast_as_number = True
+                    except Exception:
+                        can_cast_as_number = False
+                    if can_cast_as_number:
+                        # In this case, we expect to have a number as category
+                        # it might be string, but its value represent a number
+                        missing_value: typing.Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
+                                                                                   str) else -1
+                    else:
+                        missing_value = 'Missing!'
+
+                    # Make sure this missing value is not seen before
+                    # Do this check for categorical columns
+                    # else modify the value
+                    if hasattr(X[column], 'cat'):
+                        while missing_value in X[column].cat.categories:
+                            if isinstance(missing_value, str):
+                                missing_value += '0'
+                            else:
+                                missing_value += missing_value
+                    self.dict_missing_value_per_col[column] = missing_value
+
+                # Convert the frame in place
+                X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
+                                             inplace=True)
+                X.fillna({column: self.dict_missing_value_per_col[column]}, inplace=True)
         return X
