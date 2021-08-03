@@ -4,7 +4,7 @@ import numpy as np
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
-
+import time
 import torch
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import (
@@ -23,6 +23,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         self.add_fit_requirements([
             FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True)])
+        self.fit_time = None
 
     def get_column_transformer(self) -> ColumnTransformer:
         """
@@ -47,6 +48,8 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         Returns:
             "TabularColumnTransformer": an instance of self
         """
+        start_time = time.time()
+
         self.check_requirements(X, y)
         numerical_pipeline = 'passthrough'
         categorical_pipeline = 'passthrough'
@@ -71,6 +74,8 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
         self.preprocessor.fit(X_train)
+        self.fit_time = time.time() - start_time
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
