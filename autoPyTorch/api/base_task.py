@@ -189,6 +189,9 @@ class BaseTask:
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
+        self.precision: Optional[int] = None
+        self.opt_metric: Optional[str] = None
+        self.dataset: Optional[BaseDataset] = None
 
         # By default try to use the TCP logging port or get a new port
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -936,26 +939,12 @@ class BaseTask:
             self._logger.info("Starting ensemble")
             ensemble_task_name = 'ensemble'
             self._stopwatch.start_task(ensemble_task_name)
-            proc_ensemble = EnsembleBuilderManager(
-                start_time=time.time(),
-                time_left_for_ensembles=time_left_for_ensembles,
-                backend=copy.deepcopy(self._backend),
-                dataset_name=str(dataset.dataset_name),
-                output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
-                task_type=STRING_TO_TASK_TYPES[self.task_type],
-                metrics=[self._metric],
-                opt_metric=optimize_metric,
-                ensemble_size=self.ensemble_size,
-                ensemble_nbest=self.ensemble_nbest,
-                max_models_on_disc=self.max_models_on_disc,
-                seed=self.seed,
-                max_iterations=None,
-                read_at_most=sys.maxsize,
-                ensemble_memory_limit=self._memory_limit,
-                random_state=self.seed,
-                precision=precision,
-                logger_port=self._logger_port,
-            )
+            proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
+                                                        ensemble_size=self.ensemble_size,
+                                                        ensemble_nbest=self.ensemble_nbest,
+                                                        precision=precision,
+                                                        optimize_metric=self.opt_metric
+                                                        )
             self._stopwatch.stop_task(ensemble_task_name)
 
         # ==> Run SMAC
@@ -1332,6 +1321,141 @@ class BaseTask:
             dataset = None  # type: ignore [assignment]
 
         return fitted_pipeline, run_info, run_value, dataset
+
+    def fit_ensemble(
+            self,
+            ensemble_nbest: int = 50,
+            ensemble_size: int = 50,
+            precision: int = 32,
+            load_models: bool = True
+    ) -> 'BaseTask':
+        """
+        Enables post-hoc fitting of the ensemble after the `search()`
+        method is finished. This method creates an ensemble using all
+        the models stored on disk during the smbo run
+        Args:
+            ensemble_nbest (Optional[int]):
+                only consider the ensemble_nbest models to build the ensemble.
+                If None, uses the value stored in class attribute `ensemble_nbest`.
+            ensemble_size (int) (default=50):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
+        Returns:
+            self
+        """
+        # Make sure that input is valid
+        if self.dataset is None or self.opt_metric is None:
+            raise ValueError("fit_ensemble() can only be called after `search()`. "
+                             "Please call the `search()` method of {} prior to "
+                             "fit_ensemble().".format(self.__class__.__name__))
+
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset.dataset_name)
+
+        # Create a client if needed
+        if self._dask_client is None:
+            self._create_dask_client()
+        else:
+            self._is_dask_client_internally_created = False
+
+        manager = self._init_ensemble_builder(
+            time_left_for_ensembles=self._time_for_task,
+            optimize_metric=self.opt_metric,
+            precision=precision,
+            ensemble_size=ensemble_size,
+            ensemble_nbest=ensemble_nbest,
+        )
+
+        manager.build_ensemble(self._dask_client)
+        future = manager.futures.pop()
+        result = future.result()
+        if result is None:
+            raise ValueError("Errors occurred while building the ensemble - please"
+                             " check the log file and command line output for error messages.")
+        self.ensemble_performance_history, _, _, _ = result
+
+        if load_models:
+            self._load_models()
+        if self._logger is not None:
+            self._logger.info("Closing the dask infrastructure")
+            self._close_dask_client()
+            self._logger.info("Finished closing the dask infrastructure")
+
+            # Clean up the logger
+            self._logger.info("Starting to clean up the logger")
+            self._clean_logger()
+        else:
+            self._close_dask_client()
+
+        return self
+
+    def _init_ensemble_builder(
+            self,
+            time_left_for_ensembles: float,
+            optimize_metric: str,
+            ensemble_nbest: int,
+            ensemble_size: int,
+            precision: int = 32,
+    ) -> EnsembleBuilderManager:
+        """
+        Initializes an `EnsembleBuilderManager`.
+        Args:
+            time_left_for_ensembles (float):
+                Time (in seconds) allocated to building the ensemble
+            optimize_metric (str):
+                Name of the metric to optimize the ensemble.
+            ensemble_nbest (int):
+                only consider the ensemble_nbest models to build the ensemble.
+            ensemble_size (int):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
+        Returns:
+            EnsembleBuilderManager
+        """
+        if self._logger is None:
+            raise ValueError("logger should be initialized to fit ensemble")
+        if self.dataset is None:
+            raise ValueError("ensemble can only be initialised after or during `search()`. "
+                             "Please call the `search()` method of {}.".format(self.__class__.__name__))
+
+        self._logger.info("Starting ensemble")
+        ensemble_task_name = 'ensemble'
+        self._stopwatch.start_task(ensemble_task_name)
+
+        # Use the current thread to start the ensemble builder process
+        # The function ensemble_builder_process will internally create a ensemble
+        # builder in the provide dask client
+        required_dataset_properties = {'task_type': self.task_type,
+                                       'output_type': self.dataset.output_type}
+        proc_ensemble = EnsembleBuilderManager(
+            start_time=time.time(),
+            time_left_for_ensembles=time_left_for_ensembles,
+            backend=copy.deepcopy(self._backend),
+            dataset_name=str(self.dataset.dataset_name),
+            output_type=STRING_TO_OUTPUT_TYPES[self.dataset.output_type],
+            task_type=STRING_TO_TASK_TYPES[self.task_type],
+            metrics=[self._metric] if self._metric is not None else get_metrics(
+                dataset_properties=required_dataset_properties, names=[optimize_metric]),
+            opt_metric=optimize_metric,
+            ensemble_size=ensemble_size,
+            ensemble_nbest=ensemble_nbest,
+            max_models_on_disc=self.max_models_on_disc,
+            seed=self.seed,
+            max_iterations=None,
+            read_at_most=sys.maxsize,
+            ensemble_memory_limit=self._memory_limit,
+            random_state=self.seed,
+            precision=precision,
+            logger_port=self._logger_port,
+        )
+        self._stopwatch.stop_task(ensemble_task_name)
+        return proc_ensemble
 
     def predict(
         self,

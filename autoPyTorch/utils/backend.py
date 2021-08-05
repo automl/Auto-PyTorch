@@ -205,12 +205,12 @@ class Backend(object):
 
     def _make_internals_directory(self) -> None:
         try:
-            os.makedirs(self.internals_directory)
+            os.makedirs(self.internals_directory, exist_ok=True)
         except Exception as e:
             if self._logger is not None:
                 self._logger.debug("_make_internals_directory: %s" % e)
         try:
-            os.makedirs(self.get_runs_directory())
+            os.makedirs(self.get_runs_directory(), exist_ok=True)
         except Exception as e:
             if self._logger is not None:
                 self._logger.debug("_make_internals_directory: %s" % e)
