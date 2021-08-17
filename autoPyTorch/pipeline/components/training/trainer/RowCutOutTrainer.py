@@ -9,7 +9,7 @@ from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
 
 class RowCutOutTrainer(CutOut, BaseTrainerComponent):
-    NUMERICAL_VALUE = 0
+    NUMERICAL_VALUE = 0.0
     CATEGORICAL_VALUE = -1
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
@@ -39,14 +39,25 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         size = X.shape[1]
         indices = self.random_state.choice(range(1, size), max(1, np.int32(size * self.patch_ratio)),
                                            replace=False)
-
-        """if not isinstance(self.numerical_columns, typing.Iterable):
+        """
+        if not isinstance(self.numerical_columns, typing.Iterable):
             raise ValueError("{} requires numerical columns information of {}"
                              "to prepare data got {}.".format(self.__class__.__name__,
                                                               typing.Iterable,
                                                               self.numerical_columns))
-        numerical_indices = torch.tensor(self.numerical_columns)
-        categorical_indices = torch.tensor([index for index in indices if index not in self.numerical_columns])
+        nr_numerical_columns = len(self.numerical_columns)
+        numerical_indices = []
+        categorical_indices = []
+        for index in indices:
+            # all the numerical columns are shifted
+            # to the beginning
+            if index < nr_numerical_columns:
+                numerical_indices.append(index)
+            else:
+                categorical_indices.append(index)
+    
+        numerical_indices = torch.tensor(numerical_indices)
+        categorical_indices = torch.tensor(categorical_indices)
     
         # We use an ordinal encoder on the categorical columns of tabular data
         # -1 is the conceptual equivalent to 0 in a image, that does not
@@ -56,7 +67,9 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
         X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
         """
-        X[:, indices] = 0
+        indices = torch.tensor(indices)
+        X[:, indices.long()] = 0.0
+
         lam = 1
         y_a = y
         y_b = y

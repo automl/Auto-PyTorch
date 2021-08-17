@@ -123,7 +123,6 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         if batch_size is None:
             y = self._predict_proba(X)
-
         else:
             if not isinstance(batch_size, int):
                 raise ValueError("Argument 'batch_size' must be of type int, "

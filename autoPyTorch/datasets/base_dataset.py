@@ -84,7 +84,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                                    HoldoutValTypes,
                                    NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        shuffle: Optional[bool] = True,
+        shuffle: Optional[bool] = False,
         seed: Optional[int] = 42,
         train_transforms: Optional[torchvision.transforms.Compose] = None,
         val_transforms: Optional[torchvision.transforms.Compose] = None,
