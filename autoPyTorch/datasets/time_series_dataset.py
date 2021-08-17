@@ -329,9 +329,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 start_idx = end_idx
 
         if dataset_name is None:
-            dataset_name_seqs = [None] * self.num_sequences
+            self.dataset_name = hash_array_or_matrix(X_train_flatten)
         else:
-            dataset_name_seqs = [f"{dataset_name}_sequence_{i}" for i in range(self.num_sequences)]
+            self.dataset_name = dataset_name
+        dataset_name_seqs = [f"{dataset_name}_sequence_{i}" for i in range(self.num_sequences)]
 
         # initialize datasets
         sequences_kwargs = {"resampling_strategy": resampling_strategy,
