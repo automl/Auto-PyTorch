@@ -84,6 +84,17 @@ along with this program (see LICENSE file).
 ```
 
 ```bibtex
+  @article{zimmer-tpami21a,
+  author = {Lucas Zimmer and Marius Lindauer and Frank Hutter},
+  title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year = {2021},
+  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
+  pages = {1-12}
+}
+```
+
+```bibtex
 @incollection{mendoza-automlbook18a,
   author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
   title     = {Towards Automatically-Tuned Deep Neural Networks},
