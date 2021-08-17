@@ -1,29 +1,29 @@
 # Auto-PyTorch
 
-Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
+Copyright (C) 2021  [AutoML Groups Freiburg and Hannover](http://www.automl.org/)
 
-This an alpha version of Auto-PyTorch with improved API.
-So far, Auto-PyTorch supports tabular data (classification, regression).
-We plan to enable image data and time-series data.
+While early AutoML frameworks focused on optimizing traditional ML pipelines and their hyperparameters, another trend in AutoML is to focus on neural architecture search. To bring the best of these two worlds together, we developed **Auto-PyTorch**, which jointly and robustly optimizes the network architecture and the training hyperparameters to enable fully automated deep learning (AutoDL).
 
+Auto-PyTorch is mainly developed to support tabular data (classification, regression), but can also be applied to image data (classification).
+The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below for bibtex ref).
 
-Find the documentation [here](https://automl.github.io/Auto-PyTorch/refactor_development)
+## Alpha Status of Next Release
 
+The upcoming release of Auto-PyTorch will further improve usability, robustness and efficiency by using SMAC as the underlying optimization package, changing the code structure and other improvements. If you would like to give it a try, check out the `development` branch or it's [documentation](https://automl.github.io/Auto-PyTorch/development/).
 
 ## Installation
 
 ### Pip
 
-We recommend using Anaconda for developing as follows:
+```sh
+$ cd install/path
+$ git clone https://github.com/automl/Auto-PyTorch.git
+$ cd Auto-PyTorch
+```
+If you want to contribute to this repository switch to our current development branch
 
 ```sh
-# Following commands assume the user is in a cloned directory of Auto-Pytorch
-conda create -n autopytorch python=3.8
-conda activate autopytorch
-conda install gxx_linux-64 gcc_linux-64 swig
-cat requirements.txt | xargs -n 1 -L 1 pip install
-python setup.py install
-
+$ git checkout development
 ```
 
 ## Contributing
@@ -71,7 +71,19 @@ along with this program (see LICENSE file).
 
 ## Reference
 
+
+```bibtex
+  @article{zimmer-tpami21a,
+  author = {Lucas Zimmer and Marius Lindauer and Frank Hutter},
+  title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year = {2021},
+  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
+  pages = {1-12}
+}
 ```
+
+```bibtex
 @incollection{mendoza-automlbook18a,
   author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
   title     = {Towards Automatically-Tuned Deep Neural Networks},
@@ -81,14 +93,10 @@ along with this program (see LICENSE file).
   booktitle = {AutoML: Methods, Sytems, Challenges},
   publisher = {Springer},
   chapter   = {7},
-  pages     = {141--156},
-  note      = {To appear.},
+  pages     = {141--156}
 }
 ```
 
-**Note**: Previously, the name of the project was AutoNet. Since this was too generic, we changed the name to AutoPyTorch. AutoNet 2.0 in the reference mention above is indeed AutoPyTorch.
-
-
 ## Contact
 
-Auto-PyTorch is developed by the [AutoML Group of the University of Freiburg](http://www.automl.org/).
+Auto-PyTorch is developed by the [AutoML Groups of the University of Freiburg and Hannover](http://www.automl.org/).
