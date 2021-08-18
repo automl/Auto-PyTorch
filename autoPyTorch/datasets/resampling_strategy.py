@@ -152,8 +152,11 @@ def time_series_hold_out_validation(val_share: float, indices: np.ndarray, **kwa
     Returns:
     """
     # TODO consider how we handle test size properly
-    test_size = int(val_share * len(indices))
-    cv = TimeSeriesSplit(n_splits=2, test_size=test_size, gap=kwargs['n_prediction_steps'])
+    # Time Series prediction only requires on set of prediction for each
+    # This implement needs to be combined with time series forecasting dataloader, where each time an entire time series
+    # is used for prediction
+    test_size = kwargs['n_prediction_steps']
+    cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
     train, val = list(cv.split(indices))[-1]
     return train, val
 
@@ -173,6 +176,8 @@ def time_series_cross_validation(num_splits: int, indices: np.ndarray, **kwargs:
     """
     # TODO: we use gap=n_prediction_step here, we need to consider if we want to implement n_prediction_step here or
     # under DATALOADER!!!
-    cv = TimeSeriesSplit(n_splits=num_splits, gap=kwargs['n_prediction_steps'])
+    # TODO do we need cross valriadtion for time series datasets?
+    test_size = kwargs['n_prediction_steps']
+    cv = TimeSeriesSplit(n_splits=num_splits, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
     splits = list(cv.split(indices))
     return splits

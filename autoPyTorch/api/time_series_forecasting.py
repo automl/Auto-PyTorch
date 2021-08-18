@@ -239,4 +239,5 @@ class TimeSeriesForecastingTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
+            time_series_prediction=True
         )

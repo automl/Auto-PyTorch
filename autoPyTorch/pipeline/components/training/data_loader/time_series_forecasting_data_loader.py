@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -157,10 +157,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         valid_indices = np.hstack([valid_idx for valid_idx in valid_indices])
         _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
 
+
         # test_indices not required as testsets usually lies on the trail of hte sequence
         #_, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
 
-        sampler_train = SubsetRandomSampler(indices=sampler_indices_train)
+        self.sampler_train = SubsetRandomSampler(indices=sampler_indices_train)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -170,7 +171,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', True),
             collate_fn=custom_collate_fn,
-            sampler=sampler_train,
+            sampler=self.sampler_train,
         )
 
         self.val_data_loader = torch.utils.data.DataLoader(
@@ -213,26 +214,38 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         return torchvision.transforms.Compose(candidate_transformations)
 
-    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
+    def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None, batch_size: int = np.inf,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
         """
         # TODO any better way to deal with prediction data loader for multiple sequences
-        X = X[-self.subseq_length - self.n_prediction_steps:]
+        if isinstance(X, np.ndarray):
+            X = X[-self.subseq_length - self.n_prediction_steps + 1:]
 
-        if y is not None:
-            y = y[-self.subseq_length - self.n_prediction_steps:]
+            if y is not None:
+                # we want to make sure that X, and y can be mapped one 1 one (as sampling y requires a shifted value)
+                y = y[-self.subseq_length - self.n_prediction_steps + 1:]
 
-        dataset = TimeSeriesSequence(
-            X=X, Y=y,
-            # This dataset is used for loading test data in a batched format
-            train_transforms=self.test_transform,
-            val_transforms=self.test_transform,
-        )
+            dataset = TimeSeriesSequence(
+                X=X, Y=y,
+                # This dataset is used for loading test data in a batched format
+                train_transforms=self.test_transform,
+                val_transforms=self.test_transform,
+                do_split=False,
+            )
 
-        test_seq_indices = np.arange(len(X))[self.subseq_length:]
+        elif isinstance(X, TimeSeriesSequence):
+            dataset = X
+            dataset.update_transform(self.test_transform, train=False)
+        else:
+            raise ValueError(f"Unsupported type of input X: {type(X)}")
+        if self.n_prediction_steps == 1:
+            # test_seq_indices only indicates where to truncate the current
+            test_seq_indices = [len(dataset) - 1]
+        else:
+            test_seq_indices = np.arange(len(dataset))[-self.n_prediction_steps:]
 
         dataset_test = TransformSubset(dataset, indices=test_seq_indices, train=False)
 

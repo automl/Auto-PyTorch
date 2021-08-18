@@ -634,6 +634,7 @@ class BaseTask:
             precision: int = 32,
             disable_file_output: List = [],
             load_models: bool = True,
+            time_series_prediction: bool = False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -696,6 +697,8 @@ class BaseTask:
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
+            time_series_prediction (bool):
+                if we want to do time series prediction tasks
 
         Returns:
             self
@@ -851,7 +854,8 @@ class BaseTask:
                 ensemble_callback=proc_ensemble,
                 logger_port=self._logger_port,
                 start_num_run=num_run,
-                search_space_updates=self.search_space_updates
+                search_space_updates=self.search_space_updates,
+                time_series_prediction=time_series_prediction
             )
             try:
                 self.run_history, self.trajectory, budget_type = \

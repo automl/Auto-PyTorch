@@ -223,3 +223,25 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             str: name of the pipeline type
         """
         return "time_series_predictor"
+
+
+    def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
+        """Predict the output using the selected model.
+
+        Args:
+            X (np.ndarray): input data to the array
+            batch_size (Optional[int]): batch_size controls whether the pipeline will be
+                called on small chunks of the data. Useful when calling the
+                predict method on the whole array X results in a MemoryError.
+
+        Returns:
+            np.ndarray: the predicted values given input X
+        """
+
+        # Pre-process X
+        if batch_size is None:
+            warnings.warn("Batch size not provided. "
+                          "Will predict on the whole data in a single iteration")
+            batch_size = X.shape[0]
+        loader = self.named_steps['data_loader'].get_loader(X=X, batch_size=batch_size)
+        return self.named_steps['network'].predict(loader)

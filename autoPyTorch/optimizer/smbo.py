@@ -24,6 +24,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -78,7 +79,7 @@ def get_smac_object(
 
 
 class AutoMLSMBO(object):
-    def  __init__(self,
+    def __init__(self,
                  config_space: ConfigSpace.ConfigurationSpace,
                  dataset_name: str,
                  backend: Backend,
@@ -102,7 +103,8 @@ class AutoMLSMBO(object):
                  all_supported_metrics: bool = True,
                  ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
                  logger_port: typing.Optional[int] = None,
-                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
+                 time_series_prediction: bool = False
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -151,6 +153,9 @@ class AutoMLSMBO(object):
                 Allows to create a user specified SMAC object
             ensemble_callback (typing.Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
+            time_series_prediction (bool):
+                If we want to apply this optimizer to optimize time series prediction tasks (which has a different
+                tae)
 
         """
         super(AutoMLSMBO, self).__init__()
@@ -193,6 +198,8 @@ class AutoMLSMBO(object):
         self.ensemble_callback = ensemble_callback
 
         self.search_space_updates = search_space_updates
+
+        self.time_series_prediction = time_series_prediction
 
         dataset_name_ = "" if dataset_name is None else dataset_name
         if logger_port is None:
@@ -256,6 +263,9 @@ class AutoMLSMBO(object):
             pipeline_config=self.pipeline_config,
             search_space_updates=self.search_space_updates
         )
+
+        if self.time_series_prediction:
+            ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Created TA")
 

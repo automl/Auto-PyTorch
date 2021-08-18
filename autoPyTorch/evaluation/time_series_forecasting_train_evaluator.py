@@ -1,3 +1,5 @@
+from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar
 
@@ -24,19 +26,12 @@ from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
+from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 
-__all__ = ['TrainEvaluator', 'eval_function']
-
-
-def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
-    if task_type in CLASSIFICATION_TASKS and task_type != \
-            MULTICLASSMULTIOUTPUT:
-        return y.ravel()
-    else:
-        return y
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 
 
-class TrainEvaluator(AbstractEvaluator):
+class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
@@ -54,7 +49,7 @@ class TrainEvaluator(AbstractEvaluator):
                  keep_models: Optional[bool] = None,
                  all_supported_metrics: bool = True,
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
-        super().__init__(
+        super(TimeSeriesForecastingTrainEvaluator, self).__init__(
             backend=backend,
             queue=queue,
             configuration=configuration,
@@ -69,17 +64,23 @@ class TrainEvaluator(AbstractEvaluator):
             budget=budget,
             budget_type=budget_type,
             logger_port=logger_port,
+            keep_models=keep_models,
             all_supported_metrics=all_supported_metrics,
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+        self.pipeline_class = TimeSeriesForecastingPipeline
+        self.datamanager: TimeSeriesForecastingDataset
+        self.n_prediction_steps = self.datamanager.n_prediction_steps
+        self.num_sequences = self.datamanager.num_sequences
 
         self.splits = self.datamanager.splits
         if self.splits is None:
             raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
         self.num_folds: int = len(self.splits)
         self.Y_targets: List[Optional[np.ndarray]] = [None] * self.num_folds
-        self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN
+        # TODO consider if we really need Y_train_targets
+        #self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN
         self.pipelines: List[Optional[BaseEstimator]] = [None] * self.num_folds
         self.indices: List[Optional[Tuple[Union[np.ndarray, List], Union[np.ndarray, List]]]] = [None] * self.num_folds
 
@@ -105,8 +106,16 @@ class TrainEvaluator(AbstractEvaluator):
                                                                                         train_indices=train_split,
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
-            train_loss = self._loss(self.y_train[train_split], y_train_pred)
-            loss = self._loss(self.y_train[test_split], y_opt_pred)
+
+            #As each sequence contains one test split id, and the value to be predicted is the last n_prediction_steps
+            #we need to expand the current split.
+
+            y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
+                           np.tile(np.arange(self.n_prediction_steps), len(test_split))
+            #train_loss = self._loss(self.y_train[train_split], y_train_pred)
+            # TODO do we really need train loss?
+            train_loss = 0.
+            loss = self._loss(self.y_train[y_test_split], y_opt_pred)
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
@@ -149,24 +158,30 @@ class TrainEvaluator(AbstractEvaluator):
                                                                                     train_indices=train_split,
                                                                                     test_indices=test_split,
                                                                                     add_pipeline_to_self=False)
-                Y_train_pred[i] = train_pred
+                #Y_train_pred[i] = train_pred
                 Y_optimization_pred[i] = opt_pred
                 Y_valid_pred[i] = valid_pred
                 Y_test_pred[i] = test_pred
                 train_splits[i] = train_split
 
                 self.Y_train_targets[train_split] = self.y_train[train_split]
-                self.Y_targets[i] = self.y_train[test_split]
+
+                y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
+                               np.tile(np.arange(self.n_prediction_steps), len(test_split))
+
+                self.Y_targets[i] = self.y_train[y_test_split]
                 # Compute train loss of this fold and store it. train_loss could
                 # either be a scalar or a dict of scalars with metrics as keys.
-                train_loss = self._loss(
-                    self.Y_train_targets[train_split],
-                    train_pred,
-                )
+                #train_loss = self._loss(
+                #    self.Y_train_targets[train_split],
+                #    train_pred,
+                #)
+                train_loss = 0.
                 train_losses[i] = train_loss
                 # number of training data points for this fold. Used for weighting
                 # the average.
                 train_fold_weights[i] = len(train_split)
+
 
                 # Compute validation loss of this fold and store it.
                 optimization_loss = self._loss(
@@ -251,104 +266,45 @@ class TrainEvaluator(AbstractEvaluator):
                 status=status,
             )
 
-    def _fit_and_predict(self, pipeline: BaseEstimator, fold: int, train_indices: Union[np.ndarray, List],
-                         test_indices: Union[np.ndarray, List],
-                         add_pipeline_to_self: bool
-                         ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-
-        self.indices[fold] = ((train_indices, test_indices))
-
-        X = {'train_indices': train_indices,
-             'val_indices': test_indices,
-             'split_id': fold,
-             'num_run': self.num_run,
-             **self.fit_dictionary}  # fit dictionary
-        y = None
-        fit_and_suppress_warnings(self.logger, pipeline, X, y)
-        self.logger.info("Model fitted, now predicting")
-        (
-            Y_train_pred,
-            Y_opt_pred,
-            Y_valid_pred,
-            Y_test_pred
-        ) = self._predict(
-            pipeline,
-            train_indices=train_indices,
-            test_indices=test_indices,
-        )
-
-        if add_pipeline_to_self:
-            self.pipeline = pipeline
-        else:
-            self.pipelines[fold] = pipeline
-
-        return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
-
     def _predict(self, pipeline: BaseEstimator,
                  test_indices: Union[np.ndarray, List],
                  train_indices: Union[np.ndarray, List]
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+        datamanager = self.datamanager
+        y_pred = np.ones([len(test_indices), self.n_prediction_steps])
+        for seq_idx, test_idx in enumerate(test_indices):
+            y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline)
 
-        train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
-                                           self.y_train[train_indices])
+        #train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
+        #                                   self.y_train[train_indices])
+        opt_pred = y_pred.flatten()
 
-        opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
-                                            self.y_train[train_indices])
-
-
+        #TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:
-            valid_pred = self.predict_function(self.X_valid, pipeline,
-                                               self.y_valid)
+            valid_pred = np.ones([len(test_indices), self.n_prediction_steps])
+            for seq_idx, val_seq in enumerate(self.datamanager.datasets):
+                valid_pred[seq_idx] = self.predict_function(val_seq.val_tensors[0], pipeline).flatten()
+
+            valid_pred = valid_pred.flatten()
+
         else:
             valid_pred = None
 
         if self.X_test is not None:
-            test_pred = self.predict_function(self.X_test, pipeline,
-                                              self.y_train[train_indices])
+            test_pred = np.ones([len(test_indices), self.n_prediction_steps])
+            for seq_idx, test_seq in enumerate(self.datamanager.datasets):
+                test_pred[seq_idx] = self.predict_function(val_seq.test_seq[0], pipeline)
+
+            test_pred = test_pred.flatten()
         else:
             test_pred = None
 
-        return train_pred, opt_pred, valid_pred, test_pred
+        return np.empty(1), opt_pred, valid_pred, test_pred
 
-# create closure for evaluating an algorithm
-def eval_function(
-        backend: Backend,
-        queue: Queue,
-        metric: autoPyTorchMetric,
-        budget: float,
-        config: Optional[Configuration],
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        disable_file_output: Union[bool, List],
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        budget_type: str = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        logger_port: Optional[int] = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        instance: str = None,
-        evaluator_class: ClassVar[AbstractEvaluator] = TrainEvaluator,
-) -> None:
-    evaluator = evaluator_class(
-        backend=backend,
-        queue=queue,
-        metric=metric,
-        configuration=config,
-        seed=seed,
-        num_run=num_run,
-        output_y_hat_optimization=output_y_hat_optimization,
-        include=include,
-        exclude=exclude,
-        disable_file_output=disable_file_output,
-        init_params=init_params,
-        budget=budget,
-        budget_type=budget_type,
-        logger_port=logger_port,
-        all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
-    )
-    evaluator.fit_predict_and_loss()
+
+
+
+
+
+
+

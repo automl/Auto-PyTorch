@@ -58,6 +58,7 @@ class TimeSeriesSequence(BaseDataset):
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  n_prediction_steps: int = 1,
+                 do_split=True,
                  ):
         """
         A dataset representing a time series sequence.
@@ -88,12 +89,14 @@ class TimeSeriesSequence(BaseDataset):
 
         self.rand = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
 
-        # we only allow time series cross validation and holdout validation
-        self.cross_validators = get_cross_validators(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
+        if do_split:
+            self.resampling_strategy = resampling_strategy
+            self.resampling_strategy_args = resampling_strategy_args
+
+            # we only allow time series cross validation and holdout validation
+            self.cross_validators = get_cross_validators(CrossValTypes.time_series_cross_validation)
+            self.holdout_validators = get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
@@ -129,14 +132,14 @@ class TimeSeriesSequence(BaseDataset):
         Y = self.train_tensors[1]
         if Y is not None:
             # Y = Y[:index + self.n_prediction_steps]
-            Y = Y[index + self.n_prediction_steps]
+            Y = Y[index]
         else:
             Y = None
 
         return X, Y
 
     def __len__(self) -> int:
-        return self.train_tensors[0].shape[0] - self.n_prediction_steps
+        return self.train_tensors[0].shape[0]
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
         """
@@ -254,6 +257,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  validator: Optional[TimeSeriesForecastingInputValidator] = None,
                  n_prediction_steps: int = 1,
+                 shift_input_data: bool = True,
                  ):
         """
         :param target_variables: The indices of the variables you want to forecast
@@ -261,6 +265,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         :param n_steps: The number of steps you want to forecast into the future
         :param train: Tuple with one tensor holding the training data
         :param val: Tuple with one tensor holding the validation data
+        :param shift_input_data: bool
+        if the input X and targets needs to be shifted to be aligned:
+        such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
         self.n_prediction_steps = n_prediction_steps
@@ -295,8 +302,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.num_sequences = len(X)
         self.sequence_lengths = [0] * self.num_sequences
-        for seq_idx in range(self.num_sequences):
-            self.sequence_lengths[seq_idx] = len(X[seq_idx])
+        if shift_input_data:
+            for seq_idx in range(self.num_sequences):
+                X[seq_idx] = X[seq_idx][:-n_prediction_steps]
+                Y[seq_idx] = Y[seq_idx][n_prediction_steps:]
+                self.sequence_lengths[seq_idx] = len(X[seq_idx])
+        else:
+            for seq_idx in range(self.num_sequences):
+                self.sequence_lengths[seq_idx] = len(X[seq_idx])
 
         num_train_data = np.sum(self.sequence_lengths)
         X_train_flatten = np.empty([num_train_data, self.num_features])
@@ -343,6 +356,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_train = 0
         idx_start_test = 0
         sequence_datasets = []
+
         if X_test is None or Y_test is None:
             for seq_idx, seq_length_train in enumerate(self.sequence_lengths):
                 idx_end_train = idx_start_train + seq_length_train
@@ -377,7 +391,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if X_test is not None or Y_test is not None:
             self.test_tensors = (X_test_flatten, Y_test_flatten)
         else:
-            self.test_tensors = (None, None)
+            self.test_tensors = None
         self.val_tensors = None
 
         self.task_type: Optional[str] = None
@@ -409,7 +423,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
-
 
     def __getitem__(self, idx, train=True):
         if idx < 0:

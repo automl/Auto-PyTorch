@@ -112,10 +112,11 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             logger_port: int = None,
             all_supported_metrics: bool = True,
             pynisher_context: str = 'spawn',
-            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
+            **eval_func_kwargs
     ):
 
-        eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
+        eval_function = functools.partial(autoPyTorch.evaluation.train_evaluator.eval_function, **eval_func_kwargs)
 
         self.worst_possible_result = cost_for_crash
 
