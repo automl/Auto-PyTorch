@@ -241,3 +241,15 @@ class TimeSeriesForecastingTask(BaseTask):
             load_models=load_models,
             time_series_prediction=True
         )
+
+    def predict(
+            self,
+            X_test: List[np.ndarray],
+            batch_size: Optional[int] = None,
+            n_jobs: int = 1
+    ) -> np.ndarray:
+        y_pred = np.ones([len(X_test), self.dataset.n_prediction_steps])
+        for seq_idx, seq in enumerate(X_test):
+            y_pred[seq_idx] = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
+        return y_pred
+

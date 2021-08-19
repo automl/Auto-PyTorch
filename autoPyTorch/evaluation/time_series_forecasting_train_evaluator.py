@@ -100,8 +100,14 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             pipeline = self._get_pipeline()
 
             train_split, test_split = self.splits[split_id]
-            self.Y_optimization = self.y_train[test_split]
-            self.Y_actual_train = self.y_train[train_split]
+
+            y_optimization = np.ones([len(test_split), self.n_prediction_steps])
+
+            y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
+                           np.tile(np.arange(self.n_prediction_steps), len(test_split))
+
+            self.Y_optimization = self.y_train[y_test_split]
+            #self.Y_actual_train = self.y_train[train_split]
             y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
                                                                                         train_indices=train_split,
                                                                                         test_indices=test_split,
@@ -110,11 +116,9 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             #As each sequence contains one test split id, and the value to be predicted is the last n_prediction_steps
             #we need to expand the current split.
 
-            y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
-                           np.tile(np.arange(self.n_prediction_steps), len(test_split))
             #train_loss = self._loss(self.y_train[train_split], y_train_pred)
             # TODO do we really need train loss?
-            train_loss = 0.
+            train_loss = None
             loss = self._loss(self.y_train[y_test_split], y_opt_pred)
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
@@ -164,7 +168,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 Y_test_pred[i] = test_pred
                 train_splits[i] = train_split
 
-                self.Y_train_targets[train_split] = self.y_train[train_split]
+                #self.Y_train_targets[train_split] = self.y_train[train_split]
 
                 y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
                                np.tile(np.arange(self.n_prediction_steps), len(test_split))
@@ -273,7 +277,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         datamanager = self.datamanager
         y_pred = np.ones([len(test_indices), self.n_prediction_steps])
         for seq_idx, test_idx in enumerate(test_indices):
-            y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline)
+            y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).flatten()
 
         #train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
         #                                   self.y_train[train_indices])

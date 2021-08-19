@@ -270,7 +270,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             logger=logger,
             # Pynisher expects seconds as a time indicator
             wall_time_in_s=int(cutoff) if cutoff is not None else None,
-            mem_in_mb=self.memory_limit,
+            # TODO Figure out how pynisher influences GPU memory usage here
+            #mem_in_mb=self.memory_limit,
             capture_output=True,
             context=context,
         )
