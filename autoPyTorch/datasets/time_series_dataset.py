@@ -258,6 +258,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  validator: Optional[TimeSeriesForecastingInputValidator] = None,
                  n_prediction_steps: int = 1,
                  shift_input_data: bool = True,
+                 normalize_y: bool = True,
                  ):
         """
         :param target_variables: The indices of the variables you want to forecast
@@ -268,6 +269,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         :param shift_input_data: bool
         if the input X and targets needs to be shifted to be aligned:
         such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
+        :param normalize_y: bool
+        if y values needs to be normalized with mean 0 and variance 1
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
         self.n_prediction_steps = n_prediction_steps
@@ -347,6 +350,16 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.dataset_name = dataset_name
         dataset_name_seqs = [f"{dataset_name}_sequence_{i}" for i in range(self.num_sequences)]
 
+        if normalize_y:
+            self.y_train_mean = np.mean(Y_train_flatten)
+            self.y_train_std = np.std(Y_train_flatten)
+            Y_train_flatten = (Y_train_flatten - self.y_train_mean) / self.y_train_std
+            if Y_test is not None:
+                Y_test_flatten = (Y_test_flatten - self.y_train_mean) / self.y_train_std
+        else:
+            self.y_train_mean = 0
+            self.y_train_std = 1
+
         # initialize datasets
         sequences_kwargs = {"resampling_strategy": resampling_strategy,
                             "resampling_strategy_args": resampling_strategy_args,
@@ -356,6 +369,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_train = 0
         idx_start_test = 0
         sequence_datasets = []
+
 
         if X_test is None or Y_test is None:
             for seq_idx, seq_length_train in enumerate(self.sequence_lengths):
@@ -423,6 +437,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
+
 
     def __getitem__(self, idx, train=True):
         if idx < 0:

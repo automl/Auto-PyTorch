@@ -97,7 +97,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         super().__init__(batch_size=batch_size)
         self.window_size: int = window_size
-        self.upper_seuqnce_length = upper_sequence_length
+        self.upper_sequence_length = upper_sequence_length
         self.n_prediction_steps = n_prediction_steps
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,

@@ -249,7 +249,11 @@ class TimeSeriesForecastingTask(BaseTask):
             n_jobs: int = 1
     ) -> np.ndarray:
         y_pred = np.ones([len(X_test), self.dataset.n_prediction_steps])
+        y_train_mean = self.dataset.y_train_mean
+        y_train_std = self.dataset.y_train_std
         for seq_idx, seq in enumerate(X_test):
-            y_pred[seq_idx] = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
+            seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
+            seq_pred = seq_pred * y_train_std + y_train_mean
+            y_pred[seq_idx] = seq_pred
         return y_pred
 
