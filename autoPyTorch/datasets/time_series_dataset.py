@@ -401,6 +401,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
+        self.seq_length_min = np.min(self.sequence_lengths)
+
         self.train_tensors = (X_train_flatten, Y_train_flatten)
         if X_test is not None or Y_test is not None:
             self.test_tensors = (X_test_flatten, Y_test_flatten)
@@ -411,7 +413,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         # TODO find a way to edit input shape!
-        self.input_shape: Tuple[int] = (np.min(self.sequence_lengths),self.num_features)
+        self.input_shape: Tuple[int] = (self.seq_length_min, self.num_features)
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1])

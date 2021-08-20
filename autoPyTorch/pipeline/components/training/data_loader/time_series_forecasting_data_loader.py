@@ -53,7 +53,7 @@ class SequenceBuilder(object):
     window_size : int, default=1
         sliding window size
     """
-    def __init__(self, sample_interval: int = 1, window_size: int = 1):
+    def __init__(self, sample_interval: int = 1, window_size: int = 1, subseq_length=1):
         """
         initialization
         Args:
@@ -62,14 +62,13 @@ class SequenceBuilder(object):
         """
         self.sample_interval = sample_interval
         self.window_size = window_size
+        # assuming that subseq_length is 10, e.g., we can only start from -10. sample_interval = -4
+        # we will sample the following indices: [-9,-5,-1]
+        self.first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
-        sample_indices = np.arange(-1 - self.sample_interval * (self.window_size - 1), 0, step=self.sample_interval)
-        try:
-            return data[sample_indices]
-        except IndexError:
-            raise ValueError("the length of the time sequence token is larger than the possible, please check the "
-                             "sampler setting or reduce the window size")
+        sample_indices = np.arange(self.first_indices, 0, step=self.sample_interval)
+        return data[sample_indices]
 
 
 class TimeSeriesForecastingDataLoader(FeatureDataLoader):
@@ -102,7 +101,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
-        self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        #self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        self.subseq_length = self.window_size
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -118,12 +118,19 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
 
-        self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        # we want models with different sample_interval to have similar length scale
+        self.subseq_length = self.window_size
+
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
-        datamanager = X['backend'].load_datamanager() # type: TimeSeriesForecastingDataset
+        datamanager = X['backend'].load_datamanager() # type: TimeSeriesForcecastingDataset
+        assert self.subseq_length < datamanager.seq_length_min, "dataloader's window size must be smaller than the" \
+                                                                "minimal sequence length of the dataset!!"
+        # TODO, consider bucket setting
+
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
@@ -146,6 +153,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         train_split, test_split = datamanager.splits[X['split_id']]
         valid_indices = []
         idx_start = 0
+
         # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size
         # we need to drop the first part of each sequence
         for seq_idx, seq_length in enumerate(datamanager.sequence_lengths):
@@ -203,7 +211,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         candidate_transformations = []  # type: List[Callable]
 
         candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
-                                                          window_size=self.window_size)))
+                                                          window_size=self.window_size,
+                                                          subseq_length=self.subseq_length)))
         candidate_transformations.append((ExpandTransformTimeSeries()))
 
         if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
