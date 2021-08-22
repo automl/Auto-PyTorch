@@ -36,8 +36,12 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
             return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
 
         size = X.shape[1]
-        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int32(size * lam)),
-                                                        replace=False))
+        indices = torch.tensor(
+            self.random_state.choice(
+                range(1, size), max(1, np.int32(size * np.sqrt(1. - lam))),
+                replace=False,
+            )
+        )
 
         X[:, indices] = X[index, :][:, indices]
 

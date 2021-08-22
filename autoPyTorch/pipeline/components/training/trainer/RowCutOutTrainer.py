@@ -28,7 +28,6 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-
         r = self.random_state.rand(1)
         if r > self.cutout_prob:
             y_a = y
@@ -37,8 +36,10 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
         size = X.shape[1]
-        indices = self.random_state.choice(range(1, size), max(1, np.int32(size * self.patch_ratio)),
-                                           replace=False)
+        indices = self.random_state.choice(
+            range(1, size), max(1, np.int32(size * self.patch_ratio)),
+            replace=False,
+        )
         """
         if not isinstance(self.numerical_columns, typing.Iterable):
             raise ValueError("{} requires numerical columns information of {}"

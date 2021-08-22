@@ -160,7 +160,6 @@ class TabularClassificationTask(BaseTask):
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name,
-            seed=self.seed
         )
         if not return_only:
             self.InputValidator = InputValidator
