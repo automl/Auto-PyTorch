@@ -20,7 +20,7 @@ from autoPyTorch.utils.common import (
     add_hyperparameter,
     custom_collate_fn
 )
-
+from torch.utils.data.sampler import SubsetRandomSampler
 
 class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
     """This class is an interface to the PyTorch Dataloader.
@@ -108,11 +108,11 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
         train_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=True)
-
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
+            sampler=SubsetRandomSampler(train_dataset.indices),
             batch_size=min(self.batch_size, len(train_dataset)),
-            shuffle=True,
+            shuffle=False,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', True),
