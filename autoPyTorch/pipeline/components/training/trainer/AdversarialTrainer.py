@@ -189,8 +189,9 @@ class AdversarialTrainer(BaseTrainerComponent):
             default_value=3),
         epsilon: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="epsilon",
-            value_range=(0.05, 0.2),
-            default_value=0.2),
+            value_range=(0.001, 0.15),
+            default_value=0.007,
+            log=True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
