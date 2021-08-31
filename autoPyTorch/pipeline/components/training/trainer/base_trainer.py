@@ -320,8 +320,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 if self.use_snapshot_ensemble:
                     assert self.model_snapshots is not None, "model snapshots container can't be " \
                                                              "none when snapshot ensembling is enabled"
-                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
-                        else deepcopy(self.model)
+                    if epoch == self.budget_tracker.max_epochs:
+                        if self.use_stochastic_weight_averaging:
+                            model_copy = deepcopy(self.swa_model)
+                        else:
+                            model_copy = deepcopy(self.model)
+                    else:
+                        model_copy = deepcopy(self.model)
+
                     assert model_copy is not None
                     model_copy.cpu()
                     self.model_snapshots.append(model_copy)

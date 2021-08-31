@@ -1,10 +1,10 @@
 pandas
-torch
-torchvision
+torch<=1.8
+torchvision<=0.9
 tensorboard
 scikit-learn>=0.24.0,<0.25.0
 numpy
-scipy
+scipy==1.6.3
 lockfile
 imgaug>=0.4.0
 ConfigSpace>=0.4.14,<0.5
