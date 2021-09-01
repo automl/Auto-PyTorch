@@ -315,9 +315,9 @@ class AutoMLSMBO(object):
         if budget_type == 'epochs':
             initial_budget = self.pipeline_config['min_epochs']
             max_budget = self.pipeline_config['epochs']
-        elif budget_type == 'dataset_size':
-            initial_budget = self.pipeline_config.get('min_fraction_subset', 0.1)
-            max_budget = self.pipeline_config.get('fraction_subset', 1.0)
+        elif budget_type == 'resolution':
+            initial_budget = self.pipeline_config.get('min_resolution', 0.1)
+            max_budget = self.pipeline_config.get('full_resolution', 1.0)
         else:
             raise ValueError("Illegal value for budget type, must be one of "
                              "('epochs', 'runtime'), but is : %s" %

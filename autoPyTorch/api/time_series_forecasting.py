@@ -88,9 +88,9 @@ class TimeSeriesForecastingTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
         )
         # here fraction of subset could be number of images, tabular data or resolution of time-series datasets.
-        #TODO if budget type dataset_size is applied to all datasets, we will put it to configs
-        self.pipeline_options.update({"min_fraction_subset": 0.1,
-                                      "fraction_subset": 1.0})
+        #TODO if budget type resolution is applied to all datasets, we will put it to configs
+        self.pipeline_options.update({"min_resolution": 0.1,
+                                      "full_resolution": 1.0})
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):
@@ -124,6 +124,8 @@ class TimeSeriesForecastingTask(BaseTask):
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
+        shift_input_data: bool = True,
+        normalize_y: bool = True,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -143,7 +145,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 evaluate a pipeline.
             budget_type (Optional[str]):
                 Type of budget to be used when fitting the pipeline.
-                Either 'epochs' or 'runtime' or 'dataset_size'. If not provided, uses
+                Either 'epochs' or 'runtime' or 'resolution'. If not provided, uses
                 the default in the pipeline config ('epochs')
             budget (Optional[float]):
                 Budget to fit a single run of the pipeline. If not
@@ -187,7 +189,10 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-
+            shift_input_data: bool
+                if the input data needs to be shifted
+            normalize_y: bool
+                if the input y values need to be normalized
         Returns:
             self
 
@@ -217,6 +222,8 @@ class TimeSeriesForecastingTask(BaseTask):
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
             n_prediction_steps=n_prediction_steps,
+            shift_input_data=shift_input_data,
+            normalize_y=normalize_y,
         )
 
         if traditional_per_total_budget > 0.:

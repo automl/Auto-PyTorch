@@ -205,7 +205,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 elif run_info.budget <= 0 or run_info.budget > 100:
                     raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
                                      run_info.budget)
-            elif self.budget_type == 'dataset_size':
+            elif self.budget_type == 'resolution':
                 if run_info.budget == 0:
                     run_info = run_info._replace(budget=1.0)
                 elif run_info.budget <= 0 or run_info.budget > 1.:
@@ -213,7 +213,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                                      run_info.budget)
             else:
                 raise ValueError("Illegal value for budget type, must be one of "
-                                 "('epochs', 'runtime'), but is : %s" %
+                                 "('epochs', 'runtime', 'resolution'), but is : %s" %
                                  self.budget_type)
 
         remaining_time = self.stats.get_remaing_time_budget()
