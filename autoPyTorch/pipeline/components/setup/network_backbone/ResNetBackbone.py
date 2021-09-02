@@ -139,6 +139,13 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                                value_range=(True, False),
                                                                                default_value=True,
                                                                                ),
+        shake_shake_method: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="shake_shake_method",
+                                                                                  value_range=('shake-shake',
+                                                                                               'shake-even',
+                                                                                               'even-even',
+                                                                                               'M3'),
+                                                                                  default_value='shake-shake',
+                                                                                  ),
         use_shake_drop: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_drop",
                                                                               value_range=(True, False),
                                                                               default_value=True,
@@ -180,9 +187,12 @@ class ResNetBackbone(NetworkBackboneComponent):
 
         if skip_connection_flag:
 
+            shake_shake_flag = False
             shake_drop_prob_flag = False
             if 'shake-drop' in multi_branch_choice.value_range:
                 shake_drop_prob_flag = True
+            elif 'shake-shake' in multi_branch_choice.value_range:
+                shake_shake_flag = True
 
             mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
             cs.add_hyperparameter(mb_choice)
@@ -192,6 +202,10 @@ class ResNetBackbone(NetworkBackboneComponent):
                 shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
                 cs.add_hyperparameter(shake_drop_prob)
                 cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
+            if shake_shake_flag:
+                method = get_hyperparameter(shake_shake_method, CategoricalHyperparameter)
+                cs.add_hyperparameter(method)
+                cs.add_condition(CS.EqualsCondition(method, mb_choice, "shake-shake"))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
@@ -327,11 +341,13 @@ class ResBlock(nn.Module):
             if self.config["multi_branch_choice"] == 'shake-shake':
                 x1 = self.layers(x)
                 x2 = self.shake_shake_layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                alpha, beta = shake_get_alpha_beta(is_training=self.training,
+                                                   is_cuda=x.is_cuda,
+                                                   method=self.config['shake_shake_method'])
                 x = shake_shake(x1, x2, alpha, beta)
             elif self.config["multi_branch_choice"] == 'shake-drop':
                 x = self.layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda, method='shake-drop')
                 bl = shake_drop_get_bl(
                     self.block_index,
                     1 - self.config["max_shake_drop_probability"],
