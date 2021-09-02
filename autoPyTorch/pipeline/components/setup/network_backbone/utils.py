@@ -92,15 +92,31 @@ class ShakeDropFunction(Function):
 shake_drop = ShakeDropFunction.apply
 
 
-def shake_get_alpha_beta(is_training: bool, is_cuda: bool
-                         ) -> typing.Tuple[torch.tensor, torch.tensor]:
+def shake_get_alpha_beta(
+        is_training: bool,
+        is_cuda: bool,
+        method: str
+) -> typing.Tuple[torch.tensor, torch.tensor]:
+
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
-    alpha = torch.rand(1)
-    beta = torch.rand(1)
+    if method != 'even-even':
+        alpha = torch.rand(1)
+    else:
+        alpha = torch.FloatTensor([0.5])
+    if method in ['shake-shake', 'shake-drop']:
+        beta = torch.rand(1)
+    elif 'even' in method:  # 'shake-even' or 'even-even'
+        beta = torch.FloatTensor([0.5])
+    elif method == 'M3':
+        beta = torch.FloatTensor(
+            [torch.rand(1)*(0.5 - alpha)*alpha if alpha < 0.5 else torch.rand(1)*(alpha - 0.5)*alpha]
+        )
+    else:
+        raise ValueError("Unknown method for ShakeShakeRegularisation in NetworkBackbone")
 
     if is_cuda:
         alpha = alpha.cuda()
