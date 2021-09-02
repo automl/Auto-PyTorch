@@ -17,11 +17,10 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, MAX_WIDNOW_SIZE_BASE
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-
 
 class TimeSeriesForecastingTask(BaseTask):
     """
@@ -92,6 +91,13 @@ class TimeSeriesForecastingTask(BaseTask):
         self.pipeline_options.update({"min_resolution": 0.1,
                                       "full_resolution": 1.0})
 
+        self.customized_window_size = False
+        if self.search_space_updates is not None:
+            for update in self.search_space_updates.updates:
+                # user has already specified a window_size range
+                if update.node_name == 'data_loader' and update.hyperparameter == 'window_size':
+                    self.customized_window_size = True
+
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):
             raise ValueError("Dataset is incompatible for the given task,: {}".format(
@@ -110,7 +116,8 @@ class TimeSeriesForecastingTask(BaseTask):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         #target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
-        n_prediction_steps: int= 1,
+        n_prediction_steps: int = 1,
+        freq: Optional[Union[str, int, List[int]]] = None,
         dataset_name: Optional[str] = None,
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
@@ -138,9 +145,13 @@ class TimeSeriesForecastingTask(BaseTask):
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
-            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]]
-                indices indicating which variables need to be predicted, if X is given, either 'target_variables'
-                and 'y' needs to be given
+            n_prediction_steps: int
+                How many steps in advance we need to predict
+            freq: Optional[Union[str, int, List[int]]]
+                frequency information, it determines the configuration space of the window size, if it is not given,
+                we will use the default configuration
+            dataset_name: Optional[str],
+                dataset name
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline.
             budget_type (Optional[str]):
@@ -218,6 +229,7 @@ class TimeSeriesForecastingTask(BaseTask):
         self.dataset = TimeSeriesForecastingDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
+            freq=freq,
             validator=self.InputValidator,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
@@ -225,6 +237,27 @@ class TimeSeriesForecastingTask(BaseTask):
             shift_input_data=shift_input_data,
             normalize_y=normalize_y,
         )
+
+        if self.dataset.freq is not None or not self.customized_window_size:
+            base_window_size = self.dataset.freq
+            # we don't want base window size to large, which might cause a too long computation time, in which case
+            # we will use n_prediction_step instead (which is normally smaller than base_window_size)
+            if base_window_size > self.dataset.upper_window_size or base_window_size > MAX_WIDNOW_SIZE_BASE:
+                # TODO considering padding to allow larger upper_window_size !!!
+                base_window_size = min(n_prediction_steps, self.dataset.upper_window_size)
+            if base_window_size > MAX_WIDNOW_SIZE_BASE:
+                base_window_size = 50 # TODO this value comes from setting of solar dataset, do we have a better choice?
+            if self.search_space_updates is None:
+                self.search_space_updates = HyperparameterSearchSpaceUpdates()
+
+            window_size_scales = [1, 2]
+
+            self.search_space_updates.append(node_name="data_loader",
+                                             hyperparameter="window_size",
+                                             value_range=[window_size_scales[0] * base_window_size,
+                                                          window_size_scales[1] * base_window_size],
+                                             default_value=1.25 * base_window_size,
+                                             )
 
         if traditional_per_total_budget > 0.:
             self._logger.warning("Time series Forecasting for now does not support traditional classifiers. "

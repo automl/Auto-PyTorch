@@ -43,6 +43,21 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 #TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
 #TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
 
+# seasonality map, maps a frequency value to a number
+SEASONALITY_MAP = {
+   "minutely": [1440, 10080, 525960],
+   "10_minutes": [144, 1008, 52596],
+   "half_hourly": [48, 336, 17532],
+   "hourly": [24, 168, 8766],
+   "daily": 7,
+   "weekly": 365.25/7,
+   "monthly": 12,
+   "quarterly": 4,
+   "yearly": 1
+}
+
+MAX_WIDNOW_SIZE_BASE = 500
+
 
 class TimeSeriesSequence(BaseDataset):
     def __init__(self,
@@ -248,6 +263,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+                 freq: Optional[Union[str, int, List[int]]] = None,
                  dataset_name: Optional[str] = None,
                  resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
@@ -261,11 +277,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  normalize_y: bool = True,
                  ):
         """
-        :param target_variables: The indices of the variables you want to forecast
-        :param sequence_length: The amount of past data you want to use to forecast future value
-        :param n_steps: The number of steps you want to forecast into the future
-        :param train: Tuple with one tensor holding the training data
-        :param val: Tuple with one tensor holding the validation data
+        :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
+        period
+        :param n_prediction_steps: The number of steps you want to forecast into the future
         :param shift_input_data: bool
         if the input X and targets needs to be shifted to be aligned:
         such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
@@ -370,7 +384,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_test = 0
         sequence_datasets = []
 
-
         if X_test is None or Y_test is None:
             for seq_idx, seq_length_train in enumerate(self.sequence_lengths):
                 idx_end_train = idx_start_train + seq_length_train
@@ -440,6 +453,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.splits = self.get_splits_from_resampling_strategy()
 
+        if isinstance(freq, str):
+            if freq not in SEASONALITY_MAP:
+                Warning("The given freq name is not supported by our dataset, we will use the default "
+                        "configuration space on the hyperparameter window_size, if you want to adapt this value"
+                        "you could pass freq with a numerical value")
+            freq = SEASONALITY_MAP.get(freq, None)
+        if isinstance(freq, list):
+            tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
+            freq = tmp_freq
+
+        self.freq = freq
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
