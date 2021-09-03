@@ -140,6 +140,7 @@ def k_fold_cross_validation(num_splits: int, indices: np.ndarray, **kwargs: Any)
 
 
 # TODO DO we move these under autoPyTorch/datasets/time_series_dataset.py?
+# TODO rewrite this part, as we only need holdout sets
 def time_series_hold_out_validation(val_share: float, indices: np.ndarray, **kwargs: Any) \
         -> Tuple[np.ndarray, np.ndarray]:
     """

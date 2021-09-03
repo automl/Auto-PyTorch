@@ -73,7 +73,7 @@ class TimeSeriesSequence(BaseDataset):
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  n_prediction_steps: int = 1,
-                 do_split=True,
+                 do_split=False,
                  ):
         """
         A dataset representing a time series sequence.
@@ -296,7 +296,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             raise ValueError(f"This dataset only support TimeSeriesForecastingInputValidator "
                              f"but receive {type(validator)}")
 
-        self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,)
+        if not self.validator._is_fitted:
+            self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,)
 
         self.numerical_columns = self.validator.feature_validator.numerical_columns
         self.categorical_columns = self.validator.feature_validator.categorical_columns
@@ -304,7 +305,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_features = self.validator.feature_validator.num_features  # type: int
         self.num_target = self.validator.target_validator.out_dimensionality  # type: int
 
-        X, Y = self.validator.transform(X, Y)
+
+        X, sequence_lengths, Y = self.validator.transform(X, Y)
+        if X_test is not None:
+            X_test, sequence_lengths_tests, Y_test = self.validator.transform(X_test, Y_test)
 
         self.shuffle = shuffle
         self.rand = np.random.RandomState(seed=seed)
@@ -318,58 +322,20 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.val_transform = val_transforms
 
         self.num_sequences = len(X)
-        self.sequence_lengths = [0] * self.num_sequences
-        if shift_input_data:
-            for seq_idx in range(self.num_sequences):
-                X[seq_idx] = X[seq_idx][:-n_prediction_steps]
-                Y[seq_idx] = Y[seq_idx][n_prediction_steps:]
-                self.sequence_lengths[seq_idx] = len(X[seq_idx])
-        else:
-            for seq_idx in range(self.num_sequences):
-                self.sequence_lengths[seq_idx] = len(X[seq_idx])
-
-        num_train_data = np.sum(self.sequence_lengths)
-        X_train_flatten = np.empty([num_train_data, self.num_features])
-        Y_train_flatten = np.empty([num_train_data, self.num_target])
-        start_idx = 0
-
-        self.sequences = []
-        # flatten the sequences to allow data preprocessing
-
-        for seq_idx, seq_length in enumerate(self.sequence_lengths):
-            end_idx = start_idx + seq_length
-            X_train_flatten[start_idx: end_idx] = np.array(X[seq_idx]).reshape([-1, self.num_features])
-            Y_train_flatten[start_idx: end_idx] = np.array(Y[seq_idx]).reshape([-1, self.num_target])
-            start_idx = end_idx
-
-        sequence_lengths_test = [0] * self.num_sequences
-
-        if X_test is not None or Y_test is not None:
-            for seq_idx in range(self.num_sequences):
-                sequence_lengths_test[seq_idx] = len(X_test[seq_idx])
-            num_test_data = np.sum(sequence_lengths_test)
-            X_test_flatten = np.empty([num_test_data, self.num_features])
-            Y_test_flatten = np.empty([num_test_data, self.num_target])
-            start_idx = 0
-
-            for seq_idx, seq_length in enumerate(sequence_lengths_test):
-                end_idx = start_idx + seq_length
-                X_test_flatten[start_idx: end_idx] = np.array(X_test[seq_idx]).reshape([-1, self.num_features])
-                Y_test_flatten[start_idx: end_idx] = np.array(Y_test[seq_idx]).reshape([-1, self.num_target])
-                start_idx = end_idx
+        self.sequence_lengths = sequence_lengths
 
         if dataset_name is None:
-            self.dataset_name = hash_array_or_matrix(X_train_flatten)
+            self.dataset_name = hash_array_or_matrix(X)
         else:
             self.dataset_name = dataset_name
         dataset_name_seqs = [f"{dataset_name}_sequence_{i}" for i in range(self.num_sequences)]
 
         if normalize_y:
-            self.y_train_mean = np.mean(Y_train_flatten)
-            self.y_train_std = np.std(Y_train_flatten)
-            Y_train_flatten = (Y_train_flatten - self.y_train_mean) / self.y_train_std
+            self.y_train_mean = np.mean(Y)
+            self.y_train_std = np.std(Y)
+            Y = (Y - self.y_train_mean) / self.y_train_std
             if Y_test is not None:
-                Y_test_flatten = (Y_test_flatten - self.y_train_mean) / self.y_train_std
+                Y_test = (Y_test - self.y_train_mean) / self.y_train_std
         else:
             self.y_train_mean = 0
             self.y_train_std = 1
@@ -387,38 +353,34 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if X_test is None or Y_test is None:
             for seq_idx, seq_length_train in enumerate(self.sequence_lengths):
                 idx_end_train = idx_start_train + seq_length_train
-                sequence = TimeSeriesSequence(X=X_train_flatten[idx_start_train: idx_end_train],
-                                              Y=Y_train_flatten[idx_start_train: idx_end_train],
+                sequence = TimeSeriesSequence(X=X[idx_start_train: idx_end_train],
+                                              Y=Y[idx_start_train: idx_end_train],
                                               dataset_name=dataset_name_seqs[seq_idx],
                                               seed=self.rand.randint(0, 2**20),
                                               **sequences_kwargs)
                 sequence_datasets.append(sequence)
                 idx_start_train = idx_end_train
-
-                self.sequence_lengths[seq_idx] = len(sequence)
         else:
-            for seq_idx, (seq_length_train, seq_length_test) in enumerate(zip(self.sequence_lengths, sequence_lengths_test)):
+            for seq_idx, (seq_length_train, seq_length_test) in enumerate(zip(self.sequence_lengths, sequence_lengths_tests)):
                 idx_end_train = idx_start_train + seq_length_train
                 idx_end_test = idx_start_test + seq_length_test
-                sequence = TimeSeriesSequence(X=X_train_flatten[idx_start_train: idx_end_train],
-                                              Y=Y_train_flatten[idx_start_train: idx_end_train],
-                                              X_test=X_test_flatten[idx_start_test: idx_end_test],
-                                              Y_test=Y_test_flatten[idx_start_test: idx_end_test],
+                sequence = TimeSeriesSequence(X=X[idx_start_train: idx_end_train],
+                                              Y=Y[idx_start_train: idx_end_train],
+                                              X_test=X_test[idx_start_test: idx_end_test],
+                                              Y_test=Y_test[idx_start_test: idx_end_test],
                                               dataset_name=dataset_name_seqs[seq_idx],
                                               seed=self.rand.randint(0, 2**20),
                                               **sequences_kwargs)
                 sequence_datasets.append(sequence)
                 idx_start_train = idx_end_train
-
-                self.sequence_lengths[seq_idx] = len(sequence)
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
         self.seq_length_min = np.min(self.sequence_lengths)
 
-        self.train_tensors = (X_train_flatten, Y_train_flatten)
+        self.train_tensors = (X, Y)
         if X_test is not None or Y_test is not None:
-            self.test_tensors = (X_test_flatten, Y_test_flatten)
+            self.test_tensors = (X_test, Y_test)
         else:
             self.test_tensors = None
         self.val_tensors = None
@@ -590,8 +552,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
         idx_start = 0
         splits = [[[] for _ in range(len(self.datasets))] for _ in range(num_splits)]
+
+        kwargs = {"n_prediction_steps": self.n_prediction_steps}
+        splits = [[() for _ in range(self.num_sequences)] for _ in range(num_splits)]
+        idx_all = self._get_indices()
+
         for idx_seq, dataset in enumerate(self.datasets):
-            split = dataset.create_cross_val_splits(cross_val_type, num_splits=num_splits)
+            split = self.cross_validators[cross_val_type.name](num_splits, indices=dataset._get_indices(), **kwargs)
             for idx_split in range(num_splits):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths[idx_seq]
@@ -631,11 +598,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             raise ValueError(f"`val_share` must be between 0 and 1, got {val_share}.")
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
+        kwargs = {"n_prediction_steps": self.n_prediction_steps}
 
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
-            split = dataset.create_holdout_val_split(holdout_val_type, val_share)
+            split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
+                                                                   indices=dataset._get_indices(),
+                                                                   **kwargs)
             for idx_split in range(2):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths[idx_seq]
@@ -754,6 +724,5 @@ class TimeSeriesDataset(BaseDataset):
             'task_type': self.task_type,
             'numerical_features': self.numerical_features,
             'categorical_features': self.categorical_features,
-
         })
         return info
