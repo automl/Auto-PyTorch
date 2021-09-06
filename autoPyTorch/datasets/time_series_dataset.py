@@ -290,7 +290,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.n_prediction_steps = n_prediction_steps
         if validator is None:
             validator = TimeSeriesForecastingInputValidator(is_classification=False)
-        self.validator = validator
+        self.validator : TimeSeriesForecastingInputValidator = validator
 
         if not isinstance(validator, TimeSeriesForecastingInputValidator):
             raise ValueError(f"This dataset only support TimeSeriesForecastingInputValidator "
@@ -305,10 +305,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_features = self.validator.feature_validator.num_features  # type: int
         self.num_target = self.validator.target_validator.out_dimensionality  # type: int
 
-
-        X, sequence_lengths, Y = self.validator.transform(X, Y)
+        X, sequence_lengths, Y = self.validator.transform(X, Y,
+                                                          shift_input_data=shift_input_data,
+                                                          n_prediction_steps=n_prediction_steps)
         if X_test is not None:
-            X_test, sequence_lengths_tests, Y_test = self.validator.transform(X_test, Y_test)
+            X_test, sequence_lengths_tests, Y_test = self.validator.transform(X_test, Y_test,
+                                                                              shift_input_data=shift_input_data,
+                                                                              n_prediction_steps=n_prediction_steps)
 
         self.shuffle = shuffle
         self.rand = np.random.RandomState(seed=seed)
@@ -361,7 +364,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 sequence_datasets.append(sequence)
                 idx_start_train = idx_end_train
         else:
-            for seq_idx, (seq_length_train, seq_length_test) in enumerate(zip(self.sequence_lengths, sequence_lengths_tests)):
+            for seq_idx, (seq_length_train, seq_length_test) in enumerate(zip(self.sequence_lengths,
+                                                                              sequence_lengths_tests)):
                 idx_end_train = idx_start_train + seq_length_train
                 idx_end_test = idx_start_test + seq_length_test
                 sequence = TimeSeriesSequence(X=X[idx_start_train: idx_end_train],

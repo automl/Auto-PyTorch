@@ -41,6 +41,7 @@ from autoPyTorch.ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.classifier_models import get_available_classifiers
@@ -195,6 +196,8 @@ class BaseTask:
                               HyperparameterSearchSpaceUpdates):
                 raise ValueError("Expected search space updates to be of instance"
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
+
+        self.time_series_prediction = False
 
     @abstractmethod
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
@@ -514,7 +517,8 @@ class BaseTask:
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=True if len(self._disable_file_output) > 0 else False,
-            all_supported_metrics=self._all_supported_metrics
+            all_supported_metrics=self._all_supported_metrics,
+            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_prediction else None,
         )
 
         status, cost, runtime, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -586,7 +590,8 @@ class BaseTask:
                 stats=stats,
                 memory_limit=memory_limit,
                 disable_file_output=True if len(self._disable_file_output) > 0 else False,
-                all_supported_metrics=self._all_supported_metrics
+                all_supported_metrics=self._all_supported_metrics,
+                evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_prediction else None,
             )
             dask_futures.append((classifier, self._dask_client.submit(ta.run, config=classifier,
                                                                       cutoff=time_for_traditional_classifier_sec)))

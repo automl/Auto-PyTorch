@@ -228,6 +228,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
+        This is a lazy loaded test set, each time only one piece of series data is passed to the dataloader and we
+        expand the sampling indices inside this function,
         """
         # TODO any better way to deal with prediction data loader for multiple sequences
         if isinstance(X, np.ndarray):

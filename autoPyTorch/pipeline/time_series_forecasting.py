@@ -224,7 +224,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         return "time_series_predictor"
 
-
     def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 

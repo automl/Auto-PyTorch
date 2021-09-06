@@ -18,35 +18,30 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     A validator designed for a time series forecasting dataset.
     As a time series forecasting dataset might contain several time sequnces with
     """
+
     def fit(
-        self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        y_train: SUPPORTED_TARGET_TYPES,
-        X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
-        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+            self,
+            X_train: SUPPORTED_FEAT_TYPES,
+            y_train: SUPPORTED_TARGET_TYPES,
+            X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
+            y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         # Check that the data is valid
         if len(X_train) != len(y_train):
             raise ValueError("Inconsistent number of sequences for features and targets,"
-                             " {} for features and {} for targets".format(
-                len(X_train),
-                len(y_train),
-            ))
+                             " {} for features and {} for targets".format(len(X_train), len(y_train),))
 
         if X_test is not None:
             if len(X_test) != len(y_test):
                 raise ValueError("Inconsistent number of test datapoints for features and targets,"
-                             " {} for features and {} for targets".format(
-                len(X_test),
-                len(y_test),
-                ))
+                                 " {} for features and {} for targets".format(len(X_test), len(y_test), ))
             super().fit(X_train[0], y_train[0], X_test[0], y_test[0])
         else:
             super().fit(X_train[0], y_train[0])
 
         self.check_input_shapes(X_train, y_train, is_training=True)
 
-        if X_test is not  None:
+        if X_test is not None:
             self.check_input_shapes(X_test, y_test, is_training=False)
         return self
 
@@ -73,11 +68,11 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                              f"{'train' if is_training else 'test'} set!")
 
     def transform(
-        self,
-        X: SUPPORTED_FEAT_TYPES,
-        y: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
-        shift_input_data: bool = True,
-        n_prediction_steps: int = 1
+            self,
+            X: SUPPORTED_FEAT_TYPES,
+            y: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+            shift_input_data: bool = True,
+            n_prediction_steps: int = 1
     ) -> typing.Tuple[np.ndarray, typing.List[int], typing.Optional[np.ndarray]]:
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
@@ -137,9 +132,3 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             X_transformed = self.feature_validator.transform(X_flat)
 
             return X_transformed, sequence_lengths
-
-
-
-
-
-

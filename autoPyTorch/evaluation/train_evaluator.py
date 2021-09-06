@@ -330,8 +330,10 @@ def eval_function(
         all_supported_metrics: bool = True,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         instance: str = None,
-        evaluator_class: ClassVar[AbstractEvaluator] = TrainEvaluator,
+        evaluator_class: Optional[AbstractEvaluator] = None,
 ) -> None:
+    if evaluator_class is None:
+        evaluator_class = TrainEvaluator
     evaluator = evaluator_class(
         backend=backend,
         queue=queue,

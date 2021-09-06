@@ -1,13 +1,15 @@
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+from autoPyTorch.evaluation.abstract_evaluator import DummyClassificationPipeline
 
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar
-
+from functools import partial
 import warnings
 
 from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
+import pandas as pd
 
 from sklearn.base import BaseEstimator
 
@@ -29,6 +31,26 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+
+
+class DummyTimeSeriesPredictionPipeline(DummyClassificationPipeline):
+    def __init__(self, config: Configuration,
+                 random_state: Optional[Union[int, np.random.RandomState]] = None,
+                 init_params: Optional[Dict] = None,
+                 n_prediction_steps: int = 1,
+                 ) -> None:
+        super(DummyTimeSeriesPredictionPipeline, self).__init__(config, random_state, init_params)
+        self.n_prediction_steps = n_prediction_steps
+
+    def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
+                      batch_size: int = 1000) -> np.array:
+        new_X = np.ones((self.n_prediction_steps, 1))
+        return super(DummyTimeSeriesPredictionPipeline, self).predict_proba(new_X)
+
+    def predict(self, X: Union[np.ndarray, pd.DataFrame],
+                batch_size: int = 1000) -> np.array:
+        new_X = np.ones((self.n_prediction_steps, 1))
+        return super(DummyTimeSeriesPredictionPipeline, self).predict(new_X).astype(np.float32)
 
 
 class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
@@ -69,10 +91,14 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
-        self.pipeline_class = TimeSeriesForecastingPipeline
         self.datamanager: TimeSeriesForecastingDataset
         self.n_prediction_steps = self.datamanager.n_prediction_steps
         self.num_sequences = self.datamanager.num_sequences
+
+        if isinstance(self.configuration, int):
+            self.pipeline_class = partial(DummyTimeSeriesPredictionPipeline, n_prediction_steps=self.n_prediction_steps)
+        else:
+            self.pipeline_class = TimeSeriesForecastingPipeline
 
         self.splits = self.datamanager.splits
         if self.splits is None:
@@ -103,6 +129,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             y_optimization = np.ones([len(test_split), self.n_prediction_steps])
 
+            # We implement this with the following reasons:
+            # given a series data, we don't know which value to predict so we predict the last n_predicted values
+            # However, this makes the shape unaligned with the shape of "self.Y_optimization"
+            # TODO consider fixed this under data loader (use pipline to do a preprocessing)
             y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
                            np.tile(np.arange(self.n_prediction_steps), len(test_split))
 
@@ -277,6 +307,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         datamanager = self.datamanager
         y_pred = np.ones([len(test_indices), self.n_prediction_steps])
         for seq_idx, test_idx in enumerate(test_indices):
+            import pdb
             y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).flatten()
 
         #train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
@@ -304,11 +335,4 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             test_pred = None
 
         return np.empty(1), opt_pred, valid_pred, test_pred
-
-
-
-
-
-
-
 

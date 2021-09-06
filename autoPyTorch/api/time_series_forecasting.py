@@ -22,6 +22,7 @@ from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPi
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
+
 class TimeSeriesForecastingTask(BaseTask):
     """
     Time Series Forcasting API to the pipelines.
@@ -97,6 +98,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 # user has already specified a window_size range
                 if update.node_name == 'data_loader' and update.hyperparameter == 'window_size':
                     self.customized_window_size = True
+        self.time_series_prediction = True
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):
@@ -239,12 +241,12 @@ class TimeSeriesForecastingTask(BaseTask):
         )
 
         if self.dataset.freq is not None or not self.customized_window_size:
-            base_window_size = self.dataset.freq
+            base_window_size = int(np.ceil(self.dataset.freq))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
             if base_window_size > self.dataset.upper_window_size or base_window_size > MAX_WIDNOW_SIZE_BASE:
                 # TODO considering padding to allow larger upper_window_size !!!
-                base_window_size = min(n_prediction_steps, self.dataset.upper_window_size)
+                base_window_size = int(np.ceil(min(n_prediction_steps, self.dataset.upper_window_size)))
             if base_window_size > MAX_WIDNOW_SIZE_BASE:
                 base_window_size = 50 # TODO this value comes from setting of solar dataset, do we have a better choice?
             if self.search_space_updates is None:
@@ -256,7 +258,7 @@ class TimeSeriesForecastingTask(BaseTask):
                                              hyperparameter="window_size",
                                              value_range=[window_size_scales[0] * base_window_size,
                                                           window_size_scales[1] * base_window_size],
-                                             default_value=1.25 * base_window_size,
+                                             default_value=int(np.ceil(1.25 * base_window_size)),
                                              )
 
         if traditional_per_total_budget > 0.:
@@ -279,7 +281,7 @@ class TimeSeriesForecastingTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
-            time_series_prediction=True
+            time_series_prediction=self.time_series_prediction
         )
 
     def predict(
