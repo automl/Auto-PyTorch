@@ -498,7 +498,7 @@ class BaseTask:
         Returns:
                 None
         """
-        if self._logger is not None:
+        if hasattr(self, '_logger') and self._logger is not None:
             self._logger.info("Closing the dask infrastructure")
             self._close_dask_client()
             self._logger.info("Finished closing the dask infrastructure")
