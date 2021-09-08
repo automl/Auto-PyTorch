@@ -397,6 +397,7 @@ class BaseTask:
             self.logging_server.join(timeout=5)
             self.logging_server.terminate()
             del self.stop_logging_server
+            self._logger = None
 
     def _create_dask_client(self) -> None:
         """
@@ -490,6 +491,23 @@ class BaseTask:
             self.models_ = {}
 
         return True
+
+    def _cleanup(self) -> None:
+        """
+        Closes the different servers created during api search.
+        Returns:
+                None
+        """
+        if self._logger is not None:
+            self._logger.info("Closing the dask infrastructure")
+            self._close_dask_client()
+            self._logger.info("Finished closing the dask infrastructure")
+
+            # Clean up the logger
+            self._logger.info("Starting to clean up the logger")
+            self._clean_logger()
+        else:
+            self._close_dask_client()
 
     def _load_best_individual_model(self) -> SingleBest:
         """
@@ -923,6 +941,8 @@ class BaseTask:
                 self._stopwatch.stop_task(traditional_task_name)
 
         # ============> Starting ensemble
+        self.precision = precision
+        self.opt_metric = optimize_metric
         elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
         time_left_for_ensembles = max(0, total_walltime_limit - elapsed_time)
         proc_ensemble = None
@@ -1024,18 +1044,12 @@ class BaseTask:
                 pd.DataFrame(self.ensemble_performance_history).to_json(
                     os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
-        self._logger.info("Closing the dask infrastructure")
-        self._close_dask_client()
-        self._logger.info("Finished closing the dask infrastructure")
-
         if load_models:
             self._logger.info("Loading models...")
             self._load_models()
             self._logger.info("Finished loading models...")
 
-        # Clean up the logger
-        self._logger.info("Starting to clean up the logger")
-        self._clean_logger()
+        self._cleanup()
 
         return self
 
@@ -1506,7 +1520,7 @@ class BaseTask:
 
         predictions = self.ensemble_.predict(all_predictions)
 
-        self._clean_logger()
+        self._cleanup()
 
         return predictions
 
@@ -1543,10 +1557,7 @@ class BaseTask:
         return self.__dict__
 
     def __del__(self) -> None:
-        # Clean up the logger
-        self._clean_logger()
-
-        self._close_dask_client()
+        self._cleanup()
 
         # When a multiprocessing work is done, the
         # objects are deleted. We don't want to delete run areas
