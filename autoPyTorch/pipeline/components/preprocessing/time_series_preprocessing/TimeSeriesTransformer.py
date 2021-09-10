@@ -74,8 +74,8 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
 
-        if len(X.shape) == 2:
-            # expand batch dimension when called on a single record
-            X = X[np.newaxis, ...]
+        #if len(X.shape) == 2:
+        #    # expand batch dimension when called on a single record
+        #    X = X[np.newaxis, ...]
 
         return self.preprocessor.transform(X)

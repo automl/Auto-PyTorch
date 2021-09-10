@@ -168,8 +168,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         steps.extend([
             ("scaler", ScalerChoice(default_dataset_properties)),
-            ("preprocessing", EarlyPreprocessing()),
             ("time_series_transformer", TimeSeriesTransformer()),
+            ("preprocessing", EarlyPreprocessing()),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
             ("network_head", NetworkHeadChoice(default_dataset_properties)),
             ("network", NetworkComponent()),

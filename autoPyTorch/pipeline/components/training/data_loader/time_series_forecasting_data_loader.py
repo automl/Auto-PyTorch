@@ -147,6 +147,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
+
         self.n_prediction_steps = datamanager.n_prediction_steps
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
@@ -156,7 +157,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size
         # we need to drop the first part of each sequence
-        for seq_idx, seq_length in enumerate(datamanager.sequence_lengths):
+        for seq_idx, seq_length in enumerate(datamanager.sequence_lengths_train):
             idx_end = idx_start + seq_length
             full_sequence = np.arange(idx_start, idx_end)[self.subseq_length:]
             valid_indices.append(full_sequence)
@@ -228,8 +229,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
-        This is a lazy loaded test set, each time only one piece of series data is passed to the dataloader and we
-        expand the sampling indices inside this function,
+        This is a lazy loaded test set, each time only one piece of series
         """
         # TODO any better way to deal with prediction data loader for multiple sequences
         if isinstance(X, np.ndarray):
@@ -315,12 +315,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 window_size = UniformIntegerHyperparameter("window_size",
                                                            lower=1,
                                                            upper=upper_window_size,
-                                                           default_value=(upper_window_size + 1)// 2)
+                                                           default_value=upper_window_size)
         elif window_size[0][0] <= upper_window_size < window_size[0][1]:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
                                                        upper=upper_window_size,
-                                                       default_value=(window_size[0][0] + upper_window_size) // 2)
+                                                       default_value=upper_window_size)
         else:
             window_size = UniformIntegerHyperparameter("window_size",
                                                        lower=window_size[0][0],
