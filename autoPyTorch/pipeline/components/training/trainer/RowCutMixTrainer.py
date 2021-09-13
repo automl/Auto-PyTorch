@@ -26,25 +26,31 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        beta = 1.0
-        lam = self.random_state.beta(beta, beta)
-        batch_size = X.size()[0]
-        index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
+        alpha, beta = 1.0, 1.0
+        lam = self.random_state.beta(alpha, beta)
+        batch_size = X.shape[0]
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        batch_indices = torch.randperm(batch_size).to(device)
 
         r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
-            return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
+            return X, {'y_a': y, 'y_b': y[batch_indices], 'lam': 1}
 
-        size = X.shape[1]
-        indices = torch.tensor(self.random_state.choice(range(1, size), max(1, np.int32(size * lam)),
-                                                        replace=False))
+        row_size = X.shape[1]
+        row_indices = torch.tensor(
+            self.random_state.choice(
+                range(1, row_size),
+                max(1, int(row_size * lam)),
+                replace=False
+            )
+        )
 
-        X[:, indices] = X[index, :][:, indices]
+        X[:, row_indices] = X[batch_indices, :][:, row_indices]
 
         # Adjust lam
-        lam = 1 - ((len(indices)) / (X.size()[1]))
+        lam = 1 - len(row_indices) / X.shape[1]
 
-        y_a, y_b = y, y[index]
+        y_a, y_b = y, y[batch_indices]
 
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 

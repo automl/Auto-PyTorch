@@ -413,12 +413,13 @@ class TrainerChoice(autoPyTorchChoice):
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
             # update batch norm statistics
-            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model.double())
+            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
+
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
                 for model in self.choice.model_snapshots:
-                    swa_utils.update_bn(X['train_data_loader'], model.double())
+                    swa_utils.update_bn(loader=X['train_data_loader'], model=model.double())
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
@@ -490,13 +491,10 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
+        target_metrics = 'val_loss'
         if X['val_indices'] is None:
-            if X['X_test'] is not None:
-                epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch('test_loss')
-            else:
-                epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch('train_loss')
-        else:
-            epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
+            target_metrics = 'test_loss' if X['X_test'] is not None else 'train_loss'
+        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch(target_metrics)
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
@@ -626,11 +624,12 @@ class TrainerChoice(autoPyTorchChoice):
     def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
-        Keyword Arguments:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+        Args:
+            prefix (Optional[str]): Only return search space updates with given prefix
 
         Returns:
-            dict -- Mapping of search space updates. Keys don't contain the prefix.
+            Dict[str, HyperparameterSearchSpace]:
+                Mapping of search space updates. Keys don't contain the prefix.
         """
         updates = super()._get_search_space_updates(prefix=prefix)
 

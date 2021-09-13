@@ -37,7 +37,11 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         Args:
             epsilon (float): The perturbation magnitude.
-
+        
+        References:
+            Explaining and Harnessing Adversarial Examples
+            Ian J. Goodfellow et. al.
+            https://arxiv.org/pdf/1412.6572.pdf
         """
         super().__init__(random_state=random_state,
                          weighted_loss=weighted_loss,
@@ -96,10 +100,10 @@ class AdversarialTrainer(BaseTrainerComponent):
         # training
         self.optimizer.zero_grad()
         original_outputs = self.model(original_data)
-        adversarial_output = self.model(adversarial_data)
+        adversarial_outputs = self.model(adversarial_data)
 
         loss_func = self.criterion_preparation(**criterion_kwargs)
-        loss = loss_func(self.criterion, original_outputs, adversarial_output)
+        loss = loss_func(self.criterion, original_outputs, adversarial_outputs)
         loss.backward()
         self.optimizer.step()
         if self.scheduler:
@@ -125,6 +129,9 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         Returns:
             adv_data (np.ndarray): the adversarial examples.
+        
+        References:
+            https://pytorch.org/tutorials/beginner/fgsm_tutorial.html#fgsm-attack
         """
         data_copy = deepcopy(data)
         data_copy = data_copy.float().to(self.device)
@@ -159,7 +166,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=[True, False],
+            value_range=(True, False),
             default_value=True),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
@@ -196,9 +203,7 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         add_hyperparameter(cs, epsilon, UniformFloatHyperparameter)
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
-        snapshot_ensemble_flag = False
-        if any(use_snapshot_ensemble.value_range):
-            snapshot_ensemble_flag = True
+        snapshot_ensemble_flag = any(use_snapshot_ensemble.value_range)
 
         use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
         cs.add_hyperparameter(use_snapshot_ensemble)
@@ -209,9 +214,7 @@ class AdversarialTrainer(BaseTrainerComponent):
             cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
             cs.add_condition(cond)
 
-        lookahead_flag = False
-        if any(use_lookahead_optimizer.value_range):
-            lookahead_flag = True
+        lookahead_flag = any(use_lookahead_optimizer.value_range)
 
         use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
         cs.add_hyperparameter(use_lookahead_optimizer)

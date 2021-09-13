@@ -140,7 +140,6 @@ class TrainEvaluator(AbstractEvaluator):
                 'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
             )
 
-
         self.splits = self.datamanager.splits
         if self.splits is None:
             raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
