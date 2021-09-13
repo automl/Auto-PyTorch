@@ -9,7 +9,9 @@ from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
 
 class RowCutOutTrainer(CutOut, BaseTrainerComponent):
+    # 0 is non-informative in image data
     NUMERICAL_VALUE = 0
+    # -1 is the conceptually equivalent to 0 in a image, i.e. 0-pad
     CATEGORICAL_VALUE = -1
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
@@ -36,23 +38,18 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             lam = 1
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
-        size = X.shape[1]
-        indices = self.random_state.choice(range(1, size), max(1, np.int32(size * self.patch_ratio)),
-                                           replace=False)
+        row_size = X.shape[1]
+        row_indices = self.random_state.choice(range(1, row_size), max(1, int(row_size * self.patch_ratio)),
+                                               replace=False)
 
         if not isinstance(self.numerical_columns, typing.Iterable):
-            raise ValueError("{} requires numerical columns information of {}"
-                             "to prepare data got {}.".format(self.__class__.__name__,
-                                                              typing.Iterable,
-                                                              self.numerical_columns))
-        numerical_indices = torch.tensor(self.numerical_columns)
-        categorical_indices = torch.tensor([index for index in indices if index not in self.numerical_columns])
+            raise ValueError("numerical_columns in {} must be iterable, "
+                             "but got {}.".format(self.__class__.__name__,
+                                                  self.numerical_columns))
 
-        # We use an ordinal encoder on the categorical columns of tabular data
-        # -1 is the conceptual equivalent to 0 in a image, that does not
-        # have color as a feature and hence the network has to learn to deal
-        # without this data. For numerical columns we use 0 to cutout the features
-        # similar to the effect that setting 0 as a pixel value in an image.
+        numerical_indices = torch.tensor(self.numerical_columns)
+        categorical_indices = torch.tensor([idx for idx in row_indices if idx not in self.numerical_columns])
+
         X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
         X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
 

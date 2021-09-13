@@ -384,11 +384,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-<<<<<<< HEAD
                 if X['val_data_loader']:
-=======
-                if 'val_data_loader' in X and X['val_data_loader']:
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -433,26 +429,20 @@ class TrainerChoice(autoPyTorchChoice):
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
             # update batch norm statistics
-            swa_utils.update_bn(X['train_data_loader'], self.choice.swa_model.double())
+            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
+
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
                 for model in self.choice.model_snapshots:
-                    swa_utils.update_bn(X['train_data_loader'], model.double())
+                    swa_utils.update_bn(loader=X['train_data_loader'], model=model.double())
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
-<<<<<<< HEAD
             if X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['val_data_loader']:
                 test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
-=======
-            if 'val_data_loader' in X and X['val_data_loader']:
-                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
-            if 'test_data_loader' in X and X['test_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -653,11 +643,12 @@ class TrainerChoice(autoPyTorchChoice):
     def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
         """Get the search space updates with the given prefix
 
-        Keyword Arguments:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+        Args:
+            prefix (Optional[str]): Only return search space updates with given prefix
 
         Returns:
-            dict -- Mapping of search space updates. Keys don't contain the prefix.
+            Dict[str, HyperparameterSearchSpace]:
+                Mapping of search space updates. Keys don't contain the prefix.
         """
         updates = super()._get_search_space_updates(prefix=prefix)
 
