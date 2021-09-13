@@ -61,7 +61,7 @@ class MixUp:
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=[True, False],
+            value_range=(True, False),
             default_value=True),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
