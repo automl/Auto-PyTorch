@@ -119,7 +119,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             collate_fn=custom_collate_fn,
         )
 
-        if X['val_indices'] is not None:
+        if X.get('val_indices', None) is not None:
             val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=False)
             self.val_data_loader = torch.utils.data.DataLoader(
                 val_dataset,
@@ -131,7 +131,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                 collate_fn=custom_collate_fn,
             )
 
-        if 'X_test' in X and X['X_test'] is not None:
+        if X.get('X_test', None) is not None:
             self.test_data_loader = self.get_loader(X=X['X_test'],
                                                     y=X['y_test'],
                                                     batch_size=self.batch_size)
