@@ -176,8 +176,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             raise ValueError("resampling strategy must be in "
                              "(HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes), "
-                             "but got {}.".format(self.resampling_strategy)
-            )
+                             "but got {}.".format(self.resampling_strategy))
 
         self.worst_possible_result = cost_for_crash
 
