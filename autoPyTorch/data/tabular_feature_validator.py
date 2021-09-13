@@ -303,7 +303,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         feat_type = []
 
         # Make sure each column is a valid type
-        for i, column in enumerate(X.columns):
+        for column in X.columns:
             if X[column].dtype.name in ['category', 'bool']:
 
                 enc_columns.append(column)
@@ -423,7 +423,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[key] = X[key].astype(dtype.name)
                 except Exception as e:
                     # Try inference if possible
-                    self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
+                    self.logger.warning(f'Casting the column {key} to {dtype} caused the exception {e}')
                     pass
         else:
             X = X.infer_objects()
