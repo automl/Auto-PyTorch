@@ -34,13 +34,16 @@ def update_model_state_dict_from_swa(model: torch.nn.Module, swa_state_dict: Dic
         model_state[name].copy_(param)
 
 
-def swa_average_function(averaged_model_parameter: torch.nn.parameter.Parameter,
-                         model_parameter: torch.nn.parameter.Parameter,
-                         num_averaged: int) -> torch.nn.parameter.Parameter:
+def swa_update(averaged_model_parameter: torch.nn.parameter.Parameter,
+               model_parameter: torch.nn.parameter.Parameter,
+               num_averaged: int) -> torch.nn.parameter.Parameter:
     """
     Pickling the averaged function causes an error because of
     how pytorch initialises the average function.
     Passing this function fixes the issue.
+    The sequential update is performed via:
+        avg[n + 1] = (avg[n] * n + W[n + 1]) / (n + 1)
+
     Args:
         averaged_model_parameter:
         model_parameter:

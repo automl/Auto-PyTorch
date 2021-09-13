@@ -419,11 +419,7 @@ class TrainEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
-<<<<<<< HEAD
 def eval_train_function(
-=======
-def eval_function(
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
     backend: Backend,
     queue: Queue,
     metric: autoPyTorchMetric,

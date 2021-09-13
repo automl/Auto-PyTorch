@@ -28,7 +28,7 @@ from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTr
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
-from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_average_function
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_update
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -226,7 +226,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                  use_snapshot_ensemble: bool = True,
                  se_lastk: int = 3,
                  use_lookahead_optimizer: bool = True,
-                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 random_state: Optional[np.random.RandomState] = None,
                  swa_model: Optional[torch.nn.Module] = None,
                  model_snapshots: Optional[List[torch.nn.Module]] = None,
                  **lookahead_config: Any) -> None:
@@ -287,13 +287,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # in case we are using swa, maintain an averaged model,
         if self.use_stochastic_weight_averaging:
-            self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_average_function)
+            self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_update)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
         self._budget_threshold = 0
         if self.use_stochastic_weight_averaging or self.use_snapshot_ensemble:
-            assert budget_tracker.max_epochs is not None, "Can only use stochastic weight averaging or snapshot " \
-                                                          "ensemble when budget is epochs"
+            if budget_tracker.max_epochs is None:
+                raise ValueError("Budget for stochastic weight averaging or snapshot ensemble must be `epoch`.")
+
             self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
 
         # in case we are using se, initialise list to store model snapshots
@@ -591,7 +592,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=[True, False],
+            value_range=(True, False),
             default_value=True),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
@@ -623,22 +624,30 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
-        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
-        se_lastk = get_hyperparameter(se_lastk, Constant)
-        cs.add_hyperparameters([use_snapshot_ensemble, se_lastk])
-        cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
-        cs.add_condition(cond)
+        snapshot_ensemble_flag = any(use_snapshot_ensemble.value_range)
 
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_snapshot_ensemble)
+
+        if snapshot_ensemble_flag:
+            se_lastk = get_hyperparameter(se_lastk, Constant)
+            cs.add_hyperparameter(se_lastk)
+            cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
+            cs.add_condition(cond)
+
+        lookahead_flag = any(use_lookahead_optimizer.value_range)
         use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
         cs.add_hyperparameter(use_lookahead_optimizer)
-        la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
-                                                                    la_alpha=la_alpha)
-        parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
-        cs.add_configuration_space(
-            Lookahead.__name__,
-            la_config_space,
-            parent_hyperparameter=parent_hyperparameter
-        )
+
+        if lookahead_flag:
+            la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                        la_alpha=la_alpha)
+            parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
+            cs.add_configuration_space(
+                Lookahead.__name__,
+                la_config_space,
+                parent_hyperparameter=parent_hyperparameter
+            )
 
         # TODO, decouple the weighted loss from the trainer
         if dataset_properties is not None:
