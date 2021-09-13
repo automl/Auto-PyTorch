@@ -157,8 +157,8 @@ along with this program (see LICENSE file).
   title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
   journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year = {2021},
-  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
-  pages = {1-12}
+  note = {also available under https://arxiv.org/abs/2006.13799},
+  pages = {3079 - 3090}
 }
 ```
 
