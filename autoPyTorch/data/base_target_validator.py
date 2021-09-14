@@ -1,3 +1,19 @@
+"""Base class for the target (or label) validator given a task
+* A wrapper class of the sklearn.base.BaseEstimator
+* The target validator for each task inherits this class
+* Check if the provided targets (or labels) are compatible in both
+  training and test
+
+TODO:
+    * SUPPORTED_FEAT_TYPES --> Enumerator
+    * Describe the shape of y
+    * typing.<type> --> <type>
+    * logging.Logger --> Logger
+    * Rename classes_ --> get_classes
+    * Check the return of classes_
+    * is_single_column_target --> is_target_scalar
+"""
+
 import logging
 import typing
 
@@ -31,12 +47,13 @@ class BaseTargetValidator(BaseEstimator):
     """
     A class to pre-process targets. It validates the data provided during fit (to make sure
     it matches AutoPyTorch expectation) as well as encoding the targets in case of classification
+
     Attributes:
         is_classification (bool):
             A bool that indicates if the validator should operate in classification mode.
             During classification, the targets are encoded.
         encoder (typing.Optional[BaseEstimator]):
-            Host a encoder object if the data requires transformation (for example,
+            Host an encoder object if the data requires transformation (for example,
             if provided a categorical column in a pandas DataFrame)
         enc_columns (typing.List[str])
             List of columns that where encoded
@@ -175,7 +192,7 @@ class BaseTargetValidator(BaseEstimator):
         Complies with scikit learn classes_ attribute,
         which consist of a ndarray of shape (n_classes,)
         where n_classes are the number of classes seen while fitting
-        a encoder to the targets.
+        an encoder to the targets.
         Returns:
             classes_: np.ndarray
                 The unique classes seen during encoding of a classifier
