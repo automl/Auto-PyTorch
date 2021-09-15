@@ -9,6 +9,14 @@ from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
 
 class GridCutMixTrainer(MixUp, BaseTrainerComponent):
+    """  # noqa
+    References:
+        Title: CutMix: Regularization Strategy to Train Strong Classifiers
+               with Localizable Features
+        Authors: Sangdoo Yun et. al.
+        URL: https://openaccess.thecvf.com/content_ICCV_2019/papers/Yun_CutMix_Regularization_Strategy_to_Train_Strong_Classifiers_With_Localizable_Features_ICCV_2019_paper.pdf
+        Github URL: https://github.com/clovaai/CutMix-PyTorch/blob/master/train.py#L227-L244
+    """
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
