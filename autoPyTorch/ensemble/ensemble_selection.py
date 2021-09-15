@@ -1,3 +1,26 @@
+"""The title of the module description  # noqa
+* Describe at the beginning of the source code.
+* Describe before the package imports
+
+TODO:
+    * Add the following
+    References:
+        Title: Ensemble Selection from Libraries of Models
+        Authors: Rich Caruana et. al.
+        URL: https://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf
+
+    * `A copy of self` --> check if it is really true
+    * Change `<variable>_` to `_<variable>`
+    * get_models_with_weights --> looks sort by descending of weights
+    * soft voting ==> explanation
+    References:
+        Title: Consensus Based Ensembles of Soft Clusterings
+        Authors: Kunal Punera and Joydeep Ghosh
+        URL: https://www.researchgate.net/profile/Joydeep-Ghosh-8/publication/221188694_Consensus_Based_Ensembles_of_Soft_Clusterings/links/02e7e521fe367e06c3000000/Consensus-Based-Ensembles-of-Soft-Clusterings.pdf
+    * _calculate_weights ==> what about np.sum(weights) > 1??
+    * Refactor _fit() and add the shape of predictions
+"""
+
 from collections import Counter
 from typing import Any, Dict, List, Tuple, Union
 
