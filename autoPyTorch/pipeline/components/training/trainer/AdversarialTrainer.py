@@ -21,6 +21,13 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class AdversarialTrainer(BaseTrainerComponent):
+    """
+    References:
+        Title: Explaining and Harnessing Adversarial Examples
+        Authors: Ian J. Goodfellow et. al.
+        URL: https://arxiv.org/pdf/1412.6572.pdf
+        Github URL: https://pytorch.org/tutorials/beginner/fgsm_tutorial.html#fgsm-attack
+    """
     def __init__(
             self,
             epsilon: float,
@@ -37,11 +44,7 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         Args:
             epsilon (float): The perturbation magnitude.
-        
-        References:
-            Explaining and Harnessing Adversarial Examples
-            Ian J. Goodfellow et. al.
-            https://arxiv.org/pdf/1412.6572.pdf
+
         """
         super().__init__(random_state=random_state,
                          weighted_loss=weighted_loss,
@@ -129,9 +132,6 @@ class AdversarialTrainer(BaseTrainerComponent):
 
         Returns:
             adv_data (np.ndarray): the adversarial examples.
-        
-        References:
-            https://pytorch.org/tutorials/beginner/fgsm_tutorial.html#fgsm-attack
         """
         data_copy = deepcopy(data)
         data_copy = data_copy.float().to(self.device)
