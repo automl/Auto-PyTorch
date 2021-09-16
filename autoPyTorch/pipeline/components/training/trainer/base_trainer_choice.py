@@ -77,7 +77,6 @@ class TrainerChoice(autoPyTorchChoice):
                            (torch.utils.data.DataLoader,),
                            user_defined=False, dataset_property=False)]
         self.checkpoint_dir = None  # type: Optional[str]
-        self.fit_time = None
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
@@ -264,7 +263,6 @@ class TrainerChoice(autoPyTorchChoice):
         Returns:
             A instance of self
         """
-        start_time = time.time()
         # Make sure that the prerequisites are there
         self.check_requirements(X, y)
 
@@ -287,7 +285,6 @@ class TrainerChoice(autoPyTorchChoice):
         self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
-        self.fit_time = time.time() - start_time
         return self.choice
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
