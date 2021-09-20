@@ -371,16 +371,12 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         outputs_data = list()
         targets_data = list()
 
-        batch_load_start_time = time.time()
         for step, (data, targets) in enumerate(train_loader):
-            self.data_loading_times.append(time.time() - batch_load_start_time)
-            batch_train_start = time.time()
             if self.budget_tracker.is_max_time_reached():
                 break
 
             loss, outputs = self.train_step(data, targets)
 
-            self.batch_fit_times.append(time.time() - batch_train_start)
             # save for metric evaluation
             outputs_data.append(outputs.detach().cpu())
             targets_data.append(targets.detach().cpu())
@@ -395,7 +391,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     loss,
                     epoch * len(train_loader) + step,
                 )
-        batch_load_start_time = time.time()
 
         if self.scheduler:
             if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
