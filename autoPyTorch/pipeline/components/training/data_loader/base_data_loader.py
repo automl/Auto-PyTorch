@@ -64,10 +64,10 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         underlying model and returns the transformed array.
 
         Args:
-            X (Dict[str, Any])): 'X' dictionary
+            X (Dict[str, Any])): fit dictionary
 
         Returns:
-            (Dict[str, Any]): the updated 'X' dictionary
+            (Dict[str, Any]): the updated fit dictionary
         """
         X.update({'train_data_loader': self.train_data_loader,
                   'val_data_loader': self.val_data_loader,

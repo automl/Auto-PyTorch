@@ -30,27 +30,29 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         lam = self.random_state.beta(alpha, beta)
         batch_size = X.shape[0]
         device = torch.device('cuda' if X.is_cuda else 'cpu')
-        batch_indices = torch.randperm(batch_size).to(device)
+        permed_indices = torch.randperm(batch_size).to(device)
 
         r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
-            return X, {'y_a': y, 'y_b': y[batch_indices], 'lam': 1}
+            return X, {'y_a': y, 'y_b': y[permed_indices], 'lam': 1}
 
-        row_size = X.shape[1]
-        row_indices = torch.tensor(
+        # batch_size (permutation of rows), col_size = X.shape
+        col_size = X.shape[1]
+        col_indices = torch.tensor(
             self.random_state.choice(
-                range(1, row_size),
-                max(1, int(row_size * lam)),
+                range(col_size),
+                max(1, int(col_size * lam)),
                 replace=False
             )
         )
 
-        X[:, row_indices] = X[batch_indices, :][:, row_indices]
+        # Replace selected columns with columns from another data point
+        X[:, col_indices] = X[permed_indices, :][:, col_indices]
 
         # Adjust lam
-        lam = 1 - len(row_indices) / X.shape[1]
+        lam = 1 - len(col_indices) / X.shape[1]
 
-        y_a, y_b = y, y[batch_indices]
+        y_a, y_b = y, y[permed_indices]
 
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
