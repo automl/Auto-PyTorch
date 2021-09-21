@@ -368,6 +368,8 @@ class AbstractEvaluator(object):
             self.additional_metrics = get_metrics(dataset_properties=self.dataset_properties,
                                                   all_supported_metrics=all_supported_metrics)
 
+        # See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+        # about fit_dictionary
         self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
         self._init_params = init_params
         self.fit_dictionary.update({
