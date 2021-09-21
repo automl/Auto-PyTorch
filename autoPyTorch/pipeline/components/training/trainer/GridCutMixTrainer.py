@@ -38,11 +38,11 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
         lam = self.random_state.beta(alpha, beta)
         batch_size, _, W, H = X.shape
         device = torch.device('cuda' if X.is_cuda else 'cpu')
-        batch_indices = torch.randperm(batch_size).to(device)
+        permed_indices = torch.randperm(batch_size).to(device)
 
         r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
-            return X, {'y_a': y, 'y_b': y[batch_indices], 'lam': 1}
+            return X, {'y_a': y, 'y_b': y[permed_indices], 'lam': 1}
 
         # Draw parameters of a random bounding box
         # Where to cut basically
@@ -56,13 +56,13 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
         bbx2 = np.clip(cx + cut_w // 2, 0, W)
         bby2 = np.clip(cy + cut_h // 2, 0, H)
 
-        X[:, :, bbx1:bbx2, bby1:bby2] = X[batch_indices, :, bbx1:bbx2, bby1:bby2]
+        X[:, :, bbx1:bbx2, bby1:bby2] = X[permed_indices, :, bbx1:bbx2, bby1:bby2]
 
         # Adjust lam
         pixel_size = W * H
         lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / pixel_size)
 
-        y_a, y_b = y, y[batch_indices]
+        y_a, y_b = y, y[permed_indices]
 
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
