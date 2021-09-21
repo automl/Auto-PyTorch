@@ -46,8 +46,9 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             lam = 1
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
-        row_size = X.shape[1]
-        row_indices = self.random_state.choice(range(1, row_size), max(1, int(row_size * self.patch_ratio)),
+        # (batch_size (permutation of rows), col_size) = X.shape
+        col_size = X.shape[1]
+        col_indices = self.random_state.choice(range(col_size), max(1, int(col_size * self.patch_ratio)),
                                                replace=False)
 
         if not isinstance(self.numerical_columns, typing.Iterable):
@@ -56,7 +57,7 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
                                                   self.numerical_columns))
 
         numerical_indices = torch.tensor(self.numerical_columns)
-        categorical_indices = torch.tensor([idx for idx in row_indices if idx not in self.numerical_columns])
+        categorical_indices = torch.tensor([idx for idx in col_indices if idx not in self.numerical_columns])
 
         X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
         X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
