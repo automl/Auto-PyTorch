@@ -112,10 +112,10 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=min(self.batch_size, len(train_dataset)),
-            shuffle=False,
+            shuffle=True,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
-            drop_last=X.get('drop_last', True),
+            drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
 
