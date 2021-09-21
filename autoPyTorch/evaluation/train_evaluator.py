@@ -340,6 +340,8 @@ class TrainEvaluator(AbstractEvaluator):
 
         self.indices[fold] = ((train_indices, test_indices))
 
+        # See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+        # about fit_dictionary
         X = {'train_indices': train_indices,
              'val_indices': test_indices,
              'split_id': fold,

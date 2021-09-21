@@ -136,6 +136,8 @@ def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
 
     Args:
         X (Dict[str, Any]): A fit dictionary to control how the pipeline is fitted
+            See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+            about fit_dictionary
 
     Returns:
         torch.device: Device to be used for training/inference
