@@ -1244,7 +1244,7 @@ class BaseTask:
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
-        self._backend.save_datamanager(dataset)
+        self._backend.replace_datamanager(dataset)
 
         if self._logger is None:
             self._logger = self._get_logger(dataset.dataset_name)
