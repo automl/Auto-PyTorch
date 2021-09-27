@@ -200,7 +200,7 @@ class ShapedResNetBackbone(ResNetBackbone):
             shake_drop_prob_flag = False
             if 'shake-drop' in multi_branch_choice.value_range:
                 shake_drop_prob_flag = True
-            elif 'shake-shake' in multi_branch_choice.value_range:
+            if 'shake-shake' in multi_branch_choice.value_range:
                 shake_shake_flag = True
 
             mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
