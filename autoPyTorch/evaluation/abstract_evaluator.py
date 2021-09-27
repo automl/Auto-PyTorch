@@ -1,3 +1,39 @@
+"""This module provides model estimator pipelines
+This module has the following pipelines:
+    - MyTraditionalTabularClassificationPipeline
+        Wrapper class for traditional ML classification methods
+        such as CatBoost, RandomForest
+    - MyTraditionalTabularRegressionPipeline
+        Wrapper class for traditional ML regression methods
+        such as RandomForest
+    - DummyClassificationPipeline
+        Wrapper class for dummy classifier in sklearn
+    - DummyRegressionPipeline
+        Wrapper class for dummy regressor in sklearn
+    - AbstractEvaluator
+        The interface for the pipeline evaluators
+        to optimize via SMAC
+
+Note: Dummy model is an estimator using a very simple rule
+      and this is used for the minimum baseline for each task.
+      https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html  # noqa: W291
+      https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyRegressor.html  # noqa: W291
+
+TODO:
+    * Describe the definition of sample_weight
+    * import autoPyTorch.pipeline.xxx as shorter names
+    * Describe the shape of returns in predict and predict_proba
+    * Improve the documentation of additional_run_info
+    * Change get_pipeline_representation --> __repr__
+    * delete self.random_state, self.init_params, self.config,
+      self.dataset_properties, 
+      (because they are not used)
+    * [named_step](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html)  # noqa: W291
+    * The typing of config in DummyXXXPipeline
+    * Add enumerator for additional_run_info
+    * Rename fit_and_suppress_warnings
+"""
+
 import logging.handlers
 import time
 import warnings
