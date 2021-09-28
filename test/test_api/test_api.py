@@ -36,6 +36,8 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 from test.test_api.api_utils import print_debug_information  # noqa E402
 
+TRAINING_SUBSET_SIZE = 200
+
 
 # Fixtures
 # ========
@@ -53,7 +55,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend):
         data_id=int(openml_id),
         return_X_y=True, as_frame=True
     )
-    X, y = X[:200], y[:200]
+    X, y = X[:TRAINING_SUBSET_SIZE], y[:TRAINING_SUBSET_SIZE]
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
@@ -216,7 +218,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend):
         return_X_y=True,
         as_frame=True
     )
-    X, y = X[:200], y[:200]
+    X, y = X[:TRAINING_SUBSET_SIZE], y[:TRAINING_SUBSET_SIZE]
     # normalize values
     y = (y - y.mean()) / y.std()
 
@@ -480,7 +482,7 @@ def test_pipeline_fit(openml_id,
         data_id=int(openml_id),
         return_X_y=True, as_frame=True
     )
-    X, y = X[:200], y[:200]
+    X, y = X[:TRAINING_SUBSET_SIZE], y[:TRAINING_SUBSET_SIZE]
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
