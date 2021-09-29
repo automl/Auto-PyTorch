@@ -156,7 +156,7 @@ class ShapedResNetBackbone(ResNetBackbone):
         shake_alpha_beta_method: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="shake_alpha_beta_method",
             value_range=('even-even',),
-            default_value='shake-shake',
+            default_value='even-even',
         ),
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
