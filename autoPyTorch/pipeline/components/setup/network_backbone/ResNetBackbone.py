@@ -340,11 +340,12 @@ class ResBlock(nn.Module):
                 x2 = self.shake_shake_layers(x)
                 alpha, beta = shake_get_alpha_beta(is_training=self.training,
                                                    is_cuda=x.is_cuda,
-                                                   method=self.config['shake_shake_method'])
+                                                   method=self.config['shake_alpha_beta_method'])
                 x = shake_shake(x1, x2, alpha, beta)
             elif self.config["multi_branch_choice"] == 'shake-drop':
                 x = self.layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda, method='shake-drop')
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda,
+                                                   method=self.config['shake_alpha_beta_method'])
                 bl = shake_drop_get_bl(
                     self.block_index,
                     1 - self.config["max_shake_drop_probability"],
