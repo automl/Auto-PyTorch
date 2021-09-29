@@ -103,13 +103,14 @@ def shake_get_alpha_beta(
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
-    if method != 'even-even':
-        alpha = torch.rand(1)
-    else:
+    if method == 'even-even':
         alpha = torch.FloatTensor([0.5])
-    if method in ['shake-shake', 'shake-drop']:
+    else:
+        alpha = torch.rand(1)
+
+    if method == 'shake-shake':
         beta = torch.rand(1)
-    elif 'even' in method:  # 'shake-even' or 'even-even'
+    elif method in ['shake-even', 'even-even']:
         beta = torch.FloatTensor([0.5])
     elif method == 'M3':
         beta = torch.FloatTensor(
