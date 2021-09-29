@@ -145,12 +145,17 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                           'stairs'),
                                                                              default_value='funnel',
                                                                              ),
+        # shake_alpha_beta_method: HyperparameterSearchSpace = HyperparameterSearchSpace(
+        #     hyperparameter="shake_alpha_beta_method",
+        #     value_range=('shake-shake',
+        #                  'shake-even',
+        #                  'even-even',
+        #                  'M3'),
+        #     default_value='shake-shake',
+        # ),
         shake_alpha_beta_method: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="shake_alpha_beta_method",
-            value_range=('shake-shake',
-                         'shake-even',
-                         'even-even',
-                         'M3'),
+            value_range=('even-even',),
             default_value='shake-shake',
         ),
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
