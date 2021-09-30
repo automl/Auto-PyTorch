@@ -54,6 +54,15 @@ def get_search_space_updates():
                    hyperparameter='ResNetBackbone:dropout',
                    value_range=[0, 0.5],
                    default_value=0.2)
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:multi_branch_choice',
+                   value_range=['shake-shake'],
+                   default_value='shake-shake')
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:shake_shake_method',
+                   value_range=['M3'],
+                   default_value='M3'
+                   )
     return updates
 
 
@@ -74,7 +83,7 @@ if __name__ == '__main__':
     # ==================================================
     api = TabularClassificationTask(
         search_space_updates=get_search_space_updates(),
-        include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
+        include_components={'network_backbone': ['ResNetBackbone'],
                             'encoder': ['OneHotEncoder']}
     )
 

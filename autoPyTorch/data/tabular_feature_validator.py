@@ -41,26 +41,26 @@ def get_tabular_preprocessors():
     preprocessors['numerical'] = list()
     preprocessors['categorical'] = list()
 
+    # preprocessors['categorical'].append(SimpleImputer(strategy='constant',
+    #               # Train data is numpy
+    #               # as of this point, where
+    #               # Ordinal Encoding is using
+    #               # for categorical. Only
+    #               # Numbers are allowed
+    #               # fill_value='!missing!',
+    #               fill_value=-1,
+    #               copy=False))
+
+    # preprocessors['categorical'].append(OrdinalEncoder(
+    #      handle_unknown='use_encoded_value',
+    #      unknown_value=-1))
+
     preprocessors['categorical'].append(OneHotEncoder(
         categories='auto',
         sparse=False,
         handle_unknown='ignore'))
-    preprocessors['categorical'].append(SimpleImputer(strategy='constant',
-                  # Train data is numpy
-                  # as of this point, where
-                  # Ordinal Encoding is using
-                  # for categorical. Only
-                  # Numbers are allowed
-                  # fill_value='!missing!',
-                  fill_value=-1,
-                  copy=False))
-
-    preprocessors['categorical'].append(OrdinalEncoder(
-         handle_unknown='use_encoded_value',
-         unknown_value=-1))
-
     preprocessors['numerical'].append(SimpleImputer(strategy='median',
-                                                                  copy=False))
+                                                    copy=False))
     preprocessors['numerical'].append(StandardScaler(with_mean=True, with_std=True, copy=False))
 
     return preprocessors

@@ -145,6 +145,14 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                           'stairs'),
                                                                              default_value='funnel',
                                                                              ),
+        shake_alpha_beta_method: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="shake_alpha_beta_method",
+            value_range=('shake-shake',
+                         'shake-even',
+                         'even-even',
+                         'M3'),
+            default_value='shake-shake',
+        ),
         max_shake_drop_probability: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="max_shake_drop_probability",
             value_range=(0, 1),
@@ -188,9 +196,8 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         if skip_connection_flag:
 
-            shake_drop_prob_flag = False
-            if 'shake-drop' in multi_branch_choice.value_range:
-                shake_drop_prob_flag = True
+            shake_shake_flag = 'shake-shake' in multi_branch_choice.value_range
+            shake_drop_prob_flag = 'shake-drop' in multi_branch_choice.value_range
 
             mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
             cs.add_hyperparameter(mb_choice)
@@ -200,5 +207,9 @@ class ShapedResNetBackbone(ResNetBackbone):
                 shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
                 cs.add_hyperparameter(shake_drop_prob)
                 cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
+            if shake_shake_flag or shake_drop_prob_flag:
+                method = get_hyperparameter(shake_alpha_beta_method, CategoricalHyperparameter)
+                cs.add_hyperparameter(method)
+                cs.add_condition(CS.InCondition(method, mb_choice, ["shake-shake", "shake-drop"]))
 
         return cs
