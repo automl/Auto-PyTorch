@@ -275,6 +275,7 @@ class TabularClassificationTask(BaseTask):
                          y_test=y_test,
                          dataset_name=dataset_name)
 
+        assert self.dataset is not None, "Something went wrong, expected dataset to be initialised"
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,

@@ -2,7 +2,7 @@ import typing
 
 import numpy as np
 
-import torch
+# import torch
 
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
@@ -40,14 +40,15 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         indices = self.random_state.choice(range(size), max(1, np.int32(size * self.patch_ratio)),
                                            replace=False)
 
-        """if not isinstance(self.numerical_columns, typing.Iterable):
+        """
+        if not isinstance(self.numerical_columns, typing.Iterable):
             raise ValueError("{} requires numerical columns information of {}"
                              "to prepare data got {}.".format(self.__class__.__name__,
                                                               typing.Iterable,
                                                               self.numerical_columns))
         numerical_indices = torch.tensor(self.numerical_columns)
         categorical_indices = torch.tensor([index for index in indices if index not in self.numerical_columns])
-    
+
         # We use an ordinal encoder on the categorical columns of tabular data
         # -1 is the conceptual equivalent to 0 in a image, that does not
         # have color as a feature and hence the network has to learn to deal

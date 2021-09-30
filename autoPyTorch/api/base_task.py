@@ -1348,7 +1348,7 @@ class BaseTask:
             ensemble_size: int = 50,
             load_models: bool = True,
             time_for_task: int = 100,
-            func_eval_time_limit_secs: Optional[int] = None,
+            func_eval_time_limit_secs: int = 50,
             enable_traditional_pipeline: bool = True,
     ) -> 'BaseTask':
         """

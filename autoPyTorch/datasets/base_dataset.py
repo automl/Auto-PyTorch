@@ -330,13 +330,19 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         to provide training data to fit a pipeline
 
         Args:
-            split (int): The desired subset of the dataset to split and use
+            split_id (int): which split id to get from the splits
+            train (bool): whether the train or valid transforms are to be applied
+            subset (int, default=0): 0 is for train_indices, 1 is for valid_indices
 
         Returns:
+
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
-        return TransformSubset(self, self.splits[split_id][subset], train=train)
+        assert split_id <= len(self.splits), "Expected split id to be less than length of splits"
+        indices = self.splits[split_id][subset]
+        assert indices is not None, "Trying to get subset when it does not exist"
+        return TransformSubset(self, indices, train=train)
 
     def replace_data(self, X_train: BaseDatasetInputType,
                      X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':

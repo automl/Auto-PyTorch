@@ -221,8 +221,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.add_fit_requirements([
             FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
         ])
-        self.batch_fit_times = []
-        self.data_loading_times = []
 
     def prepare(
         self,

@@ -117,7 +117,7 @@ def shake_get_alpha_beta(
         beta = torch.FloatTensor([0.5])
     elif method == 'M3':
         beta = torch.FloatTensor(
-            [torch.rand(1)*(0.5 - alpha)*alpha if alpha < 0.5 else torch.rand(1)*(alpha - 0.5)*alpha]
+            [torch.rand(1) * (0.5 - alpha) * alpha if alpha < 0.5 else torch.rand(1) * (alpha - 0.5) * alpha]
         )
     else:
         raise ValueError("Unknown method for ShakeShakeRegularisation in NetworkBackbone")

@@ -328,7 +328,7 @@ class Backend(object):
             with open(filepath, 'rb') as fh:
                 return pickle.load(fh)
 
-    def replace_datamanager(self, datamanager: BaseDataset):
+    def replace_datamanager(self, datamanager: BaseDataset) -> None:
         warnings.warn("Original dataset will be overwritten with the provided dataset")
         os.remove(self._get_datamanager_pickle_filename())
         self.save_datamanager(datamanager=datamanager)

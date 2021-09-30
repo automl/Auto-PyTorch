@@ -9,35 +9,32 @@ from pandas.api.types import is_numeric_dtype
 import scipy.sparse
 
 import sklearn.utils
-
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
 
 
 def _create_column_transformer(
-        preprocessors: Dict[str, List[BaseEstimator]],
-        numerical_columns: List[str],
-        categorical_columns: List[str]
+    preprocessors: Dict[str, List[BaseEstimator]],
+    numerical_columns: List[str],
+    categorical_columns: List[str]
 ) -> ColumnTransformer:
     """
-    Given a dictionary of preprocessors, this function 
-    creates a sklearn column transformer with appropriate 
-    columns associated with their preprocessors. 
+    Given a dictionary of preprocessors, this function
+    creates a sklearn column transformer with appropriate
+    columns associated with their preprocessors.
     Args:
-        preprocessors (Dict[str, List]): 
+        preprocessors (Dict[str, List]):
             Dictionary containing list of numerical and categorical preprocessors.
         numerical_columns (List[int]):
             List of names of numerical columns
         categorical_columns (List[int]):
             List of names of categorical columns
-            
     Returns:
         ColumnTransformer
     """
@@ -57,12 +54,12 @@ def _create_column_transformer(
 
 def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     """
-    This function creates a Dictionary containing list 
+    This function creates a Dictionary containing list
     of numerical and categorical preprocessors
     Returns:
-
+        Dict[str, List[BaseEstimator]]
     """
-    preprocessors = dict()
+    preprocessors: Dict[str, List[BaseEstimator]] = dict()
     preprocessors['numerical'] = list()
     preprocessors['categorical'] = list()
 
@@ -144,12 +141,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
             )
 
             if len(categorical_columns) > 0:
-                print(self.column_transformer.named_transformers_['categorical_pipeline'].named_steps)
                 self.categories = [
                     # We fit an ordinal encoder, where all categorical
                     # columns are shifted to the left
                     list(range(len(cat)))
-                    for cat in self.column_transformer.named_transformers_['categorical_pipeline'].named_steps['onehotencoder'].categories_
+                    for cat in self.column_transformer.named_transformers_[
+                        'categorical_pipeline'].named_steps['onehotencoder'].categories_
                 ]
 
             for i, type_ in enumerate(self.feat_type):
@@ -284,7 +281,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     raise ValueError("Changing the column order of the features after fit() is "
                                      "not supported. Fit() method was called with "
                                      "{} whereas the new features have {} as type".format(self.column_order,
-                                                                                          column_order,)
+                                                                                          column_order, )
                                      )
             else:
                 self.column_order = column_order
@@ -411,7 +408,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     @staticmethod
     def numpy_array_to_pandas(
-            X: np.ndarray,
+        X: np.ndarray,
     ) -> pd.DataFrame:
         """
         Converts a numpy array to pandas for type inference
@@ -457,7 +454,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
         return X
 
-    def impute_nan_in_categories(self, X: pd.DataFrame, categorical_columns=None) -> pd.DataFrame:
+    def impute_nan_in_categories(self,
+                                 X: pd.DataFrame
+                                 ) -> pd.DataFrame:
         """
         impute missing values before encoding,
         remove once sklearn natively supports
@@ -489,8 +488,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     if can_cast_as_number:
                         # In this case, we expect to have a number as category
                         # it might be string, but its value represent a number
-                        missing_value: Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
-                                                                                   str) else -1
+                        missing_value: Union[str, int] = '-1' if isinstance(X[column].dropna().values[0], str) else -1
                     else:
                         missing_value = 'Missing!'
 

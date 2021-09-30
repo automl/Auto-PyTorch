@@ -451,13 +451,14 @@ class BasePipeline(Pipeline):
                             continue
                         raise ValueError("Unknown hyperparameter for component {}. "
                                          "Expected update hyperparameter "
-                                         "to be in {} got {}. choice is {}".format(node.__class__.__name__,
-                                                                     component.
-                                                                     get_hyperparameter_search_space(
-                                                                         dataset_properties=self.dataset_properties).
-                                                                     get_hyperparameter_names(),
-                                                                     split_hyperparameter[1],
-                                                                                   component.__name__))
+                                         "to be in {} got {}."
+                                         " component is {}".format(node.__class__.__name__,
+                                                                   component.get_hyperparameter_search_space(
+                                                                       dataset_properties=self.dataset_properties
+                                                                   ).get_hyperparameter_names(),
+                                                                   split_hyperparameter[1],
+                                                                   component.__name__)
+                                         )
             else:
                 if update.hyperparameter not in node.get_hyperparameter_search_space(
                         dataset_properties=self.dataset_properties):
