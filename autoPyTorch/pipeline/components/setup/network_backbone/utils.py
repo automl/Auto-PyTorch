@@ -97,7 +97,10 @@ def shake_get_alpha_beta(
         is_cuda: bool,
         method: str
 ) -> typing.Tuple[torch.tensor, torch.tensor]:
-
+    """
+    The methods used in this function have been introduced in 'ShakeShake Regularisation'
+    https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
+    """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
