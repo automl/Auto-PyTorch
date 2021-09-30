@@ -1,5 +1,5 @@
 import functools
-import typing
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 
@@ -16,12 +16,31 @@ from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
 
 
-def _create_column_transformer(preprocessors: typing.Dict, numerical_columns, categorical_columns):
+def _create_column_transformer(
+        preprocessors: Dict[str, List[BaseEstimator]],
+        numerical_columns: List[str],
+        categorical_columns: List[str]
+) -> ColumnTransformer:
+    """
+    Given a dictionary of preprocessors, this function 
+    creates a sklearn column transformer with appropriate 
+    columns associated with their preprocessors. 
+    Args:
+        preprocessors (Dict[str, List]): 
+            Dictionary containing list of numerical and categorical preprocessors.
+        numerical_columns (List[int]):
+            List of names of numerical columns
+        categorical_columns (List[int]):
+            List of names of categorical columns
+            
+    Returns:
+        ColumnTransformer
+    """
     numerical_pipeline = 'drop'
     categorical_pipeline = 'drop'
     if len(numerical_columns) > 0:
@@ -36,24 +55,16 @@ def _create_column_transformer(preprocessors: typing.Dict, numerical_columns, ca
     )
 
 
-def get_tabular_preprocessors():
+def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
+    """
+    This function creates a Dictionary containing list 
+    of numerical and categorical preprocessors
+    Returns:
+
+    """
     preprocessors = dict()
     preprocessors['numerical'] = list()
     preprocessors['categorical'] = list()
-
-    # preprocessors['categorical'].append(SimpleImputer(strategy='constant',
-    #               # Train data is numpy
-    #               # as of this point, where
-    #               # Ordinal Encoding is using
-    #               # for categorical. Only
-    #               # Numbers are allowed
-    #               # fill_value='!missing!',
-    #               fill_value=-1,
-    #               copy=False))
-
-    # preprocessors['categorical'].append(OrdinalEncoder(
-    #      handle_unknown='use_encoded_value',
-    #      unknown_value=-1))
 
     preprocessors['categorical'].append(OneHotEncoder(
         categories='auto',
@@ -91,7 +102,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_array_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
-            X = typing.cast(pd.DataFrame, X)
+            X = cast(pd.DataFrame, X)
 
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
@@ -179,7 +190,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_array_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
-            X = typing.cast(pd.DataFrame, X)
+            X = cast(pd.DataFrame, X)
 
             # Also remove the object dtype for new data
             if not X.select_dtypes(include='object').empty:
@@ -257,7 +268,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Then for Pandas, we do not support Nan in categorical columns
         if hasattr(X, "iloc"):
             # If entered here, we have a pandas dataframe
-            X = typing.cast(pd.DataFrame, X)
+            X = cast(pd.DataFrame, X)
 
             # Handle objects if possible
             if not X.select_dtypes(include='object').empty:
@@ -293,7 +304,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def _get_columns_info(
         self,
         X: pd.DataFrame,
-    ) -> typing.Tuple[typing.List[str], typing.List[str], typing.List[str]]:
+    ) -> Tuple[List[str], List[str], List[str]]:
         """
         Return the columns to be encoded from a pandas dataframe
 
@@ -365,8 +376,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def list_to_dataframe(
         self,
         X_train: SUPPORTED_FEAT_TYPES,
-        X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
-    ) -> typing.Tuple[pd.DataFrame, typing.Optional[pd.DataFrame]]:
+        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """
         Converts a list to a pandas DataFrame. In this process, column types are inferred.
 
@@ -376,7 +387,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (typing.Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SUPPORTED_FEAT_TYPES]):
                 A hold out set of data used for checking
         Returns:
             pd.DataFrame:
@@ -398,9 +409,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X_test = pd.DataFrame(data=X_test).infer_objects()
         return X_train, X_test
 
+    @staticmethod
     def numpy_array_to_pandas(
-        self,
-        X: np.ndarray,
+            X: np.ndarray,
     ) -> pd.DataFrame:
         """
         Converts a numpy array to pandas for type inference
@@ -462,7 +473,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # To be on the safe side, map always to the same missing
         # value per column
         if not hasattr(self, 'dict_nancol_to_missing'):
-            self.dict_missing_value_per_col: typing.Dict[str, typing.Any] = {}
+            self.dict_missing_value_per_col: Dict[str, Any] = {}
 
         # First make sure that we do not alter the type of the column which cause:
         # TypeError: '<' not supported between instances of 'int' and 'str'
@@ -478,7 +489,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     if can_cast_as_number:
                         # In this case, we expect to have a number as category
                         # it might be string, but its value represent a number
-                        missing_value: typing.Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
+                        missing_value: Union[str, int] = '-1' if isinstance(X[column].dropna().values[0],
                                                                                    str) else -1
                     else:
                         missing_value = 'Missing!'

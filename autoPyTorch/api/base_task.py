@@ -842,6 +842,8 @@ class BaseTask:
             raise ValueError("Incompatible dataset entered for current task,"
                              "expected dataset to have task type :{} got "
                              ":{}".format(self.task_type, dataset.task_type))
+        if precision not in [16, 32, 64]:
+            raise ValueError("precision must be one of 16, 32, 64. Got {}".format(precision))
 
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
@@ -1340,19 +1342,24 @@ class BaseTask:
 
     def fit_ensemble(
             self,
+            optimize_metric: Optional[str] = None,
+            precision: Optional[int] = None,
             ensemble_nbest: int = 50,
             ensemble_size: int = 50,
-            precision: int = 32,
             load_models: bool = True,
             time_for_task: int = 100,
             func_eval_time_limit_secs: Optional[int] = None,
-            enable_traditional_pipeline: bool = True
+            enable_traditional_pipeline: bool = True,
     ) -> 'BaseTask':
         """
         Enables post-hoc fitting of the ensemble after the `search()`
         method is finished. This method creates an ensemble using all
         the models stored on disk during the smbo run
         Args:
+            optimize_metric (str): name of the metric that is used to
+                evaluate a pipeline. if not specified, value passed to search will be used
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
             ensemble_nbest (Optional[int]):
                 only consider the ensemble_nbest models to build the ensemble.
                 If None, uses the value stored in class attribute `ensemble_nbest`.
@@ -1360,8 +1367,6 @@ class BaseTask:
                 Number of models added to the ensemble built by
                 Ensemble selection from libraries of models.
                 Models are drawn with replacement.
-            precision (int), (default=32): Numeric precision used when loading
-                ensemble data. Can be either 16, 32 or 64.
             enable_traditional_pipeline (bool), (default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
@@ -1394,6 +1399,9 @@ class BaseTask:
             raise ValueError("fit_ensemble() can only be called after `search()`. "
                              "Please call the `search()` method of {} prior to "
                              "fit_ensemble().".format(self.__class__.__name__))
+
+        if precision not in [16, 32, 64]:
+            raise ValueError("precision must be one of 16, 32, 64. Got {}".format(precision))
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset.dataset_name)
@@ -1453,8 +1461,8 @@ class BaseTask:
         time_left_for_ensemble = int(time_for_task - elapsed_time)
         manager = self._init_ensemble_builder(
             time_left_for_ensembles=time_left_for_ensemble,
-            optimize_metric=self.opt_metric,
-            precision=precision,
+            optimize_metric=self.opt_metric if optimize_metric is None else optimize_metric,
+            precision=self.precision if precision is None else precision,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
         )
