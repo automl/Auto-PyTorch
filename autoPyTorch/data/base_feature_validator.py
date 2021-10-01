@@ -122,6 +122,7 @@ class BaseFeatureValidator(BaseEstimator):
             self:
                 The fitted base estimator
         """
+
         raise NotImplementedError()
 
     def _check_data(
@@ -136,6 +137,7 @@ class BaseFeatureValidator(BaseEstimator):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
         """
+
         raise NotImplementedError()
 
     def transform(
@@ -152,4 +154,30 @@ class BaseFeatureValidator(BaseEstimator):
             np.ndarray:
                 The transformed array
         """
+
+        raise NotImplementedError()
+
+    def list_to_dataframe(
+        self,
+        X_train: SUPPORTED_FEAT_TYPES,
+        X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
+    ) -> typing.Tuple[pd.DataFrame, typing.Optional[pd.DataFrame]]:
+        """
+        Converts a list to a pandas DataFrame. In this process, column types are inferred.
+
+        If test data is provided, we proactively match it to train data
+
+        Arguments:
+            X_train (SUPPORTED_FEAT_TYPES):
+                A set of features that are going to be validated (type and dimensionality
+                checks) and a encoder fitted in the case the data needs encoding
+            X_test (typing.Optional[SUPPORTED_FEAT_TYPES]):
+                A hold out set of data used for checking
+        Returns:
+            pd.DataFrame:
+                transformed train data from list to pandas DataFrame
+            pd.DataFrame:
+                transformed test data from list to pandas DataFrame
+        """
+
         raise NotImplementedError()
