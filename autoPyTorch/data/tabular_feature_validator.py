@@ -23,7 +23,7 @@ from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPOR
 def _create_column_transformer(
     preprocessors: Dict[str, List[BaseEstimator]],
     numerical_columns: List[str],
-    categorical_columns: List[str]
+    categorical_columns: List[str],
 ) -> ColumnTransformer:
     """
     Given a dictionary of preprocessors, this function
