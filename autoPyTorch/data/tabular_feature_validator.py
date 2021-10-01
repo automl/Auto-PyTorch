@@ -78,6 +78,13 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
             copy=False,
         )
     )
+    preprocessors['numerical'].append(
+        StandardScaler(
+            with_mean=True,
+            with_std=True,
+            copy=False,
+        )
+    )
 
     return preprocessors
 
