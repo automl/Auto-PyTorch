@@ -30,8 +30,8 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
         raise NotImplementedError
-    #
-    # def _get_args(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
+    
+    def _get_args(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
     #     # Feature preprocessors can alter numerical columns
     #     # if len(X['dataset_properties']['numerical_columns']) == 0:
     #     #     num_numerical_columns = 0
@@ -49,4 +49,4 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
     #     # for i, category in enumerate(categories):
     #     #     num_input_features[num_numerical_columns + i, ] = len(category)
     #     # return num_numerical_columns, num_input_features
-    #     return None, None
+        return None, None
