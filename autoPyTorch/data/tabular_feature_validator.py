@@ -270,7 +270,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = cast(pd.DataFrame, X)
 
             # Handle objects if possible
-            object_columns_indicator = has_object_columns(X.dtypes)
+            object_columns_indicator = has_object_columns(X.dtypes.values)
             if object_columns_indicator:
                 X = self.infer_objects(X)
 
@@ -480,6 +480,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
             pd.DataFrame
         """
 
+        def can_cast_as_number(value: Union[int, float, str]) -> bool:
+            try:
+                float(first_value)
+                return True
+            except ValueError:
+                return False
+
         # To be on the safe side, map always to the same missing
         # value per column
         if not hasattr(self, 'dict_nancol_to_missing'):
@@ -494,16 +501,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 continue
             else:
                 if column not in self.dict_missing_value_per_col:
-                    try:
-                        first_value = X[column].dropna().values[0]
-                        float(first_value)
-                        can_cast_as_number = True
-                    except ValueError:
-                        can_cast_as_number = False
-                    if can_cast_as_number:
+
+                    first_value = X[column].dropna().values[0]
+
+                    if can_cast_as_number(first_value):
                         # In this case, we expect to have a number as category
                         # it might be string, but its value represent a number
-
                         missing_value: Union[str, int] = '-1' if isinstance(first_value, str) else -1
                     else:
                         missing_value = 'Missing!'
@@ -543,8 +546,4 @@ def has_object_columns(
         True if the DataFrame dtypes contain an object column, False
         otherwise.
     """
-    for feature_type in feature_types:
-        if pd.api.types.is_object_dtype(feature_type):
-            return True
-        else:
-            return False
+    return np.dtype('O') in feature_types
