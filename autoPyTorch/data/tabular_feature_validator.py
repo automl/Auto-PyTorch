@@ -62,29 +62,13 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
         Dict[str, List[BaseEstimator]]
     """
     preprocessors: Dict[str, List[BaseEstimator]] = dict()
-    preprocessors['numerical'] = list()
-    preprocessors['categorical'] = list()
 
-    preprocessors['categorical'].append(
-        OneHotEncoder(
-            categories='auto',
-            sparse=False,
-            handle_unknown='ignore',
-        )
-    )
-    preprocessors['numerical'].append(
-        SimpleImputer(
-            strategy='median',
-            copy=False,
-        )
-    )
-    preprocessors['numerical'].append(
-        StandardScaler(
-            with_mean=True,
-            with_std=True,
-            copy=False,
-        )
-    )
+    onehot_encoder = OneHotEncoder(categories='auto', sparse=False, handle_unknown='ignore')
+    imputer = SimpleImputer(strategy='median', copy=False)
+    standard_scaler = StandardScaler(with_mean=True, with_std=True, copy=False)
+
+    preprocessors['categorical'] = [onehot_encoder]
+    preprocessors['numerical'] = [imputer, standard_scaler]
 
     return preprocessors
 
@@ -161,7 +145,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             if len(categorical_columns) > 0:
                 self.categories = [
-                    # We fit an one-hot encoder, where all categorical
+                    # We fit a one-hot encoder, where all categorical
                     # columns are shifted to the left
                     list(range(len(cat)))
                     for cat in self.column_transformer.named_transformers_[
@@ -477,7 +461,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[column] = X[column].astype('category')
             # only numerical attributes and categories
             data_types = X.dtypes
-            self.object_dtype_mapping = {column: data_types[index] for index, column in enumerate(X.columns)}
+            self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
+
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
 
         return X
@@ -504,13 +489,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # TypeError: '<' not supported between instances of 'int' and 'str'
         # in the encoding
         for column in self.enc_columns:
-            if X[column].isna().any():
+            # no missing values for categorical column
+            if not X[column].isna().any():
+                continue
+            else:
                 if column not in self.dict_missing_value_per_col:
                     try:
                         first_value = X[column].dropna().values[0]
                         float(first_value)
                         can_cast_as_number = True
-                    except Exception:
+                    except ValueError:
                         can_cast_as_number = False
                     if can_cast_as_number:
                         # In this case, we expect to have a number as category
@@ -555,10 +543,8 @@ def has_object_columns(
         True if the DataFrame dtypes contain an object column, False
         otherwise.
     """
-    object_columns_indicator = [True if pd.api.types.is_object_dtype(feature_type) else False
-                                for feature_type in feature_types]
-
-    if True in object_columns_indicator:
-        return True
-    else:
-        return False
+    for feature_type in feature_types:
+        if pd.api.types.is_object_dtype(feature_type):
+            return True
+        else:
+            return False
