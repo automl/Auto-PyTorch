@@ -107,6 +107,7 @@ def shake_get_alpha_beta(
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
+    # alpha is the weight ratio for the forward pass and beta is that for the backward pass
     if method == 'even-even':
         alpha = torch.FloatTensor([0.5])
     else:
