@@ -412,7 +412,7 @@ class BaseTask:
             dask.distributed.LocalCluster(
                 n_workers=self.n_jobs,
                 processes=True,
-                threads_per_worker=1,
+                threads_per_worker=2,
                 # We use the temporal directory to save the
                 # dask workers, because deleting workers
                 # more time than deleting backend directories
