@@ -322,7 +322,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.random_state, val_share, self._get_indices(), **kwargs)
         return train, val
 
-    def get_dataset_for_training(self, split_id: int, train: bool, subset: int = 0) -> Dataset:
+    def get_dataset_for_training(self, split_id: int, train: bool) -> Dataset:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
 
@@ -331,8 +331,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         Args:
             split_id (int): which split id to get from the splits
-            train (bool): whether the train or valid transforms are to be applied
-            subset (int, default=0): 0 is for train_indices, 1 is for valid_indices
+            train (bool): whether the dataset is required for training or evaluating.
 
         Returns:
 
@@ -340,6 +339,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
         assert split_id <= len(self.splits), "Expected split id to be less than length of splits"
+        subset = int(not train)
         indices = self.splits[split_id][subset]
         assert indices is not None, "Trying to get subset when it does not exist"
         return TransformSubset(self, indices, train=train)
