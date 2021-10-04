@@ -338,7 +338,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
-        assert split_id <= len(self.splits), "Expected split id to be less than length of splits"
+        if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
+            raise IndexError("split_id out of range, got split_id={} (>= num_splits={})".format(split_id, len(self.splits)))
         subset = int(not train)
         indices = self.splits[split_id][subset]
         assert indices is not None, "Trying to get subset when it does not exist"
