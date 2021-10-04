@@ -150,7 +150,7 @@ class AdversarialTrainer(BaseTrainerComponent):
             'shortname': 'AdversarialTrainer',
             'name': 'AdversarialTrainer',
             'handles_tabular': True,
-            'handles_image': False,
+            'handles_image': True,
             'handles_time_series': False,
         }
 
