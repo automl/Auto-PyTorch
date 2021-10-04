@@ -41,7 +41,7 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         X[:, indices] = X[index, :][:, indices]
 
         # Adjust lam
-        lam = 1 - ((len(indices)) / (n_columns))
+        lam = 1 - (len(indices) / n_columns)
 
         y_a, y_b = y, y[index]
 
