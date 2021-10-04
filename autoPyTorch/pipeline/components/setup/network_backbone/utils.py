@@ -100,6 +100,7 @@ def shake_get_alpha_beta(
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
+    Currently, this function supports `even-even`, `shake-even` and `shake-shake`
     """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
