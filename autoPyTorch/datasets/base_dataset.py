@@ -339,11 +339,12 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
         if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
-            raise IndexError("split_id out of range, got split_id={} (>= num_splits={})".format(split_id, len(self.splits)))
+            raise IndexError("split_id out of range, got split_id={}"
+                             " (>= num_splits={})".format(split_id, len(self.splits)))
         subset = int(not train)
         indices = self.splits[split_id][subset]
         if indices is None:
-                raise ValueError("Specified fold (or subset) does not exist")
+            raise ValueError("Specified fold (or subset) does not exist")
         return TransformSubset(self, indices, train=train)
 
     def replace_data(self, X_train: BaseDatasetInputType,

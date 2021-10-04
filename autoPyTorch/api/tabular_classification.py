@@ -276,7 +276,7 @@ class TabularClassificationTask(BaseTask):
                          dataset_name=dataset_name)
 
         if self.dataset is None:
-                raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
+            raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,

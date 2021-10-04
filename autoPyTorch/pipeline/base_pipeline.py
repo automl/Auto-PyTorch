@@ -25,6 +25,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
     HyperparameterSearchSpaceUpdates
 )
 
+
 class BasePipeline(Pipeline):
     """Base class for all pipeline objects.
     Notes
@@ -450,7 +451,8 @@ class BasePipeline(Pipeline):
                                 component.get_hyperparameter_search_space(
                                     dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
                             continue
-                        raise ValueError("Unknown hyperparameter for  component {} of node {}. Expected update hyperparameter " 
+                        raise ValueError("Unknown hyperparameter for  component {} of node {}."
+                                         " Expected update hyperparameter "
                                          "to be in {} got {}.".format(component.__name__,
                                                                       node.__class__.__name__,
                                                                       component.get_hyperparameter_search_space(
