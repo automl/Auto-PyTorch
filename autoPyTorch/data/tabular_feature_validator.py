@@ -549,8 +549,8 @@ def get_unused_category_symbol(
     """
     Select the appropriate missing value symbol for a column.
 
-    Giving a column from a DataFrame and an initial missing value symbol,
-    check if the missing_value is contained in the column, f it is, make
+    Given a column from a DataFrame and an initial missing value symbol,
+    check if the missing_value is contained in the column. If it is, make
     the necessary changes for a unique missing value symbol.
 
     Arguments:
@@ -558,6 +558,7 @@ def get_unused_category_symbol(
             The DataFrame column.
         missing_value_symbol (Union[int, str]):
             The initial symbol for the missing value.
+            -1 for int and '-1' for str. 
 
     Returns:
         missing_value_symbol (Union[int, str]):
@@ -568,11 +569,13 @@ def get_unused_category_symbol(
         pass
     elif isinstance(missing_value_symbol, str):
         max_length = max(len(c) for c in frame_column.cat.categories)
+        # There are no categories that are longer than `max_length`
         missing_value_symbol += '0' * max_length
     else:
         # min_value is guaranteed to be negative since there exists -1 in categories
         # and min_value must be smaller than -1. So the symbol is always negative.
         min_value = min(c for c in frame_column.cat.categories)
+        # always missing_value_symbol + min_value < min_value < 0
         missing_value_symbol = missing_value_symbol + min_value
 
     return missing_value_symbol
