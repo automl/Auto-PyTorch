@@ -498,23 +498,23 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # no missing values for categorical column
             if not X[column].isna().any():
                 continue
-            else:
-                if column not in self.dict_missing_value_per_col:
 
-                    first_value = X[column].dropna().values[0]
+            if column not in self.dict_missing_value_per_col:
 
-                    if can_cast_as_number(first_value):
-                        # In this case, we expect to have a number as category
-                        # it might be string, but its value represent a number
-                        missing_value: Union[str, int] = '-1' if isinstance(first_value, str) else -1
-                    else:
-                        missing_value = 'Missing!'
+                first_value = X[column].dropna().values[0]
 
-                    # Make sure this missing value is not seen before
-                    if hasattr(X[column], 'cat'):
-                        missing_value = get_unused_category_symbol(X[column], missing_value)
+                if can_cast_as_number(first_value):
+                    # In this case, we expect to have a number as category
+                    # it might be string, but its value represent a number
+                    missing_value: Union[str, int] = '-1' if isinstance(first_value, str) else -1
+                else:
+                    missing_value = 'Missing!'
 
-                    self.dict_missing_value_per_col[column] = missing_value
+                # Make sure this missing value is not seen before
+                if hasattr(X[column], 'cat'):
+                    missing_value = get_unused_category_symbol(X[column], missing_value)
+
+                self.dict_missing_value_per_col[column] = missing_value
 
                 # Convert the frame in place
                 X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
