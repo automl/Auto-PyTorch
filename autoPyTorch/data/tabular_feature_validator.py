@@ -1,7 +1,6 @@
 import functools
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-
 import numpy as np
 
 import pandas as pd
@@ -512,14 +511,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                         missing_value = 'Missing!'
 
                     # Make sure this missing value is not seen before
-                    # Do this check for categorical columns
-                    # else modify the value
                     if hasattr(X[column], 'cat'):
-                        while missing_value in X[column].cat.categories:
-                            if isinstance(missing_value, str):
-                                missing_value += '0'
-                            else:
-                                missing_value += missing_value
+                        missing_value = get_unused_category_symbol(X[column], missing_value)
+
                     self.dict_missing_value_per_col[column] = missing_value
 
                 # Convert the frame in place
@@ -529,6 +523,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         return X
 
+
 def has_object_columns(
     feature_types: pd.Series,
 ) -> bool:
@@ -537,13 +532,47 @@ def has_object_columns(
     there exists one or more object columns.
 
     Arguments:
-    ----------
-    feature_types: pd.Series
-        The feature types for a DataFrame.
+        feature_types (pd.Series):
+            The feature types for a DataFrame.
     Returns:
-    --------
-    bool
-        True if the DataFrame dtypes contain an object column, False
-        otherwise.
+        bool:
+            True if the DataFrame dtypes contain an object column, False
+            otherwise.
     """
     return np.dtype('O') in feature_types
+
+
+def get_unused_category_symbol(
+    frame_column: pd.Series,
+    missing_value_symbol: Union[int, str],
+) -> Union[int, str]:
+    """
+    Select the appropriate missing value symbol for a column.
+
+    Giving a column from a DataFrame and an initial missing value symbol,
+    check if the missing_value is contained in the column, f it is, make
+    the necessary changes for a unique missing value symbol.
+
+    Arguments:
+        frame_column (pd.Series):
+            The DataFrame column.
+        missing_value_symbol (Union[int, str]):
+            The initial symbol for the missing value.
+
+    Returns:
+        missing_value_symbol (Union[int, str]):
+            The unique missing value symbol.
+    """
+
+    if missing_value_symbol not in frame_column.cat.categories:
+        pass
+    elif isinstance(missing_value_symbol, str):
+        max_length = max(len(c) for c in frame_column.cat.categories)
+        missing_value_symbol += '0' * max_length
+    else:
+        # min_value is guaranteed to be negative since there exists -1 in categories
+        # and min_value must be smaller than -1. So the symbol is always negative.
+        min_value = min(c for c in frame_column.cat.categories)
+        missing_value_symbol = missing_value_symbol + min_value
+
+    return missing_value_symbol
