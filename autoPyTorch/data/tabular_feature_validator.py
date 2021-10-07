@@ -62,12 +62,16 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     """
     preprocessors: Dict[str, List[BaseEstimator]] = dict()
 
+    # Categorical Preprocessors
     onehot_encoder = OneHotEncoder(categories='auto', sparse=False, handle_unknown='ignore')
-    imputer = SimpleImputer(strategy='median', copy=False)
+    categorical_imputer = SimpleImputer(strategy='constant', copy=False)
+
+    # Numerical Preprocessors
+    numerical_imputer = SimpleImputer(strategy='median', copy=False)
     standard_scaler = StandardScaler(with_mean=True, with_std=True, copy=False)
 
-    preprocessors['categorical'] = [onehot_encoder]
-    preprocessors['numerical'] = [imputer, standard_scaler]
+    preprocessors['categorical'] = [categorical_imputer, onehot_encoder]
+    preprocessors['numerical'] = [numerical_imputer, standard_scaler]
 
     return preprocessors
 
@@ -106,10 +110,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             X = cast(pd.DataFrame, X)
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
+            print("enc_columns", categorical_columns)
+            print("all_nan_columns", self.all_nan_columns)
 
             self.enc_columns = categorical_columns
-            if len(categorical_columns) >= 0:
-                X = self.impute_nan_in_categories(X)
+
             preprocessors = get_tabular_preprocessors()
             self.column_transformer = _create_column_transformer(
                 preprocessors=preprocessors,
@@ -196,10 +201,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
-        # We also need to fillna on the transformation
-        # in case test data is provided
-        if len(self.categorical_columns) >= 0:
-            X = self.impute_nan_in_categories(X)
+    
         X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -267,6 +269,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc"):
             # If entered here, we have a pandas dataframe
             X = cast(pd.DataFrame, X)
+    
+            if hasattr(self, 'all_nan_columns') and set(self.all_nan_columns).issubset(X.columns):
+                X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
+            else:
+                self.all_nan_columns: List[Union[int, str]] = list()
+                for column in X.columns:
+                    if X[column].isna().all():
+                        self.all_nan_columns.append(column)
+                X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
 
             # Handle objects if possible
             object_columns_indicator = has_object_columns(X.dtypes.values)
@@ -463,63 +474,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
 
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
-
-        return X
-
-    def impute_nan_in_categories(self, X: pd.DataFrame) -> pd.DataFrame:
-        """
-        impute missing values before encoding,
-        remove once sklearn natively supports
-        it in ordinal encoding. Sklearn issue:
-        "https://github.com/scikit-learn/scikit-learn/issues/17123)"
-        Arguments:
-            X (pd.DataFrame):
-                data to be interpreted.
-        Returns:
-            pd.DataFrame
-        """
-
-        def can_cast_as_number(value: Union[int, float, str]) -> bool:
-            try:
-                float(first_value)
-                return True
-            except ValueError:
-                return False
-
-        # To be on the safe side, map always to the same missing
-        # value per column
-        if not hasattr(self, 'dict_nancol_to_missing'):
-            self.dict_missing_value_per_col: Dict[str, Any] = {}
-
-        # First make sure that we do not alter the type of the column which cause:
-        # TypeError: '<' not supported between instances of 'int' and 'str'
-        # in the encoding
-        for column in self.enc_columns:
-            # no missing values for categorical column
-            if not X[column].isna().any():
-                continue
-
-            if column not in self.dict_missing_value_per_col:
-
-                first_value = X[column].dropna().values[0]
-
-                if can_cast_as_number(first_value):
-                    # In this case, we expect to have a number as category
-                    # it might be string, but its value represent a number
-                    missing_value: Union[str, int] = '-1' if isinstance(first_value, str) else -1
-                else:
-                    missing_value = 'Missing!'
-
-                # Make sure this missing value is not seen before
-                if hasattr(X[column], 'cat'):
-                    missing_value = get_unused_category_symbol(X[column], missing_value)
-
-                self.dict_missing_value_per_col[column] = missing_value
-
-                # Convert the frame in place
-                X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
-                                             inplace=True)
-                X.fillna({column: self.dict_missing_value_per_col[column]}, inplace=True)
 
         return X
 
