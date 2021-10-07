@@ -329,8 +329,17 @@ class Backend(object):
                 return pickle.load(fh)
 
     def replace_datamanager(self, datamanager: BaseDataset) -> None:
+        """
+        This function is called to replace the old datamanager with a datamanager
+        in case it is required.
+
+        Args:
+            datamanager (BaseDataset): the new datamanager to replace the old.
+        """
         warnings.warn("Original dataset will be overwritten with the provided dataset")
-        os.remove(self._get_datamanager_pickle_filename())
+        datamanager_pickle_file = self._get_datamanager_pickle_filename()
+        if os.path.exists(datamanager_pickle_file):
+            os.remove(datamanager_pickle_file)
         self.save_datamanager(datamanager=datamanager)
 
     def get_runs_directory(self) -> str:

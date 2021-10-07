@@ -102,7 +102,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 proba_k /= normalizer
                 all_proba.append(proba_k)
 
-            return all_proba
+            return np.array(all_proba)
 
     def predict_proba(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """predict_proba.

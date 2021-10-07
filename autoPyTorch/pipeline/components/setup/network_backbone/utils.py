@@ -100,12 +100,14 @@ def shake_get_alpha_beta(
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
+    Currently, this function supports `even-even`, `shake-even` and `shake-shake`
     """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
+    # alpha is the weight ratio for the forward pass and beta is that for the backward pass
     if method == 'even-even':
         alpha = torch.FloatTensor([0.5])
     else:
@@ -116,8 +118,10 @@ def shake_get_alpha_beta(
     elif method in ['shake-even', 'even-even']:
         beta = torch.FloatTensor([0.5])
     elif method == 'M3':
+        # Table 4 in the paper `Shake-Shake regularization`
+        rnd = torch.rand(1)
         beta = torch.FloatTensor(
-            [torch.rand(1) * (0.5 - alpha) * alpha if alpha < 0.5 else torch.rand(1) * (alpha - 0.5) * alpha]
+            [rnd * (0.5 - alpha) + alpha if alpha < 0.5 else rnd * (alpha - 0.5) + 0.5]
         )
     else:
         raise ValueError("Unknown method for ShakeShakeRegularisation in NetworkBackbone")

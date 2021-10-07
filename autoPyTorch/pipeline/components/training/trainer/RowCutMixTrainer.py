@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 class RowCutMixTrainer(MixUp, BaseTrainerComponent):
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -28,29 +28,28 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         """
         beta = 1.0
         lam = self.random_state.beta(beta, beta)
-        batch_size = X.size()[0]
+        batch_size, n_columns = np.shape(X)
         index = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
         r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[index], 'lam': 1}
 
-        size = X.shape[1]
-        indices = torch.tensor(self.random_state.choice(range(size), max(1, np.int32(size * lam)),
+        indices = torch.tensor(self.random_state.choice(range(n_columns), max(1, np.int32(n_columns * lam)),
                                                         replace=False))
 
         X[:, indices] = X[index, :][:, indices]
 
         # Adjust lam
-        lam = 1 - ((len(indices)) / (X.size()[1]))
+        lam = 1 - (len(indices) / n_columns)
 
         y_a, y_b = y, y[index]
 
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RowCutMixTrainer',
             'name': 'MixUp Regularized with Cutoff Tabular Trainer',
