@@ -465,10 +465,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         else:
             # Calling for the first time to infer the categories
             X = X.infer_objects()
-            # initial data types
-            data_types = X.dtypes
-            for index, column in enumerate(X.columns):
-                if not is_numeric_dtype(data_types[index]):
+            for column, data_type in zip(X.columns, X.dtypes):
+                if not is_numeric_dtype(data_type):
                     X[column] = X[column].astype('category')
             # only numerical attributes and categories
             data_types = X.dtypes
