@@ -324,9 +324,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 checks) and a encoder fitted in the case the data needs encoding
         Returns:
             categorical_columns: (List[str])
-                Categorical columns.
+                List of the names of categorical columns.
             numerical_columns: (List[str])
-                Numerical columns.
+                List of the names of numerical columns.
             feat_type:
                 Type of each column numerical/categorical
         """
