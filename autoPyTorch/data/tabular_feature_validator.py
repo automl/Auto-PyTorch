@@ -269,7 +269,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc"):
             # If entered here, we have a pandas dataframe
             X = cast(pd.DataFrame, X)
-    
+
+            # we should remove columns with all nans in the training set.
             if hasattr(self, 'all_nan_columns') and set(self.all_nan_columns).issubset(X.columns):
                 X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
             else:
