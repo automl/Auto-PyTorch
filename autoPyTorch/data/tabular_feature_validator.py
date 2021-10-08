@@ -109,7 +109,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
 
             X = cast(pd.DataFrame, X)
-             self.all_nan_columns = set([column for column in X.columns if X[column].isna().all()])
+
+            self.all_nan_columns = set([column for column in X.columns if X[column].isna().all()])
 
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
@@ -146,15 +147,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 feat_type,
                 key=functools.cmp_to_key(comparator)
             )
-
-            if len(categorical_columns) > 0:
-                self.categories = [
-                    # We fit a one-hot encoder, where all categorical
-                    # columns are shifted to the left
-                    list(range(len(cat)))
-                    for cat in self.column_transformer.named_transformers_[
-                        'categorical_pipeline'].named_steps['onehotencoder'].categories_
-                ]
 
             # differently to categorical_columns and numerical_columns,
             # this saves the index of the column.
