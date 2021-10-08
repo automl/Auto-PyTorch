@@ -49,7 +49,7 @@ def _create_column_transformer(
     return ColumnTransformer([
         ('categorical_pipeline', categorical_pipeline, categorical_columns),
         ('numerical_pipeline', numerical_pipeline, numerical_columns)],
-        remainder='passthrough'
+        remainder='drop'
     )
 
 
@@ -109,13 +109,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
 
             X = cast(pd.DataFrame, X)
-            categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
-            
-            self.all_nan_columns = list()
+            self.all_nan_columns = set()
             for column in X.columns:
                 if X[column].isna().all():
-                    self.all_nan_columns.append(column)
+                    self.all_nan_columns.add(column)
 
+            categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)            
 
             self.enc_columns = categorical_columns
 
@@ -206,17 +205,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Check the data here so we catch problems on new test data
         self._check_data(X)
 
-        if self.all_nan_columns is None:
-            raise NotFittedError("Expected all_nan_columns to be"
-                                 " initialised during fit, got {}".format(self.all_nan_columns))
-        if set(self.all_nan_columns).issubset(X.columns):
-            raise ValueError("Expected all nan columns {} to be a" 
-                             "subset of the columns of the dataset {}".format(
-                                                                              self.all_nan_columns,
-                                                                              X.columns
-                                                                              )
-                            )
-        X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
+        # in case of test data being all none and train data
+        # having a value for a categorical column.
+        # We need to convert the column in test data to 
+        # object otherwise the test column is interpreted as float
+        if len(self.categorical_columns) > 0:
+            categorical_columns = self.column_transformer.transformers_[0][-1]
+            for column in categorical_columns:
+                if X[column].isna().all():
+                    X[column] = X[column].astype('object')
 
         X = self.column_transformer.transform(X)
 
@@ -307,13 +304,20 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             dtypes = [dtype.name for dtype in X.dtypes]
             if len(self.dtypes) > 0:
-                if self.dtypes != dtypes:
-                    raise ValueError("Changing the dtype of the features after fit() is "
-                                     "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(self.dtypes,
-                                                                                          dtypes,
-                                                                                          )
-                                     )
+                dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+                if any(dtypes_diff):
+                    if self.all_nan_columns is not None and len(self.all_nan_columns) > 0:
+                        if len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0:
+                            # we expect the dtypes to only be different if the column belongs 
+                            # to all_nan_columns as these columns would be imputed. if there is 
+                            # a value in the test set for a column in all_nan_columns, pandas 
+                            # does not recognise the dtype of the test column properly
+                            raise ValueError("Changing the dtype of the features after fit() is "
+                                            "not supported. Fit() method was called with "
+                                            "{} whereas the new features have {} as type".format(self.dtypes,
+                                                                                                dtypes,
+                                                                                                )
+                                            )
             else:
                 self.dtypes = dtypes
 
@@ -344,6 +348,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Make sure each column is a valid type
         for i, column in enumerate(X.columns):
+            if self.all_nan_columns is not None and column in self.all_nan_columns:
+                continue
             column_dtype = self.dtypes[i]
             if column_dtype in ['category', 'bool']:
                 categorical_columns.append(column)
@@ -474,6 +480,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             for column, data_type in zip(X.columns, X.dtypes):
                 if not is_numeric_dtype(data_type):
                     X[column] = X[column].astype('category')
+
             # only numerical attributes and categories
             data_types = X.dtypes
             self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}

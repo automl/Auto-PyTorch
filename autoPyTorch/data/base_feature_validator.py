@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -64,7 +64,7 @@ class BaseFeatureValidator(BaseEstimator):
         self.categorical_columns: List[int] = []
         self.numerical_columns: List[int] = []
 
-        self.all_nan_columns: Optional[List[Union[int, str]]] = None
+        self.all_nan_columns: Optional[Set[Union[int, str]]] = None
 
         self._is_fitted = False
 
