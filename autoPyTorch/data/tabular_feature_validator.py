@@ -110,8 +110,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             X = cast(pd.DataFrame, X)
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
-            print("enc_columns", categorical_columns)
-            print("all_nan_columns", self.all_nan_columns)
 
             self.enc_columns = categorical_columns
 

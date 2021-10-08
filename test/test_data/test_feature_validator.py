@@ -317,6 +317,93 @@ def test_featurevalidator_get_columns_to_encode():
     assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
 
 
+def test_featurevalidator_remove_nan__catcolumns():
+    """
+    Make sure categorical columns that have only nan values are removed.
+    """
+    # First case, there exist null columns in the train set
+    # and the same columns are not all null for the test set.
+    validator = TabularFeatureValidator()
+
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan, 'C': 5},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+
+    validator.fit(df_train)
+    transformed_df_train = validator.transform(df_train)
+    transformed_df_test = validator.transform(df_test)
+
+    assert np.array_equal(transformed_df_train, np.array([[0, 1], [1, 0], [0, 1]]))
+    assert np.array_equal(transformed_df_test, np.array([[1, 0], [1, 0], [0, 1]]))
+
+    # Second case, there exist null columns in the training set and the same
+    # are null in the test set.
+    validator = TabularFeatureValidator()
+
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+
+    validator.fit(df_train)
+    transformed_df_train = validator.transform(df_train)
+    transformed_df_test = validator.transform(df_test)
+
+    assert np.array_equal(transformed_df_train, np.array([[0, 1], [1, 0], [0, 1]]))
+    assert np.array_equal(transformed_df_test, np.array([[1, 0], [1, 0], [0, 1]]))
+
+    # Third case, there exist no null columns in the training set and a
+    # few null columns exist in the test set.
+    validator = TabularFeatureValidator()
+
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': 1},
+            {'A': 2, 'B': 2}
+        ],
+        dtype='category',
+    )
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan},
+            {'A': np.nan, 'B': np.nan}
+        ],
+        dtype='category',
+    )
+
+    validator.fit(df_train)
+    transformed_df_train = validator.transform(df_train)
+    transformed_df_test = validator.transform(df_test)
+
+    assert np.array_equal(transformed_df_train, np.array([[0, 1, 0, 1], [1, 0, 1, 0]]))
+    assert np.array_equal(transformed_df_test, np.array([[0, 0, 0, 0], [0, 0, 0, 0]]))
+
+
 def test_features_unsupported_calls_are_raised():
     """
     Makes sure we raise a proper message to the user,
