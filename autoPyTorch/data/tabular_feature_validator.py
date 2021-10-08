@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -114,7 +114,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if X[column].isna().all():
                     self.all_nan_columns.add(column)
 
-            categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)            
+            categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
             self.enc_columns = categorical_columns
 
@@ -207,7 +207,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # in case of test data being all none and train data
         # having a value for a categorical column.
-        # We need to convert the column in test data to 
+        # We need to convert the column in test data to
         # object otherwise the test column is interpreted as float
         if len(self.categorical_columns) > 0:
             categorical_columns = self.column_transformer.transformers_[0][-1]
@@ -308,16 +308,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if any(dtypes_diff):
                     if self.all_nan_columns is not None and len(self.all_nan_columns) > 0:
                         if len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0:
-                            # we expect the dtypes to only be different if the column belongs 
-                            # to all_nan_columns as these columns would be imputed. if there is 
-                            # a value in the test set for a column in all_nan_columns, pandas 
+                            # we expect the dtypes to only be different if the column belongs
+                            # to all_nan_columns as these columns would be imputed. if there is
+                            # a value in the test set for a column in all_nan_columns, pandas
                             # does not recognise the dtype of the test column properly
                             raise ValueError("Changing the dtype of the features after fit() is "
-                                            "not supported. Fit() method was called with "
-                                            "{} whereas the new features have {} as type".format(self.dtypes,
-                                                                                                dtypes,
-                                                                                                )
-                                            )
+                                             "not supported. Fit() method was called with "
+                                             "{} whereas the new features have {} as type".format(self.dtypes,
+                                                                                                  dtypes,
+                                                                                                  )
+                                             )
             else:
                 self.dtypes = dtypes
 
@@ -482,7 +482,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[column] = X[column].astype('category')
 
             # only numerical attributes and categories
-            data_types = X.dtypes
             self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
 
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
@@ -506,4 +505,3 @@ def has_object_columns(
             otherwise.
     """
     return np.dtype('O') in feature_types
-

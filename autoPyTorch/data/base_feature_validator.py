@@ -43,7 +43,8 @@ class BaseFeatureValidator(BaseEstimator):
     """
     def __init__(self,
                  logger: Optional[Union[PicklableClientLogger, logging.Logger
-                                                      ]] = None,
+                                        ]
+                                  ] = None,
                  ) -> None:
         # Register types to detect unsupported data format changes
         self.feat_type = None  # type: Optional[List[str]]

@@ -636,15 +636,13 @@ def test_feature_validator_imbalanced_data():
     validator = TabularFeatureValidator()
     validator.fit(X_train)
 
-    transformed_X_train = validator.transform(X_train)
-
     train_feature_types = copy.deepcopy(validator.feat_type)
     assert train_feature_types == ['numerical']
     # validator will throw an error if the column types are not the same
     transformed_X_test = validator.transform(X_test)
     transformed_X_test = pd.DataFrame(transformed_X_test)
     assert sorted(validator.all_nan_columns) == sorted(['A', 'C', 'D'])
-    # as there are no categorical columns, we can make such an 
+    # as there are no categorical columns, we can make such an
     # assertion. We only expect to drop the all nan columns
     total_all_nan_columns = len(validator.all_nan_columns)
     total_columns = len(validator.column_order)
