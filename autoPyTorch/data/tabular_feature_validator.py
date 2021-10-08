@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -22,7 +22,7 @@ from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPOR
 def _create_column_transformer(
     preprocessors: Dict[str, List[BaseEstimator]],
     numerical_columns: List[str],
-    categorical_columns: List[str]
+    categorical_columns: List[str],
 ) -> ColumnTransformer:
     """
     Given a dictionary of preprocessors, this function
@@ -38,6 +38,7 @@ def _create_column_transformer(
     Returns:
         ColumnTransformer
     """
+
     numerical_pipeline = 'drop'
     categorical_pipeline = 'drop'
     if len(numerical_columns) > 0:
@@ -48,7 +49,7 @@ def _create_column_transformer(
     return ColumnTransformer([
         ('categorical_pipeline', categorical_pipeline, categorical_columns),
         ('numerical_pipeline', numerical_pipeline, numerical_columns)],
-        remainder='passthrough'
+        remainder='drop'
     )
 
 
@@ -60,21 +61,23 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
         Dict[str, List[BaseEstimator]]
     """
     preprocessors: Dict[str, List[BaseEstimator]] = dict()
-    preprocessors['numerical'] = list()
-    preprocessors['categorical'] = list()
 
-    preprocessors['categorical'].append(OneHotEncoder(
-        categories='auto',
-        sparse=False,
-        handle_unknown='ignore'))
-    preprocessors['numerical'].append(SimpleImputer(strategy='median',
-                                                    copy=False))
-    preprocessors['numerical'].append(StandardScaler(with_mean=True, with_std=True, copy=False))
+    # Categorical Preprocessors
+    onehot_encoder = OneHotEncoder(categories='auto', sparse=False, handle_unknown='ignore')
+    categorical_imputer = SimpleImputer(strategy='constant', copy=False)
+
+    # Numerical Preprocessors
+    numerical_imputer = SimpleImputer(strategy='median', copy=False)
+    standard_scaler = StandardScaler(with_mean=True, with_std=True, copy=False)
+
+    preprocessors['categorical'] = [categorical_imputer, onehot_encoder]
+    preprocessors['numerical'] = [numerical_imputer, standard_scaler]
 
     return preprocessors
 
 
 class TabularFeatureValidator(BaseFeatureValidator):
+
     def _fit(
         self,
         X: SUPPORTED_FEAT_TYPES,
@@ -96,24 +99,29 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # The final output of a validator is a numpy array. But pandas
         # gives us information about the column dtype
         if isinstance(X, np.ndarray):
+
             X = self.numpy_array_to_pandas(X)
+            # Replace the data type from the previously saved type.
+            self.data_type = type(X)
+            # save all the information about the column order and data types
+            self._check_data(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+
             X = cast(pd.DataFrame, X)
 
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
+            self.all_nan_columns = set([column for column in X.columns if X[column].isna().all()])
 
-            self._check_data(X)
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
             self.enc_columns = categorical_columns
-            if len(categorical_columns) >= 0:
-                X = self.impute_nan_in_categories(X)
+
             preprocessors = get_tabular_preprocessors()
-            self.column_transformer = _create_column_transformer(preprocessors=preprocessors,
-                                                                 numerical_columns=numerical_columns,
-                                                                 categorical_columns=categorical_columns)
+            self.column_transformer = _create_column_transformer(
+                preprocessors=preprocessors,
+                numerical_columns=numerical_columns,
+                categorical_columns=categorical_columns,
+            )
 
             # Mypy redefinition
             assert self.column_transformer is not None
@@ -140,15 +148,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 key=functools.cmp_to_key(comparator)
             )
 
-            if len(categorical_columns) > 0:
-                self.categories = [
-                    # We fit an ordinal encoder, where all categorical
-                    # columns are shifted to the left
-                    list(range(len(cat)))
-                    for cat in self.column_transformer.named_transformers_[
-                        'categorical_pipeline'].named_steps['onehotencoder'].categories_
-                ]
-
+            # differently to categorical_columns and numerical_columns,
+            # this saves the index of the column.
             for i, type_ in enumerate(self.feat_type):
                 if 'numerical' in type_:
                     self.numerical_columns.append(i)
@@ -156,7 +157,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     self.categorical_columns.append(i)
 
         # Lastly, store the number of features
-        self.num_features = np.shape(X)[1]
+        self.num_features = len(X.columns)
+
         return self
 
     def transform(
@@ -189,16 +191,19 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = cast(pd.DataFrame, X)
 
-            # Also remove the object dtype for new data
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
-
         # Check the data here so we catch problems on new test data
         self._check_data(X)
-        # We also need to fillna on the transformation
-        # in case test data is provided
-        if len(self.categorical_columns) >= 0:
-            X = self.impute_nan_in_categories(X)
+
+        # in case of test data being all none and train data
+        # having a value for a categorical column.
+        # We need to convert the column in test data to
+        # object otherwise the test column is interpreted as float
+        if len(self.categorical_columns) > 0:
+            categorical_columns = self.column_transformer.transformers_[0][-1]
+            for column in categorical_columns:
+                if X[column].isna().all():
+                    X[column] = X[column].astype('object')
+
         X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -268,13 +273,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = cast(pd.DataFrame, X)
 
             # Handle objects if possible
-            if not X.select_dtypes(include='object').empty:
+            exist_object_columns = has_object_columns(X.dtypes.values)
+            if exist_object_columns:
                 X = self.infer_objects(X)
 
             # Define the column to be encoded here as the feature validator is fitted once
             # per estimator
             # enc_columns, _ = self._get_columns_to_encode(X)
-
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
                 if self.column_order != column_order:
@@ -288,13 +293,21 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             dtypes = [dtype.name for dtype in X.dtypes]
             if len(self.dtypes) > 0:
-                if self.dtypes != dtypes:
-                    raise ValueError("Changing the dtype of the features after fit() is "
-                                     "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(self.dtypes,
-                                                                                          dtypes,
-                                                                                          )
-                                     )
+                dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+                if any(dtypes_diff):
+                    if self.all_nan_columns is not None and len(self.all_nan_columns) > 0:
+                        if len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0:
+                            # we expect the dtypes to only be different if the column belongs
+                            # to all_nan_columns as these columns would be imputed. if there is
+                            # a value in the test set for a column in all_nan_columns, pandas
+                            # does not recognise the dtype of the test column properly
+                            raise ValueError("Changing the dtype of the features after fit() is "
+                                             "not supported. The dtype of some columns are different "
+                                             "between training and test datasets. Fit() method was called with "
+                                             "{} whereas the new features have {} as type".format(self.dtypes,
+                                                                                                  dtypes,
+                                                                                                  )
+                                             )
             else:
                 self.dtypes = dtypes
 
@@ -310,8 +323,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
         Returns:
-            enc_columns (List[str]):
-                Columns to encode, if any
+            categorical_columns: (List[str])
+                List of the names of categorical columns.
+            numerical_columns: (List[str])
+                List of the names of numerical columns.
             feat_type:
                 Type of each column numerical/categorical
         """
@@ -323,51 +338,44 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Make sure each column is a valid type
         for i, column in enumerate(X.columns):
-            if X[column].dtype.name in ['category', 'bool']:
-
+            if self.all_nan_columns is not None and column in self.all_nan_columns:
+                continue
+            column_dtype = self.dtypes[i]
+            err_msg = "Valid types are `numerical`, `categorical` or `boolean`, " \
+                      "but input Column {} has an invalid type `{}`.".format(column, column_dtype)
+            if column_dtype in ['category', 'bool']:
                 categorical_columns.append(column)
                 feat_type.append('categorical')
             # Move away from np.issubdtype as it causes
             # TypeError: data type not understood in certain pandas types
-            elif not is_numeric_dtype(X[column]):
-                if X[column].dtype.name == 'object':
-                    raise ValueError(
-                        "Input Column {} has invalid type object. "
-                        "Cast it to a valid dtype before using it in AutoPyTorch. "
-                        "Valid types are numerical, categorical or boolean. "
-                        "You can cast it to a valid dtype using "
-                        "pandas.Series.astype ."
-                        "If working with string objects, the following "
-                        "tutorial illustrates how to work with text data: "
-                        "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
-                            # noqa: E501
-                            column,
-                        )
-                    )
-                elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                    X[column].dtype
-                ):
-                    raise ValueError(
-                        "AutoPyTorch does not support time and/or date datatype as given "
-                        "in column {}. Please convert the time information to a numerical value "
-                        "first. One example on how to do this can be found on "
-                        "https://stats.stackexchange.com/questions/311494/".format(
-                            column,
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        "Input Column {} has unsupported dtype {}. "
-                        "Supported column types are categorical/bool/numerical dtypes. "
-                        "Make sure your data is formatted in a correct way, "
-                        "before feeding it to AutoPyTorch.".format(
-                            column,
-                            X[column].dtype.name,
-                        )
-                    )
-            else:
+            elif is_numeric_dtype(column_dtype):
                 feat_type.append('numerical')
                 numerical_columns.append(column)
+            elif column_dtype == 'object':
+                # TODO verify how would this happen when we always convert the object dtypes to category
+                raise ValueError(
+                    "{} Cast it to a valid dtype before feeding it to AutoPyTorch. "
+                    "You can cast it to a valid dtype using pandas.Series.astype."
+                    "If you are working with string objects, the following "
+                    "tutorial illustrates how to work with text data: "
+                    "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
+                        # noqa: E501
+                        err_msg,
+                    )
+                )
+            elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(column_dtype):
+                raise ValueError(
+                    "{} Convert the time information to a numerical value"
+                    " before feeding it to AutoPyTorch. "
+                    "One example of the conversion can be found on "
+                    "https://stats.stackexchange.com/questions/311494/".format(err_msg)
+                )
+            else:
+                raise ValueError(
+                    "{} Make sure your data is formatted in a correct way"
+                    "before feeding it to AutoPyTorch.".format(err_msg)
+                )
+
         return categorical_columns, numerical_columns, feat_type
 
     def list_to_dataframe(
@@ -394,7 +402,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
 
         # If a list was provided, it will be converted to pandas
-        X_train = pd.DataFrame(data=X_train).infer_objects()
+        X_train = pd.DataFrame(data=X_train).convert_dtypes()
         self.logger.warning("The provided feature types to AutoPyTorch are of type list."
                             "Features have been interpreted as: {}".format([(col, t) for col, t in
                                                                             zip(X_train.columns, X_train.dtypes)]))
@@ -403,7 +411,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 self.logger.warning("Train features are a list while the provided test data"
                                     "is {}. X_test will be casted as DataFrame.".format(type(X_test))
                                     )
-            X_test = pd.DataFrame(data=X_test).infer_objects()
+            X_test = pd.DataFrame(data=X_test).convert_dtypes()
+
         return X_train, X_test
 
     @staticmethod
@@ -446,65 +455,33 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
                     pass
         else:
+            # Calling for the first time to infer the categories
             X = X.infer_objects()
-            for column in X.columns:
-                if not is_numeric_dtype(X[column]):
+            for column, data_type in zip(X.columns, X.dtypes):
+                if not is_numeric_dtype(data_type):
                     X[column] = X[column].astype('category')
-            self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
+
+            # only numerical attributes and categories
+            self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
+
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
+
         return X
 
-    def impute_nan_in_categories(self,
-                                 X: pd.DataFrame
-                                 ) -> pd.DataFrame:
-        """
-        impute missing values before encoding,
-        remove once sklearn natively supports
-        it in ordinal encoding. Sklearn issue:
-        "https://github.com/scikit-learn/scikit-learn/issues/17123)"
-        Arguments:
-            X (pd.DataFrame):
-                data to be interpreted.
-        Returns:
-            pd.DataFrame
-        """
 
-        # To be on the safe side, map always to the same missing
-        # value per column
-        if not hasattr(self, 'dict_nancol_to_missing'):
-            self.dict_missing_value_per_col: Dict[str, Any] = {}
+def has_object_columns(
+    feature_types: pd.Series,
+) -> bool:
+    """
+    Indicate whether on a Series of dtypes for a Pandas DataFrame
+    there exists one or more object columns.
 
-        # First make sure that we do not alter the type of the column which cause:
-        # TypeError: '<' not supported between instances of 'int' and 'str'
-        # in the encoding
-        for column in self.enc_columns:
-            if X[column].isna().any():
-                if column not in self.dict_missing_value_per_col:
-                    try:
-                        float(X[column].dropna().values[0])
-                        can_cast_as_number = True
-                    except Exception:
-                        can_cast_as_number = False
-                    if can_cast_as_number:
-                        # In this case, we expect to have a number as category
-                        # it might be string, but its value represent a number
-                        missing_value: Union[str, int] = '-1' if isinstance(X[column].dropna().values[0], str) else -1
-                    else:
-                        missing_value = 'Missing!'
-
-                    # Make sure this missing value is not seen before
-                    # Do this check for categorical columns
-                    # else modify the value
-                    if hasattr(X[column], 'cat'):
-                        while missing_value in X[column].cat.categories:
-                            if isinstance(missing_value, str):
-                                missing_value += '0'
-                            else:
-                                missing_value += missing_value
-                    self.dict_missing_value_per_col[column] = missing_value
-
-                # Convert the frame in place
-                X[column].cat.add_categories([self.dict_missing_value_per_col[column]],
-                                             inplace=True)
-                X.fillna({column: self.dict_missing_value_per_col[column]}, inplace=True)
-        return X
+    Arguments:
+        feature_types (pd.Series):
+            The feature types for a DataFrame.
+    Returns:
+        bool:
+            True if the DataFrame dtypes contain an object column, False
+            otherwise.
+    """
+    return np.dtype('O') in feature_types
