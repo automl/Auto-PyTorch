@@ -109,10 +109,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
 
             X = cast(pd.DataFrame, X)
-            self.all_nan_columns = set()
-            for column in X.columns:
-                if X[column].isna().all():
-                    self.all_nan_columns.add(column)
+             self.all_nan_columns = set([column for column in X.columns if X[column].isna().all()])
 
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
@@ -284,8 +281,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = cast(pd.DataFrame, X)
 
             # Handle objects if possible
-            object_columns_indicator = has_object_columns(X.dtypes.values)
-            if object_columns_indicator:
+            exist_object_columns = has_object_columns(X.dtypes.values)
+            if exist_object_columns:
                 X = self.infer_objects(X)
 
             # Define the column to be encoded here as the feature validator is fitted once

@@ -317,7 +317,7 @@ def test_featurevalidator_get_columns_to_encode():
     assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
 
 
-def test_featurevalidator_remove_nan__catcolumns():
+def test_featurevalidator_remove_nan_catcolumns():
     """
     Make sure categorical columns that have only nan values are removed.
     """
