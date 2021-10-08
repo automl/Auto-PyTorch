@@ -110,6 +110,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             X = cast(pd.DataFrame, X)
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
+            
+            self.all_nan_columns = list()
+            for column in X.columns:
+                if X[column].isna().all():
+                    self.all_nan_columns.append(column)
+
 
             self.enc_columns = categorical_columns
 
@@ -199,7 +205,19 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
-    
+
+        if self.all_nan_columns is None:
+            raise NotFittedError("Expected all_nan_columns to be"
+                                 " initialised during fit, got {}".format(self.all_nan_columns))
+        if set(self.all_nan_columns).issubset(X.columns):
+            raise ValueError("Expected all nan columns {} to be a" 
+                             "subset of the columns of the dataset {}".format(
+                                                                              self.all_nan_columns,
+                                                                              X.columns
+                                                                              )
+                            )
+        X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
+
         X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -267,16 +285,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if hasattr(X, "iloc"):
             # If entered here, we have a pandas dataframe
             X = cast(pd.DataFrame, X)
-
-            # we should remove columns with all nans in the training set.
-            if hasattr(self, 'all_nan_columns') and set(self.all_nan_columns).issubset(X.columns):
-                X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
-            else:
-                self.all_nan_columns: List[Union[int, str]] = list()
-                for column in X.columns:
-                    if X[column].isna().all():
-                        self.all_nan_columns.append(column)
-                X.drop(labels=self.all_nan_columns, axis=1, inplace=True)
 
             # Handle objects if possible
             object_columns_indicator = has_object_columns(X.dtypes.values)
