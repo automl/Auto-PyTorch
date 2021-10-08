@@ -310,7 +310,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                             # a value in the test set for a column in all_nan_columns, pandas
                             # does not recognise the dtype of the test column properly
                             raise ValueError("Changing the dtype of the features after fit() is "
-                                             "not supported. Fit() method was called with "
+                                             "not supported. The dtype of some columns are different "
+                                             "between training and test datasets. Fit() method was called with "
                                              "{} whereas the new features have {} as type".format(self.dtypes,
                                                                                                   dtypes,
                                                                                                   )
@@ -348,51 +349,41 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if self.all_nan_columns is not None and column in self.all_nan_columns:
                 continue
             column_dtype = self.dtypes[i]
+            err_msg = "Valid types are `numerical`, `categorical` or `boolean`, " \
+                      "but input Column {} has an invalid type `{}`.".format(column, column_dtype)
             if column_dtype in ['category', 'bool']:
                 categorical_columns.append(column)
                 feat_type.append('categorical')
             # Move away from np.issubdtype as it causes
             # TypeError: data type not understood in certain pandas types
-            elif not is_numeric_dtype(column_dtype):
-                # TODO verify how would this happen when we always convert the object dtypes to category
-                if column_dtype == 'object':
-                    raise ValueError(
-                        "Input Column {} has invalid type object. "
-                        "Cast it to a valid dtype before using it in AutoPyTorch. "
-                        "Valid types are numerical, categorical or boolean. "
-                        "You can cast it to a valid dtype using "
-                        "pandas.Series.astype ."
-                        "If working with string objects, the following "
-                        "tutorial illustrates how to work with text data: "
-                        "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
-                            # noqa: E501
-                            column,
-                        )
-                    )
-                elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                    column_dtype
-                ):
-                    raise ValueError(
-                        "AutoPyTorch does not support time and/or date datatype as given "
-                        "in column {}. Please convert the time information to a numerical value "
-                        "first. One example on how to do this can be found on "
-                        "https://stats.stackexchange.com/questions/311494/".format(
-                            column,
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        "Input Column {} has unsupported dtype {}. "
-                        "Supported column types are categorical/bool/numerical dtypes. "
-                        "Make sure your data is formatted in a correct way, "
-                        "before feeding it to AutoPyTorch.".format(
-                            column,
-                            column_dtype,
-                        )
-                    )
-            else:
+            elif is_numeric_dtype(column_dtype):
                 feat_type.append('numerical')
                 numerical_columns.append(column)
+            elif column_dtype == 'object':
+                # TODO verify how would this happen when we always convert the object dtypes to category
+                raise ValueError(
+                    "{} Cast it to a valid dtype before feeding it to AutoPyTorch. "
+                    "You can cast it to a valid dtype using pandas.Series.astype."
+                    "If you are working with string objects, the following "
+                    "tutorial illustrates how to work with text data: "
+                    "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
+                        # noqa: E501
+                        err_msg,
+                    )
+                )
+            elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(column_dtype):
+                raise ValueError(
+                    "{} Convert the time information to a numerical value"
+                    " before feeding it to AutoPyTorch. "
+                    "One example of the conversion can be found on "
+                    "https://stats.stackexchange.com/questions/311494/".format(err_msg)
+                )
+            else:
+                raise ValueError(
+                    "{} Make sure your data is formatted in a correct way"
+                    "before feeding it to AutoPyTorch.".format(err_msg)
+                )
+
         return categorical_columns, numerical_columns, feat_type
 
     def list_to_dataframe(

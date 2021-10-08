@@ -47,8 +47,8 @@ class BaseFeatureValidator(BaseEstimator):
                                   ] = None,
                  ) -> None:
         # Register types to detect unsupported data format changes
-        self.feat_type: Optional[List[str]] = None 
-        self.data_type: Optional[type] = None 
+        self.feat_type: Optional[List[str]] = None
+        self.data_type: Optional[type] = None
         self.dtypes: List[str] = []
         self.column_order: List[str] = []
 
