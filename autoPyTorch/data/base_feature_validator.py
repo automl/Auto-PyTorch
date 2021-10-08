@@ -47,21 +47,21 @@ class BaseFeatureValidator(BaseEstimator):
                                   ] = None,
                  ) -> None:
         # Register types to detect unsupported data format changes
-        self.feat_type = None  # type: Optional[List[str]]
-        self.data_type = None  # type: Optional[type]
-        self.dtypes = []  # type: List[str]
-        self.column_order = []  # type: List[str]
+        self.feat_type: Optional[List[str]] = None 
+        self.data_type: Optional[type] = None 
+        self.dtypes: List[str] = []
+        self.column_order: List[str] = []
 
-        self.encoder = None  # type: Optional[BaseEstimator]
-        self.enc_columns = []  # type: List[str]
+        self.encoder: Optional[BaseEstimator] = None
+        self.enc_columns: List[str] = []
 
         self.logger: Union[
             PicklableClientLogger, logging.Logger
         ] = logger if logger is not None else logging.getLogger(__name__)
 
         # Required for dataset properties
-        self.num_features = None  # type: Optional[int]
-        self.categories = []  # type: List[List[int]]
+        self.num_features: Optional[int] = None
+        self.categories: List[List[int]] = []
         self.categorical_columns: List[int] = []
         self.numerical_columns: List[int] = []
 
