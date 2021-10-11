@@ -320,11 +320,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
         Returns:
-            categorical_columns: (List[str])
+            categorical_columns (List[str])
                 List of the names of categorical columns.
-            numerical_columns: (List[str])
+            numerical_columns (List[str])
                 List of the names of numerical columns.
-            feat_type:
+            feat_type (List[str])
                 Type of each column numerical/categorical
         """
         # Register if a column needs encoding
