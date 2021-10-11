@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import typing
+from typing_extensions import runtime
 import unittest.mock
 import warnings
 from abc import abstractmethod
@@ -746,6 +747,37 @@ class BaseTask:
                               save_external=True)
         return
 
+    def run_traditional_ml(
+        self,
+        current_task_name: str,
+        runtime_limit: int,
+        func_eval_time_limit_secs: int) -> None:
+        """
+        This function can be used to run the suite of traditional machine
+        learning models during the current task (for e.g, ensemble fit, search) 
+
+        Args:
+            current_task_name (str): name of the current task, 
+            runtime_limit (int): time limit for fitting traditional models,
+            func_eval_time_limit_secs (int): Time limit
+                for a single call to the machine learning model.
+                Model fitting will be terminated if the machine
+                learning algorithm runs over the time limit.
+        """
+        assert self._logger is not None  # for mypy compliancy
+        if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
+            self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
+        else:
+            traditional_task_name = 'runTraditional'
+            self._stopwatch.start_task(traditional_task_name)
+            elapsed_time = self._stopwatch.wall_elapsed(current_task_name)
+            time_for_traditional = int(runtime_limit - elapsed_time)
+            self._do_traditional_prediction(
+                func_eval_time_limit_secs=func_eval_time_limit_secs,
+                time_left=time_for_traditional,
+            )
+            self._stopwatch.stop_task(traditional_task_name)
+
     def _search(
         self,
         optimize_metric: str,
@@ -927,22 +959,12 @@ class BaseTask:
 
         # ============> Run traditional ml
         # We only want to run traditional predictions in case we want to build an ensemble
+        # We want time for at least 1 Neural network in SMAC
         if enable_traditional_pipeline and self.ensemble_size > 0:
-            if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
-                self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
-            else:
-                traditional_task_name = 'runTraditional'
-                self._stopwatch.start_task(traditional_task_name)
-                elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
-                # We want time for at least 1 Neural network in SMAC
-                time_for_traditional = int(
-                    self._time_for_task - elapsed_time - func_eval_time_limit_secs
-                )
-                self._do_traditional_prediction(
-                    func_eval_time_limit_secs=func_eval_time_limit_secs,
-                    time_left=time_for_traditional,
-                )
-                self._stopwatch.stop_task(traditional_task_name)
+            traditional_runtime_limit = int(self._time_for_task - func_eval_time_limit_secs)
+            self.run_traditional_ml(current_task_name=self.dataset_name,
+                                    runtime_limit=traditional_runtime_limit,
+                                    func_eval_time_limit_secs=func_eval_time_limit_secs)
 
         # ============> Starting ensemble
         self.precision = precision
@@ -1433,29 +1455,17 @@ class BaseTask:
                         func_eval_time_limit_secs
                     )
                 )
-        # We only want to run dummy predictions in case we want to build an ensemble
+        # ============> Run Dummy predictions
         dummy_task_name = 'runDummy'
         self._stopwatch.start_task(dummy_task_name)
         self._do_dummy_prediction()
         self._stopwatch.stop_task(dummy_task_name)
 
         # ============> Run traditional ml
-        # We only want to run traditional predictions in case we want to build an ensemble
-        if enable_traditional_pipeline and self.ensemble_size > 0:
-            if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
-                self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
-            else:
-                traditional_task_name = 'runTraditional'
-                self._stopwatch.start_task(traditional_task_name)
-                elapsed_time = self._stopwatch.wall_elapsed(ensemble_fit_task_name)
-                time_for_traditional = int(
-                    time_for_task - elapsed_time
-                )
-                self._do_traditional_prediction(
-                    func_eval_time_limit_secs=func_eval_time_limit_secs,
-                    time_left=time_for_traditional,
-                )
-                self._stopwatch.stop_task(traditional_task_name)
+        if enable_traditional_pipeline:
+            self.run_traditional_ml(current_task_name=ensemble_fit_task_name,
+                                    runtime_limit=time_for_task,
+                                    func_eval_time_limit_secs=func_eval_time_limit_secs)
 
         elapsed_time = self._stopwatch.wall_elapsed(ensemble_fit_task_name)
         time_left_for_ensemble = int(time_for_task - elapsed_time)
