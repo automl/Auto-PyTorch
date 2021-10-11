@@ -840,10 +840,10 @@ class BaseTask:
 
         if self.task_type != dataset.task_type:
             raise ValueError("Incompatible dataset entered for current task,"
-                             "expected dataset to have task type :{} got "
+                             "expected dataset to have task type :{} but got "
                              ":{}".format(self.task_type, dataset.task_type))
         if precision not in [16, 32, 64]:
-            raise ValueError("precision must be one of 16, 32, 64. Got {}".format(precision))
+            raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
 
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
@@ -1429,7 +1429,7 @@ class BaseTask:
                 func_eval_time_limit_secs = time_for_task // 2
                 self._logger.warning(
                     "Capping the func_eval_time_limit_secs to {} to have "
-                    "time for a least 2 models to ensemble.".format(
+                    "time for at least 2 models to ensemble.".format(
                         func_eval_time_limit_secs
                     )
                 )
