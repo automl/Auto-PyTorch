@@ -145,8 +145,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                                                                                           'stairs'),
                                                                              default_value='funnel',
                                                                              ),
-        shake_alpha_beta_method: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter="shake_alpha_beta_method",
+        shake_shake_update_func: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="shake_shake_update_func",
             value_range=('shake-shake',
                          'shake-even',
                          'even-even',
@@ -203,13 +203,17 @@ class ShapedResNetBackbone(ResNetBackbone):
             cs.add_hyperparameter(mb_choice)
             cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
 
+            shake_shake_update_func_conditional: List[str] = list()
             if shake_drop_prob_flag:
                 shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
                 cs.add_hyperparameter(shake_drop_prob)
                 cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
-            if shake_shake_flag or shake_drop_prob_flag:
-                method = get_hyperparameter(shake_alpha_beta_method, CategoricalHyperparameter)
+                shake_shake_update_func_conditional.append('shake-drop')
+            if shake_shake_flag:
+                shake_shake_update_func_conditional.append('shake-shake')
+            if len(shake_shake_update_func_conditional) > 0:
+                method = get_hyperparameter(shake_shake_update_func, CategoricalHyperparameter)
                 cs.add_hyperparameter(method)
-                cs.add_condition(CS.InCondition(method, mb_choice, ["shake-shake", "shake-drop"]))
+                cs.add_condition(CS.InCondition(method, mb_choice, shake_shake_update_func_conditional))
 
         return cs

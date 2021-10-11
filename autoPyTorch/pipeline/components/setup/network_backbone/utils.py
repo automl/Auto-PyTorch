@@ -37,8 +37,8 @@ class ShakeShakeFunction(Function):
         ctx: typing.Any,  # No typing for AutogradContext
         x1: torch.Tensor,
         x2: torch.Tensor,
-        alpha: torch.tensor,
-        beta: torch.tensor,
+        alpha: torch.Tensor,
+        beta: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(x1, x2, alpha, beta)
 
@@ -66,10 +66,10 @@ shake_shake = ShakeShakeFunction.apply
 class ShakeDropFunction(Function):
     @staticmethod
     def forward(ctx: typing.Any,
-                x: torch.tensor,
-                alpha: torch.tensor,
-                beta: torch.tensor,
-                bl: torch.tensor,
+                x: torch.Tensor,
+                alpha: torch.Tensor,
+                beta: torch.Tensor,
+                bl: torch.Tensor,
                 ) -> torch.Tensor:
         ctx.save_for_backward(x, alpha, beta, bl)
 
@@ -96,7 +96,7 @@ def shake_get_alpha_beta(
         is_training: bool,
         is_cuda: bool,
         method: str
-) -> typing.Tuple[torch.tensor, torch.tensor]:
+) -> typing.Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
@@ -139,14 +139,14 @@ def shake_drop_get_bl(
         num_blocks: int,
         is_training: bool,
         is_cuda: bool
-) -> torch.tensor:
+) -> torch.Tensor:
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if is_training:
         # Move to torch.randn(1) for reproducibility
-        bl = torch.tensor(1.0) if torch.randn(1) <= pl else torch.tensor(0.0)
+        bl = torch.Tensor(1.0) if torch.randn(1) <= pl else torch.Tensor(0.0)
     else:
-        bl = torch.tensor(pl)
+        bl = torch.Tensor(pl)
 
     if is_cuda:
         bl = bl.cuda()
