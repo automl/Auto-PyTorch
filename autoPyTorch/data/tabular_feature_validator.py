@@ -127,21 +127,18 @@ class TabularFeatureValidator(BaseFeatureValidator):
             assert self.column_transformer is not None
             self.column_transformer.fit(X)
 
-            # The column transformer reoders the feature types - we therefore need to change
-            # it as well
-            # This means columns are shifted to the right
+            # The column transformer reorders the feature types
+            # therefore, we need to change the order of columns as well
+            # This means categorical columns are shifted to the right
             def comparator(cmp1: str, cmp2: str) -> int:
-                if (
-                    cmp1 == 'categorical' and cmp2 == 'categorical'
-                    or cmp1 == 'numerical' and cmp2 == 'numerical'
-                ):
-                    return 0
-                elif cmp1 == 'categorical' and cmp2 == 'numerical':
-                    return -1
-                elif cmp1 == 'numerical' and cmp2 == 'categorical':
-                    return 1
-                else:
-                    raise ValueError((cmp1, cmp2))
+                """ Order so that categorical columns come right and numerical columns come left """
+                choices = ['categorical', 'numerical']
+                if cmp1 not in choices or cmp2 not in choices:
+                    raise ValueError('The comparator for the column order only accepts {}, '
+                                                'but got {} and {}'.format(choices, cmp1, cmp2))
+
+                idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
+                return idx1 - idx2
 
             self.feat_type = sorted(
                 feat_type,
@@ -353,7 +350,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 numerical_columns.append(column)
             elif column_dtype == 'object':
                 # TODO verify how would this happen when we always convert the object dtypes to category
-                raise ValueError(
+                raise TypeError(
                     "{} Cast it to a valid dtype before feeding it to AutoPyTorch. "
                     "You can cast it to a valid dtype using pandas.Series.astype."
                     "If you are working with string objects, the following "
@@ -364,14 +361,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     )
                 )
             elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(column_dtype):
-                raise ValueError(
+                raise TypeError(
                     "{} Convert the time information to a numerical value"
                     " before feeding it to AutoPyTorch. "
                     "One example of the conversion can be found on "
                     "https://stats.stackexchange.com/questions/311494/".format(err_msg)
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     "{} Make sure your data is formatted in a correct way"
                     "before feeding it to AutoPyTorch.".format(err_msg)
                 )
