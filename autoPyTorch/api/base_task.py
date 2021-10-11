@@ -1423,7 +1423,7 @@ class BaseTask:
                              "fit_ensemble().".format(self.__class__.__name__))
 
         if precision not in [16, 32, 64]:
-            raise ValueError("precision must be one of 16, 32, 64. Got {}".format(precision))
+            raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
 
         if self._logger is None:
             self._logger = self._get_logger(self.dataset.dataset_name)

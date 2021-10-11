@@ -29,11 +29,11 @@ def _create_column_transformer(
     creates a sklearn column transformer with appropriate
     columns associated with their preprocessors.
     Args:
-        preprocessors (Dict[str, List]):
+        preprocessors (Dict[str, List[BaseEstimator]]):
             Dictionary containing list of numerical and categorical preprocessors.
-        numerical_columns (List[int]):
+        numerical_columns (List[str]):
             List of names of numerical columns
-        categorical_columns (List[int]):
+        categorical_columns (List[str]):
             List of names of categorical columns
     Returns:
         ColumnTransformer
@@ -135,7 +135,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 choices = ['categorical', 'numerical']
                 if cmp1 not in choices or cmp2 not in choices:
                     raise ValueError('The comparator for the column order only accepts {}, '
-                                                'but got {} and {}'.format(choices, cmp1, cmp2))
+                                     'but got {} and {}'.format(choices, cmp1, cmp2))
 
                 idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
                 return idx1 - idx2
@@ -274,9 +274,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if exist_object_columns:
                 X = self.infer_objects(X)
 
-            # Define the column to be encoded here as the feature validator is fitted once
-            # per estimator
-            # enc_columns, _ = self._get_columns_to_encode(X)
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
                 if self.column_order != column_order:

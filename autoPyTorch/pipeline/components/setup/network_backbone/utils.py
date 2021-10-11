@@ -136,11 +136,28 @@ def shake_drop_get_bl(
     is_training: bool,
     is_cuda: bool
 ) -> torch.Tensor:
+    """
+    The sampling of Bernoulli random variable
+    based on Eq. (4) in the paper
+    Args:
+        block_index (int): The index of the block from the input layer
+        min_prob_no_shake (float): The initial shake probability
+        num_blocks (int): The total number of building blocks
+        is_training (bool): Whether it is training
+        is_cuda (bool): Whether the tensor is on CUDA
+    Returns:
+        bl (torch.Tensor): a Bernoulli random variable in {0, 1}
+    Reference:
+        ShakeDrop Regularization for Deep Residual Learning
+        Yoshihiro Yamada et. al. (2020)
+        paper: https://arxiv.org/pdf/1802.02375.pdf
+        implementation: https://github.com/imenurok/ShakeDrop
+    """
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if is_training:
         # Move to torch.randn(1) for reproducibility
-        bl = torch.Tensor(1.0) if torch.randn(1) <= pl else torch.Tensor(0.0)
+        bl = torch.Tensor(1.0) if torch.rand(1) <= pl else torch.Tensor(0.0)
     else:
         bl = torch.Tensor(pl)
 
