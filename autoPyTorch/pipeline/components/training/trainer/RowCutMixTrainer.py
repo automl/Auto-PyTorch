@@ -41,7 +41,7 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
 
         # Replace the values in `cut_indices` columns with
         # the values from `permed_indices`
-        X[:, cut_indices] = X[shuffled_indices, :][:, cut_column_indices]
+        X[:, cut_column_indices] = X[shuffled_indices, :][:, cut_column_indices]
 
         # Since we cannot cut exactly `lam x 100 %` of rows, we need to adjust the `lam`
         lam = 1 - (len(cut_column_indices) / n_columns)

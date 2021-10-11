@@ -93,9 +93,9 @@ shake_drop = ShakeDropFunction.apply
 
 
 def shake_get_alpha_beta(
-        is_training: bool,
-        is_cuda: bool,
-        method: str
+    is_training: bool,
+    is_cuda: bool,
+    method: str
 ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
@@ -108,15 +108,11 @@ def shake_get_alpha_beta(
 
     # TODO implement other update methods
     # alpha is the weight ratio for the forward pass and beta is that for the backward pass
-    if method == 'even-even':
-        alpha = torch.FloatTensor([0.5])
-    else:
-        alpha = torch.rand(1)
-
-    if method == 'shake-shake':
-        beta = torch.rand(1)
-    elif method in ['shake-even', 'even-even']:
+    alpha = torch.FloatTensor([0.5]) if method.startswith('even') else torch.rand(1)
+    if method.endswith('even'):
         beta = torch.FloatTensor([0.5])
+    elif method.endswith('shake'):
+        beta = torch.rand(1)
     elif method == 'M3':
         # Table 4 in the paper `Shake-Shake regularization`
         rnd = torch.rand(1)
@@ -134,11 +130,11 @@ def shake_get_alpha_beta(
 
 
 def shake_drop_get_bl(
-        block_index: int,
-        min_prob_no_shake: float,
-        num_blocks: int,
-        is_training: bool,
-        is_cuda: bool
+    block_index: int,
+    min_prob_no_shake: float,
+    num_blocks: int,
+    is_training: bool,
+    is_cuda: bool
 ) -> torch.Tensor:
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
