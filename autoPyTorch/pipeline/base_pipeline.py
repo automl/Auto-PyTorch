@@ -1,7 +1,7 @@
 import warnings
 from abc import ABCMeta
 from collections import Counter
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from ConfigSpace import Configuration
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -26,8 +26,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
 )
 
 
-def _err_msg(var_name: str, choices: List[Any], val: Any) -> str:
-    return "Expected {} to be in {}, but got {}".format(var_name, choices, val)
+def _err_msg(var_name: str, choices: Iterable, val: Any) -> str:
+    return "Expected {} to be in {}, but got {}".format(var_name, list(choices), val)
 
 
 class BasePipeline(Pipeline):
@@ -336,18 +336,14 @@ class BasePipeline(Pipeline):
 
         for key in include.keys():
             if key_exist.get(key, False):
-                raise ValueError('Keys in `include` must be {}, but got {}'.format(
-                    list(key_exist.keys()), key)
-                )
+                raise ValueError('Keys in `include` must be {}, but got {}'.format(key_exist.keys(), key))
 
         if exclude is None:
             exclude = {} if self.exclude is None else self.exclude
 
         for key in exclude:
             if key_exist.get(key, False):
-                raise ValueError('Keys in `exclude` must be {}, but got {}'.format(
-                    list(key_exist.keys()), key)
-                )
+                raise ValueError('Keys in `exclude` must be {}, but got {}'.format(key_exist.keys(), key))
 
         return include, exclude
 
@@ -474,13 +470,13 @@ class BasePipeline(Pipeline):
         exclude: Optional[Dict[str, Any]]
     ) -> None:
 
-        exist_in_include = include is not None and update.node_name in include.keys()
-        if exist_in_include and module_name not in include[update.node_name]:
+        exist_in_include = include is not None and include.get(update.node_name, False)
+        if exist_in_include:
             raise ValueError("Not found {} in include".format(module_name))
 
         # check if component is present in exclude
-        exist_in_exclude = exclude is not None and update.node_name in exclude.keys()
-        if exist_in_exclude and module_name in exclude[update.node_name]:
+        exist_in_exclude = exclude is not None and exclude.get(update.node_name, False)
+        if exist_in_exclude:
             raise ValueError("Found {} in exclude".format(module_name))
 
     def _check_available_components(
@@ -527,7 +523,7 @@ class BasePipeline(Pipeline):
         include: Optional[Dict[str, Any]],
         exclude: Optional[Dict[str, Any]],
         components: Dict[str, autoPyTorchComponent]
-    ):
+    ) -> None:
         """
         Check if the components in the value range of
         search space update are in components of the choice module
@@ -546,8 +542,9 @@ class BasePipeline(Pipeline):
                                     exclude: Optional[Dict[str, Any]]) -> None:
         assert self.search_space_updates is not None
 
+        key_exist = {key: True for key in self.named_steps.keys()}
         for update in self.search_space_updates.updates:
-            if update.node_name not in self.named_steps.keys():
+            if not key_exist.get(update.node_name, False):
                 msg = _err_msg('update.node_name', self.named_steps.keys(), update.node_name)
                 raise ValueError(msg)
 
