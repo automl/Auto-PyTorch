@@ -1,4 +1,5 @@
 import copy
+import functools
 
 import numpy as np
 
@@ -331,6 +332,11 @@ def feature_validator_remove_nan_catcolumns(df_train: pd.DataFrame, df_test: pd.
 def test_feature_validator_remove_nan_catcolumns():
     """
     Make sure categorical columns that have only nan values are removed.
+    The ans arrays contain the final output after calling transform on
+    datasets, this includes fitting and transforming a column transformer
+    containing simple imputation for both categorical and numerical
+    columns, scaling for numerical columns and one hot encoding for
+    categorical columns.
     """
     # First case, there exist null columns (B and C) in the train set
     # and a same column (C) are not all null for the test set.
@@ -395,6 +401,7 @@ def test_feature_validator_remove_nan_catcolumns():
     )
     ans_test = np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.float64)
     feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
+
 
 def test_features_unsupported_calls_are_raised():
     """
@@ -664,3 +671,26 @@ def test_feature_validator_imbalanced_data():
     transformed_X_test = validator.transform(X_test)
     transformed_X_test = pd.DataFrame(transformed_X_test)
     assert not len(validator.all_nan_columns)
+
+
+def test_comparator():
+    numerical = 'numerical'
+    categorical = 'categorical'
+
+    validator = TabularFeatureValidator
+
+    feat_type = [numerical, categorical] * 10
+    ans = [categorical] * 10 + [numerical] * 10
+    feat_type = sorted(
+        feat_type,
+        key=functools.cmp_to_key(validator._comparator)
+    )
+    assert ans == feat_type
+
+    feat_type = [numerical] * 10 + [categorical] * 10
+    ans = [categorical] * 10 + [numerical] * 10
+    feat_type = sorted(
+        feat_type,
+        key=functools.cmp_to_key(validator._comparator)
+    )
+    assert ans == feat_type

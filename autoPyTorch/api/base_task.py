@@ -9,7 +9,6 @@ import sys
 import tempfile
 import time
 import typing
-from typing_extensions import runtime
 import unittest.mock
 import warnings
 from abc import abstractmethod
@@ -751,13 +750,14 @@ class BaseTask:
         self,
         current_task_name: str,
         runtime_limit: int,
-        func_eval_time_limit_secs: int) -> None:
+        func_eval_time_limit_secs: int
+    ) -> None:
         """
         This function can be used to run the suite of traditional machine
-        learning models during the current task (for e.g, ensemble fit, search) 
+        learning models during the current task (for e.g, ensemble fit, search)
 
         Args:
-            current_task_name (str): name of the current task, 
+            current_task_name (str): name of the current task,
             runtime_limit (int): time limit for fitting traditional models,
             func_eval_time_limit_secs (int): Time limit
                 for a single call to the machine learning model.

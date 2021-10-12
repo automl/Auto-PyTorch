@@ -43,8 +43,10 @@ class BaseTargetValidator(BaseEstimator):
     """
     def __init__(self,
                  is_classification: bool = False,
-                 logger: Optional[Union[PicklableClientLogger, logging.Logger
-                                                      ]] = None,
+                 logger: Optional[Union[PicklableClientLogger,
+                                        logging.Logger
+                                        ]
+                                  ] = None,
                  ) -> None:
         self.is_classification = is_classification
 

@@ -29,7 +29,7 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         beta = 1.0
         lam = self.random_state.beta(beta, beta)
         batch_size, n_columns = np.shape(X)
-        # shuffled_indices: Shuffled version of torch.arange(batch_size) 
+        # shuffled_indices: Shuffled version of torch.arange(batch_size)
         shuffled_indices = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
         r = self.random_state.rand(1)
