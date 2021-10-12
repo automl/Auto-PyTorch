@@ -335,14 +335,37 @@ def feature_validator_remove_nan_catcolumns(df_train: pd.DataFrame, df_test: pd.
 def test_feature_validator_remove_nan_catcolumns():
     """
     Make sure categorical columns that have only nan values are removed.
-    The ans arrays contain the final output after calling transform on
-    datasets, this includes fitting and transforming a column transformer
-    containing simple imputation for both categorical and numerical
-    columns, scaling for numerical columns and one hot encoding for
-    categorical columns.
+    Transform performs the folloing:
+        * simple imputation for both
+        * scaling for numerical
+        * one-hot encoding for categorical
+    For example,
+        data = [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'B': 3, 'C': np.nan},
+            {'A': 2, 'B': np.nan, 'C': np.nan}
+        ]
+    and suppose all the columns are categorical,
+    then
+        * `A` in {np.nan, 1, 2}
+        * `B` in {np.nan, 3}
+        * `C` in {np.nan} <=== it will be dropped.
+
+    So in the column A,
+        * np.nan ==> [1, 0, 0]
+        * 1      ==> [0, 1, 0]
+        * 2      ==> [0, 0, 1]
+    in the column B,
+        * np.nan ==> [1, 0]
+        * 3      ==> [0, 1]
+    Therefore, by concatenating,
+        * {'A': 1, 'B': np.nan, 'C': np.nan} ==> [0, 1, 0, 1, 0]
+        * {'A': np.nan, 'B': 3, 'C': np.nan} ==> [1, 0, 0, 0, 1]
+        * {'A': 2, 'B': np.nan, 'C': np.nan} ==> [0, 0, 1, 1, 0]
     """
     # First case, there exist null columns (B and C) in the train set
     # and a same column (C) are not all null for the test set.
+
     df_train = pd.DataFrame(
         [
             {'A': 1, 'B': np.nan, 'C': np.nan},
