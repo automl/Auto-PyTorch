@@ -532,6 +532,7 @@ class BasePipeline(Pipeline):
         """
         key_exist = {key: True for key in components.keys()}
         for choice in update.value_range:
+            assert isinstance(choice, str)
             self._check_valid_component(
                 update=update, include=include, exclude=exclude,
                 module_name=choice
