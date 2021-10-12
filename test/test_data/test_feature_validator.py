@@ -317,14 +317,23 @@ def test_featurevalidator_get_columns_to_encode():
     assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
 
 
-def test_featurevalidator_remove_nan_catcolumns():
+def feature_validator_remove_nan_catcolumns(df_train: pd.DataFrame, df_test: pd.DataFrame,
+                                            ans_train: np.ndarray, ans_test: np.ndarray) -> None:
+    validator = TabularFeatureValidator()
+    validator.fit(df_train)
+    transformed_df_train = validator.transform(df_train)
+    transformed_df_test = validator.transform(df_test)
+
+    assert np.array_equal(transformed_df_train, ans_train)
+    assert np.array_equal(transformed_df_test, ans_test)
+
+
+def test_feature_validator_remove_nan_catcolumns():
     """
     Make sure categorical columns that have only nan values are removed.
     """
-    # First case, there exist null columns in the train set
-    # and the same columns are not all null for the test set.
-    validator = TabularFeatureValidator()
-
+    # First case, there exist null columns (B and C) in the train set
+    # and a same column (C) are not all null for the test set.
     df_train = pd.DataFrame(
         [
             {'A': 1, 'B': np.nan, 'C': np.nan},
@@ -333,6 +342,7 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
+    ans_train = np.array([[0, 1], [1, 0], [0, 1]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan, 'C': 5},
@@ -341,18 +351,11 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
+    ans_test = np.array([[1, 0], [1, 0], [0, 1]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
-    validator.fit(df_train)
-    transformed_df_train = validator.transform(df_train)
-    transformed_df_test = validator.transform(df_test)
-
-    assert np.array_equal(transformed_df_train, np.array([[0, 1], [1, 0], [0, 1]], dtype=float))
-    assert np.array_equal(transformed_df_test, np.array([[1, 0], [1, 0], [0, 1]], dtype=float))
-
-    # Second case, there exist null columns in the training set and the same
-    # are null in the test set.
-    validator = TabularFeatureValidator()
-
+    # Second case, there exist null columns (B and C) in the training set and
+    # the same columns (B and C) are null in the test set.
     df_train = pd.DataFrame(
         [
             {'A': 1, 'B': np.nan, 'C': np.nan},
@@ -361,6 +364,7 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
+    ans_train = np.array([[0, 1], [1, 0], [0, 1]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan, 'C': np.nan},
@@ -369,18 +373,11 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
+    ans_test = np.array([[1, 0], [1, 0], [0, 1]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
-    validator.fit(df_train)
-    transformed_df_train = validator.transform(df_train)
-    transformed_df_test = validator.transform(df_test)
-
-    assert np.array_equal(transformed_df_train, np.array([[0, 1], [1, 0], [0, 1]], dtype=float))
-    assert np.array_equal(transformed_df_test, np.array([[1, 0], [1, 0], [0, 1]], dtype=float))
-
-    # Third case, there exist no null columns in the training set and a
-    # few null columns exist in the test set.
-    validator = TabularFeatureValidator()
-
+    # Third case, there exist no null columns in the training set and
+    # null columns exist in the test set.
     df_train = pd.DataFrame(
         [
             {'A': 1, 'B': 1},
@@ -388,6 +385,7 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
+    ans_train = np.array([[1, 0, 1, 0], [0, 1, 0, 1]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan},
@@ -395,14 +393,8 @@ def test_featurevalidator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-
-    validator.fit(df_train)
-    transformed_df_train = validator.transform(df_train)
-    transformed_df_test = validator.transform(df_test)
-
-    assert np.array_equal(transformed_df_train, np.array([[1, 0, 1, 0], [0, 1, 0, 1]], dtype=float))
-    assert np.array_equal(transformed_df_test, np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=float))
-
+    ans_test = np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
 def test_features_unsupported_calls_are_raised():
     """
