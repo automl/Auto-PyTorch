@@ -26,6 +26,10 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
 )
 
 
+def _err_msg(var_name: str, choices: List[Any], val: Any) -> str:
+    return "Expected {} to be in {}, but got {}".format(var_name, choices, val)
+
+
 class BasePipeline(Pipeline):
     """Base class for all pipeline objects.
     Notes
@@ -304,6 +308,101 @@ class BasePipeline(Pipeline):
         string += '_' * 40
         return string
 
+    def _get_search_space_modifications(
+        self,
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]],
+        pipeline: List[Tuple[str, autoPyTorchChoice]]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Get what pipeline or components to
+        include in or exclude from the searching space
+
+        Args:
+            include (Optional[Dict[str, Any]]): Components to include in the searching
+            exclude (Optional[Dict[str, Any]]): Components to exclude from the searching
+            pipeline (List[Tuple[str, autoPyTorchChoice]]):
+                Available components
+
+        Returns:
+            include, exclude (Tuple[Dict[str, Any]], Dict[str, Any]]]):
+                modified version of `include` and `exclude`
+        """
+
+        key_exist = {pair[0]: True for pair in pipeline}
+
+        if include is None:
+            include = {} if self.include is None else self.include
+
+        for key in include.keys():
+            if key_exist.get(key, False):
+                raise ValueError('Keys in `include` must be {}, but got {}'.format(
+                    list(key_exist.keys()), key)
+                )
+
+        if exclude is None:
+            exclude = {} if self.exclude is None else self.exclude
+
+        for key in exclude:
+            if key_exist.get(key, False):
+                raise ValueError('Keys in `exclude` must be {}, but got {}'.format(
+                    list(key_exist.keys()), key)
+                )
+
+        return include, exclude
+
+    @staticmethod
+    def _update_search_space_per_node(
+        cs: ConfigurationSpace,
+        dataset_properties: Dict[str, Any],
+        include: Dict[str, Any],
+        exclude: Dict[str, Any],
+        matches: np.ndarray,
+        node_name: str,
+        node_idx: int,
+        node: autoPyTorchChoice
+    ) -> ConfigurationSpace:
+        """
+        Args:
+            cs (ConfigurationSpace): Searching space information
+            dataset_properties (Dict[str, Any]): The properties of dataset
+            include (Dict[str, Any]): Components to include in the searching
+            exclude (Dict[str, Any]): Components to exclude from the searching
+            node_name (str): The name of the component choice
+            node_idx (int): The index of the component in a provided list of components
+            node (autoPyTorchChoice): The module of the component
+            matches (np.ndarray): ...
+
+        Returns:
+            modified cs (ConfigurationSpace):
+                modified searching space information based on the arguments.
+        """
+        is_choice = isinstance(node, autoPyTorchChoice)
+
+        if not is_choice:
+            # if the node isn't a choice we can add it immediately because
+            # it must be active (if it wasn't, np.sum(matches) would be zero
+            assert not isinstance(node, autoPyTorchChoice)
+            cs.add_configuration_space(
+                node_name,
+                node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[arg-type]
+                                                     **node._get_search_space_updates()),
+            )
+        else:
+            # If the node is a choice, we have to figure out which of
+            # its choices are actually legal choices
+            choices_list = find_active_choices(
+                matches, node, node_idx,
+                dataset_properties,
+                include.get(node_name),
+                exclude.get(node_name)
+            )
+            sub_config_space = node.get_hyperparameter_search_space(
+                dataset_properties, include=choices_list)
+            cs.add_configuration_space(node_name, sub_config_space)
+
+        return cs
+
     def _get_base_search_space(
             self,
             cs: ConfigurationSpace,
@@ -312,75 +411,50 @@ class BasePipeline(Pipeline):
             exclude: Optional[Dict[str, Any]],
             pipeline: List[Tuple[str, autoPyTorchChoice]]
     ) -> ConfigurationSpace:
-        if include is None:
-            if self.include is None:
-                include = {}
-            else:
-                include = self.include
+        """
+        Get the searching space
 
-        keys = [pair[0] for pair in pipeline]
-        for key in include:
-            if key not in keys:
-                raise ValueError('Invalid key in include: %s; should be one '
-                                 'of %s' % (key, keys))
+        Args:
+            cs (ConfigurationSpace): Searching space information
+            dataset_properties (Dict[str, Any]): The properties of dataset
+            include (Optional[Dict[str, Any]]): Components to include in the searching
+            exclude (Optional[Dict[str, Any]]): Components to exclude from the searching
+            pipeline (List[Tuple[str, autoPyTorchChoice]]):
+                Available components
 
-        if exclude is None:
-            if self.exclude is None:
-                exclude = {}
-            else:
-                exclude = self.exclude
-
-        keys = [pair[0] for pair in pipeline]
-        for key in exclude:
-            if key not in keys:
-                raise ValueError('Invalid key in exclude: %s; should be one '
-                                 'of %s' % (key, keys))
-
+        Returns:
+            modified cs (ConfigurationSpace):
+                modified searching space information based on the arguments.
+        """
+        include, exclude = self._get_search_space_modifications(
+            include=include, exclude=exclude, pipeline=pipeline
+        )
         if self.search_space_updates is not None:
             self._check_search_space_updates(include=include,
                                              exclude=exclude)
             self.search_space_updates.apply(pipeline=pipeline)
 
+        # The size of this array exponentially grows, so it will be better to remove
         matches = get_match_array(
             pipeline, dataset_properties, include=include, exclude=exclude)
 
         # Now we have only legal combinations at this step of the pipeline
         # Simple sanity checks
-        assert np.sum(matches) != 0, "No valid pipeline found."
-
-        assert np.sum(matches) <= np.size(matches), \
-            "'matches' is not binary; %s <= %d, %s" % \
-            (str(np.sum(matches)), np.size(matches), str(matches.shape))
+        if np.sum(matches) == 0:
+            raise ValueError("No valid pipeline found.")
+        if np.sum(matches) > np.size(matches):
+            raise TypeError("'matches' is not binary; {} <= {}, {}".format(
+                np.sum(matches), np.size(matches), str(matches.shape)
+            ))
 
         # Iterate each dimension of the matches array (each step of the
         # pipeline) to see if we can add a hyperparameter for that step
-        for node_idx, n_ in enumerate(pipeline):
-            node_name, node = n_
-
-            is_choice = isinstance(node, autoPyTorchChoice)
-
-            # if the node isn't a choice we can add it immediately because it
-            #  must be active (if it wasn't, np.sum(matches) would be zero
-            if not is_choice:
-                # for mypy
-                assert not isinstance(node, autoPyTorchChoice)
-                cs.add_configuration_space(
-                    node_name,
-                    node.get_hyperparameter_search_space(dataset_properties,  # type: ignore[arg-type]
-                                                         **node._get_search_space_updates()),
-                )
-            # If the node is a choice, we have to figure out which of its
-            #  choices are actually legal choices
-            else:
-                choices_list = find_active_choices(
-                    matches, node, node_idx,
-                    dataset_properties,
-                    include.get(node_name),
-                    exclude.get(node_name)
-                )
-                sub_config_space = node.get_hyperparameter_search_space(
-                    dataset_properties, include=choices_list)
-                cs.add_configuration_space(node_name, sub_config_space)
+        for node_idx, (node_name, node) in enumerate(pipeline):
+            cs = self._update_search_space_per_node(
+                cs=ConfigurationSpace, dataset_properties=dataset_properties,
+                include=include, exclude=exclude, matches=matches,
+                node=node, node_idx=node_idx, node_name=node_name
+            )
 
         # And now add forbidden parameter configurations
         # According to matches
@@ -392,90 +466,104 @@ class BasePipeline(Pipeline):
 
         return cs
 
+    @staticmethod
+    def _check_valid_component(
+        update: HyperparameterSearchSpaceUpdates,
+        module_name: str,
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]]
+    ) -> None:
+
+        exist_in_include = include is not None and update.node_name in include.keys()
+        if exist_in_include and module_name not in include[update.node_name]:
+            raise ValueError("Not found {} in include".format(module_name))
+
+        # check if component is present in exclude
+        exist_in_exclude = exclude is not None and update.node_name in exclude.keys()
+        if exist_in_exclude and module_name in exclude[update.node_name]:
+            raise ValueError("Found {} in exclude".format(module_name))
+
+    def _check_available_components(
+        self,
+        update: HyperparameterSearchSpaceUpdates,
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]]
+    ) -> None:
+
+        component_names = update.hyperparameter.split(':')
+        node = self.named_steps[update.node_name]
+        node_name = node.__class__.__name__
+        self._check_valid_component(
+            update=update, include=include, exclude=exclude,
+            module_name=component_names[0]
+        )
+
+        components = node.get_components()
+        cmp0 = components[component_names[0]]
+        cmp0_space = cmp0.get_hyperparameter_search_space(dataset_properties=self.dataset_properties)
+        cmp0_hyperparameters = cmp0_space.get_hyperparameter_names()
+
+        if component_names[0] == '__choice__':
+            self._check_component_in_choices(
+                update=update, components=components,
+                include=include, exclude=exclude
+            )
+        elif component_names[0] not in components.keys():
+            msg = _err_msg('component choice', components.keys(), component_names[0])
+            raise ValueError(msg)
+        elif component_names[1] not in cmp0_space and \
+                not any([component_names[1] in name for name in cmp0_hyperparameters]):
+            # Check if update hyperparameter is in names of hyperparameters of the search space
+            # e.g. 'num_units' in 'num_units_1', 'num_units_2'
+            msg = _err_msg(
+                f'hyperparameter for component {cmp0.__name__} of node {node_name}',
+                cmp0_hyperparameters, component_names[1]
+            )
+            raise ValueError(msg)
+
+    def _check_component_in_choices(
+        self,
+        update: HyperparameterSearchSpaceUpdates,
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]],
+        components: Dict[str, autoPyTorchComponent]
+    ):
+        """
+        Check if the components in the value range of
+        search space update are in components of the choice module
+        """
+        key_exist = {key: True for key in components.keys()}
+        for choice in update.value_range:
+            self._check_valid_component(
+                update=update, include=include, exclude=exclude,
+                module_name=choice
+            )
+            if not key_exist.get(choice, False):
+                msg = _err_msg('component choice', components.keys(), choice)
+                raise ValueError(msg)
+
     def _check_search_space_updates(self, include: Optional[Dict[str, Any]],
                                     exclude: Optional[Dict[str, Any]]) -> None:
         assert self.search_space_updates is not None
+
         for update in self.search_space_updates.updates:
             if update.node_name not in self.named_steps.keys():
-                raise ValueError("Unknown node name. Expected update node name to be in {} "
-                                 "got {}".format(self.named_steps.keys(), update.node_name))
+                msg = _err_msg('update.node_name', self.named_steps.keys(), update.node_name)
+                raise ValueError(msg)
+
             node = self.named_steps[update.node_name]
-            node_name = node.__class__.__name__
-            # if node is a choice module
-            if hasattr(node, 'get_components'):
-                split_hyperparameter = update.hyperparameter.split(':')
+            node_search_space = node.get_hyperparameter_search_space(
+                dataset_properties=self.dataset_properties)
+            node_hyperparameters = node_search_space.get_hyperparameter_names()
+            key_exist = {key: True for key in node_hyperparameters}
 
-                # check if component is not present in include
-                if include is not None and update.node_name in include.keys():
-                    if split_hyperparameter[0] not in include[update.node_name]:
-                        raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
+            if not hasattr(node, 'get_components'):
+                self._check_available_components(update=update, include=include, exclude=exclude)
+            elif update.hyperparameter not in node_search_space and \
+                    not key_exist.get(update.hyperparameter, False):
 
-                # check if component is present in exclude
-                if exclude is not None and update.node_name in exclude.keys():
-                    if split_hyperparameter[0] in exclude[update.node_name]:
-                        raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
-
-                components = node.get_components()
-                # if hyperparameter is __choice__, check if
-                # the components in the value range of search space update
-                # are in components of the choice module
-                if split_hyperparameter[0] == '__choice__':
-                    for choice in update.value_range:
-                        if include is not None and update.node_name in include.keys():
-                            if choice not in include[update.node_name]:
-                                raise ValueError("Not found {} in include".format(choice))
-                        if exclude is not None and update.node_name in exclude.keys():
-                            if choice in exclude[update.node_name]:
-                                raise ValueError("Found {} in exclude".format(choice))
-                        if choice not in components.keys():
-                            raise ValueError("Unknown component choice for node {}. "
-                                             "Expected update hyperparameter "
-                                             "to be in {}, but got {}".format(node_name,
-                                                                              components.keys(), choice))
-                # check if the component whose hyperparameter
-                # needs to be updated is in components of the
-                # choice module
-                elif split_hyperparameter[0] not in components.keys():
-                    raise ValueError("Unknown component choice for node {}. "
-                                     "Expected update component "
-                                     "to be in {}, but got {}".format(node_name,
-                                                                      components.keys(), split_hyperparameter[0]))
-                else:
-                    # check if hyperparameter is in the search space of the component
-                    component = components[split_hyperparameter[0]]
-                    if split_hyperparameter[1] not in component. \
-                            get_hyperparameter_search_space(dataset_properties=self.dataset_properties):
-                        # Check if update hyperparameter is in names of
-                        # hyperparameters of the search space
-                        # Example 'num_units' in 'num_units_1', 'num_units_2'
-                        if any([split_hyperparameter[1] in name for name in
-                                component.get_hyperparameter_search_space(
-                                    dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
-                            continue
-                        component_hyperparameters = component.get_hyperparameter_search_space(
-                            dataset_properties=self.dataset_properties).get_hyperparameter_names()
-                        raise ValueError("Unknown hyperparameter for  component {} of node {}."
-                                         " Expected update hyperparameter "
-                                         "to be in {}, but got {}.".format(component.__name__,
-                                                                           node_name,
-                                                                           component_hyperparameters,
-                                                                           split_hyperparameter[1]
-                                                                           )
-                                         )
-            else:
-                if update.hyperparameter not in node.get_hyperparameter_search_space(
-                        dataset_properties=self.dataset_properties):
-                    if any([update.hyperparameter in name for name in
-                            node.get_hyperparameter_search_space(
-                                dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
-                        continue
-                    node_hyperparameters = node.get_hyperparameter_search_space(
-                        dataset_properties=self.dataset_properties).get_hyperparameter_names()
-                    raise ValueError("Unknown hyperparameter for node {}. "
-                                     "Expected update hyperparameter "
-                                     "to be in {}, but got {}".format(node_name,
-                                                                      node_hyperparameters,
-                                                                      update.hyperparameter))
+                msg = _err_msg('hyperparameter for node', node_hyperparameters, update.hyperparameter)
+                raise ValueError(msg)
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]]
                             ) -> List[Tuple[str, autoPyTorchChoice]]:
