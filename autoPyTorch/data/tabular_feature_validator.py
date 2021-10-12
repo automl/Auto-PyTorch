@@ -123,7 +123,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # gives us information about the column dtype
         if isinstance(X, np.ndarray):
 
-            X = self.numpy_array_to_pandas(X)
+            X = self.numpy_to_pandas(X)
             # Replace the data type from the previously saved type.
             self.data_type = type(X)
             # save all the information about the column order and data types
@@ -194,10 +194,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X, list):
-            X, _ = self.list_to_dataframe(X)
+            X, _ = self.list_to_pandas(X)
 
         if isinstance(X, np.ndarray):
-            X = self.numpy_array_to_pandas(X)
+            X = self.numpy_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = cast(pd.DataFrame, X)
@@ -380,7 +380,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         return categorical_columns, numerical_columns, feat_type
 
-    def list_to_dataframe(
+    def list_to_pandas(
         self,
         X_train: SUPPORTED_FEAT_TYPES,
         X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
@@ -418,7 +418,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         return X_train, X_test
 
     @staticmethod
-    def numpy_array_to_pandas(
+    def numpy_to_pandas(
         X: np.ndarray,
     ) -> pd.DataFrame:
         """

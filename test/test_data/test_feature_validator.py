@@ -284,9 +284,9 @@ def test_featurevalidator_fitontypeA_transformtypeB(input_data_featuretest):
     if isinstance(input_data_featuretest, pd.DataFrame):
         pytest.skip("Column order change in pandas is not supported")
     elif isinstance(input_data_featuretest, np.ndarray):
-        complementary_type = validator.numpy_array_to_pandas(input_data_featuretest)
+        complementary_type = validator.numpy_to_pandas(input_data_featuretest)
     elif isinstance(input_data_featuretest, list):
-        complementary_type, _ = validator.list_to_dataframe(input_data_featuretest)
+        complementary_type, _ = validator.list_to_pandas(input_data_featuretest)
     elif sparse.issparse(input_data_featuretest):
         complementary_type = sparse.csr_matrix(input_data_featuretest.todense())
     else:

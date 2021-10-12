@@ -89,7 +89,7 @@ class BaseFeatureValidator(BaseEstimator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X_train, list):
-            X_train, X_test = self.list_to_dataframe(X_train, X_test)
+            X_train, X_test = self.list_to_pandas(X_train, X_test)
 
         self._check_data(X_train)
 
@@ -158,7 +158,7 @@ class BaseFeatureValidator(BaseEstimator):
 
         raise NotImplementedError()
 
-    def list_to_dataframe(
+    def list_to_pandas(
         self,
         X_train: SUPPORTED_FEAT_TYPES,
         X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
