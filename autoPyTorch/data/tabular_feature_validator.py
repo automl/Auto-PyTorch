@@ -291,33 +291,27 @@ class TabularFeatureValidator(BaseFeatureValidator):
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
                 if self.column_order != column_order:
-                    raise ValueError("Changing the column order of the features after fit() is "
-                                     "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(self.column_order,
-                                                                                          column_order, )
-                                     )
+                    raise ValueError("The column order of the features must not be changed after fit(), but"
+                                     " the column order are different between training ({}) and"
+                                     " test ({}) datasets.".format(self.column_order, column_order))
             else:
                 self.column_order = column_order
 
             dtypes = [dtype.name for dtype in X.dtypes]
-            if len(self.dtypes) > 0:
-                dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
-                if any(dtypes_diff):
-                    if self.all_nan_columns is not None and len(self.all_nan_columns) > 0:
-                        if len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0:
-                            # we expect the dtypes to only be different if the column belongs
-                            # to all_nan_columns as these columns would be imputed. if there is
-                            # a value in the test set for a column in all_nan_columns, pandas
-                            # does not recognise the dtype of the test column properly
-                            raise ValueError("Changing the dtype of the features after fit() is "
-                                             "not supported. The dtype of some columns are different "
-                                             "between training and test datasets. Fit() method was called with "
-                                             "{} whereas the new features have {} as type".format(self.dtypes,
-                                                                                                  dtypes,
-                                                                                                  )
-                                             )
-            else:
+
+            dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+            if len(self.dtypes) == 0:
                 self.dtypes = dtypes
+            elif (
+                any(dtypes_diff)  # the dtypes of some columns are different in train and test dataset
+                and self.all_nan_columns is not None  # Ignore all_nan_columns is None
+                and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
+            ):
+                # The dtypes can be different if and only if the column belongs
+                # to all_nan_columns as these columns would be imputed.
+                raise ValueError("The dtype of the features must not be changed after fit(), but"
+                                 " the dtypes of some columns are different between training ({}) and"
+                                 " test ({}) datasets.".format(self.dtypes, dtypes))
 
     def _get_columns_info(
         self,
@@ -350,7 +344,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 continue
             column_dtype = self.dtypes[i]
             err_msg = "Valid types are `numerical`, `categorical` or `boolean`, " \
-                      "but input Column {} has an invalid type `{}`.".format(column, column_dtype)
+                      "but input column {} has an invalid type `{}`.".format(column, column_dtype)
             if column_dtype in ['category', 'bool']:
                 categorical_columns.append(column)
                 feat_type.append('categorical')
