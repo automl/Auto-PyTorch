@@ -312,10 +312,13 @@ def test_featurevalidator_get_columns_to_encode():
     for col in df.columns:
         df[col] = df[col].astype(col)
 
-    enc_columns, feature_types = validator._get_columns_to_encode(df)
+    validator.fit(df)
 
-    assert enc_columns == ['category', 'bool']
-    assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
+    categorical_columns, numerical_columns, feat_type = validator._get_columns_info(df)
+
+    assert numerical_columns == ['int', 'float']
+    assert categorical_columns == ['category', 'bool']
+    assert feat_type == ['numerical', 'numerical', 'categorical', 'categorical']
 
 
 def feature_validator_remove_nan_catcolumns(df_train: pd.DataFrame, df_test: pd.DataFrame,
