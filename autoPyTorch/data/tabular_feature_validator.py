@@ -188,6 +188,41 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Return:
             np.ndarray:
                 The transformed array
+
+        Note:
+            The default transform performs the folloing:
+                * simple imputation for both
+                * scaling for numerical
+                * one-hot encoding for categorical
+            For example, here is a simple case
+            of which all the columns are categorical.
+                data = [
+                    {'A': 1, 'B': np.nan, 'C': np.nan},
+                    {'A': np.nan, 'B': 3, 'C': np.nan},
+                    {'A': 2, 'B': np.nan, 'C': np.nan}
+                ]
+            and suppose all the columns are categorical,
+            then
+                * `A` in {np.nan, 1, 2}
+                * `B` in {np.nan, 3}
+                * `C` in {np.nan} <=== it will be dropped.
+
+            So in the column A,
+                * np.nan ==> [1, 0, 0] (always the index 0)
+                * 1      ==> [0, 1, 0]
+                * 2      ==> [0, 0, 1]
+            in the column B,
+                * np.nan ==> [1, 0]
+                * 3      ==> [0, 1]
+            Therefore, by concatenating,
+                * {'A': 1, 'B': np.nan, 'C': np.nan} ==> [0, 1, 0, 1, 0]
+                * {'A': np.nan, 'B': 3, 'C': np.nan} ==> [1, 0, 0, 0, 1]
+                * {'A': 2, 'B': np.nan, 'C': np.nan} ==> [0, 0, 1, 1, 0]
+                ==> [
+                    [0, 1, 0, 1, 0],
+                    [1, 0, 0, 0, 1],
+                    [0, 0, 1, 1, 0]
+                ]
         """
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
