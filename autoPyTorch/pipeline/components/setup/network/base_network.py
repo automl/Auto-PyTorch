@@ -131,6 +131,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         # Batch prediction
         Y_batch_preds = list()
 
+        # `torch.no_grad` reduces memory usage even after `model.eval()`
         with torch.no_grad():
             for i, (X_batch, Y_batch) in enumerate(loader):
                 # Predict on batch

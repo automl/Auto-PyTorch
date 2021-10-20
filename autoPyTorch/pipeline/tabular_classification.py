@@ -90,8 +90,8 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
         if isinstance(self.dataset_properties['output_shape'], int):
+            # The final layer is always softmax now (`pred` already gives pseudo proba)
             return pred
-
         else:
             all_proba = []
 

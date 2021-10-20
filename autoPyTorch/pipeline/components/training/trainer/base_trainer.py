@@ -541,7 +541,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=[1],
+            value_range=(1, ),
             default_value=1),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
@@ -567,7 +567,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             default_value=True),
         se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="se_lastk",
-            value_range=(3,),
+            value_range=(3, ),
             default_value=3),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()

@@ -275,20 +275,19 @@ class ResBlock(nn.Module):
         # if in != out the shortcut needs a linear layer to match the result dimensions
         # if the shortcut needs a layer we apply batchnorm and activation to the shortcut
         # as well (start_norm)
-        if in_features != out_features:
-            if self.config["use_skip_connection"]:
-                self.shortcut = nn.Linear(in_features, out_features)
-                initial_normalization = list()
-                if self.config['use_batch_norm']:
-                    initial_normalization.append(
-                        nn.BatchNorm1d(in_features)
-                    )
+        if in_features != out_features and self.config["use_skip_connection"]:
+            self.shortcut = nn.Linear(in_features, out_features)
+            initial_normalization = list()
+            if self.config['use_batch_norm']:
                 initial_normalization.append(
-                    self.activation()
+                    nn.BatchNorm1d(in_features)
                 )
-                self.start_norm = nn.Sequential(
-                    *initial_normalization
-                )
+            initial_normalization.append(
+                self.activation()
+            )
+            self.start_norm = nn.Sequential(
+                *initial_normalization
+            )
 
         self.block_index = block_index
         self.num_blocks = blocks_per_group * self.config["num_groups"]
@@ -321,9 +320,6 @@ class ResBlock(nn.Module):
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
 
-        if self.config["use_skip_connection"]:
-            residual = x
-
         # if shortcut is not none we need a layer such that x matches the output dimension
         if self.shortcut is not None and self.start_norm is not None:
             # in this case self.start_norm is also != none
@@ -331,38 +327,44 @@ class ResBlock(nn.Module):
             # in front of shortcut and layers. Note that in this case layers
             # does not start with batchnorm+activation but with the first linear layer
             # (see _build_block). As a result if in_features == out_features
-            # -> result = x + W(~D(A(BN(W(A(BN(x))))))
+            # -> result = x + W_2(~D(A(BN(W_1(A(BN(x))))))
             # if in_features != out_features
             # -> result = W_shortcut(A(BN(x))) + W_2(~D(A(BN(W_1(A(BN(x))))))
             x = self.start_norm(x)
             residual = self.shortcut(x)
-
-        # TODO make the below code better
-        if self.config["use_skip_connection"]:
-            if self.config["multi_branch_choice"] == 'shake-shake':
-                x1 = self.layers(x)
-                x2 = self.shake_shake_layers(x)
-                alpha, beta = shake_get_alpha_beta(is_training=self.training,
-                                                   is_cuda=x.is_cuda,
-                                                   method=self.config['shake_shake_update_func'])
-                x = shake_shake(x1, x2, alpha, beta)
-            elif self.config["multi_branch_choice"] == 'shake-drop':
-                x = self.layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda,
-                                                   method=self.config['shake_shake_update_func'])
-                bl = shake_drop_get_bl(
-                    self.block_index,
-                    1 - self.config["max_shake_drop_probability"],
-                    self.num_blocks,
-                    self.training,
-                    x.is_cuda,
-                )
-                x = shake_drop(x, alpha, beta, bl)
+        else:
+            if not self.config["use_skip_connection"]:
+                # Early-return
+                return self.layers(x)
             else:
-                x = self.layers(x)
+                # We use a skip connection but we do not need to match dimensions
+                residual = x
 
-            x = x + residual
+        if self.config["multi_branch_choice"] == 'shake-shake':
+            x1 = self.layers(x)
+            x2 = self.shake_shake_layers(x)
+            alpha, beta = shake_get_alpha_beta(
+                is_training=self.training,
+                is_cuda=x.is_cuda,
+                method=self.config['shake_shake_update_func'],
+            )
+            x = shake_shake(x1, x2, alpha, beta)
+        elif self.config["multi_branch_choice"] == 'shake-drop':
+            x = self.layers(x)
+            alpha, beta = shake_get_alpha_beta(
+                self.training,
+                x.is_cuda,
+                method=self.config['shake_shake_update_func'],
+            )
+            bl = shake_drop_get_bl(
+                self.block_index,
+                1 - self.config["max_shake_drop_probability"],
+                self.num_blocks,
+                self.training,
+                x.is_cuda,
+            )
+            x = shake_drop(x, alpha, beta, bl)
         else:
             x = self.layers(x)
 
-        return x
+        return x + residual
