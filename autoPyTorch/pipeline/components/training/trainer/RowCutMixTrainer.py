@@ -36,7 +36,7 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[shuffled_indices], 'lam': 1}
 
-        cut_column_indices = torch.tensor(self.random_state.choice(range(n_columns),
+        cut_column_indices = torch.as_tensor(self.random_state.choice(range(n_columns),
                                           max(1, np.int32(n_columns * lam)),
                                           replace=False))
 

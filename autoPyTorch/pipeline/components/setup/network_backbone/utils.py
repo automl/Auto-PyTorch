@@ -28,6 +28,7 @@ def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ..
     placeholder = torch.randn((2, *input_shape), dtype=torch.float)
     with torch.no_grad():
         output = network(placeholder)
+
     return tuple(output.shape[1:])
 
 
@@ -157,9 +158,9 @@ def shake_drop_get_bl(
 
     if is_training:
         # Move to torch.randn(1) for reproducibility
-        bl = torch.Tensor(1.0) if torch.rand(1) <= pl else torch.Tensor(0.0)
+        bl = torch.as_tensor(1.0) if torch.rand(1) <= pl else torch.as_tensor(0.0)
     else:
-        bl = torch.Tensor(pl)
+        bl = torch.as_tensor(pl)
 
     if is_cuda:
         bl = bl.cuda()
