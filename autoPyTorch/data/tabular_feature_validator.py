@@ -28,6 +28,7 @@ def _create_column_transformer(
     Given a dictionary of preprocessors, this function
     creates a sklearn column transformer with appropriate
     columns associated with their preprocessors.
+
     Args:
         preprocessors (Dict[str, List[BaseEstimator]]):
             Dictionary containing list of numerical and categorical preprocessors.
@@ -512,12 +513,12 @@ def has_object_columns(
     """
     Indicate whether on a Series of dtypes for a Pandas DataFrame
     there exists one or more object columns.
-            
+
     Args:
         feature_types (pd.Series): The feature types for a DataFrame.
 
     Returns:
-        bool: 
+        bool:
             True if the DataFrame dtypes contain an object column, False
             otherwise.
     """

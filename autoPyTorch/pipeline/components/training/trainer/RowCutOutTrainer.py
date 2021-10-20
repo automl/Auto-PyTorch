@@ -33,9 +33,13 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
         size: int = np.shape(X)[1]
-        indices = self.random_state.choice(range(size), max(1, np.int32(size * self.patch_ratio)),
-                                           replace=False)
+        indices = self.random_state.choice(
+            range(size),
+            max(1, np.int32(size * self.patch_ratio)),
+            replace=False,
+        )
 
+        # Mask the selected features as 0
         X[:, indices] = 0
         lam = 1
         y_a = y
