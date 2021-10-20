@@ -57,6 +57,7 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     """
     This function creates a Dictionary containing a list
     of numerical and categorical preprocessors
+
     Returns:
         Dict[str, List[BaseEstimator]]
     """
