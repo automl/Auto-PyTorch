@@ -79,7 +79,7 @@ class BaseFeatureValidator(BaseEstimator):
         The supported data types are List, numpy arrays and pandas DataFrames.
         CSR sparse data types are also supported
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -115,7 +115,7 @@ class BaseFeatureValidator(BaseEstimator):
         X: SUPPORTED_FEAT_TYPES,
     ) -> BaseEstimator:
         """
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -133,7 +133,7 @@ class BaseFeatureValidator(BaseEstimator):
         """
         Feature dimensionality and data type checks
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -146,7 +146,7 @@ class BaseFeatureValidator(BaseEstimator):
         X: SUPPORTED_FEAT_TYPES,
     ) -> np.ndarray:
         """
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features, whose categorical features are going to be
                 transformed
@@ -168,7 +168,7 @@ class BaseFeatureValidator(BaseEstimator):
 
         If test data is provided, we proactively match it to train data
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding

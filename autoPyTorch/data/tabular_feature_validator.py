@@ -110,7 +110,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         features (from categorical for example) to a numerical value that further stages
         will be able to use
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -180,7 +180,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features, whose categorical features are going to be
                 transformed
@@ -279,7 +279,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         Feature dimensionality and data type checks
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -355,7 +355,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         Return the columns to be encoded from a pandas dataframe
 
-        Arguments:
+        Args:
             X (pd.DataFrame)
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -425,7 +425,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         If test data is provided, we proactively match it to train data
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
@@ -459,7 +459,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         Converts a numpy array to pandas for type inference
 
-        Arguments:
+        Args:
             X (np.ndarray):
                 data to be interpreted.
 
@@ -474,7 +474,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         This has to be done once, so the test and train data are treated equally
 
-        Arguments:
+        Args:
             X (pd.DataFrame):
                 data to be interpreted.
 
@@ -512,12 +512,12 @@ def has_object_columns(
     """
     Indicate whether on a Series of dtypes for a Pandas DataFrame
     there exists one or more object columns.
+            
+    Args:
+        feature_types (pd.Series): The feature types for a DataFrame.
 
-    Arguments:
-        feature_types (pd.Series):
-            The feature types for a DataFrame.
     Returns:
-        bool:
+        bool: 
             True if the DataFrame dtypes contain an object column, False
             otherwise.
     """

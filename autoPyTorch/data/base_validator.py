@@ -58,7 +58,7 @@ class BaseInputValidator(BaseEstimator):
             + Checks for dimensionality as well as missing values are performed.
             + If performing a classification task, the data is going to be encoded
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks). If this data contains categorical columns, an encoder is going to
@@ -102,7 +102,7 @@ class BaseInputValidator(BaseEstimator):
         """
         Transform the given target or features to a numpy array
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features to transform
             y (typing.Optional[SUPPORTED_TARGET_TYPES]):

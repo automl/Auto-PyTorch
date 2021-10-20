@@ -75,7 +75,7 @@ class BaseTargetValidator(BaseEstimator):
         Validates and fit a categorical encoder (if needed) to the targets
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 A set of targets set aside for training
             y_test (Union[SUPPORTED_TARGET_TYPES])
@@ -132,7 +132,7 @@ class BaseTargetValidator(BaseEstimator):
         y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         """
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 The labels of the current task. They are going to be encoded in case
                 of classification
@@ -146,7 +146,7 @@ class BaseTargetValidator(BaseEstimator):
         y: Union[SUPPORTED_TARGET_TYPES],
     ) -> np.ndarray:
         """
-        Arguments:
+        Args:
             y (SUPPORTED_TARGET_TYPES)
                 A set of targets that are going to be encoded if the current task
                 is classification
@@ -163,7 +163,7 @@ class BaseTargetValidator(BaseEstimator):
         """
         Revert any encoding transformation done on a target array
 
-        Arguments:
+        Args:
             y (Union[np.ndarray, pd.DataFrame, pd.Series]):
                 Target array to be transformed back to original form before encoding
         Returns:
