@@ -205,12 +205,12 @@ class Backend(object):
 
     def _make_internals_directory(self) -> None:
         try:
-            os.makedirs(self.internals_directory)
+            os.makedirs(self.internals_directory, exist_ok=True)
         except Exception as e:
             if self._logger is not None:
                 self._logger.debug("_make_internals_directory: %s" % e)
         try:
-            os.makedirs(self.get_runs_directory())
+            os.makedirs(self.get_runs_directory(), exist_ok=True)
         except Exception as e:
             if self._logger is not None:
                 self._logger.debug("_make_internals_directory: %s" % e)
@@ -327,6 +327,20 @@ class Backend(object):
         with lockfile.LockFile(filepath):
             with open(filepath, 'rb') as fh:
                 return pickle.load(fh)
+
+    def replace_datamanager(self, datamanager: BaseDataset) -> None:
+        """
+        This function is called to replace the old datamanager with a datamanager
+        in case it is required.
+
+        Args:
+            datamanager (BaseDataset): the new datamanager to replace the old.
+        """
+        warnings.warn("Original dataset will be overwritten with the provided dataset")
+        datamanager_pickle_file = self._get_datamanager_pickle_filename()
+        if os.path.exists(datamanager_pickle_file):
+            os.remove(datamanager_pickle_file)
+        self.save_datamanager(datamanager=datamanager)
 
     def get_runs_directory(self) -> str:
         return os.path.join(self.internals_directory, 'runs')

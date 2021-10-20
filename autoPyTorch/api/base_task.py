@@ -189,6 +189,9 @@ class BaseTask:
         self.trajectory: Optional[List] = None
         self.dataset_name: Optional[str] = None
         self.cv_models_: Dict = {}
+        self.precision: Optional[int] = None
+        self.opt_metric: Optional[str] = None
+        self.dataset: Optional[BaseDataset] = None
 
         # By default try to use the TCP logging port or get a new port
         self._logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -394,6 +397,7 @@ class BaseTask:
             self.logging_server.join(timeout=5)
             self.logging_server.terminate()
             del self.stop_logging_server
+            self._logger = None
 
     def _create_dask_client(self) -> None:
         """
@@ -408,7 +412,7 @@ class BaseTask:
             dask.distributed.LocalCluster(
                 n_workers=self.n_jobs,
                 processes=True,
-                threads_per_worker=1,
+                threads_per_worker=2,
                 # We use the temporal directory to save the
                 # dask workers, because deleting workers
                 # more time than deleting backend directories
@@ -487,6 +491,23 @@ class BaseTask:
             self.models_ = {}
 
         return True
+
+    def _cleanup(self) -> None:
+        """
+        Closes the different servers created during api search.
+        Returns:
+                None
+        """
+        if hasattr(self, '_logger') and self._logger is not None:
+            self._logger.info("Closing the dask infrastructure")
+            self._close_dask_client()
+            self._logger.info("Finished closing the dask infrastructure")
+
+            # Clean up the logger
+            self._logger.info("Starting to clean up the logger")
+            self._clean_logger()
+        else:
+            self._close_dask_client()
 
     def _load_best_individual_model(self) -> SingleBest:
         """
@@ -725,6 +746,38 @@ class BaseTask:
                               save_external=True)
         return
 
+    def run_traditional_ml(
+        self,
+        current_task_name: str,
+        runtime_limit: int,
+        func_eval_time_limit_secs: int
+    ) -> None:
+        """
+        This function can be used to run the suite of traditional machine
+        learning models during the current task (for e.g, ensemble fit, search)
+
+        Args:
+            current_task_name (str): name of the current task,
+            runtime_limit (int): time limit for fitting traditional models,
+            func_eval_time_limit_secs (int): Time limit
+                for a single call to the machine learning model.
+                Model fitting will be terminated if the machine
+                learning algorithm runs over the time limit.
+        """
+        assert self._logger is not None  # for mypy compliancy
+        if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
+            self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
+        else:
+            traditional_task_name = 'runTraditional'
+            self._stopwatch.start_task(traditional_task_name)
+            elapsed_time = self._stopwatch.wall_elapsed(current_task_name)
+            time_for_traditional = int(runtime_limit - elapsed_time)
+            self._do_traditional_prediction(
+                func_eval_time_limit_secs=func_eval_time_limit_secs,
+                time_left=time_for_traditional,
+            )
+            self._stopwatch.stop_task(traditional_task_name)
+
     def _search(
         self,
         optimize_metric: str,
@@ -819,8 +872,10 @@ class BaseTask:
 
         if self.task_type != dataset.task_type:
             raise ValueError("Incompatible dataset entered for current task,"
-                             "expected dataset to have task type :{} got "
+                             "expected dataset to have task type :{} but got "
                              ":{}".format(self.task_type, dataset.task_type))
+        if precision not in [16, 32, 64]:
+            raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
 
         # Initialise information needed for the experiment
         experiment_task_name: str = 'runSearch'
@@ -866,7 +921,7 @@ class BaseTask:
         # If no dask client was provided, we create one, so that we can
         # start a ensemble process in parallel to smbo optimize
         if (
-            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs is not None and self.n_jobs > 1)
+            self._dask_client is None and (self.ensemble_size > 0 or self.n_jobs > 1)
         ):
             self._create_dask_client()
         else:
@@ -895,31 +950,25 @@ class BaseTask:
             )
 
         # ============> Run dummy predictions
-        dummy_task_name = 'runDummy'
-        self._stopwatch.start_task(dummy_task_name)
-        self._do_dummy_prediction()
-        self._stopwatch.stop_task(dummy_task_name)
+        # We only want to run dummy predictions in case we want to build an ensemble
+        if self.ensemble_size > 0:
+            dummy_task_name = 'runDummy'
+            self._stopwatch.start_task(dummy_task_name)
+            self._do_dummy_prediction()
+            self._stopwatch.stop_task(dummy_task_name)
 
         # ============> Run traditional ml
-
-        if enable_traditional_pipeline:
-            if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
-                self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
-            else:
-                traditional_task_name = 'runTraditional'
-                self._stopwatch.start_task(traditional_task_name)
-                elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
-                # We want time for at least 1 Neural network in SMAC
-                time_for_traditional = int(
-                    self._time_for_task - elapsed_time - func_eval_time_limit_secs
-                )
-                self._do_traditional_prediction(
-                    func_eval_time_limit_secs=func_eval_time_limit_secs,
-                    time_left=time_for_traditional,
-                )
-                self._stopwatch.stop_task(traditional_task_name)
+        # We only want to run traditional predictions in case we want to build an ensemble
+        # We want time for at least 1 Neural network in SMAC
+        if enable_traditional_pipeline and self.ensemble_size > 0:
+            traditional_runtime_limit = int(self._time_for_task - func_eval_time_limit_secs)
+            self.run_traditional_ml(current_task_name=self.dataset_name,
+                                    runtime_limit=traditional_runtime_limit,
+                                    func_eval_time_limit_secs=func_eval_time_limit_secs)
 
         # ============> Starting ensemble
+        self.precision = precision
+        self.opt_metric = optimize_metric
         elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
         time_left_for_ensembles = max(0, total_walltime_limit - elapsed_time)
         proc_ensemble = None
@@ -936,26 +985,12 @@ class BaseTask:
             self._logger.info("Starting ensemble")
             ensemble_task_name = 'ensemble'
             self._stopwatch.start_task(ensemble_task_name)
-            proc_ensemble = EnsembleBuilderManager(
-                start_time=time.time(),
-                time_left_for_ensembles=time_left_for_ensembles,
-                backend=copy.deepcopy(self._backend),
-                dataset_name=str(dataset.dataset_name),
-                output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
-                task_type=STRING_TO_TASK_TYPES[self.task_type],
-                metrics=[self._metric],
-                opt_metric=optimize_metric,
-                ensemble_size=self.ensemble_size,
-                ensemble_nbest=self.ensemble_nbest,
-                max_models_on_disc=self.max_models_on_disc,
-                seed=self.seed,
-                max_iterations=None,
-                read_at_most=sys.maxsize,
-                ensemble_memory_limit=self._memory_limit,
-                random_state=self.seed,
-                precision=precision,
-                logger_port=self._logger_port,
-            )
+            proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
+                                                        ensemble_size=self.ensemble_size,
+                                                        ensemble_nbest=self.ensemble_nbest,
+                                                        precision=precision,
+                                                        optimize_metric=self.opt_metric
+                                                        )
             self._stopwatch.stop_task(ensemble_task_name)
 
         # ==> Run SMAC
@@ -1035,18 +1070,12 @@ class BaseTask:
                 pd.DataFrame(self.ensemble_performance_history).to_json(
                     os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
-        self._logger.info("Closing the dask infrastructure")
-        self._close_dask_client()
-        self._logger.info("Finished closing the dask infrastructure")
-
         if load_models:
             self._logger.info("Loading models...")
             self._load_models()
             self._logger.info("Finished loading models...")
 
-        # Clean up the logger
-        self._logger.info("Starting to clean up the logger")
-        self._clean_logger()
+        self._cleanup()
 
         return self
 
@@ -1241,7 +1270,7 @@ class BaseTask:
         dataset_requirements = get_dataset_requirements(
             info=self._get_required_dataset_properties(dataset))
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
-        self._backend.save_datamanager(dataset)
+        self._backend.replace_datamanager(dataset)
 
         if self._logger is None:
             self._logger = self._get_logger(dataset.dataset_name)
@@ -1333,6 +1362,203 @@ class BaseTask:
 
         return fitted_pipeline, run_info, run_value, dataset
 
+    def fit_ensemble(
+            self,
+            optimize_metric: Optional[str] = None,
+            precision: Optional[int] = None,
+            ensemble_nbest: int = 50,
+            ensemble_size: int = 50,
+            load_models: bool = True,
+            time_for_task: int = 100,
+            func_eval_time_limit_secs: int = 50,
+            enable_traditional_pipeline: bool = True,
+    ) -> 'BaseTask':
+        """
+        Enables post-hoc fitting of the ensemble after the `search()`
+        method is finished. This method creates an ensemble using all
+        the models stored on disk during the smbo run
+        Args:
+            optimize_metric (str): name of the metric that is used to
+                evaluate a pipeline. if not specified, value passed to search will be used
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
+            ensemble_nbest (Optional[int]):
+                only consider the ensemble_nbest models to build the ensemble.
+                If None, uses the value stored in class attribute `ensemble_nbest`.
+            ensemble_size (int) (default=50):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            enable_traditional_pipeline (bool), (default=True):
+                We fit traditional machine learning algorithms
+                (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
+                prior building PyTorch Neural Networks. You can disable this
+                feature by turning this flag to False. All machine learning
+                algorithms that are fitted during search() are considered for
+                ensemble building.
+            load_models (bool), (default=True): Whether to load the
+                models after fitting AutoPyTorch.
+            time_for_task (int), (default=100): Time limit
+                in seconds for the search of appropriate models.
+                By increasing this value, autopytorch has a higher
+                chance of finding better models.
+            func_eval_time_limit_secs (int), (default=None): Time limit
+                for a single call to the machine learning model.
+                Model fitting will be terminated if the machine
+                learning algorithm runs over the time limit. Set
+                this value high enough so that typical machine
+                learning algorithms can be fit on the training
+                data.
+                When set to None, this time will automatically be set to
+                total_walltime_limit // 2 to allow enough time to fit
+                at least 2 individual machine learning algorithms.
+                Set to np.inf in case no time limit is desired.
+        Returns:
+            self
+        """
+        # Make sure that input is valid
+        if self.dataset is None or self.opt_metric is None:
+            raise ValueError("fit_ensemble() can only be called after `search()`. "
+                             "Please call the `search()` method of {} prior to "
+                             "fit_ensemble().".format(self.__class__.__name__))
+
+        if precision not in [16, 32, 64]:
+            raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
+
+        if self._logger is None:
+            self._logger = self._get_logger(self.dataset.dataset_name)
+
+        # Create a client if needed
+        if self._dask_client is None:
+            self._create_dask_client()
+        else:
+            self._is_dask_client_internally_created = False
+
+        ensemble_fit_task_name = 'EnsembleFit'
+        self._stopwatch.start_task(ensemble_fit_task_name)
+        if enable_traditional_pipeline:
+            if func_eval_time_limit_secs is None or func_eval_time_limit_secs > time_for_task:
+                self._logger.warning(
+                    'Time limit for a single run is higher than total time '
+                    'limit. Capping the limit for a single run to the total '
+                    'time given to Ensemble fit (%f)' % time_for_task
+                )
+                func_eval_time_limit_secs = time_for_task
+
+            # Make sure that at least 2 models are created for the ensemble process
+            num_models = time_for_task // func_eval_time_limit_secs
+            if num_models < 2:
+                func_eval_time_limit_secs = time_for_task // 2
+                self._logger.warning(
+                    "Capping the func_eval_time_limit_secs to {} to have "
+                    "time for at least 2 models to ensemble.".format(
+                        func_eval_time_limit_secs
+                    )
+                )
+        # ============> Run Dummy predictions
+        dummy_task_name = 'runDummy'
+        self._stopwatch.start_task(dummy_task_name)
+        self._do_dummy_prediction()
+        self._stopwatch.stop_task(dummy_task_name)
+
+        # ============> Run traditional ml
+        if enable_traditional_pipeline:
+            self.run_traditional_ml(current_task_name=ensemble_fit_task_name,
+                                    runtime_limit=time_for_task,
+                                    func_eval_time_limit_secs=func_eval_time_limit_secs)
+
+        elapsed_time = self._stopwatch.wall_elapsed(ensemble_fit_task_name)
+        time_left_for_ensemble = int(time_for_task - elapsed_time)
+        manager = self._init_ensemble_builder(
+            time_left_for_ensembles=time_left_for_ensemble,
+            optimize_metric=self.opt_metric if optimize_metric is None else optimize_metric,
+            precision=self.precision if precision is None else precision,
+            ensemble_size=ensemble_size,
+            ensemble_nbest=ensemble_nbest,
+        )
+
+        manager.build_ensemble(self._dask_client)
+        future = manager.futures.pop()
+        result = future.result()
+        if result is None:
+            raise ValueError("Errors occurred while building the ensemble - please"
+                             " check the log file and command line output for error messages.")
+        self.ensemble_performance_history, _, _, _ = result
+
+        if load_models:
+            self._load_models()
+
+        self._stopwatch.stop_task(ensemble_fit_task_name)
+
+        self._cleanup()
+
+        return self
+
+    def _init_ensemble_builder(
+            self,
+            time_left_for_ensembles: float,
+            optimize_metric: str,
+            ensemble_nbest: int,
+            ensemble_size: int,
+            precision: int = 32,
+    ) -> EnsembleBuilderManager:
+        """
+        Initializes an `EnsembleBuilderManager`.
+        Args:
+            time_left_for_ensembles (float):
+                Time (in seconds) allocated to building the ensemble
+            optimize_metric (str):
+                Name of the metric to optimize the ensemble.
+            ensemble_nbest (int):
+                only consider the ensemble_nbest models to build the ensemble.
+            ensemble_size (int):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            precision (int), (default=32): Numeric precision used when loading
+                ensemble data. Can be either 16, 32 or 64.
+        Returns:
+            EnsembleBuilderManager
+        """
+        if self._logger is None:
+            raise ValueError("logger should be initialized to fit ensemble")
+        if self.dataset is None:
+            raise ValueError("ensemble can only be initialised after or during `search()`. "
+                             "Please call the `search()` method of {}.".format(self.__class__.__name__))
+
+        self._logger.info("Starting ensemble")
+        ensemble_task_name = 'ensemble'
+        self._stopwatch.start_task(ensemble_task_name)
+
+        # Use the current thread to start the ensemble builder process
+        # The function ensemble_builder_process will internally create a ensemble
+        # builder in the provide dask client
+        required_dataset_properties = {'task_type': self.task_type,
+                                       'output_type': self.dataset.output_type}
+        proc_ensemble = EnsembleBuilderManager(
+            start_time=time.time(),
+            time_left_for_ensembles=time_left_for_ensembles,
+            backend=copy.deepcopy(self._backend),
+            dataset_name=str(self.dataset.dataset_name),
+            output_type=STRING_TO_OUTPUT_TYPES[self.dataset.output_type],
+            task_type=STRING_TO_TASK_TYPES[self.task_type],
+            metrics=[self._metric] if self._metric is not None else get_metrics(
+                dataset_properties=required_dataset_properties, names=[optimize_metric]),
+            opt_metric=optimize_metric,
+            ensemble_size=ensemble_size,
+            ensemble_nbest=ensemble_nbest,
+            max_models_on_disc=self.max_models_on_disc,
+            seed=self.seed,
+            max_iterations=None,
+            read_at_most=sys.maxsize,
+            ensemble_memory_limit=self._memory_limit,
+            random_state=self.seed,
+            precision=precision,
+            logger_port=self._logger_port,
+        )
+        self._stopwatch.stop_task(ensemble_task_name)
+        return proc_ensemble
+
     def predict(
         self,
         X_test: np.ndarray,
@@ -1382,7 +1608,7 @@ class BaseTask:
 
         predictions = self.ensemble_.predict(all_predictions)
 
-        self._clean_logger()
+        self._cleanup()
 
         return predictions
 
@@ -1419,10 +1645,7 @@ class BaseTask:
         return self.__dict__
 
     def __del__(self) -> None:
-        # Clean up the logger
-        self._clean_logger()
-
-        self._close_dask_client()
+        self._cleanup()
 
         # When a multiprocessing work is done, the
         # objects are deleted. We don't want to delete run areas

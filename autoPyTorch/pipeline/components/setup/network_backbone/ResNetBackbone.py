@@ -139,6 +139,14 @@ class ResNetBackbone(NetworkBackboneComponent):
                                                                                value_range=(True, False),
                                                                                default_value=True,
                                                                                ),
+        shake_shake_update_func: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="shake_shake_update_func",
+            value_range=('shake-shake',
+                         'shake-even',
+                         'even-even',
+                         'M3'),
+            default_value='shake-shake',
+        ),
         use_shake_drop: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_shake_drop",
                                                                               value_range=(True, False),
                                                                               default_value=True,
@@ -180,18 +188,25 @@ class ResNetBackbone(NetworkBackboneComponent):
 
         if skip_connection_flag:
 
-            shake_drop_prob_flag = False
-            if 'shake-drop' in multi_branch_choice.value_range:
-                shake_drop_prob_flag = True
+            shake_shake_flag = 'shake-shake' in multi_branch_choice.value_range
+            shake_drop_prob_flag = 'shake-drop' in multi_branch_choice.value_range
 
             mb_choice = get_hyperparameter(multi_branch_choice, CategoricalHyperparameter)
             cs.add_hyperparameter(mb_choice)
             cs.add_condition(CS.EqualsCondition(mb_choice, use_sc, True))
 
+            shake_shake_update_func_conditional: List[str] = list()
             if shake_drop_prob_flag:
                 shake_drop_prob = get_hyperparameter(max_shake_drop_probability, UniformFloatHyperparameter)
                 cs.add_hyperparameter(shake_drop_prob)
                 cs.add_condition(CS.EqualsCondition(shake_drop_prob, mb_choice, "shake-drop"))
+                shake_shake_update_func_conditional.append('shake-drop')
+            if shake_shake_flag:
+                shake_shake_update_func_conditional.append('shake-shake')
+            if len(shake_shake_update_func_conditional) > 0:
+                method = get_hyperparameter(shake_shake_update_func, CategoricalHyperparameter)
+                cs.add_hyperparameter(method)
+                cs.add_condition(CS.InCondition(method, mb_choice, shake_shake_update_func_conditional))
 
         # It is the upper bound of the nr of groups,
         # since the configuration will actually be sampled.
@@ -327,11 +342,14 @@ class ResBlock(nn.Module):
             if self.config["multi_branch_choice"] == 'shake-shake':
                 x1 = self.layers(x)
                 x2 = self.shake_shake_layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                alpha, beta = shake_get_alpha_beta(is_training=self.training,
+                                                   is_cuda=x.is_cuda,
+                                                   method=self.config['shake_shake_update_func'])
                 x = shake_shake(x1, x2, alpha, beta)
             elif self.config["multi_branch_choice"] == 'shake-drop':
                 x = self.layers(x)
-                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda)
+                alpha, beta = shake_get_alpha_beta(self.training, x.is_cuda,
+                                                   method=self.config['shake_shake_update_func'])
                 bl = shake_drop_get_bl(
                     self.block_index,
                     1 - self.config["max_shake_drop_probability"],

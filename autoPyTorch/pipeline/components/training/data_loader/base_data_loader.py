@@ -115,12 +115,12 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             shuffle=True,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
-            drop_last=X.get('drop_last', True),
+            drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
 
         if X['val_indices'] is not None:
-            val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=False, subset=1)
+            val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=False)
             self.val_data_loader = torch.utils.data.DataLoader(
                 val_dataset,
                 batch_size=min(self.batch_size, len(val_dataset)),
