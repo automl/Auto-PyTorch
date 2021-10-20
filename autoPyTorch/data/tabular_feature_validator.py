@@ -55,7 +55,7 @@ def _create_column_transformer(
 
 def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     """
-    This function creates a Dictionary containing list
+    This function creates a Dictionary containing a list
     of numerical and categorical preprocessors
     Returns:
         Dict[str, List[BaseEstimator]]
@@ -80,7 +80,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
-        """Order so that categorical columns come right and numerical columns come left
+        """Order so that categorical columns come left and numerical columns come right
 
         Args:
             cmp1 (str): First variable to compare
@@ -97,7 +97,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if cmp1 not in choices or cmp2 not in choices:
             raise ValueError('The comparator for the column order only accepts {}, '
                              'but got {} and {}'.format(choices, cmp1, cmp2))
-
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
@@ -152,7 +151,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             # The column transformer reorders the feature types
             # therefore, we need to change the order of columns as well
-            # This means categorical columns are shifted to the right
+            # This means categorical columns are shifted to the left
 
             self.feat_type = sorted(
                 feat_type,
