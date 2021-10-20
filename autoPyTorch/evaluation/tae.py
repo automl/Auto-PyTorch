@@ -1,3 +1,10 @@
+"""The target algorithm evaluator module
+* Provide the target algorithm framework for SMAC
+
+TODO:
+    * Think about a dataclass to pass
+    * Refactor run()
+"""
 # -*- encoding: utf-8 -*-
 import functools
 import json

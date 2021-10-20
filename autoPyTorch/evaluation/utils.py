@@ -1,3 +1,9 @@
+"""Utilities for the evaluators
+
+TODO:
+    * Check the behaviors
+    * add doc-string
+"""
 import queue
 from multiprocessing.queues import Queue
 from typing import List, Optional, Union

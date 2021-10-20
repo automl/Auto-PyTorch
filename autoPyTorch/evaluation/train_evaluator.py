@@ -1,3 +1,12 @@
+"""Training and evaluation of a provided pipeline with a configuration
+* Train a model and evaluate the validation performance
+
+TODO:
+    * Refactor fit_predict_and_loss
+    * Think about making a dataclass for a set of variables
+        => encapsulation
+    * Do we really need this module itself? (Can't we go only with AbstractEvaluator?)
+"""
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union
 

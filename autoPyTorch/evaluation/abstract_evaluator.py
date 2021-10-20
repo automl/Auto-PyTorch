@@ -1,3 +1,39 @@
+"""Wrapper classes for the traditional pipelines and base class for evaluators
+* Wrapper classes for the traditional pipelines provide wraps the sklearn
+  module and show the basic methods to use
+* Abstract evaluator provides the common functionality for algorithm evaluators
+
+TODO:
+    * Change the line 822 -- 835 (in the old version) to the following:
+        ```
+        pipelines = None
+        if (
+            hasattr(self, 'pipelines')
+            and self.pipelines is not None
+            and self.pipelines[0] is not None
+            and len(self.pipelines) > 0
+            and 'pipelines' not in self.disabled_file_outputs
+        ):
+            if self.task_type in CLASSIFICATION_TASKS:
+                pipelines = VotingClassifier(estimators=None, voting='soft', )
+            else:
+                pipelines = VotingRegressorWrapper(estimators=None)
+            pipelines.estimators_ = self.pipelines
+        ```
+    * Fix typing error e.g. np.array -> np.ndarray
+    * Reduce unused member variables
+    * Rename abstract_evaluator ==> base_evaluator
+    * Make variables private if they are not refered from outside
+    * [refactor] config: Configuration --> it is int in DummyClassificationPipeline
+    * [refactor] configuration in AbstractEvaluator --> unite by enum or Configuration
+    * [refactor] Enhance the fit_dicitonary
+    * [refactor] Change assert into raise Error
+    * Y_actual_train, Y_optimization, y_hat, y_true?
+    * Different parameter set for different pipeline class ==> can be better?
+    * additional_run_info --> dataclass
+    * finish_up --> _finish_up
+    * file_output should probably be a separated function
+"""
 import logging.handlers
 import time
 import warnings
