@@ -1558,6 +1558,7 @@ class BaseTask:
             logger_port=self._logger_port,
         )
         self._stopwatch.stop_task(ensemble_task_name)
+
         return proc_ensemble
 
     def predict(
