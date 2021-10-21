@@ -140,7 +140,7 @@ def shake_get_alpha_beta(
             [rnd * (0.5 - alpha) + alpha if alpha < 0.5 else rnd * (alpha - 0.5) + 0.5]
         )
     else:
-        raise ValueError("Unknown method for ShakeShakeRegularisation in NetworkBackbone")
+        raise ValueError(f"Unknown method `{method}` for ShakeShakeRegularisation in NetworkBackbone")
 
     if is_cuda:
         alpha = alpha.cuda()
