@@ -162,7 +162,7 @@ class BaseTask:
     ) -> None:
         self.seed = seed
         self.n_jobs = n_jobs
-        self.nr_threads = nr_threads
+        self.n_threads = n_threads
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
         self.max_models_on_disc = max_models_on_disc
@@ -417,7 +417,7 @@ class BaseTask:
             dask.distributed.LocalCluster(
                 n_workers=self.n_jobs,
                 processes=True,
-                threads_per_worker=self.nr_threads,
+                threads_per_worker=self.n_threads,
                 # We use the temporal directory to save the
                 # dask workers, because deleting workers
                 # more time than deleting backend directories
@@ -1381,7 +1381,8 @@ class BaseTask:
         """
         Enables post-hoc fitting of the ensemble after the `search()`
         method is finished. This method creates an ensemble using all
-        the models stored on disk during the smbo run
+        the models stored on disk during the smbo run.
+
         Args:
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline. if not specified, value passed to search will be used
@@ -1418,6 +1419,7 @@ class BaseTask:
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
+
         Returns:
             self
         """
