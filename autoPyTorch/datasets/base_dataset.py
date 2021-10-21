@@ -359,6 +359,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             train (bool): whether the dataset is required for training or evaluating.
 
         Returns:
+
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple

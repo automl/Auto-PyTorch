@@ -1,8 +1,6 @@
-import typing
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-
-import torch
 
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
@@ -17,13 +15,8 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
         Github URL: https://github.com/hysts/pytorch_cutout/blob/master/dataloader.py#L36-L68
     """
 
-    # 0 is non-informative in image data
-    NUMERICAL_VALUE = 0
-    # -1 is the conceptually equivalent to 0 in a image, i.e. 0-pad
-    CATEGORICAL_VALUE = -1
-
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -36,9 +29,8 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
 
         Returns:
             np.ndarray: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            Dict[str, np.ndarray]: arguments to the criterion function
         """
-
         r = self.random_state.rand(1)
         if r > self.cutout_prob:
             y_a = y
@@ -46,30 +38,23 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             lam = 1
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
-        # (batch_size (permutation of rows), col_size) = X.shape
-        col_size = X.shape[1]
-        col_indices = self.random_state.choice(range(col_size), max(1, int(col_size * self.patch_ratio)),
-                                               replace=False)
+        size: int = np.shape(X)[1]
+        cut_column_indices = self.random_state.choice(
+            range(size),
+            max(1, np.int32(size * self.patch_ratio)),
+            replace=False,
+        )
 
-        if not isinstance(self.numerical_columns, typing.Iterable):
-            raise ValueError("numerical_columns in {} must be iterable, "
-                             "but got {}.".format(self.__class__.__name__,
-                                                  self.numerical_columns))
-
-        numerical_indices = torch.tensor(self.numerical_columns)
-        categorical_indices = torch.tensor([idx for idx in col_indices if idx not in self.numerical_columns])
-
-        X[:, categorical_indices.long()] = self.CATEGORICAL_VALUE
-        X[:, numerical_indices.long()] = self.NUMERICAL_VALUE
-
+        # Mask the selected features as 0
+        X[:, cut_column_indices] = 0
         lam = 1
         y_a = y
         y_b = y
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RowCutOutTrainer',
             'name': 'RowCutOutTrainer',

@@ -79,7 +79,6 @@ class TabularRegressionTask(BaseTask):
             Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
     """
-
     def __init__(
         self,
         seed: int = 1,
@@ -436,6 +435,8 @@ class TabularRegressionTask(BaseTask):
             dataset_name=dataset_name,
             dataset_compression=self._dataset_compression)
 
+        if self.dataset is None:
+            raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
