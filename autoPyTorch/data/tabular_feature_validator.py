@@ -36,6 +36,7 @@ def _create_column_transformer(
             List of names of numerical columns
         categorical_columns (List[str]):
             List of names of categorical columns
+
     Returns:
         ColumnTransformer
     """
