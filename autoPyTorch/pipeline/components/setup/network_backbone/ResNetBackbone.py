@@ -332,11 +332,11 @@ class ResBlock(nn.Module):
             # -> result = W_shortcut(A(BN(x))) + W_2(~D(A(BN(W_1(A(BN(x))))))
             x = self.start_norm(x)
             residual = self.shortcut(x)
-        else:
-            if not self.config["use_skip_connection"]:
-                # Early-return
-                return self.layers(x)
-            else:
+        elif self.config["use_skip_connection"]:
+            # We use a skip connection but we do not need to match dimensions
+            residual = x
+        else:  # Early-return because no need of skip connection
+            return self.layers(x)
                 # We use a skip connection but we do not need to match dimensions
                 residual = x
 
