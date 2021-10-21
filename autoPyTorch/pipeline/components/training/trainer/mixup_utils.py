@@ -26,7 +26,7 @@ class MixUp:
         Github URL: https://github.com/facebookresearch/mixup-cifar10/blob/master/train.py#L119-L138
     """
     def __init__(self, alpha: float,
-                 weighted_loss: bool = False,
+                 weighted_loss: int = 0,
                  random_state: Optional[np.random.RandomState] = None,
                  use_stochastic_weight_averaging: bool = False,
                  use_snapshot_ensemble: bool = False,
@@ -68,8 +68,8 @@ class MixUp:
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=(True, False),
-            default_value=True),
+            value_range=(1, ),
+            default_value=1),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -94,7 +94,7 @@ class MixUp:
             default_value=True),
         se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="se_lastk",
-            value_range=(3,),
+            value_range=(3, ),
             default_value=3),
         alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="alpha",
@@ -134,9 +134,18 @@ class MixUp:
                 la_config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
+
+        """
         # TODO, decouple the weighted loss from the trainer
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs
