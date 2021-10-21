@@ -146,6 +146,7 @@ def shake_drop_get_bl(
         num_blocks (int): The total number of building blocks
         is_training (bool): Whether it is training
         is_cuda (bool): Whether the tensor is on CUDA
+
     Returns:
         bl (torch.Tensor): a Bernoulli random variable in {0, 1}
     Reference:
