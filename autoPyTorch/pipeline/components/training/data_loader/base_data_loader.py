@@ -115,7 +115,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             shuffle=True,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
-            drop_last=X.get('drop_last', True),
+            drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
 
@@ -154,6 +154,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             train_tensors=(X, y),
             seed=self.random_state.get_state()[1][0],
             # This dataset is used for loading test data in a batched format
+            seed=self.random_state.get_state()[1][0],
+            shuffle=False,
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
         )
