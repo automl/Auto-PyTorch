@@ -7,7 +7,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTr
 
 class StandardTrainer(BaseTrainerComponent):
     def __init__(self,
-                 weighted_loss: bool = False,
+                 weighted_loss: int = 0,
                  use_stochastic_weight_averaging: bool = False,
                  use_snapshot_ensemble: bool = False,
                  se_lastk: int = 3,
@@ -18,7 +18,7 @@ class StandardTrainer(BaseTrainerComponent):
         This class handles the training of a network for a single given epoch.
 
         Args:
-            weighted_loss (bool): whether to use weighted loss
+            weighted_loss (int): whether to use weighted loss
 
         """
         super().__init__(random_state=random_state,

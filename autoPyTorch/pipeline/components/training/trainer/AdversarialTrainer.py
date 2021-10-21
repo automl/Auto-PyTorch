@@ -31,7 +31,7 @@ class AdversarialTrainer(BaseTrainerComponent):
     def __init__(
             self,
             epsilon: float,
-            weighted_loss: bool = False,
+            weighted_loss: int = 0,
             random_state: Optional[np.random.RandomState] = None,
             use_stochastic_weight_averaging: bool = False,
             use_snapshot_ensemble: bool = False,
@@ -157,7 +157,7 @@ class AdversarialTrainer(BaseTrainerComponent):
             'shortname': 'AdversarialTrainer',
             'name': 'AdversarialTrainer',
             'handles_tabular': True,
-            'handles_image': False,
+            'handles_image': True,
             'handles_time_series': False,
         }
 
@@ -166,8 +166,8 @@ class AdversarialTrainer(BaseTrainerComponent):
         dataset_properties: Optional[Dict] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
-            value_range=(True, False),
-            default_value=True),
+            value_range=(1, ),
+            default_value=1),
         la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="la_steps",
             value_range=(5, 10),
@@ -192,16 +192,21 @@ class AdversarialTrainer(BaseTrainerComponent):
             default_value=True),
         se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="se_lastk",
-            value_range=(3,),
+            value_range=(3, ),
             default_value=3),
         epsilon: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="epsilon",
-            value_range=(0.05, 0.2),
-            default_value=0.2),
+            value_range=(0.001, 0.15),
+            default_value=0.007,
+            log=True),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
+        epsilon = HyperparameterSearchSpace(hyperparameter="epsilon",
+                                            value_range=(0.007, 0.007),
+                                            default_value=0.007)
         add_hyperparameter(cs, epsilon, UniformFloatHyperparameter)
+
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
         snapshot_ensemble_flag = any(use_snapshot_ensemble.value_range)
 
@@ -229,9 +234,17 @@ class AdversarialTrainer(BaseTrainerComponent):
                 parent_hyperparameter=parent_hyperparameter
             )
 
+        """
         # TODO, decouple the weighted loss from the trainer
         if dataset_properties is not None:
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs

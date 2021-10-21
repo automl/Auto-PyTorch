@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
-from smac.runhistory.runhistory import RunHistory
+from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.ensemble.abstract_ensemble import AbstractEnsemble
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -49,6 +49,9 @@ class SingleBest(AbstractEnsemble):
 
         for run_key in self.run_history.data.keys():
             run_value = self.run_history.data[run_key]
+            if run_value.status == StatusType.CRASHED:
+                continue
+
             score = self.metric._optimum - (self.metric._sign * run_value.cost)
 
             if (score > best_model_score and self.metric._sign > 0) \

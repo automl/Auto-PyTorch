@@ -27,9 +27,13 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class TabularRegressionTask(BaseTask):
     """
     Tabular Regression API to the pipelines.
+
     Args:
         seed (int): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
+        n_jobs (int), (default=1):
+            number of consecutive processes to spawn.
+        n_threads (int), (default=1):
+            number of threads to use for each process.
         logging_config (Optional[Dict]): specifies configuration
             for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50): Number of models added to the ensemble built by
@@ -50,11 +54,11 @@ class TabularRegressionTask(BaseTask):
             Otherwise specifies set of components not to use. Incompatible with include
             components
     """
-
     def __init__(
             self,
             seed: int = 1,
             n_jobs: int = 1,
+            n_threads: int = 1,
             logging_config: Optional[Dict] = None,
             ensemble_size: int = 50,
             ensemble_nbest: int = 50,
@@ -75,6 +79,7 @@ class TabularRegressionTask(BaseTask):
         super().__init__(
             seed=seed,
             n_jobs=n_jobs,
+            n_threads=n_threads,
             logging_config=logging_config,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
@@ -263,6 +268,8 @@ class TabularRegressionTask(BaseTask):
                          y_test=y_test,
                          dataset_name=dataset_name)
 
+        if self.dataset is None:
+            raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,

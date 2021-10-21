@@ -285,7 +285,6 @@ class TrainerChoice(autoPyTorchChoice):
         self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
-
         return self.choice
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
@@ -402,14 +401,15 @@ class TrainerChoice(autoPyTorchChoice):
                 torch.cuda.empty_cache()
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
+
             # update batch norm statistics
             swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
 
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
-                for model in self.choice.model_snapshots:
-                    swa_utils.update_bn(loader=X['train_data_loader'], model=model.double())
+                # we update only the last network which pertains to the stochastic weight averaging model
+                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):

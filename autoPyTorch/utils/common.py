@@ -96,7 +96,7 @@ def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: 
             k.startswith(prefix)}
 
 
-def custom_collate_fn(batch: List) -> List[Optional[torch.tensor]]:
+def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
     """
     In the case of not providing a y tensor, in a
     dataset of form {X, y}, y would be None.

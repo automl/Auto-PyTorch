@@ -35,7 +35,6 @@ class LossWeightStrategyWeighted():
             weights = (np.ones(y.shape[1]) * weight_per_class) / np.maximum(counts, 1)
         else:
             classes, counts = np.unique(y, axis=0, return_counts=True)
-            classes, counts = classes[::-1], counts[::-1]
             weight_per_class = total_weight / classes.shape[0]
             weights = (np.ones(classes.shape[0]) * weight_per_class) / counts
 

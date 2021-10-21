@@ -28,7 +28,7 @@ class TabularTargetValidator(BaseTargetValidator):
         It does so by also using the classes from the test data, to prevent encoding
         errors
 
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 The labels of the current task. They are going to be encoded in case
                 of classification
@@ -100,7 +100,7 @@ class TabularTargetValidator(BaseTargetValidator):
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             y (SUPPORTED_TARGET_TYPES)
                 A set of targets that are going to be encoded if the current task
                 is classification
@@ -152,7 +152,7 @@ class TabularTargetValidator(BaseTargetValidator):
         """
         Revert any encoding transformation done on a target array
 
-        Arguments:
+        Args:
             y (typing.Union[np.ndarray, pd.DataFrame, pd.Series]):
                 Target array to be transformed back to original form before encoding
         Returns:
@@ -189,7 +189,7 @@ class TabularTargetValidator(BaseTargetValidator):
         """
         Perform dimensionality and data type checks on the targets
 
-        Arguments:
+        Args:
             y (typing.Union[np.ndarray, pd.DataFrame, pd.Series]):
                 A set of features whose dimensionality and data type is going to be checked
         """
