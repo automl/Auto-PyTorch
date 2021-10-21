@@ -204,6 +204,7 @@ class Backend(object):
         return self.context.temporary_directory
 
     def _make_internals_directory(self) -> None:
+        # TODO: make exist_ok a function argument
         try:
             os.makedirs(self.internals_directory, exist_ok=True)
         except Exception as e:

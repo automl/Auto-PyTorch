@@ -118,7 +118,6 @@ def shake_get_alpha_beta(
     method: str
 ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
     """
-    """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     Each method name is available in the referred paper.
     Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
@@ -137,8 +136,8 @@ def shake_get_alpha_beta(
         Title: Shake-shake regularization
         Author: Xavier Gastaldi
         URL: https://arxiv.org/abs/1705.07485
-    """
-    https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
+
+    The names have been taken from the paper as well.
     Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
     """
     if not is_training:
