@@ -99,7 +99,26 @@ def shake_get_alpha_beta(
     method: str
 ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
     """
+    """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
+    Each method name is available in the referred paper.
+    Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
+
+    Args:
+        is_training (bool): Whether the computation for the training
+        is_cuda (bool): Whether the tensor is on CUDA
+        method (str): The shake method either `even-even`, `shake-even`, `shake-shake` or `M3`
+
+    Returns:
+        alpha, beta (Tuple[float, float]):
+            alpha (in [0, 1]) is the weight coefficient  for the forward pass
+            beta (in [0, 1]) is the weight coefficient for the backward pass
+
+    Reference:
+        Title: Shake-shake regularization
+        Author: Xavier Gastaldi
+        URL: https://arxiv.org/abs/1705.07485
+    """
     https://arxiv.org/abs/1705.07485. The names have been taken from the paper as well.
     Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
     """
