@@ -254,7 +254,7 @@ class BaseTask:
                                                         NoResamplingStrategyTypes]] = None,
                     resampling_strategy_args: Optional[Dict[str, Any]] = None,
                     dataset_name: Optional[str] = None,
-                    return_only: Optional[bool] = False
+                    update_dataset_attribute: Optional[bool] = True
                     ) -> BaseDataset:
         raise NotImplementedError("Function called on BaseTask, this can only be called by "
                                   "specific task which is a child of the BaseTask")
@@ -276,7 +276,7 @@ class BaseTask:
             None
         """
         unknown_keys = []
-        for option, value in pipeline_config_kwargs.items():
+        for option in pipeline_config_kwargs.keys():
             if option in self.pipeline_options.keys():
                 pass
             else:
@@ -587,7 +587,7 @@ class BaseTask:
             all_supported_metrics=self._all_supported_metrics
         )
 
-        status, cost, runtime, additional_info = ta.run(num_run, cutoff=self._time_for_task)
+        status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
         if status == StatusType.SUCCESS:
             self._logger.info("Finished creating dummy predictions.")
         else:
@@ -1263,7 +1263,7 @@ class BaseTask:
                                        resampling_strategy=resampling_strategy,
                                        resampling_strategy_args=resampling_strategy_args,
                                        dataset_name=dataset_name,
-                                       return_only=True)
+                                       update_dataset_attribute=False)
 
         # TAE expects each configuration to have a config_id.
         # For fitting a pipeline as it is not part of the

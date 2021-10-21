@@ -368,6 +368,8 @@ class AbstractEvaluator(object):
             self.additional_metrics = get_metrics(dataset_properties=self.dataset_properties,
                                                   all_supported_metrics=all_supported_metrics)
 
+        # See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+        # about fit_dictionary
         self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
         self._init_params = init_params
         self.fit_dictionary.update({
@@ -380,8 +382,7 @@ class AbstractEvaluator(object):
         })
 
         # Update fit dictionary with metrics passed to the evaluator
-        metrics_dict: Dict[str, List[str]] = {'additional_metrics': []}
-        metrics_dict['additional_metrics'].append(self.metric.name)
+        metrics_dict: Dict[str, List[str]] = {'additional_metrics': [self.metric.name]}
         if all_supported_metrics:
             assert self.additional_metrics is not None
             for metric in self.additional_metrics:

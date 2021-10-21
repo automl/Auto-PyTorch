@@ -18,6 +18,13 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class MixUp:
+    """
+    References:
+        Title: mixup: Beyond Empirical Risk Minimization
+        Authors: Hougyi Zhang et. al.
+        URL: https://arxiv.org/pdf/1710.09412.pdf%C2%A0
+        Github URL: https://github.com/facebookresearch/mixup-cifar10/blob/master/train.py#L119-L138
+    """
     def __init__(self, alpha: float,
                  weighted_loss: int = 0,
                  random_state: Optional[np.random.RandomState] = None,

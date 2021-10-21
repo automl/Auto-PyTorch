@@ -12,8 +12,12 @@ def get_tabular_preprocessers(X: Dict[str, Any]) -> Dict[str, List[BaseEstimator
     Creates a dictionary with two keys,
     numerical- containing list of numerical preprocessors
     categorical- containing list of categorical preprocessors
+
     Args:
         X: fit dictionary
+            See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+            about fit_dictionary
+
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """

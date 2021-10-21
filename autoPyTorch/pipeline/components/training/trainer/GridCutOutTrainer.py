@@ -7,6 +7,13 @@ from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
 
 class GridCutOutTrainer(CutOut, BaseTrainerComponent):
+    """
+    References:
+        Title: Improved Regularization of Convolutional Neural Networks with Cutout
+        Authors: Terrance DeVries and Graham W. Taylor
+        URL: https://arxiv.org/pdf/1708.04552.pdf
+        Github URL: https://github.com/hysts/pytorch_cutout/blob/master/dataloader.py#L36-L68
+    """
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:

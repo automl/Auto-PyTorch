@@ -33,6 +33,13 @@ def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ..
 
 
 class ShakeShakeFunction(Function):
+    """
+    References:
+        Title: Shake-Shake regularization
+        Authors: Xavier Gastaldi
+        URL: https://arxiv.org/pdf/1705.07485.pdf
+        Github URL: https://github.com/hysts/pytorch_shake_shake/blob/master/functions/shake_shake_function.py
+    """
     @staticmethod
     def forward(
         ctx: typing.Any,  # No typing for AutogradContext
@@ -65,6 +72,18 @@ shake_shake = ShakeShakeFunction.apply
 
 
 class ShakeDropFunction(Function):
+    """
+    References:
+        Title: ShakeDrop Regularization for Deep Residual Learning
+        Authors: Yoshihiro Yamada et. al.
+        URL: https://arxiv.org/pdf/1802.02375.pdf
+
+        Title: ShakeDrop Regularization
+        Authors: Yoshihiro Yamada et. al.
+        URL: https://openreview.net/pdf?id=S1NHaMW0b
+
+        Github URL: https://github.com/owruby/shake-drop_pytorch/blob/master/models/shakedrop.py
+    """
     @staticmethod
     def forward(ctx: typing.Any,
                 x: torch.Tensor,

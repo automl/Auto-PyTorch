@@ -9,6 +9,13 @@ from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
 
 class MixUpTrainer(MixUp, BaseTrainerComponent):
+    """
+    References:
+        Title: mixup: Beyond Empirical Risk Minimization
+        Authors: Hougyi Zhang et. al.
+        URL: https://arxiv.org/pdf/1710.09412.pdf%C2%A0
+        Github URL: https://github.com/facebookresearch/mixup-cifar10/blob/master/train.py#L119-L138
+    """
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
                          ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """

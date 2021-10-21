@@ -31,11 +31,11 @@ class ShapedResNetBackbone(ResNetBackbone):
 
         # use the get_shaped_neuron_counts to update the number of units
         neuron_counts = get_shaped_neuron_counts(
-            self.config['resnet_shape'],
-            in_features,
-            out_features,
-            self.config['max_units'],
-            self.config['num_groups'] + 2,
+            shape=self.config['resnet_shape'],
+            in_feat=in_features,
+            out_feat=out_features,
+            max_neurons=self.config['max_units'],
+            layer_count=self.config['num_groups'] + 2,
         )[:-1]
         self.config.update(
             {"num_units_%d" % (i): num for i, num in enumerate(neuron_counts)}
@@ -46,11 +46,11 @@ class ShapedResNetBackbone(ResNetBackbone):
             # nr of units for the architecture, since, it is mostly implemented for the
             # output layer, which is part of the head and not of the backbone.
             dropout_shape = get_shaped_neuron_counts(
-                self.config['dropout_shape'],
-                0,
-                0,
-                self.config["max_dropout"],
-                self.config['num_groups'] + 1,
+                shape=self.config['dropout_shape'],
+                in_feat=0,
+                out_feat=0,
+                max_neurons=self.config["max_dropout"],
+                layer_count=self.config['num_groups'] + 1,
             )[:-1]
 
             self.config.update(

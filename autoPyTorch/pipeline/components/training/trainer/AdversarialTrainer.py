@@ -21,6 +21,13 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class AdversarialTrainer(BaseTrainerComponent):
+    """
+    References:
+        Title: Explaining and Harnessing Adversarial Examples
+        Authors: Ian J. Goodfellow et. al.
+        URL: https://arxiv.org/pdf/1412.6572.pdf
+        Github URL: https://pytorch.org/tutorials/beginner/fgsm_tutorial.html#fgsm-attack
+    """
     def __init__(
             self,
             epsilon: float,
@@ -96,10 +103,10 @@ class AdversarialTrainer(BaseTrainerComponent):
         # training
         self.optimizer.zero_grad()
         original_outputs = self.model(original_data)
-        adversarial_output = self.model(adversarial_data)
+        adversarial_outputs = self.model(adversarial_data)
 
         loss_func = self.criterion_preparation(**criterion_kwargs)
-        loss = loss_func(self.criterion, original_outputs, adversarial_output)
+        loss = loss_func(self.criterion, original_outputs, adversarial_outputs)
         loss.backward()
         self.optimizer.step()
         if self.scheduler:
@@ -201,9 +208,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         add_hyperparameter(cs, epsilon, UniformFloatHyperparameter)
 
         add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
-        snapshot_ensemble_flag = False
-        if any(use_snapshot_ensemble.value_range):
-            snapshot_ensemble_flag = True
+        snapshot_ensemble_flag = any(use_snapshot_ensemble.value_range)
 
         use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
         cs.add_hyperparameter(use_snapshot_ensemble)
@@ -214,9 +219,7 @@ class AdversarialTrainer(BaseTrainerComponent):
             cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
             cs.add_condition(cond)
 
-        lookahead_flag = False
-        if any(use_lookahead_optimizer.value_range):
-            lookahead_flag = True
+        lookahead_flag = any(use_lookahead_optimizer.value_range)
 
         use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
         cs.add_hyperparameter(use_lookahead_optimizer)

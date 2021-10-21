@@ -71,11 +71,12 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
-        assert isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)),\
-            "This Evaluator is used for HPO Search. " \
-            "Val Split is required for HPO search. " \
-            "Expected 'self.resampling_strategy' in" \
-            " '(CrossValTypes, HoldoutValTypes)' got {}".format(self.datamanager.resampling_strategy)
+
+        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            raise ValueError(
+                'TrainEvaluator expect to have (CrossValTypes, HoldoutValTypes) as '
+                'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
+            )
 
         self.splits = self.datamanager.splits
         if self.splits is None:
@@ -271,6 +272,8 @@ class TrainEvaluator(AbstractEvaluator):
 
         self.indices[fold] = ((train_indices, test_indices))
 
+        # See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
+        # about fit_dictionary
         X = {'train_indices': train_indices,
              'val_indices': test_indices,
              'split_id': fold,

@@ -492,7 +492,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     X[key] = X[key].astype(dtype.name)
                 except Exception as e:
                     # Try inference if possible
-                    self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
+                    self.logger.warning(f'Casting the column {key} to {dtype} caused the exception {e}')
                     pass
         else:
             # Calling for the first time to infer the categories
