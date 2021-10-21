@@ -31,7 +31,6 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             np.ndarray: that processes data
             Dict[str, np.ndarray]: arguments to the criterion function
         """
-
         r = self.random_state.rand(1)
         if r > self.cutout_prob:
             y_a = y
@@ -40,14 +39,14 @@ class RowCutOutTrainer(CutOut, BaseTrainerComponent):
             return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
         size: int = np.shape(X)[1]
-        indices = self.random_state.choice(
+        cut_column_indices = self.random_state.choice(
             range(size),
             max(1, np.int32(size * self.patch_ratio)),
             replace=False,
         )
 
         # Mask the selected features as 0
-        X[:, indices] = 0
+        X[:, cut_column_indices] = 0
         lam = 1
         y_a = y
         y_b = y
