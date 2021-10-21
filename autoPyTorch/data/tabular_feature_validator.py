@@ -170,7 +170,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     self.categorical_columns.append(i)
 
         # Lastly, store the number of features
-        self.num_features = len(X.columns)
+        self.num_features = np.shape(X)[1]
 
         return self
 
