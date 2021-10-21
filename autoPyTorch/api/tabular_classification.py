@@ -27,11 +27,14 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class TabularClassificationTask(BaseTask):
     """
     Tabular Classification API to the pipelines.
+
     Args:
         seed (int):
             seed to be used for reproducibility.
         n_jobs (int), (default=1):
             number of consecutive processes to spawn.
+        nr_threads (int), (default=1):
+            number of threads to use for each process.
         logging_config (Optional[Dict]):
             specifies configuration for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50):
@@ -63,6 +66,7 @@ class TabularClassificationTask(BaseTask):
         self,
         seed: int = 1,
         n_jobs: int = 1,
+        nr_threads: int = 1,
         logging_config: Optional[Dict] = None,
         ensemble_size: int = 50,
         ensemble_nbest: int = 50,
@@ -83,6 +87,7 @@ class TabularClassificationTask(BaseTask):
         super().__init__(
             seed=seed,
             n_jobs=n_jobs,
+            nr_threads=nr_threads,
             logging_config=logging_config,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,

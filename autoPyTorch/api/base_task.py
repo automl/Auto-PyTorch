@@ -101,7 +101,10 @@ class BaseTask:
     Base class for the tasks that serve as API to the pipelines.
     Args:
         seed (int), (default=1): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
+        n_jobs (int), (default=1):
+            number of consecutive processes to spawn.
+        nr_threads (int), (default=1):
+            number of threads to use for each process.
         logging_config (Optional[Dict]): specifies configuration
             for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50): Number of models added to the ensemble built by
@@ -138,6 +141,7 @@ class BaseTask:
         self,
         seed: int = 1,
         n_jobs: int = 1,
+        nr_threads: int = 1,
         logging_config: Optional[Dict] = None,
         ensemble_size: int = 50,
         ensemble_nbest: int = 50,
@@ -158,6 +162,7 @@ class BaseTask:
     ) -> None:
         self.seed = seed
         self.n_jobs = n_jobs
+        self.nr_threads = nr_threads
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
         self.max_models_on_disc = max_models_on_disc
@@ -412,7 +417,7 @@ class BaseTask:
             dask.distributed.LocalCluster(
                 n_workers=self.n_jobs,
                 processes=True,
-                threads_per_worker=2,
+                threads_per_worker=self.nr_threads,
                 # We use the temporal directory to save the
                 # dask workers, because deleting workers
                 # more time than deleting backend directories
