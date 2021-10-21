@@ -29,7 +29,8 @@ SUPPORTED_FEAT_TYPES = Union[
 class BaseFeatureValidator(BaseEstimator):
     """
     A class to pre-process features. In this regards, the format of the data is checked,
-    and if applicable, features are encoded
+    and if applicable, features are encoded.
+
     Attributes:
         feat_type (List[str]):
             List of the column types found by this estimator during fit.
@@ -37,23 +38,19 @@ class BaseFeatureValidator(BaseEstimator):
             Class name of the data type provided during fit.
         encoder (Optional[BaseEstimator])
             Host a encoder object if the data requires transformation (for example,
-            if provided a categorical column in a pandas DataFrame)
-        enc_columns (List[str])
-            List of columns that were encoded.
+            if provided a categorical column in a pandas DataFrame).
     """
-    def __init__(self,
-                 logger: Optional[Union[PicklableClientLogger, logging.Logger
-                                        ]
-                                  ] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
+    ) -> None:
         # Register types to detect unsupported data format changes
         self.feat_type: Optional[List[str]] = None
         self.data_type: Optional[type] = None
         self.dtypes: List[str] = []
         self.column_order: List[str] = []
 
-        self.encoder: Optional[BaseEstimator] = None
-        self.enc_columns: List[str] = []
+        self.column_transformer: Optional[BaseEstimator] = None
 
         self.logger: Union[
             PicklableClientLogger, logging.Logger
