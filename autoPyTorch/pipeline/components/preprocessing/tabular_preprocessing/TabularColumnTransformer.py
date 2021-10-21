@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import make_pipeline
+# from sklearn.pipeline import make_pipeline
 
 import torch
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import (
     autoPyTorchTabularPreprocessingComponent
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.utils import get_tabular_preprocessers
+# from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.utils import get_tabular_preprocessers
 from autoPyTorch.utils.common import FitRequirement, subsampler
 
 
@@ -47,15 +47,16 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         Returns:
             "TabularColumnTransformer": an instance of self
         """
-        self.check_requirements(X, y)
-        numerical_pipeline = 'drop'
-        categorical_pipeline = 'drop'
 
-        preprocessors = get_tabular_preprocessers(X)
-        if len(X['dataset_properties']['numerical_columns']):
-            numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-        if len(X['dataset_properties']['categorical_columns']):
-            categorical_pipeline = make_pipeline(*preprocessors['categorical'])
+        self.check_requirements(X, y)
+        numerical_pipeline = 'passthrough'
+        categorical_pipeline = 'passthrough'
+
+        # preprocessors = get_tabular_preprocessers(X)
+        # if len(X['dataset_properties']['numerical_columns']):
+        #     numerical_pipeline = make_pipeline(*preprocessors['numerical'])
+        # if len(X['dataset_properties']['categorical_columns']):
+        #     categorical_pipeline = make_pipeline(*preprocessors['categorical'])
 
         self.preprocessor = ColumnTransformer([
             ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns']),
@@ -71,6 +72,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
         self.preprocessor.fit(X_train)
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

@@ -96,7 +96,7 @@ class TabularTargetValidator(BaseTargetValidator):
 
     def transform(
         self,
-        y: Union[SUPPORTED_TARGET_TYPES],
+        y: SUPPORTED_TARGET_TYPES,
     ) -> np.ndarray:
         """
         Validates and fit a categorical encoder (if needed) to the features.

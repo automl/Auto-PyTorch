@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 class RowCutMixTrainer(MixUp, BaseTrainerComponent):
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -26,39 +26,38 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
             np.ndarray: that processes data
             typing.Dict[str, np.ndarray]: arguments to the criterion function
         """
-        alpha, beta = 1.0, 1.0
-        lam = self.random_state.beta(alpha, beta)
-        batch_size = X.shape[0]
-        device = torch.device('cuda' if X.is_cuda else 'cpu')
-        permed_indices = torch.randperm(batch_size).to(device)
+        beta = 1.0
+        lam = self.random_state.beta(beta, beta)
+        batch_size, n_columns = np.shape(X)
+        # shuffled_indices: Shuffled version of torch.arange(batch_size)
+        shuffled_indices = torch.randperm(batch_size).cuda() if X.is_cuda else torch.randperm(batch_size)
 
         r = self.random_state.rand(1)
         if beta <= 0 or r > self.alpha:
-            return X, {'y_a': y, 'y_b': y[permed_indices], 'lam': 1}
+            return X, {'y_a': y, 'y_b': y[shuffled_indices], 'lam': 1}
 
-        # batch_size (permutation of rows), col_size = X.shape
-        col_size = X.shape[1]
-        col_indices = torch.tensor(
+        cut_column_indices = torch.as_tensor(
             self.random_state.choice(
-                range(col_size),
-                max(1, int(col_size * lam)),
-                replace=False
-            )
+                range(n_columns),
+                max(1, np.int32(n_columns * lam)),
+                replace=False,
+            ),
         )
 
-        # Replace selected columns with columns from another data point
-        X[:, col_indices] = X[permed_indices, :][:, col_indices]
+        # Replace the values in `cut_indices` columns with
+        # the values from `permed_indices`
+        X[:, cut_column_indices] = X[shuffled_indices, :][:, cut_column_indices]
 
-        # Adjust lam
-        lam = 1 - len(col_indices) / X.shape[1]
+        # Since we cannot cut exactly `lam x 100 %` of rows, we need to adjust the `lam`
+        lam = 1 - (len(cut_column_indices) / n_columns)
 
-        y_a, y_b = y, y[permed_indices]
+        y_a, y_b = y, y[shuffled_indices]
 
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RowCutMixTrainer',
             'name': 'MixUp Regularized with Cutoff Tabular Trainer',

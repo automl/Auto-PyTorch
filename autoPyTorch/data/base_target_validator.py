@@ -48,7 +48,7 @@ class BaseTargetValidator(BaseEstimator):
                                         logging.Logger
                                         ]
                                   ] = None,
-                 ):
+                 ) -> None:
         self.is_classification = is_classification
 
         self.data_type: Optional[type] = None
@@ -98,6 +98,7 @@ class BaseTargetValidator(BaseEstimator):
                                      np.shape(y_test)
                                  ))
             if isinstance(y_train, pd.DataFrame):
+                y_train = cast(pd.DataFrame, y_train)
                 y_test = cast(pd.DataFrame, y_test)
                 if y_train.columns.tolist() != y_test.columns.tolist():
                     raise ValueError(
@@ -143,7 +144,7 @@ class BaseTargetValidator(BaseEstimator):
 
     def transform(
         self,
-        y: Union[SUPPORTED_TARGET_TYPES],
+        y: SUPPORTED_TARGET_TYPES,
     ) -> np.ndarray:
         """
         Args:
