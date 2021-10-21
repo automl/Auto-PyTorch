@@ -252,7 +252,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 if X[column].isna().all():
                     X[column] = X[column].astype('object')
 
-        X = self.column_transformer.transform(X)
+        if self.column_transformer is not None:
+            X = self.column_transformer.transform(X)
 
         # Sparse related transformations
         # Not all sparse format support index sorting
