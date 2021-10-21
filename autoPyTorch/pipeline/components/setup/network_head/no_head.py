@@ -23,7 +23,6 @@ class NoHead(NetworkHeadComponent):
         layers = []
         in_features = np.prod(input_shape).item()
         out_features = np.prod(output_shape).item()
-        layers.append(_activations[self.config["activation"]]())
         layers.append(nn.Linear(in_features=in_features,
                                 out_features=out_features))
         return nn.Sequential(*layers)
