@@ -337,8 +337,6 @@ class ResBlock(nn.Module):
             residual = x
         else:  # Early-return because no need of skip connection
             return self.layers(x)
-                # We use a skip connection but we do not need to match dimensions
-                residual = x
 
         if self.config["multi_branch_choice"] == 'shake-shake':
             x1 = self.layers(x)
