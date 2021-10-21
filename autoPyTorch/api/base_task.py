@@ -1517,6 +1517,7 @@ class BaseTask:
                 Models are drawn with replacement.
             precision (int), (default=32): Numeric precision used when loading
                 ensemble data. Can be either 16, 32 or 64.
+
         Returns:
             EnsembleBuilderManager
         """
