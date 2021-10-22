@@ -1429,6 +1429,7 @@ class BaseTask:
                              "Please call the `search()` method of {} prior to "
                              "fit_ensemble().".format(self.__class__.__name__))
 
+        precision = precision if precision is not None else self.precision
         if precision not in [16, 32, 64]:
             raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
 
