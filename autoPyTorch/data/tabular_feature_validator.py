@@ -345,7 +345,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 and self.all_nan_columns is not None  # Ignore all_nan_columns is None
                 and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
             ):
-                diff_indices = np.where(np.array(dtypes_diff) is True)[0]
+                diff_indices = np.where(np.array(dtypes_diff))[0]
 
                 if not all([X[X.columns[i]].isna().all() for i in diff_indices]):
                     # The dtypes can be different if the column belongs
