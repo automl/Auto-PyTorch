@@ -273,13 +273,14 @@ class TrainerChoice(autoPyTorchChoice):
             port=X['logger_port'
                    ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
+        with torch.autograd.set_detect_anomaly(True):
+            # Call the actual fit function.
+            self._fit(
+                X=X,
+                y=y,
+                **kwargs
+            )
 
-        # Call the actual fit function.
-        self._fit(
-            X=X,
-            y=y,
-            **kwargs
-        )
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
         self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
