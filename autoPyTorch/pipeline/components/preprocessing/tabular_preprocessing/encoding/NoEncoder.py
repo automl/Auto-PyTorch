@@ -39,7 +39,7 @@ class NoEncoder(BaseEncoder):
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
-        X.update({'encoder': self.preprocessor})
+        # X.update({'encoder': self.preprocessor})
         return X
 
     @staticmethod

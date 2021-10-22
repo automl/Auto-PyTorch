@@ -275,7 +275,7 @@ def test_every_trainer_is_valid():
 
 @pytest.mark.parametrize("test_input,expected", [
     ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer', 'AdversarialTrainer'])),
-    ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer'])),
+    ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer', 'AdversarialTrainer'])),
     ("time_series_classification", set([])),
 ])
 def test_get_set_config_space(test_input, expected):
@@ -363,10 +363,7 @@ def test_cutput_regularizers(cutout_prob, regularizer, X):
         np.testing.assert_array_equal(X_new.numpy(), X.numpy())
     else:
         # There has to be a change in the features
-        if len(X.shape) > 2:
-            expected = 0.0
-        else:
-            expected = -1
+        expected = 0.0
         # The original X does not have the expected value
         # If a cutoff happened, then this value is gonna be there
         assert expected in X_new

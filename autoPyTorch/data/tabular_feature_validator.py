@@ -100,6 +100,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if cmp1 not in choices or cmp2 not in choices:
             raise ValueError('The comparator for the column order only accepts {}, '
                              'but got {} and {}'.format(choices, cmp1, cmp2))
+
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
@@ -246,13 +247,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # having a value for a categorical column.
         # We need to convert the column in test data to
         # object otherwise the test column is interpreted as float
-        if len(self.categorical_columns) > 0:
-            categorical_columns = self.column_transformer.transformers_[0][-1]
-            for column in categorical_columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype('object')
-
         if self.column_transformer is not None:
+            if len(self.categorical_columns) > 0:
+                categorical_columns = self.column_transformer.transformers_[0][-1]
+                for column in categorical_columns:
+                    if X[column].isna().all():
+                        X[column] = X[column].astype('object')
             X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -345,11 +345,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 and self.all_nan_columns is not None  # Ignore all_nan_columns is None
                 and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
             ):
-                # The dtypes can be different if and only if the column belongs
-                # to all_nan_columns as these columns would be imputed.
-                raise ValueError("The dtype of the features must not be changed after fit(), but"
-                                 " the dtypes of some columns are different between training ({}) and"
-                                 " test ({}) datasets.".format(self.dtypes, dtypes))
+                diff_indices = np.where(np.array(dtypes_diff) is True)[0]
+
+                if not all([X[X.columns[i]].isna().all() for i in diff_indices]):
+                    # The dtypes can be different if the column belongs
+                    # to all_nan_columns if the dataset is in training
+                    # set or if the column is all nan if the dataset
+                    # is for testing as these columns would be imputed.
+                    raise ValueError("The dtype of the features must not be changed after fit(), but"
+                                     " the dtypes of some columns are different between training ({}) and"
+                                     " test ({}) datasets.".format(self.dtypes, dtypes))
 
     def _get_columns_info(
         self,
