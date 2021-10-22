@@ -329,16 +329,17 @@ class TestNetworkBackbone:
 
         # test 10 random configurations
         for i in range(10):
-            config = cs.sample_configuration()
-            network_backbone_choice.set_hyperparameters(config)
-            backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
-            assert backbone is not None
-            backbone = backbone.to(device)
-            dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
-            output = backbone(dummy_input)
-            assert output.shape[1:] != output
-            loss = output.sum()
-            loss.backward()
+            with torch.autograd.set_detect_anomaly(True):
+                config = cs.sample_configuration()
+                network_backbone_choice.set_hyperparameters(config)
+                backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
+                assert backbone is not None
+                backbone = backbone.to(device)
+                dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
+                output = backbone(dummy_input)
+                assert output.shape[1:] != output
+                loss = output.sum()
+                loss.backward()
 
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
