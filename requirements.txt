@@ -17,3 +17,4 @@ catboost
 lightgbm
 flaky
 tabulate
+seaborn
