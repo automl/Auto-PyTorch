@@ -273,7 +273,7 @@ class TrainerChoice(autoPyTorchChoice):
             port=X['logger_port'
                    ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
-        
+
         # Call the actual fit function.
         self._fit(
             X=X,
