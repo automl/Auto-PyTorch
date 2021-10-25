@@ -339,7 +339,10 @@ class TestNetworkBackbone:
                 output = backbone(dummy_input)
                 assert output.shape[1:] != output
                 loss = output.sum()
-                loss.backward()
+                try:
+                    loss.backward()
+                except RuntimeError as err:
+                    print(f'Unexpected error = {err} \n with backbone = {backbone}')
 
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
