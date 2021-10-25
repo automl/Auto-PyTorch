@@ -2,7 +2,6 @@ import copy
 from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace import Configuration
 
 import pytest
 
