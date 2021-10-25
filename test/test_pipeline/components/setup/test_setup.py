@@ -2,6 +2,7 @@ import copy
 from typing import Any, Dict, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace import Configuration
 
 import pytest
 
@@ -329,16 +330,16 @@ class TestNetworkBackbone:
 
         # test 10 random configurations
         for i in range(10):
+            config = cs.sample_configuration()
+            network_backbone_choice.set_hyperparameters(config)
+            backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
+            assert backbone is not None
+            backbone = backbone.to(device)
+            dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
+            output = backbone(dummy_input)
+            assert output.shape[1:] != output
+            loss = output.sum()
             with torch.autograd.set_detect_anomaly(True):
-                config = cs.sample_configuration()
-                network_backbone_choice.set_hyperparameters(config)
-                backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
-                assert backbone is not None
-                backbone = backbone.to(device)
-                dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
-                output = backbone(dummy_input)
-                assert output.shape[1:] != output
-                loss = output.sum()
                 try:
                     loss.backward()
                 except RuntimeError as err:
