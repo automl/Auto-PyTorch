@@ -78,7 +78,7 @@ class _ResidualBlock(nn.Module):
     def forward(self, x: torch.Tensor, res: torch.Tensor) -> torch.Tensor:
         shortcut = self.shortcut(res)
         shortcut = self.bn(shortcut)
-        x += shortcut
+        x = x + shortcut
         return torch.relu(x)
 
 
