@@ -338,10 +338,10 @@ class TestNetworkBackbone:
             dummy_input = torch.randn((2, *input_shape), dtype=torch.float)
             output = backbone(dummy_input)
             assert output.shape[1:] != output
-            loss = output.sum()
+            # loss = output.sum()
             with torch.autograd.set_detect_anomaly(True):
                 try:
-                    loss.backward()
+                    output.backward()
                 except RuntimeError as err:
                     pytest.fail(f"Failed with unexpected error = {err} \n using config = {config}")
 
