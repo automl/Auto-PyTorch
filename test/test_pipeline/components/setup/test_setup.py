@@ -342,7 +342,7 @@ class TestNetworkBackbone:
                 try:
                     loss.backward()
                 except RuntimeError as err:
-                    print(f'Unexpected error = {err} \n with backbone = {backbone}')
+                    pytest.fail(f"Failed with unexpected error = {err} \n using backbone = {backbone}")
 
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
