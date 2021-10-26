@@ -134,7 +134,7 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
         estimator._search(optimize_metric='accuracy', dataset=dataset, tae_func=pipeline_fit,
                           min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
                           enable_traditional_pipeline=False,
-                          total_walltime_limit=10, func_eval_time_limit_secs=5,
+                          total_walltime_limit=20, func_eval_time_limit_secs=10,
                           load_models=False)
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
