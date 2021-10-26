@@ -19,10 +19,11 @@ class StandardScaler(BaseScaler):
         self.random_state = random_state
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseScaler:
-
         self.check_requirements(X, y)
 
-        self.preprocessor['numerical'] = TimeSeriesScaler(mode="standard")
+        sequence_lengths_train = X['dataset_properties']['sequence_lengths_train']
+        self.preprocessor['numerical'] = TimeSeriesScaler(mode="standard",
+                                                          sequence_lengths_train=sequence_lengths_train)
         return self
 
     @staticmethod

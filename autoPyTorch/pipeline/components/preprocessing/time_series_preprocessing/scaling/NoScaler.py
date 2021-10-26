@@ -30,9 +30,10 @@ class NoScaler(BaseScaler):
         Returns:
             instance of self
         """
-
         self.check_requirements(X, y)
-        self.preprocessor["numerical"] = TimeSeriesScaler(mode="none")
+
+        sequence_lengths_train = X['dataset_properties']['sequence_lengths_train']
+        self.preprocessor["numerical"] = TimeSeriesScaler(mode="none", sequence_lengths_train=sequence_lengths_train)
         return self
 
     @staticmethod

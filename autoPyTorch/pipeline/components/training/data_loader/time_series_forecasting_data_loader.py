@@ -23,6 +23,8 @@ from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.utils.common import  custom_collate_fn
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
+    TimeSeriesTransformer
 
 
 class ExpandTransformTimeSeries(object):
@@ -126,7 +128,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
-        datamanager = X['backend'].load_datamanager() # type: TimeSeriesForcecastingDataset
+        datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
         assert self.subseq_length < datamanager.seq_length_min, "dataloader's window size must be smaller than the" \
                                                                 "minimal sequence length of the dataset!!"
         # TODO, consider bucket setting
@@ -146,7 +148,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
-
+            self.dataset_small_preprocess = True
+            self.preprocess_transforms_test = X['preprocess_transforms']
+        else:
+            self.dataset_small_preprocess = False
 
         self.n_prediction_steps = datamanager.n_prediction_steps
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
@@ -165,7 +170,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         valid_indices = np.hstack([valid_idx for valid_idx in valid_indices])
         _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
-
 
         # test_indices not required as testsets usually lies on the trail of hte sequence
         #_, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
@@ -211,13 +215,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         candidate_transformations = []  # type: List[Callable]
 
+        #if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
+        #    candidate_transformations.extend(X['preprocess_transforms'])
+
         candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
                                                           window_size=self.window_size,
                                                           subseq_length=self.subseq_length)))
         candidate_transformations.append((ExpandTransformTimeSeries()))
-
-        if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
-            candidate_transformations.extend(X['preprocess_transforms'])
 
         # Transform to tensor
         candidate_transformations.append(torch.from_numpy)
@@ -235,8 +239,17 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if isinstance(X, np.ndarray):
             X = X[-self.subseq_length - self.n_prediction_steps + 1:]
 
+            if self.dataset_small_preprocess:
+                for preprocess in self.preprocess_transforms_test:
+                    if isinstance(preprocess, TimeSeriesTransformer):
+                        if preprocess.is_training:
+                            preprocess.eval()
+
+                transform = torchvision.transforms.Compose(self.preprocess_transforms_test)
+                X = transform(X)
+
             if y is not None:
-                # we want to make sure that X, and y can be mapped one 1 one (as sampling y requires a shifted value)
+                # we want to make sure that X, and y can be mapped one to one (as sampling y requires a shifted value)
                 y = y[-self.subseq_length - self.n_prediction_steps + 1:]
 
             dataset = TimeSeriesSequence(
@@ -244,7 +257,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 # This dataset is used for loading test data in a batched format
                 train_transforms=self.test_transform,
                 val_transforms=self.test_transform,
-                do_split=False,
             )
 
         elif isinstance(X, TimeSeriesSequence):

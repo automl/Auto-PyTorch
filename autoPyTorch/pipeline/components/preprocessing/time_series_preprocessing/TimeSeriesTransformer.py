@@ -13,11 +13,11 @@ from autoPyTorch.utils.common import FitRequirement, subsampler
 
 
 class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
-
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
         super().__init__()
         self.random_state = random_state
         self.preprocessor: Optional[Pipeline] = None
+        self.is_training = True
         self.add_fit_requirements([
             FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_features', (List,), user_defined=True, dataset_property=True)])
@@ -67,6 +67,10 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         """
         X.update({'time_series_transformer': self})
         return X
+
+    def eval(self):
+        self.is_training = False
+        self.preprocessor.set_params(timeseriesscaler__is_training=False)
 
     def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
 

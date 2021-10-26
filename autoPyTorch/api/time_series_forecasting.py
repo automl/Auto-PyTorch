@@ -117,7 +117,7 @@ class TimeSeriesForecastingTask(BaseTask):
         y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        #target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+        target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
         n_prediction_steps: int = 1,
         freq: Optional[Union[str, int, List[int]]] = None,
         dataset_name: Optional[str] = None,
@@ -147,6 +147,8 @@ class TimeSeriesForecastingTask(BaseTask):
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
+            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+                (used for multi-variable prediction), indicates which value needs to be predicted
             n_prediction_steps: int
                 How many steps in advance we need to predict
             freq: Optional[Union[str, int, List[int]]]
@@ -216,6 +218,8 @@ class TimeSeriesForecastingTask(BaseTask):
         # we have to create a logger for at this point for the validator
         self._logger = self._get_logger(dataset_name)
 
+        self.target_variables = target_variables
+
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         self.InputValidator = TimeSeriesForecastingInputValidator(
@@ -239,6 +243,8 @@ class TimeSeriesForecastingTask(BaseTask):
             shift_input_data=shift_input_data,
             normalize_y=normalize_y,
         )
+
+        self.normalize_y = normalize_y
 
         if self.dataset.freq is not None or not self.customized_window_size:
             base_window_size = int(np.ceil(self.dataset.freq))
@@ -288,14 +294,39 @@ class TimeSeriesForecastingTask(BaseTask):
             self,
             X_test: List[np.ndarray],
             batch_size: Optional[int] = None,
-            n_jobs: int = 1
+            n_jobs: int = 1,
+            y_train:Optional[List[np.ndarray]]=None,
+            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
     ) -> np.ndarray:
+        """
+                    target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+                (used for multi-variable prediction), indicates which value needs to be predicted
+        """
         y_pred = np.ones([len(X_test), self.dataset.n_prediction_steps])
-        y_train_mean = self.dataset.y_train_mean
-        y_train_std = self.dataset.y_train_std
         for seq_idx, seq in enumerate(X_test):
-            seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
-            seq_pred = seq_pred * y_train_std + y_train_mean
+            if self.normalize_y:
+                if pd.DataFrame(seq).shape[-1] > 1:
+                    if target_variables is None and y_train is None:
+                        raise ValueError('For multi-variant prediction task, either target_variables or y_train needs to '
+                                         'be provided!')
+                    if y_train is None:
+                        y_train = seq[target_variables]
+                else:
+                    y_train = seq
+                if self.dataset.shift_input_data:
+                    # if input data is shifted, we must compute the mean and standard deviation with the shifted data.
+                    # This is helpful when the
+                    mean_seq = np.mean(y_train[self.dataset.n_prediction_steps])
+                    std_seq = np.std(y_train[self.dataset.n_prediction_steps])
+                else:
+                    mean_seq = np.mean(y_train)
+                    std_seq = np.std(y_train)
+
+                seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
+
+                seq_pred = seq_pred * mean_seq + std_seq
+            else:
+                seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
             y_pred[seq_idx] = seq_pred
         return y_pred
 
