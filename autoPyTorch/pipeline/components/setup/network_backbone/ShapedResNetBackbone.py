@@ -48,9 +48,13 @@ class ShapedResNetBackbone(ResNetBackbone):
                 self.config['resnet_shape'], 0, 0, 1000, self.config['num_groups'] + 1
             )[:-1]
 
-            dropout_shape = [
-                dropout / 1000 * self.config["max_dropout"] for dropout in dropout_shape
-            ]
+            dropout_shape = get_shaped_neuron_counts(
+                shape=self.config['dropout_shape'],
+                in_feat=0,
+                out_feat=0,
+                max_neurons=self.config["max_dropout"],
+                layer_count=self.config['num_groups'] + 1,
+            )[:-1]
 
             self.config.update(
                 {"dropout_%d" % (i + 1): dropout for i, dropout in enumerate(dropout_shape)}

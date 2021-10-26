@@ -69,7 +69,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             np.ndarray: Transformed features
         """
         X.update({'train_data_loader': self.train_data_loader,
-                  'val_data_loader': self.val_data_loader})
+                  'val_data_loader': self.val_data_loader,
+                  'test_data_loader': self.test_data_loader})
         return X
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
@@ -112,7 +113,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             shuffle=True,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
-            drop_last=X.get('drop_last', True),
+            drop_last=X.get('drop_last', False),
             collate_fn=custom_collate_fn,
         )
 
@@ -126,6 +127,11 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             collate_fn=custom_collate_fn,
         )
 
+        if X.get('X_test', None) is not None:
+            self.test_data_loader = self.get_loader(X=X['X_test'],
+                                                    y=X['y_test'],
+                                                    batch_size=self.batch_size)
+
         return self
 
     def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
@@ -137,6 +143,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         dataset = BaseDataset(
             train_tensors=(X, y),
+            seed=self.random_state.get_state()[1][0],
             # This dataset is used for loading test data in a batched format
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
