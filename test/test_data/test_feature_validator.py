@@ -1,4 +1,5 @@
 import copy
+import functools
 
 import numpy as np
 
@@ -236,8 +237,10 @@ def test_featurevalidator_categorical_nan(input_data_featuretest):
     validator.fit(input_data_featuretest)
     transformed_X = validator.transform(input_data_featuretest)
     assert any(pd.isna(input_data_featuretest))
-    assert any((-1 in categories) or ('-1' in categories) or ('Missing!' in categories) for categories in
-               validator.encoder.named_transformers_['encoder'].categories_)
+    categories_ = validator.column_transformer.named_transformers_['categorical_pipeline'].\
+        named_steps['ordinalencoder'].categories_
+    assert any(('0' in categories) or (0 in categories) or ('missing_value' in categories) for categories in
+               categories_)
     assert np.shape(input_data_featuretest) == np.shape(transformed_X)
     assert np.issubdtype(transformed_X.dtype, np.number)
     assert validator._is_fitted
@@ -371,14 +374,14 @@ def test_features_unsupported_calls_are_raised():
     ),
     indirect=True
 )
-def test_no_encoder_created(input_data_featuretest):
+def test_no_column_transformer_created(input_data_featuretest):
     """
     Makes sure that for numerical only features, no encoder is created
     """
     validator = TabularFeatureValidator()
     validator.fit(input_data_featuretest)
     validator.transform(input_data_featuretest)
-    assert validator.encoder is None
+    assert validator.column_transformer is None
 
 
 @pytest.mark.parametrize(
@@ -389,14 +392,14 @@ def test_no_encoder_created(input_data_featuretest):
     ),
     indirect=True
 )
-def test_encoder_created(input_data_featuretest):
+def test_column_transformer_created(input_data_featuretest):
     """
     This test ensures an encoder is created if categorical data is provided
     """
     validator = TabularFeatureValidator()
     validator.fit(input_data_featuretest)
     transformed_X = validator.transform(input_data_featuretest)
-    assert validator.encoder is not None
+    assert validator.column_transformer is not None
 
     # Make sure that the encoded features are actually encoded. Categorical columns are at
     # the start after transformation. In our fixtures, this is also honored prior encode
@@ -523,3 +526,26 @@ def test_featurevalidator_new_data_after_fit(openml_id,
             X_test = X_test[reversed(columns)]
             with pytest.raises(ValueError, match=r"Changing the column order of the features"):
                 transformed_X = validator.transform(X_test)
+
+
+def test_comparator():
+    numerical = 'numerical'
+    categorical = 'categorical'
+
+    validator = TabularFeatureValidator
+
+    feat_type = [numerical, categorical] * 10
+    ans = [categorical] * 10 + [numerical] * 10
+    feat_type = sorted(
+        feat_type,
+        key=functools.cmp_to_key(validator._comparator)
+    )
+    assert ans == feat_type
+
+    feat_type = [numerical] * 10 + [categorical] * 10
+    ans = [categorical] * 10 + [numerical] * 10
+    feat_type = sorted(
+        feat_type,
+        key=functools.cmp_to_key(validator._comparator)
+    )
+    assert ans == feat_type

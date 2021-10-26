@@ -51,7 +51,7 @@ class BaseFeatureValidator(BaseEstimator):
         self.dtypes = []  # type: typing.List[str]
         self.column_order = []  # type: typing.List[str]
 
-        self.encoder = None  # type: typing.Optional[BaseEstimator]
+        self.column_transformer = None  # type: typing.Optional[BaseEstimator]
         self.enc_columns = []  # type: typing.List[str]
 
         self.logger: typing.Union[
