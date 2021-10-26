@@ -13,7 +13,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling
 
 
 # TODO: fix in preprocessing PR
-@unittest.skip("demonstrating skipping")
+@unittest.skip("Skipping tests as preprocessing is not finalised")
 class TestNormalizer(unittest.TestCase):
 
     def test_l2_norm(self):
@@ -132,7 +132,7 @@ class TestNormalizer(unittest.TestCase):
 
 
 # TODO: fix in preprocessing PR
-@unittest.skip("demonstrating skipping")
+@unittest.skip("Skipping tests as preprocessing is not finalised")
 class TestMinMaxScaler(unittest.TestCase):
 
     def test_minmax_scaler(self):
@@ -175,7 +175,7 @@ class TestMinMaxScaler(unittest.TestCase):
 
 
 # TODO: fix in preprocessing PR
-@unittest.skip("demonstrating skipping")
+@unittest.skip("Skipping tests as preprocessing is not finalised")
 class TestStandardScaler(unittest.TestCase):
 
     def test_standard_scaler(self):
@@ -219,7 +219,7 @@ class TestStandardScaler(unittest.TestCase):
 
 
 # TODO: fix in preprocessing PR
-@unittest.skip("demonstrating skipping")
+@unittest.skip("Skipping tests as preprocessing is not finalised")
 class TestNoneScaler(unittest.TestCase):
 
     def test_none_scaler(self):

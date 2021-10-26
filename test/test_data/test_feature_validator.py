@@ -608,7 +608,6 @@ def test_feature_validator_new_data_after_fit(
         assert sparse.issparse(transformed_X)
     else:
         assert isinstance(transformed_X, np.ndarray)
-    # assert np.shape(X_test) == np.shape(transformed_X)
 
     # And then check proper error messages
     if train_data_type == 'pandas':

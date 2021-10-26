@@ -14,7 +14,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 
 
 # TODO: fix in preprocessing PR
-@pytest.mark.skip("demonstrating skipping")
+@pytest.mark.skip("Skipping tests as preprocessing is not finalised")
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
                                                     'classification_categorical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)
