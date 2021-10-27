@@ -244,8 +244,6 @@ class TimeSeriesForecastingTask(BaseTask):
             normalize_y=normalize_y,
         )
 
-        self.normalize_y = normalize_y
-
         if self.dataset.freq is not None or not self.customized_window_size:
             base_window_size = int(np.ceil(self.dataset.freq))
             # we don't want base window size to large, which might cause a too long computation time, in which case
@@ -304,7 +302,7 @@ class TimeSeriesForecastingTask(BaseTask):
         """
         y_pred = np.ones([len(X_test), self.dataset.n_prediction_steps])
         for seq_idx, seq in enumerate(X_test):
-            if self.normalize_y:
+            if self.dataset.normalize_y:
                 if pd.DataFrame(seq).shape[-1] > 1:
                     if target_variables is None and y_train is None:
                         raise ValueError('For multi-variant prediction task, either target_variables or y_train needs to '
@@ -316,8 +314,8 @@ class TimeSeriesForecastingTask(BaseTask):
                 if self.dataset.shift_input_data:
                     # if input data is shifted, we must compute the mean and standard deviation with the shifted data.
                     # This is helpful when the
-                    mean_seq = np.mean(y_train[self.dataset.n_prediction_steps])
-                    std_seq = np.std(y_train[self.dataset.n_prediction_steps])
+                    mean_seq = np.mean(y_train[self.dataset.n_prediction_steps:])
+                    std_seq = np.std(y_train[self.dataset.n_prediction_steps:])
                 else:
                     mean_seq = np.mean(y_train)
                     std_seq = np.std(y_train)
