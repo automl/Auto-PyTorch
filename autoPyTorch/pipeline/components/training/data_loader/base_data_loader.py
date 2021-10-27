@@ -37,6 +37,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         self.batch_size = batch_size
         self.train_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
         self.val_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
+        self.test_data_loader: Optional[torch.utils.data.DataLoader] = None
 
         # We also support existing datasets!
         self.dataset = None
