@@ -15,14 +15,6 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
-from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
-    MULTICLASSMULTIOUTPUT,
-)
-from autoPyTorch.evaluation.abstract_evaluator import (
-    AbstractEvaluator,
-    fit_and_suppress_warnings
-)
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
@@ -134,7 +126,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             # However, this makes the shape unaligned with the shape of "self.Y_optimization"
             # TODO consider fixed this under data loader (use pipline to do a preprocessing)
             y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
-                           np.tile(np.arange(self.n_prediction_steps), len(test_split))
+                           np.tile(np.arange(self.n_prediction_steps)[::-1], len(test_split))
 
             self.Y_optimization = self.y_train[y_test_split]
             #self.Y_actual_train = self.y_train[train_split]
@@ -201,7 +193,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 #self.Y_train_targets[train_split] = self.y_train[train_split]
 
                 y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
-                               np.tile(np.arange(self.n_prediction_steps), len(test_split))
+                               np.tile(np.arange(self.n_prediction_steps)[::-1], len(test_split))
 
                 self.Y_targets[i] = self.y_train[y_test_split]
                 # Compute train loss of this fold and store it. train_loss could
@@ -301,14 +293,14 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             )
 
     def _predict(self, pipeline: BaseEstimator,
+                 train_indices: Union[np.ndarray, List],
                  test_indices: Union[np.ndarray, List],
-                 train_indices: Union[np.ndarray, List]
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         datamanager = self.datamanager
         y_pred = np.ones([len(test_indices), self.n_prediction_steps])
         for seq_idx, test_idx in enumerate(test_indices):
-            import pdb
             y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).flatten()
+
 
         #train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
         #                                   self.y_train[train_indices])
@@ -318,7 +310,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         if self.X_valid is not None:
             valid_pred = np.ones([len(test_indices), self.n_prediction_steps])
             for seq_idx, val_seq in enumerate(self.datamanager.datasets):
-                valid_pred[seq_idx] = self.predict_function(val_seq.val_tensors[0], pipeline).flatten()
+                valid_pred[seq_idx] = self.predict_function(val_seq.X, pipeline).flatten()
 
             valid_pred = valid_pred.flatten()
 
@@ -328,7 +320,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         if self.X_test is not None:
             test_pred = np.ones([len(test_indices), self.n_prediction_steps])
             for seq_idx, test_seq in enumerate(self.datamanager.datasets):
-                test_pred[seq_idx] = self.predict_function(val_seq.test_seq[0], pipeline)
+                test_pred[seq_idx] = self.predict_function(test_seq.X, pipeline)
 
             test_pred = test_pred.flatten()
         else:
