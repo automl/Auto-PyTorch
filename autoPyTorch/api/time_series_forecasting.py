@@ -322,7 +322,7 @@ class TimeSeriesForecastingTask(BaseTask):
 
                 seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
 
-                seq_pred = seq_pred * mean_seq + std_seq
+                seq_pred = seq_pred * std_seq + mean_seq
             else:
                 seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
             y_pred[seq_idx] = seq_pred
