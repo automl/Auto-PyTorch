@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Dict, Tuple, Optional, Union
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
     """
 
     def data_preparation(self, X: np.ndarray, y: np.ndarray,
-                         ) -> typing.Tuple[np.ndarray, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -32,7 +32,7 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
 
         Returns:
             np.ndarray: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            Dict[str, np.ndarray]: arguments to the criterion function
         """
         alpha, beta = 1.0, 1.0
         lam = self.random_state.beta(alpha, beta)
@@ -67,8 +67,8 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'GridCutMixTrainer',
             'name': 'GridCutMixTrainer',

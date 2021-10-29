@@ -40,16 +40,16 @@ class autoPyTorchPreprocessingComponent(autoPyTorchComponent):
         """
         raise NotImplementedError()
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
         """
         Makes the autoPyTorchPreprocessingComponent Callable. Calling the component
         calls the transform function of the underlying early_preprocessor and
         returns the transformed array.
         Args:
-            X (Union[np.ndarray, torch.tensor]): input data tensor
+            X (Union[np.ndarray, torch.Tensor]): input data tensor
 
         Returns:
-            Union[np.ndarray, torch.tensor]: Transformed data tensor
+            Union[np.ndarray, torch.Tensor]: Transformed data tensor
         """
         raise NotImplementedError()
 

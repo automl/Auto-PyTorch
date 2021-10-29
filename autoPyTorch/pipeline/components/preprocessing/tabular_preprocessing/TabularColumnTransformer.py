@@ -87,7 +87,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         X.update({'tabular_transformer': self})
         return X
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
 
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."

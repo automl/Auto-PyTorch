@@ -1,5 +1,5 @@
-import typing
 import warnings
+from typing import Any, List, Tuple
 
 import torch
 from torch.autograd import Function
@@ -16,8 +16,8 @@ _activations = {
 }
 
 
-def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ...]
-                     ) -> typing.Tuple[int, ...]:
+def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...]
+                     ) -> Tuple[int, ...]:
     """
     Run a dummy forward pass to get the output shape of the backbone.
     Can and should be overridden by subclasses that know the output shape
@@ -42,7 +42,7 @@ class ShakeShakeFunction(Function):
     """
     @staticmethod
     def forward(
-        ctx: typing.Any,  # No typing for AutogradContext
+        ctx: Any,  # No typing for AutogradContext
         x1: torch.Tensor,
         x2: torch.Tensor,
         alpha: torch.Tensor,
@@ -54,9 +54,9 @@ class ShakeShakeFunction(Function):
         return y
 
     @staticmethod
-    def backward(ctx: typing.Any,
+    def backward(ctx: Any,
                  grad_output: torch.Tensor
-                 ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x1, x2, alpha, beta = ctx.saved_tensors
         grad_x1 = grad_x2 = grad_alpha = grad_beta = None
 
@@ -85,7 +85,7 @@ class ShakeDropFunction(Function):
         Github URL: https://github.com/owruby/shake-drop_pytorch/blob/master/models/shakedrop.py
     """
     @staticmethod
-    def forward(ctx: typing.Any,
+    def forward(ctx: Any,
                 x: torch.Tensor,
                 alpha: torch.Tensor,
                 beta: torch.Tensor,
@@ -97,9 +97,9 @@ class ShakeDropFunction(Function):
         return y
 
     @staticmethod
-    def backward(ctx: typing.Any,
+    def backward(ctx: Any,
                  grad_output: torch.Tensor
-                 ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x, alpha, beta, bl = ctx.saved_tensors
         grad_x = grad_alpha = grad_beta = grad_bl = None
 
@@ -116,7 +116,7 @@ def shake_get_alpha_beta(
     is_training: bool,
     is_cuda: bool,
     method: str
-) -> typing.Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     Each method name is available in the referred paper.
@@ -212,8 +212,8 @@ def get_shaped_neuron_counts(
     out_feat: int,
     max_neurons: int,
     layer_count: int
-) -> typing.List[int]:
-    counts = []  # type: typing.List[int]
+) -> List[int]:
+    counts = []  # type: List[int]
 
     if (layer_count <= 0):
         return counts

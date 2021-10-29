@@ -1,7 +1,7 @@
 import copy
 import json
 import logging.handlers
-import typing
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace
 
@@ -32,25 +32,25 @@ from autoPyTorch.utils.stopwatch import StopWatch
 
 
 def get_smac_object(
-    scenario_dict: typing.Dict[str, typing.Any],
+    scenario_dict: Dict[str, Any],
     seed: int,
-    ta: typing.Callable,
-    ta_kwargs: typing.Dict[str, typing.Any],
+    ta: Callable,
+    ta_kwargs: Dict[str, Any],
     n_jobs: int,
     initial_budget: int,
     max_budget: int,
-    dask_client: typing.Optional[dask.distributed.Client],
+    dask_client: Optional[dask.distributed.Client],
 ) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
     optimizer of pipelines
 
     Args:
-        scenario_dict (typing.Dict[str, typing.Any]): constrain on how to run
+        scenario_dict (Dict[str, Any]): constrain on how to run
             the jobs
         seed (int): to make the job deterministic
-        ta (typing.Callable): the function to be intensifier by smac
-        ta_kwargs (typing.Dict[str, typing.Any]): Arguments to the above ta
+        ta (Callable): the function to be intensifier by smac
+        ta_kwargs (Dict[str, Any]): Arguments to the above ta
         n_jobs (int): Amount of cores to use for this task
         dask_client (dask.distributed.Client): User provided scheduler
 
@@ -85,25 +85,25 @@ class AutoMLSMBO(object):
                  backend: Backend,
                  total_walltime_limit: float,
                  func_eval_time_limit_secs: float,
-                 memory_limit: typing.Optional[int],
+                 memory_limit: Optional[int],
                  metric: autoPyTorchMetric,
                  watcher: StopWatch,
                  n_jobs: int,
-                 dask_client: typing.Optional[dask.distributed.Client],
-                 pipeline_config: typing.Dict[str, typing.Any],
+                 dask_client: Optional[dask.distributed.Client],
+                 pipeline_config: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: typing.Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
-                 resampling_strategy_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 disable_file_output: typing.Union[bool, typing.List] = [],
-                 smac_scenario_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 get_smac_object_callback: typing.Optional[typing.Callable] = None,
+                 resampling_strategy: Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy_args: Optional[Dict[str, Any]] = None,
+                 include: Optional[Dict[str, Any]] = None,
+                 exclude: Optional[Dict[str, Any]] = None,
+                 disable_file_output: Union[bool, List] = [],
+                 smac_scenario_args: Optional[Dict[str, Any]] = None,
+                 get_smac_object_callback: Optional[Callable] = None,
                  all_supported_metrics: bool = True,
-                 ensemble_callback: typing.Optional[EnsembleBuilderManager] = None,
-                 logger_port: typing.Optional[int] = None,
-                 search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+                 ensemble_callback: Optional[EnsembleBuilderManager] = None,
+                 logger_port: Optional[int] = None,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -122,7 +122,7 @@ class AutoMLSMBO(object):
                 The maximum allowed time for this job
             func_eval_time_limit_secs (float):
                 How much each individual task is allowed to last
-            memory_limit (typing.Optional[int]):
+            memory_limit (Optional[int]):
                 Maximum allowed CPU memory this task can use
             metric (autoPyTorchMetric):
                 An scorer object to evaluate the performance of each jon
@@ -130,7 +130,7 @@ class AutoMLSMBO(object):
                 A stopwatch object to debug time consumption
             n_jobs (int):
                 How many workers are allowed in each task
-            dask_client (typing.Optional[dask.distributed.Client]):
+            dask_client (Optional[dask.distributed.Client]):
                 An user provided scheduler. Else smac will create its own.
             start_num_run (int):
                 The ID index to start runs
@@ -138,28 +138,28 @@ class AutoMLSMBO(object):
                 To make the run deterministic
             resampling_strategy (str):
                 What strategy to use for performance validation
-            resampling_strategy_args (typing.Optional[typing.Dict[str, typing.Any]]):
+            resampling_strategy_args (Optional[Dict[str, Any]]):
                 Arguments to the resampling strategy -- like number of folds
-            include (typing.Optional[typing.Dict[str, typing.Any]] = None):
+            include (Optional[Dict[str, Any]] = None):
                 Optimal Configuration space modifiers
-            exclude (typing.Optional[typing.Dict[str, typing.Any]] = None):
+            exclude (Optional[Dict[str, Any]] = None):
                 Optimal Configuration space modifiers
             disable_file_output List:
                 Support to disable file output to disk -- to reduce space
-            smac_scenario_args (typing.Optional[typing.Dict[str, typing.Any]]):
+            smac_scenario_args (Optional[Dict[str, Any]]):
                 Additional arguments to the smac scenario
-            get_smac_object_callback (typing.Optional[typing.Callable]):
+            get_smac_object_callback (Optional[Callable]):
                 Allows to create a user specified SMAC object
-            ensemble_callback (typing.Optional[EnsembleBuilderManager]):
+            ensemble_callback (Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
 
         """
         super(AutoMLSMBO, self).__init__()
         # data related
         self.dataset_name = dataset_name
-        self.datamanager: typing.Optional[BaseDataset] = None
+        self.datamanager: Optional[BaseDataset] = None
         self.metric = metric
-        self.task: typing.Optional[str] = None
+        self.task: Optional[str] = None
         self.backend = backend
         self.all_supported_metrics = all_supported_metrics
 
@@ -213,8 +213,8 @@ class AutoMLSMBO(object):
         if self.datamanager is not None and self.datamanager.task_type is not None:
             self.task = self.datamanager.task_type
 
-    def run_smbo(self, func: typing.Optional[typing.Callable] = None
-                 ) -> typing.Tuple[RunHistory, typing.List[TrajEntry], str]:
+    def run_smbo(self, func: Optional[Callable] = None
+                 ) -> Tuple[RunHistory, List[TrajEntry], str]:
 
         self.watcher.start_task('SMBO')
         self.logger.info("Started run of SMBO")

@@ -7,9 +7,9 @@ import multiprocessing
 import os
 import time
 import traceback
-import typing
 import warnings
 from queue import Empty
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
 
@@ -38,8 +38,8 @@ from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_l
 
 
 def fit_predict_try_except_decorator(
-        ta: typing.Callable,
-        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> None:
+        ta: Callable,
+        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: Any) -> None:
     try:
         return ta(queue=queue, **kwargs)
     except Exception as e:
@@ -104,23 +104,23 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             metric: autoPyTorchMetric,
             cost_for_crash: float,
             abort_on_first_run_crash: bool,
-            pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            pipeline_config: Optional[Dict[str, Any]] = None,
             initial_num_run: int = 1,
-            stats: typing.Optional[Stats] = None,
+            stats: Optional[Stats] = None,
             run_obj: str = 'quality',
             par_factor: int = 1,
             output_y_hat_optimization: bool = True,
-            include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            memory_limit: typing.Optional[int] = None,
-            disable_file_output: typing.Union[bool, typing.List] = False,
-            init_params: typing.Dict[str, typing.Any] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            memory_limit: Optional[int] = None,
+            disable_file_output: Union[bool, List] = False,
+            init_params: Dict[str, Any] = None,
             budget_type: str = None,
-            ta: typing.Optional[typing.Callable] = None,
+            ta: Optional[Callable] = None,
             logger_port: int = None,
             all_supported_metrics: bool = True,
             pynisher_context: str = 'spawn',
-            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         self.backend = backend
@@ -133,7 +133,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.exclude = exclude
         self.disable_file_output = disable_file_output
         self.init_params = init_params
-        self.pipeline_config: typing.Dict[str, typing.Union[int, str, float]] = dict()
+        self.pipeline_config: Dict[str, Union[int, str, float]] = dict()
         if pipeline_config is None:
             pipeline_config = replace_string_bool_to_bool(json.load(open(
                 os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
@@ -142,7 +142,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
         self.logger_port = logger_port
         if self.logger_port is None:
-            self.logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
+            self.logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
         else:
             self.logger = get_named_client_logger(
                 name="TAE",
@@ -198,7 +198,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def run_wrapper(
             self,
             run_info: RunInfo,
-    ) -> typing.Tuple[RunInfo, RunValue]:
+    ) -> Tuple[RunInfo, RunValue]:
         """
         wrapper function for ExecuteTARun.run_wrapper() to cap the target algorithm
         runtime if it would run over the total allowed runtime.
@@ -254,12 +254,12 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def run(
             self,
             config: Configuration,
-            instance: typing.Optional[str] = None,
-            cutoff: typing.Optional[float] = None,
+            instance: Optional[str] = None,
+            cutoff: Optional[float] = None,
             seed: int = 12345,
             budget: float = 0.0,
-            instance_specific: typing.Optional[str] = None,
-    ) -> typing.Tuple[StatusType, float, float, typing.Dict[str, typing.Any]]:
+            instance_specific: Optional[str] = None,
+    ) -> Tuple[StatusType, float, float, Dict[str, Any]]:
 
         context = multiprocessing.get_context(self.pynisher_context)
         queue: multiprocessing.queues.Queue = context.Queue()
@@ -271,7 +271,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             init_params.update(self.init_params)
 
         if self.logger_port is None:
-            logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
+            logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
         else:
             logger = get_named_client_logger(
                 name="pynisher",
@@ -315,8 +315,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             search_space_updates=self.search_space_updates
         )
 
-        info: typing.Optional[typing.List[RunValue]]
-        additional_run_info: typing.Dict[str, typing.Any]
+        info: Optional[List[RunValue]]
+        additional_run_info: Dict[str, Any]
         try:
             # By default, self.ta is fit_predict_try_except_decorator
             obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
