@@ -68,6 +68,27 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
 
 
 class TabularFeatureValidator(BaseFeatureValidator):
+    """
+    A subclass of `BaseFeatureValidator` made for tabular data.
+    It ensures that the dataset provided is of the expected format.
+    Subsequently, it preprocesses the data by fitting a column
+    transformer.
+
+    Attributes:
+        categories (List[List[str]]):
+            List for which an element at each index is a
+            list containing the categories for the respective
+            categorical column.
+        transformed_columns (List[str])
+            List of columns that were transformed.
+        column_transformer (Optional[BaseEstimator])
+            Hosts an imputer and an encoder object if the data
+            requires transformation (for example, if provided a
+            categorical column in a pandas DataFrame)
+        column_order (List[str]):
+            List of the features stored in the order that
+            was fitted.
+    """
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
@@ -133,14 +154,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
-            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
+            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
 
-            if len(self.enc_columns) > 0:
+            if len(self.transformed_columns) > 0:
 
                 preprocessors = get_tabular_preprocessors()
                 self.column_transformer = _create_column_transformer(
                     preprocessors=preprocessors,
-                    categorical_columns=self.enc_columns,
+                    categorical_columns=self.transformed_columns,
                 )
 
                 # Mypy redefinition

@@ -35,11 +35,6 @@ class BaseFeatureValidator(BaseEstimator):
             List of the column types found by this estimator during fit.
         data_type (str):
             Class name of the data type provided during fit.
-        encoder (typing.Optional[BaseEstimator])
-            Host a encoder object if the data requires transformation (for example,
-            if provided a categorical column in a pandas DataFrame)
-        enc_columns (typing.List[str])
-            List of columns that were encoded.
     """
     def __init__(self,
                  logger: typing.Optional[typing.Union[PicklableClientLogger, logging.Logger
@@ -52,7 +47,7 @@ class BaseFeatureValidator(BaseEstimator):
         self.column_order = []  # type: typing.List[str]
 
         self.column_transformer = None  # type: typing.Optional[BaseEstimator]
-        self.enc_columns = []  # type: typing.List[str]
+        self.transformed_columns = []  # type: typing.List[str]
 
         self.logger: typing.Union[
             PicklableClientLogger, logging.Logger
@@ -61,8 +56,7 @@ class BaseFeatureValidator(BaseEstimator):
         # Required for dataset properties
         self.num_features = None  # type: typing.Optional[int]
         self.categories = []  # type: typing.List[typing.List[int]]
-        self.categorical_columns: typing.List[int] = []
-        self.numerical_columns: typing.List[int] = []
+
 
         self._is_fitted = False
 
