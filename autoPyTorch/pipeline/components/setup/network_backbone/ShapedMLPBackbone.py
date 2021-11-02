@@ -25,7 +25,7 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        layers = list()  # type: List[nn.Module]
+        layers: List[nn.Module] = list()
         in_features = input_shape[0]
         out_features = self.config["output_dim"]
         neuron_counts = get_shaped_neuron_counts(self.config['mlp_shape'],

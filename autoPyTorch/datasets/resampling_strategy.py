@@ -92,7 +92,8 @@ class NoResamplingStrategyTypes(IntEnum):
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
 
-DEFAULT_RESAMPLING_PARAMETERS = {
+ResamplingStrategiesTypes = Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]
+DEFAULT_RESAMPLING_PARAMETERS: Dict[ResamplingStrategiesTypes, Dict[str, Any]] = {
     HoldoutValTypes.holdout_validation: {
         'val_share': 0.33,
     },
@@ -117,7 +118,7 @@ DEFAULT_RESAMPLING_PARAMETERS = {
     NoResamplingStrategyTypes.shuffle_no_resampling: {
         'shuffle': True
     }
-}  # type: Dict[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes], Dict[str, Any]]
+}
 
 
 class HoldOutFuncs():

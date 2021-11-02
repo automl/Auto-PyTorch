@@ -106,7 +106,7 @@ class BasePipeline(Pipeline):
 
         super().__init__(steps=self.steps)
 
-        self._additional_run_info = {}  # type: Dict[str, str]
+        self._additional_run_info: Dict[str, str] = {}
 
     def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
             **fit_params: Any) -> Pipeline:
@@ -525,7 +525,7 @@ class BasePipeline(Pipeline):
         Returns:
             List[NamedTuple]: List of FitRequirements
         """
-        fit_requirements = list()  # type: List[FitRequirement]
+        fit_requirements: List[FitRequirement] = list()
         for name, step in self.steps:
             step_requirements = step.get_fit_requirements()
             if step_requirements:

@@ -213,7 +213,7 @@ def get_shaped_neuron_counts(
     max_neurons: int,
     layer_count: int
 ) -> List[int]:
-    counts = []  # type: List[int]
+    counts: List[int] = []
 
     if (layer_count <= 0):
         return counts

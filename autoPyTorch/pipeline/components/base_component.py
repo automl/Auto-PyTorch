@@ -63,7 +63,7 @@ class ThirdPartyComponents(object):
 
     def __init__(self, base_class: BaseEstimator) -> None:
         self.base_class = base_class
-        self.components = OrderedDict()  # type: Dict[str, BaseEstimator]
+        self.components: Dict[str, BaseEstimator] = OrderedDict()
 
     def add_component(self, obj: BaseEstimator) -> None:
         if inspect.isclass(obj) and self.base_class in obj.__bases__:

@@ -80,10 +80,10 @@ class RunSummary(object):
 
         It does so by tracking a metric/loss at the end of each epoch.
         """
-        self.performance_tracker = {
+        self.performance_tracker: Dict[str, Dict] = {
             'start_time': {},
             'end_time': {},
-        }  # type: Dict[str, Dict]
+        }
 
         self.total_parameter_count = total_parameter_count
         self.trainable_parameter_count = trainable_parameter_count

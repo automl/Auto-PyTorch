@@ -28,7 +28,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
-        layers = list()  # type: List[nn.Module]
+        layers: List[nn.Module] = list()
         in_features = input_shape[0]
         layers.append(nn.Linear(in_features, self.config["num_units_0"]))
 
@@ -270,7 +270,7 @@ class ResBlock(nn.Module):
         self.activation = activation
 
         self.shortcut = None
-        self.start_norm = None  # type: Optional[Callable]
+        self.start_norm: Optional[Callable] = None
 
         # if in != out the shortcut needs a linear layer to match the result dimensions
         # if the shortcut needs a layer we apply batchnorm and activation to the shortcut

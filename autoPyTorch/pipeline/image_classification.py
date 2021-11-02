@@ -153,7 +153,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
             List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
                 by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
+        steps: List[Tuple[str, autoPyTorchChoice]] = []
 
         default_dataset_properties = {'target_type': 'image_classification'}
         if dataset_properties is not None:

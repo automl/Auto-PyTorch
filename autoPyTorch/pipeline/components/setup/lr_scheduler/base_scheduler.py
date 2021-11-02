@@ -13,7 +13,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
 
     def __init__(self) -> None:
         super().__init__()
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
 
         self.add_fit_requirements([
             FitRequirement('optimizer', (Optimizer,), user_defined=False, dataset_property=False)])

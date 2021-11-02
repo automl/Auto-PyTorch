@@ -34,7 +34,7 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         super().__init__()
         self.n_restarts = n_restarts
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

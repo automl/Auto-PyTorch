@@ -96,7 +96,7 @@ class BackendContext(object):
         )
         self._output_directory = output_directory
         self.create_directories()
-        self._logger = None  # type: Optional[PicklableClientLogger]
+        self._logger: Optional[PicklableClientLogger] = None
 
     @property
     def output_directory(self) -> Optional[str]:
@@ -167,7 +167,7 @@ class Backend(object):
     """
 
     def __init__(self, context: BackendContext):
-        self._logger = None  # type: Optional[PicklableClientLogger]
+        self._logger: Optional[PicklableClientLogger] = None
         self.context = context
 
         # Track the number of configurations launched

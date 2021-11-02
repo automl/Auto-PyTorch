@@ -25,7 +25,7 @@ class ShapedResNetBackbone(ResNetBackbone):
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> None:
-        layers = list()  # type: List[torch.nn.Module]
+        layers: List[torch.nn.Module] = list()
         in_features = input_shape[0]
         out_features = self.config["output_dim"]
 

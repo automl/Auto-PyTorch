@@ -21,7 +21,7 @@ def get_tabular_preprocessers(X: Dict[str, Any]) -> Dict[str, List[BaseEstimator
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """
-    preprocessor = dict(numerical=list(), categorical=list())  # type: Dict[str, List[BaseEstimator]]
+    preprocessor: Dict[str, List[BaseEstimator]] = dict(numerical=list(), categorical=list())
     for key, value in X.items():
         if isinstance(value, dict):
             # as each preprocessor is child of BaseEstimator

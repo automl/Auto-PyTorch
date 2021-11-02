@@ -37,7 +37,7 @@ class StepLR(BaseLRComponent):
         self.gamma = gamma
         self.step_size = step_size
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

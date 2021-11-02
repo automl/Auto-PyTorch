@@ -45,7 +45,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         self.factor = factor
         self.patience = patience
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

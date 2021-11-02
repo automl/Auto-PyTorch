@@ -47,7 +47,7 @@ class CyclicLR(BaseLRComponent):
         self.max_lr = max_lr
         self.step_size_up = step_size_up
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """

@@ -13,8 +13,8 @@ class ImageNormalizer(BaseNormalizer):
                  ):
         super().__init__()
         self.random_state = random_state
-        self.mean = None  # type: Optional[np.ndarray]
-        self.std = None  # type: Optional[np.ndarray]
+        self.mean: Optional[np.ndarray] = None
+        self.std: Optional[np.ndarray] = None
 
     def fit(self, X: Dict[str, Any], y: Optional[Any] = None) -> "ImageNormalizer":
         """
