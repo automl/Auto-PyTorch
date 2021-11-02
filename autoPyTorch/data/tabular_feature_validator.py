@@ -88,6 +88,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
         column_order (List[str]):
             List of the features stored in the order that
             was fitted.
+        numerical_columns (List[int]):
+            List of indices of numerical columns
+        categorical_columns (List[int]):
+            List of indices of categorical columns
     """
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
