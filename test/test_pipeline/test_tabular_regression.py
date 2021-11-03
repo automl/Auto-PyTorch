@@ -173,7 +173,7 @@ class TestTabularRegression:
 
         # Then the pipeline should have added the following keys
         # Removing 'imputer', 'encoder', 'scaler', these will be
-        # added back after a PR fixing preprocessing
+        # TODO: added back after a PR fixing preprocessing
         expected_keys = {'tabular_transformer', 'preprocess_transforms', 'network',
                          'optimizer', 'lr_scheduler', 'train_data_loader',
                          'val_data_loader', 'run_summary', 'feature_preprocessor'}
