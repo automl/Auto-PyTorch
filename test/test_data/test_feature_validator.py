@@ -314,9 +314,9 @@ def test_featurevalidator_get_columns_to_encode():
     for col in df.columns:
         df[col] = df[col].astype(col)
 
-    enc_columns, feature_types = validator._get_columns_to_encode(df)
+    transformed_columns, feature_types = validator._get_columns_to_encode(df)
 
-    assert enc_columns == ['category', 'bool']
+    assert transformed_columns == ['category', 'bool']
     assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
 
 
@@ -403,7 +403,7 @@ def test_column_transformer_created(input_data_featuretest):
 
     # Make sure that the encoded features are actually encoded. Categorical columns are at
     # the start after transformation. In our fixtures, this is also honored prior encode
-    enc_columns, feature_types = validator._get_columns_to_encode(input_data_featuretest)
+    transformed_columns, feature_types = validator._get_columns_to_encode(input_data_featuretest)
 
     # At least one categorical
     assert 'categorical' in validator.feat_type
@@ -536,7 +536,7 @@ def test_comparator():
 
     with pytest.raises(ValueError, match=r"The comparator for the column order only accepts .*"):
         dummy = 'dummy'
-        feat_type = [numerical, categorical, dummy] 
+        feat_type = [numerical, categorical, dummy]
         feat_type = sorted(
             feat_type,
             key=functools.cmp_to_key(validator._comparator)
