@@ -518,7 +518,7 @@ def test_featurevalidator_new_data_after_fit(openml_id,
     if train_data_type == 'pandas':
         old_dtypes = copy.deepcopy(validator.dtypes)
         validator.dtypes = ['dummy' for dtype in X_train.dtypes]
-        with pytest.raises(ValueError, match=r"hanging the dtype of the features after fit"):
+        with pytest.raises(ValueError, match=r"Changing the dtype of the features after fit"):
             transformed_X = validator.transform(X_test)
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':

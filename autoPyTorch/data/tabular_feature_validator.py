@@ -158,7 +158,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            if len(self.transformed_columns) == 0 and self.feat_type is None:
+                self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
 
             if len(self.transformed_columns) > 0:
 
@@ -321,6 +322,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # Handle objects if possible
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
+
+            # Define the column to be encoded here as the feature validator is fitted once
+            # per estimator
+            if len(self.transformed_columns) == 0 and self.feat_type is None:
+                self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
 
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
