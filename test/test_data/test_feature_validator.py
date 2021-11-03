@@ -534,6 +534,14 @@ def test_comparator():
 
     validator = TabularFeatureValidator
 
+    with pytest.raises(ValueError, match=r"The comparator for the column order only accepts .*"):
+        dummy = 'dummy'
+        feat_type = [numerical, categorical, dummy] 
+        feat_type = sorted(
+            feat_type,
+            key=functools.cmp_to_key(validator._comparator)
+        )
+
     feat_type = [numerical, categorical] * 10
     ans = [categorical] * 10 + [numerical] * 10
     feat_type = sorted(
