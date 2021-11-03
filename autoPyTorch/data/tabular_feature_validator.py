@@ -160,6 +160,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             if len(self.transformed_columns) == 0 and self.feat_type is None:
                 self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            assert self.feat_type is not None
 
             if len(self.transformed_columns) > 0:
 
