@@ -135,7 +135,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             X = cast(pd.DataFrame, X)
 
-            self.all_nan_columns = set([column for column in X.columns if X[column].isna().all()])
+            self.all_nan_columns = set(X.columns[X.isna().all()])
 
             categorical_columns, numerical_columns, feat_type = self._get_columns_info(X)
 
@@ -248,9 +248,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # object otherwise the test column is interpreted as float
         if len(self.categorical_columns) > 0:
             categorical_columns = self.column_transformer.transformers_[0][-1]
-            for column in categorical_columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype('object')
+
+            all_nan_cat_cols = X[categorical_columns].isna().all()
+            # filter all nan is True
+            all_nan_cat_cols = all_nan_cat_cols[all_nan_cat_cols]
+            for column in all_nan_cat_cols.keys():
+                X[column] = X[column].astype('object')
 
         if self.column_transformer is not None:
             X = self.column_transformer.transform(X)
