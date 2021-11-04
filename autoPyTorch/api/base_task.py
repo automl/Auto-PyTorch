@@ -1322,7 +1322,8 @@ class BaseTask:
         if not include_traditional:
             # traditional classifiers have trainer_configuration in their additional info
             run_history_data = dict(
-                filter(lambda elem: elem[1].additional_info is not None and elem[1].
+                filter(lambda elem: elem[1].status == StatusType.SUCCESS and elem[1].
+                       additional_info is not None and elem[1].
                        additional_info['configuration_origin'] != 'traditional',
                        run_history_data.items()))
         run_history_data = dict(

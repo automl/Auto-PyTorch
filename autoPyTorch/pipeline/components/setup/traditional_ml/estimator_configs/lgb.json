@@ -5,6 +5,5 @@
 	"min_data_in_leaf" : 3,
 	"feature_fraction" : 0.9,
 	"boosting_type" : "gbdt",
-	"learning_rate" : 0.03,
-	"num_threads" : -1
+	"learning_rate" : 0.03
 }
