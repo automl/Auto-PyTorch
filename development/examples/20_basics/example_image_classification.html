@@ -8,10 +8,10 @@
     <title>Image Classification &#8212; AutoPyTorch 0.1.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/gallery-binder.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/gallery-dataframe.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/gallery-rendered-html.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -22,9 +22,9 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
 <script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
 <script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
 
   </head><body>
@@ -30332,24 +30332,24 @@ Pipeline Random Config:
  ________________________________________
 Configuration:
   image_augmenter:GaussianBlur:use_augmenter, Value: False
-  image_augmenter:GaussianNoise:sigma_offset, Value: 0.28308981908683095
-  image_augmenter:GaussianNoise:use_augmenter, Value: True
-  image_augmenter:RandomAffine:rotate, Value: 91
-  image_augmenter:RandomAffine:scale_offset, Value: 0.1419348290937196
-  image_augmenter:RandomAffine:shear, Value: 45
-  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.30537089818273044
+  image_augmenter:GaussianNoise:use_augmenter, Value: False
+  image_augmenter:RandomAffine:rotate, Value: 339
+  image_augmenter:RandomAffine:scale_offset, Value: 0.27762613836482325
+  image_augmenter:RandomAffine:shear, Value: 33
+  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.17488287367402774
   image_augmenter:RandomAffine:use_augmenter, Value: True
-  image_augmenter:RandomCutout:use_augmenter, Value: False
-  image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.26934979186928804
-  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
+  image_augmenter:RandomCutout:p, Value: 0.6111318694962542
+  image_augmenter:RandomCutout:use_augmenter, Value: True
+  image_augmenter:Resize:use_augmenter, Value: True
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.44852699670478985
+  normalizer:__choice__, Value: &#39;ImageNormalizer&#39;
 
 Fitting the pipeline...
 ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        NoNormalizer
+        ImageNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -30414,7 +30414,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.275 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.728 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -30449,7 +30449,7 @@ ________________________________________
     </p>
     <p>
         &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
     </p>
   </div>
 </footer>

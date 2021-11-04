@@ -86,24 +86,24 @@ Image Classification
      ________________________________________ 
     Configuration:
       image_augmenter:GaussianBlur:use_augmenter, Value: False
-      image_augmenter:GaussianNoise:sigma_offset, Value: 0.28308981908683095
-      image_augmenter:GaussianNoise:use_augmenter, Value: True
-      image_augmenter:RandomAffine:rotate, Value: 91
-      image_augmenter:RandomAffine:scale_offset, Value: 0.1419348290937196
-      image_augmenter:RandomAffine:shear, Value: 45
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.30537089818273044
+      image_augmenter:GaussianNoise:use_augmenter, Value: False
+      image_augmenter:RandomAffine:rotate, Value: 339
+      image_augmenter:RandomAffine:scale_offset, Value: 0.27762613836482325
+      image_augmenter:RandomAffine:shear, Value: 33
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.17488287367402774
       image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:use_augmenter, Value: False
-      image_augmenter:Resize:use_augmenter, Value: False
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.26934979186928804
-      normalizer:__choice__, Value: 'NoNormalizer'
+      image_augmenter:RandomCutout:p, Value: 0.6111318694962542
+      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:Resize:use_augmenter, Value: True
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.44852699670478985
+      normalizer:__choice__, Value: 'ImageNormalizer'
 
     Fitting the pipeline...
     ________________________________________
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            NoNormalizer
+            ImageNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -175,7 +175,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.275 seconds)
+   **Total running time of the script:** ( 0 minutes  8.728 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:

@@ -133,7 +133,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fed3eaddd90>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4862e2a7f0>
 
 
 
@@ -162,7 +162,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fed3e8d8a30> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f4862e2ad90> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -194,7 +194,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014102458953857422, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0013358592987060547, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -226,7 +226,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=2.9105358123779297, wallclock_time=3.9437384605407715, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=2.8465611934661865, wallclock_time=3.8827130794525146, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 149
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:Nystroem:gamma, Value: 0.0011818439394745584
@@ -278,22 +278,17 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=20, ta_time_used=165.19103455543518, wallclock_time=239.00682401657104, budget=50.0)]
-    {'accuracy': 0.8497109826589595}
-    |    | Preprocessing                                                     | Estimator                                                       |   Weight |
-    |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.26 |
-    |  1 | SimpleImputer,NoEncoder,StandardScaler,Nystroem                   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
-    |  2 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-    |  3 | SimpleImputer,NoEncoder,StandardScaler,Nystroem                   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-    |  5 | None                                                              | KNNLearner                                                      |     0.06 |
-    |  6 | None                                                              | CBLearner                                                       |     0.04 |
-    |  7 | None                                                              | SVMLearner                                                      |     0.04 |
-    |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  9 | None                                                              | RFLearner                                                       |     0.02 |
-    | 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    , ta_runs=18, ta_time_used=134.9354636669159, wallclock_time=203.3929147720337, budget=50.0)]
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                        | Estimator                                                       |   Weight |
+    |---:|:-----------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,OneHotEncoder,MinMaxScaler,KitchenSink | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.34 |
+    |  1 | SimpleImputer,NoEncoder,StandardScaler,Nystroem      | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem  | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
+    |  3 | None                                                 | CBLearner                                                       |     0.14 |
+    |  4 | None                                                 | SVMLearner                                                      |     0.08 |
+    |  5 | None                                                 | KNNLearner                                                      |     0.08 |
+    |  6 | None                                                 | RFLearner                                                       |     0.04 |
 
 
 
@@ -301,7 +296,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  25.335 seconds)
+   **Total running time of the script:** ( 5 minutes  30.029 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
