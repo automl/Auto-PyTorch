@@ -249,10 +249,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if len(self.categorical_columns) > 0:
             categorical_columns = self.column_transformer.transformers_[0][-1]
 
-            all_nan_cats = X[categorical_columns].isna().all()
-            # filter `all nan is True`
-            all_nan_cats = all_nan_cats[all_nan_cats]
-            all_nan_cat_cols = all_nan_cats.keys()
+            is_all_nan_cat_cols = X[categorical_columns].isna().all()
+            all_nan_cat_cols = is_all_nan_cat_cols[is_all_nan_cat_cols].keys()
             X[all_nan_cat_cols] = X[all_nan_cat_cols].astype('object')
 
         if self.column_transformer is not None:
