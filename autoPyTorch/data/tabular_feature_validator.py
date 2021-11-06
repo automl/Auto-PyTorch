@@ -304,7 +304,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Do not support category/string numpy data. Only numbers
         if hasattr(X, "dtype") and not np.issubdtype(X.dtype.type, np.number):  # type: ignore[union-attr]
             err_msg = f"dtype of features provided by numpy.array must be subdtype of np.number, but got {X.dtype.type}"
-            raise TypeError()(err_msg)
+            raise TypeError(err_msg)
 
         # Then for Pandas, we do not support Nan in categorical columns
         if hasattr(X, "iloc"):
