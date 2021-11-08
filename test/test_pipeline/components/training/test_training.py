@@ -350,7 +350,7 @@ def test_mixup_regularizers(cutmix_prob, regularizer, X):
     (GridCutOutTrainer, torch.from_numpy(np.full(shape=(2, 3, 10, 12), fill_value=255))),
     (RowCutOutTrainer, torch.from_numpy(np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]))),
 ])
-def test_cutput_regularizers(cutout_prob, regularizer, X):
+def test_cutout_regularizers(cutout_prob, regularizer, X):
     trainer = regularizer(cutout_prob=cutout_prob, patch_ratio=0.5)
 
     y = torch.from_numpy(np.array([[1], [0]]))

@@ -336,24 +336,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             dtypes = [dtype.name for dtype in X.dtypes]
 
-            dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+            diff_cols = X.columns[[s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]]
             if len(self.dtypes) == 0:
                 self.dtypes = dtypes
-            elif (
-                any(dtypes_diff)  # the dtypes of some columns are different in train and test dataset
-                and self.all_nan_columns is not None  # Ignore all_nan_columns is None
-                and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
-            ):
-                diff_indices = np.where(np.array(dtypes_diff))[0]
-
-                if not all([X[X.columns[i]].isna().all() for i in diff_indices]):
-                    # The dtypes can be different if the column belongs
-                    # to all_nan_columns if the dataset is in training
-                    # set or if the column is all nan if the dataset
-                    # is for testing as these columns would be imputed.
-                    raise ValueError("The dtype of the features must not be changed after fit(), but"
-                                     " the dtypes of some columns are different between training ({}) and"
-                                     " test ({}) datasets.".format(self.dtypes, dtypes))
+            elif not self._is_datasets_consistent(diff_cols, X):
+                # The dtypes can be different if the column belongs
+                # to all_nan_columns if the dataset is in training
+                # set or if the column is all nan if the dataset
+                # is for testing as these columns would be imputed.
+                raise ValueError("The dtype of the features must not be changed after fit(), but"
+                                 " the dtypes of some columns are different between training ({}) and"
+                                 " test ({}) datasets.".format(self.dtypes, dtypes))
 
     def _get_columns_info(
         self,
@@ -511,6 +504,23 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
 
         return X
+
+    def _is_datasets_consistent(self, diff_cols: List[str], X: pd.DataFrame) -> bool:
+        """
+        Check the consistency of dtypes between training and test datasets.
+        Args:
+            diff_cols (List[bool]): The column labels that have different dtypes.
+        Returns:
+            _ (bool): Whether the training and test datasets are consistent.
+        """
+        if self.all_nan_columns is None:
+            return True
+
+        # dtype is different ==> the column in at least either of train or test datasets must be all NaN
+        # inconsistent <==> dtype is different and the col in both train and test is not all NaN
+        inconsistent_cols = list(set(diff_cols) - self.all_nan_columns)
+
+        return len(inconsistent_cols) == 0 or all(X[inconsistent_cols].isna().all())
 
 
 def has_object_columns(
