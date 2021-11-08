@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 
@@ -341,10 +341,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if len(self.dtypes) == 0:
                 self.dtypes = dtypes
             elif not self._is_datasets_consistent(diff_cols, X):
-                # The dtypes can be different if the column belongs
-                # to all_nan_columns if the dataset is in training
-                # set or if the column is all nan if the dataset
-                # is for testing as these columns would be imputed.
                 raise ValueError("The dtype of the features must not be changed after fit(), but"
                                  " the dtypes of some columns are different between training ({}) and"
                                  " test ({}) datasets.".format(self.dtypes, dtypes))
@@ -506,9 +502,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         return X
 
-    def _is_datasets_consistent(self, diff_cols: List[str], X: pd.DataFrame) -> bool:
+    def _is_datasets_consistent(self, diff_cols: List[Union[int, str]], X: pd.DataFrame) -> bool:
         """
         Check the consistency of dtypes between training and test datasets.
+        The dtypes can be different if the column belongs to `self.all_nan_columns`
+        (list of column names with all nans in training data) or if the column is
+        all nan as these columns would be imputed.
+
         Args:
             diff_cols (List[bool]): The column labels that have different dtypes.
         Returns:
