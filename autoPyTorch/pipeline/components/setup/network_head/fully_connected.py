@@ -74,7 +74,7 @@ class FullyConnectedHead(NetworkHeadComponent):
             # only add activation if we have more than 1 layer
             cs.add_hyperparameter(activation_hp)
 
-        for i in range(min_num_layers, max_num_layers + 1):
+        for i in range(1, max_num_layers + 1):
             num_units_search_space = HyperparameterSearchSpace(
                 hyperparameter=f"units_layer_{i}",
                 value_range=units_layer.value_range,
@@ -82,14 +82,13 @@ class FullyConnectedHead(NetworkHeadComponent):
                 log=units_layer.log,
             )
             num_units_hp = get_hyperparameter(num_units_search_space, UniformIntegerHyperparameter)
+            cs.add_hyperparameter(num_units_hp)
 
-            if i >= min_num_layers:
-                cs.add_hyperparameter(num_units_hp)
+            if i >= min_num_layers and not num_layers_is_constant:
                 # In the case of a constant, the max and min number of layers are the same.
                 # So no condition is needed. If it is not a constant but a hyperparameter,
                 # then a condition has to be made so that it accounts for the value of the
                 # hyperparameter.
-                if not num_layers_is_constant:
-                    cs.add_condition(CS.GreaterThanCondition(num_units_hp, num_layers_hp, i))
+                cs.add_condition(CS.GreaterThanCondition(num_units_hp, num_layers_hp, i))
 
         return cs
