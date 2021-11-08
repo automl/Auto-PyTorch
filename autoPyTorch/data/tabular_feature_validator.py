@@ -247,7 +247,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # having a value for a categorical column.
         # We need to convert the column in test data to
         # object otherwise the test column is interpreted as float
-        if self.column_transformer is not None: 
+        if self.column_transformer is not None:
             if len(self.categorical_columns) > 0:
                 categorical_columns = self.column_transformer.transformers_[0][-1]
                 for column in categorical_columns:
