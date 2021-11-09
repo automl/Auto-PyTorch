@@ -36,7 +36,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
@@ -105,6 +105,8 @@ class BaseTask:
     Args:
         seed (int), (default=1): seed to be used for reproducibility.
         n_jobs (int), (default=1): number of consecutive processes to spawn.
+        n_threads (int), (default=1):
+            number of threads to use for each process.
         logging_config (Optional[Dict]): specifies configuration
             for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50): Number of models added to the ensemble built by
@@ -133,6 +135,7 @@ class BaseTask:
         self,
         seed: int = 1,
         n_jobs: int = 1,
+        n_threads: int = 1,
         logging_config: Optional[Dict] = None,
         ensemble_size: int = 50,
         ensemble_nbest: int = 50,
@@ -151,6 +154,7 @@ class BaseTask:
     ) -> None:
         self.seed = seed
         self.n_jobs = n_jobs
+        self.n_threads = n_threads
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
         self.max_models_on_disc = max_models_on_disc
@@ -1064,6 +1068,28 @@ class BaseTask:
 
         return self
 
+    def _get_fit_dictionary(
+        self,
+        dataset_properties: Dict[str, BaseDatasetPropertiesType],
+        dataset: BaseDataset,
+        split_id: int = 0
+    ) -> Dict[str, Any]:
+        X_test = dataset.test_tensors[0].copy() if dataset.test_tensors is not None else None
+        y_test = dataset.test_tensors[1].copy() if dataset.test_tensors is not None else None
+        X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
+                                  'backend': self._backend,
+                                  'X_train': dataset.train_tensors[0].copy(),
+                                  'y_train': dataset.train_tensors[1].copy(),
+                                  'X_test': X_test,
+                                  'y_test': y_test,
+                                  'train_indices': dataset.splits[split_id][0],
+                                  'val_indices': dataset.splits[split_id][1],
+                                  'split_id': split_id,
+                                  'num_run': self._backend.get_next_num_run(),
+                                  })
+        X.update(self.pipeline_options)
+        return X
+
     def refit(
         self,
         dataset: BaseDataset,
@@ -1107,18 +1133,6 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
-        X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
-                                  'backend': self._backend,
-                                  'X_train': dataset.train_tensors[0],
-                                  'y_train': dataset.train_tensors[1],
-                                  'X_test': dataset.test_tensors[0] if dataset.test_tensors is not None else None,
-                                  'y_test': dataset.test_tensors[1] if dataset.test_tensors is not None else None,
-                                  'train_indices': dataset.splits[split_id][0],
-                                  'val_indices': dataset.splits[split_id][1],
-                                  'split_id': split_id,
-                                  'num_run': self._backend.get_next_num_run(),
-                                  })
-        X.update(self.pipeline_options)
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
             self._load_models()
 
@@ -1134,6 +1148,10 @@ class BaseTask:
             # try to fit the model. If it fails, shuffle the data. This
             # could alleviate the problem in algorithms that depend on
             # the ordering of the data.
+            X = self._get_fit_dictionary(
+                dataset_properties=dataset_properties,
+                dataset=dataset,
+                split_id=split_id)
             fit_and_suppress_warnings(self._logger, model, X, y=None)
 
         self._clean_logger()
@@ -1187,18 +1205,10 @@ class BaseTask:
             pipeline.set_hyperparameters(pipeline_config)
 
         # initialise fit dictionary
-        X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
-                                  'backend': self._backend,
-                                  'X_train': dataset.train_tensors[0],
-                                  'y_train': dataset.train_tensors[1],
-                                  'X_test': dataset.test_tensors[0] if dataset.test_tensors is not None else None,
-                                  'y_test': dataset.test_tensors[1] if dataset.test_tensors is not None else None,
-                                  'train_indices': dataset.splits[split_id][0],
-                                  'val_indices': dataset.splits[split_id][1],
-                                  'split_id': split_id,
-                                  'num_run': self._backend.get_next_num_run(),
-                                  })
-        X.update(self.pipeline_options)
+        X = self._get_fit_dictionary(
+            dataset_properties=dataset_properties,
+            dataset=dataset,
+            split_id=split_id)
 
         fit_and_suppress_warnings(self._logger, pipeline, X, y=None)
 

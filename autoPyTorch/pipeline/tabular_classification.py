@@ -7,7 +7,6 @@ from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
-import sklearn.preprocessing
 from sklearn.base import ClassifierMixin
 
 import torch
@@ -101,13 +100,8 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
         if isinstance(self.dataset_properties['output_shape'], int):
-            proba = pred[:, :self.dataset_properties['output_shape']]
-            normalizer = proba.sum(axis=1)[:, np.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
-            proba /= normalizer
-
-            return proba
-
+            # The final layer is always softmax now (`pred` already gives pseudo proba)
+            return pred
         else:
             raise ValueError("Expected output_shape to be integer, got {},"
                              "Tabular Classification only supports 'binary' and 'multiclass' outputs"
@@ -148,11 +142,6 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                     batch_to = min([(k + 1) * batch_size, X.shape[0]])
                     pred_prob = self.predict_proba(X[batch_from:batch_to], batch_size=None)
                     y[batch_from:batch_to] = pred_prob.astype(np.float32)
-
-        # Neural networks might not be fit to produce a [0-1] output
-        # For instance, after small number of epochs.
-        y = np.clip(y, 0, 1)
-        y = sklearn.preprocessing.normalize(y, axis=1, norm='l1')
 
         return y
 
