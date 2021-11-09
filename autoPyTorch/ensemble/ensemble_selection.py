@@ -45,7 +45,7 @@ class EnsembleSelection(AbstractEnsemble):
         aggregation of the models in the given identifiers.
 
         Args:
-            predictions (List[np.array]):
+            predictions (List[np.ndarray]):
                 A list of individual model predictions of shape (n_datapoints, n_targets)
                 corresponding to the OutOfFold estimate of the ground truth
             labels (np.ndarray):
@@ -78,7 +78,7 @@ class EnsembleSelection(AbstractEnsemble):
         "Ensemble Selection from Library of Models" by R Caruana  (2004)
 
         Args:
-            predictions (List[np.array]):
+            predictions (List[np.ndarray]):
                 A list of individual model predictions of shape (n_datapoints, n_targets)
                 corresponding to the OutOfFold estimate of the ground truth
             identifiers (List[Tuple[int, int, float]]):
@@ -185,7 +185,7 @@ class EnsembleSelection(AbstractEnsemble):
                 A list of predictions from the individual base models.
 
         Returns:
-            average (np.array): Soft voting predictions of ensemble models, using
+            average (np.ndarray): Soft voting predictions of ensemble models, using
                                 the weights found during ensemble selection (self._weights)
         """
 
