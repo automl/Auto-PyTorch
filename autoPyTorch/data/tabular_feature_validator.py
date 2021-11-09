@@ -510,7 +510,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
         all nan as these columns would be imputed.
 
         Args:
-            diff_cols (List[bool]): The column labels that have different dtypes.
+            diff_cols (List[bool]):
+                The column labels that have different dtypes.
+            X (pd.DataFrame):
+                A validation or test dataset to be compared with the training dataset
         Returns:
             _ (bool): Whether the training and test datasets are consistent.
         """
