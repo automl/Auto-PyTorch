@@ -139,10 +139,10 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Tabular Classification API to the pipelines.</span>
 <span class="sd">    Args:</span>
-<span class="sd">        seed (int):</span>
-<span class="sd">            seed to be used for reproducibility.</span>
-<span class="sd">        n_jobs (int), (default=1):</span>
-<span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        seed (int), (default=1): seed to be used for reproducibility.</span>
+<span class="sd">        n_jobs (int), (default=1): number of consecutive processes to spawn.</span>
+<span class="sd">        n_threads (int), (default=1):</span>
+<span class="sd">            number of threads to use for each process.</span>
 <span class="sd">        logging_config (Optional[Dict]):</span>
 <span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
 <span class="sd">        ensemble_size (int), (default=50):</span>
@@ -177,6 +177,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">logging_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">ensemble_nbest</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
@@ -195,6 +196,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="n">n_threads</span><span class="o">=</span><span class="n">n_threads</span><span class="p">,</span>
             <span class="n">logging_config</span><span class="o">=</span><span class="n">logging_config</span><span class="p">,</span>
             <span class="n">ensemble_size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">,</span>
             <span class="n">ensemble_nbest</span><span class="o">=</span><span class="n">ensemble_nbest</span><span class="p">,</span>
