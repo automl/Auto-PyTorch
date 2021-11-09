@@ -28,7 +28,7 @@ class MLPBackbone(NetworkBackboneComponent):
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        layers = list()  # type: List[nn.Module]
+        layers: List[nn.Module] = list()
         in_features = input_shape[0]
 
         self._add_layer(layers, in_features, self.config['num_units_1'], 1)

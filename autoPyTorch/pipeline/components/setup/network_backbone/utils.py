@@ -1,5 +1,5 @@
-import typing
 import warnings
+from typing import Any, List, Tuple
 
 import torch
 from torch.autograd import Function
@@ -16,8 +16,8 @@ _activations = {
 }
 
 
-def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ...]
-                     ) -> typing.Tuple[int, ...]:
+def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...]
+                     ) -> Tuple[int, ...]:
     """
     Run a dummy forward pass to get the output shape of the backbone.
     Can and should be overridden by subclasses that know the output shape
@@ -32,13 +32,20 @@ def get_output_shape(network: torch.nn.Module, input_shape: typing.Tuple[int, ..
 
 
 class ShakeShakeFunction(Function):
+    """
+    References:
+        Title: Shake-Shake regularization
+        Authors: Xavier Gastaldi
+        URL: https://arxiv.org/pdf/1705.07485.pdf
+        Github URL: https://github.com/hysts/pytorch_shake_shake/blob/master/functions/shake_shake_function.py
+    """
     @staticmethod
     def forward(
-        ctx: typing.Any,  # No typing for AutogradContext
+        ctx: Any,  # No typing for AutogradContext
         x1: torch.Tensor,
         x2: torch.Tensor,
-        alpha: torch.tensor,
-        beta: torch.tensor,
+        alpha: torch.Tensor,
+        beta: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(x1, x2, alpha, beta)
 
@@ -46,9 +53,9 @@ class ShakeShakeFunction(Function):
         return y
 
     @staticmethod
-    def backward(ctx: typing.Any,
+    def backward(ctx: Any,
                  grad_output: torch.Tensor
-                 ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x1, x2, alpha, beta = ctx.saved_tensors
         grad_x1 = grad_x2 = grad_alpha = grad_beta = None
 
@@ -64,12 +71,22 @@ shake_shake = ShakeShakeFunction.apply
 
 
 class ShakeDropFunction(Function):
+    """
+    References:
+        Title: ShakeDrop Regularization for Deep Residual Learning
+        Authors: Yoshihiro Yamada et. al.
+        URL: https://arxiv.org/pdf/1802.02375.pdf
+        Title: ShakeDrop Regularization
+        Authors: Yoshihiro Yamada et. al.
+        URL: https://openreview.net/pdf?id=S1NHaMW0b
+        Github URL: https://github.com/owruby/shake-drop_pytorch/blob/master/models/shakedrop.py
+    """
     @staticmethod
-    def forward(ctx: typing.Any,
-                x: torch.tensor,
-                alpha: torch.tensor,
-                beta: torch.tensor,
-                bl: torch.tensor,
+    def forward(ctx: Any,
+                x: torch.Tensor,
+                alpha: torch.Tensor,
+                beta: torch.Tensor,
+                bl: torch.Tensor,
                 ) -> torch.Tensor:
         ctx.save_for_backward(x, alpha, beta, bl)
 
@@ -77,9 +94,9 @@ class ShakeDropFunction(Function):
         return y
 
     @staticmethod
-    def backward(ctx: typing.Any,
+    def backward(ctx: Any,
                  grad_output: torch.Tensor
-                 ) -> typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         x, alpha, beta, bl = ctx.saved_tensors
         grad_x = grad_alpha = grad_beta = grad_bl = None
 
@@ -93,7 +110,29 @@ shake_drop = ShakeDropFunction.apply
 
 
 def shake_get_alpha_beta(is_training: bool, is_cuda: bool
-                         ) -> typing.Tuple[torch.tensor, torch.tensor]:
+                         ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    The methods used in this function have been introduced in 'ShakeShake Regularisation'
+    Currently, this function supports `even-even`.
+
+    Args:
+        is_training (bool): Whether the computation for the training
+        is_cuda (bool): Whether the tensor is on CUDA
+
+    Returns:
+        alpha, beta (Tuple[float, float]):
+            alpha (in [0, 1]) is the weight coefficient  for the forward pass
+            beta (in [0, 1]) is the weight coefficient for the backward pass
+
+    Reference:
+        Title: Shake-shake regularization
+        Author: Xavier Gastaldi
+        URL: https://arxiv.org/abs/1705.07485
+
+    Note:
+        The names have been taken from the paper as well.
+        Currently, this function supports `even-even`.
+    """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
@@ -115,7 +154,28 @@ def shake_drop_get_bl(
         num_blocks: int,
         is_training: bool,
         is_cuda: bool
-) -> torch.tensor:
+) -> torch.Tensor:
+    """
+    The sampling of Bernoulli random variable
+    based on Eq. (4) in the paper
+
+    Args:
+        block_index (int): The index of the block from the input layer
+        min_prob_no_shake (float): The initial shake probability
+        num_blocks (int): The total number of building blocks
+        is_training (bool): Whether it is training
+        is_cuda (bool): Whether the tensor is on CUDA
+
+    Returns:
+        bl (torch.Tensor): a Bernoulli random variable in {0, 1}
+
+    Reference:
+        ShakeDrop Regularization for Deep Residual Learning
+        Yoshihiro Yamada et. al. (2020)
+        paper: https://arxiv.org/pdf/1802.02375.pdf
+        implementation: https://github.com/imenurok/ShakeDrop
+    """
+
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if is_training:
@@ -136,8 +196,9 @@ def get_shaped_neuron_counts(
     out_feat: int,
     max_neurons: int,
     layer_count: int
-) -> typing.List[int]:
-    counts = []  # type: typing.List[int]
+) -> List[int]:
+
+    counts: List[int] = []
 
     if (layer_count <= 0):
         return counts

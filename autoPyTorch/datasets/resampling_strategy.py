@@ -79,7 +79,7 @@ class HoldoutValTypes(IntEnum):
 # TODO: replace it with another way
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
 
-DEFAULT_RESAMPLING_PARAMETERS = {
+DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]] = {
     HoldoutValTypes.holdout_validation: {
         'val_share': 0.33,
     },
@@ -98,7 +98,7 @@ DEFAULT_RESAMPLING_PARAMETERS = {
     CrossValTypes.time_series_cross_validation: {
         'num_splits': 5,
     },
-}  # type: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]]
+}
 
 
 class HoldOutFuncs():

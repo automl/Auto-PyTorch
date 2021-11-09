@@ -87,7 +87,7 @@ class EnsembleSelection(AbstractEnsemble):
         """
         self.num_input_models_ = len(predictions)
 
-        ensemble = []  # type: List[np.ndarray]
+        ensemble: List[np.ndarray] = []
         trajectory = []
         order = []
 

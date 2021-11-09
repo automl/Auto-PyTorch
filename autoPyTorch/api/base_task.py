@@ -195,7 +195,7 @@ class BaseTask:
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
 
-        self.stop_logging_server = None  # type: Optional[multiprocessing.synchronize.Event]
+        self.stop_logging_server: Optional[multiprocessing.synchronize.Event] = None
 
         # Single core, local runs should use fork
         # to prevent the __main__ requirements in

@@ -14,7 +14,7 @@ def preload_modules(context: multiprocessing.context.BaseContext) -> None:
 
     We do not inherit dead-lock problematic modules like logging.
 
-    Arguments:
+    Args:
         context (multiprocessing.context.BaseContext): One of the three supported multiprocessing
             contexts being fork, forkserver or spawn.
     """

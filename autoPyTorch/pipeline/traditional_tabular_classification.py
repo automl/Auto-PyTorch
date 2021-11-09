@@ -195,7 +195,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 list of steps sequentially exercised
                 by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, PipelineStepType]]
+        steps: List[Tuple[str, PipelineStepType]] = []
 
         default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:

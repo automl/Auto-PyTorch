@@ -1,6 +1,5 @@
 import functools
-import typing
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, cast
 
 import numpy as np
 
@@ -125,10 +124,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
         features (from categorical for example) to a numerical value that further stages
         will be able to use
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
-                checks) and a encoder fitted in the case the data needs encoding
+                checks) and an encoder fitted in the case the data needs encoding
+
         Returns:
             self:
                 The fitted base estimator
@@ -140,7 +140,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_array_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
-            X = typing.cast(pd.DataFrame, X)
+            X = cast(pd.DataFrame, X)
             # Treat a column with all instances a NaN as numerical
             # This will prevent doing encoding to a categorical column made completely
             # out of nan values -- which will trigger a fail, as encoding is not supported
@@ -210,7 +210,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features, whose categorical features are going to be
                 transformed
@@ -281,10 +281,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         Feature dimensionality and data type checks
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
-                checks) and a encoder fitted in the case the data needs encoding
+                checks) and an encoder fitted in the case the data needs encoding
         """
 
         if not isinstance(X, (np.ndarray, pd.DataFrame)) and not scipy.sparse.issparse(X):
@@ -318,7 +318,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Then for Pandas, we do not support Nan in categorical columns
         if hasattr(X, "iloc"):
             # If entered here, we have a pandas dataframe
-            X = typing.cast(pd.DataFrame, X)
+            X = cast(pd.DataFrame, X)
 
             # Handle objects if possible
             if not X.select_dtypes(include='object').empty:
@@ -354,14 +354,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def _get_columns_to_encode(
         self,
         X: pd.DataFrame,
-    ) -> typing.Tuple[typing.List[str], typing.List[str]]:
+    ) -> Tuple[List[str], List[str]]:
         """
         Return the columns to be encoded from a pandas dataframe
 
-        Arguments:
+        Args:
             X (pd.DataFrame)
                 A set of features that are going to be validated (type and dimensionality
-                checks) and a encoder fitted in the case the data needs encoding
+                checks) and an encoder fitted in the case the data needs encoding
+
         Returns:
             transformed_columns (List[str]):
                 Columns to encode, if any
@@ -429,19 +430,20 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def list_to_dataframe(
         self,
         X_train: SUPPORTED_FEAT_TYPES,
-        X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
-    ) -> typing.Tuple[pd.DataFrame, typing.Optional[pd.DataFrame]]:
+        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """
         Converts a list to a pandas DataFrame. In this process, column types are inferred.
 
         If test data is provided, we proactively match it to train data
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (typing.Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SUPPORTED_FEAT_TYPES]):
                 A hold out set of data used for checking
+
         Returns:
             pd.DataFrame:
                 transformed train data from list to pandas DataFrame
@@ -469,7 +471,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         Converts a numpy array to pandas for type inference
 
-        Arguments:
+        Args:
             X (np.ndarray):
                 data to be interpreted.
 
@@ -484,7 +486,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         This has to be done once, so the test and train data are treated equally
 
-        Arguments:
+        Args:
             X (pd.DataFrame):
                 data to be interpreted.
 

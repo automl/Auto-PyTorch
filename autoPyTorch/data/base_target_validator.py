@@ -1,5 +1,5 @@
 import logging
-import typing
+from typing import List, Optional, Union, cast
 
 import numpy as np
 
@@ -12,8 +12,8 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
-SUPPORTED_TARGET_TYPES = typing.Union[
-    typing.List,
+SUPPORTED_TARGET_TYPES = Union[
+    List,
     pd.Series,
     pd.DataFrame,
     np.ndarray,
@@ -31,52 +31,55 @@ class BaseTargetValidator(BaseEstimator):
     """
     A class to pre-process targets. It validates the data provided during fit (to make sure
     it matches AutoPyTorch expectation) as well as encoding the targets in case of classification
+
     Attributes:
         is_classification (bool):
             A bool that indicates if the validator should operate in classification mode.
             During classification, the targets are encoded.
-        encoder (typing.Optional[BaseEstimator]):
+        encoder (Optional[BaseEstimator]):
             Host a encoder object if the data requires transformation (for example,
             if provided a categorical column in a pandas DataFrame)
-        enc_columns (typing.List[str])
+        enc_columns (List[str])
             List of columns that where encoded
     """
     def __init__(self,
                  is_classification: bool = False,
-                 logger: typing.Optional[typing.Union[PicklableClientLogger, logging.Logger
-                                                      ]] = None,
-                 ) -> None:
+                 logger: Optional[Union[PicklableClientLogger,
+                                        logging.Logger
+                                        ]
+                                  ] = None,
+                 ):
         self.is_classification = is_classification
 
-        self.data_type = None  # type: typing.Optional[type]
+        self.data_type: Optional[type] = None
 
-        self.encoder = None  # type: typing.Optional[BaseEstimator]
+        self.encoder: Optional[BaseEstimator] = None
 
-        self.out_dimensionality = None  # type: typing.Optional[int]
-        self.type_of_target = None  # type: typing.Optional[str]
+        self.out_dimensionality: Optional[int] = None
+        self.type_of_target: Optional[str] = None
 
-        self.logger: typing.Union[
+        self.logger: Union[
             PicklableClientLogger, logging.Logger
         ] = logger if logger is not None else logging.getLogger(__name__)
 
         # Store the dtype for remapping to correct type
-        self.dtype = None  # type: typing.Optional[type]
+        self.dtype: Optional[type] = None
 
         self._is_fitted = False
 
     def fit(
         self,
         y_train: SUPPORTED_TARGET_TYPES,
-        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         """
         Validates and fit a categorical encoder (if needed) to the targets
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 A set of targets set aside for training
-            y_test (typing.Union[SUPPORTED_TARGET_TYPES])
+            y_test (Union[SUPPORTED_TARGET_TYPES])
                 A hold out set of data used of the targets. It is also used to fit the
                 categories of the encoder.
         """
@@ -95,7 +98,7 @@ class BaseTargetValidator(BaseEstimator):
                                      np.shape(y_test)
                                  ))
             if isinstance(y_train, pd.DataFrame):
-                y_test = typing.cast(pd.DataFrame, y_test)
+                y_test = cast(pd.DataFrame, y_test)
                 if y_train.columns.tolist() != y_test.columns.tolist():
                     raise ValueError(
                         "Train and test targets must both have the same columns, yet "
@@ -126,24 +129,24 @@ class BaseTargetValidator(BaseEstimator):
     def _fit(
         self,
         y_train: SUPPORTED_TARGET_TYPES,
-        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         """
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 The labels of the current task. They are going to be encoded in case
                 of classification
-            y_test (typing.Optional[SUPPORTED_TARGET_TYPES])
+            y_test (Optional[SUPPORTED_TARGET_TYPES])
                 A holdout set of labels
         """
         raise NotImplementedError()
 
     def transform(
         self,
-        y: typing.Union[SUPPORTED_TARGET_TYPES],
+        y: Union[SUPPORTED_TARGET_TYPES],
     ) -> np.ndarray:
         """
-        Arguments:
+        Args:
             y (SUPPORTED_TARGET_TYPES)
                 A set of targets that are going to be encoded if the current task
                 is classification
@@ -160,9 +163,10 @@ class BaseTargetValidator(BaseEstimator):
         """
         Revert any encoding transformation done on a target array
 
-        Arguments:
-            y (typing.Union[np.ndarray, pd.DataFrame, pd.Series]):
+        Args:
+            y (Union[np.ndarray, pd.DataFrame, pd.Series]):
                 Target array to be transformed back to original form before encoding
+
         Returns:
             np.ndarray:
                 The transformed array
@@ -176,6 +180,7 @@ class BaseTargetValidator(BaseEstimator):
         which consist of a ndarray of shape (n_classes,)
         where n_classes are the number of classes seen while fitting
         a encoder to the targets.
+
         Returns:
             classes_: np.ndarray
                 The unique classes seen during encoding of a classifier

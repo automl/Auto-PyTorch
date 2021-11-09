@@ -50,7 +50,7 @@ class ImageAugmenter(BaseImageAugmenter):
 
     def __init__(self, random_state: Optional[Union[int, np.random.RandomState]] = None):
         super().__init__()
-        self.available_augmenters = get_components()  # type: Dict[str, BaseImageAugmenter]
+        self.available_augmenters: Dict[str, BaseImageAugmenter] = get_components()
         self.random_state = random_state
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseImageAugmenter:
@@ -112,7 +112,7 @@ class ImageAugmenter(BaseImageAugmenter):
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        available_augmenters = get_components()  # type: Dict[str, BaseImageAugmenter]
+        available_augmenters: Dict[str, BaseImageAugmenter] = get_components()
 
         if dataset_properties is None:
             dataset_properties = dict()

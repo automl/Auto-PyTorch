@@ -131,7 +131,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         self.opt_metric = opt_metric
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
-        self.max_models_on_disc = max_models_on_disc  # type: Union[float, int]
+        self.max_models_on_disc: Union[float, int] = max_models_on_disc
         self.seed = seed
         self.precision = precision
         self.max_iterations = max_iterations
@@ -142,10 +142,10 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         self.pynisher_context = pynisher_context
 
         # Store something similar to SMAC's runhistory
-        self.history = []  # type: List[Dict[str, float]]
+        self.history: List[Dict[str, float]] = []
 
         # We only submit new ensembles when there is not an active ensemble job
-        self.futures = []  # type: List[dask.Future]
+        self.futures: List[dask.Future] = []
 
         # The last criteria is the number of iterations
         self.iteration = 0
@@ -482,7 +482,7 @@ class EnsembleBuilder(object):
                 "max_models_on_disc has to be a positive number or None"
             )
         self.max_models_on_disc = max_models_on_disc
-        self.max_resident_models = None  # type: Optional[int]
+        self.max_resident_models: Optional[int] = None
 
         self.seed = seed
         self.precision = precision
@@ -574,7 +574,7 @@ class EnsembleBuilder(object):
         # hidden feature which can be activated via an environment variable. This keeps all
         # models and predictions which have ever been a candidate. This is necessary to post-hoc
         # compute the whole ensemble building trajectory.
-        self._has_been_candidate = set()  # type: Set[str]
+        self._has_been_candidate: Set[str] = set()
 
         self.validation_performance_ = np.inf
 
@@ -584,7 +584,7 @@ class EnsembleBuilder(object):
         if datamanager.test_tensors is not None:
             self.y_test = datamanager.test_tensors[1]
         del datamanager
-        self.ensemble_history = []  # type: List[Dict[str, float]]
+        self.ensemble_history: List[Dict[str, float]] = []
 
     def run(
         self,
