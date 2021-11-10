@@ -1,3 +1,15 @@
+"""Backup solution class for the crached searching
+* Provide the best configuration instead of an ensemble
+  with multiple models
+
+TODO:
+    * Change `<variable>_` to `_<variable>`
+    * Add more `raise <Error>` since this class is supposed
+      to be used in very specific situations
+    * Check the contexts where this class is called because
+      self.weights_ and self.indices_ are not clear enough
+"""
+
 import os
 from typing import Any, Dict, List, Tuple, Union
 

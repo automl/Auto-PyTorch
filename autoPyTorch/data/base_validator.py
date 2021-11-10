@@ -1,3 +1,16 @@
+"""Base class for the input validator given a task
+* A wrapper class of the sklearn.base.BaseEstimator
+* The input validator for each task inherits this class
+* Check if the provided data are compatible with AutoPytorch implementation
+* Manage both target_ and feature_validator in this class
+
+TODO:
+    * typing.<type> --> <type>
+    * logging.Logger --> Logger
+    * Inherit feature_validator and target_validator from a child class
+      via super().__init__()
+"""
+
 # -*- encoding: utf-8 -*-
 import logging.handlers
 import typing

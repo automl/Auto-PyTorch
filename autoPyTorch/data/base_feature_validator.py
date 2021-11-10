@@ -1,3 +1,15 @@
+"""Base class for the feature validator given a task
+* A wrapper class of the sklearn.base.BaseEstimator
+* The feature validator for each task inherits this class
+* Check if the provided feature can be processed in AutoPytorch
+
+TODO:
+    * SUPPORTED_FEAT_TYPES --> Enumerator
+    * Describe the shape of X
+    * typing.<type> --> <type>
+    * logging.Logger --> Logger
+"""
+
 import logging
 import typing
 

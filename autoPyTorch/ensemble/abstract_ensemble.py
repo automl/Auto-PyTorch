@@ -1,3 +1,11 @@
+"""The abstract class of ensemble classes
+* Provide methods that must be overridden by the child class
+
+TODO:
+    * Add `raise NotImplementedError`
+    * model_identifiers --> List[<NamedTuple with an appropriate name>]
+"""
+
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Tuple, Union
 

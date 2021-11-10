@@ -1,3 +1,19 @@
+"""Functions for resampling strategy or cross validation
+* Each function is used in BaseDataset to provide dataset splits
+
+TODO:
+    * DEFAULT_RESAMPLING_PARAMETERS --> keyword arguments
+    * documentation strings
+    * Make shuffle and stratified arguments rather than
+      independent methods
+    * Force the instantiation of each splitting methods
+        ==> instance variables tell you what kind of splitting
+    * Delete protocol and enumerator because we do not need
+      once we make them classes that require instantiation
+    * resampling_strategy --> splitting_fn
+    * resampling_strategy_args --> splitting_params
+"""
+
 from enum import IntEnum
 from typing import Any, Dict, List, Optional, Tuple, Union
 

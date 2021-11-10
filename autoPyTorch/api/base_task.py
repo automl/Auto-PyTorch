@@ -1,3 +1,18 @@
+"""Base class for tasks to solve
+* The shared components among all the tasks
+* This module provides the optimization given a pipeline
+* This module plays a role of communicating with
+  distributed clients
+
+TODO:
+    * Separate the training procedure by another class and encapsulate it
+    * Separate _do_dummy_prediction and refactor it
+    * Separate _do_traditional_prediction and refactor it
+    * Refactor _search
+    * Reduce unimportant instance variables
+    * Use private variables and public variables by _<var name>
+"""
+
 import copy
 import json
 import logging.handlers

@@ -1,3 +1,10 @@
+"""Constant variables in AutoPytorch
+
+TODO:
+    * Make everything enumerators
+    * Avoid the usage of integers
+"""
+
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3

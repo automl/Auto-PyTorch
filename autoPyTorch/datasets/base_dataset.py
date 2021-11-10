@@ -1,3 +1,19 @@
+"""Base class of the provided dataset
+* Provide data validation splits based on types of data
+* Provide API to return training and validation splits
+* Storage the properties of the dataset which are required
+  in AutoPytorch implementation
+
+TODO:
+    * Address: https://github.com/automl/Auto-PyTorch/pull/108/
+    * Make BaseDatasetPropertiesType more informative
+    * Use private variables and public variables properly
+    * Consider more memory-efficient way to store splits
+        ==> It will be so much memory consumption for huge datasets
+    * Check the usage of validation and test because cross validation
+      only uses the training dataset
+"""
+
 import os
 import uuid
 from abc import ABCMeta

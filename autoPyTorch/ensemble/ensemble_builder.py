@@ -1,3 +1,30 @@
+"""The module that enables a build ensemble
+* EnsembleBuilderManager serves as a central system that
+  submit an EnsembleBuilder to dask
+* EnsembleBuilder builds an ensemble using pynisher
+  so that we can easily suppress the memory usage and runtime
+* EnsembleBuilder builds an ensemble using the configurations
+  that are observed in HPO
+
+TODO:
+    * Unused arguments in EnsembleBuilderManager.__call__
+    * Remove the argument `unit_test` and separate methods
+    with patch.object(<class name>, '<method name>', side_effect=MemoryError):
+        inst = <class name>(arguments)
+        inst.<method name>()  <== MemoryError
+
+    * Remove unneeded comments
+    * Make precision in a better way (enum, np.int32 ...)
+    * Separate `raise Error` methods in EnsembleBuilder
+        + run
+        + main
+        + compute_loss_per_model
+        + get_n_best_preds
+    * Separate more general function from EnsembleBuilder
+        + get_disk_consumption
+        + _read_np_fn
+"""
+
 # -*- encoding: utf-8 -*-
 import glob
 import gzip
