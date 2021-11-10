@@ -113,7 +113,7 @@ def shake_get_alpha_beta(is_training: bool, is_cuda: bool
                          ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
-    Currently, this function supports `even-even`.
+    Currently, this function supports `shake-shake`.
 
     Args:
         is_training (bool): Whether the computation for the training
@@ -131,7 +131,7 @@ def shake_get_alpha_beta(is_training: bool, is_cuda: bool
 
     Note:
         The names have been taken from the paper as well.
-        Currently, this function supports `even-even`.
+        Currently, this function supports `shake-shake`.
     """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
