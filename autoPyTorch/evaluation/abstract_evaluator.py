@@ -488,47 +488,25 @@ class AbstractEvaluator(object):
                                      exclude=self.exclude,
                                      search_space_updates=self.search_space_updates
                                      ))
-        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
+        metrics_dict: Optional[Dict[str, List[str]]] = None
         if all_supported_metrics:
             self.additional_metrics = get_metrics(dataset_properties=self.dataset_properties,
                                                   all_supported_metrics=all_supported_metrics)
             # Update fit dictionary with metrics passed to the evaluator
-            metrics_dict: Dict[str, List[str]] = {'additional_metrics': []}
+            metrics_dict = {'additional_metrics': []}
             metrics_dict['additional_metrics'].append(self.metric.name)
             for metric in self.additional_metrics:
                 metrics_dict['additional_metrics'].append(metric.name)
 
-            self.fit_dictionary.update(metrics_dict)
-
         self._init_params = init_params
-        self.fit_dictionary.update({
-            'X_train': self.X_train,
-            'y_train': self.y_train,
-            'X_test': self.X_test,
-            'y_test': self.y_test,
-            'backend': self.backend,
-            'logger_port': logger_port,
-            'optimize_metric': self.metric.name
-        })
 
         assert self.pipeline_class is not None, "Could not infer pipeline class"
         pipeline_config = pipeline_config if pipeline_config is not None \
             else self.pipeline_class.get_default_pipeline_options()
         self.budget_type = pipeline_config['budget_type'] if budget_type is None else budget_type
         self.budget = pipeline_config[self.budget_type] if budget == 0 else budget
-        self.fit_dictionary = {**pipeline_config, **self.fit_dictionary}
-
-        # If the budget is epochs, we want to limit that in the fit dictionary
-        if self.budget_type == 'epochs':
-            self.fit_dictionary['epochs'] = budget
-            self.fit_dictionary.pop('runtime', None)
-        elif self.budget_type == 'runtime':
-            self.fit_dictionary['runtime'] = budget
-            self.fit_dictionary.pop('epochs', None)
-        else:
-            raise ValueError(f"Unsupported budget type {self.budget_type} provided")
 
         self.num_run = 0 if num_run is None else num_run
 
@@ -541,12 +519,64 @@ class AbstractEvaluator(object):
             port=logger_port,
         )
 
+        self._init_fit_dictionary(logger_port=logger_port, pipeline_config=pipeline_config, metrics_dict=metrics_dict)
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+
+    def _init_fit_dictionary(
+        self,
+        logger_port: int,
+        pipeline_config: Dict[str, Any],
+        metrics_dict: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
+        """
+        Initialises the fit dictionary
+
+        Args:
+            logger_port (int):
+                Logging is performed using a socket-server scheme to be robust against many
+                parallel entities that want to write to the same file. This integer states the
+                socket port for the communication channel.
+            pipeline_config (Dict[str, Any]):
+                Defines the content of the pipeline being evaluated. For example, it
+                contains pipeline specific settings like logging name, or whether or not
+                to use tensorboard.
+            metrics_dict (Optional[Dict[str, List[str]]]):
+            Contains a list of metric names to be evaluated in Trainer with key `additional_metrics`. Defaults to None.
+
+        Returns:
+            None
+        """
+
+        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
+
+        if metrics_dict is not None:
+            self.fit_dictionary.update(metrics_dict)
+
+        self.fit_dictionary.update({
+            'X_train': self.X_train,
+            'y_train': self.y_train,
+            'X_test': self.X_test,
+            'y_test': self.y_test,
+            'backend': self.backend,
+            'logger_port': logger_port,
+            'optimize_metric': self.metric.name
+        })
+
+        self.fit_dictionary = {**pipeline_config, **self.fit_dictionary}
+        # If the budget is epochs, we want to limit that in the fit dictionary
+        if self.budget_type == 'epochs':
+            self.fit_dictionary['epochs'] = self.budget
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'runtime':
+            self.fit_dictionary['runtime'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+        else:
+            raise ValueError(f"Unsupported budget type {self.budget_type} provided")
 
     def _get_pipeline(self) -> BaseEstimator:
         """
