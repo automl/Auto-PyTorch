@@ -3,7 +3,7 @@
 Tabular Classification
 ======================
 
-The following example shows how to fit a sample classification model
+The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch
 """
 import os
