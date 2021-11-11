@@ -63,6 +63,7 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
                    ) -> None:
         layers.append(nn.Linear(in_features, out_features))
         layers.append(_activations[self.config["activation"]]())
+        layers.append(nn.BatchNorm1d(out_features))
         if self.config["use_dropout"] and self.config["max_dropout"] > 0.05:
             layers.append(nn.Dropout(dropout))
 
