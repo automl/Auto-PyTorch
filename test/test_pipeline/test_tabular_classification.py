@@ -460,7 +460,7 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     # Convert the training to runtime
     fit_dictionary_tabular_dummy.pop('epochs', None)
     fit_dictionary_tabular_dummy['budget_type'] = 'runtime'
-    fit_dictionary_tabular_dummy['runtime'] = 3
+    fit_dictionary_tabular_dummy['runtime'] = 5
     fit_dictionary_tabular_dummy['early_stopping'] = -1
 
     pipeline = TabularClassificationPipeline(
@@ -474,11 +474,11 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     run_summary = pipeline.named_steps['trainer'].run_summary
     budget_tracker = pipeline.named_steps['trainer'].budget_tracker
     assert budget_tracker.budget_type == 'runtime'
-    assert budget_tracker.max_runtime == 3
+    assert budget_tracker.max_runtime == 5
     assert budget_tracker.is_max_time_reached()
 
     # There is no epoch limitation
     assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
 
-    # More than 200 epochs would have pass in 3 seconds for this dataset
+    # More than 200 epochs would have pass in 5 seconds for this dataset
     assert len(run_summary.performance_tracker['start_time']) > 100
