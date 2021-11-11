@@ -576,7 +576,7 @@ class AbstractEvaluator(object):
             self.fit_dictionary['runtime'] = self.budget
             self.fit_dictionary.pop('epochs', None)
         else:
-            raise ValueError(f"Unsupported budget type {self.budget_type} provided")
+            raise ValueError(f"Unsupported budget type '{self.budget_type}' provided")
 
     def _get_pipeline(self) -> BaseEstimator:
         """
