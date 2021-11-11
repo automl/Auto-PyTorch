@@ -25,30 +25,42 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class TabularRegressionTask(BaseTask):
     """
     Tabular Regression API to the pipelines.
+
     Args:
-        seed (int), (default=1): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
+        seed (int), (default=1):
+            seed to be used for reproducibility.
+        n_jobs (int), (default=1): 
+            number of consecutive processes to spawn.
         n_threads (int), (default=1):
             number of threads to use for each process.
         logging_config (Optional[Dict]): specifies configuration
             for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int), (default=50): Number of models added to the ensemble built by
+        ensemble_size (int), (default=50):
+            Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50): only consider the ensemble_nbest
+        ensemble_nbest (int), (default=50): 
+            Only consider the ensemble_nbest
             models to build the ensemble
-        max_models_on_disc (int), (default=50): maximum number of models saved to disc.
-            Also, controls the size of the ensemble as any additional models will be deleted.
+        max_models_on_disc (int), (default=50):
+            Maximum number of models saved to disc.
+            Also, controls the size of the ensemble 
+            as any additional models will be deleted.
             Must be greater than or equal to 1.
-        temporary_directory (str): folder to store configuration output and log file
-        output_directory (str): folder to store predictions for optional test set
-        delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,
+        temporary_directory (str):
+            Folder to store configuration output and log file
+        output_directory (str):
+            Folder to store predictions for optional test set
+        delete_tmp_folder_after_terminate (bool):
+            Determines whether to delete the temporary directory,
             when finished
-        include_components (Optional[Dict]): If None, all possible components are used.
+        include_components (Optional[Dict]):
+            If None, all possible components are used.
             Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]): If None, all possible components are used.
-            Otherwise specifies set of components not to use. Incompatible with include
-            components
+        exclude_components (Optional[Dict]):
+            If None, all possible components are used.
+            Otherwise specifies set of components not to use.
+            Incompatible with include components.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
@@ -96,6 +108,16 @@ class TabularRegressionTask(BaseTask):
         )
 
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
+        """
+        Build pipeline according to current task and for the passed dataset properties
+
+        Args:
+            dataset_properties (Dict[str,Any])
+
+        Returns:
+            TabularRegressionPipeline:
+                Pipeline compatible with the given dataset properties.
+        """
         return TabularRegressionPipeline(dataset_properties=dataset_properties)
 
     def search(
@@ -137,18 +159,18 @@ class TabularRegressionTask(BaseTask):
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
-                + 'epochs': The training of each pipeline will be terminated after
-                  a number of epochs have passed. This number of epochs is determined by the
-                  budget argument of this method.
-                + 'runtime': The training of each pipeline will be terminated after
-                  a number of seconds have passed. This number of seconds is determined by the
-                  budget argument of this method. The overall fitting time of a pipeline is
-                  controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
-                  time to train a pipeline, but it does not consider the overall time it takes
-                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
-                budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
-                is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
-                min_budget will refer to seconds.
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                    budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                    is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                    min_budget will refer to seconds.
             min_budget (int):
                 Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
                 trade-off resources between running many pipelines at min_budget and
@@ -180,8 +202,12 @@ class TabularRegressionTask(BaseTask):
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
             enable_traditional_pipeline (bool), (default=True):
-                Not enabled for regression. This flag is here to comply
-                with the API.
+                We fit traditional machine learning algorithms
+                (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
+                prior building PyTorch Neural Networks. You can disable this
+                feature by turning this flag to False. All machine learning
+                algorithms that are fitted during search() are considered for
+                ensemble building.
             memory_limit (Optional[int]), (default=4096): Memory
                 limit in MB for the machine learning algorithm. autopytorch
                 will stop fitting the machine learning algorithm if it tries
@@ -192,6 +218,7 @@ class TabularRegressionTask(BaseTask):
             smac_scenario_args (Optional[Dict]): Additional arguments inserted
                 into the scenario of SMAC. See the
                 [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)
+                for a list of available arguments.
             get_smac_object_callback (Optional[Callable]): Callback function
                 to create an object of class
                 [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).
@@ -199,6 +226,10 @@ class TabularRegressionTask(BaseTask):
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
                 [SMAC](https://automl.github.io/SMAC3/master/index.html).
+            tae_func (Optional[Callable]):
+                TargetAlgorithm to be optimised. If None, `eval_function`
+                available in autoPyTorch/evaluation/train_evaluator is used.
+                Must be child class of AbstractEvaluator.
             all_supported_metrics (bool), (default=True): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
@@ -215,11 +246,7 @@ class TabularRegressionTask(BaseTask):
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`.
-                Although portfolio selection is supported for tabular
-                regression, the portfolio has been built using
-                classification datasets. We will update a portfolio
-                to cover tabular regression datasets.
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
 
         Returns:
             self

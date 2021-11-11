@@ -102,9 +102,12 @@ def _pipeline_predict(pipeline: BasePipeline,
 class BaseTask:
     """
     Base class for the tasks that serve as API to the pipelines.
+
     Args:
-        seed (int), (default=1): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
+        seed (int), (default=1):
+            seed to be used for reproducibility.
+        n_jobs (int), (default=1): 
+            number of consecutive processes to spawn.
         n_threads (int), (default=1):
             number of threads to use for each process.
         logging_config (Optional[Dict]): specifies configuration
@@ -221,8 +224,9 @@ class BaseTask:
         """
         Build pipeline according to current task
         and for the passed dataset properties
+
         Args:
-            dataset_properties (Dict[str,Any]):
+            dataset_properties (Dict[str,Any])
 
         Returns:
 
@@ -349,6 +353,7 @@ class BaseTask:
     def _clean_logger(self) -> None:
         """
         cleans the logging server created
+
         Returns:
 
         """
@@ -373,6 +378,7 @@ class BaseTask:
         """
         creates the dask client that is used to parallelize
         the training of pipelines
+
         Returns:
             None
         """
@@ -400,6 +406,7 @@ class BaseTask:
     def _close_dask_client(self) -> None:
         """
         Closes the created dask client
+
         Returns:
             None
         """
@@ -716,6 +723,7 @@ class BaseTask:
         Fit both optimizes the machine learning models and builds an ensemble out of them.
         To disable ensembling, set ensemble_size==0.
         using the optimizer.
+
         Args:
             dataset (Dataset):
                 The argument that will provide the dataset splits. It is
@@ -727,18 +735,18 @@ class BaseTask:
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
-                + 'epochs': The training of each pipeline will be terminated after
-                  a number of epochs have passed. This number of epochs is determined by the
-                  budget argument of this method.
-                + 'runtime': The training of each pipeline will be terminated after
-                  a number of seconds have passed. This number of seconds is determined by the
-                  budget argument of this method. The overall fitting time of a pipeline is
-                  controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
-                  time to train a pipeline, but it does not consider the overall time it takes
-                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
-                budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
-                is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
-                min_budget will refer to seconds.
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                    budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                    is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                    min_budget will refer to seconds.
             min_budget (int):
                 Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
                 trade-off resources between running many pipelines at min_budget and
@@ -815,6 +823,7 @@ class BaseTask:
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+
         Returns:
             self
 
@@ -1223,9 +1232,11 @@ class BaseTask:
     ) -> np.ndarray:
         """Generate the estimator predictions.
         Generate the predictions based on the given examples from the test set.
+
         Args:
-        X_test: (np.ndarray)
-            The test set examples.
+            X_test: (np.ndarray)
+                The test set examples.
+
         Returns:
             Array with estimator predictions.
         """
@@ -1274,11 +1285,13 @@ class BaseTask:
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
+
         Args:
-        y_pred: (np.ndarray)
-            The test predictions
-        y_test: (np.ndarray)
-            The test ground truth labels.
+            y_pred: (np.ndarray)
+                The test predictions
+            y_test: (np.ndarray)
+                The test ground truth labels.
+
         Returns:
             Dict[str, float]: Value of the evaluation metric calculated on the test set.
         """
@@ -1317,10 +1330,16 @@ class BaseTask:
     ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
         """
         Get Incumbent config and the corresponding results
+
         Args:
-            include_traditional: Whether to include results from tradtional pipelines
+            include_traditional:
+                Whether to include results from tradtional pipelines
 
         Returns:
+            Configuration:
+                The incumbent configuration
+            Dict[str, Union[int, str, float]]:
+                Additional information about the run of the incumbent configuration.
 
         """
         assert self.run_history is not None, "No Run History found, search has not been called."
@@ -1354,6 +1373,13 @@ class BaseTask:
         return models_with_weights
 
     def show_models(self) -> str:
+        """
+        Returns a Markdown containing details about the final ensemble/configuration.
+
+        Returns:
+            str:
+                Markdown table.
+        """
         df = []
         for weight, model in self.get_models_with_weights():
             representation = model.get_pipeline_representation()
