@@ -1,5 +1,5 @@
-import typing
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
 import dask.distributed
 
@@ -9,10 +9,10 @@ class DummyFuture(dask.distributed.Future):
     A class that mimics a distributed Future, the outcome of
     performing submit on a distributed client.
     """
-    def __init__(self, result: typing.Any) -> None:
-        self._result = result  # type: typing.Any
+    def __init__(self, result: Any):
+        self._result: Any = result
 
-    def result(self, timeout: typing.Optional[int] = None) -> typing.Any:
+    def result(self, timeout: Optional[int] = None) -> Any:
         return self._result
 
     def cancel(self) -> None:
@@ -58,11 +58,11 @@ class SingleThreadedClient(dask.distributed.Client):
 
     def submit(
         self,
-        func: typing.Callable,
-        *args: typing.List,
+        func: Callable,
+        *args: List,
         priority: int = 0,
-        **kwargs: typing.Any,
-    ) -> typing.Any:
+        **kwargs: Any,
+    ) -> Any:
         return DummyFuture(func(*args, **kwargs))
 
     def close(self) -> None:
@@ -75,13 +75,13 @@ class SingleThreadedClient(dask.distributed.Client):
         Path(scheduler_file).touch()
         return
 
-    def _get_scheduler_info(self) -> typing.Dict:
+    def _get_scheduler_info(self) -> Dict:
         return {
             'workers': ['127.0.0.1'],
             'type': 'Scheduler',
         }
 
-    def nthreads(self) -> typing.Dict:
+    def nthreads(self) -> Dict:
         return {
             '127.0.0.1': 1,
         }

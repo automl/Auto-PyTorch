@@ -1,4 +1,4 @@
-import typing
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -17,8 +17,15 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class MixUpTrainer(BaseTrainerComponent):
+    """
+    References:
+        Title: mixup: Beyond Empirical Risk Minimization
+        Authors: Hougyi Zhang et. al.
+        URL: https://arxiv.org/pdf/1710.09412.pdf%C2%A0
+        Github URL: https://github.com/facebookresearch/mixup-cifar10/blob/master/train.py#L119-L138
+    """
     def __init__(self, alpha: float, weighted_loss: bool = False,
-                 random_state: typing.Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         """
         This class handles the training of a network for a single given epoch.
 
@@ -31,7 +38,7 @@ class MixUpTrainer(BaseTrainerComponent):
         self.alpha = alpha
 
     def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> typing.Tuple[torch.Tensor, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -44,7 +51,7 @@ class MixUpTrainer(BaseTrainerComponent):
 
         Returns:
             torch.Tensor: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            Dict[str, np.ndarray]: arguments to the criterion function
                                           TODO: Fix this typing. It is not np.ndarray.
         """
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -58,12 +65,12 @@ class MixUpTrainer(BaseTrainerComponent):
         return mixed_x, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
-                              ) -> typing.Callable:
+                              ) -> Callable:
         return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'MixUpTrainer',
             'name': 'MixUp Regularized Trainer',
@@ -71,7 +78,7 @@ class MixUpTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="alpha",
                                                                      value_range=(0, 1),
                                                                      default_value=0.2),

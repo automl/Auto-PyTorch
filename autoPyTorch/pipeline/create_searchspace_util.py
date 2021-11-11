@@ -20,7 +20,7 @@ def get_match_array(
 
     # Duck typing, not sure if it's good...
     node_i_is_choice = []
-    node_i_choices = []  # type: List[List[Union[autoPyTorchComponent, autoPyTorchChoice]]]
+    node_i_choices: List[List[Union[autoPyTorchComponent, autoPyTorchChoice]]] = []
     node_i_choices_names = []
     all_nodes = []
     for node_name, node in pipeline:
@@ -90,8 +90,8 @@ def add_forbidden(
 ) -> ConfigurationSpace:
     # Not sure if this works for 3D
     node_i_is_choice = []
-    node_i_choices_names = []  # type: List[List[str]]
-    node_i_choices = []  # type: List[List[Union[autoPyTorchComponent, autoPyTorchChoice]]]
+    node_i_choices_names: List[List[str]] = []
+    node_i_choices: List[List[Union[autoPyTorchComponent, autoPyTorchChoice]]] = []
     all_nodes = []
     for node_name, node in pipeline:
         all_nodes.append(node)
@@ -136,7 +136,7 @@ def add_forbidden(
         idx += 1
 
     for choices_chain in choices_chains:
-        constraints = set()  # type: Set[Tuple]
+        constraints: Set[Tuple] = set()
 
         chain_start = choices_chain[0]
         chain_stop = choices_chain[1]

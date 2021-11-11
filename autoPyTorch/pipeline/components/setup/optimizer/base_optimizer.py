@@ -13,7 +13,7 @@ class BaseOptimizerComponent(autoPyTorchSetupComponent):
 
     def __init__(self) -> None:
         super().__init__()
-        self.optimizer = None  # type: Optional[Optimizer]
+        self.optimizer: Optional[Optimizer] = None
         self.add_fit_requirements([
             FitRequirement('network', (torch.nn.Module,), user_defined=False, dataset_property=False)])
 

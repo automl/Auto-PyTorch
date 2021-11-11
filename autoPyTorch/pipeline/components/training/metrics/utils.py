@@ -81,7 +81,7 @@ def get_metrics(dataset_properties: Dict[str, Any],
                                             'continuous-multioutput': 'r2'}))
 
     supported_metrics = get_supported_metrics(dataset_properties)
-    metrics = list()  # type: List[autoPyTorchMetric]
+    metrics: List[autoPyTorchMetric] = list()
     if names is not None:
         for name in names:
             if name not in supported_metrics.keys():

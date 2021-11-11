@@ -30,9 +30,6 @@ PipelineStepType = Union[autoPyTorchComponent, autoPyTorchChoice]
 
 class BasePipeline(Pipeline):
     """Base class for all pipeline objects.
-    Notes
-    -----
-    This class should not be instantiated, only subclassed.
 
     Args:
         config (Optional[Configuration]):
@@ -69,19 +66,21 @@ class BasePipeline(Pipeline):
             allows to produce reproducible
                results by setting a seed for randomized settings
 
+    Notes:
+        This class should not be instantiated, only subclassed.
     """
     __metaclass__ = ABCMeta
 
     def __init__(
-            self,
-            config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, PipelineStepType]]] = None,
-            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        config: Optional[Configuration] = None,
+        steps: Optional[List[Tuple[str, PipelineStepType]]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        random_state: Optional[np.random.RandomState] = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
         self.init_params = init_params if init_params is not None else {}
@@ -124,12 +123,13 @@ class BasePipeline(Pipeline):
 
         super().__init__(steps=self.steps)
 
-        self._additional_run_info = {}  # type: Dict[str, str]
+        self._additional_run_info: Dict[str, str] = {}
 
     def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
             **fit_params: Any) -> Pipeline:
         """Fit the selected algorithm to the training data.
-        Arguments:
+
+        Args:
             X (typing.Dict):
             A fit dictionary that contains information to fit a pipeline
             TODO: Use fit_params support from 0.24 scikit learn version instead
@@ -494,6 +494,7 @@ class BasePipeline(Pipeline):
         Utility function that goes through all the components in
         the pipeline and gets the fit requirement of that components.
         All the fit requirements are then aggregated into a list
+
         Returns:
             List[NamedTuple]: List of FitRequirements
         """
@@ -522,10 +523,11 @@ class BasePipeline(Pipeline):
         the pipeline and gets the fit requirement that are expected to be
         computed by the dataset for that components. All the fit requirements
         are then aggregated into a list.
+
         Returns:
             List[NamedTuple]: List of FitRequirements
         """
-        fit_requirements = list()  # type: List[FitRequirement]
+        fit_requirements: List[FitRequirement] = list()
         for name, step in self.steps:
             step_requirements = step.get_fit_requirements()
             if step_requirements:

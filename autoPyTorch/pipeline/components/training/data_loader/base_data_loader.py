@@ -35,8 +35,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                  random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__(random_state=random_state)
         self.batch_size = batch_size
-        self.train_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
-        self.val_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
+        self.train_data_loader: Optional[torch.utils.data.DataLoader] = None
+        self.val_data_loader: Optional[torch.utils.data.DataLoader] = None
         self.test_data_loader: Optional[torch.utils.data.DataLoader] = None
 
         # We also support existing datasets!
@@ -44,14 +44,14 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         self.vision_datasets = self.get_torchvision_datasets()
 
         # Save the transformations for reuse
-        self.train_transform = None  # type: Optional[torchvision.transforms.Compose]
+        self.train_transform: Optional[torchvision.transforms.Compose] = None
 
         # The only reason we have val/test transform separated is to speed up
         # prediction during training. Namely, if is_small_preprocess is set to true
         # X_train data will be pre-processed, so we do no need preprocessing in the transform
         # Regardless, test/inference always need this transformation
-        self.val_transform = None  # type: Optional[torchvision.transforms.Compose]
-        self.test_transform = None  # type: Optional[torchvision.transforms.Compose]
+        self.val_transform: Optional[torchvision.transforms.Compose] = None
+        self.test_transform: Optional[torchvision.transforms.Compose] = None
 
         # Define fit requirements
         self.add_fit_requirements([

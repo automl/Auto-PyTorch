@@ -173,7 +173,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
             List[Tuple[str, PipelineStepType]]:
                 list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, PipelineStepType]]
+        steps: List[Tuple[str, PipelineStepType]] = []
 
         default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'image_classification'}
         if dataset_properties is not None:

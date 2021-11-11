@@ -94,11 +94,11 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
         return self.pipeline.fit(X, y)
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
+                      batch_size: int = 1000) -> np.ndarray:
         return self.pipeline.predict_proba(X, batch_size=batch_size)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         return self.pipeline.predict(X, batch_size=batch_size)
 
     def get_additional_run_info(self) -> Dict[str, Any]:
@@ -164,7 +164,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
         return self.pipeline.fit(X, y)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         return self.pipeline.predict(X, batch_size=batch_size)
 
     def get_additional_run_info(self) -> Dict[str, Any]:
@@ -224,7 +224,7 @@ class DummyClassificationPipeline(DummyClassifier):
                                                             sample_weight=sample_weight)
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
+                      batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         probas = super(DummyClassificationPipeline, self).predict_proba(new_X)
         probas = convert_multioutput_multiclass_to_multilabel(probas).astype(
@@ -232,7 +232,7 @@ class DummyClassificationPipeline(DummyClassifier):
         return probas
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         return super(DummyClassificationPipeline, self).predict(new_X).astype(np.float32)
 
@@ -286,7 +286,7 @@ class DummyRegressionPipeline(DummyRegressor):
                                                         sample_weight=sample_weight)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         return super(DummyRegressionPipeline, self).predict(new_X).astype(np.float32)
 

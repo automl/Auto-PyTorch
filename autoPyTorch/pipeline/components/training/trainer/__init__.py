@@ -63,8 +63,8 @@ class TrainerChoice(autoPyTorchChoice):
 
         super().__init__(dataset_properties=dataset_properties,
                          random_state=random_state)
-        self.run_summary = None  # type: Optional[RunSummary]
-        self.writer = None  # type: Optional[SummaryWriter]
+        self.run_summary: Optional[RunSummary] = None
+        self.writer: Optional[SummaryWriter] = None
         self._fit_requirements: Optional[List[FitRequirement]] = [
             FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
             FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
@@ -76,7 +76,7 @@ class TrainerChoice(autoPyTorchChoice):
             FitRequirement("val_data_loader",
                            (torch.utils.data.DataLoader,),
                            user_defined=False, dataset_property=False)]
-        self.checkpoint_dir = None  # type: Optional[str]
+        self.checkpoint_dir: Optional[str] = None
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
@@ -91,7 +91,7 @@ class TrainerChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all components available
                 as choices for learning rate scheduling
         """
-        components = collections.OrderedDict()  # type: Dict[str, autoPyTorchComponent]
+        components: Dict[str, autoPyTorchComponent] = collections.OrderedDict()
         components.update(_trainers)
         components.update(_addons.components)
         return components

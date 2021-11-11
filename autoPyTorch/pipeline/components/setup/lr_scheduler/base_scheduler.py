@@ -14,7 +14,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
 
     def __init__(self, step_interval: Union[str, StepIntervalUnit]):
         super().__init__()
-        self.scheduler = None  # type: Optional[_LRScheduler]
+        self.scheduler: Optional[_LRScheduler] = None
         self._step_interval: StepIntervalUnit
 
         if isinstance(step_interval, str):

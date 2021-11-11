@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import aut
 
 
 def get_preprocess_transforms(X: Dict[str, Any]) -> torchvision.transforms.Compose:
-    candidate_transforms = list()  # type: List[autoPyTorchPreprocessingComponent]
+    candidate_transforms: List[autoPyTorchPreprocessingComponent] = list()
     for key, value in X.items():
         if isinstance(value, autoPyTorchPreprocessingComponent):
             candidate_transforms.append(copy.deepcopy(value))

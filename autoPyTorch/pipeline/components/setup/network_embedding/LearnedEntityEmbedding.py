@@ -21,7 +21,7 @@ class _LearnedEntityEmbedding(nn.Module):
 
     def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
         """
-        Arguments:
+        Args:
             config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
             num_input_features (np.ndarray): column wise information of number of output columns after transformation
                 for each categorical column and 0 for numerical columns
@@ -90,7 +90,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     Class to learn an embedding for categorical hyperparameters.
     """
 
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None, **kwargs: Any):
+    def __init__(self, random_state: Optional[np.random.RandomState] = None, **kwargs: Any):
         super().__init__(random_state=random_state)
         self.config = kwargs
 

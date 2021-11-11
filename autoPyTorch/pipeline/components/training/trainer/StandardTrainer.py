@@ -1,4 +1,4 @@
-import typing
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
@@ -15,7 +15,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class StandardTrainer(BaseTrainerComponent):
     def __init__(self, weighted_loss: bool = False,
-                 random_state: typing.Optional[np.random.RandomState] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         """
         This class handles the training of a network for a single given epoch.
 
@@ -27,7 +27,7 @@ class StandardTrainer(BaseTrainerComponent):
         self.weighted_loss = weighted_loss
 
     def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> typing.Tuple[torch.Tensor, typing.Dict[str, np.ndarray]]:
+                         ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -40,18 +40,18 @@ class StandardTrainer(BaseTrainerComponent):
 
         Returns:
             torch.Tensor: that processes data
-            typing.Dict[str, np.ndarray]: arguments to the criterion function
+            Dict[str, np.ndarray]: arguments to the criterion function
                                           TODO: Fix this typing. It is not np.ndarray.
         """
         return X, {'y_a': y}
 
     def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
-                              ) -> typing.Callable:
+                              ) -> Callable:
         return lambda criterion, pred: criterion(pred, y_a)
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> typing.Dict[str, typing.Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'StandardTrainer',
             'name': 'Standard Trainer',
@@ -59,7 +59,7 @@ class StandardTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="weighted_loss",
                                                                              value_range=(True, False),
                                                                              default_value=True),
