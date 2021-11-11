@@ -144,7 +144,7 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fc36c7d0e50&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f91153e0f40&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -178,7 +178,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0013322830200195312, budget=0), TrajEntry(train_perf=0.2865497076023392, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001371145248413086, budget=0), TrajEntry(train_perf=0.2865497076023392, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -212,7 +212,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=5.235500812530518, wallclock_time=6.2838451862335205, budget=5.555555555555555)]
+, ta_runs=1, ta_time_used=5.30727219581604, wallclock_time=6.354439973831177, budget=5.555555555555555)]
 {&#39;accuracy&#39;: 0.861271676300578}
 |    | Preprocessing   | Estimator   |   Weight |
 |---:|:----------------|:------------|---------:|
@@ -221,7 +221,7 @@ the search space.</p>
 |  2 | None            | KNNLearner  |     0.06 |
 |  3 | None            | ETLearner   |     0.04 |
 |  4 | None            | RFLearner   |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7fc36c043760&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f91154d8130&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -253,7 +253,7 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011556148529052734, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014290809631347656, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -285,21 +285,21 @@ the search space.</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.6312057971954346, wallclock_time=4.679858684539795, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8554913294797688}
+, ta_runs=1, ta_time_used=3.5893008708953857, wallclock_time=4.6382224559783936, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.8323699421965318}
 |    | Preprocessing                                                 | Estimator                                                          |   Weight |
 |---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.42 |
-|  1 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.16 |
-|  2 | None                                                          | CBLearner                                                          |     0.08 |
-|  3 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer           | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  5 | SimpleImputer,NoEncoder,NoScaler,KitchenSink                  | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  6 | None                                                          | RFLearner                                                          |     0.04 |
-|  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  8 | None                                                          | LGBMLearner                                                        |     0.02 |
-|  9 | None                                                          | ETLearner                                                          |     0.02 |
-| 10 | None                                                          | SVMLearner                                                         |     0.02 |
+|  0 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.36 |
+|  1 | None                                                          | CBLearner                                                          |     0.16 |
+|  2 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
+|  3 | None                                                          | RFLearner                                                          |     0.08 |
+|  4 | None                                                          | SVMLearner                                                         |     0.08 |
+|  5 | None                                                          | LGBMLearner                                                        |     0.04 |
+|  6 | None                                                          | ETLearner                                                          |     0.04 |
+|  7 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer           | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  8 | SimpleImputer,NoEncoder,NoScaler,KitchenSink                  | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+| 10 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 | 11 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 </pre></div>
 </div>
@@ -422,7 +422,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  55.329 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  3.169 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

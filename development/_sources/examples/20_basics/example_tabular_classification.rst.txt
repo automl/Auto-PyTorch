@@ -133,7 +133,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc36cb418b0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f91159b1e80>
 
 
 
@@ -162,7 +162,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fc36c9ffd00> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f91159b14f0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -194,7 +194,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014204978942871094, budget=0), TrajEntry(train_perf=0.14619883040935677, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014147758483886719, budget=0), TrajEntry(train_perf=0.14619883040935677, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -226,7 +226,7 @@ Print the final ensemble performance
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.931585788726807, wallclock_time=5.967687129974365, budget=5.555555555555555)]
+    , ta_runs=1, ta_time_used=4.973806142807007, wallclock_time=6.012700080871582, budget=5.555555555555555)]
     {'accuracy': 0.8670520231213873}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
@@ -247,7 +247,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  30.625 seconds)
+   **Total running time of the script:** ( 5 minutes  35.756 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
