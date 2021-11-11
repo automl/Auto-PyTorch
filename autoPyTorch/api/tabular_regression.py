@@ -29,22 +29,22 @@ class TabularRegressionTask(BaseTask):
     Args:
         seed (int), (default=1):
             seed to be used for reproducibility.
-        n_jobs (int), (default=1): 
+        n_jobs (int), (default=1):
             number of consecutive processes to spawn.
         n_threads (int), (default=1):
             number of threads to use for each process.
-        logging_config (Optional[Dict]): specifies configuration
-            for logging, if None, it is loaded from the logging.yaml
+        logging_config (Optional[Dict]):
+            Specifies configuration for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50):
             Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50): 
+        ensemble_nbest (int), (default=50):
             Only consider the ensemble_nbest
             models to build the ensemble
         max_models_on_disc (int), (default=50):
             Maximum number of models saved to disc.
-            Also, controls the size of the ensemble 
+            Also, controls the size of the ensemble
             as any additional models will be deleted.
             Must be greater than or equal to 1.
         temporary_directory (str):

@@ -106,12 +106,12 @@ class BaseTask:
     Args:
         seed (int), (default=1):
             seed to be used for reproducibility.
-        n_jobs (int), (default=1): 
+        n_jobs (int), (default=1):
             number of consecutive processes to spawn.
         n_threads (int), (default=1):
             number of threads to use for each process.
-        logging_config (Optional[Dict]): specifies configuration
-            for logging, if None, it is loaded from the logging.yaml
+        logging_config (Optional[Dict]):
+            Specifies configuration for logging, if None, it is loaded from the logging.yaml
         ensemble_size (int), (default=50): Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
