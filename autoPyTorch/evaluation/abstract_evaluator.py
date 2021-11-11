@@ -488,13 +488,20 @@ class AbstractEvaluator(object):
                                      exclude=self.exclude,
                                      search_space_updates=self.search_space_updates
                                      ))
+        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
         if all_supported_metrics:
             self.additional_metrics = get_metrics(dataset_properties=self.dataset_properties,
                                                   all_supported_metrics=all_supported_metrics)
+            # Update fit dictionary with metrics passed to the evaluator
+            metrics_dict: Dict[str, List[str]] = {'additional_metrics': []}
+            metrics_dict['additional_metrics'].append(self.metric.name)
+            for metric in self.additional_metrics:
+                metrics_dict['additional_metrics'].append(metric.name)
 
-        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
+            self.fit_dictionary.update(metrics_dict)
+
         self._init_params = init_params
         self.fit_dictionary.update({
             'X_train': self.X_train,
@@ -505,6 +512,7 @@ class AbstractEvaluator(object):
             'logger_port': logger_port,
             'optimize_metric': self.metric.name
         })
+
         assert self.pipeline_class is not None, "Could not infer pipeline class"
         pipeline_config = pipeline_config if pipeline_config is not None \
             else self.pipeline_class.get_default_pipeline_options()
