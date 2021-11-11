@@ -55,6 +55,7 @@ class MLPBackbone(NetworkBackboneComponent):
 
         """
         layers.append(nn.Linear(in_features, out_features))
+        layers.append(nn.BatchNorm1d(out_features))
         layers.append(_activations[self.config["activation"]]())
         if self.config['use_dropout']:
             layers.append(nn.Dropout(self.config["dropout_%d" % layer_id]))
