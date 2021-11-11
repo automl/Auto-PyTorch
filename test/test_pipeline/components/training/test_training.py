@@ -16,7 +16,6 @@ from sklearn.base import clone
 import torch
 
 from autoPyTorch import constants
-from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
