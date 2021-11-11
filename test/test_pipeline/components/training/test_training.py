@@ -16,6 +16,7 @@ from sklearn.base import clone
 import torch
 
 from autoPyTorch import constants
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.data_loader.base_data_loader import (
     BaseDataLoaderComponent,
 )
@@ -410,6 +411,7 @@ def test_early_stopping():
         'metrics_during_training': True,
         'dataset_properties': dataset_properties,
         'split_id': 0,
+        'step_interval': StepIntervalUnit.batch
     }
     for item in ['backend', 'lr_scheduler', 'network', 'optimizer', 'train_data_loader', 'val_data_loader',
                  'device', 'y_train']:
