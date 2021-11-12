@@ -18,6 +18,7 @@ with open("requirements.txt", "r") as f:
         requirements.append(line.strip())
 
 
+"""
 requirements.append(
     "automl_common "
     "@ git+ssh://git@"
@@ -25,6 +26,7 @@ requirements.append(
     # "@v0.0.1#egg=automl_common"
     "#egg=automl_common"
 )
+"""
 
 
 # noinspection PyInterpreter
