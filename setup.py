@@ -18,12 +18,6 @@ with open("requirements.txt", "r") as f:
         requirements.append(line.strip())
 
 
-requirements.append(
-    "https://github.com/automl/automl_common.git"
-    "/tarball/autoPyTorch#egg=package-0.0.1"
-)
-
-
 # noinspection PyInterpreter
 setuptools.setup(
     name="autoPyTorch",
@@ -81,5 +75,6 @@ setuptools.setup(
     },
     test_suite="pytest",
     data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json']),
-                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])]
+                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])],
+    dependency_links=['https://github.com/automl/automl_common.git/tarball/autoPyTorch#egg=package-0.0.1']
 )
