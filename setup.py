@@ -20,7 +20,8 @@ with open("requirements.txt", "r") as f:
 
 requirements.append(
     "automl_common "
-    "@ git+ssh://git@"
+    # "@ git+ssh://git@"
+    "@ git+https://"
     "github.com/automl/automl_common"
     # "@v0.0.1#egg=automl_common"
     "#egg=automl_common"
