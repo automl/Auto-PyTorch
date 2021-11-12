@@ -262,3 +262,35 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertEqual(len(result), 5)
         self.assertEqual(result[0][0], 0)
         self.assertAlmostEqual(result[0][1], 1.0)
+
+    @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
+    def test_additional_metrics_during_training(self, pipeline_mock):
+        pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 50}
+        # Binary iris, contains 69 train samples, 31 test samples
+        D = get_binary_classification_datamanager()
+        pipeline_mock.predict_proba.side_effect = \
+            lambda X, batch_size=None: np.tile([0.6, 0.4], (len(X), 1))
+        pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
+        pipeline_mock.get_additional_run_info.return_value = None
+
+        # Binary iris, contains 69 train samples, 31 test samples
+        D = get_binary_classification_datamanager()
+
+        configuration = unittest.mock.Mock(spec=Configuration)
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
+        backend_api.load_datamanager = lambda: D
+        queue_ = multiprocessing.Queue()
+
+        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
+                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50}, all_supported_metrics=True)
+        evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
+        evaluator.file_output.return_value = (None, {})
+
+        evaluator.fit_predict_and_loss()
+
+        rval = read_queue(evaluator.queue)
+        self.assertEqual(len(rval), 1)
+        result = rval[0]
+        self.assertIn('additional_run_info', result)
+        self.assertIn('opt_loss', result['additional_run_info'])
+        self.assertGreater(len(result['additional_run_info']['opt_loss'].keys()), 1)

@@ -282,3 +282,35 @@ class AbstractEvaluatorTest(unittest.TestCase):
                                                         '.autoPyTorch', 'runs', '1_0_1.0')))
 
             shutil.rmtree(self.working_directory, ignore_errors=True)
+
+    def test_error_unsupported_budget_type(self):
+        shutil.rmtree(self.working_directory, ignore_errors=True)
+        os.mkdir(self.working_directory)
+
+        queue_mock = unittest.mock.Mock()
+
+        context = BackendContext(
+            prefix='autoPyTorch',
+            temporary_directory=os.path.join(self.working_directory, 'tmp'),
+            output_directory=os.path.join(self.working_directory, 'out'),
+            delete_tmp_folder_after_terminate=True,
+            delete_output_folder_after_terminate=True,
+        )
+        with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
+            load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
+
+            backend = Backend(context, prefix='autoPyTorch')
+
+            try:
+                AbstractEvaluator(
+                    backend=backend,
+                    output_y_hat_optimization=False,
+                    queue=queue_mock,
+                    pipeline_config={'budget_type': "error", 'error': 0},
+                    metric=accuracy,
+                    budget=0,
+                    configuration=1)
+            except Exception as e:
+                self.assertIsInstance(e, ValueError)
+
+            shutil.rmtree(self.working_directory, ignore_errors=True)
