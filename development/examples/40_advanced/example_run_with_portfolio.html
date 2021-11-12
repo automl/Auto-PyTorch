@@ -124,7 +124,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch using the greedy portfolio</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe06d5b95b0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff1d0416fd0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 60
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -156,7 +156,7 @@ with AutoPyTorch using the greedy portfolio</p>
   trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00011277198791503906, budget=0), TrajEntry(train_perf=0.1871345029239766, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00011587142944335938, budget=0), TrajEntry(train_perf=0.1871345029239766, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 60
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -188,7 +188,7 @@ with AutoPyTorch using the greedy portfolio</p>
   trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=1, ta_time_used=3.9802193641662598, wallclock_time=5.028411149978638, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=3.6033413410186768, wallclock_time=4.6426897048950195, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 183
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -223,7 +223,7 @@ with AutoPyTorch using the greedy portfolio</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=5, ta_time_used=19.972800493240356, wallclock_time=26.204259634017944, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=3, incumbent=Configuration:
+, ta_runs=5, ta_time_used=18.03929591178894, wallclock_time=24.050015926361084, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 48
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -252,7 +252,7 @@ with AutoPyTorch using the greedy portfolio</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=6, ta_time_used=23.879078149795532, wallclock_time=31.44675636291504, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=4, incumbent=Configuration:
+, ta_runs=6, ta_time_used=21.580986976623535, wallclock_time=28.8749942779541, budget=5.555555555555555), TrajEntry(train_perf=0.16374269005847952, incumbent_id=4, incumbent=Configuration:
   data_loader:batch_size, Value: 150
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -287,19 +287,22 @@ with AutoPyTorch using the greedy portfolio</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=10, ta_time_used=42.71543765068054, wallclock_time=55.70362210273743, budget=16.666666666666664)]
-{&#39;accuracy&#39;: 0.8786127167630058}
+, ta_runs=10, ta_time_used=38.75929641723633, wallclock_time=51.10997653007507, budget=16.666666666666664)]
+{&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                     | Estimator                                                          |   Weight |
 |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
 |  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
-|  1 | None                                                              | CBLearner                                                          |     0.24 |
-|  2 | None                                                              | RFLearner                                                          |     0.14 |
+|  1 | None                                                              | CBLearner                                                          |     0.2  |
+|  2 | None                                                              | RFLearner                                                          |     0.1  |
 |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  5 | None                                                              | ETLearner                                                          |     0.04 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | None                                                              | KNNLearner                                                         |     0.02 |
-|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  5 | SimpleImputer,NoEncoder,StandardScaler,Nystroem                   | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
+|  6 | None                                                              | ETLearner                                                          |     0.04 |
+|  7 | None                                                              | KNNLearner                                                         |     0.04 |
+|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+| 10 | None                                                              | SVMLearner                                                         |     0.02 |
+| 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -370,7 +373,7 @@ with AutoPyTorch using the greedy portfolio</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  25.413 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  32.841 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
