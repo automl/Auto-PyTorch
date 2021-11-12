@@ -567,7 +567,7 @@ class AbstractEvaluator(object):
             'optimize_metric': self.metric.name
         })
 
-        self.fit_dictionary = {**pipeline_config, **self.fit_dictionary}
+        self.fit_dictionary.update(pipeline_config)
         # If the budget is epochs, we want to limit that in the fit dictionary
         if self.budget_type == 'epochs':
             self.fit_dictionary['epochs'] = self.budget
@@ -576,7 +576,7 @@ class AbstractEvaluator(object):
             self.fit_dictionary['runtime'] = self.budget
             self.fit_dictionary.pop('epochs', None)
         else:
-            raise ValueError(f"Unsupported budget type '{self.budget_type}' provided")
+            raise ValueError(f"budget type must be `epochs` or `runtime`, but got {self.budget_type}")
 
     def _get_pipeline(self) -> BaseEstimator:
         """
