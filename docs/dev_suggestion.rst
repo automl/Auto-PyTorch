@@ -81,9 +81,9 @@ to disk as stated `here <https://scikit-learn.org/stable/modules/model_persisten
 Optimization of pipeline
 ------------------------
 
-To optimize pipeline, we use SMAC as mentioned earlier.
-Given a configuration, AutoPytorch pipeline fits a pipeline and 
-and finally saves to disc using the function evaluator `ExecuteTaFuncWithQueue`.
+To optimize the pipeline, we use SMAC as mentioned earlier.
+Given a configuration, AutoPytorch fits a pipeline and 
+ finally saves to disc using the function evaluator `ExecuteTaFuncWithQueue`.
 `ExecuteTaFuncWithQueue` is basically a worker that reads a dataset from disc,
 fits a pipeline, and collects the performance result,
 which is communicated back to the main process via a Queue.
