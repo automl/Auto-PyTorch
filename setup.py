@@ -1,9 +1,12 @@
 import setuptools
 import sys
+
+
 if sys.version_info < (3, 7):
     raise ValueError(
-        'Unsupported Python version %d.%d.%d found. Auto-PyTorch requires Python '
-        '3.7 or higher.' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+        'Auto-Pytorch requires Python 3.7 or higher, but found version {}.{}.{}'.format(
+            sys.version_info.major, sys.version_info.minor, sys.version_info.micro
+        )
     )
 
 with open("README.md", "r") as f:
@@ -13,6 +16,7 @@ requirements = []
 with open("requirements.txt", "r") as f:
     for line in f:
         requirements.append(line.strip())
+
 
 # noinspection PyInterpreter
 setuptools.setup(
@@ -71,5 +75,6 @@ setuptools.setup(
     },
     test_suite="pytest",
     data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json']),
-                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])]
+                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])],
+    dependency_links=['https://github.com/automl/automl_common.git/tarball/autoPyTorch#egg=package-0.0.1']
 )
