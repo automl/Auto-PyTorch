@@ -18,15 +18,10 @@ with open("requirements.txt", "r") as f:
         requirements.append(line.strip())
 
 
-"""
 requirements.append(
-    "automl_common "
-    "@ git+ssh://git@"
-    "github.com/automl/automl_common"
-    # "@v0.0.1#egg=automl_common"
-    "#egg=automl_common"
+    "https://github.com/automl/automl_common.git"
+    "/tarball/autoPyTorch#egg=package-0.0.1"
 )
-"""
 
 
 # noinspection PyInterpreter
