@@ -1,9 +1,12 @@
 import setuptools
 import sys
+
+
 if sys.version_info < (3, 7):
     raise ValueError(
-        'Unsupported Python version %d.%d.%d found. Auto-PyTorch requires Python '
-        '3.7 or higher.' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+        'Auto-Pytorch requires Python 3.7 or higher, but found version {}.{}.{}'.format(
+            sys.version_info.major, sys.version_info.minor, sys.version_info.micro
+        )
     )
 
 with open("README.md", "r") as f:
@@ -13,6 +16,16 @@ requirements = []
 with open("requirements.txt", "r") as f:
     for line in f:
         requirements.append(line.strip())
+
+
+requirements.append(
+    "automl_common "
+    "@ git+ssh://git@"
+    "github.com/automl/automl_common"
+    # "@v0.0.1#egg=automl_common"
+    "#egg=automl_common"
+)
+
 
 # noinspection PyInterpreter
 setuptools.setup(
