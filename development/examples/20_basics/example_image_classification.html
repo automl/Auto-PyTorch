@@ -30332,12 +30332,13 @@ Pipeline Random Config:
  ________________________________________
 Configuration:
   image_augmenter:GaussianBlur:use_augmenter, Value: False
-  image_augmenter:GaussianNoise:sigma_offset, Value: 0.43287833896879524
+  image_augmenter:GaussianNoise:sigma_offset, Value: 1.7036116625374713
   image_augmenter:GaussianNoise:use_augmenter, Value: True
   image_augmenter:RandomAffine:use_augmenter, Value: False
-  image_augmenter:RandomCutout:use_augmenter, Value: False
-  image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.4972822105141404
+  image_augmenter:RandomCutout:p, Value: 0.4940248141525674
+  image_augmenter:RandomCutout:use_augmenter, Value: True
+  image_augmenter:Resize:use_augmenter, Value: True
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.470467989324491
   normalizer:__choice__, Value: &#39;ImageNormalizer&#39;
 
 Fitting the pipeline...
@@ -30410,7 +30411,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.855 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.695 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>

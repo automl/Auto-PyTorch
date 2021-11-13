@@ -108,9 +108,14 @@
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
 <li><a class="reference internal" href="#">Developer Documentation</a><ul>
-<li><a class="reference internal" href="#building-individual-models">Building Individual Models</a></li>
+<li><a class="reference internal" href="#building-individual-models">Building Individual Models</a><ul>
+<li><a class="reference internal" href="#pipeline-of-individual-models">Pipeline of individual models</a></li>
+<li><a class="reference internal" href="#training-of-individual-models">Training of individual models</a></li>
+<li><a class="reference internal" href="#optimization-of-pipeline">Optimization of pipeline</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#building-the-ensemble-model">Building the ensemble model</a></li>
-<li><a class="reference internal" href="#the-automl-part">The AutoML Part</a></li>
+<li><a class="reference internal" href="#search-space">Search Space</a></li>
 </ul>
 </li>
 </ul>
@@ -121,42 +126,127 @@
       
   <section id="developer-documentation">
 <span id="dev"></span><h1>Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permalink to this headline">¶</a></h1>
-<p>This documentation summarizes how the AutoPyTorch code works, and is meant as a guide for the developers to help contribute to it.</p>
-<p>AutoPyTorch relies on the <a class="reference external" href="https://automl.github.io/SMAC3/master/">SMAC</a> library to build individual models,
-which are later ensembled together using ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>.
-Therefore, there are two main parts of the code: <cite>AutoMLSMBO</cite>,  which acts as an interface to SMAC, and
-<cite>EnsembleBuilder</cite> which opportunistically builds an ensemble of the individual algorithms found by SMAC, at fixed intervals.
-The following sections provides details regarding this two main blocks of code.</p>
+<p>This document summarizes how the AutoPyTorch code works and is meant as a guide for the developers looking to contribute.</p>
+<p>AutoPyTorch relies on the <a class="reference external" href="https://automl.github.io/SMAC3/master/">SMAC</a> library to build individual models.
+Note that SMAC runs an optimization loop that proposes new configurations
+based on Bayesian optimization, which comply with
+the package <a class="reference external" href="https://automl.github.io/ConfigSpace/master/">ConfigSpace</a>.
+Individual models evaluated during the optimization are later ensembled together
+using ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>.</p>
+<p>In other words, there are two main parts of the code:</p>
+<ol class="arabic simple">
+<li><p><cite>AutoMLSMBO</cite>: Interface to SMAC</p></li>
+<li><p><cite>EnsembleBuilder</cite>: Build an ensemble of the individual algorithms found by SMAC at fixed intervals</p></li>
+</ol>
+<p>The ensemble builder and the individual model constructions are both regulated by the <cite>BaseTask</cite>.
+It fundamentally calls the aforementioned task and waits until the time resource is exhausted.</p>
+<p>The following sections provide details regarding these two main blocks of code.</p>
 <section id="building-individual-models">
 <h2>Building Individual Models<a class="headerlink" href="#building-individual-models" title="Permalink to this headline">¶</a></h2>
-<dl class="simple">
-<dt>AutoPyTorch relies on Scikit-Learn <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a> to build an individual algorithm.</dt><dd><p>In other words, each of the individual models fitted by SMAC is (and comply) with Scikit-Learn pipeline and framework.</p>
-</dd>
-<dt>A pipeline can consist of various preprocessing steps including imputation, encoding, scaling,       feature preprocessing, and algorithm setup and training.  Regarding the training, Auto-PyTorch can fit 3 types of pipelines: a dummy pipeline, traditional classification pipelines, and PyTorch neural networks. The dummy pipeline builds on top of sklearn.dummy to construct an estimator that predicts using simple rules. This prediction is used as a baseline to define the worst-performing model that can be fit. Additionally, Auto-PyTorch fits traditional machine learning models (including           LightGBM, CatBoost, RandomForest, ExtraTrees, K-Nearest-Neighbors, and Support Vector Machines)       which are critical for small-sized datasets. The final type of machine learning pipeline corresponds to Neural Architecture Search of backbones (feature extraction) and network heads (for the final prediction). A pipeline might also contain additional training components like learning</dt><dd><p>rate scheduler, optimizers, and data loaders required to perform the neural architecture search.</p>
-</dd>
-</dl>
-<p>In the case of tabular classification/regression, the training data is preprocessed using scikit-learn.compose.ColumnTransformer on a per-column basis. The data preprocessing is dynamically created depending on the dataset properties. For example, on a dataset that only contains float-type features, no one-hot encoding is needed. Additionally, we wrap the ColumnTransformer via              TabularColumnTransformer class to support torchvision transformation and handle column-reordering (Categorical columns are shifted to the left if one uses a ColumnTransformer).</p>
-<p>When a pipeline is fitted, we use pickle to save it to disk as stated <a class="reference external" href="https://scikit-learn.org/stable/modules/model_persistence.html">here</a>. SMAC runs an optimization loop that proposes new configurations based on Bayesian optimization, which comply with the package <a class="reference external" href="https://automl.github.io/ConfigSpace/master/">ConfigSpace</a>. These configurations are then translated to AutoPyTorch pipelines, fitted, and finally saved to disc using the function evaluator <cite>ExecuteTaFuncWithQueue</cite>.  The latter is basically a worker that reads a dataset from disc, fits a pipeline, and collects the performance result which is communicated back to the main process via a Queue. This worker manages resources using <a class="reference external" href="https://github.com/automl/pynisher">Pynisher</a>, and it usually does so by creating a new process with a restricted memory (<cite>memory_limit</cite> API argument) and time constraints   (<cite>func_eval_time_limit_secs</cite> API argument).</p>
-<p>The Scikit-learn pipeline inherits from the <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">BaseEstimator</a>, which implies that we have to honor the <a class="reference external" href="https://scikit-learn.org/stable/developers/develop.html">Scikit-Learn development Guidelines</a>. Particularly, the arguments to the class constructor of any estimator must be defined as attributes of the class (see <cite>get_params and set_params</cite> from the above documentation).</p>
-<p>To speed up the search, AutoPyTorch and SMAC use <a class="reference external" href="https://distributed.dask.org/en/latest/">Dask.distributed</a> multiprocessing scheme. We only submits jobs to Dask.distributed.Client up to the number of
-workers, and wait for a worker to be available before continuing searching for more pipelines.</p>
-<p>At the end of SMAC, the results will be available in the <cite>temporary_directory</cite> provided to the API run, in particular inside of the <cite>&lt;temporary_directory&gt;/smac3-output/run_&lt;SEED&gt;/</cite> directory. One can debug
-the performance of the individual models using the file <cite>runhistory.json</cite> located in this area. Every individual model will be stored in <cite>&lt;temporary_directory&gt;/.autoPyTorch/runs</cite>.
-In this <cite>runs</cite> directory we store the fitted model (during cross-validation we store a single Voting Classifier/Regressor, which is the soft voting outcome of k-Fold cross-validation), the Out-Of-Fold
-predictions that are used to build an ensemble, and also the test predictions of this model in question.</p>
+<p>AutoPytorch first preprocesses a given dataset and then it starts the training of individual algorithm.
+The preprocessing and training rely on Scikit-Learn <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.
+Each of the individual models fitted by SMAC is (and comply) with Scikit-Learn pipeline and framework.</p>
+<p>The Scikit-learn pipeline inherits from the <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">BaseEstimator</a>,
+which implies that we have to honor the <a class="reference external" href="https://scikit-learn.org/stable/developers/develop.html">Scikit-Learn development Guidelines</a>.
+Particularly, the arguments to the class constructor of any estimator must be defined as attributes of the class
+(see <cite>get_params and set_params</cite> from the above documentation).</p>
+<section id="pipeline-of-individual-models">
+<h3>Pipeline of individual models<a class="headerlink" href="#pipeline-of-individual-models" title="Permalink to this headline">¶</a></h3>
+<p>A pipeline consists of various steps each consisting of either an <cite>autoPyTorchChoice</cite> or an <cite>autoPyTorchComponent</cite> both implemented with <a class="reference external" href="https://scikit-learn.org/stable/developers/develop.html#rolling-your-own-estimator">Scikit-learn Base Estimator Guidelines</a>.</p>
+<p>These steps include:</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/imputation">Imputation</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/encoding">Encoding</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/scaling">Scaling</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/feature_preprocessing">Feature preprocessing</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup">Algorithm setup</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/training">Training</a></p></li>
+</ol>
+<p>In the case of tabular classification/regression,
+the training data is preprocessed using scikit-learn.compose.ColumnTransformer
+on a per-column basis.
+The data preprocessing is dynamically created depending on the dataset properties.
+For example, on a dataset that only contains float-type features,
+no one-hot encoding is needed.
+Additionally, we wrap the ColumnTransformer via TabularColumnTransformer class
+to support torchvision transformation and
+handle column-reordering.
+Note that column-reordering shifts categorical columns to the earlier indices
+and it is activated only if one uses a ColumnTransformer.</p>
+</section>
+<section id="training-of-individual-models">
+<h3>Training of individual models<a class="headerlink" href="#training-of-individual-models" title="Permalink to this headline">¶</a></h3>
+<p>Auto-PyTorch can fit 3 types of pipelines:</p>
+<ol class="arabic simple">
+<li><p>Dummy pipeline: Use sklearn.dummy to construct an estimator that predicts using simple rules such as most frequent class</p></li>
+<li><p>Traditional machine learning pipelines: Use LightGBM, CatBoost, RandomForest, ExtraTrees, K-Nearest-Neighbors, and SupportVectorMachines</p></li>
+<li><p>PyTorch neural networks: Neural architecture search of backbones (feature extraction) and network heads (for the final prediction)</p></li>
+</ol>
+<p>Note that dummy pipeline is used as a baseline to define the worst-performing model that can be fit
+and traditional machine learning pipelines are critical for small-sized datasets.
+A pipeline might also contain additional training components
+like learning rate scheduler, optimizers,
+and data loaders required to perform the neural architecture search.</p>
+<p>After the training (fitting a pipeline), we use pickle to save it
+to disk as stated <a class="reference external" href="https://scikit-learn.org/stable/modules/model_persistence.html">here</a>.</p>
+</section>
+<section id="optimization-of-pipeline">
+<h3>Optimization of pipeline<a class="headerlink" href="#optimization-of-pipeline" title="Permalink to this headline">¶</a></h3>
+<p>To optimize the pipeline, we use SMAC as mentioned earlier.
+Given a configuration, AutoPytorch fits a pipeline and
+finally saves to disc using the function evaluator <cite>ExecuteTaFuncWithQueue</cite>.
+<cite>ExecuteTaFuncWithQueue</cite> is basically a worker that reads a dataset from disc,
+fits a pipeline, and collects the performance result,
+which is communicated back to the main process via a Queue.
+This worker manages resources using <a class="reference external" href="https://github.com/automl/pynisher">Pynisher</a>,
+and it usually does so by creating a new process with a restricted memory
+(<cite>memory_limit</cite> API argument)
+and time constraints (<cite>func_eval_time_limit_secs</cite> API argument).</p>
+<p>To speed up the search, AutoPyTorch and SMAC use
+<a class="reference external" href="https://distributed.dask.org/en/latest/">Dask.distributed</a>
+multiprocessing scheme.
+We only submits jobs to Dask.distributed.Client up to the number of workers,
+and wait for a worker to be available
+before continuing searching for more pipelines.</p>
+<p>At the end of SMAC, the results will be available in the <cite>temporary_directory</cite> provided to the API run,
+in particular inside of the <cite>&lt;temporary_directory&gt;/smac3-output/run_&lt;SEED&gt;/</cite>
+directory.
+One can debug the performance of the individual models using the file <cite>runhistory.json</cite>
+located in the same directory.
+Every individual model will be stored in <cite>&lt;temporary_directory&gt;/.autoPyTorch/runs</cite>.
+In this <cite>runs</cite> directory, we store:</p>
+<ol class="arabic simple">
+<li><p>Fitted model</p></li>
+<li><p>Test predictions of the model</p></li>
+<li><p>Out-Of-Fold predictions (that are used to build an ensemble)</p></li>
+</ol>
+<p>Note that we store a single Voting Classifier/Regressor,
+which is the soft voting outcome of k-Fold cross-validation during cross-validation.</p>
+</section>
 </section>
 <section id="building-the-ensemble-model">
 <h2>Building the ensemble model<a class="headerlink" href="#building-the-ensemble-model" title="Permalink to this headline">¶</a></h2>
-<p>At every smac iteration, we submit a callback to create an ensemble in the case new models are written to disk. If no new models are available, no ensemble selection
-is triggered. We use the OutOfFold predictions to build an ensemble via <cite>EnsembleSelection</cite>. This process is also submitted to Dask. Every new ensemble that is fitted is also
-written to disk, where this object is mainly a container that specifies the weights one should use, to join individual model predictions.</p>
+<p>At every SMAC iteration, we submit a callback to create an ensemble
+in the case new models are written to disk.
+If no new models are available, no ensemble selection is triggered.
+We use the Out-Of-Fold predictions to build an ensemble via <cite>EnsembleSelection</cite>.
+This process is also submitted to Dask.
+Every new fitted ensemble is also written to disk,
+where this object is mainly a container that specifies the weights one should use,
+to join individual model predictions.</p>
 </section>
-<section id="the-automl-part">
-<h2>The AutoML Part<a class="headerlink" href="#the-automl-part" title="Permalink to this headline">¶</a></h2>
-<p>The ensemble builder and the individual model constructions are both regulated by the <cite>BaseTask</cite>. This entity fundamentally calls the aforementioned task, and wait until
-the time resource is exhausted.</p>
-<p>We also rely on the <a class="reference external" href="https://automl.github.io/ConfigSpace/master/index.html">ConfigSpace</a> package to build a configuration space and sample configurations from it. A configuration in this context, determines the content of a pipeline (for example, that the final estimator will be a MLP, or that it will have PCA as preprocessing).The set of valid configurations is determined by the configuration space. The configuration space is build using the dataset characteristics, like type
-of features (categorical, numerical) or the target type (classification, regression).</p>
+<section id="search-space">
+<h2>Search Space<a class="headerlink" href="#search-space" title="Permalink to this headline">¶</a></h2>
+<p>We also rely on the
+<a class="reference external" href="https://automl.github.io/ConfigSpace/master/index.html">ConfigSpace package</a>
+to build a configuration space and sample configurations from it.
+In this context, a configuration determines the content of a pipeline.
+For example, the choice of model such as MLP, random forest or
+whether the pipeline has PCA as preprocessing can be elements of a configuration.
+The set of valid configurations is specified by the configuration space.
+The configuration space changes by the dataset characteristics,
+like type of features (categorical, numerical) or
+the target type (classification, regression).</p>
 </section>
 </section>
 

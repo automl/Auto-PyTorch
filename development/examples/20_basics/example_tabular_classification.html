@@ -186,7 +186,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7ff1d130deb0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc8f85d73d0&gt;
 </pre></div>
 </div>
 </section>
@@ -201,7 +201,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff1d130d790&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fc8f85d7f40&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -233,7 +233,7 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001264810562133789, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015010833740234375, budget=0), TrajEntry(train_perf=0.16374269005847952, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -265,69 +265,65 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.4787635803222656, wallclock_time=4.510373592376709, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 266
+, ta_runs=1, ta_time_used=5.310230255126953, wallclock_time=6.34569239616394, budget=5.555555555555555), TrajEntry(train_perf=0.14619883040935677, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 154
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
+  feature_preprocessor:KernelPCA:coef0, Value: 0.27733876378393374
+  feature_preprocessor:KernelPCA:kernel, Value: &#39;sigmoid&#39;
+  feature_preprocessor:KernelPCA:n_components, Value: 3
+  feature_preprocessor:__choice__, Value: &#39;KernelPCA&#39;
+  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ExponentialLR:gamma, Value: 0.7803332724128763
-  lr_scheduler:__choice__, Value: &#39;ExponentialLR&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;tanh&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 4
-  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.8275414469766155
-  network_backbone:ShapedResNetBackbone:max_units, Value: 991
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 4
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 128
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;diamond&#39;
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: False
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.8146754510667957
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.46105774284940415
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_2, Value: 0.6407402862872158
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_3, Value: 0.9996791613255537
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_4, Value: 0.9118197641772963
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_5, Value: 0.030056436852129775
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_6, Value: 0.26194440908949934
-  network_embedding:LearnedEntityEmbedding:dimension_reduction_7, Value: 0.7609575399123664
+  lr_scheduler:StepLR:gamma, Value: 0.5658285105415104
+  lr_scheduler:StepLR:step_size, Value: 10
+  lr_scheduler:__choice__, Value: &#39;StepLR&#39;
+  network_backbone:ResNetBackbone:activation, Value: &#39;tanh&#39;
+  network_backbone:ResNetBackbone:blocks_per_group_0, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
+  network_backbone:ResNetBackbone:max_shake_drop_probability, Value: 0.4280891218905112
+  network_backbone:ResNetBackbone:num_groups, Value: 1
+  network_backbone:ResNetBackbone:num_units_0, Value: 623
+  network_backbone:ResNetBackbone:num_units_1, Value: 42
+  network_backbone:ResNetBackbone:use_dropout, Value: False
+  network_backbone:ResNetBackbone:use_shake_drop, Value: True
+  network_backbone:ResNetBackbone:use_shake_shake, Value: True
+  network_backbone:__choice__, Value: &#39;ResNetBackbone&#39;
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_0, Value: 0.7061800992159439
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_1, Value: 0.40404533505032336
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_2, Value: 0.14124612419045746
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_3, Value: 0.24304972767199295
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_4, Value: 0.8403938666630251
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_5, Value: 0.11081539209354929
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_6, Value: 0.5150164644256714
+  network_embedding:LearnedEntityEmbedding:dimension_reduction_7, Value: 0.6185258490472787
   network_embedding:LearnedEntityEmbedding:min_unique_values_for_embedding, Value: 3
   network_embedding:__choice__, Value: &#39;LearnedEntityEmbedding&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;sigmoid&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
   network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 475
-  network_init:KaimingInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;KaimingInit&#39;
-  optimizer:RMSpropOptimizer:alpha, Value: 0.9693545357631622
-  optimizer:RMSpropOptimizer:lr, Value: 0.009495659050311307
-  optimizer:RMSpropOptimizer:momentum, Value: 0.1346144689909763
-  optimizer:RMSpropOptimizer:weight_decay, Value: 0.03466653993446461
-  optimizer:__choice__, Value: &#39;RMSpropOptimizer&#39;
-  scaler:__choice__, Value: &#39;MinMaxScaler&#39;
-  trainer:MixUpTrainer:alpha, Value: 0.3593787058162444
-  trainer:MixUpTrainer:weighted_loss, Value: False
-  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=16, ta_time_used=129.56639432907104, wallclock_time=178.3990023136139, budget=50.0)]
-{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing                                                     | Estimator                                                          |   Weight |
-|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,MinMaxScaler,PolynomialFeatures           | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.22 |
-|  1 | SimpleImputer,OneHotEncoder,NoScaler,KernelPCA                    | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  2 | None                                                              | CBLearner                                                          |     0.14 |
-|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
-|  4 | SimpleImputer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing   | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
-|  5 | None                                                              | ETLearner                                                          |     0.06 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  7 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
-|  8 | None                                                              | RFLearner                                                          |     0.04 |
-|  9 | None                                                              | SVMLearner                                                         |     0.04 |
-| 10 | None                                                              | KNNLearner                                                         |     0.02 |
-| 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+  network_head:fully_connected:units_layer_1, Value: 506
+  network_init:NoInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;NoInit&#39;
+  optimizer:AdamWOptimizer:beta1, Value: 0.9639206805787317
+  optimizer:AdamWOptimizer:beta2, Value: 0.9439342949959634
+  optimizer:AdamWOptimizer:lr, Value: 0.05110804312778185
+  optimizer:AdamWOptimizer:weight_decay, Value: 0.026136253949706992
+  optimizer:__choice__, Value: &#39;AdamWOptimizer&#39;
+  scaler:__choice__, Value: &#39;NoScaler&#39;
+  trainer:StandardTrainer:weighted_loss, Value: True
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=17, ta_time_used=203.85989904403687, wallclock_time=267.69750905036926, budget=50.0)]
+{&#39;accuracy&#39;: 0.8728323699421965}
+|    | Preprocessing                                  | Estimator                                                 |   Weight |
+|---:|:-----------------------------------------------|:----------------------------------------------------------|---------:|
+|  0 | None                                           | CBLearner                                                 |     0.92 |
+|  1 | SimpleImputer,OneHotEncoder,NoScaler,KernelPCA | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  2 | None                                           | RFLearner                                                 |     0.02 |
+|  3 | None                                           | ETLearner                                                 |     0.02 |
+|  4 | None                                           | SVMLearner                                                |     0.02 |
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  30.492 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  30.066 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
