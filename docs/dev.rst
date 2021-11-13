@@ -83,7 +83,7 @@ Optimization of pipeline
 
 To optimize the pipeline, we use SMAC as mentioned earlier.
 Given a configuration, AutoPytorch fits a pipeline and 
- finally saves to disc using the function evaluator `ExecuteTaFuncWithQueue`.
+finally saves to disc using the function evaluator `ExecuteTaFuncWithQueue`.
 `ExecuteTaFuncWithQueue` is basically a worker that reads a dataset from disc,
 fits a pipeline, and collects the performance result,
 which is communicated back to the main process via a Queue.
