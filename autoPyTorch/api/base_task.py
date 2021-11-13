@@ -104,7 +104,7 @@ class BaseTask:
     Base class for the tasks that serve as API to the pipelines.
 
     Args:
-        seed (int), (default=1):
+        seed (int: default=1):
             seed to be used for reproducibility.
         n_jobs (int), (default=1):
             number of consecutive processes to spawn.
@@ -1332,11 +1332,11 @@ class BaseTask:
         Get Incumbent config and the corresponding results
 
         Args:
-            include_traditional:
+            include_traditional (bool):
                 Whether to include results from tradtional pipelines
 
         Returns:
-            Configuration:
+            Configuration (CS.ConfigurationSpace):
                 The incumbent configuration
             Dict[str, Union[int, str, float]]:
                 Additional information about the run of the incumbent configuration.
@@ -1378,7 +1378,7 @@ class BaseTask:
 
         Returns:
             str:
-                Markdown table.
+                Markdown table of models.
         """
         df = []
         for weight, model in self.get_models_with_weights():
