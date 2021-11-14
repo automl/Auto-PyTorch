@@ -44,19 +44,20 @@ class _PredictMetric(autoPyTorchMetric):
             y_pred: np.ndarray,
             sample_weight: Optional[List[float]] = None
     ) -> float:
-        """Evaluate predicted target values for X relative to y_true.
-        Parameters
-        ----------
-        y_true : array-like
-            Gold standard target values for X.
-        y_pred : array-like, [n_samples x n_classes]
-            Model predictions
-        sample_weight : array-like, optional (default=None)
-            Sample weights.
-        Returns
-        -------
-        score : float
-            Score function applied to prediction of estimator on X.
+        """
+        Evaluate predicted target values for X relative to y_true.
+
+        Args:
+            y_true (np.ndarray):
+                Gold standard target values for X.
+            y_pred (np.ndarray):
+                [n_samples x n_classes], Model predictions
+            sample_weight (Optional[np.ndarray]):
+                Sample weights.
+
+        Returns:
+            score (float):
+                Score function applied to prediction of estimator on X.
         """
         type_true = type_of_target(y_true)
         if type_true == 'binary' and type_of_target(y_pred) == 'continuous' and \
@@ -96,20 +97,22 @@ class _ProbaMetric(autoPyTorchMetric):
             y_pred: np.ndarray,
             sample_weight: Optional[List[float]] = None
     ) -> float:
-        """Evaluate predicted probabilities for X relative to y_true.
-        Parameters
-        ----------
-        y_true : array-like
-            Gold standard target values for X. These must be class labels,
-            not probabilities.
-        y_pred : array-like, [n_samples x n_classes]
-            Model predictions
-        sample_weight : array-like, optional (default=None)
-            Sample weights.
-        Returns
-        -------
-        score : float
-            Score function applied to prediction of estimator on X.
+
+        """
+        Evaluate predicted probabilities for X relative to y_true.
+                
+        Args:
+            y_true (np.ndarray):
+                Gold standard target values for X. These must be class labels,
+                not probabilities.
+            y_pred (np.ndarray):
+                [n_samples x n_classes], Model predictions
+            sample_weight (Optional[np.ndarray]):
+                Sample weights.
+
+        Returns:
+            score (float):
+                Score function applied to prediction of estimator on X.
         """
 
         if self._metric_func is sklearn.metrics.log_loss:
@@ -143,19 +146,18 @@ class _ThresholdMetric(autoPyTorchMetric):
             sample_weight: Optional[List[float]] = None
     ) -> float:
         """Evaluate decision function output for X relative to y_true.
-        Parameters
-        ----------
-        y_true : array-like
-            Gold standard target values for X. These must be class labels,
-            not probabilities.
-        y_pred : array-like, [n_samples x n_classes]
-            Model predictions
-        sample_weight : array-like, optional (default=None)
-            Sample weights.
-        Returns
-        -------
-        score : float
-            Score function applied to prediction of estimator on X.
+        Args:
+            y_true (np.ndarray):
+                Gold standard target values for X. These must be class labels,
+                not probabilities.
+            y_pred (np.ndarray):
+                [n_samples x n_classes], Model predictions
+            sample_weight (Optional[np.ndarray]):
+                Sample weights.
+
+        Returns:
+            score (float):
+                Score function applied to prediction of estimator on X.
         """
         y_type = type_of_target(y_true)
         if y_type not in ("binary", "multilabel-indicator"):
@@ -185,38 +187,37 @@ def make_metric(
     needs_threshold: bool = False,
     **kwargs: Any
 ) -> autoPyTorchMetric:
-    """Make a autoPyTorchMetric from a performance metric or loss function.
+    """
+    Make a autoPyTorchMetric from a performance metric or loss function.
     Factory inspired by scikit-learn which wraps scikit-learn scoring functions
-    to be used in auto-sklearn.
-    Parameters
-    ----------
-
-    Returns
-    -------
-    autoPyTorchMetric : callable
-        Callable object that returns a scalar score; greater is better.
+    to be used in autoPyTorch.
 
     Args:
-        name : str
-        Name of the metric
-        score_func : callable
-        Score function (or loss function) with signature
-        ``score_func(y, y_pred, **kwargs)``.
-    optimum : int or float, default=1
-        The best score achievable by the score function, i.e. maximum in case of
-        metric function and minimum in case of loss function.
-    greater_is_better : boolean, default=True
-        Whether score_func is a score function (default), meaning high is good,
-        or a loss function, meaning low is good. In the latter case, the
-        autoPyTorchMetric object will sign-flip the outcome of the score_func.
-    needs_proba : boolean, default=False
-        Whether score_func requires predict_proba to get probability estimates
-        out of a classifier.
-    needs_threshold : boolean, default=False
-        Whether score_func takes a continuous decision certainty.
-        This only works for binary classification.
-    **kwargs : additional arguments
-        Additional parameters to be passed to score_func.
+        name (str):
+            Name of the metric
+        score_func (Callable):
+            Score function (or loss function) with signature
+            ``score_func(y, y_pred, **kwargs)``.
+        optimum (Union[int, float]: default=1):
+            The best score achievable by the score function, i.e. maximum in case of
+            metric function and minimum in case of loss function.
+        greater_is_better (bool: default=True):
+            Whether score_func is a score function (default), meaning high is good,
+            or a loss function, meaning low is good. In the latter case, the
+            autoPyTorchMetric object will sign-flip the outcome of the score_func.
+        needs_proba (bool: default=False):
+            Whether score_func requires predict_proba to get probability estimates
+            out of a classifier.
+        needs_threshold (bool: default=True):
+            Whether score_func takes a continuous decision certainty.
+            This only works for binary classification.
+        **kwargs : additional arguments
+            Additional parameters to be passed to score_func.
+
+    Returns
+        autoPyTorchMetric (Callable):
+            Callable object that returns a scalar score; greater is better.
+
     """
     sign = 1 if greater_is_better else -1
     if needs_proba:

@@ -766,7 +766,7 @@ class BaseTask:
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit_secs (int: default=None): Time limit
+            func_eval_time_limit_secs (Optional[int]): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
@@ -814,7 +814,7 @@ class BaseTask:
             disable_file_output (Union[bool, List]):
             load_models (bool: default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            portfolio_selection (str: default=None):
+            portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.

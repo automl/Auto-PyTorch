@@ -33,7 +33,7 @@ class BaseTraditionalLearner:
             sklearn's type_of_target. `see
             <https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html>`
         logger_port (int) (default=logging.handlers.DEFAULT_TCP_LOGGING_PORT)
-        random_state (Optional[np.random.RandomState], default=None):
+        random_state (Optional[np.random.RandomState]):
         name (str, default=''):
             Name of the learner, when not specified,
             uses the name of the class
