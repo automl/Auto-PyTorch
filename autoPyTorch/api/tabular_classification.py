@@ -27,22 +27,22 @@ class TabularClassificationTask(BaseTask):
     Tabular Classification API to the pipelines.
 
     Args:
-        seed (int), (default=1):
+        seed (int: default=1):
             seed to be used for reproducibility.
-        n_jobs (int), (default=1):
+        n_jobs (int: default=1):
             number of consecutive processes to spawn.
-        n_threads (int), (default=1):
+        n_threads (int: default=1):
             number of threads to use for each process.
         logging_config (Optional[Dict]):
             Specifies configuration for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int), (default=50):
+        ensemble_size (int: default=50):
             Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50):
+        ensemble_nbest (int: default=50):
             Only consider the ensemble_nbest
             models to build the ensemble
-        max_models_on_disc (int), (default=50):
+        max_models_on_disc (int: default=50):
             Maximum number of models saved to disc.
             Also, controls the size of the ensemble
             as any additional models will be deleted.
@@ -189,7 +189,7 @@ class TabularClassificationTask(BaseTask):
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit_secs (int), (default=None): Time limit
+            func_eval_time_limit_secs (Optional[int]): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
@@ -200,14 +200,14 @@ class TabularClassificationTask(BaseTask):
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
-            enable_traditional_pipeline (bool), (default=True):
+            enable_traditional_pipeline (bool: default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
                 prior building PyTorch Neural Networks. You can disable this
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]), (default=4096): Memory
+            memory_limit (int: default=4096): Memory
                 limit in MB for the machine learning algorithm. autopytorch
                 will stop fitting the machine learning algorithm if it tries
                 to allocate more than memory_limit MB. If None is provided,
@@ -229,15 +229,15 @@ class TabularClassificationTask(BaseTask):
                 TargetAlgorithm to be optimised. If None, `eval_function`
                 available in autoPyTorch/evaluation/train_evaluator is used.
                 Must be child class of AbstractEvaluator.
-            all_supported_metrics (bool), (default=True): if True, all
+            all_supported_metrics (bool: default=True): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
-            precision (int), (default=32): Numeric precision used when loading
+            precision (int: default=32): Numeric precision used when loading
                 ensemble data. Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
-            load_models (bool), (default=True): Whether to load the
+            load_models (bool: default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            portfolio_selection (str), (default=None):
+            portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.
