@@ -100,7 +100,6 @@ class _ProbaMetric(autoPyTorchMetric):
 
         """
         Evaluate predicted probabilities for X relative to y_true.
-                
         Args:
             y_true (np.ndarray):
                 Gold standard target values for X. These must be class labels,
