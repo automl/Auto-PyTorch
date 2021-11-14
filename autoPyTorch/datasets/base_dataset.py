@@ -103,7 +103,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
             shuffle:  Whether to shuffle the data before performing splits
-            seed (int), (default=1): seed to be used for reproducibility.
+            seed (int: default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the training data
             val_transforms (Optional[torchvision.transforms.Compose]):

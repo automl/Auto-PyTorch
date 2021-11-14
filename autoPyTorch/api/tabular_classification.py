@@ -185,7 +185,7 @@ class TabularClassificationTask(BaseTask):
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            total_walltime_limit (int), (default=100): Time limit
+            total_walltime_limit (int: default=100): Time limit
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.

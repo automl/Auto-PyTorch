@@ -31,7 +31,7 @@ class TabularRegressionTask(BaseTask):
             seed to be used for reproducibility.
         n_jobs (int: default=1):
             number of consecutive processes to spawn.
-        n_threads (int), (default=1):
+        n_threads (int: default=1):
             number of threads to use for each process.
         logging_config (Optional[Dict]):
             Specifies configuration for logging, if None, it is loaded from the logging.yaml
@@ -186,11 +186,11 @@ class TabularRegressionTask(BaseTask):
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            total_walltime_limit (int), (default=100): Time limit
+            total_walltime_limit (int: default=100): Time limit
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit_secs (int), (default=None): Time limit
+            func_eval_time_limit_secs (int: default=None): Time limit
                 for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
@@ -201,14 +201,14 @@ class TabularRegressionTask(BaseTask):
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
-            enable_traditional_pipeline (bool), (default=True):
+            enable_traditional_pipeline (bool: default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
                 prior building PyTorch Neural Networks. You can disable this
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]), (default=4096): Memory
+            memory_limit (Optional[int]: default=4096): Memory
                 limit in MB for the machine learning algorithm. autopytorch
                 will stop fitting the machine learning algorithm if it tries
                 to allocate more than memory_limit MB. If None is provided,
@@ -230,15 +230,15 @@ class TabularRegressionTask(BaseTask):
                 TargetAlgorithm to be optimised. If None, `eval_function`
                 available in autoPyTorch/evaluation/train_evaluator is used.
                 Must be child class of AbstractEvaluator.
-            all_supported_metrics (bool), (default=True): if True, all
+            all_supported_metrics (bool: default=True): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
-            precision (int), (default=32): Numeric precision used when loading
+            precision (int: default=32): Numeric precision used when loading
                 ensemble data. Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
-            load_models (bool), (default=True): Whether to load the
+            load_models (bool: default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            portfolio_selection (str), (default=None):
+            portfolio_selection (str: default=None):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.

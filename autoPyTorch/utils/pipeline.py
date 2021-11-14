@@ -40,10 +40,10 @@ def get_dataset_requirements(info: Dict[str, Any],
              about the dataset to instantiate a pipeline. For more
              info check the get_required_dataset_info of the
              appropriate dataset in autoPyTorch/datasets
-        include (Optional[Dict]), (default=None):
+        include (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components to use.
-        exclude (Optional[Dict]), (default=None):
+        exclude (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components not to use.
             Incompatible with include.
@@ -129,10 +129,10 @@ def get_configuration_space(info: Dict[str, Any],
              about the dataset to instantiate a pipeline. For more
              info check the get_required_dataset_info of the
              appropriate dataset in autoPyTorch/datasets
-        include (Optional[Dict]), (default=None):
+        include (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components to use.
-        exclude (Optional[Dict]), (default=None):
+        exclude (Optional[Dict]):
             If None, all possible components are used.
             Otherwise specifies set of components not to use.
             Incompatible with include.
