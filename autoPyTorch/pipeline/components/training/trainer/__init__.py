@@ -354,13 +354,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         # As training have finished, load the best weight
         if self.checkpoint_dir is not None:
-            best_path = os.path.join(self.checkpoint_dir, 'best.pth')
-            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
-            # We will stop the training. Load the last best performing weights
-            X['network'].load_state_dict(torch.load(best_path))
-
-            # Clean the temp dir
-            shutil.rmtree(self.checkpoint_dir)
+            self._load_best_weights_and_clean_checkpoints(X)
 
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
 
@@ -368,6 +362,24 @@ class TrainerChoice(autoPyTorchChoice):
         self.fitted_ = True
 
         return self
+
+    def _load_best_weights_and_clean_checkpoints(self, X: Dict[str, Any]) -> None:
+        """
+        Load the best model until the last epoch and delete all the files for checkpoints.
+
+        Args:
+            X (Dict[str, Any]): Dependencies needed by current component to perform fit
+        """
+        assert self.checkpoint_dir is not None  # mypy
+        assert self.run_summary is not None  # mypy
+
+        best_path = os.path.join(self.checkpoint_dir, 'best.pth')
+        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+        # We will stop the training. Load the last best performing weights
+        X['network'].load_state_dict(torch.load(best_path))
+
+        # Clean the temp dir
+        shutil.rmtree(self.checkpoint_dir)
 
     def early_stop_handler(self, X: Dict[str, Any]) -> bool:
         """
