@@ -208,7 +208,7 @@ class TabularClassificationTask(BaseTask):
                 algorithms that are fitted during search() are considered for
                 ensemble building.
             memory_limit (Optional[int]: default=4096):
-                Memory limit in MB for the machine learning algorithm. 
+                Memory limit in MB for the machine learning algorithm.
                 Autopytorch will stop fitting the machine learning algorithm
                 if it tries to allocate more than memory_limit MB. If None
                 is provided, no memory limit is set. In case of multi-processing,
