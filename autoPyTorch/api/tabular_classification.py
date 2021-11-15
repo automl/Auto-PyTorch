@@ -25,37 +25,42 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class TabularClassificationTask(BaseTask):
     """
     Tabular Classification API to the pipelines.
+
     Args:
-        seed (int), (default=1): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
-        n_threads (int), (default=1):
+        seed (int: default=1):
+            seed to be used for reproducibility.
+        n_jobs (int: default=1):
+            number of consecutive processes to spawn.
+        n_threads (int: default=1):
             number of threads to use for each process.
         logging_config (Optional[Dict]):
-            specifies configuration for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int), (default=50):
+            Specifies configuration for logging, if None, it is loaded from the logging.yaml
+        ensemble_size (int: default=50):
             Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50):
-            only consider the ensemble_nbest
+        ensemble_nbest (int: default=50):
+            Only consider the ensemble_nbest
             models to build the ensemble
-        max_models_on_disc (int), (default=50):
-            maximum number of models saved to disc.
-            Also, controls the size of the ensemble as any additional models will be deleted.
+        max_models_on_disc (int: default=50):
+            Maximum number of models saved to disc.
+            Also, controls the size of the ensemble
+            as any additional models will be deleted.
             Must be greater than or equal to 1.
         temporary_directory (str):
-            folder to store configuration output and log file
+            Folder to store configuration output and log file
         output_directory (str):
-            folder to store predictions for optional test set
+            Folder to store predictions for optional test set
         delete_tmp_folder_after_terminate (bool):
-            determines whether to delete the temporary directory, when finished
+            Determines whether to delete the temporary directory,
+            when finished
         include_components (Optional[Dict]):
-            If None, all possible components are used. Otherwise
-            specifies set of components to use.
+            If None, all possible components are used.
+            Otherwise specifies set of components to use.
         exclude_components (Optional[Dict]):
-            If None, all possible components are used. Otherwise
-            specifies set of components not to use. Incompatible
-            with include components
+            If None, all possible components are used.
+            Otherwise specifies set of components not to use.
+            Incompatible with include components.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
@@ -102,6 +107,16 @@ class TabularClassificationTask(BaseTask):
         )
 
     def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularClassificationPipeline:
+        """
+        Build pipeline according to current task and for the passed dataset properties
+
+        Args:
+            dataset_properties (Dict[str,Any])
+
+        Returns:
+            TabularClassificationPipeline:
+                Pipeline compatible with the given dataset properties.
+        """
         return TabularClassificationPipeline(dataset_properties=dataset_properties)
 
     def search(
@@ -143,20 +158,20 @@ class TabularClassificationTask(BaseTask):
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
-                + 'epochs': The training of each pipeline will be terminated after
-                  a number of epochs have passed. This number of epochs is determined by the
-                  budget argument of this method.
-                + 'runtime': The training of each pipeline will be terminated after
-                  a number of seconds have passed. This number of seconds is determined by the
-                  budget argument of this method. The overall fitting time of a pipeline is
-                  controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
-                  time to train a pipeline, but it does not consider the overall time it takes
-                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
-                budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
-                is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
-                min_budget will refer to seconds.
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                    budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                    is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                    min_budget will refer to seconds.
             min_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 min_budget states the minimum resource allocation a pipeline should have
@@ -164,17 +179,17 @@ class TabularClassificationTask(BaseTask):
                 For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
             max_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            total_walltime_limit (int), (default=100): Time limit
-                in seconds for the search of appropriate models.
+            total_walltime_limit (int: default=100):
+                Time limit in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit_secs (int), (default=None):
+            func_eval_time_limit_secs (Optional[int]):
                 Time limit for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
@@ -185,39 +200,45 @@ class TabularClassificationTask(BaseTask):
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
-            enable_traditional_pipeline (bool), (default=True):
+            enable_traditional_pipeline (bool: default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
-                before building PyTorch Neural Networks. You can disable this
+                prior building PyTorch Neural Networks. You can disable this
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]), (default=4096):
-                Memory limit in MB for the machine learning algorithm. autopytorch
-                will stop fitting the machine learning algorithm if it tries
-                to allocate more than memory_limit MB. If None is provided,
-                no memory limit is set. In case of multi-processing, memory_limit
-                will be per job. This memory limit also applies to the ensemble
-                creation process.
+            memory_limit (Optional[int]: default=4096):
+                Memory limit in MB for the machine learning algorithm.
+                Autopytorch will stop fitting the machine learning algorithm
+                if it tries to allocate more than memory_limit MB. If None
+                is provided, no memory limit is set. In case of multi-processing,
+                memory_limit will be per job. This memory limit also applies to
+                the ensemble creation process.
             smac_scenario_args (Optional[Dict]):
                 Additional arguments inserted into the scenario of SMAC. See the
-                [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)
+                `SMAC documentation <https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario>`_
+                for a list of available arguments.
             get_smac_object_callback (Optional[Callable]):
                 Callback function to create an object of class
-                [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).
+                `smac.optimizer.smbo.SMBO <https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html>`_.
                 The function must accept the arguments scenario_dict,
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
-                [SMAC](https://automl.github.io/SMAC3/master/index.html).
-            all_supported_metrics (bool), (default=True):
-                if True, all metrics supporting current task will be calculated
+                `SMAC <https://automl.github.io/SMAC3/master/index.html>`_.
+            tae_func (Optional[Callable]):
+                TargetAlgorithm to be optimised. If None, `eval_function`
+                available in autoPyTorch/evaluation/train_evaluator is used.
+                Must be child class of AbstractEvaluator.
+            all_supported_metrics (bool: default=True):
+                If True, all metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
-            precision (int), (default=32): Numeric precision used when loading
-                ensemble data. Can be either '16', '32' or '64'.
+            precision (int: default=32):
+                Numeric precision used when loading ensemble data.
+                Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
-            load_models (bool), (default=True):
+            load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
-            portfolio_selection (str), (default=None):
+            portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.
@@ -225,7 +246,8 @@ class TabularClassificationTask(BaseTask):
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_.
+
         Returns:
             self
 
@@ -281,6 +303,16 @@ class TabularClassificationTask(BaseTask):
             batch_size: Optional[int] = None,
             n_jobs: int = 1
     ) -> np.ndarray:
+        """Generate the estimator predictions.
+        Generate the predictions based on the given examples from the test set.
+
+        Args:
+            X_test (np.ndarray):
+                The test set examples.
+
+        Returns:
+            Array with estimator predictions.
+        """
         if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")

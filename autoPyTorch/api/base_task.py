@@ -102,32 +102,42 @@ def _pipeline_predict(pipeline: BasePipeline,
 class BaseTask:
     """
     Base class for the tasks that serve as API to the pipelines.
+
     Args:
-        seed (int), (default=1): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
-        n_threads (int), (default=1):
-            number of threads to use for each process.
-        logging_config (Optional[Dict]): specifies configuration
-            for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int), (default=50): Number of models added to the ensemble built by
+        seed (int: default=1):
+            Seed to be used for reproducibility.
+        n_jobs (int: default=1):
+            Number of consecutive processes to spawn.
+        n_threads (int: default=1):
+            Number of threads to use for each process.
+        logging_config (Optional[Dict]):
+            Specifies configuration for logging, if None, it is loaded from the logging.yaml
+        ensemble_size (int: default=50):
+            Number of models added to the ensemble built by
             Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50): only consider the ensemble_nbest
-            models to build the ensemble
-        max_models_on_disc (int), (default=50): maximum number of models saved to disc.
-            Also, controls the size of the ensemble as any additional models will be deleted.
+        ensemble_nbest (int: default=50):
+            Only consider the ensemble_nbest models to build the ensemble
+        max_models_on_disc (int: default=50):
+            Maximum number of models saved to disc. It also controls the size of
+            the ensemble as any additional models will be deleted.
             Must be greater than or equal to 1.
-        temporary_directory (str): folder to store configuration output and log file
-        output_directory (str): folder to store predictions for optional test set
-        delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,
+        temporary_directory (str):
+            Folder to store configuration output and log file
+        output_directory (str):
+            Folder to store predictions for optional test set
+        delete_tmp_folder_after_terminate (bool):
+            Determines whether to delete the temporary directory,
             when finished
-        include_components (Optional[Dict]): If None, all possible components are used.
+        include_components (Optional[Dict]):
+            If None, all possible components are used.
             Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]): If None, all possible components are used.
-            Otherwise specifies set of components not to use. Incompatible with include
-            components
+        exclude_components (Optional[Dict]):
+            If None, all possible components are used.
+            Otherwise specifies set of components not to use.
+            Incompatible with include components
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            search space updates that can be used to modify the search
+            Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
     """
 
@@ -221,8 +231,9 @@ class BaseTask:
         """
         Build pipeline according to current task
         and for the passed dataset properties
+
         Args:
-            dataset_properties (Dict[str,Any]):
+            dataset_properties (Dict[str,Any])
 
         Returns:
 
@@ -234,6 +245,7 @@ class BaseTask:
         Check whether arguments are valid and
         then sets them to the current pipeline
         configuration.
+
         Args:
             **pipeline_config_kwargs: Valid config options include "num_run",
             "device", "budget_type", "epochs", "runtime", "torch_num_threads",
@@ -285,9 +297,10 @@ class BaseTask:
     def _get_logger(self, name: str) -> PicklableClientLogger:
         """
         Instantiates the logger used throughout the experiment
+
         Args:
-            name (str): name of the log file,
-            usually the dataset name
+            name (str):
+                Name of the log file, usually the dataset name
 
         Returns:
             PicklableClientLogger
@@ -349,8 +362,9 @@ class BaseTask:
     def _clean_logger(self) -> None:
         """
         cleans the logging server created
-        Returns:
 
+        Returns:
+            None
         """
         if not hasattr(self, 'stop_logging_server') or self.stop_logging_server is None:
             return
@@ -373,6 +387,7 @@ class BaseTask:
         """
         creates the dask client that is used to parallelize
         the training of pipelines
+
         Returns:
             None
         """
@@ -400,6 +415,7 @@ class BaseTask:
     def _close_dask_client(self) -> None:
         """
         Closes the created dask client
+
         Returns:
             None
         """
@@ -462,6 +478,10 @@ class BaseTask:
         by AutoML.
         This is a robust mechanism to be able to predict,
         even though no ensemble was found by ensemble builder.
+
+        Returns:
+            SingleBest:
+                Ensemble made with incumbent pipeline
         """
 
         if self._metric is None:
@@ -716,6 +736,7 @@ class BaseTask:
         Fit both optimizes the machine learning models and builds an ensemble out of them.
         To disable ensembling, set ensemble_size==0.
         using the optimizer.
+
         Args:
             dataset (Dataset):
                 The argument that will provide the dataset splits. It is
@@ -727,20 +748,20 @@ class BaseTask:
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
-                + 'epochs': The training of each pipeline will be terminated after
-                  a number of epochs have passed. This number of epochs is determined by the
-                  budget argument of this method.
-                + 'runtime': The training of each pipeline will be terminated after
-                  a number of seconds have passed. This number of seconds is determined by the
-                  budget argument of this method. The overall fitting time of a pipeline is
-                  controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
-                  time to train a pipeline, but it does not consider the overall time it takes
-                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
-                budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
-                is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
-                min_budget will refer to seconds.
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                    budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                    is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                    min_budget will refer to seconds.
             min_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 min_budget states the minimum resource allocation a pipeline should have
@@ -748,18 +769,18 @@ class BaseTask:
                 For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
             max_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            total_walltime_limit (int), (default=100): Time limit
-                in seconds for the search of appropriate models.
+            total_walltime_limit (int: default=100):
+                Time limit in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
                 chance of finding better models.
-            func_eval_time_limit_secs (int), (default=None): Time limit
-                for a single call to the machine learning model.
+            func_eval_time_limit_secs (Optional[int]):
+                Time limit for a single call to the machine learning model.
                 Model fitting will be terminated if the machine
                 learning algorithm runs over the time limit. Set
                 this value high enough so that typical machine
@@ -769,44 +790,45 @@ class BaseTask:
                 total_walltime_limit // 2 to allow enough time to fit
                 at least 2 individual machine learning algorithms.
                 Set to np.inf in case no time limit is desired.
-            enable_traditional_pipeline (bool), (default=True):
+            enable_traditional_pipeline (bool: default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
                 prior building PyTorch Neural Networks. You can disable this
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]), (default=4096): Memory
-                limit in MB for the machine learning algorithm. autopytorch
-                will stop fitting the machine learning algorithm if it tries
-                to allocate more than memory_limit MB. If None is provided,
-                no memory limit is set. In case of multi-processing, memory_limit
-                will be per job. This memory limit also applies to the ensemble
-                creation process.
-            smac_scenario_args (Optional[Dict]): Additional arguments inserted
-                into the scenario of SMAC. See the
-                [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)
+            memory_limit (Optional[int]: default=4096):
+                Memory limit in MB for the machine learning algorithm.
+                Autopytorch will stop fitting the machine learning algorithm
+                if it tries to allocate more than memory_limit MB. If None
+                is provided, no memory limit is set. In case of multi-processing,
+                memory_limit will be per job. This memory limit also applies to
+                the ensemble creation process.
+            smac_scenario_args (Optional[Dict]):
+                Additional arguments inserted into the scenario of SMAC. See the
+                `SMAC documentation <https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario>`_
                 for a list of available arguments.
-            get_smac_object_callback (Optional[Callable]): Callback function
-                to create an object of class
-                [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).
+            get_smac_object_callback (Optional[Callable]):
+                Callback function to create an object of class
+                `smac.optimizer.smbo.SMBO <https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html>`_.
                 The function must accept the arguments scenario_dict,
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
-                [SMAC](https://automl.github.io/SMAC3/master/index.html).
+                `SMAC <https://automl.github.io/SMAC3/master/index.html>`_.
             tae_func (Optional[Callable]):
                 TargetAlgorithm to be optimised. If None, `eval_function`
                 available in autoPyTorch/evaluation/train_evaluator is used.
                 Must be child class of AbstractEvaluator.
-            all_supported_metrics (bool), (default=True): if True, all
-                metrics supporting current task will be calculated
+            all_supported_metrics (bool: default=True):
+                If True, all metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
-            precision (int), (default=32): Numeric precision used when loading
-                ensemble data. Can be either '16', '32' or '64'.
+            precision (int: default=32):
+                Numeric precision used when loading ensemble data.
+                Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
-            load_models (bool), (default=True): Whether to load the
-                models after fitting AutoPyTorch.
-            portfolio_selection (str), (default=None):
+            load_models (bool: default=True):
+                Whether to load the models after fitting AutoPyTorch.
+            portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.
@@ -814,7 +836,8 @@ class BaseTask:
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
+
         Returns:
             self
 
@@ -1110,11 +1133,11 @@ class BaseTask:
         methods.
 
         Args:
-            dataset: (Dataset)
+            dataset (Dataset):
                 The argument that will provide the dataset splits. It can either
                 be a dictionary with the splits, or the dataset object which can
                 generate the splits based on different restrictions.
-            split_id: (int)
+            split_id (int):
                 split id to fit on.
         Returns:
             self
@@ -1172,18 +1195,19 @@ class BaseTask:
         methods.
 
         Args:
-            dataset: (Dataset)
+            dataset (Dataset):
                 The argument that will provide the dataset splits. It can either
                 be a dictionary with the splits, or the dataset object which can
                 generate the splits based on different restrictions.
-            split_id: (int) (default=0)
+            split_id (int: default=0):
                 split id to fit on.
-            pipeline_config: (Optional[Configuration])
+            pipeline_config (Optional[Configuration]):
                 configuration to fit the pipeline with. If None,
                 uses default
 
         Returns:
-            (BasePipeline): fitted pipeline
+            BasePipeline:
+                fitted pipeline
         """
         self.dataset_name = dataset.dataset_name
 
@@ -1223,9 +1247,11 @@ class BaseTask:
     ) -> np.ndarray:
         """Generate the estimator predictions.
         Generate the predictions based on the given examples from the test set.
+
         Args:
-        X_test: (np.ndarray)
-            The test set examples.
+            X_test (np.ndarray):
+                The test set examples.
+
         Returns:
             Array with estimator predictions.
         """
@@ -1274,13 +1300,16 @@ class BaseTask:
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
+
         Args:
-        y_pred: (np.ndarray)
-            The test predictions
-        y_test: (np.ndarray)
-            The test ground truth labels.
+            y_pred (np.ndarray):
+                The test predictions
+            y_test (np.ndarray):
+                The test ground truth labels.
+
         Returns:
-            Dict[str, float]: Value of the evaluation metric calculated on the test set.
+            Dict[str, float]:
+                Value of the evaluation metric calculated on the test set.
         """
         if self._metric is None:
             raise ValueError("No metric found. Either fit/search has not been called yet "
@@ -1317,10 +1346,16 @@ class BaseTask:
     ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
         """
         Get Incumbent config and the corresponding results
+
         Args:
-            include_traditional: Whether to include results from tradtional pipelines
+            include_traditional (bool):
+                Whether to include results from tradtional pipelines
 
         Returns:
+            Configuration (CS.ConfigurationSpace):
+                The incumbent configuration
+            Dict[str, Union[int, str, float]]:
+                Additional information about the run of the incumbent configuration.
 
         """
         assert self.run_history is not None, "No Run History found, search has not been called."
@@ -1354,6 +1389,13 @@ class BaseTask:
         return models_with_weights
 
     def show_models(self) -> str:
+        """
+        Returns a Markdown containing details about the final ensemble/configuration.
+
+        Returns:
+            str:
+                Markdown table of models.
+        """
         df = []
         for weight, model in self.get_models_with_weights():
             representation = model.get_pipeline_representation()

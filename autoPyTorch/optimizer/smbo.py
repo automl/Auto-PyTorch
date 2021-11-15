@@ -163,7 +163,7 @@ class AutoMLSMBO(object):
                 A string indicating the multiprocessing context to use
             ensemble_callback (Optional[EnsembleBuilderManager]):
                 A callback used in this scenario to start ensemble building subtasks
-            portfolio_selection (str), (default=None):
+            portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
                 optimization. By default, no warm-starting happens.
