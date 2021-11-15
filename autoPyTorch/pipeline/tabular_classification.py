@@ -42,7 +42,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     """
-    This class is a wrapper around `Sklearn Pipeline 
+    This class is a wrapper around `Sklearn Pipeline
     <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_
     to integrate autoPyTorch components and choices for
     tabular classification tasks.

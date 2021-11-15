@@ -114,7 +114,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         Args:
             X (np.ndarray):
                 Input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): 
+            batch_size (Optional[int]):
                 Controls whether the pipeline will be called on
                 small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
