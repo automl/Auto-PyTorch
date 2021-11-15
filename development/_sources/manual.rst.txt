@@ -48,3 +48,24 @@ Auto-PyTorch allows users to inspect the training results and statistics. The fo
 >>> automl = TabularClassificationTask()
 >>> automl.fit(X_train, y_train)
 >>> automl.show_models()
+
+Parallel computation
+====================
+
+In it's default mode, *Auto-PyTorch* already uses two cores. The first one is used for model building, the second for building an ensemble every time a new machine learning model has finished training.
+
+Nevertheless, *Auto-PyTorch* also supports parallel Bayesian optimization via the use of `Dask.distributed  <https://distributed.dask.org/>`_. By providing the arguments ``n_jobs`` to the estimator construction, one can control the number of cores available to *Auto-PyTorch* (As shown in the Example :ref:`sphx_glr_examples_40_advanced_example_parallel_n_jobs.py`). When multiple cores are available, *Auto-PyTorch* will create a worker per core, and use the  available workers to both search for better machine learning models as well as building  an ensemble with them until the time resource is exhausted.
+
+**Note:** *Auto-PyTorch* requires all workers to have access to a shared file system for storing training data and models.
+
+*Auto-PyTorch* employs `threadpoolctl <https://github.com/joblib/threadpoolctl/>`_ to control the number of threads employed by scientific libraries like numpy or scikit-learn. This is done exclusively during the building procedure of models, not during inference. In particular, *Auto-PyTorch* allows each pipeline to use at most 1 thread during training. At predicting and scoring time this limitation is not enforced by *Auto-PyTorch*. You can control the number of resources
+employed by the pipelines by setting the following variables in your environment, prior to running *Auto-PyTorch*:
+
+.. code-block:: shell-session
+
+    $ export OPENBLAS_NUM_THREADS=1
+    $ export MKL_NUM_THREADS=1
+    $ export OMP_NUM_THREADS=1
+
+
+For further information about how scikit-learn handles multiprocessing, please check the `Parallelism, resource management, and configuration <https://scikit-learn.org/stable/computing/parallelism.html>`_ documentation from the library.

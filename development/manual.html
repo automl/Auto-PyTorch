@@ -112,6 +112,7 @@
 <li><a class="reference internal" href="#resource-allocation">Resource Allocation</a></li>
 <li><a class="reference internal" href="#ensemble-building-process">Ensemble Building Process</a></li>
 <li><a class="reference internal" href="#inspecting-the-results">Inspecting the results</a></li>
+<li><a class="reference internal" href="#parallel-computation">Parallel computation</a></li>
 </ul>
 </li>
 </ul>
@@ -162,6 +163,20 @@ to build an ensemble based on the models’ prediction for the validation set. T
 <span class="gp">&gt;&gt;&gt; </span><span class="n">automl</span><span class="o">.</span><span class="n">show_models</span><span class="p">()</span>
 </pre></div>
 </div>
+</section>
+<section id="parallel-computation">
+<h2>Parallel computation<a class="headerlink" href="#parallel-computation" title="Permalink to this headline">¶</a></h2>
+<p>In it’s default mode, <em>Auto-PyTorch</em> already uses two cores. The first one is used for model building, the second for building an ensemble every time a new machine learning model has finished training.</p>
+<p>Nevertheless, <em>Auto-PyTorch</em> also supports parallel Bayesian optimization via the use of <a class="reference external" href="https://distributed.dask.org/">Dask.distributed</a>. By providing the arguments <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> to the estimator construction, one can control the number of cores available to <em>Auto-PyTorch</em> (As shown in the Example <a class="reference internal" href="examples/40_advanced/example_parallel_n_jobs.html#sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"><span class="std std-ref">Tabular Classification</span></a>). When multiple cores are available, <em>Auto-PyTorch</em> will create a worker per core, and use the  available workers to both search for better machine learning models as well as building  an ensemble with them until the time resource is exhausted.</p>
+<p><strong>Note:</strong> <em>Auto-PyTorch</em> requires all workers to have access to a shared file system for storing training data and models.</p>
+<p><em>Auto-PyTorch</em> employs <a class="reference external" href="https://github.com/joblib/threadpoolctl/">threadpoolctl</a> to control the number of threads employed by scientific libraries like numpy or scikit-learn. This is done exclusively during the building procedure of models, not during inference. In particular, <em>Auto-PyTorch</em> allows each pipeline to use at most 1 thread during training. At predicting and scoring time this limitation is not enforced by <em>Auto-PyTorch</em>. You can control the number of resources
+employed by the pipelines by setting the following variables in your environment, prior to running <em>Auto-PyTorch</em>:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">export</span> <span class="nv">OPENBLAS_NUM_THREADS</span><span class="o">=</span><span class="m">1</span>
+<span class="gp">$ </span><span class="nb">export</span> <span class="nv">MKL_NUM_THREADS</span><span class="o">=</span><span class="m">1</span>
+<span class="gp">$ </span><span class="nb">export</span> <span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+<p>For further information about how scikit-learn handles multiprocessing, please check the <a class="reference external" href="https://scikit-learn.org/stable/computing/parallelism.html">Parallelism, resource management, and configuration</a> documentation from the library.</p>
 </section>
 </section>
 
