@@ -1,6 +1,7 @@
 import collections
 import logging.handlers
 import os
+import shutil
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
@@ -351,12 +352,34 @@ class TrainerChoice(autoPyTorchChoice):
             )
             self.save_model_for_ensemble()
 
+        # As training have finished, load the best weight
+        if self.checkpoint_dir is not None:
+            self._load_best_weights_and_clean_checkpoints(X)
+
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
 
         # Tag as fitted
         self.fitted_ = True
 
         return self
+
+    def _load_best_weights_and_clean_checkpoints(self, X: Dict[str, Any]) -> None:
+        """
+        Load the best model until the last epoch and delete all the files for checkpoints.
+
+        Args:
+            X (Dict[str, Any]): Dependencies needed by current component to perform fit
+        """
+        assert self.checkpoint_dir is not None  # mypy
+        assert self.run_summary is not None  # mypy
+
+        best_path = os.path.join(self.checkpoint_dir, 'best.pth')
+        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+        # We will stop the training. Load the last best performing weights
+        X['network'].load_state_dict(torch.load(best_path))
+
+        # Clean the temp dir
+        shutil.rmtree(self.checkpoint_dir)
 
     def early_stop_handler(self, X: Dict[str, Any]) -> bool:
         """
@@ -387,16 +410,7 @@ class TrainerChoice(autoPyTorchChoice):
         if epochs_since_best == 0:
             torch.save(X['network'].state_dict(), best_path)
 
-        if epochs_since_best > X['early_stopping']:
-            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
-            # We will stop the training. Load the last best performing weights
-            X['network'].load_state_dict(torch.load(best_path))
-
-            # Let the tempfile module clean the temp dir
-            self.checkpoint_dir = None
-            return True
-
-        return False
+        return epochs_since_best > cast(int, X['early_stopping'])
 
     def eval_valid_each_epoch(self, X: Dict[str, Any]) -> bool:
         """

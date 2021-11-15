@@ -1,6 +1,9 @@
 import copy
+import glob
 import os
+import shutil
 import sys
+import tempfile
 import unittest
 import unittest.mock
 
@@ -380,6 +383,54 @@ class TestTrainer(unittest.TestCase):
                 key = key.replace(selected_choice + ':', '')
                 self.assertIn(key, vars(trainer_choice.choice))
                 self.assertEqual(value, trainer_choice.choice.__dict__[key])
+
+
+def test_early_stopping():
+    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'binary'}
+    trainer_choice = TrainerChoice(dataset_properties=dataset_properties)
+
+    def dummy_performance(*args, **kwargs):
+        return (-time.time(), {'accuracy': -time.time()})
+
+    # Fake the training so that the first epoch was the best one
+    import time
+    trainer_choice.choice = unittest.mock.MagicMock()
+    trainer_choice.choice.train_epoch = dummy_performance
+    trainer_choice.choice.evaluate = dummy_performance
+    trainer_choice.choice.on_epoch_end.return_value = False
+
+    fit_dictionary = {
+        'logger_port': 1000,
+        'budget_type': 'epochs',
+        'epochs': 6,
+        'budget': 10,
+        'num_run': 1,
+        'torch_num_threads': 1,
+        'early_stopping': 5,
+        'metrics_during_training': True,
+        'dataset_properties': dataset_properties,
+        'split_id': 0,
+        'step_interval': StepIntervalUnit.batch
+    }
+    for item in ['backend', 'lr_scheduler', 'network', 'optimizer', 'train_data_loader', 'val_data_loader',
+                 'device', 'y_train']:
+        fit_dictionary[item] = unittest.mock.MagicMock()
+
+    fit_dictionary['backend'].temporary_directory = tempfile.mkdtemp()
+    fit_dictionary['network'].state_dict.return_value = {'dummy': 1}
+    trainer_choice.fit(fit_dictionary)
+    epochs_since_best = trainer_choice.run_summary.get_last_epoch() - trainer_choice.run_summary.get_best_epoch()
+
+    # Six epochs ran
+    assert len(trainer_choice.run_summary.performance_tracker['val_metrics']) == 6
+
+    # But the best performance was achieved on the first epoch
+    assert epochs_since_best == 0
+
+    # No files are left after training
+    left_files = glob.glob(f"{fit_dictionary['backend'].temporary_directory}/*")
+    assert len(left_files) == 0
+    shutil.rmtree(fit_dictionary['backend'].temporary_directory)
 
 
 if __name__ == '__main__':
