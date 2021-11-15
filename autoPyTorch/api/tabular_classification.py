@@ -171,7 +171,7 @@ class TabularClassificationTask(BaseTask):
                     is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
                     min_budget will refer to seconds.
             min_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 min_budget states the minimum resource allocation a pipeline should have
@@ -179,7 +179,7 @@ class TabularClassificationTask(BaseTask):
                 For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
             max_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 max_budget states the maximum resource allocation a pipeline is going to
@@ -207,36 +207,37 @@ class TabularClassificationTask(BaseTask):
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (int: default=4096): Memory
-                limit in MB for the machine learning algorithm. autopytorch
-                will stop fitting the machine learning algorithm if it tries
-                to allocate more than memory_limit MB. If None is provided,
-                no memory limit is set. In case of multi-processing, memory_limit
-                will be per job. This memory limit also applies to the ensemble
-                creation process.
-            smac_scenario_args (Optional[Dict]): Additional arguments inserted
-                into the scenario of SMAC. See the
-                [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)
+            memory_limit (Optional[int]: default=4096):
+                Memory limit in MB for the machine learning algorithm. 
+                Autopytorch will stop fitting the machine learning algorithm
+                if it tries to allocate more than memory_limit MB. If None
+                is provided, no memory limit is set. In case of multi-processing,
+                memory_limit will be per job. This memory limit also applies to
+                the ensemble creation process.
+            smac_scenario_args (Optional[Dict]):
+                Additional arguments inserted into the scenario of SMAC. See the
+                `SMAC documentation <https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario>`_
                 for a list of available arguments.
-            get_smac_object_callback (Optional[Callable]): Callback function
-                to create an object of class
-                [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).
+            get_smac_object_callback (Optional[Callable]):
+                Callback function to create an object of class
+                `smac.optimizer.smbo.SMBO <https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html>`_.
                 The function must accept the arguments scenario_dict,
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
-                [SMAC](https://automl.github.io/SMAC3/master/index.html).
+                `SMAC <https://automl.github.io/SMAC3/master/index.html>`_.
             tae_func (Optional[Callable]):
                 TargetAlgorithm to be optimised. If None, `eval_function`
                 available in autoPyTorch/evaluation/train_evaluator is used.
                 Must be child class of AbstractEvaluator.
-            all_supported_metrics (bool: default=True): if True, all
-                metrics supporting current task will be calculated
+            all_supported_metrics (bool: default=True):
+                If True, all metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
-            precision (int: default=32): Numeric precision used when loading
-                ensemble data. Can be either '16', '32' or '64'.
+            precision (int: default=32):
+                Numeric precision used when loading ensemble data.
+                Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
-            load_models (bool: default=True): Whether to load the
-                models after fitting AutoPyTorch.
+            load_models (bool: default=True):
+                Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
                 This argument controls the initial configurations that
                 AutoPyTorch uses to warm start SMAC for hyperparameter
@@ -245,7 +246,7 @@ class TabularClassificationTask(BaseTask):
                 configurations, similar to (...herepathtogreedy...).
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
-                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`
+                `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_.
 
         Returns:
             self
