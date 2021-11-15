@@ -16,18 +16,22 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 class autoPyTorchChoice(object):
-    """Allows for the dynamically generation of components as pipeline steps.
+    """
+    Allows for the dynamically generation of components as pipeline steps.
 
     Args:
-        dataset_properties (Dict[str, Union[str, BaseDatasetPropertiesType]]): Describes the dataset
-            to work on
-        random_state (Optional[np.random.RandomState]): allows to produce reproducible
-            results by setting a seed for randomized settings
+        dataset_properties (Dict[str, Union[str, BaseDatasetPropertiesType]]):
+            Describes the dataset to work on
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
 
     Attributes:
-        random_state (Optional[np.random.RandomState]): allows to produce reproducible
-            results by setting a seed for randomized settings
-        choice (autoPyTorchComponent): the choice of components for this stage
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a seed for
+            randomized settings
+        choice (autoPyTorchComponent):
+            the choice of components for this stage
     """
     def __init__(self,
                  dataset_properties: Dict[str, BaseDatasetPropertiesType],
@@ -67,11 +71,13 @@ class autoPyTorchChoice(object):
         for current step.
 
         Args:
-            cls (autoPyTorchChoice): The choice object from which to query the valid
+            cls (autoPyTorchChoice):
+                The choice object from which to query the valid
                 components
 
         Returns:
-            Dict[str, autoPyTorchComponent]: The available components via a mapping
+            Dict[str, autoPyTorchComponent]:
+                The available components via a mapping
                 from the module name to the component class
 
         """
@@ -88,10 +94,13 @@ class autoPyTorchChoice(object):
         user specification
 
         Args:
-            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Describes the dataset to work on
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive
                 list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip. Can't be used together with include
 
         Results:
             Dict[str, autoPyTorchComponent]: A dictionary with valid components for this
@@ -137,10 +146,10 @@ class autoPyTorchChoice(object):
         to an actual parameter of the autoPyTorch component.
 
         Args:
-            configuration (Configuration): which configuration to apply to
-                the chosen component
-            init_params (Optional[Dict[str, any]]): Optional arguments to
-                initialize the chosen component
+            configuration (Configuration):
+                Which configuration to apply to the chosen component
+            init_params (Optional[Dict[str, any]]):
+                Optional arguments to initialize the chosen component
 
         Returns:
             self: returns an instance of self
@@ -177,11 +186,15 @@ class autoPyTorchChoice(object):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Describes the dataset to work on
-            default: (Optional[str]) : Default component to use in hyperparameters
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Describes the dataset to work on
+            default: (Optional[str]):
+                Default component to use in hyperparameters
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive
                 list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip
 
         Returns:
             ConfigurationSpace: the configuration space of the hyper-parameters of the
@@ -193,8 +206,10 @@ class autoPyTorchChoice(object):
         """Handy method to check if a component is fitted
 
         Args:
-            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
-            y (Any): not used. To comply with sklearn API
+            X (X: Dict[str, Any]):
+                Dependencies needed by current component to perform fit
+            y (Any):
+                not used. To comply with sklearn API
         """
         # Allows to use check_is_fitted on the choice object
         self.fitted_ = True
@@ -205,10 +220,12 @@ class autoPyTorchChoice(object):
         """Predicts the target given an input, by using the chosen component
 
         Args:
-            X (np.ndarray): input features from which to predict the target
+            X (np.ndarray):
+                input features from which to predict the target
 
         Returns:
-            np.ndarray: the predicted target
+            np.ndarray:
+                the predicted target
         """
         assert self.choice is not None, "Cannot call predict without initializing the component"
         return self.choice.predict(X)
@@ -216,8 +233,10 @@ class autoPyTorchChoice(object):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds the current choice in the fit dictionary
+
         Args:
-            X (Dict[str, Any]): fit dictionary
+            X (Dict[str, Any]):
+                fit dictionary
 
         Returns:
             (Dict[str, Any])
@@ -233,7 +252,8 @@ class autoPyTorchChoice(object):
         are honored before fit.
 
         Args:
-            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
         """
@@ -246,7 +266,8 @@ class autoPyTorchChoice(object):
         """
         A mechanism in code to ensure the correctness of the initialised dataset properties.
         Args:
-            dataset_properties:
+            dataset_properties (Dict[str, BaseDatasetPropertiesType]):
+                Describes the dataset to work on
 
         """
         assert isinstance(dataset_properties, dict), "dataset_properties must be a dictionary"

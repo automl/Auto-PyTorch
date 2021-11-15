@@ -29,7 +29,8 @@ PipelineStepType = Union[autoPyTorchComponent, autoPyTorchChoice]
 
 
 class BasePipeline(Pipeline):
-    """Base class for all pipeline objects.
+    """
+    Base class for all pipeline objects.
 
     Args:
         config (Optional[Configuration]):
@@ -46,11 +47,11 @@ class BasePipeline(Pipeline):
         random_state (np.random.RandomState):
             allows to produce reproducible results by
             setting a seed for randomized settings
-        init_params (Optional[Dict[str, Any]])
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
-
 
     Attributes:
         steps (List[Tuple[str, PipelineStepType]]):

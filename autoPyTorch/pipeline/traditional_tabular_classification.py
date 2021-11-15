@@ -16,7 +16,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
     """
-    A pipeline that contains steps to fit traditional ML methods for tabular classification.
+    A pipeline to fit traditional ML methods for tabular classification.
 
     Args:
         config (Configuration)
@@ -29,13 +29,25 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
             to avoid during the creation of the configuration space.
         random_state (np.random.RandomState): allows to produce reproducible results by
             setting a seed for randomized settings
-        init_params (Optional[Dict[str, Any]])
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
 
-
     Attributes:
+        steps (List[Tuple[str, PipelineStepType]]):
+            the steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            a configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            allows to produce reproducible
+            results by setting a seed for randomized settings
     """
 
     def __init__(
@@ -58,8 +70,10 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """Predict the output using the selected model.
 
         Args:
-            X (np.ndarray): input data to the array
-            batch_size (Optional[int]): batch_size controls whether the pipeline will be
+            X (np.ndarray):
+                Input data to the array
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be
                 called on small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
 
@@ -98,12 +112,15 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """predict_proba.
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
+            X (np.ndarray):
+                Input to the pipeline, from which to guess targets
+            batch_size (Optional[int]): 
+                Controls whether the pipeline will be called on
+                small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
         Returns:
-            np.ndarray: Probabilities of the target being certain class
+            np.ndarray:
+                Probabilities of the target being certain class
         """
         if batch_size is None:
             return self.named_steps['model_trainer'].predict_proba(X)
@@ -144,16 +161,20 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            include (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            exclude (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Any]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices
+                of components
 
         Returns:
-            cs (Configuration): The configuration space describing
-                the SimpleRegressionClassifier.
+            cs (Configuration):
+                The configuration space describing
+                the TraditionalTabularClassificationPipeline.
         """
         cs = ConfigurationSpace()
 
@@ -192,7 +213,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
         Returns:
             List[Tuple[str, PipelineStepType]]:
-                list of steps sequentially exercised
+                List of steps sequentially exercised
                 by the pipeline.
         """
         steps: List[Tuple[str, PipelineStepType]] = []
@@ -212,7 +233,8 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         Returns the name of the current estimator.
 
         Returns:
-            str: name of the pipeline type
+            str:
+                Name of the pipeline type
         """
         return "traditional_tabular_learner"
 
@@ -225,7 +247,8 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         [{'PreProcessing': <>, 'Estimator': <>}]
 
         Returns:
-            Dict: contains the pipeline representation in a short format
+            Dict:
+                Contains the pipeline representation in a short format
         """
         estimator_name = 'TraditionalTabularClassification'
         if self.steps[0][1].choice is not None:
