@@ -109,6 +109,8 @@
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
 <li><a class="reference internal" href="#">Manual</a><ul>
 <li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#data-validation">Data validation</a></li>
+<li><a class="reference internal" href="#data-preprocessing">Data Preprocessing</a></li>
 <li><a class="reference internal" href="#resource-allocation">Resource Allocation</a></li>
 <li><a class="reference internal" href="#ensemble-building-process">Ensemble Building Process</a></li>
 <li><a class="reference internal" href="#inspecting-the-results">Inspecting the results</a></li>
@@ -139,19 +141,80 @@ We expand the support to image processing tasks in the future.</p>
 <li><p><a class="reference external" href="examples/40_advanced/example_visualization.html">Visualizing the results</a></p></li>
 </ul>
 </section>
+<section id="data-validation">
+<h2>Data validation<a class="headerlink" href="#data-validation" title="Permalink to this headline">¶</a></h2>
+<p>For tabular tasks, <em>Auto-PyTorch</em> uses a feature and target validator on the input feature set and target set respectively.</p>
+<p>The feature validator checks whether the data is supported by <em>Auto-PyTorch</em> or not. Additionally, a sklearn column transformer
+is also used which imputes and ordinally encodes the categorical columns of the dataset. This ensures
+that no unseen category is found while fitting the data.</p>
+<p>The target validator applies a label encoder on the target column.</p>
+</section>
+<section id="data-preprocessing">
+<h2>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this headline">¶</a></h2>
+<p>The tabular preprocessing pipeline in <em>Auto-PyTorch</em> consists of</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/imputation">Imputation</a></p></li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/encoding">Encoding</a></dt><dd><p>Choice of <cite>OneHotEncoder</cite> or no encoding.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/scaling">Scaling</a></dt><dd><p>Choice of <cite>MinMaxScaler</cite>, <cite>Normalizer</cite>, <cite>StandardScaler</cite> and no scaling.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/feature_preprocessing">Feature preprocessing</a></dt><dd><p>Choice of <cite>FastICA</cite>, <cite>KernelPCA</cite>, <cite>RandomKitchenSinks</cite>, <cite>Nystroem</cite>, <cite>PolynomialFeatures</cite>, <cite>PowerTransformer</cite>, <cite>TruncatedSVD</cite>,</p>
+</dd>
+</dl>
+</li>
+</ol>
+<p>Along with the choices, their corresponding hyperparameters are also tuned. A sklearn ColumnTransformer is
+created which includes a categorical pipeline and a numerical pipeline. These pipelines are made up of the
+relevant preprocessors chosen in the previous steps. The column transformer is compatible with <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html">torchvision transforms</a>
+and is therefore passed to the DataLoader.</p>
+</section>
 <section id="resource-allocation">
 <h2>Resource Allocation<a class="headerlink" href="#resource-allocation" title="Permalink to this headline">¶</a></h2>
-<p>Auto-PyTorch allows to control the maximum allowed resident set size memory (RSS) that an estimator can use. By providing the <cite>memory_limit</cite> argument to the <cite>search()</cite> method, one can make sure that neither the individual machine learning models fitted by SMAC nor the final ensemble consume more than <cite>memory_limit</cite> megabytes.</p>
-<p>Additionally, one can control the allocated time to search for a model via the argument <cite>total_walltime_limit</cite> to the <cite>search()</cite> method. This argument controls the total time SMAC can use to search for new configurations. The more time is allocated, the better the final estimator will be.</p>
+<p><em>Auto-PyTorch</em> allows to control the maximum allowed resident set size memory (RSS) that an estimator can use.
+By providing the <cite>memory_limit</cite> argument to the <cite>search()</cite> method, one can make sure that neither the individual
+machine learning models fitted by SMAC nor the final ensemble consume more than <cite>memory_limit</cite> megabytes.</p>
+<p>Additionally, one can control the allocated time to search for a model via the argument <cite>total_walltime_limit</cite>
+to the <cite>search()</cite> method. This argument controls the total time SMAC can use to search for new configurations.
+The more time is allocated, the better the final estimator will be.</p>
 </section>
 <section id="ensemble-building-process">
 <h2>Ensemble Building Process<a class="headerlink" href="#ensemble-building-process" title="Permalink to this headline">¶</a></h2>
-<p>Auto-PyTorch uses ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>
+<p><em>Auto-PyTorch</em> uses ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>
 to build an ensemble based on the models’ prediction for the validation set. The following hyperparameters control how the ensemble is constructed:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ensemble_size</span></code> determines the maximal size of the ensemble. If it is set to zero, no ensemble will be constructed.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code> allows the user to directly specify the number of models considered for the ensemble.  When an integer is provided for this hyperparameter, the final ensemble chooses each predictor from only the best n models. If a float between 0.0 and 1.0 is provided, <code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code> would be interpreted as a fraction suggesting the percentage of models to use in the ensemble building process (namely, if ensemble_nbest is a float, library pruning is implemented as described in <a class="reference external" href="https://dl.acm.org/doi/10.1109/ICDM.2006.76">Caruana et al. (2006)</a>). For example, if 10 candidates are available for the ensemble building process and the hyper-parameter is <cite>ensemble_nbest==0.7`</cite>, we build an ensemble by taking the best 7 models among the original 10 candidate models.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">max_models_on_disc</span></code> defines the maximum number of models that are kept on the disc, as a mechanism to control the amount of disc space consumed by Auto-PyTorch. Throughout the automl process, different individual models are optimized, and their predictions (and other metadata) are stored on disc. The user can set the upper bound on how many models are acceptable to keep on disc, yet this variable takes priority in the definition of the number of models used by the ensemble builder (that is, the minimum of <code class="docutils literal notranslate"><span class="pre">ensemble_size</span></code>, <code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code> and <code class="docutils literal notranslate"><span class="pre">max_models_on_disc</span></code> determines the maximal amount of models used in the ensemble). If set to None, this feature is disabled.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">ensemble_size</span></code></dt><dd><p>determines the maximal size of the ensemble. If it is set to zero, no ensemble will be constructed.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code></dt><dd><p>allows the user to directly specify the number of models considered for the ensemble. When an integer
+is provided for this hyperparameter, the final ensemble chooses each predictor from only the best n models.
+If a float between 0.0 and 1.0 is provided, <code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code> would be interpreted as a fraction suggesting
+the percentage of models to use in the ensemble building process (namely, if ensemble_nbest is a float,
+library pruning is implemented as described in <a class="reference external" href="https://dl.acm.org/doi/10.1109/ICDM.2006.76">Caruana et al. (2006)</a>).
+For example, if 10 candidates are available for the ensemble building process and the hyper-parameter is <cite>ensemble_nbest==0.7`</cite>,
+we build an ensemble by taking the best 7 models among the original 10 candidate models.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">max_models_on_disc</span></code></dt><dd><p>defines the maximum number of models that are kept on the disc, as a mechanism to control the amount of disc space
+consumed by Auto-PyTorch. Throughout the automl process, different individual models are optimized, and their
+predictions (and other metadata) are stored on disc. The user can set the upper bound on how many models are
+acceptable to keep on disc, yet this variable takes priority in the definition of the number of models used by
+the ensemble builder (that is, the minimum of <code class="docutils literal notranslate"><span class="pre">ensemble_size</span></code>, <code class="docutils literal notranslate"><span class="pre">ensemble_nbest</span></code> and <code class="docutils literal notranslate"><span class="pre">max_models_on_disc</span></code>
+determines the maximal amount of models used in the ensemble). If set to None, this feature is disabled.</p>
+</dd>
+</dl>
+</li>
 </ul>
 </section>
 <section id="inspecting-the-results">

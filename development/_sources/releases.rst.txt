@@ -14,4 +14,11 @@ Releases
 
 Version 0.1.0
 ==============
-[refactor] Initial version of the new scikit-learn compatible API.
+[refactor] Completely refactored version with a new scikit-learn compatible API.
+
+Contributors v0.1.0
+********************
+
+* Ravin Kohli
+* Shuhei Watanabe
+* Francisco Rivera

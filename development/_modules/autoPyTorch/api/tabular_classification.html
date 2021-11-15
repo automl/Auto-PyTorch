@@ -138,37 +138,42 @@
 <div class="viewcode-block" id="TabularClassificationTask"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask">[docs]</a><span class="k">class</span> <span class="nc">TabularClassificationTask</span><span class="p">(</span><span class="n">BaseTask</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Tabular Classification API to the pipelines.</span>
+
 <span class="sd">    Args:</span>
-<span class="sd">        seed (int), (default=1): seed to be used for reproducibility.</span>
-<span class="sd">        n_jobs (int), (default=1): number of consecutive processes to spawn.</span>
-<span class="sd">        n_threads (int), (default=1):</span>
+<span class="sd">        seed (int: default=1):</span>
+<span class="sd">            seed to be used for reproducibility.</span>
+<span class="sd">        n_jobs (int: default=1):</span>
+<span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        n_threads (int: default=1):</span>
 <span class="sd">            number of threads to use for each process.</span>
 <span class="sd">        logging_config (Optional[Dict]):</span>
-<span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
-<span class="sd">        ensemble_size (int), (default=50):</span>
+<span class="sd">            Specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
+<span class="sd">        ensemble_size (int: default=50):</span>
 <span class="sd">            Number of models added to the ensemble built by</span>
 <span class="sd">            Ensemble selection from libraries of models.</span>
 <span class="sd">            Models are drawn with replacement.</span>
-<span class="sd">        ensemble_nbest (int), (default=50):</span>
-<span class="sd">            only consider the ensemble_nbest</span>
+<span class="sd">        ensemble_nbest (int: default=50):</span>
+<span class="sd">            Only consider the ensemble_nbest</span>
 <span class="sd">            models to build the ensemble</span>
-<span class="sd">        max_models_on_disc (int), (default=50):</span>
-<span class="sd">            maximum number of models saved to disc.</span>
-<span class="sd">            Also, controls the size of the ensemble as any additional models will be deleted.</span>
+<span class="sd">        max_models_on_disc (int: default=50):</span>
+<span class="sd">            Maximum number of models saved to disc.</span>
+<span class="sd">            Also, controls the size of the ensemble</span>
+<span class="sd">            as any additional models will be deleted.</span>
 <span class="sd">            Must be greater than or equal to 1.</span>
 <span class="sd">        temporary_directory (str):</span>
-<span class="sd">            folder to store configuration output and log file</span>
+<span class="sd">            Folder to store configuration output and log file</span>
 <span class="sd">        output_directory (str):</span>
-<span class="sd">            folder to store predictions for optional test set</span>
+<span class="sd">            Folder to store predictions for optional test set</span>
 <span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
-<span class="sd">            determines whether to delete the temporary directory, when finished</span>
+<span class="sd">            Determines whether to delete the temporary directory,</span>
+<span class="sd">            when finished</span>
 <span class="sd">        include_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used. Otherwise</span>
-<span class="sd">            specifies set of components to use.</span>
+<span class="sd">            If None, all possible components are used.</span>
+<span class="sd">            Otherwise specifies set of components to use.</span>
 <span class="sd">        exclude_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used. Otherwise</span>
-<span class="sd">            specifies set of components not to use. Incompatible</span>
-<span class="sd">            with include components</span>
+<span class="sd">            If None, all possible components are used.</span>
+<span class="sd">            Otherwise specifies set of components not to use.</span>
+<span class="sd">            Incompatible with include components.</span>
 <span class="sd">        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
 <span class="sd">            search space updates that can be used to modify the search</span>
 <span class="sd">            space of particular components or choice modules of the pipeline</span>
@@ -215,6 +220,16 @@
         <span class="p">)</span>
 
 <div class="viewcode-block" id="TabularClassificationTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TabularClassificationPipeline</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build pipeline according to current task and for the passed dataset properties</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_properties (Dict[str,Any])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            TabularClassificationPipeline:</span>
+<span class="sd">                Pipeline compatible with the given dataset properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">TabularClassificationPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TabularClassificationTask.search"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span>
@@ -256,20 +271,20 @@
 <span class="sd">            budget_type (str):</span>
 <span class="sd">                Type of budget to be used when fitting the pipeline.</span>
 <span class="sd">                It can be one of:</span>
-<span class="sd">                + &#39;epochs&#39;: The training of each pipeline will be terminated after</span>
-<span class="sd">                  a number of epochs have passed. This number of epochs is determined by the</span>
-<span class="sd">                  budget argument of this method.</span>
-<span class="sd">                + &#39;runtime&#39;: The training of each pipeline will be terminated after</span>
-<span class="sd">                  a number of seconds have passed. This number of seconds is determined by the</span>
-<span class="sd">                  budget argument of this method. The overall fitting time of a pipeline is</span>
-<span class="sd">                  controlled by func_eval_time_limit_secs. &#39;runtime&#39; only controls the allocated</span>
-<span class="sd">                  time to train a pipeline, but it does not consider the overall time it takes</span>
-<span class="sd">                  to create a pipeline (data loading and preprocessing, other i/o operations, etc.).</span>
-<span class="sd">                budget_type will determine the units of min_budget/max_budget. If budget_type==&#39;epochs&#39;</span>
-<span class="sd">                is used, min_budget will refer to epochs whereas if budget_type==&#39;runtime&#39; then</span>
-<span class="sd">                min_budget will refer to seconds.</span>
+<span class="sd">                + `epochs`: The training of each pipeline will be terminated after</span>
+<span class="sd">                    a number of epochs have passed. This number of epochs is determined by the</span>
+<span class="sd">                    budget argument of this method.</span>
+<span class="sd">                + `runtime`: The training of each pipeline will be terminated after</span>
+<span class="sd">                    a number of seconds have passed. This number of seconds is determined by the</span>
+<span class="sd">                    budget argument of this method. The overall fitting time of a pipeline is</span>
+<span class="sd">                    controlled by func_eval_time_limit_secs. &#39;runtime&#39; only controls the allocated</span>
+<span class="sd">                    time to train a pipeline, but it does not consider the overall time it takes</span>
+<span class="sd">                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).</span>
+<span class="sd">                    budget_type will determine the units of min_budget/max_budget. If budget_type==&#39;epochs&#39;</span>
+<span class="sd">                    is used, min_budget will refer to epochs whereas if budget_type==&#39;runtime&#39; then</span>
+<span class="sd">                    min_budget will refer to seconds.</span>
 <span class="sd">            min_budget (int):</span>
-<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_` to</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;`_ to</span>
 <span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
 <span class="sd">                running the top performing pipelines on max_budget.</span>
 <span class="sd">                min_budget states the minimum resource allocation a pipeline should have</span>
@@ -277,17 +292,17 @@
 <span class="sd">                For example, if the budget_type is epochs, and min_budget=5, then we will</span>
 <span class="sd">                run every pipeline to a minimum of 5 epochs before performance comparison.</span>
 <span class="sd">            max_budget (int):</span>
-<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_` to</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;`_ to</span>
 <span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
 <span class="sd">                running the top performing pipelines on max_budget.</span>
 <span class="sd">                max_budget states the maximum resource allocation a pipeline is going to</span>
 <span class="sd">                be ran. For example, if the budget_type is epochs, and max_budget=50,</span>
 <span class="sd">                then the pipeline training will be terminated after 50 epochs.</span>
-<span class="sd">            total_walltime_limit (int), (default=100): Time limit</span>
-<span class="sd">                in seconds for the search of appropriate models.</span>
+<span class="sd">            total_walltime_limit (int: default=100):</span>
+<span class="sd">                Time limit in seconds for the search of appropriate models.</span>
 <span class="sd">                By increasing this value, autopytorch has a higher</span>
 <span class="sd">                chance of finding better models.</span>
-<span class="sd">            func_eval_time_limit_secs (int), (default=None):</span>
+<span class="sd">            func_eval_time_limit_secs (Optional[int]):</span>
 <span class="sd">                Time limit for a single call to the machine learning model.</span>
 <span class="sd">                Model fitting will be terminated if the machine</span>
 <span class="sd">                learning algorithm runs over the time limit. Set</span>
@@ -298,39 +313,45 @@
 <span class="sd">                total_walltime_limit // 2 to allow enough time to fit</span>
 <span class="sd">                at least 2 individual machine learning algorithms.</span>
 <span class="sd">                Set to np.inf in case no time limit is desired.</span>
-<span class="sd">            enable_traditional_pipeline (bool), (default=True):</span>
+<span class="sd">            enable_traditional_pipeline (bool: default=True):</span>
 <span class="sd">                We fit traditional machine learning algorithms</span>
 <span class="sd">                (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)</span>
-<span class="sd">                before building PyTorch Neural Networks. You can disable this</span>
+<span class="sd">                prior building PyTorch Neural Networks. You can disable this</span>
 <span class="sd">                feature by turning this flag to False. All machine learning</span>
 <span class="sd">                algorithms that are fitted during search() are considered for</span>
 <span class="sd">                ensemble building.</span>
-<span class="sd">            memory_limit (Optional[int]), (default=4096):</span>
-<span class="sd">                Memory limit in MB for the machine learning algorithm. autopytorch</span>
-<span class="sd">                will stop fitting the machine learning algorithm if it tries</span>
-<span class="sd">                to allocate more than memory_limit MB. If None is provided,</span>
-<span class="sd">                no memory limit is set. In case of multi-processing, memory_limit</span>
-<span class="sd">                will be per job. This memory limit also applies to the ensemble</span>
-<span class="sd">                creation process.</span>
+<span class="sd">            memory_limit (Optional[int]: default=4096):</span>
+<span class="sd">                Memory limit in MB for the machine learning algorithm.</span>
+<span class="sd">                Autopytorch will stop fitting the machine learning algorithm</span>
+<span class="sd">                if it tries to allocate more than memory_limit MB. If None</span>
+<span class="sd">                is provided, no memory limit is set. In case of multi-processing,</span>
+<span class="sd">                memory_limit will be per job. This memory limit also applies to</span>
+<span class="sd">                the ensemble creation process.</span>
 <span class="sd">            smac_scenario_args (Optional[Dict]):</span>
 <span class="sd">                Additional arguments inserted into the scenario of SMAC. See the</span>
-<span class="sd">                [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)</span>
+<span class="sd">                `SMAC documentation &lt;https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario&gt;`_</span>
+<span class="sd">                for a list of available arguments.</span>
 <span class="sd">            get_smac_object_callback (Optional[Callable]):</span>
 <span class="sd">                Callback function to create an object of class</span>
-<span class="sd">                [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).</span>
+<span class="sd">                `smac.optimizer.smbo.SMBO &lt;https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html&gt;`_.</span>
 <span class="sd">                The function must accept the arguments scenario_dict,</span>
 <span class="sd">                instances, num_params, runhistory, seed and ta. This is</span>
 <span class="sd">                an advanced feature. Use only if you are familiar with</span>
-<span class="sd">                [SMAC](https://automl.github.io/SMAC3/master/index.html).</span>
-<span class="sd">            all_supported_metrics (bool), (default=True):</span>
-<span class="sd">                if True, all metrics supporting current task will be calculated</span>
+<span class="sd">                `SMAC &lt;https://automl.github.io/SMAC3/master/index.html&gt;`_.</span>
+<span class="sd">            tae_func (Optional[Callable]):</span>
+<span class="sd">                TargetAlgorithm to be optimised. If None, `eval_function`</span>
+<span class="sd">                available in autoPyTorch/evaluation/train_evaluator is used.</span>
+<span class="sd">                Must be child class of AbstractEvaluator.</span>
+<span class="sd">            all_supported_metrics (bool: default=True):</span>
+<span class="sd">                If True, all metrics supporting current task will be calculated</span>
 <span class="sd">                for each pipeline and results will be available via cv_results</span>
-<span class="sd">            precision (int), (default=32): Numeric precision used when loading</span>
-<span class="sd">                ensemble data. Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
+<span class="sd">            precision (int: default=32):</span>
+<span class="sd">                Numeric precision used when loading ensemble data.</span>
+<span class="sd">                Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
 <span class="sd">            disable_file_output (Union[bool, List]):</span>
-<span class="sd">            load_models (bool), (default=True):</span>
+<span class="sd">            load_models (bool: default=True):</span>
 <span class="sd">                Whether to load the models after fitting AutoPyTorch.</span>
-<span class="sd">            portfolio_selection (str), (default=None):</span>
+<span class="sd">            portfolio_selection (Optional[str]):</span>
 <span class="sd">                This argument controls the initial configurations that</span>
 <span class="sd">                AutoPyTorch uses to warm start SMAC for hyperparameter</span>
 <span class="sd">                optimization. By default, no warm-starting happens.</span>
@@ -338,7 +359,8 @@
 <span class="sd">                configurations, similar to (...herepathtogreedy...).</span>
 <span class="sd">                Additionally, the keyword &#39;greedy&#39; is supported,</span>
 <span class="sd">                which would use the default portfolio from</span>
-<span class="sd">                `AutoPyTorch Tabular &lt;https://arxiv.org/abs/2006.13799&gt;`</span>
+<span class="sd">                `AutoPyTorch Tabular &lt;https://arxiv.org/abs/2006.13799&gt;`_.</span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
 
@@ -394,6 +416,16 @@
             <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Generate the estimator predictions.</span>
+<span class="sd">        Generate the predictions based on the given examples from the test set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X_test (np.ndarray):</span>
+<span class="sd">                The test set examples.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Array with estimator predictions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
                              <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>

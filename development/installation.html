@@ -133,18 +133,17 @@
 </section>
 <section id="installing-auto-pytorch">
 <h2>Installing Auto-Pytorch<a class="headerlink" href="#installing-auto-pytorch" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># We also need to initialize the automl_common repository as follows</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Following commands assume the user is in a cloned directory of Auto-Pytorch</span>
+
+<span class="c1"># We also need to initialize the automl_common repository as follows</span>
 <span class="c1"># You can find more information about this here:</span>
 <span class="c1"># https://github.com/automl/automl_common/</span>
 git submodule update --init --recursive
 
+<span class="c1"># Create the environment</span>
 conda create -n autopytorch <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
 conda activate autopytorch
-For Linux:
-    conda install gxx_linux-64 gcc_linux-64 swig
-For mac:
-    conda install -c conda-forge clang_osx-64 clangxx_osx-64
-    conda install -c anaconda swig
+conda install swig
 cat requirements.txt <span class="p">|</span> xargs -n <span class="m">1</span> -L <span class="m">1</span> pip install
 python setup.py install
 </pre></div>
