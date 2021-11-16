@@ -192,7 +192,7 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         [{'PreProcessing': <>, 'Estimator': <>}]
 
         Returns:
-            Dict:
+            Dict[str, str]:
                 Contains the pipeline representation in a short format
         """
         estimator_name = 'TraditionalTabularRegression'

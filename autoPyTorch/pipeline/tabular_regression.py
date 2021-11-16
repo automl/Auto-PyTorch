@@ -49,7 +49,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     to integrate autoPyTorch components and choices for
     tabular classification tasks.
 
-    It implements a pipeline, which includes as steps:
+    It implements a pipeline, which includes the following as steps:
 
     1. `imputer`
     2. `encoder`

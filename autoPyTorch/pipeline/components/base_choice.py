@@ -225,7 +225,7 @@ class autoPyTorchChoice(object):
 
         Returns:
             np.ndarray:
-                the predicted target
+                the target prediction
         """
         assert self.choice is not None, "Cannot call predict without initializing the component"
         return self.choice.predict(X)
