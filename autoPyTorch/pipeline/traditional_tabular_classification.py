@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -10,6 +10,7 @@ from sklearn.base import ClassifierMixin
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -21,39 +22,44 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
-            build the pipeline. If provided, they won't be dynamically produced.
-        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        steps (Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]]):
+            the list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to honor during the creation of the configuration space.
-        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to avoid during the creation of the configuration space.
-        random_state (np.random.RandomState): allows to produce reproducible results by
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
             setting a seed for randomized settings
         init_params (Optional[Dict[str, Any]]):
             Optional initial settings for the config
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            search space updates that can be used to modify the search
+            Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
 
     Attributes:
         steps (List[Tuple[str, PipelineStepType]]):
-            the steps of the current pipeline. Each step in an AutoPyTorch
+            The steps of the current pipeline. Each step in an AutoPyTorch
             pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
             Both of these are child classes of sklearn 'BaseEstimator' and
             they perform operations on and transform the fit dictionary.
             For more info, check documentation of 'autoPyTorchChoice' or
             'autoPyTorchComponent'.
         config (Configuration):
-            a configuration to delimit the current component choice
+            A configuration to delimit the current component choice
         random_state (Optional[np.random.RandomState]):
-            allows to produce reproducible
-            results by setting a seed for randomized settings
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,

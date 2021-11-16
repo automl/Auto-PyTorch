@@ -76,8 +76,9 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         config (Configuration)
             The configuration to evaluate.
         steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):
-            the list of steps that build the pipeline.
-            If provided, they won't be dynamically produced.
+            The list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
         include (Optional[Dict[str, Any]]):
             Allows the caller to specify which configurations
             to honor during the creation of the configuration space.
@@ -111,7 +112,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,

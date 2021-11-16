@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,8 +7,10 @@ import numpy as np
 
 from sklearn.base import RegressorMixin
 
-from autoPyTorch.pipeline.base_pipeline import BaseDatasetPropertiesType, BasePipeline, PipelineStepType
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 
 
@@ -19,18 +21,23 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
-            build the pipeline. If provided, they won't be dynamically produced.
-        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):
+            the list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to honor during the creation of the configuration space.
-        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to avoid during the creation of the configuration space.
-        random_state (np.random.RandomState): allows to produce reproducible results by
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
             setting a seed for randomized settings
         init_params (Optional[Dict[str, Any]]):
             Optional initial settings for the config
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            search space updates that can be used to modify the search
+            Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
 
     Attributes:
@@ -44,14 +51,14 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         config (Configuration):
             A configuration to delimit the current component choice
         random_state (Optional[np.random.RandomState]):
-            Allows to produce reproducible
-            results by setting a seed for randomized settings
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
         dataset_properties: Optional[Dict[str, Any]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,

@@ -36,8 +36,9 @@ class BasePipeline(Pipeline):
         config (Optional[Configuration]):
             Allows to directly specify a configuration space
         steps (Optional[List[Tuple[str, PipelineStepType]]]):
-            the list of steps that build the pipeline. If provided,
-             they won't be dynamically produced.
+            The list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
         include (Optional[Dict[str, Any]]):
             Allows the caller to specify which configurations to honor during
             the creation of the configuration space.
