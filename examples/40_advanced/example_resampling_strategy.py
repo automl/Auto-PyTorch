@@ -98,12 +98,13 @@ api.search(
 ############################################################################
 # Print the final ensemble performance
 # ====================================
-print(api.run_history, api.trajectory)
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)
 # Print the final ensemble built by AutoPyTorch
 print(api.show_models())
+# print statistics from search
+print(api.sprint_statistics())
 
 ############################################################################
 
@@ -134,9 +135,10 @@ api.search(
 ############################################################################
 # Print the final ensemble performance
 # ====================================
-print(api.run_history, api.trajectory)
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)
 # Print the final ensemble built by AutoPyTorch
 print(api.show_models())
+# print statistics from search
+print(api.sprint_statistics())

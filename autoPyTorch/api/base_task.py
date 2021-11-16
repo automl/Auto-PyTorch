@@ -1,4 +1,5 @@
 import copy
+import io
 import json
 import logging.handlers
 import math
@@ -24,6 +25,8 @@ import joblib
 import numpy as np
 
 import pandas as pd
+
+import scipy
 
 from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
@@ -192,6 +195,7 @@ class BaseTask:
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
+        self._scoring_functions: Optional[List[autoPyTorchMetric]] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: RunHistory = RunHistory()
         self.trajectory: Optional[List] = None
@@ -883,6 +887,12 @@ class BaseTask:
 
         self.pipeline_options['optimize_metric'] = optimize_metric
 
+        if all_supported_metrics:
+            self._scoring_functions = get_metrics(dataset_properties=dataset_properties,
+                                                  all_supported_metrics=True)
+        else:
+            self._scoring_functions = [self._metric]
+
         self.search_space = self.get_search_space(dataset)
 
         # Incorporate budget to pipeline config
@@ -1417,3 +1427,129 @@ class BaseTask:
         self._logger.debug('  multiprocessing_context: %s', str(self._multiprocessing_context))
         for key, value in vars(self).items():
             self._logger.debug(f"\t{key}->{value}")
+
+    @property
+    def search_results(self):
+        assert self.run_history is not None, "`search_results` is only available after a search has finished."
+        assert self._scoring_functions is not None, "`search_results` is only available after a search has finished."
+        results: Dict[str, Any] = dict()
+
+        metric_mask = dict()
+        metric_dict = dict()
+        metric_name = []
+
+        if self._scoring_functions is not None:
+            for metric in self._scoring_functions:
+                metric_name.append(metric.name)
+                metric_dict[metric.name] = []
+                metric_mask[metric.name] = []
+
+        mean_opt_scores = []
+        mean_fit_time = []
+        params = []
+        status = []
+        budgets = []
+
+        for run_key in self.run_history.data:
+            run_value = self.run_history.data[run_key]
+            config_id = run_key.config_id
+            config = self.run_history.ids_config[config_id]
+
+            s = run_value.status
+            if s == StatusType.SUCCESS:
+                status.append('Success')
+            elif s == StatusType.DONOTADVANCE:
+                status.append('Success (but do not advance to higher budget)')
+            elif s == StatusType.TIMEOUT:
+                status.append('Timeout')
+            elif s == StatusType.CRASHED:
+                status.append('Crash')
+            elif s == StatusType.ABORT:
+                status.append('Abort')
+            elif s == StatusType.MEMOUT:
+                status.append('Memout')
+            # TODO remove StatusType.RUNNING at some point in the future when the new SMAC 0.13.2
+            #  is the new minimum required version!
+            elif s in (StatusType.STOP, StatusType.RUNNING):
+                continue
+            else:
+                raise NotImplementedError(s)
+
+            param_dict = config.get_dictionary()
+            params.append(param_dict)
+            budgets.append(run_key.budget)
+
+            mean_opt_scores.append(self._metric._optimum - (self._metric._sign * run_value.cost))
+
+            for metric in self._scoring_functions:
+                if s in [StatusType.SUCCESS, StatusType.DONOTADVANCE] and \
+                        metric.name in run_value.additional_info['opt_loss'].keys():
+                    metric_cost = run_value.additional_info['opt_loss'][metric.name]
+                    metric_value = metric._optimum - (metric._sign * metric_cost)
+                else:
+                    metric_value = np.NaN
+                metric_dict[metric.name].append(metric_value)
+
+        results['mean_opt_scores'] = np.array(mean_opt_scores)
+        for metric in self._scoring_functions:
+            results[f'metric_{metric.name}'] = metric_dict[metric.name]
+
+        results['mean_fit_times'] = np.array(mean_fit_time)
+        results['params'] = params
+        rank_order = -1 * self._metric._sign * results['mean_opt_scores']
+        results['rank_test_scores'] = scipy.stats.rankdata(rank_order, method='min')
+        results['status'] = status
+        results['budgets'] = budgets
+
+        return results
+
+    def sprint_statistics(self) -> str:
+        """
+        Prints statistics about the SMAC search.
+
+        These statistics include:
+
+        1. Optimisation Metric
+        2. Best Optimisation score achieved by individual pipelines
+        3. Total number of target algorithm runs
+        4. Total number of successful target algorithm runs
+        5. Total number of crashed target algorithm runs
+        6. Total number of target algorithm runs that exceeded the time limit
+        7. Total number of successful target algorithm runs that exceeded the memory limit
+
+        Returns:
+            (str):
+                Formatted string with statistics
+        """
+        search_results = self.search_results
+        sio = io.StringIO()
+        sio.write("autoPyTorch results:\n")
+        sio.write(f"\tDataset name: {self.dataset_name}\n")
+        sio.write(f"\tOptimisation Metric: {self._metric}\n")
+        idx_success = np.where(np.array(
+            [status in ["Success", "Success (but do not advance to higher budget)"]
+             for status in search_results["status"]]
+        ))[0]
+        if len(idx_success) > 0:
+            if not self._metric._optimum:
+                idx_best_run = np.argmin(search_results["mean_opt_scores"])
+            else:
+                idx_best_run = np.argmax(search_results["mean_opt_scores"])
+            best_score = search_results["mean_opt_scores"][idx_best_run]
+            sio.write(f"\tBest validation score: {best_score}\n")
+        num_runs = len(search_results["status"])
+        sio.write(f"\tNumber of target algorithm runs: {num_runs}\n")
+        num_success = sum([
+            s in ["Success", "Success (but do not advance to higher budget)"]
+            for s in search_results["status"]
+        ])
+        sio.write(f"\tNumber of successful target algorithm runs: {num_success}\n")
+        num_crash = sum([s == "Crash" for s in search_results["status"]])
+        sio.write(f"\tNumber of crashed target algorithm runs: {num_crash}\n")
+        num_timeout = sum([s == "Timeout" for s in search_results["status"]])
+        sio.write(f"\tNumber of target algorithms that exceeded the time "
+                  f"limit: {num_timeout}\n")
+        num_memout = sum([s == "Memout" for s in search_results["status"]])
+        sio.write(f"\tNumber of target algorithms that exceeded the memory "
+                  f"limit: {num_memout}\n")
+        return sio.getvalue()

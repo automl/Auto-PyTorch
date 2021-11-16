@@ -275,6 +275,7 @@ class TabularRegressionTask(BaseTask):
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             validator=self.InputValidator,
+            dataset_name=dataset_name,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
         )
