@@ -110,7 +110,7 @@ def test_search_results_sprint_statistics():
     api.dataset_name = 'iris'
     api._scoring_functions = [accuracy, balanced_accuracy]
     api.search_space = MagicMock(spec=ConfigurationSpace)
-    search_results = api.search_results
+    search_results = api.search_results_
 
     # assert that contents of search_results are of expected types
     assert isinstance(search_results['mean_test_scores'], np.ndarray)

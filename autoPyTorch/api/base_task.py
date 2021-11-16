@@ -142,6 +142,14 @@ class BaseTask:
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
+
+    Attributes:
+        run_history (RunHistory):
+            A `SMAC Runshistory <https://automl.github.io/SMAC3/master/apidoc/smac.runhistory.runhistory.html>`_ 
+            object that holds information about the runs of the target algorithm made during search
+        trajectory (Optional[List]):
+            A list of all incumbent configurations during search
+
     """
 
     def __init__(
@@ -1429,8 +1437,22 @@ class BaseTask:
             self._logger.debug(f"\t{key}->{value}")
 
     @property
-    def search_results(self):
+    def search_results_(self):
+        """
+        This attribute is populated with data from `self.run_history`
+        and contains information about the configurations, and their
+        corresponding metric results, status of run, parameters and
+        the budget
+
+        Returns:
+            Dict[str, Any]:
+                dictionary containing the results from search
+        """
         assert self.run_history is not None, "`search_results` is only available after a search has finished."
+        if self.run_history.empty():
+            raise ValueError("Run History is empty. Something went wrong, "
+                             "smac was not able to fit any model?")
+
         assert self._scoring_functions is not None, "`search_results` is only available after a search has finished."
         results: Dict[str, Any] = dict()
 
@@ -1521,7 +1543,7 @@ class BaseTask:
             (str):
                 Formatted string with statistics
         """
-        search_results = self.search_results
+        search_results = self.search_results_
         sio = io.StringIO()
         sio.write("autoPyTorch results:\n")
         sio.write(f"\tDataset name: {self.dataset_name}\n")
