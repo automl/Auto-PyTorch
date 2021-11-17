@@ -1458,15 +1458,13 @@ class BaseTask:
 
         results: Dict[str, Any] = dict()
 
-        metric_mask = dict()
-        metric_dict = dict()
-        metric_name = []
+        metric_dict: Dict[str, List[float]] = dict()
+        metric_names = []
 
         if self._scoring_functions is not None:
             for metric in self._scoring_functions:
-                metric_name.append(metric.name)
+                metric_names.append(metric.name)
                 metric_dict[metric.name] = []
-                metric_mask[metric.name] = []
 
         mean_opt_scores = []
         mean_fit_time = []
@@ -1554,6 +1552,9 @@ class BaseTask:
             [status in ["Success", "Success (but do not advance to higher budget)"]
              for status in search_results["status"]]
         ))[0]
+
+        assert self._metric is not None  # mypy
+
         if len(idx_success) > 0:
             if not self._metric._optimum:
                 idx_best_run = np.argmin(search_results["mean_opt_scores"])
