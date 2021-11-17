@@ -16,6 +16,7 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
+from autoPyTorch.pipeline.components.setup.lr_scheduler.NoScheduler import NoScheduler
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
@@ -237,6 +238,8 @@ class TestTabularClassification:
         # No error when network is passed
         X = pipeline.named_steps['lr_scheduler'].fit(X, None).transform(X)
         assert 'lr_scheduler' in X
+        if isinstance(pipeline.named_steps['lr_scheduler'].choice, NoScheduler):
+            pytest.skip("This scheduler does not support `get_scheduler`")
         lr_scheduler = pipeline.named_steps['lr_scheduler'].choice.get_scheduler()
         if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             pytest.skip("This scheduler is not a child of _LRScheduler")
