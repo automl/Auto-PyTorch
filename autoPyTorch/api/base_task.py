@@ -21,6 +21,8 @@ import dask.distributed
 
 import joblib
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 import pandas as pd
@@ -30,6 +32,7 @@ from smac.stats.stats import Stats
 from smac.tae import StatusType
 
 from autoPyTorch.api.results_manager import ResultsManager, SearchResults
+from autoPyTorch.api.run_history_visualizer import RunHistoryVisualizer
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
@@ -189,6 +192,8 @@ class BaseTask:
 
         self.pipeline_options = replace_string_bool_to_bool(json.load(open(
             os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
+
+        self._visualizer = RunHistoryVisualizer()
 
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
@@ -1478,4 +1483,124 @@ class BaseTask:
             dataset_name=self.dataset_name,
             scoring_functions=self._scoring_functions,
             metric=self._metric
+        )
+
+    def plot_perf_over_time(
+        self,
+        metric_name: str,
+        include_single_train: bool = True,
+        include_single_opt: bool = True,
+        include_single_test: bool = True,
+        include_ensemble_train: bool = True,
+        include_ensemble_test: bool = True,
+        color_single_train: str = 'red',
+        color_single_opt: str = 'blue',
+        color_single_test: str = 'green',
+        color_ensemble_train: str = 'brown',
+        color_ensemble_test: str = 'purple',
+        label_single_train: Optional[str] = None,
+        label_single_opt: Optional[str] = None,
+        label_single_test: Optional[str] = None,
+        label_ensemble_train: Optional[str] = None,
+        label_ensemble_test: Optional[str] = None,
+        ax: Optional[plt.Axes] = None,
+        n_points: int = 20,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        xscale: str = 'log',
+        yscale: str = 'linear',
+        title: Optional[str] = None,
+        xlim: Optional[Tuple[float, float]] = None,
+        ylim: Optional[Tuple[float, float]] = None,
+        figsize: Optional[Tuple[int, int]] = None,
+        legend: bool = True,
+        legend_loc: Optional[str] = 'best',
+        show: bool = False,
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
+        """
+        Visualize the performance over time using matplotlib.
+        The plot relate arguments are based on matplotlib.
+        Please refer to the matplotlib documentation for more details.
+
+        Args:
+            metric_name (str):
+                The name of metric to visualize.
+                The names are available in
+                    * autoPyTorch.metrics.CLASSIFICATION_METRICS
+                    * autoPyTorch.metrics.REGRESSION_METRICS
+            include_single_(train, opt, test) (bool):
+                Whether to include single train/opt/test performance
+                to the plot.
+            include_ensemble_(train, test) (bool):
+                Whether to include ensemble train/test performance
+                to the plot.
+            color_single_(train, opt, test) (str):
+                What color to use for single train/opt/test performance.
+            color_ensemble_(train, test) (str):
+                What color to use for ensemble train/opt/test performance.
+            label_single_(train, opt, test) (bool):
+                What label in the legend to use for single train/opt/test performance.
+            label_ensemble_(train, test) (bool):
+                What label in the legend to use for ensemble train/opt/test performance.
+            ax (Optional[plt.Axes]):
+                axis to plot (subplots of matplotlib).
+                If None, it will be created automatically.
+            n_points (int):
+                The number of points to plot.
+            labels (Dict[str, str]):
+                The name of each plot.
+            xlabel (Optional[str]):
+                The label in the x axis.
+            ylabel (Optional[str]):
+                The label in the y axis.
+            xscale (str):
+                The scale of x axis.
+            yscale (str):
+                The scale of y axis.
+            xscale (Tuple[float, float]):
+                The range of x axis.
+            yscale (Tuple[float, float]):
+                The range of y axis.
+            title (Optional[str]):
+                The title of the subfigure.
+            figsize (Optional[Tuple[int, int]]):
+                The figure size.
+            legend (bool):
+                Whether to have legend in the figure.
+            legend_loc (str):
+                The location of the legend.
+            show (bool):
+                Whether to show the plot.
+            args, kwargs (Any):
+                Arguments for the ax.plot.
+        """
+
+        colors = {
+            f'single::train::{metric_name}' if include_single_train else '': color_single_train,
+            f'single::opt::{metric_name}' if include_single_opt else '': color_single_opt,
+            f'single::test::{metric_name}' if include_single_test else '': color_single_test,
+            f'ensemble::train::{metric_name}' if include_ensemble_train else '': color_ensemble_train,
+            f'ensemble::test::{metric_name}' if include_ensemble_test else '': color_ensemble_test,
+        }
+        colors.pop('', None)  # Remove if the include_xxx is False
+        labels = {
+            f'single::train::{metric_name}' if include_single_train else '': label_single_train,
+            f'single::opt::{metric_name}' if include_single_opt else '': label_single_opt,
+            f'single::test::{metric_name}' if include_single_test else '': label_single_test,
+            f'ensemble::train::{metric_name}' if include_ensemble_train else '': label_ensemble_train,
+            f'ensemble::test::{metric_name}' if include_ensemble_test else '': label_ensemble_test,
+        }
+        labels.pop('', None)  # Remove if the include_xxx is False
+
+        perf_metric_names = list(colors.keys())
+
+        self._visualizer.plot_perf_over_time(
+            perf_metric_names=perf_metric_names,
+            run_history=self.run_history,
+            ensemble_performance_history=self.ensemble_performance_history,
+            colors=colors, xlabel=xlabel, ylabel=ylabel, xscale=xscale, yscale=yscale,
+            ax=ax, n_points=n_points, labels=labels, xlim=xlim, ylim=ylim, title=title,
+            figsize=figsize, legend=legend, legend_loc=legend_loc, show=show, *args, **kwargs
         )
