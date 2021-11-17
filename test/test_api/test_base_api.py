@@ -104,7 +104,7 @@ def test_search_results_sprint_statistics():
                                                    '.tmp_api/runhistory.json'),
                                       mode='r'))['data']
     api.run_history = MagicMock()
-
+    api.run_history.empty = MagicMock(return_value=False)
     api.run_history.data = make_dict_run_history_data(run_history_data)
     api._metric = accuracy
     api.dataset_name = 'iris'
@@ -113,8 +113,8 @@ def test_search_results_sprint_statistics():
     search_results = api.search_results_
 
     # assert that contents of search_results are of expected types
-    assert isinstance(search_results['mean_test_scores'], np.ndarray)
-    assert search_results['mean_test_scores'].dtype is np.dtype(np.float)
+    assert isinstance(search_results['mean_opt_scores'], np.ndarray)
+    assert search_results['mean_opt_scores'].dtype is np.dtype(np.float)
     assert isinstance(search_results['mean_fit_times'], np.ndarray)
     assert search_results['mean_fit_times'].dtype is np.dtype(np.float)
     assert isinstance(search_results['metric_accuracy'], list)

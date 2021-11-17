@@ -145,7 +145,7 @@ class BaseTask:
 
     Attributes:
         run_history (RunHistory):
-            A `SMAC Runshistory <https://automl.github.io/SMAC3/master/apidoc/smac.runhistory.runhistory.html>`_ 
+            A `SMAC Runshistory <https://automl.github.io/SMAC3/master/apidoc/smac.runhistory.runhistory.html>`_
             object that holds information about the runs of the target algorithm made during search
         trajectory (Optional[List]):
             A list of all incumbent configurations during search
@@ -1437,7 +1437,7 @@ class BaseTask:
             self._logger.debug(f"\t{key}->{value}")
 
     @property
-    def search_results_(self):
+    def search_results_(self) -> Dict[str, Any]:
         """
         This attribute is populated with data from `self.run_history`
         and contains information about the configurations, and their
@@ -1454,6 +1454,8 @@ class BaseTask:
                              "smac was not able to fit any model?")
 
         assert self._scoring_functions is not None, "`search_results` is only available after a search has finished."
+        assert self._metric is not None, "`search_results` is only available after a search has finished."
+
         results: Dict[str, Any] = dict()
 
         metric_mask = dict()
