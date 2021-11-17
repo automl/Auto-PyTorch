@@ -58,6 +58,7 @@ def _get_perf_and_time(
     n_evals, runtime_lb, runtime_ub = results.size, cum_times[0], cum_times[-1]
 
     if xscale == 'log':
+        # Take the even time interval in the log scale and revert
         check_points = np.exp(np.linspace(np.log(runtime_lb), np.log(runtime_ub), n_points))
     else:
         check_points = np.linspace(np.log(runtime_lb), np.log(runtime_ub), n_points)
@@ -68,11 +69,14 @@ def _get_perf_and_time(
 
     for i, check_point in enumerate(check_points):
         while cur < n_evals and cum_times[cur] <= check_point:
+            # Guarantee that cum_times[cur] > check_point
+            # ==> cum_times[cur - 1] <= check_point
             cur += 1
-        if cur:
+        if cur:  # filter cur - 1 == -1
+            # results[cur - 1] was obtained before or at the checkpoint
+            # ==> The best performance up to this checkpoint
             perf_by_time_step[i] = results[cur - 1]
 
-    perf_by_time_step += 1e-12  # Avoid overflow in the case of log scale
     if yscale == 'log' and np.any(perf_by_time_step < 0):
         raise ValueError('log scale is not available when performance metric can be negative.')
 
@@ -81,6 +85,17 @@ def _get_perf_and_time(
 
 class RunHistoryVisualizer:
     def __init__(self, *args: Any, **kwargs: Any):
+        """
+        Module that realizes the visualization of the results
+        obtained in the optimization.
+
+        Attributes:
+            starttime (float):
+                The start of the run.
+            cum_times (np.ndarray):
+                The runtime for each end of the evaluation of
+                each configuration
+        """
         self.starttime: float = 0.0
         self.cum_times: np.ndarray = np.array([])
 
@@ -119,30 +134,27 @@ class RunHistoryVisualizer:
                 f'or {metrics.REGRESSION_METRICS}, but got {metric_name}'
             )
 
-        results, runtime = [], []
-        for run_value in run_history.data.values():
-            if run_value.status == StatusType.SUCCESS:
-                if len(runtime) == 0:
-                    self.starttime = run_value.starttime
-
-                if which_inference == 'test':
-                    results.append(run_value.additional_info['test_loss'])
-                else:
-                    key = f'{which_inference}_loss'
-                    results.append(run_value.additional_info[key][metric_name])
-
-                runtime.append(run_value.endtime - self.starttime)
-
-        self.cum_times = np.array(runtime)
-            
         metric_cls = getattr(metrics, metric_name)
         minimization = metric_cls._sign == -1
+        worst_val = metric_cls._worst_possible_result
+        results: List[float] = []
+        runtime: List[float] = []
+        self.starttime = list(run_history.data.values())[0].starttime
+
+        key = 'test_loss' if which_inference == 'test' else f'{which_inference}_loss'
+        for run_value in run_history.data.values():
+            runtime.append(run_value.endtime - self.starttime)
+            results.append(worst_val)
+
+            if run_value.status == StatusType.SUCCESS:
+                info = run_value.additional_info[key]
+                # TODO: Check what is this metric in general
+                results[-1] = info if which_inference == 'test' else info[metric_name]
+
+        self.cum_times = np.array(runtime)
 
         # Calculate the cumulated results
-        if minimization:
-            return np.minimum.accumulate(results, axis=-1)
-        else:
-            return np.maximum.accumulate(results, axis=-1)
+        return np.minimum.accumulate(results) if minimization else np.maximum.accumulate(results)
 
     def extract_info_from_ensemble_history(
         self,
@@ -193,17 +205,18 @@ class RunHistoryVisualizer:
                if k.startswith(which_inference)][0]
 
         for data in ensemble_performance_history:
-            t = datetime.timestamp(data['Timestamp']) - self.starttime
-            while cur < timestep_size and self.cum_times[cur] <= t:
+            avail_time = datetime.timestamp(data['Timestamp']) - self.starttime
+            while cur < timestep_size and self.cum_times[cur] < avail_time:
+                # Guarantee that cum_times[cur] >= avail_time
                 cur += 1
-            if cur:
-                results[cur] = data[key]
+
+            # results[cur] is the closest available checkpoint after or at the avail_time
+            # ==> Assign this data to that checkpoint
+            # Do not assign this data to the checkpoint before avail_time
+            results[cur] = data[key]
 
         # Calculate the cumulated results
-        if minimization:
-            return np.minimum.accumulate(results, axis=-1)
-        else:
-            return np.maximum.accumulate(results, axis=-1)
+        return np.minimum.accumulate(results) if minimization else np.maximum.accumulate(results)
 
     def plot_perf_over_time(
         self,
@@ -224,6 +237,8 @@ class RunHistoryVisualizer:
         **kwargs: Any
     ) -> None:
         """
+        Plot the performance of the AutoPytorch over time.
+
         Args:
             ax (plt.Axes):
                 axis to plot (subplots of matplotlib).
