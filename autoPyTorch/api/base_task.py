@@ -1466,11 +1466,11 @@ class BaseTask:
                 metric_names.append(metric.name)
                 metric_dict[metric.name] = []
 
-        mean_opt_scores = []
-        mean_fit_time = []
-        params = []
-        status = []
-        budgets = []
+        mean_opt_scores: np.ndarray = []
+        mean_fit_time: np.ndarray = []
+        params: List[Dict] = []
+        status: List[str] = []
+        budgets: List[float] = []
 
         for run_key in self.run_history.data:
             run_value = self.run_history.data[run_key]

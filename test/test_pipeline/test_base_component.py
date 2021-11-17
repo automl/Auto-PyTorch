@@ -3,7 +3,7 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntege
 
 import pytest
 
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent, ThirdPartyComponents, find_components
+from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents, autoPyTorchComponent
 
 
 class DummyComponentRequiredFailuire(autoPyTorchComponent):
@@ -61,6 +61,7 @@ class DummyComponent(autoPyTorchComponent):
         return {"name": 'DummyComponent',
                 "shortname": 'Dummy'}
 
+
 def test_third_party_component_failure():
     _addons = ThirdPartyComponents(autoPyTorchComponent)
 
@@ -70,7 +71,7 @@ def test_third_party_component_failure():
     with pytest.raises(ValueError, match=r"Property must_not_be_there must not be specified for algorithm .*"):
         _addons.add_component(DummyComponentExtraPropFailuire)
 
-    with pytest.raises(TypeError, match=r"add_component works only with a subclass of .*"):     
+    with pytest.raises(TypeError, match=r"add_component works only with a subclass of .*"):
         _addons.add_component(1)
 
 
@@ -78,9 +79,11 @@ def test_set_hyperparameters_not_found_failure():
     dummy_component = DummyComponent()
     dummy_config_space = dummy_component.get_hyperparameter_search_space()
     success_configuration = dummy_config_space.sample_configuration()
-    dummy_config_space.add_hyperparameter(CategoricalHyperparameter('c', choices=[1,2]))
+    dummy_config_space.add_hyperparameter(CategoricalHyperparameter('c', choices=[1, 2]))
     failure_configuration = dummy_config_space.sample_configuration()
-    with pytest.raises(ValueError, match=r"Cannot set hyperparameter c for autoPyTorch.pipeline DummyComponent because the hyperparameter does not exist."):
+    with pytest.raises(ValueError, match=r"Cannot set hyperparameter c for autoPyTorch.pipeline "
+                                         r"DummyComponent because the hyperparameter does not exist."):
         dummy_component.set_hyperparameters(failure_configuration)
-    with pytest.raises(ValueError, match=r"Cannot set init param r for autoPyTorch.pipeline DummyComponent because the init param does not exist."):
-        dummy_component.set_hyperparameters(success_configuration, init_params={'r':1})
+    with pytest.raises(ValueError, match=r"Cannot set init param r for autoPyTorch.pipeline "
+                                         r"DummyComponent because the init param does not exist."):
+        dummy_component.set_hyperparameters(success_configuration, init_params={'r': 1})
