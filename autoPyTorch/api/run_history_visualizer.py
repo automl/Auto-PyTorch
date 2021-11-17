@@ -118,6 +118,35 @@ def _split_perf_metric_name(perf_metric_name: str) -> Tuple[str, str, str]:
     return ensemble_name, inference_name, metric_name
 
 
+def _check_valid_metric(
+    inference_name: str,
+    inference_choices: List[str],
+    metric_name: str,
+) -> None:
+    """
+    Check whether the inputs are valid.
+
+    Args:
+        inference_name (str):
+            Stands which inference target metric are.
+        inference_choices (str):
+            The choices of possible inference names.
+        metric_name (str):
+            The name of metric to plot.
+    """
+
+    if inference_name not in inference_choices:
+        raise ValueError(
+            f'inference_name must be in {inference_choices}, but '
+            f'{inference_name}'
+        )
+    if not hasattr(metrics, metric_name):
+        raise ValueError(
+            f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
+            f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
+        )
+
+
 class RunHistoryVisualizer:
     def __init__(self, *args: Any, **kwargs: Any):
         """
@@ -257,17 +286,11 @@ class RunHistoryVisualizer:
             results (np.ndarray):
                 The cumulated performance corresponding to the runtime.
         """
-        inference_choices = ['train', 'test', 'opt']
-        if inference_name not in inference_choices:
-            raise ValueError(
-                f'inference_name must be in {inference_choices}, but '
-                f'{inference_name}'
-            )
-        if not hasattr(metrics, metric_name):
-            raise ValueError(
-                f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
-                f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
-            )
+        _check_valid_metric(
+            inference_name=inference_name,
+            inference_choices=['train', 'test', 'opt'],
+            metric_name=metric_name
+        )
 
         metric_cls = getattr(metrics, metric_name)
         minimization = metric_cls._sign == -1
@@ -326,17 +349,11 @@ class RunHistoryVisualizer:
                 The best performance at the corresponding time in second
                 where the plot will happen.
         """
-        inference_choices = ['train', 'test']
-        if inference_name not in inference_choices:
-            raise ValueError(
-                f'inference_name must be in {inference_choices}, but '
-                f'{inference_name}'
-            )
-        if not hasattr(metrics, metric_name):
-            raise ValueError(
-                f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
-                f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
-            )
+        _check_valid_metric(
+            inference_name=inference_name,
+            inference_choices=['train', 'test'],
+            metric_name=metric_name
+        )
 
         metric_cls = getattr(metrics, metric_name)
         minimization = metric_cls._sign == -1
