@@ -85,26 +85,25 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:sigma_min, Value: 1.1477050650598004
-      image_augmenter:GaussianBlur:sigma_offset, Value: 0.2823191510883727
-      image_augmenter:GaussianBlur:use_augmenter, Value: True
+      image_augmenter:GaussianBlur:use_augmenter, Value: False
       image_augmenter:GaussianNoise:use_augmenter, Value: False
-      image_augmenter:RandomAffine:rotate, Value: 313
-      image_augmenter:RandomAffine:scale_offset, Value: 0.22157150483045607
-      image_augmenter:RandomAffine:shear, Value: 33
-      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.31366795252179314
+      image_augmenter:RandomAffine:rotate, Value: 114
+      image_augmenter:RandomAffine:scale_offset, Value: 0.11914307425363649
+      image_augmenter:RandomAffine:shear, Value: 8
+      image_augmenter:RandomAffine:translate_percent_offset, Value: 0.027196925844249223
       image_augmenter:RandomAffine:use_augmenter, Value: True
-      image_augmenter:RandomCutout:use_augmenter, Value: False
-      image_augmenter:Resize:use_augmenter, Value: True
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.4994526394988469
-      normalizer:__choice__, Value: 'NoNormalizer'
+      image_augmenter:RandomCutout:p, Value: 0.24908507480752906
+      image_augmenter:RandomCutout:use_augmenter, Value: True
+      image_augmenter:Resize:use_augmenter, Value: False
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.2779993065586726
+      normalizer:__choice__, Value: 'ImageNormalizer'
 
     Fitting the pipeline...
     ________________________________________
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            NoNormalizer
+            ImageNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -176,7 +175,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.335 seconds)
+   **Total running time of the script:** ( 0 minutes  5.899 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:

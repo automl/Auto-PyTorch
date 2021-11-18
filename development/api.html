@@ -113,6 +113,16 @@
 <li><a class="reference internal" href="#regression">Regression</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#pipelines">Pipelines</a><ul>
+<li><a class="reference internal" href="#tabular-classification">Tabular Classification</a></li>
+<li><a class="reference internal" href="#tabular-regression">Tabular Regression</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#steps-in-pipeline">Steps in Pipeline</a><ul>
+<li><a class="reference internal" href="#autopytorchcomponent">autoPyTorchComponent</a></li>
+<li><a class="reference internal" href="#autopytorchchoice">autoPyTorchChoice</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -175,7 +185,7 @@ space of particular components or choice modules of the pipeline</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline">
-<span class="sig-name descname"><span class="pre">build_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline</span></span></span><a class="reference internal" href="_modules/autoPyTorch/api/tabular_classification.html#TabularClassificationTask.build_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">build_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline" title="autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline"><span class="pre">autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline</span></a></span></span><a class="reference internal" href="_modules/autoPyTorch/api/tabular_classification.html#TabularClassificationTask.build_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build pipeline according to current task and for the passed dataset properties</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>dataset_properties (Dict[str,Any])</p>
@@ -321,10 +331,9 @@ Calculate the evaluation measure on the test set.</p>
 <dd><p>Search for the best pipeline configuration for the given dataset.</p>
 <p>Fit both optimizes the machine learning models and builds an ensemble out of them.
 To disable ensembling, set ensemble_size==0.
-using the optimizer.
-Args:</p>
-<blockquote>
-<div><dl>
+using the optimizer.</p>
+<dl>
+<dt>Args:</dt><dd><dl>
 <dt>X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]</dt><dd><p>A pair of features (X_train) and targets (y_train) used to fit a
 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
 be provided to track the generalization performance of each stage.</p>
@@ -435,8 +444,7 @@ which would use the default portfolio from
 <a class="reference external" href="https://arxiv.org/abs/2006.13799">AutoPyTorch Tabular</a>.</p>
 </dd>
 </dl>
-</div></blockquote>
-<dl class="simple">
+</dd>
 <dt>Returns:</dt><dd><p>self</p>
 </dd>
 </dl>
@@ -525,7 +533,7 @@ space of particular components or choice modules of the pipeline</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.build_pipeline">
-<span class="sig-name descname"><span class="pre">build_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline</span></span></span><a class="reference internal" href="_modules/autoPyTorch/api/tabular_regression.html#TabularRegressionTask.build_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.build_pipeline" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">build_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline" title="autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline"><span class="pre">autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline</span></a></span></span><a class="reference internal" href="_modules/autoPyTorch/api/tabular_regression.html#TabularRegressionTask.build_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.build_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build pipeline according to current task and for the passed dataset properties</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>dataset_properties (Dict[str,Any])</p>
@@ -671,10 +679,9 @@ Calculate the evaluation measure on the test set.</p>
 <dd><p>Search for the best pipeline configuration for the given dataset.</p>
 <p>Fit both optimizes the machine learning models and builds an ensemble out of them.
 To disable ensembling, set ensemble_size==0.
-using the optimizer.
-Args:</p>
-<blockquote>
-<div><dl>
+using the optimizer.</p>
+<dl>
+<dt>Args:</dt><dd><dl>
 <dt>X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]</dt><dd><p>A pair of features (X_train) and targets (y_train) used to fit a
 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
 be provided to track the generalization performance of each stage.</p>
@@ -785,8 +792,7 @@ which would use the default portfolio from
 <a class="reference external" href="https://arxiv.org/abs/2006.13799">AutoPyTorch Tabular</a>.</p>
 </dd>
 </dl>
-</div></blockquote>
-<dl class="simple">
+</dd>
 <dt>Returns:</dt><dd><p>self</p>
 </dd>
 </dl>
@@ -818,6 +824,765 @@ configuration.</p>
 <dt>str:</dt><dd><p>Markdown table of models.</p>
 </dd>
 </dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="pipelines">
+<h2>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h2>
+<section id="tabular-classification">
+<h3>Tabular Classification<a class="headerlink" href="#tabular-classification" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.tabular_classification.</span></span><span class="sig-name descname"><span class="pre">TabularClassificationPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigSpace.configuration_space.Configuration</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice"><span class="pre">autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.utils.hyperparameter_search_space_update.HyperparameterSearchSpaceUpdates</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_classification.html#TabularClassificationPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is a wrapper around <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Sklearn Pipeline</a>
+to integrate autoPyTorch components and choices for
+tabular classification tasks.</p>
+<p>It implements a pipeline, which includes the following as steps:</p>
+<ol class="arabic simple">
+<li><p><cite>imputer</cite></p></li>
+<li><p><cite>encoder</cite></p></li>
+<li><p><cite>scaler</cite></p></li>
+<li><p><cite>feature_preprocessor</cite></p></li>
+<li><p><cite>tabular_transformer</cite></p></li>
+<li><p><cite>preprocessing</cite></p></li>
+<li><p><cite>network_embedding</cite></p></li>
+<li><p><cite>network_backbone</cite></p></li>
+<li><p><cite>network_head</cite></p></li>
+<li><p><cite>network</cite></p></li>
+<li><p><cite>network_init</cite></p></li>
+<li><p><cite>optimizer</cite></p></li>
+<li><p><cite>lr_scheduler</cite></p></li>
+<li><p><cite>data_loader</cite></p></li>
+<li><p><cite>trainer</cite></p></li>
+</ol>
+<p>Contrary to the sklearn API it is not possible to enumerate the
+possible parameters in the __init__ function because we only know the
+available classifiers at runtime. For this reason the user must
+specifiy the parameters by passing an instance of
+ConfigSpace.configuration_space.Configuration.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config (Configuration)</dt><dd><p>The configuration to evaluate.</p>
+</dd>
+<dt>steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):</dt><dd><p>The list of <cite>autoPyTorchComponent</cite> or <cite>autoPyTorchChoice</cite>
+that build the pipeline. If provided, they won’t be
+dynamically produced.</p>
+</dd>
+<dt>include (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to honor during the creation of the configuration space.</p>
+</dd>
+<dt>exclude (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to avoid during the creation of the configuration space.</p>
+</dd>
+<dt>random_state (np.random.RandomState):</dt><dd><p>Allows to produce reproducible results by
+setting a seed for randomized settings</p>
+</dd>
+<dt>init_params (Optional[Dict[str, Any]]):</dt><dd><p>Optional initial settings for the config</p>
+</dd>
+<dt>search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</dt><dd><p>Search space updates that can be used to modify the search
+space of particular components or choice modules of the pipeline</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>steps (List[Tuple[str, PipelineStepType]]):</dt><dd><p>The steps of the current pipeline. Each step in an AutoPyTorch
+pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+Both of these are child classes of sklearn ‘BaseEstimator’ and
+they perform operations on and transform the fit dictionary.
+For more info, check documentation of ‘autoPyTorchChoice’ or
+‘autoPyTorchComponent’.</p>
+</dd>
+<dt>config (Configuration):</dt><dd><p>A configuration to delimit the current component choice</p>
+</dd>
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.get_pipeline_representation">
+<span class="sig-name descname"><span class="pre">get_pipeline_representation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_classification.html#TabularClassificationPipeline.get_pipeline_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.get_pipeline_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a representation of the pipeline, so that it can be
+consumed and formatted by the API.</p>
+<p>It should be a representation that follows:
+[{‘PreProcessing’: &lt;&gt;, ‘Estimator’: &lt;&gt;}]</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Dict: contains the pipeline representation in a short format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.predict_proba">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_classification.html#TabularClassificationPipeline.predict_proba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>predict_proba.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>Input to the pipeline, from which to guess targets</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>Controls whether the pipeline will be called on small chunks
+of the data. Useful when calling the predict method on the
+whole array X results in a MemoryError.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.ndarray:</dt><dd><p>Probabilities of the target being certain class</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'accuracy'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_classification.html#TabularClassificationPipeline.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scores the fitted estimator on (X, y)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>input to the pipeline, from which to guess targets</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>batch_size controls whether the pipeline
+will be called on small chunks of the data.
+Useful when calling the predict method on
+the whole array X results in a MemoryError.</p>
+</dd>
+<dt>y (np.ndarray):</dt><dd><p>Ground Truth labels</p>
+</dd>
+<dt>metric_name (str: default = ‘accuracy’):</dt><dd><p>name of the metric to be calculated</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>float: score based on the metric name</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.traditional_tabular_classification.</span></span><span class="sig-name descname"><span class="pre">TraditionalTabularClassificationPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigSpace.configuration_space.Configuration</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice"><span class="pre">autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.utils.hyperparameter_search_space_update.HyperparameterSearchSpaceUpdates</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_classification.html#TraditionalTabularClassificationPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pipeline to fit traditional ML methods for tabular classification.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config (Configuration)</dt><dd><p>The configuration to evaluate.</p>
+</dd>
+<dt>steps (Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]]):</dt><dd><p>the list of <cite>autoPyTorchComponent</cite> or <cite>autoPyTorchChoice</cite>
+that build the pipeline. If provided, they won’t be
+dynamically produced.</p>
+</dd>
+<dt>include (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to honor during the creation of the configuration space.</p>
+</dd>
+<dt>exclude (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to avoid during the creation of the configuration space.</p>
+</dd>
+<dt>random_state (np.random.RandomState):</dt><dd><p>Allows to produce reproducible results by
+setting a seed for randomized settings</p>
+</dd>
+<dt>init_params (Optional[Dict[str, Any]]):</dt><dd><p>Optional initial settings for the config</p>
+</dd>
+<dt>search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</dt><dd><p>Search space updates that can be used to modify the search
+space of particular components or choice modules of the pipeline</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>steps (List[Tuple[str, PipelineStepType]]):</dt><dd><p>The steps of the current pipeline. Each step in an AutoPyTorch
+pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+Both of these are child classes of sklearn ‘BaseEstimator’ and
+they perform operations on and transform the fit dictionary.
+For more info, check documentation of ‘autoPyTorchChoice’ or
+‘autoPyTorchComponent’.</p>
+</dd>
+<dt>config (Configuration):</dt><dd><p>A configuration to delimit the current component choice</p>
+</dd>
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.get_pipeline_representation">
+<span class="sig-name descname"><span class="pre">get_pipeline_representation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_classification.html#TraditionalTabularClassificationPipeline.get_pipeline_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.get_pipeline_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a representation of the pipeline, so that it can be
+consumed and formatted by the API.</p>
+<p>It should be a representation that follows:
+[{‘PreProcessing’: &lt;&gt;, ‘Estimator’: &lt;&gt;}]</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Dict:</dt><dd><p>Contains the pipeline representation in a short format</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_classification.html#TraditionalTabularClassificationPipeline.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the output using the selected model.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>Input data to the array</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>Controls whether the pipeline will be
+called on small chunks of the data. Useful when calling the
+predict method on the whole array X results in a MemoryError.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>np.ndarray: the predicted values given input X</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.predict_proba">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_classification.html#TraditionalTabularClassificationPipeline.predict_proba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_classification.TraditionalTabularClassificationPipeline.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>predict_proba.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>Input to the pipeline, from which to guess targets</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>Controls whether the pipeline will be called on
+small chunks of the data. Useful when calling the
+predict method on the whole array X results in a MemoryError.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.ndarray:</dt><dd><p>Probabilities of the target being certain class</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="tabular-regression">
+<h3>Tabular Regression<a class="headerlink" href="#tabular-regression" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.tabular_regression.</span></span><span class="sig-name descname"><span class="pre">TabularRegressionPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigSpace.configuration_space.Configuration</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice"><span class="pre">autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.utils.hyperparameter_search_space_update.HyperparameterSearchSpaceUpdates</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_regression.html#TabularRegressionPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is a wrapper around <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Sklearn Pipeline</a>
+to integrate autoPyTorch components and choices for
+tabular classification tasks.</p>
+<p>It implements a pipeline, which includes the following as steps:</p>
+<ol class="arabic simple">
+<li><p><cite>imputer</cite></p></li>
+<li><p><cite>encoder</cite></p></li>
+<li><p><cite>scaler</cite></p></li>
+<li><p><cite>feature_preprocessor</cite></p></li>
+<li><p><cite>tabular_transformer</cite></p></li>
+<li><p><cite>preprocessing</cite></p></li>
+<li><p><cite>network_embedding</cite></p></li>
+<li><p><cite>network_backbone</cite></p></li>
+<li><p><cite>network_head</cite></p></li>
+<li><p><cite>network</cite></p></li>
+<li><p><cite>network_init</cite></p></li>
+<li><p><cite>optimizer</cite></p></li>
+<li><p><cite>lr_scheduler</cite></p></li>
+<li><p><cite>data_loader</cite></p></li>
+<li><p><cite>trainer</cite></p></li>
+</ol>
+<p>Contrary to the sklearn API it is not possible to enumerate the
+possible parameters in the __init__ function because we only know the
+available regressors at runtime. For this reason the user must
+specifiy the parameters by passing an instance of
+ConfigSpace.configuration_space.Configuration.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config (Configuration)</dt><dd><p>The configuration to evaluate.</p>
+</dd>
+<dt>steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):</dt><dd><p>the list of <cite>autoPyTorchComponent</cite> or <cite>autoPyTorchChoice</cite>
+that build the pipeline. If provided, they won’t be
+dynamically produced.</p>
+</dd>
+<dt>include (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to honor during the creation of the configuration space.</p>
+</dd>
+<dt>exclude (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to avoid during the creation of the configuration space.</p>
+</dd>
+<dt>random_state (np.random.RandomState):</dt><dd><p>Allows to produce reproducible results by
+setting a seed for randomized settings</p>
+</dd>
+<dt>init_params (Optional[Dict[str, Any]]):</dt><dd><p>Optional initial settings for the config</p>
+</dd>
+<dt>search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</dt><dd><p>Search space updates that can be used to modify the search
+space of particular components or choice modules of the pipeline</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>steps (List[Tuple[str, PipelineStepType]]):</dt><dd><p>The steps of the current pipeline. Each step in an AutoPyTorch
+pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+Both of these are child classes of sklearn ‘BaseEstimator’ and
+they perform operations on and transform the fit dictionary.
+For more info, check documentation of ‘autoPyTorchChoice’ or
+‘autoPyTorchComponent’.</p>
+</dd>
+<dt>config (Configuration):</dt><dd><p>A configuration to delimit the current component choice</p>
+</dd>
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline.get_pipeline_representation">
+<span class="sig-name descname"><span class="pre">get_pipeline_representation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_regression.html#TabularRegressionPipeline.get_pipeline_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline.get_pipeline_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a representation of the pipeline, so that it can be
+consumed and formatted by the API.</p>
+<p>It should be a representation that follows:
+[{‘PreProcessing’: &lt;&gt;, ‘Estimator’: &lt;&gt;}]</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Dict: contains the pipeline representation in a short format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'r2'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/tabular_regression.html#TabularRegressionPipeline.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scores the fitted estimator on (X, y)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>input to the pipeline, from which to guess targets</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>batch_size controls whether the pipeline will be
+called on small chunks of the data. Useful when
+calling the predict method on the whole array X
+results in a MemoryError.</p>
+</dd>
+<dt>y (np.ndarray):</dt><dd><p>Ground Truth labels</p>
+</dd>
+<dt>metric_name (str, default = ‘r2’):</dt><dd><p>name of the metric to be calculated</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>float: score based on the metric name</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.traditional_tabular_regression.</span></span><span class="sig-name descname"><span class="pre">TraditionalTabularRegressionPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigSpace.configuration_space.Configuration</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice"><span class="pre">autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_regression.html#TraditionalTabularRegressionPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pipeline to fit traditional ML methods for tabular regression.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config (Configuration)</dt><dd><p>The configuration to evaluate.</p>
+</dd>
+<dt>steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):</dt><dd><p>the list of <cite>autoPyTorchComponent</cite> or <cite>autoPyTorchChoice</cite>
+that build the pipeline. If provided, they won’t be
+dynamically produced.</p>
+</dd>
+<dt>include (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to honor during the creation of the configuration space.</p>
+</dd>
+<dt>exclude (Optional[Dict[str, Any]]):</dt><dd><p>Allows the caller to specify which configurations
+to avoid during the creation of the configuration space.</p>
+</dd>
+<dt>random_state (np.random.RandomState):</dt><dd><p>Allows to produce reproducible results by
+setting a seed for randomized settings</p>
+</dd>
+<dt>init_params (Optional[Dict[str, Any]]):</dt><dd><p>Optional initial settings for the config</p>
+</dd>
+<dt>search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</dt><dd><p>Search space updates that can be used to modify the search
+space of particular components or choice modules of the pipeline</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>steps (List[Tuple[str, PipelineStepType]]):</dt><dd><p>The steps of the current pipeline. Each step in an AutoPyTorch
+pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+Both of these are child classes of sklearn ‘BaseEstimator’ and
+they perform operations on and transform the fit dictionary.
+For more info, check documentation of ‘autoPyTorchChoice’ or
+‘autoPyTorchComponent’.</p>
+</dd>
+<dt>config (Configuration):</dt><dd><p>A configuration to delimit the current component choice</p>
+</dd>
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline.get_pipeline_representation">
+<span class="sig-name descname"><span class="pre">get_pipeline_representation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_regression.html#TraditionalTabularRegressionPipeline.get_pipeline_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline.get_pipeline_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a representation of the pipeline, so that it can be
+consumed and formatted by the API.</p>
+<p>It should be a representation that follows:
+[{‘PreProcessing’: &lt;&gt;, ‘Estimator’: &lt;&gt;}]</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Dict[str, str]:</dt><dd><p>Contains the pipeline representation in a short format</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/traditional_tabular_regression.html#TraditionalTabularRegressionPipeline.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the output using the selected model.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>Input data to the array</p>
+</dd>
+<dt>batch_size (Optional[int]):</dt><dd><p>Controls whether the pipeline will be
+called on small chunks of the data. Useful when calling the
+predict method on the whole array X results in a MemoryError.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>np.ndarray: the predicted values given input X</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="steps-in-pipeline">
+<h2>Steps in Pipeline<a class="headerlink" href="#steps-in-pipeline" title="Permalink to this headline">¶</a></h2>
+<section id="autopytorchcomponent">
+<h3>autoPyTorchComponent<a class="headerlink" href="#autopytorchcomponent" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.components.base_component.</span></span><span class="sig-name descname"><span class="pre">autoPyTorchComponent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides an abstract interface which can be used to
+create steps of a pipeline in AutoPyTorch.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.check_requirements">
+<span class="sig-name descname"><span class="pre">check_requirements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.check_requirements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.check_requirements" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mechanism in code to ensure the correctness of the fit dictionary
+It recursively makes sure that the children and parent level requirements
+are honored before fit.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (Dict[str, Any]):</dt><dd><p>Dictionary with fitted parameters. It is a message passing
+mechanism, in which during a transform, a components adds relevant information
+so that further stages can be properly fitted</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fit function calls the fit function of the underlying
+model and returns <cite>self</cite>.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (Dict[str, Any]):</dt><dd><p>Dictionary with fitted parameters. It is a message passing
+mechanism, in which during a transform, a components adds relevant information
+so that further stages can be properly fitted</p>
+</dd>
+<dt>y (Any):</dt><dd><p>Not Used – to comply with API</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>self:</dt><dd><p>returns an instance of self.</p>
+</dd>
+</dl>
+</dd>
+<dt>Notes:</dt><dd><p>Please see the <a class="reference external" href="http://scikit-learn.org/dev/developers/index.html#apis-of-scikit-learn-objects">scikit-learn API documentation</a> for further information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_fit_requirements">
+<span class="sig-name descname"><span class="pre">get_fit_requirements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.utils.common.FitRequirement</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.get_fit_requirements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_fit_requirements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get the required keys by the component
+that need to be in the fit dictionary</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>List[FitRequirement]:</dt><dd><p>a list containing required keys in a named tuple (name: str, type: object)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_hyperparameter_search_space">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_hyperparameter_search_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigSpace.configuration_space.ConfigurationSpace</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.get_hyperparameter_search_space"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_hyperparameter_search_space" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the configuration space of this classification algorithm.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_properties (Optional[Dict[str, Union[str, int]]):</dt><dd><p>Describes the dataset to work on</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>ConfigurationSpace:</dt><dd><p>The configuration space of this algorithm.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_properties">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.get_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the properties of the underlying algorithm.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_properties (Optional[Dict[str, Union[str, int]]):</dt><dd><p>Describes the dataset to work on</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Dict[str, Any]:</dt><dd><p>Properties of the algorithm</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_required_properties">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_required_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.get_required_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_required_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to get the properties in the component
+that are required for the properly fitting the pipeline.
+Usually defined in the base class of the component</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>List[str]:</dt><dd><p>list of properties autopytorch component must have for proper functioning of the pipeline</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.set_hyperparameters">
+<span class="sig-name descname"><span class="pre">set_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConfigSpace.configuration_space.Configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">sklearn.base.BaseEstimator</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_component.html#autoPyTorchComponent.set_hyperparameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.set_hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a configuration to the given component.
+This method translate a hierarchical configuration key,
+to an actual parameter of the autoPyTorch component.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>configuration (Configuration):</dt><dd><p>Which configuration to apply to the chosen component</p>
+</dd>
+<dt>init_params (Optional[Dict[str, any]]):</dt><dd><p>Optional arguments to initialize the chosen component</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>An instance of self</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="autopytorchchoice">
+<h3>autoPyTorchChoice<a class="headerlink" href="#autopytorchchoice" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">autoPyTorch.pipeline.components.base_choice.</span></span><span class="sig-name descname"><span class="pre">autoPyTorchChoice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows for the dynamically generation of components as pipeline steps.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_properties (Dict[str, Union[str, BaseDatasetPropertiesType]]):</dt><dd><p>Describes the dataset to work on</p>
+</dd>
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a
+seed for randomized settings</p>
+</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>random_state (Optional[np.random.RandomState]):</dt><dd><p>Allows to produce reproducible results by setting a seed for
+randomized settings</p>
+</dd>
+<dt>choice (autoPyTorchComponent):</dt><dd><p>the choice of components for this stage</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.check_requirements">
+<span class="sig-name descname"><span class="pre">check_requirements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.check_requirements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.check_requirements" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mechanism in code to ensure the correctness of the fit dictionary
+It recursively makes sure that the children and parent level requirements
+are honored before fit.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (Dict[str, Any]):</dt><dd><p>Dictionary with fitted parameters. It is a message passing
+mechanism, in which during a transform, a components adds relevant information
+so that further stages can be properly fitted</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handy method to check if a component is fitted</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (X: Dict[str, Any]):</dt><dd><p>Dependencies needed by current component to perform fit</p>
+</dd>
+<dt>y (Any):</dt><dd><p>not used. To comply with sklearn API</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_available_components">
+<span class="sig-name descname"><span class="pre">get_available_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.get_available_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_available_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper over get components to incorporate include/exclude
+user specification</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):</dt><dd><p>Describes the dataset to work on</p>
+</dd>
+<dt>include: Optional[Dict[str, Any]]:</dt><dd><p>what components to include. It is an exhaustive
+list, and will exclusively use this components.</p>
+</dd>
+<dt>exclude: Optional[Dict[str, Any]]:</dt><dd><p>which components to skip. Can’t be used together with include</p>
+</dd>
+</dl>
+</dd>
+<dt>Results:</dt><dd><dl class="simple">
+<dt>Dict[str, autoPyTorchComponent]: A dictionary with valid components for this</dt><dd><p>choice object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_components">
+<span class="sig-name descname"><span class="pre">get_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent" title="autoPyTorch.pipeline.components.base_component.autoPyTorchComponent"><span class="pre">autoPyTorch.pipeline.components.base_component.autoPyTorchComponent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.get_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns and ordered dict with the components available
+for current step.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>cls (autoPyTorchChoice):</dt><dd><p>The choice object from which to query the valid
+components</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Dict[str, autoPyTorchComponent]:</dt><dd><p>The available components via a mapping
+from the module name to the component class</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_hyperparameter_search_space">
+<span class="sig-name descname"><span class="pre">get_hyperparameter_search_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigSpace.configuration_space.ConfigurationSpace</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.get_hyperparameter_search_space"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.get_hyperparameter_search_space" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the configuration space of the current chosen components</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):</dt><dd><p>Describes the dataset to work on</p>
+</dd>
+<dt>default: (Optional[str]):</dt><dd><p>Default component to use in hyperparameters</p>
+</dd>
+<dt>include: Optional[Dict[str, Any]]:</dt><dd><p>what components to include. It is an exhaustive
+list, and will exclusively use this components.</p>
+</dd>
+<dt>exclude: Optional[Dict[str, Any]]:</dt><dd><p>which components to skip</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>ConfigurationSpace: the configuration space of the hyper-parameters of the</dt><dd><p>chosen component</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the target given an input, by using the chosen component</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (np.ndarray):</dt><dd><p>input features from which to predict the target</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>np.ndarray:</dt><dd><p>the target prediction</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.set_hyperparameters">
+<span class="sig-name descname"><span class="pre">set_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConfigSpace.configuration_space.Configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice" title="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice"><span class="pre">autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice</span></a></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.set_hyperparameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.set_hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a configuration to the given component.
+This method translate a hierarchical configuration key,
+to an actual parameter of the autoPyTorch component.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>configuration (Configuration):</dt><dd><p>Which configuration to apply to the chosen component</p>
+</dd>
+<dt>init_params (Optional[Dict[str, any]]):</dt><dd><p>Optional arguments to initialize the chosen component</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>self: returns an instance of self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/autoPyTorch/pipeline/components/base_choice.html#autoPyTorchChoice.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#autoPyTorch.pipeline.components.base_choice.autoPyTorchChoice.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the current choice in the fit dictionary</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>X (Dict[str, Any]):</dt><dd><p>fit dictionary</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>(Dict[str, Any])</p>
 </dd>
 </dl>
 </dd></dl>
