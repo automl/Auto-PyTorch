@@ -1443,6 +1443,7 @@ class BaseTask:
             raise RuntimeError("`search_results` is only available after a search has finished.")
 
         return self._results_manager.sprint_statistics(
+            dataset_name=self.dataset_name,
             scoring_functions=self._scoring_functions,
             metric=self._metric
         )

@@ -14,7 +14,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 
 # TODO remove StatusType.RUNNING at some point in the future when the new SMAC 0.13.2
 #  is the new minimum required version!
-status2msg = {
+STATUS2MSG = {
     StatusType.SUCCESS: 'Success',
     StatusType.DONOTADVANCE: 'Success (but did not advance to higher budget)',
     StatusType.TIMEOUT: 'Timeout',
@@ -149,14 +149,16 @@ class ResultsManager:
                 The list of metrics to retrieve the info.
         """
 
-        success_status = (StatusType.SUCCESS, StatusType.DONOTADVANCE)
+        if run_value.status not in (StatusType.SUCCESS, StatusType.DONOTADVANCE):
+            # Additional info is not available in this case.
+            return {metric.name: np.nan for metric in scoring_functions}
+
         cost_info = run_value.additional_info['opt_loss']
         avail_metrics = cost_info.keys()
 
         return {
             metric.name: cls.cost2metric(cost=cost_info[metric.name], metric=metric)
-            if run_value.status in success_status and metric.name in avail_metrics
-            else np.nan
+            if metric.name in avail_metrics else np.nan
             for metric in scoring_functions
         }
 
@@ -190,7 +192,7 @@ class ResultsManager:
             config_id = run_key.config_id
             config = self.run_history.ids_config[config_id]
 
-            status_msg = status2msg.get(run_value.status, None)
+            status_msg = STATUS2MSG.get(run_value.status, None)
             if run_value.status in (StatusType.STOP, StatusType.RUNNING):
                 continue
             elif status_msg is None:
@@ -244,7 +246,7 @@ class ResultsManager:
                 Formatted string with statistics
         """
         search_results = self._get_search_results(scoring_functions, metric)
-        success_msgs = (status2msg[StatusType.SUCCESS], status2msg[StatusType.DONOTADVANCE])
+        success_msgs = (STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.DONOTADVANCE])
         sio = io.StringIO()
         sio.write("autoPyTorch results:\n")
         sio.write(f"\tDataset name: {dataset_name}\n")
@@ -252,9 +254,9 @@ class ResultsManager:
 
         num_runs = len(search_results.status)
         num_success = sum([s in success_msgs for s in search_results.status])
-        num_crash = sum([s == status2msg[StatusType.CRASHED] for s in search_results.status])
-        num_timeout = sum([s == status2msg[StatusType.TIMEOUT] for s in search_results.status])
-        num_memout = sum([s == status2msg[StatusType.MEMOUT] for s in search_results.status])
+        num_crash = sum([s == STATUS2MSG[StatusType.CRASHED] for s in search_results.status])
+        num_timeout = sum([s == STATUS2MSG[StatusType.TIMEOUT] for s in search_results.status])
+        num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status])
 
         if num_success > 0:
             best_score = metric._sign * np.max(metric._sign * search_results.mean_opt_scores)
