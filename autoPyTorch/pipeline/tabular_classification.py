@@ -41,12 +41,29 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
-    """This class is a proof of concept to integrate AutoSklearn Components
+    """
+    This class is a wrapper around `Sklearn Pipeline
+    <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_
+    to integrate autoPyTorch components and choices for
+    tabular classification tasks.
 
-    It implements a pipeline, which includes as steps:
+    It implements a pipeline, which includes the following as steps:
 
-        ->One preprocessing step
-        ->One neural network
+    1. `imputer`
+    2. `encoder`
+    3. `scaler`
+    4. `feature_preprocessor`
+    5. `tabular_transformer`
+    6. `preprocessing`
+    7. `network_embedding`
+    8. `network_backbone`
+    9. `network_head`
+    10. `network`
+    11. `network_init`
+    12. `optimizer`
+    13. `lr_scheduler`
+    14. `data_loader`
+    15. `trainer`
 
     Contrary to the sklearn API it is not possible to enumerate the
     possible parameters in the __init__ function because we only know the
@@ -58,27 +75,44 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]): the list of steps that
-            build the pipeline. If provided, they won't be dynamically produced.
-        include (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):
+            The list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to honor during the creation of the configuration space.
-        exclude (Optional[Dict[str, Any]]): Allows the caller to specify which configurations
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
             to avoid during the creation of the configuration space.
-        random_state (np.random.RandomState): allows to produce reproducible results by
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
             setting a seed for randomized settings
-        init_params (Optional[Dict[str, Any]])
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            search space updates that can be used to modify the search
+            Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
 
     Attributes:
-    Examples
+        steps (List[Tuple[str, PipelineStepType]]):
+            The steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            A configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
@@ -112,12 +146,15 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """predict_proba.
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
-                predict method on the whole array X results in a MemoryError.
+            X (np.ndarray):
+                Input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be called on small chunks
+                of the data. Useful when calling the predict method on the
+                whole array X results in a MemoryError.
         Returns:
-            np.ndarray: Probabilities of the target being certain class
+            np.ndarray:
+                Probabilities of the target being certain class
         """
         if batch_size is None:
             y = self._predict_proba(X)
@@ -160,7 +197,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 the whole array X results in a MemoryError.
             y (np.ndarray):
                 Ground Truth labels
-            metric_name (str, default = 'accuracy'):
+            metric_name (str: default = 'accuracy'):
                  name of the metric to be calculated
         Returns:
             float: score based on the metric name
@@ -184,16 +221,20 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            include (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            exclude (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
 
         Returns:
-            cs (Configuration): The configuration space describing
-                the SimpleRegressionClassifier.
+            cs (ConfigurationSpace):
+                The configuration space describing
+                the TabularClassificationPipeline.
         """
         cs = ConfigurationSpace()
 

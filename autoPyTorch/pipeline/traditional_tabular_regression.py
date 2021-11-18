@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,27 +7,58 @@ import numpy as np
 
 from sklearn.base import RegressorMixin
 
-from autoPyTorch.pipeline.base_pipeline import BaseDatasetPropertiesType, BasePipeline, PipelineStepType
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
 
 
 class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
     """
-    A pipeline that contains steps to fit traditional ML methods for tabular regression.
+    A pipeline to fit traditional ML methods for tabular regression.
 
     Args:
         config (Configuration)
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):
+            the list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to honor during the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to avoid during the creation of the configuration space.
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
+            setting a seed for randomized settings
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            Search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
 
     Attributes:
+        steps (List[Tuple[str, PipelineStepType]]):
+            The steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            A configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
         dataset_properties: Optional[Dict[str, Any]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
@@ -43,8 +74,10 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         """Predict the output using the selected model.
 
         Args:
-            X (np.ndarray): input data to the array
-            batch_size (Optional[int]): batch_size controls whether the pipeline will be
+            X (np.ndarray):
+                Input data to the array
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be
                 called on small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
 
@@ -91,15 +124,20 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            include (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            exclude (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices
+                of components
 
         Returns:
-            cs (Configuration): The configuration space describing the TabularRegressionPipeline.
+            cs (Configuration):
+                The configuration space describing
+                the TraditionalTabularRegressionPipeline.
         """
         cs = ConfigurationSpace()
 
@@ -161,7 +199,8 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         [{'PreProcessing': <>, 'Estimator': <>}]
 
         Returns:
-            Dict: contains the pipeline representation in a short format
+            Dict[str, str]:
+                Contains the pipeline representation in a short format
         """
         estimator_name = 'TraditionalTabularRegression'
         if self.steps[0][1].choice is not None:
@@ -182,6 +221,7 @@ class TraditionalTabularRegressionPipeline(RegressorMixin, BasePipeline):
         Returns the name of the current estimator.
 
         Returns:
-            str: name of the pipeline type
+            str:
+                Name of the pipeline type
         """
         return "traditional_tabular_regressor"

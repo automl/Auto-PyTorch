@@ -148,6 +148,7 @@ class TabularClassificationTask(BaseTask):
         Fit both optimizes the machine learning models and builds an ensemble out of them.
         To disable ensembling, set ensemble_size==0.
         using the optimizer.
+
         Args:
             X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
                 A pair of features (X_train) and targets (y_train) used to fit a

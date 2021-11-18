@@ -27,9 +27,12 @@ def find_components(
     that inherit from base_class
 
     Args:
-        package (str): The associated package that contains the components
-        directory (str): The directory from which to extract the components
-        base_class (BaseEstimator): base class to filter out desired components
+        package (str):
+            The associated package that contains the components
+        directory (str):
+            The directory from which to extract the components
+        base_class (BaseEstimator):
+            base class to filter out desired components
             that don't inherit from this class
     """
     components = OrderedDict()
@@ -60,7 +63,8 @@ class ThirdPartyComponents(object):
     space to work.
 
     Args:
-        base_class (BaseEstimator) component type desired to be created
+        base_class (BaseEstimator):
+            Component type desired to be created
     """
 
     def __init__(self, base_class: BaseEstimator):
@@ -96,6 +100,16 @@ class ThirdPartyComponents(object):
 
 
 class autoPyTorchComponent(BaseEstimator):
+    """
+    Provides an abstract interface which can be used to
+    create steps of a pipeline in AutoPyTorch.
+
+    Args:
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
+
+    """
     _required_properties: Optional[List[str]] = None
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
@@ -115,7 +129,8 @@ class autoPyTorchComponent(BaseEstimator):
         Usually defined in the base class of the component
 
         Returns:
-            List[str]: list of properties autopytorch component must have for proper functioning of the pipeline
+            List[str]:
+                list of properties autopytorch component must have for proper functioning of the pipeline
         """
         return cls._required_properties
 
@@ -125,8 +140,8 @@ class autoPyTorchComponent(BaseEstimator):
         that need to be in the fit dictionary
 
         Returns:
-            List[FitRequirement]: a list containing required keys
-                            in a named tuple (name: str, type: object)
+            List[FitRequirement]:
+                a list containing required keys in a named tuple (name: str, type: object)
         """
         return self._fit_requirements
 
@@ -139,11 +154,12 @@ class autoPyTorchComponent(BaseEstimator):
         """Get the properties of the underlying algorithm.
 
         Args:
-            dataset_properties (Optional[Dict[str, Union[str, int]]): Describes the dataset
-               to work on
+            dataset_properties (Optional[Dict[str, Union[str, int]]):
+                Describes the dataset to work on
 
         Returns:
-            Dict[str, Any]: Properties of the algorithm
+            Dict[str, Any]:
+                Properties of the algorithm
         """
         raise NotImplementedError()
 
@@ -154,11 +170,12 @@ class autoPyTorchComponent(BaseEstimator):
         """Return the configuration space of this classification algorithm.
 
         Args:
-            dataset_properties (Optional[Dict[str, Union[str, int]]): Describes the dataset
-               to work on
+            dataset_properties (Optional[Dict[str, Union[str, int]]):
+                Describes the dataset to work on
 
         Returns:
-            ConfigurationSpace: The configuration space of this algorithm.
+            ConfigurationSpace:
+                The configuration space of this algorithm.
         """
         raise NotImplementedError()
 
@@ -167,13 +184,16 @@ class autoPyTorchComponent(BaseEstimator):
         model and returns `self`.
 
         Args:
-            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
-            y (Any): Not Used -- to comply with API
+            y (Any):
+                Not Used -- to comply with API
 
         Returns:
-            self : returns an instance of self.
+            self:
+                returns an instance of self.
 
         Notes:
             Please see the `scikit-learn API documentation
@@ -192,10 +212,10 @@ class autoPyTorchComponent(BaseEstimator):
         to an actual parameter of the autoPyTorch component.
 
         Args:
-            configuration (Configuration): which configuration to apply to
-                the chosen component
-            init_params (Optional[Dict[str, any]]): Optional arguments to
-                initialize the chosen component
+            configuration (Configuration):
+                Which configuration to apply to the chosen component
+            init_params (Optional[Dict[str, any]]):
+                Optional arguments to initialize the chosen component
 
         Returns:
             An instance of self
@@ -226,7 +246,8 @@ class autoPyTorchComponent(BaseEstimator):
         are honored before fit.
 
         Args:
-            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
         """
@@ -267,10 +288,12 @@ class autoPyTorchComponent(BaseEstimator):
         """Allows the user to update a hyperparameter
 
         Args:
-            name (str): name of hyperparameter
+            name (str):
+                name of hyperparameter
             new_value_range (List[Union[int, str, float]]):
                 value range can be either lower, upper or a list of possible candidates
-            log (bool): Whether to use log scale
+            log (bool):
+                Whether to use log scale
         """
 
         self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
