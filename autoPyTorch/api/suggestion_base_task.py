@@ -1445,6 +1445,7 @@ class BaseTask:
         if self._scoring_functions is None or self._metric is None:
             raise RuntimeError("`search_results` is only available after a search has finished.")
 
+        assert self.dataset_name is not None  # my check
         return self._results_manager.sprint_statistics(
             dataset_name=self.dataset_name,
             scoring_functions=self._scoring_functions,

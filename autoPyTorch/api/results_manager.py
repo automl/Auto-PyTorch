@@ -1,10 +1,11 @@
 import io
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import numpy as np
-import scipy
-
 from ConfigSpace.configuration_space import Configuration
+
+import numpy as np
+
+import scipy
 
 from smac.runhistory.runhistory import RunHistory, RunValue
 from smac.tae import StatusType
@@ -109,15 +110,15 @@ class SearchResults:
             self.metric_dict[metric_name].append(val)
 
     def clear(self) -> None:
-        self._mean_opt_scores: List[float] = []
-        self._mean_fit_time: List[float] = []
-        self.configs: List[Configuration] = []
-        self.status: List[str] = []
-        self.budgets: List[float] = []
-        self.config_ids: List[int] = []
-        self.additional_infos: List[Optional[Dict[str, Any]]] = []
-        self.is_traditionals: List[bool] = []
-        self.rank_test_scores: np.ndarray = np.array([])
+        self._mean_opt_scores = []
+        self._mean_fit_time = []
+        self.configs = []
+        self.status = []
+        self.budgets = []
+        self.config_ids = []
+        self.additional_infos = []
+        self.is_traditionals = []
+        self.rank_test_scores = np.array([])
 
     def extract_results_from_run_history(self, run_history: RunHistory) -> None:
         """
