@@ -9,6 +9,7 @@ import scipy
 
 from smac.runhistory.runhistory import RunHistory, RunValue
 from smac.tae import StatusType
+from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 
@@ -173,12 +174,12 @@ class ResultsManager:
             ensemble_performance_history (List[Dict[str, Any]]):
                 The list of ensemble performance in the optimization.
                 The list includes the `timestamp`, `result on train set`, and `result on test set`
-            trajectory (List):
+            trajectory (List[TrajEntry]):
                 A list of all incumbent configurations during search
         """
         self.run_history: RunHistory = RunHistory()
         self.ensemble_performance_history: List[Dict[str, Any]] = []
-        self.trajectory: List = []
+        self.trajectory: List[TrajEntry] = []
 
     def _check_run_history(self) -> None:
         if self.run_history is None:
