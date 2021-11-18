@@ -1378,9 +1378,12 @@ class BaseTask:
                 The incumbent configuration
             Dict[str, Union[int, str, float]]:
                 Additional information about the run of the incumbent configuration.
-
         """
-        return self._results_manager.get_incumbent_results(include_traditional)
+
+        if self._metric is None:
+            raise RuntimeError("`search_results` is only available after a search has finished.")
+
+        return self._results_manager.get_incumbent_results(metric=self._metric, include_traditional=include_traditional)
 
     def get_models_with_weights(self) -> List:
         if self.models_ is None or len(self.models_) == 0 or \

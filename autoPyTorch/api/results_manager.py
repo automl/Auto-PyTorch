@@ -1,5 +1,5 @@
 import io
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import scipy
@@ -24,18 +24,56 @@ STATUS2MSG = {
 }
 
 
+def cost2metric(cost: float, metric: autoPyTorchMetric) -> float:
+    return metric._optimum - (metric._sign * cost)
+
+
+def _extract_metrics_info(
+    run_value: RunValue,
+    scoring_functions: List[autoPyTorchMetric]
+) -> Dict[str, float]:
+    """
+    Extract the metric information given a run_value
+    and a list of metrics of interest.
+
+    Args:
+        run_value (RunValue):
+            The information for each config evaluation.
+        scoring_functions (List[autoPyTorchMetric]):
+            The list of metrics to retrieve the info.
+    """
+
+    if run_value.status not in (StatusType.SUCCESS, StatusType.DONOTADVANCE):
+        # Additional info is not available in this case.
+        return {metric.name: np.nan for metric in scoring_functions}
+
+    cost_info = run_value.additional_info['opt_loss']
+    avail_metrics = cost_info.keys()
+
+    return {
+        metric.name: cost2metric(cost=cost_info[metric.name], metric=metric)
+        if metric.name in avail_metrics else np.nan
+        for metric in scoring_functions
+    }
+
+
 class SearchResults:
-    def __init__(self, scoring_functions: List[autoPyTorchMetric]):
+    def __init__(self, metric: autoPyTorchMetric, scoring_functions: List[autoPyTorchMetric]):
         self.metric_dict: Dict[str, List[float]] = {
             metric.name: []
             for metric in scoring_functions
         }
         self._mean_opt_scores: List[float] = []
         self._mean_fit_time: List[float] = []
-        self.params: List[Dict] = []
+        self.configs: List[Configuration] = []
         self.status: List[str] = []
         self.budgets: List[float] = []
+        self.config_ids: List[int] = []
+        self.is_traditionals: List[bool] = []
+        self.additional_infos: List[Optional[Dict[str, Any]]] = []
         self.rank_test_scores: np.ndarray = np.array([])
+        self._scoring_functions = scoring_functions
+        self._metric = metric
 
     @property
     def mean_opt_scores(self) -> np.ndarray:
@@ -47,22 +85,81 @@ class SearchResults:
 
     def update(
         self,
-        param: Dict,
+        config: Configuration,
         status: str,
         budget: float,
         fit_time: float,
+        config_id: int,
+        is_traditional: bool,
+        additional_info: Dict[str, Any],
         score: float,
         metric_info: Dict[str, float]
     ) -> None:
 
         self.status.append(status)
-        self.params.append(param)
+        self.configs.append(config)
         self.budgets.append(budget)
+        self.config_ids.append(config_id)
+        self.is_traditionals.append(is_traditional)
+        self.additional_infos.append(additional_info)
         self._mean_fit_time.append(fit_time)
         self._mean_opt_scores.append(score)
 
         for metric_name, val in metric_info.items():
             self.metric_dict[metric_name].append(val)
+
+    def clear(self) -> None:
+        self._mean_opt_scores: List[float] = []
+        self._mean_fit_time: List[float] = []
+        self.configs: List[Configuration] = []
+        self.status: List[str] = []
+        self.budgets: List[float] = []
+        self.config_ids: List[int] = []
+        self.additional_infos: List[Optional[Dict[str, Any]]] = []
+        self.is_traditionals: List[bool] = []
+        self.rank_test_scores: np.ndarray = np.array([])
+
+    def extract_results_from_run_history(self, run_history: RunHistory) -> None:
+        """
+        Extract the information to match this class format.
+
+        Args:
+            run_history (RunHistory):
+                The history of config evals from SMAC.
+        """
+
+        self.clear()  # Delete cache before the extraction
+
+        for run_key, run_value in run_history.data.items():
+            config_id = run_key.config_id
+            config = run_history.ids_config[config_id]
+
+            status_msg = STATUS2MSG.get(run_value.status, None)
+            if run_value.status in (StatusType.STOP, StatusType.RUNNING):
+                continue
+            elif status_msg is None:
+                raise ValueError(f'Unexpected run status: {run_value.status}')
+
+            is_traditional = False  # If run is not successful, unsure ==> not True ==> False
+            if run_value.additional_info is not None:
+                is_traditional = run_value.additional_info['configuration_origin'] == 'traditional'
+
+            self.update(
+                status=status_msg,
+                config=config,
+                budget=run_key.budget,
+                fit_time=run_value.time,  # To ravin: I added this line since mean_fit_time was untouched.
+                score=cost2metric(cost=run_value.cost, metric=self._metric),
+                metric_info=_extract_metrics_info(run_value=run_value, scoring_functions=self._scoring_functions),
+                is_traditional=is_traditional,
+                additional_info=run_value.additional_info,
+                config_id=config_id
+            )
+
+        self.rank_test_scores = scipy.stats.rankdata(
+            -1 * self._metric._sign * self.mean_opt_scores,  # rank order
+            method='min'
+        )
 
 
 class ResultsManager:
@@ -92,12 +189,15 @@ class ResultsManager:
 
     def get_incumbent_results(
         self,
+        metric: autoPyTorchMetric,
         include_traditional: bool = False
     ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
         """
         Get Incumbent config and the corresponding results
 
         Args:
+            metric (autoPyTorchMetric):
+                A metric that is used to fit AutoPytorch.
             include_traditional (bool):
                 Whether to include results from tradtional pipelines
 
@@ -106,61 +206,26 @@ class ResultsManager:
                 The incumbent configuration
             Dict[str, Union[int, str, float]]:
                 Additional information about the run of the incumbent configuration.
-
         """
         self._check_run_history()
 
-        run_history_data = self.run_history.data
+        results = SearchResults(metric=metric, scoring_functions=[])
+        results.extract_results_from_run_history(self.run_history)
 
         if not include_traditional:
-            # traditional classifiers have trainer_configuration in their additional info
-            run_history_data = dict(
-                filter(lambda elem: elem[1].status == StatusType.SUCCESS and elem[1].
-                       additional_info is not None and elem[1].
-                       additional_info['configuration_origin'] != 'traditional',
-                       run_history_data.items()))
+            non_traditional = ~np.array(results.is_traditionals)
+            scores = results.mean_opt_scores[non_traditional]
+            indices = np.arange(len(results.configs))[non_traditional]
+        else:
+            scores = results.mean_opt_scores
+            indices = np.arange(len(results.configs))
 
-        run_history_data = dict(
-            filter(lambda elem: 'SUCCESS' in str(elem[1].status), run_history_data.items()))
-        sorted_runvalue_by_cost = sorted(run_history_data.items(), key=lambda item: item[1].cost)
-        incumbent_run_key, incumbent_run_value = sorted_runvalue_by_cost[0]
-        incumbent_config = self.run_history.ids_config[incumbent_run_key.config_id]
-        incumbent_results = incumbent_run_value.additional_info
+        incumbent_idx = indices[np.nanargmax(metric._sign * scores)]
+        incumbent_config = results.configs[incumbent_idx]
+        incumbent_results = results.additional_infos[incumbent_idx]
+
+        assert incumbent_results is not None  # mypy check
         return incumbent_config, incumbent_results
-
-    @staticmethod
-    def cost2metric(cost: float, metric: autoPyTorchMetric) -> float:
-        return metric._optimum - (metric._sign * cost)
-
-    @classmethod
-    def _extract_metrics_info(
-        cls,
-        run_value: RunValue,
-        scoring_functions: List[autoPyTorchMetric]
-    ) -> Dict[str, float]:
-        """
-        Extract the metric information given a run_value
-        and a list of metrics of interest.
-
-        Args:
-            run_value (RunValue):
-                The information for each config evaluation.
-            scoring_functions (List[autoPyTorchMetric]):
-                The list of metrics to retrieve the info.
-        """
-
-        if run_value.status not in (StatusType.SUCCESS, StatusType.DONOTADVANCE):
-            # Additional info is not available in this case.
-            return {metric.name: np.nan for metric in scoring_functions}
-
-        cost_info = run_value.additional_info['opt_loss']
-        avail_metrics = cost_info.keys()
-
-        return {
-            metric.name: cls.cost2metric(cost=cost_info[metric.name], metric=metric)
-            if metric.name in avail_metrics else np.nan
-            for metric in scoring_functions
-        }
 
     def _get_search_results(
         self,
@@ -176,7 +241,6 @@ class ResultsManager:
         Args:
             scoring_functions (List[autoPyTorchMetric]):
                 Metrics to show in the results.
-
             metric (autoPyTorchMetric):
                 A metric that is used to fit AutoPytorch.
 
@@ -186,32 +250,8 @@ class ResultsManager:
         """
         self._check_run_history()
 
-        results = SearchResults(scoring_functions)
-
-        for run_key, run_value in self.run_history.data.items():
-            config_id = run_key.config_id
-            config = self.run_history.ids_config[config_id]
-
-            status_msg = STATUS2MSG.get(run_value.status, None)
-            if run_value.status in (StatusType.STOP, StatusType.RUNNING):
-                continue
-            elif status_msg is None:
-                raise ValueError(f'Unexpected run status: {run_value.status}')
-
-            results.update(
-                status=status_msg,
-                param=config.get_dictionary(),
-                budget=run_key.budget,
-                fit_time=run_value.time,  # To ravin: I added this line since mean_fit_time was untouched.
-                score=self.cost2metric(cost=run_value.cost, metric=metric),
-                metric_info=self._extract_metrics_info(run_value=run_value, scoring_functions=scoring_functions)
-            )
-
-        results.rank_test_scores = scipy.stats.rankdata(
-            -1 * metric._sign * results.mean_opt_scores,  # rank order
-            method='min'
-        )
-
+        results = SearchResults(metric=metric, scoring_functions=scoring_functions)
+        results.extract_results_from_run_history(self.run_history)
         return results
 
     def sprint_statistics(
@@ -259,7 +299,7 @@ class ResultsManager:
         num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status])
 
         if num_success > 0:
-            best_score = metric._sign * np.max(metric._sign * search_results.mean_opt_scores)
+            best_score = metric._sign * np.nanmax(metric._sign * search_results.mean_opt_scores)
             sio.write(f"\tBest validation score: {best_score}\n")
 
         sio.write(f"\tNumber of target algorithm runs: {num_runs}\n")
