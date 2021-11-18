@@ -508,7 +508,7 @@ class BaseTask:
         ensemble = SingleBest(
             metric=self._metric,
             seed=self.seed,
-            run_history=self._results_manager.run_history,
+            run_history=self.run_history,
             backend=self._backend,
         )
         if self._logger is None:
@@ -718,7 +718,7 @@ class BaseTask:
 
         self._logger.debug("Run history traditional: {}".format(run_history))
         # add run history of traditional to api run history
-        self._results_manager.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+        self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
         run_history.save_json(os.path.join(self._backend.internals_directory, 'traditional_run_history.json'),
                               save_external=True)
         return
@@ -1059,7 +1059,7 @@ class BaseTask:
             try:
                 run_history, self._results_manager.trajectory, budget_type = \
                     _proc_smac.run_smbo(func=tae_func)
-                self._results_manager.run_history.update(run_history, DataOrigin.INTERNAL)
+                self.run_history.update(run_history, DataOrigin.INTERNAL)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),
                     'trajectory.json')
