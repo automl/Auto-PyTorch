@@ -1,5 +1,5 @@
 import io
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import scipy
@@ -66,7 +66,7 @@ class SearchResults:
 
 
 class ResultsManager:
-    def __init__(self):
+    def __init__(self, *args: Any, **kwargs: Any):
         """
         Attributes:
             run_history (RunHistory):
@@ -75,14 +75,14 @@ class ResultsManager:
             ensemble_performance_history (List[Dict[str, Any]]):
                 The list of ensemble performance in the optimization.
                 The list includes the `timestamp`, `result on train set`, and `result on test set`
-            trajectory (Optional[List]):
+            trajectory (List):
                 A list of all incumbent configurations during search
         """
         self.run_history: RunHistory = RunHistory()
         self.ensemble_performance_history: List[Dict[str, Any]] = []
-        self.trajectory: Optional[List] = None
+        self.trajectory: List = []
 
-    def _is_valid_run_history(self) -> bool:
+    def _check_run_history(self) -> None:
         if self.run_history is None:
             raise RuntimeError("No Run History found, search has not been called.")
 
@@ -108,7 +108,7 @@ class ResultsManager:
                 Additional information about the run of the incumbent configuration.
 
         """
-        self._is_valid_run_history()
+        self._check_run_history()
 
         run_history_data = self.run_history.data
 
@@ -162,8 +162,8 @@ class ResultsManager:
 
     def _get_search_results(
         self,
-        scoring_functions: Optional[List[autoPyTorchMetric]],
-        metric: Optional[autoPyTorchMetric]
+        scoring_functions: List[autoPyTorchMetric],
+        metric: autoPyTorchMetric
     ) -> SearchResults:
         """
         This attribute is populated with data from `self.run_history`
@@ -172,20 +172,17 @@ class ResultsManager:
         the budget
 
         Args:
-            scoring_functions (Optional[List[autoPyTorchMetric]]):
+            scoring_functions (List[autoPyTorchMetric]):
                 Metrics to show in the results.
 
-            metric (Optional[autoPyTorchMetric]):
+            metric (autoPyTorchMetric):
                 A metric that is used to fit AutoPytorch.
 
         Returns:
             SearchResults:
                 An instance that contains the results from search
         """
-        self._is_valid_run_history()
-
-        if scoring_functions is None or metric is None:
-            raise RuntimeError("`search_results` is only available after a search has finished.")
+        self._check_run_history()
 
         results = SearchResults(scoring_functions)
 
@@ -209,7 +206,7 @@ class ResultsManager:
             )
 
         results.rank_test_scores = scipy.stats.rankdata(
-            -1 * self._metric._sign * results.mean_opt_scores,  # rank order
+            -1 * metric._sign * results.mean_opt_scores,  # rank order
             method='min'
         )
 
@@ -217,8 +214,9 @@ class ResultsManager:
 
     def sprint_statistics(
         self,
-        scoring_functions: Optional[List[autoPyTorchMetric]],
-        metric: Optional[autoPyTorchMetric]
+        dataset_name: str,
+        scoring_functions: List[autoPyTorchMetric],
+        metric: autoPyTorchMetric
     ) -> str:
         """
         Prints statistics about the SMAC search.
@@ -234,10 +232,11 @@ class ResultsManager:
         7. Total number of successful target algorithm runs that exceeded the memory limit
 
         Args:
-            scoring_functions (Optional[List[autoPyTorchMetric]]):
+            dataset_name (str):
+                The dataset name that was used in the run.
+            scoring_functions (List[autoPyTorchMetric]):
                 Metrics to show in the results.
-
-            metric (Optional[autoPyTorchMetric]):
+            metric (autoPyTorchMetric):
                 A metric that is used to fit AutoPytorch.
 
         Returns:
@@ -248,7 +247,7 @@ class ResultsManager:
         success_msgs = (status2msg[StatusType.SUCCESS], status2msg[StatusType.DONOTADVANCE])
         sio = io.StringIO()
         sio.write("autoPyTorch results:\n")
-        sio.write(f"\tDataset name: {self.dataset_name}\n")
+        sio.write(f"\tDataset name: {dataset_name}\n")
         sio.write(f"\tOptimisation Metric: {metric}\n")
 
         num_runs = len(search_results.status)
@@ -256,8 +255,6 @@ class ResultsManager:
         num_crash = sum([s == status2msg[StatusType.CRASHED] for s in search_results.status])
         num_timeout = sum([s == status2msg[StatusType.TIMEOUT] for s in search_results.status])
         num_memout = sum([s == status2msg[StatusType.MEMOUT] for s in search_results.status])
-
-        assert metric is not None  # mypy
 
         if num_success > 0:
             best_score = metric._sign * np.max(metric._sign * search_results.mean_opt_scores)

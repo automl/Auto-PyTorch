@@ -252,7 +252,7 @@ class BaseTask:
 
     @property
     def trajectory(self) -> Optional[List]:
-        return self._results_manager.traje
+        return self._results_manager.trajectory
 
     def set_pipeline_config(self, **pipeline_config_kwargs: Any) -> None:
         """
@@ -1057,12 +1057,14 @@ class BaseTask:
                 pynisher_context=self._multiprocessing_context,
             )
             try:
-                run_history, self.trajectory, budget_type = \
+                run_history, self._results_manager.trajectory, budget_type = \
                     _proc_smac.run_smbo(func=tae_func)
                 self._results_manager.run_history.update(run_history, DataOrigin.INTERNAL)
                 trajectory_filename = os.path.join(
                     self._backend.get_smac_output_directory_for_run(self.seed),
                     'trajectory.json')
+
+                assert self.trajectory is not None  # mypy check
                 saveable_trajectory = \
                     [list(entry[:2]) + [entry[2].get_dictionary()] + list(entry[3:])
                      for entry in self.trajectory]
@@ -1437,6 +1439,9 @@ class BaseTask:
             (str):
                 Formatted string with statistics
         """
+        if self._scoring_functions is None or self._metric is None:
+            raise RuntimeError("`search_results` is only available after a search has finished.")
+
         return self._results_manager.sprint_statistics(
             scoring_functions=self._scoring_functions,
             metric=self._metric
