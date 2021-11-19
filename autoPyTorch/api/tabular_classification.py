@@ -159,6 +159,7 @@ class TabularClassificationTask(BaseTask):
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
+
                 + `epochs`: The training of each pipeline will be terminated after
                     a number of epochs have passed. This number of epochs is determined by the
                     budget argument of this method.
@@ -237,6 +238,15 @@ class TabularClassificationTask(BaseTask):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
+                If True, disable model and prediction output.
+                Can also be used as a list to pass more fine-grained
+                information on what to save. Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization/validation set,
+                    which would later on be used to build an ensemble.
+                + 'pipeline':
+                    do not save any pipeline files
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
