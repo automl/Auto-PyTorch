@@ -735,7 +735,7 @@ class AbstractEvaluator(object):
         self,
         Y_valid_pred: np.ndarray,
         Y_test_pred: np.ndarray,
-    ) -> Tuple[Optional[float], Optional[float]]:
+    ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
         """
         A helper function to calculate the performance estimate of the
         current pipeline in the user provided validation/test set.
@@ -747,29 +747,26 @@ class AbstractEvaluator(object):
             Y_test_pred (np.ndarray):
                 predictions on a test set provided by the user,
                 matching self.y_test
+
         Returns:
-            validation_loss (Optional[float]):
-                The validation loss under the optimization metric
-                stored in self.metric
-            test_loss (Optional[float]]):
-                The test loss under the optimization metric
-                stored in self.metric
+            validation_loss_dict (Optional[Dict[str, float]]):
+                Various validation losses available.
+            test_loss_dict (Optional[Dict[str, float]]):
+                Various test losses available.
         """
 
-        validation_loss: Optional[float] = None
+        validation_loss_dict: Optional[Dict[str, float]] = None
 
         if Y_valid_pred is not None:
             if self.y_valid is not None:
                 validation_loss_dict = self._loss(self.y_valid, Y_valid_pred)
-                validation_loss = validation_loss_dict[self.metric.name]
 
-        test_loss: Optional[float] = None
+        test_loss_dict: Optional[Dict[str, float]] = None
         if Y_test_pred is not None:
             if self.y_test is not None:
                 test_loss_dict = self._loss(self.y_test, Y_test_pred)
-                test_loss = test_loss_dict[self.metric.name]
 
-        return validation_loss, test_loss
+        return validation_loss_dict, test_loss_dict
 
     def file_output(
         self,
