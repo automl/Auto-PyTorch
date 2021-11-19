@@ -4,18 +4,16 @@ from test.test_api.utils import make_dict_run_history_data
 from unittest.mock import MagicMock
 
 import ConfigSpace.hyperparameters as CSH
+from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 import numpy as np
 
 import pytest
 
-from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-
 from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import cost2metric, ResultsManager
-from autoPyTorch.api.results_manager import STATUS2MSG
+from autoPyTorch.api.results_manager import ResultsManager, STATUS2MSG, cost2metric
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
@@ -96,7 +94,7 @@ def _check_metric_dict(metric_dict, status_types):
 
 def test_search_results_sprint_statistics():
     api = BaseTask()
-    for method in ['get_search_results', 'sprint_statistics']:
+    for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
         try:
             getattr(api, method)()
         except RuntimeError:
