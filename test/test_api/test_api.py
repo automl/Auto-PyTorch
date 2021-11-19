@@ -575,6 +575,7 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
         )
 
 
+"""
 @pytest.mark.parametrize('dataset_name', ('iris',))
 @pytest.mark.parametrize('include_traditional', (True, False))
 def test_get_incumbent_results(dataset_name, backend, include_traditional):
@@ -641,6 +642,7 @@ def test_get_incumbent_results(dataset_name, backend, include_traditional):
 
     if not include_traditional:
         assert results['configuration_origin'] != 'traditional'
+"""
 
 
 # TODO: Make faster when https://github.com/automl/Auto-PyTorch/pull/223 is incorporated
