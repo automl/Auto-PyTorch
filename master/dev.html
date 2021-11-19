@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Developer Documentation &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="index.html">Start</a></li>
+                <li><a href="releases.html">Releases</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="manual.html">Manual</a></li>
+                <li><a href="examples/index.html">Examples</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="#">Dev</a></li>
+                <li><a href="extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Developer Documentation</a><ul>
+<li><a class="reference internal" href="#building-individual-models">Building Individual Models</a><ul>
+<li><a class="reference internal" href="#pipeline-of-individual-models">Pipeline of individual models</a></li>
+<li><a class="reference internal" href="#training-of-individual-models">Training of individual models</a></li>
+<li><a class="reference internal" href="#optimization-of-pipeline">Optimization of pipeline</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-the-ensemble-model">Building the ensemble model</a></li>
+<li><a class="reference internal" href="#search-space">Search Space</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <section id="developer-documentation">
+<span id="dev"></span><h1>Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This document summarizes how the AutoPyTorch code works and is meant as a guide for the developers looking to contribute.</p>
+<p>AutoPyTorch relies on the <a class="reference external" href="https://automl.github.io/SMAC3/master/">SMAC</a> library to build individual models.
+Note that SMAC runs an optimization loop that proposes new configurations
+based on Bayesian optimization, which comply with
+the package <a class="reference external" href="https://automl.github.io/ConfigSpace/master/">ConfigSpace</a>.
+Individual models evaluated during the optimization are later ensembled together
+using ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>.</p>
+<p>In other words, there are two main parts of the code:</p>
+<ol class="arabic simple">
+<li><p><cite>AutoMLSMBO</cite>: Interface to SMAC</p></li>
+<li><p><cite>EnsembleBuilder</cite>: Build an ensemble of the individual algorithms found by SMAC at fixed intervals</p></li>
+</ol>
+<p>The ensemble builder and the individual model constructions are both regulated by the <cite>BaseTask</cite>.
+It fundamentally calls the aforementioned task and waits until the time resource is exhausted.</p>
+<p>The following sections provide details regarding these two main blocks of code.</p>
+<section id="building-individual-models">
+<h2>Building Individual Models<a class="headerlink" href="#building-individual-models" title="Permalink to this headline">¶</a></h2>
+<p>AutoPytorch first preprocesses a given dataset and then it starts the training of individual algorithm.
+The preprocessing and training rely on Scikit-Learn <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.
+Each of the individual models fitted by SMAC is (and comply) with Scikit-Learn pipeline and framework.</p>
+<p>The Scikit-learn pipeline inherits from the <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">BaseEstimator</a>,
+which implies that we have to honor the <a class="reference external" href="https://scikit-learn.org/stable/developers/develop.html">Scikit-Learn development Guidelines</a>.
+Particularly, the arguments to the class constructor of any estimator must be defined as attributes of the class
+(see <cite>get_params and set_params</cite> from the above documentation).</p>
+<section id="pipeline-of-individual-models">
+<h3>Pipeline of individual models<a class="headerlink" href="#pipeline-of-individual-models" title="Permalink to this headline">¶</a></h3>
+<p>A pipeline consists of various steps each consisting of either an <cite>autoPyTorchChoice</cite> or an <cite>autoPyTorchComponent</cite> both implemented with <a class="reference external" href="https://scikit-learn.org/stable/developers/develop.html#rolling-your-own-estimator">Scikit-learn Base Estimator Guidelines</a>.</p>
+<p>These steps include:</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/imputation">Imputation</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/encoding">Encoding</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/scaling">Scaling</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/feature_preprocessing">Feature preprocessing</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup">Algorithm setup</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/training">Training</a></p></li>
+</ol>
+<p>In the case of tabular classification/regression,
+the training data is preprocessed using scikit-learn.compose.ColumnTransformer
+on a per-column basis.
+The data preprocessing is dynamically created depending on the dataset properties.
+For example, on a dataset that only contains float-type features,
+no one-hot encoding is needed.
+Additionally, we wrap the ColumnTransformer via TabularColumnTransformer class
+to support torchvision transformation and
+handle column-reordering.
+Note that column-reordering shifts categorical columns to the earlier indices
+and it is activated only if one uses a ColumnTransformer.</p>
+</section>
+<section id="training-of-individual-models">
+<h3>Training of individual models<a class="headerlink" href="#training-of-individual-models" title="Permalink to this headline">¶</a></h3>
+<p>Auto-PyTorch can fit 3 types of pipelines:</p>
+<ol class="arabic simple">
+<li><p>Dummy pipeline: Use sklearn.dummy to construct an estimator that predicts using simple rules such as most frequent class</p></li>
+<li><p>Traditional machine learning pipelines: Use LightGBM, CatBoost, RandomForest, ExtraTrees, K-Nearest-Neighbors, and SupportVectorMachines</p></li>
+<li><p>PyTorch neural networks: Neural architecture search of backbones (feature extraction) and network heads (for the final prediction)</p></li>
+</ol>
+<p>Note that dummy pipeline is used as a baseline to define the worst-performing model that can be fit
+and traditional machine learning pipelines are critical for small-sized datasets.
+A pipeline might also contain additional training components
+like learning rate scheduler, optimizers,
+and data loaders required to perform the neural architecture search.</p>
+<p>After the training (fitting a pipeline), we use pickle to save it
+to disk as stated <a class="reference external" href="https://scikit-learn.org/stable/modules/model_persistence.html">here</a>.</p>
+</section>
+<section id="optimization-of-pipeline">
+<h3>Optimization of pipeline<a class="headerlink" href="#optimization-of-pipeline" title="Permalink to this headline">¶</a></h3>
+<p>To optimize the pipeline, we use SMAC as mentioned earlier.
+Given a configuration, AutoPytorch fits a pipeline and
+finally saves to disc using the function evaluator <cite>ExecuteTaFuncWithQueue</cite>.
+<cite>ExecuteTaFuncWithQueue</cite> is basically a worker that reads a dataset from disc,
+fits a pipeline, and collects the performance result,
+which is communicated back to the main process via a Queue.
+This worker manages resources using <a class="reference external" href="https://github.com/automl/pynisher">Pynisher</a>,
+and it usually does so by creating a new process with a restricted memory
+(<cite>memory_limit</cite> API argument)
+and time constraints (<cite>func_eval_time_limit_secs</cite> API argument).</p>
+<p>To speed up the search, AutoPyTorch and SMAC use
+<a class="reference external" href="https://distributed.dask.org/en/latest/">Dask.distributed</a>
+multiprocessing scheme.
+We only submits jobs to Dask.distributed.Client up to the number of workers,
+and wait for a worker to be available
+before continuing searching for more pipelines.</p>
+<p>At the end of SMAC, the results will be available in the <cite>temporary_directory</cite> provided to the API run,
+in particular inside of the <cite>&lt;temporary_directory&gt;/smac3-output/run_&lt;SEED&gt;/</cite>
+directory.
+One can debug the performance of the individual models using the file <cite>runhistory.json</cite>
+located in the same directory.
+Every individual model will be stored in <cite>&lt;temporary_directory&gt;/.autoPyTorch/runs</cite>.
+In this <cite>runs</cite> directory, we store:</p>
+<ol class="arabic simple">
+<li><p>Fitted model</p></li>
+<li><p>Test predictions of the model</p></li>
+<li><p>Out-Of-Fold predictions (that are used to build an ensemble)</p></li>
+</ol>
+<p>Note that we store a single Voting Classifier/Regressor,
+which is the soft voting outcome of k-Fold cross-validation during cross-validation.</p>
+</section>
+</section>
+<section id="building-the-ensemble-model">
+<h2>Building the ensemble model<a class="headerlink" href="#building-the-ensemble-model" title="Permalink to this headline">¶</a></h2>
+<p>At every SMAC iteration, we submit a callback to create an ensemble
+in the case new models are written to disk.
+If no new models are available, no ensemble selection is triggered.
+We use the Out-Of-Fold predictions to build an ensemble via <cite>EnsembleSelection</cite>.
+This process is also submitted to Dask.
+Every new fitted ensemble is also written to disk,
+where this object is mainly a container that specifies the weights one should use,
+to join individual model predictions.</p>
+</section>
+<section id="search-space">
+<h2>Search Space<a class="headerlink" href="#search-space" title="Permalink to this headline">¶</a></h2>
+<p>We also rely on the
+<a class="reference external" href="https://automl.github.io/ConfigSpace/master/index.html">ConfigSpace package</a>
+to build a configuration space and sample configurations from it.
+In this context, a configuration determines the content of a pipeline.
+For example, the choice of model such as MLP, random forest or
+whether the pipeline has PCA as preprocessing can be elements of a configuration.
+The set of valid configurations is specified by the configuration space.
+The configuration space changes by the dataset characteristics,
+like type of features (categorical, numerical) or
+the target type (classification, regression).</p>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/dev.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

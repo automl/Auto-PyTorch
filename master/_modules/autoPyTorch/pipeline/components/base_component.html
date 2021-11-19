@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>autoPyTorch.pipeline.components.base_component &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../../index.html">Start</a></li>
+                <li><a href="../../../../releases.html">Releases</a></li>
+                <li><a href="../../../../installation.html">Installation</a></li>
+                <li><a href="../../../../manual.html">Manual</a></li>
+                <li><a href="../../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../../api.html">API</a></li>
+                <li><a href="../../../../dev.html">Dev</a></li>
+                <li><a href="../../../../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for autoPyTorch.pipeline.components.base_component</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">pkgutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">ConfigSpace.configuration_space</span> <span class="kn">import</span> <span class="n">Configuration</span><span class="p">,</span> <span class="n">ConfigurationSpace</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="kn">import</span> <span class="n">check_random_state</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.utils.common</span> <span class="kn">import</span> <span class="n">FitRequirement</span><span class="p">,</span> <span class="n">HyperparameterSearchSpace</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdate</span>
+
+
+<span class="k">def</span> <span class="nf">find_components</span><span class="p">(</span>
+    <span class="n">package</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">base_class</span><span class="p">:</span> <span class="n">BaseEstimator</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Utility to find component on a given directory,</span>
+<span class="sd">    that inherit from base_class</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        package (str):</span>
+<span class="sd">            The associated package that contains the components</span>
+<span class="sd">        directory (str):</span>
+<span class="sd">            The directory from which to extract the components</span>
+<span class="sd">        base_class (BaseEstimator):</span>
+<span class="sd">            base class to filter out desired components</span>
+<span class="sd">            that don&#39;t inherit from this class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">components</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">module_loader</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">ispkg</span> <span class="ow">in</span> <span class="n">pkgutil</span><span class="o">.</span><span class="n">iter_modules</span><span class="p">([</span><span class="n">directory</span><span class="p">]):</span>
+        <span class="n">full_module_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">full_module_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ispkg</span><span class="p">:</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">full_module_name</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">member_name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">base_class</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span> <span class="o">!=</span> <span class="n">base_class</span><span class="p">:</span>
+                    <span class="c1"># TODO test if the obj implements the interface</span>
+                    <span class="c1"># Keep in mind that this only instantiates the ensemble_wrapper,</span>
+                    <span class="c1"># but not the real target classifier</span>
+                    <span class="n">classifier</span> <span class="o">=</span> <span class="n">obj</span>
+                    <span class="n">components</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">classifier</span>
+
+    <span class="k">return</span> <span class="n">components</span>
+
+
+<span class="k">class</span> <span class="nc">ThirdPartyComponents</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class allow the user to create a new component for any stage of the pipeline.</span>
+<span class="sd">    Inheriting from the base class of each component does not provide any checks,</span>
+<span class="sd">    to make sure that the hyperparameter space is properly specified.</span>
+
+<span class="sd">    This class ensures the minimum component checking for the configuration</span>
+<span class="sd">    space to work.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        base_class (BaseEstimator):</span>
+<span class="sd">            Component type desired to be created</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_class</span><span class="p">:</span> <span class="n">BaseEstimator</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_class</span> <span class="o">=</span> <span class="n">base_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">BaseEstimator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_class</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="n">classifier</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;add_component works only with a subclass of </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_class</span><span class="p">))</span>
+
+        <span class="n">properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">classifier</span><span class="o">.</span><span class="n">get_properties</span><span class="p">())</span>
+        <span class="n">class_specific_properties</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">get_required_properties</span><span class="p">()</span>
+        <span class="c1"># TODO: Add desired properties when we define them</span>
+        <span class="n">should_be_there</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;shortname&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">class_specific_properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">should_be_there</span> <span class="o">=</span> <span class="n">should_be_there</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">class_specific_properties</span><span class="p">)</span>
+        <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">should_be_there</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Property </span><span class="si">%s</span><span class="s1"> must not be specified for &#39;</span>
+                                 <span class="s1">&#39;algorithm </span><span class="si">%s</span><span class="s1">. Only the following properties &#39;</span>
+                                 <span class="s1">&#39;can be specified: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="nb">property</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">should_be_there</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="n">should_be_there</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">property</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Property </span><span class="si">%s</span><span class="s1"> not specified for algorithm </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="nb">property</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">classifier</span>
+
+
+<div class="viewcode-block" id="autoPyTorchComponent"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent">[docs]</a><span class="k">class</span> <span class="nc">autoPyTorchComponent</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides an abstract interface which can be used to</span>
+<span class="sd">    create steps of a pipeline in AutoPyTorch.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        random_state (Optional[np.random.RandomState]):</span>
+<span class="sd">            Allows to produce reproducible results by setting a</span>
+<span class="sd">            seed for randomized settings</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_required_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">check_random_state</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">check_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_requirements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FitRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cs_updates</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HyperparameterSearchSpaceUpdate</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="autoPyTorchComponent.get_required_properties"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_required_properties">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_required_properties</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get the properties in the component</span>
+<span class="sd">        that are required for the properly fitting the pipeline.</span>
+<span class="sd">        Usually defined in the base class of the component</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]:</span>
+<span class="sd">                list of properties autopytorch component must have for proper functioning of the pipeline</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_required_properties</span></div>
+
+<div class="viewcode-block" id="autoPyTorchComponent.get_fit_requirements"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_fit_requirements">[docs]</a>    <span class="k">def</span> <span class="nf">get_fit_requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">FitRequirement</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get the required keys by the component</span>
+<span class="sd">        that need to be in the fit dictionary</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[FitRequirement]:</span>
+<span class="sd">                a list containing required keys in a named tuple (name: str, type: object)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_requirements</span></div>
+
+    <span class="k">def</span> <span class="nf">add_fit_requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requirements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FitRequirement</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_requirements</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">requirements</span><span class="p">)</span>
+
+<div class="viewcode-block" id="autoPyTorchComponent.get_properties"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_properties">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_properties</span><span class="p">(</span><span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the properties of the underlying algorithm.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_properties (Optional[Dict[str, Union[str, int]]):</span>
+<span class="sd">                Describes the dataset to work on</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]:</span>
+<span class="sd">                Properties of the algorithm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="autoPyTorchComponent.get_hyperparameter_search_space"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.get_hyperparameter_search_space">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_hyperparameter_search_space</span><span class="p">(</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigurationSpace</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the configuration space of this classification algorithm.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_properties (Optional[Dict[str, Union[str, int]]):</span>
+<span class="sd">                Describes the dataset to work on</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ConfigurationSpace:</span>
+<span class="sd">                The configuration space of this algorithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="autoPyTorchComponent.fit"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">y</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;autoPyTorchComponent&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;The fit function calls the fit function of the underlying</span>
+<span class="sd">        model and returns `self`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (Dict[str, Any]):</span>
+<span class="sd">                Dictionary with fitted parameters. It is a message passing</span>
+<span class="sd">                mechanism, in which during a transform, a components adds relevant information</span>
+<span class="sd">                so that further stages can be properly fitted</span>
+<span class="sd">            y (Any):</span>
+<span class="sd">                Not Used -- to comply with API</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self:</span>
+<span class="sd">                returns an instance of self.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Please see the `scikit-learn API documentation</span>
+<span class="sd">            &lt;http://scikit-learn.org/dev/developers/index.html#apis-of-scikit</span>
+<span class="sd">            -learn-objects&gt;`_ for further information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="autoPyTorchComponent.set_hyperparameters"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.set_hyperparameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_hyperparameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">configuration</span><span class="p">:</span> <span class="n">Configuration</span><span class="p">,</span>
+                            <span class="n">init_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+                            <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseEstimator</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies a configuration to the given component.</span>
+<span class="sd">        This method translate a hierarchical configuration key,</span>
+<span class="sd">        to an actual parameter of the autoPyTorch component.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            configuration (Configuration):</span>
+<span class="sd">                Which configuration to apply to the chosen component</span>
+<span class="sd">            init_params (Optional[Dict[str, any]]):</span>
+<span class="sd">                Optional arguments to initialize the chosen component</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An instance of self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">get_dictionary</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot set hyperparameter </span><span class="si">%s</span><span class="s1"> for </span><span class="si">%s</span><span class="s1"> because &#39;</span>
+                                 <span class="s1">&#39;the hyperparameter does not exist.&#39;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">init_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">init_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot set init param </span><span class="si">%s</span><span class="s1"> for </span><span class="si">%s</span><span class="s1"> because &#39;</span>
+                                     <span class="s1">&#39;the init param does not exist.&#39;</span> <span class="o">%</span>
+                                     <span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="autoPyTorchComponent.check_requirements"><a class="viewcode-back" href="../../../../api.html#autoPyTorch.pipeline.components.base_component.autoPyTorchComponent.check_requirements">[docs]</a>    <span class="k">def</span> <span class="nf">check_requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">y</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A mechanism in code to ensure the correctness of the fit dictionary</span>
+<span class="sd">        It recursively makes sure that the children and parent level requirements</span>
+<span class="sd">        are honored before fit.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (Dict[str, Any]):</span>
+<span class="sd">                Dictionary with fitted parameters. It is a message passing</span>
+<span class="sd">                mechanism, in which during a transform, a components adds relevant information</span>
+<span class="sd">                so that further stages can be properly fitted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="nb">dict</span><span class="p">),</span> <span class="s2">&quot;The input X to the pipeline must be a dictionary&quot;</span>
+
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Provided y argument, yet only X is required&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;dataset_properties&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;To fit a pipeline, expected fit dictionary to have a dataset_properties key&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">requirement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_requirements</span><span class="p">:</span>
+            <span class="n">check_dict</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="s1">&#39;dataset_properties&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">dataset_property</span> <span class="k">else</span> <span class="n">X</span>
+            <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">check_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">requirement</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;X_train&#39;</span><span class="p">,</span> <span class="s1">&#39;backend&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;X_train&#39;</span> <span class="ow">in</span> <span class="n">check_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="s1">&#39;backend&#39;</span> <span class="ow">in</span> <span class="n">check_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;To fit </span><span class="si">{}</span><span class="s2">, expected fit dictionary to have &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span>
+                        <span class="s2">&quot; but got </span><span class="se">\n</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                            <span class="n">requirement</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">check_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">TYPE_SUPPORTED</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">check_dict</span><span class="p">[</span><span class="n">requirement</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">requirement</span><span class="o">.</span><span class="n">supported_types</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">TYPE_SUPPORTED</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected </span><span class="si">{}</span><span class="s2"> to be instance of </span><span class="si">{}</span><span class="s2"> got </span><span class="si">{}</span><span class="s2">&quot;</span>
+                                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">requirement</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="n">requirement</span><span class="o">.</span><span class="n">supported_types</span><span class="p">,</span>
+                                            <span class="nb">type</span><span class="p">(</span><span class="n">check_dict</span><span class="p">[</span><span class="n">requirement</span><span class="o">.</span><span class="n">name</span><span class="p">])))</span></div>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Representation of the current Component&quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_properties</span><span class="p">()[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;autoPyTorch.pipeline </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">_apply_search_space_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hyperparameter_search_space_update</span><span class="p">:</span> <span class="n">HyperparameterSearchSpaceUpdate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Allows the user to update a hyperparameter</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str):</span>
+<span class="sd">                name of hyperparameter</span>
+<span class="sd">            new_value_range (List[Union[int, str, float]]):</span>
+<span class="sd">                value range can be either lower, upper or a list of possible candidates</span>
+<span class="sd">            log (bool):</span>
+<span class="sd">                Whether to use log scale</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cs_updates</span><span class="p">[</span><span class="n">hyperparameter_search_space_update</span><span class="o">.</span><span class="n">hyperparameter</span><span class="p">]</span> <span class="o">=</span> <span class="n">hyperparameter_search_space_update</span>
+
+    <span class="k">def</span> <span class="nf">_get_search_space_updates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HyperparameterSearchSpace</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the search space updates</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _ (Dict[str, HyperparameterSearchSpace]):</span>
+<span class="sd">                Mapping of search space updates. Keys don&#39;t contain the prefix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">HyperparameterSearchSpace</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># iterate over all search space updates of this node and keep the ones that have the given prefix</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cs_updates</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cs_updates</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">get_search_space</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>autoPyTorch.pipeline.tabular_classification &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../index.html">Start</a></li>
+                <li><a href="../../../releases.html">Releases</a></li>
+                <li><a href="../../../installation.html">Installation</a></li>
+                <li><a href="../../../manual.html">Manual</a></li>
+                <li><a href="../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../api.html">API</a></li>
+                <li><a href="../../../dev.html">Dev</a></li>
+                <li><a href="../../../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for autoPyTorch.pipeline.tabular_classification</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">ConfigSpace.configuration_space</span> <span class="kn">import</span> <span class="n">Configuration</span><span class="p">,</span> <span class="n">ConfigurationSpace</span>
+<span class="kn">from</span> <span class="nn">ConfigSpace.forbidden</span> <span class="kn">import</span> <span class="n">ForbiddenAndConjunction</span><span class="p">,</span> <span class="n">ForbiddenEqualsClause</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">ClassifierMixin</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.constants</span> <span class="kn">import</span> <span class="n">STRING_TO_TASK_TYPES</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.base_pipeline</span> <span class="kn">import</span> <span class="n">BasePipeline</span><span class="p">,</span> <span class="n">PipelineStepType</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.base_choice</span> <span class="kn">import</span> <span class="n">autoPyTorchChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.base_component</span> <span class="kn">import</span> <span class="n">autoPyTorchComponent</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TabularColumnTransformer</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">EncoderChoice</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FeatureProprocessorChoice</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer</span> <span class="kn">import</span> <span class="n">SimpleImputer</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling</span> <span class="kn">import</span> <span class="n">ScalerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing</span> <span class="kn">import</span> <span class="n">EarlyPreprocessing</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.lr_scheduler</span> <span class="kn">import</span> <span class="n">SchedulerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network.base_network</span> <span class="kn">import</span> <span class="n">NetworkComponent</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_backbone</span> <span class="kn">import</span> <span class="n">NetworkBackboneChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_embedding</span> <span class="kn">import</span> <span class="n">NetworkEmbeddingChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_head</span> <span class="kn">import</span> <span class="n">NetworkHeadChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_initializer</span> <span class="kn">import</span> <span class="n">NetworkInitializerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.optimizer</span> <span class="kn">import</span> <span class="n">OptimizerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.data_loader.feature_data_loader</span> <span class="kn">import</span> <span class="n">FeatureDataLoader</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.trainer</span> <span class="kn">import</span> <span class="n">TrainerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
+
+
+<div class="viewcode-block" id="TabularClassificationPipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline">[docs]</a><span class="k">class</span> <span class="nc">TabularClassificationPipeline</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">BasePipeline</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is a wrapper around `Sklearn Pipeline</span>
+<span class="sd">    &lt;https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html&gt;`_</span>
+<span class="sd">    to integrate autoPyTorch components and choices for</span>
+<span class="sd">    tabular classification tasks.</span>
+
+<span class="sd">    It implements a pipeline, which includes the following as steps:</span>
+
+<span class="sd">    1. `imputer`</span>
+<span class="sd">    2. `encoder`</span>
+<span class="sd">    3. `scaler`</span>
+<span class="sd">    4. `feature_preprocessor`</span>
+<span class="sd">    5. `tabular_transformer`</span>
+<span class="sd">    6. `preprocessing`</span>
+<span class="sd">    7. `network_embedding`</span>
+<span class="sd">    8. `network_backbone`</span>
+<span class="sd">    9. `network_head`</span>
+<span class="sd">    10. `network`</span>
+<span class="sd">    11. `network_init`</span>
+<span class="sd">    12. `optimizer`</span>
+<span class="sd">    13. `lr_scheduler`</span>
+<span class="sd">    14. `data_loader`</span>
+<span class="sd">    15. `trainer`</span>
+
+<span class="sd">    Contrary to the sklearn API it is not possible to enumerate the</span>
+<span class="sd">    possible parameters in the __init__ function because we only know the</span>
+<span class="sd">    available classifiers at runtime. For this reason the user must</span>
+<span class="sd">    specifiy the parameters by passing an instance of</span>
+<span class="sd">    ConfigSpace.configuration_space.Configuration.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (Configuration)</span>
+<span class="sd">            The configuration to evaluate.</span>
+<span class="sd">        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):</span>
+<span class="sd">            The list of `autoPyTorchComponent` or `autoPyTorchChoice`</span>
+<span class="sd">            that build the pipeline. If provided, they won&#39;t be</span>
+<span class="sd">            dynamically produced.</span>
+<span class="sd">        include (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Allows the caller to specify which configurations</span>
+<span class="sd">            to honor during the creation of the configuration space.</span>
+<span class="sd">        exclude (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Allows the caller to specify which configurations</span>
+<span class="sd">            to avoid during the creation of the configuration space.</span>
+<span class="sd">        random_state (np.random.RandomState):</span>
+<span class="sd">            Allows to produce reproducible results by</span>
+<span class="sd">            setting a seed for randomized settings</span>
+<span class="sd">        init_params (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Optional initial settings for the config</span>
+<span class="sd">        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
+<span class="sd">            Search space updates that can be used to modify the search</span>
+<span class="sd">            space of particular components or choice modules of the pipeline</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        steps (List[Tuple[str, PipelineStepType]]):</span>
+<span class="sd">            The steps of the current pipeline. Each step in an AutoPyTorch</span>
+<span class="sd">            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.</span>
+<span class="sd">            Both of these are child classes of sklearn &#39;BaseEstimator&#39; and</span>
+<span class="sd">            they perform operations on and transform the fit dictionary.</span>
+<span class="sd">            For more info, check documentation of &#39;autoPyTorchChoice&#39; or</span>
+<span class="sd">            &#39;autoPyTorchComponent&#39;.</span>
+<span class="sd">        config (Configuration):</span>
+<span class="sd">            A configuration to delimit the current component choice</span>
+<span class="sd">        random_state (Optional[np.random.RandomState]):</span>
+<span class="sd">            Allows to produce reproducible results by setting a</span>
+<span class="sd">            seed for randomized settings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Configuration</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">autoPyTorchComponent</span><span class="p">,</span> <span class="n">autoPyTorchChoice</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">init_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">config</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">,</span> <span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="p">,</span>
+            <span class="n">random_state</span><span class="p">,</span> <span class="n">init_params</span><span class="p">,</span> <span class="n">search_space_updates</span><span class="p">)</span>
+
+        <span class="c1"># Because a pipeline is passed to a worker, we need to honor the random seed</span>
+        <span class="c1"># in this context. A tabular classification pipeline will implement a torch</span>
+        <span class="c1"># model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">get_state</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># Pre-process X</span>
+        <span class="n">loader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;data_loader&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_loader</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;network&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;output_shape&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="c1"># The final layer is always softmax now (`pred` already gives pseudo proba)</span>
+            <span class="k">return</span> <span class="n">pred</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected output_shape to be integer, got </span><span class="si">{}</span><span class="s2">,&quot;</span>
+                             <span class="s2">&quot;Tabular Classification only supports &#39;binary&#39; and &#39;multiclass&#39; outputs&quot;</span>
+                             <span class="s2">&quot;got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;output_shape&#39;</span><span class="p">]),</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;output_type&#39;</span><span class="p">]))</span>
+
+<div class="viewcode-block" id="TabularClassificationPipeline.predict_proba"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.predict_proba">[docs]</a>    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;predict_proba.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (np.ndarray):</span>
+<span class="sd">                Input to the pipeline, from which to guess targets</span>
+<span class="sd">            batch_size (Optional[int]):</span>
+<span class="sd">                Controls whether the pipeline will be called on small chunks</span>
+<span class="sd">                of the data. Useful when calling the predict method on the</span>
+<span class="sd">                whole array X results in a MemoryError.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray:</span>
+<span class="sd">                Probabilities of the target being certain class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;batch_size&#39; must be of type int, &quot;</span>
+                                 <span class="s2">&quot;but is &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">batch_size</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Argument &#39;batch_size&#39; must be positive, &quot;</span>
+                                 <span class="s2">&quot;but is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">batch_size</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Probe for the target array dimensions</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+                <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">target</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                             <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">batch_size</span><span class="p">)))):</span>
+                    <span class="n">batch_from</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">batch_size</span>
+                    <span class="n">batch_to</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                    <span class="n">pred_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">batch_from</span><span class="p">:</span><span class="n">batch_to</span><span class="p">],</span> <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+                    <span class="n">y</span><span class="p">[</span><span class="n">batch_from</span><span class="p">:</span><span class="n">batch_to</span><span class="p">]</span> <span class="o">=</span> <span class="n">pred_prob</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">y</span></div>
+
+<div class="viewcode-block" id="TabularClassificationPipeline.score"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+              <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;accuracy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Scores the fitted estimator on (X, y)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (np.ndarray):</span>
+<span class="sd">                input to the pipeline, from which to guess targets</span>
+<span class="sd">            batch_size (Optional[int]):</span>
+<span class="sd">                batch_size controls whether the pipeline</span>
+<span class="sd">                will be called on small chunks of the data.</span>
+<span class="sd">                Useful when calling the predict method on</span>
+<span class="sd">                the whole array X results in a MemoryError.</span>
+<span class="sd">            y (np.ndarray):</span>
+<span class="sd">                Ground Truth labels</span>
+<span class="sd">            metric_name (str: default = &#39;accuracy&#39;):</span>
+<span class="sd">                 name of the metric to be calculated</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: score based on the metric name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.metrics.utils</span> <span class="kn">import</span> <span class="n">get_metrics</span><span class="p">,</span> <span class="n">calculate_score</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">get_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">,</span> <span class="p">[</span><span class="n">metric_name</span><span class="p">])</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">calculate_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="n">STRING_TO_TASK_TYPES</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;task_type&#39;</span><span class="p">])],</span>
+                                <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)[</span><span class="n">metric_name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">score</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_hyperparameter_search_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                         <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">],</span>
+                                         <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">exclude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigurationSpace</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create the hyperparameter configuration space.</span>
+
+<span class="sd">        For the given steps, and the Choices within that steps,</span>
+<span class="sd">        this procedure returns a configuration space object to</span>
+<span class="sd">        explore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            include (Optional[Dict[str, Any]]):</span>
+<span class="sd">                What hyper-parameter configurations</span>
+<span class="sd">                to honor when creating the configuration space</span>
+<span class="sd">            exclude (Optional[Dict[str, Any]]):</span>
+<span class="sd">                What hyper-parameter configurations</span>
+<span class="sd">                to remove from the configuration space</span>
+<span class="sd">            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):</span>
+<span class="sd">                Characteristics of the dataset to guide the pipeline</span>
+<span class="sd">                choices of components</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            cs (ConfigurationSpace):</span>
+<span class="sd">                The configuration space describing</span>
+<span class="sd">                the TabularClassificationPipeline.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">ConfigurationSpace</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_properties</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;The given dataset_properties argument contains an illegal value.&#39;</span>
+                          <span class="s1">&#39;Proceeding with the default value&#39;</span><span class="p">)</span>
+            <span class="n">dataset_properties</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="s1">&#39;target_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_properties</span><span class="p">:</span>
+            <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tabular_classification&#39;</span>
+        <span class="k">if</span> <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;tabular_classification&#39;</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Tabular classification is being used, however the target_type&#39;</span>
+                          <span class="s1">&#39;is not given as &quot;tabular_classification&quot;. Overriding it.&#39;</span><span class="p">)</span>
+            <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tabular_classification&#39;</span>
+        <span class="c1"># get the base search space given this</span>
+        <span class="c1"># dataset properties. Then overwrite with custom</span>
+        <span class="c1"># classification requirements</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_base_search_space</span><span class="p">(</span>
+            <span class="n">cs</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+
+        <span class="c1"># Here we add custom code, that is used to ensure valid configurations, For example</span>
+        <span class="c1"># Learned Entity Embedding is only valid when encoder is one hot encoder</span>
+        <span class="k">if</span> <span class="s1">&#39;network_embedding&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;encoder&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">choices</span>
+            <span class="k">if</span> <span class="s1">&#39;LearnedEntityEmbedding&#39;</span> <span class="ow">in</span> <span class="n">embeddings</span><span class="p">:</span>
+                <span class="n">encoders</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;encoder:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">choices</span>
+                <span class="n">possible_default_embeddings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">embeddings</span><span class="p">))</span>
+                <span class="k">del</span> <span class="n">possible_default_embeddings</span><span class="p">[</span><span class="n">possible_default_embeddings</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;LearnedEntityEmbedding&#39;</span><span class="p">)]</span>
+
+                <span class="k">for</span> <span class="n">encoder</span> <span class="ow">in</span> <span class="n">encoders</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">encoder</span> <span class="o">==</span> <span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clause</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                                <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span>
+                                    <span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">),</span> <span class="s1">&#39;LearnedEntityEmbedding&#39;</span><span class="p">),</span>
+                                <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;encoder:__choice__&#39;</span><span class="p">),</span> <span class="n">encoder</span><span class="p">)</span>
+                            <span class="p">))</span>
+                            <span class="k">break</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="c1"># change the default and try again</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">default</span> <span class="o">=</span> <span class="n">possible_default_embeddings</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot find a legal default configuration&quot;</span><span class="p">)</span>
+                            <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">default_value</span> <span class="o">=</span> <span class="n">default</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">configuration_space</span> <span class="o">=</span> <span class="n">cs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span> <span class="o">=</span> <span class="n">dataset_properties</span>
+        <span class="k">return</span> <span class="n">cs</span>
+
+    <span class="k">def</span> <span class="nf">_get_pipeline_steps</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PipelineStepType</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines what steps a pipeline should follow.</span>
+<span class="sd">        The step itself has choices given via autoPyTorchChoice.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tuple[str, PipelineStepType]]:</span>
+<span class="sd">                list of steps sequentially exercised by the pipeline.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PipelineStepType</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">default_dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;target_type&#39;</span><span class="p">:</span> <span class="s1">&#39;tabular_classification&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">dataset_properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">default_dataset_properties</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dataset_properties</span><span class="p">)</span>
+
+        <span class="n">steps</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="p">(</span><span class="s2">&quot;imputer&quot;</span><span class="p">,</span> <span class="n">SimpleImputer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="n">EncoderChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;scaler&quot;</span><span class="p">,</span> <span class="n">ScalerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;feature_preprocessor&quot;</span><span class="p">,</span> <span class="n">FeatureProprocessorChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                               <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;tabular_transformer&quot;</span><span class="p">,</span> <span class="n">TabularColumnTransformer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;preprocessing&quot;</span><span class="p">,</span> <span class="n">EarlyPreprocessing</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_embedding&quot;</span><span class="p">,</span> <span class="n">NetworkEmbeddingChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                         <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_backbone&quot;</span><span class="p">,</span> <span class="n">NetworkBackboneChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                       <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_head&quot;</span><span class="p">,</span> <span class="n">NetworkHeadChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                               <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network&quot;</span><span class="p">,</span> <span class="n">NetworkComponent</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_init&quot;</span><span class="p">,</span> <span class="n">NetworkInitializerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                      <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="n">OptimizerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                          <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;lr_scheduler&quot;</span><span class="p">,</span> <span class="n">SchedulerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                             <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;data_loader&quot;</span><span class="p">,</span> <span class="n">FeatureDataLoader</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">TrainerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+        <span class="p">])</span>
+        <span class="k">return</span> <span class="n">steps</span>
+
+<div class="viewcode-block" id="TabularClassificationPipeline.get_pipeline_representation"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline.get_pipeline_representation">[docs]</a>    <span class="k">def</span> <span class="nf">get_pipeline_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a representation of the pipeline, so that it can be</span>
+<span class="sd">        consumed and formatted by the API.</span>
+
+<span class="sd">        It should be a representation that follows:</span>
+<span class="sd">        [{&#39;PreProcessing&#39;: &lt;&gt;, &#39;Estimator&#39;: &lt;&gt;}]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict: contains the pipeline representation in a short format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">preprocessing</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">estimator</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skip_steps</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;lr_scheduler&#39;</span><span class="p">,</span> <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span> <span class="s1">&#39;network_init&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;preprocessing&#39;</span><span class="p">,</span> <span class="s1">&#39;tabular_transformer&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">step_name</span><span class="p">,</span> <span class="n">step_component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">step_name</span> <span class="ow">in</span> <span class="n">skip_steps</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step_component</span><span class="p">,</span> <span class="n">autoPyTorchChoice</span><span class="p">)</span> <span class="ow">and</span> <span class="n">step_component</span><span class="o">.</span><span class="n">choice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">properties</span> <span class="o">=</span> <span class="n">step_component</span><span class="o">.</span><span class="n">choice</span><span class="o">.</span><span class="n">get_properties</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step_component</span><span class="p">,</span> <span class="n">autoPyTorchComponent</span><span class="p">):</span>
+                <span class="n">properties</span> <span class="o">=</span> <span class="n">step_component</span><span class="o">.</span><span class="n">get_properties</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;shortname&#39;</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;network&#39;</span> <span class="ow">in</span> <span class="n">step_name</span><span class="p">:</span>
+                    <span class="n">estimator</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;shortname&#39;</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">preprocessing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;shortname&#39;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;Preprocessing&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">preprocessing</span><span class="p">),</span>
+            <span class="s1">&#39;Estimator&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">estimator</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_estimator_hyperparameter_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the name of the current estimator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: name of the pipeline type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;tabular_classifier&quot;</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
