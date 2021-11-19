@@ -3,15 +3,19 @@ import os
 from test.test_api.utils import make_dict_run_history_data
 from unittest.mock import MagicMock
 
+import pytest
+
 import numpy as np
 
-from ConfigSpace.configuration_space import ConfigurationSpace
+import ConfigSpace.hyperparameters as CSH
+from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 from smac.runhistory.runhistory import StatusType
 
 from autoPyTorch.api.base_task import BaseTask
+from autoPyTorch.api.results_manager import ResultsManager
 from autoPyTorch.api.results_manager import STATUS2MSG
-from autoPyTorch.metrics import accuracy, balanced_accuracy
+from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
 def _check_status(status):
@@ -141,3 +145,53 @@ def test_search_results_sprint_statistics():
 
     assert isinstance(api.sprint_statistics(), str)
     assert all([m1 == m2 for m1, m2 in zip(api.sprint_statistics().split("\n"), msg)])
+
+
+@pytest.mark.parametrize('include_traditional', (True, False))
+@pytest.mark.parametrize('metric', (accuracy, log_loss))
+def test_get_incumbent_results(include_traditional, metric):
+    manager = ResultsManager()
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+
+    try:
+        manager._check_run_history()
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError('The error was not properly catched.')
+
+    T, NT = 'traditional', 'non-traditional'
+    n_configs = 10
+    A = [0.1 * i for i in range(n_configs)]
+    origins = [T, NT] * 5
+    costs = A[:]
+    costs_of_interest = []
+
+    for a, origin, cost in zip(A, origins, costs):
+        config = Configuration(cs, {'a': a})
+        manager.run_history.add(
+            config=config,
+            cost=cost,
+            time=1.0,
+            status=StatusType.SUCCESS,
+            additional_info={'opt_loss': {metric.name: cost},
+                             'configuration_origin': origin}
+        )
+        if include_traditional:
+            costs_of_interest.append(cost)
+        elif origin != T:
+            costs_of_interest.append(cost)
+
+    incumbent_config, incumbent_results = manager.get_incumbent_results(
+        metric=metric,
+        include_traditional=include_traditional
+    )
+    print(metric, incumbent_config, incumbent_results)
+
+    assert isinstance(incumbent_config, Configuration)
+    assert isinstance(incumbent_results, dict)
+    assert incumbent_results['opt_loss'][metric.name] == min(costs_of_interest)
+
+    if not include_traditional:
+        assert incumbent_results['configuration_origin'] != T
