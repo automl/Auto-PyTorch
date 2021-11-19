@@ -46,7 +46,7 @@ def _extract_metrics_info(
     """
 
     if run_value.status not in (StatusType.SUCCESS, StatusType.DONOTADVANCE):
-        # Additional info is not available in this case.
+        # Additional info for metrics is not available in this case.
         return {metric.name: np.nan for metric in scoring_functions}
 
     cost_info = run_value.additional_info['opt_loss']
@@ -73,7 +73,7 @@ class SearchResults:
         self._opt_scores: List[float] = []
         self._fit_times: List[float] = []
         self.configs: List[Configuration] = []
-        self.status: List[str] = []
+        self.status_types: List[str] = []
         self.budgets: List[float] = []
         self.config_ids: List[int] = []
         self.is_traditionals: List[bool] = []
@@ -90,7 +90,7 @@ class SearchResults:
 
     @property
     def fit_times(self) -> np.ndarray:
-        return np.asarray(self._opt_scores)
+        return np.asarray(self._fit_times)
 
     def update(
         self,
@@ -105,7 +105,7 @@ class SearchResults:
         metric_info: Dict[str, float]
     ) -> None:
 
-        self.status.append(status)
+        self.status_types.append(status)
         self.configs.append(config)
         self.budgets.append(budget)
         self.config_ids.append(config_id)
@@ -121,7 +121,7 @@ class SearchResults:
         self._opt_scores = []
         self._fit_times = []
         self.configs = []
-        self.status = []
+        self.status_types = []
         self.budgets = []
         self.config_ids = []
         self.additional_infos = []
@@ -157,7 +157,7 @@ class SearchResults:
                 status=status_msg,
                 config=config,
                 budget=run_key.budget,
-                fit_time=run_value.time,  # To ravin: I added this line since fit_times was untouched.
+                fit_time=run_value.time,
                 score=cost2metric(cost=run_value.cost, metric=self._metric),
                 metric_info=_extract_metrics_info(run_value=run_value, scoring_functions=self._scoring_functions),
                 is_traditional=is_traditional,
@@ -206,7 +206,7 @@ class ResultsManager:
 
         Args:
             metric (autoPyTorchMetric):
-                A metric that is used to fit AutoPytorch.
+                A metric that is evaluated when searching with fit AutoPytorch.
             include_traditional (bool):
                 Whether to include results from tradtional pipelines
 
@@ -250,7 +250,7 @@ class ResultsManager:
             scoring_functions (List[autoPyTorchMetric]):
                 Metrics to show in the results.
             metric (autoPyTorchMetric):
-                A metric that is used to fit AutoPytorch.
+                A metric that is evaluated when searching with fit AutoPytorch.
 
         Returns:
             SearchResults:
@@ -284,7 +284,7 @@ class ResultsManager:
             scoring_functions (List[autoPyTorchMetric]):
                 Metrics to show in the results.
             metric (autoPyTorchMetric):
-                A metric that is used to fit AutoPytorch.
+                A metric that is evaluated when searching with fit AutoPytorch.
 
         Returns:
             (str):
@@ -297,11 +297,11 @@ class ResultsManager:
         sio.write(f"\tDataset name: {dataset_name}\n")
         sio.write(f"\tOptimisation Metric: {metric}\n")
 
-        num_runs = len(search_results.status)
-        num_success = sum([s in success_msgs for s in search_results.status])
-        num_crash = sum([s == STATUS2MSG[StatusType.CRASHED] for s in search_results.status])
-        num_timeout = sum([s == STATUS2MSG[StatusType.TIMEOUT] for s in search_results.status])
-        num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status])
+        num_runs = len(search_results.status_types)
+        num_success = sum([s in success_msgs for s in search_results.status_types])
+        num_crash = sum([s == STATUS2MSG[StatusType.CRASHED] for s in search_results.status_types])
+        num_timeout = sum([s == STATUS2MSG[StatusType.TIMEOUT] for s in search_results.status_types])
+        num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status_types])
 
         if num_success > 0:
             best_score = metric._sign * np.nanmax(metric._sign * search_results.opt_scores)

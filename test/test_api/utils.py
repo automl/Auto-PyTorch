@@ -127,7 +127,7 @@ def make_dict_run_history_data(data):
         run_value = RunValue(
             cost=row[1][0],
             time=row[1][1],
-            status=StatusType.SUCCESS if 'SUCCESS' in row[1][2]['__enum__'] else StatusType.RUNNING,
+            status=getattr(StatusType, row[1][2]['__enum__'].split(".")[-1]),
             starttime=row[1][3],
             endtime=row[1][4],
             additional_info=row[1][5],
