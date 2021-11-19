@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, Sequence, List
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -25,6 +25,74 @@ from autoPyTorch.utils.common import  custom_collate_fn
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
+
+
+class TimeSeriesSampler(SubsetRandomSampler):
+    def __init__(self,
+                 indices: Sequence[int],
+                 seq_lengths: Sequence[int],
+                 num_instances_per_seqs: List[int],
+                 min_start: int = 0,
+                 generator: Optional[torch.Generator] = None) -> None:
+        """
+        A sampler designed for time series sequence. For the sake of efficiency, it will not sample each possible
+        sequences from indices. Instead, it samples 'num_instances_per_seqs' for each sequence. This sampler samples
+        the instances in a Latin-Hypercube likewise way: we divide each sequence in to num_instances_per_seqs interval
+        and  randomly sample one instance from each interval.
+
+        Parameters
+        ----------
+        indices: Sequence[int]
+            The set of all the possible indices that can be sampled from
+        seq_lengths: Sequence[int]
+            lengths of each sequence, applied to unsqueeze indices
+        num_instances_per_seqs: List[int]
+            how many instances are sampled in each sequence
+        min_start: int
+            the how many first instances we want to skip (the first few sequences need to be padded with 0)
+        generator: Optional[torch.Generator]
+            pytorch generator to control the randomness
+        """
+        super(TimeSeriesSampler, self).__init__(indices, generator)
+        if len(seq_lengths) != len(num_instances_per_seqs):
+            raise ValueError(f'the lengths of seq_lengths must equal the lengths of num_instances_per_seqs.'
+                             f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
+        if np.sum(seq_lengths) != len(indices):
+            raise ValueError(f'the sum of sequence length must correspond to the number of indices. '
+                             f'However, they are {np.sum(seq_lengths)} versus {len(indices)}')
+        seq_intervals = []
+        idx_tracker = 0
+        for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
+            idx_end = idx_tracker + seq_length
+            idx_start = idx_tracker + min_start
+            interval = np.linspace(idx_start, idx_end, num_instances + 1, endpoint=True, dtype=np.int)
+            seq_intervals.append(interval)
+        self.seq_lengths = seq_lengths
+        self.num_instances = np.sum(num_instances_per_seqs)
+        self.seq_intervals = seq_intervals
+
+    def __iter__(self):
+        samples = torch.ones(self.num_instances, dtype=torch.int)
+        idx_samples_start = 0
+        idx_seq_tracker = 0
+        for idx_seq, (interval, seq_length) in enumerate(zip(self.seq_intervals, self.seq_lengths)):
+            num_samples = len(interval) - 1
+            idx_samples_end = idx_samples_start + num_samples
+
+            samples_shift = torch.rand(num_samples, generator=self.generator) * (interval[1:] - interval[:-1])
+            samples_seq = torch.floor(samples_shift + interval[:-1]).int() + idx_seq_tracker
+            samples[idx_samples_start: idx_samples_end] = samples_seq
+
+            idx_samples_start = idx_samples_end
+            idx_seq_tracker += seq_length
+
+        return (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
+
+    def __len__(self):
+        return self.num_instances
+
+
+
 
 
 class ExpandTransformTimeSeries(object):
@@ -55,7 +123,7 @@ class SequenceBuilder(object):
     window_size : int, default=1
         sliding window size
     """
-    def __init__(self, sample_interval: int = 1, window_size: int = 1, subseq_length=1):
+    def __init__(self, sample_interval: int = 1, window_size: int = 1, subseq_length=1, padding_value=0.):
         """
         initialization
         Args:
@@ -67,10 +135,23 @@ class SequenceBuilder(object):
         # assuming that subseq_length is 10, e.g., we can only start from -10. sample_interval = -4
         # we will sample the following indices: [-9,-5,-1]
         self.first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
+        self.padding_value = padding_value
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
         sample_indices = np.arange(self.first_indices, 0, step=self.sample_interval)
-        return data[sample_indices]
+        if sample_indices[0] < -1 * len(data):
+            # we need to pad with 0
+            valid_indices = sample_indices[np.where(sample_indices >= -len(data))[0]]
+
+            data_values = data[valid_indices]
+            if data.ndim == 1:
+                padding_vector = np.full([len(sample_indices) - len(valid_indices)], self.padding_value)
+                return np.hstack([padding_vector, data_values])
+            else:
+                padding_vector = np.full([len(sample_indices) - len(valid_indices), data.shape[-1]], self.padding_value)
+                return np.vstack([padding_vector, data_values])
+        else:
+            return data[sample_indices]
 
 
 class TimeSeriesForecastingDataLoader(FeatureDataLoader):
@@ -85,6 +166,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  window_size: int = 1,
                  #sample_interval: int = 1,
                  upper_sequence_length: int = np.iinfo(np.int32).max,
+                 num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1) -> None:
         """
         initialize a dataloader
@@ -94,6 +176,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             sample_interval: sample interval ,its value is the interval of the resolution
             upper_sequence_length: upper limit of sequence length, to avoid a sequence length larger than dataset length
             or specified by the users
+            num_batches_per_epoch: how
             n_prediction_steps: how many stpes to predict in advance
         """
         super().__init__(batch_size=batch_size)
@@ -105,6 +188,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
         #self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.subseq_length = self.window_size
+        self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -132,7 +216,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         assert self.subseq_length < datamanager.seq_length_min, "dataloader's window size must be smaller than the" \
                                                                 "minimal sequence length of the dataset!!"
         # TODO, consider bucket setting
-
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
@@ -160,21 +243,44 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         valid_indices = []
         idx_start = 0
 
+
+
+
+        num_instances_dataset = np.size(train_split)
+        num_instances_train = self.num_batches_per_epoch * self.batch_size
+
+        # get the length of each sequence of training data (after split)
+        # as we already know that the elements in 'train_split' increases consecutively with a certain number of
+        # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
+        #  A new sequence must start from the index 7. We could then split each unique values to represent the length
+        # of each split
+        _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
+        num_instances_per_seqs = np.ceil(num_instances_train / num_instances_dataset * seq_train_length)
+        num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
+        # at least one element of each sequence should be selected
+
+        """
         # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size
         # we need to drop the first part of each sequence
         for seq_idx, seq_length in enumerate(datamanager.sequence_lengths_train):
             idx_end = idx_start + seq_length
-            full_sequence = np.arange(idx_start, idx_end)[self.subseq_length:]
+            #full_sequence = np.random.choice(np.arange(idx_start, idx_end)[self.subseq_length:], 5)
+            #full_sequence = np.arange(idx_start, idx_end)[self.subseq_length:]
+            #full_sequence = np.random.choice(np.arange(idx_start, idx_end)[self.subseq_length:], 5)
+            full_sequence = np.arange(idx_start, idx_end)
             valid_indices.append(full_sequence)
             idx_start = idx_end
 
         valid_indices = np.hstack([valid_idx for valid_idx in valid_indices])
         _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
-
+        """
         # test_indices not required as testsets usually lies on the trail of hte sequence
         #_, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
 
-        self.sampler_train = SubsetRandomSampler(indices=sampler_indices_train)
+        sampler_indices_train = np.arange(num_instances_dataset)
+
+        self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
+                                               num_instances_per_seqs=num_instances_per_seqs)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -257,6 +363,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 # This dataset is used for loading test data in a batched format
                 train_transforms=self.test_transform,
                 val_transforms=self.test_transform,
+                n_prediction_steps=0,
             )
 
         elif isinstance(X, TimeSeriesSequence):
@@ -264,11 +371,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             dataset.update_transform(self.test_transform, train=False)
         else:
             raise ValueError(f"Unsupported type of input X: {type(X)}")
-        if self.n_prediction_steps == 1:
-            # test_seq_indices only indicates where to truncate the current
-            test_seq_indices = [len(dataset) - 1]
-        else:
-            test_seq_indices = np.arange(len(dataset))[-self.n_prediction_steps:]
+
+        # we only consider the last sequence as validation set
+        test_seq_indices = [len(dataset) - 1]
 
         dataset_test = TransformSubset(dataset, indices=test_seq_indices, train=False)
 

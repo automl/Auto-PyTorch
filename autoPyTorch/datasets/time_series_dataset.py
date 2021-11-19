@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import issparse
 
+import torch
 from torch.utils.data.dataset import Dataset, Subset, ConcatDataset
 
 import torchvision.transforms
@@ -120,7 +121,10 @@ class TimeSeriesSequence(Dataset):
         Y = self.Y
         if Y is not None:
             # Y = Y[:index + self.n_prediction_steps]
-            Y = Y[index]
+            #Y = Y[index + 1: index + self.n_prediction_steps + 1]
+            Y = Y[index + 1: index + self.n_prediction_steps + 1]
+
+            Y = torch.from_numpy(Y)
         else:
             Y = None
 
@@ -204,7 +208,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.categorical_columns = self.validator.feature_validator.categorical_columns
 
         self.num_features = self.validator.feature_validator.num_features  # type: int
-        self.num_target = self.validator.target_validator.out_dimensionality  # type: int
+        self.num_target =  self.validator.target_validator.out_dimensionality  # type: int
 
         self.shift_input_data = shift_input_data
 
@@ -247,11 +251,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.y_train_std = [1] * len(self.sequence_lengths_train)
 
         sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(X=X, Y=Y,
-                                                                                     sequence_lengths_train=self.sequence_lengths_train,
-                                                                                     X_test=X_test, Y_test=Y_test,
-                                                                                     sequence_lengths_tests=self.sequence_lengths_tests,
-                                                                                     normalize_y=normalize_y,
-                                                                                     **sequences_kwargs)
+                                                                                      X_test=X_test, Y_test=Y_test,
+                                                                                      normalize_y=normalize_y,
+                                                                                      **sequences_kwargs)
 
         self.normalize_y = normalize_y
 
@@ -276,10 +278,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 self.output_type = "continuous"
 
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
-                self.output_shape = len(np.unique(Y))
+                num_target = len(np.unique(Y))
+                #self.output_shape = len(np.unique(Y))
             else:
                 # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
-                self.output_shape = X.shape[-1] if X.ndim > 1 else 1
+                num_target = X.shape[-1] if X.ndim > 1 else 1
+            self.output_shape = [self.n_prediction_steps, num_target]
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
@@ -321,10 +325,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def make_sequences_datasets(self,
                                 X: np.ndarray,
                                 Y: np.ndarray,
-                                sequence_lengths_train: List[int],
                                 X_test: Optional[np.ndarray] = None,
                                 Y_test: Optional[np.ndarray] = None,
-                                sequence_lengths_tests: Optional[List[int]] = None,
                                 normalize_y: bool = True,
                                 **sequences_kwargs: Optional[Dict]) -> \
             Tuple[List[TimeSeriesSequence], Tuple[List, List], Tuple[List, List]]:
@@ -362,42 +364,54 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_train = 0
         idx_start_test = 0
 
-        X_seq_all = []
-        Y_seq_all = []
-
-        X_test_seq_all = []
-        Y_test_seq_all = []
-
-        for seq_idx, seq_length_train in enumerate(sequence_lengths_train):
+        for seq_idx, seq_length_train in enumerate(self.sequence_lengths_train):
             idx_end_train = idx_start_train + seq_length_train
 
             X_seq = X[idx_start_train: idx_end_train]
-            Y_seq = Y[idx_start_train: idx_end_train]
+            if self.shift_input_data:
+                Y_seq = Y[idx_start_train + seq_idx * self.n_prediction_steps:
+                          idx_end_train + (1 + seq_idx) * self.n_prediction_steps]
+            else:
+                Y_seq = Y[idx_start_train: idx_end_train]
+
 
             if normalize_y:
                 Y_seq_mean = np.mean(Y_seq)
                 Y_seq_std = np.std(Y_seq)
                 Y_seq = (Y_seq - Y_seq_mean) / Y_seq_std
 
-            Y[idx_start_train: idx_end_train] = Y_seq
+            if self.shift_input_data:
+                Y[idx_start_train + seq_idx * self.n_prediction_steps:
+                  idx_end_train + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
+            else:
+                Y[idx_start_train: idx_end_train] = Y_seq
 
             if X_test is not None and Y_test is not None:
-                seq_length_test = sequence_lengths_tests[seq_idx]
+                seq_length_test = self.sequence_lengths_tests[seq_idx]
                 idx_end_test = idx_start_test + seq_length_test
 
                 X_test_seq = X_test[idx_start_test: idx_end_test]
-                Y_test_seq = Y_test[idx_start_test: idx_end_test]
+                if self.shift_input_data:
+                    Y_test_seq = Y[idx_start_test + seq_idx * self.n_prediction_steps:
+                                   idx_end_test + (1 + seq_idx) * self.n_prediction_steps]
+                else:
+                    Y_test_seq = Y_test[idx_start_test: idx_end_test]
+
 
                 if normalize_y:
                     Y_test_seq_mean = np.mean(Y_test_seq)
                     Y_test_seq_std = np.std(Y_test_seq)
                     Y_seq = (Y_seq - Y_test_seq_mean) / Y_test_seq_std
 
-                Y_test[idx_start_test: idx_end_test] = Y_seq
+                if self.shift_input_data:
+                    Y_test[idx_start_test + seq_idx * self.n_prediction_steps:
+                      idx_end_test + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
+                else:
+                    Y_test[idx_start_test: idx_end_test] = Y_seq
+
             else:
                 X_test_seq = None
                 Y_test_seq = None
-
 
             sequence = TimeSeriesSequence(X=X_seq,
                                           Y=Y_seq,
@@ -407,17 +421,19 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sequence_datasets.append(sequence)
             idx_start_train = idx_end_train
 
-            #X_seq_all.append(X_seq)
-            #Y_seq_all.append(Y_seq)
+            #self.sequence_lengths_train[seq_idx] = len(sequence)
 
-            #X_test_seq_all.append(X_test_seq)
-            #Y_test_seq_all.append(Y_test_seq)
-        #train_tensors = (X_seq_all, Y_seq_all)
+            # X_seq_all.append(X_seq)
+            # Y_seq_all.append(Y_seq)
+
+            # X_test_seq_all.append(X_test_seq)
+            # Y_test_seq_all.append(Y_test_seq)
+        # train_tensors = (X_seq_all, Y_seq_all)
         train_tensors = (X, Y)
         if X_test is None or Y_test is None:
             test_tensors = None
         else:
-            #test_tensors = (X_test_seq_all, Y_test_seq_all)
+            # test_tensors = (X_test_seq_all, Y_test_seq_all)
             test_tensors = (X_test, Y_test)
 
         return sequence_datasets, train_tensors, test_tensors
