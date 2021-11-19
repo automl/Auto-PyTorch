@@ -1428,9 +1428,13 @@ class BaseTask:
         """
         Get the interface to obtain the search results easily.
         """
-        results = SearchResults(metric=self._metric, scoring_functions=self._scoring_functions)
-        results.extract_results_from_run_history(run_history=self.run_history)
-        return results
+        if self._scoring_functions is None or self._metric is None:
+            raise RuntimeError("`search_results` is only available after a search has finished.")
+
+        return self._results_manager.get_search_results(
+            metric=self._metric,
+            scoring_functions=self._scoring_functions
+        )
 
     def sprint_statistics(self) -> str:
         """

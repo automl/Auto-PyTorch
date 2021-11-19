@@ -60,7 +60,12 @@ def _extract_metrics_info(
 
 
 class SearchResults:
-    def __init__(self, metric: autoPyTorchMetric, scoring_functions: List[autoPyTorchMetric]):
+    def __init__(
+        self,
+        metric: autoPyTorchMetric,
+        scoring_functions: List[autoPyTorchMetric],
+        run_history: RunHistory
+    ):
         self.metric_dict: Dict[str, List[float]] = {
             metric.name: []
             for metric in scoring_functions
@@ -76,6 +81,8 @@ class SearchResults:
         self.rank_test_scores: np.ndarray = np.array([])
         self._scoring_functions = scoring_functions
         self._metric = metric
+
+        self._extract_results_from_run_history(run_history)
 
     @property
     def opt_scores(self) -> np.ndarray:
@@ -121,7 +128,7 @@ class SearchResults:
         self.is_traditionals = []
         self.rank_test_scores = np.array([])
 
-    def extract_results_from_run_history(self, run_history: RunHistory) -> None:
+    def _extract_results_from_run_history(self, run_history: RunHistory) -> None:
         """
         Extract the information to match this class format.
 
@@ -211,8 +218,7 @@ class ResultsManager:
         """
         self._check_run_history()
 
-        results = SearchResults(metric=metric, scoring_functions=[])
-        results.extract_results_from_run_history(self.run_history)
+        results = SearchResults(metric=metric, scoring_functions=[], run_history=self.run_history)
 
         if not include_traditional:
             non_traditional = ~np.array(results.is_traditionals)
@@ -229,7 +235,7 @@ class ResultsManager:
         assert incumbent_results is not None  # mypy check
         return incumbent_config, incumbent_results
 
-    def _get_search_results(
+    def get_search_results(
         self,
         scoring_functions: List[autoPyTorchMetric],
         metric: autoPyTorchMetric
@@ -251,10 +257,7 @@ class ResultsManager:
                 An instance that contains the results from search
         """
         self._check_run_history()
-
-        results = SearchResults(metric=metric, scoring_functions=scoring_functions)
-        results.extract_results_from_run_history(self.run_history)
-        return results
+        return SearchResults(metric=metric, scoring_functions=scoring_functions, run_history=self.run_history)
 
     def sprint_statistics(
         self,
@@ -287,7 +290,7 @@ class ResultsManager:
             (str):
                 Formatted string with statistics
         """
-        search_results = self._get_search_results(scoring_functions, metric)
+        search_results = self.get_search_results(scoring_functions, metric)
         success_msgs = (STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.DONOTADVANCE])
         sio = io.StringIO()
         sio.write("autoPyTorch results:\n")
