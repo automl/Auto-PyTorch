@@ -578,6 +578,7 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
 @pytest.mark.parametrize('dataset_name', ('iris',))
 @pytest.mark.parametrize('include_traditional', (True, False))
 def test_get_incumbent_results(dataset_name, backend, include_traditional):
+    # TODO: Remove this function completely if possible
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
         name=dataset_name,
