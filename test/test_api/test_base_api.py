@@ -1,7 +1,12 @@
+import json
 import logging
+import os
 import re
 import unittest
+from test.test_api.utils import make_dict_run_history_data
 from unittest.mock import MagicMock
+
+from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
@@ -12,6 +17,7 @@ from smac.tae.serial_runner import SerialRunner
 
 from autoPyTorch.api.base_task import BaseTask, _pipeline_predict
 from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
+from autoPyTorch.metrics import accuracy, balanced_accuracy
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -90,6 +96,42 @@ def test_show_models(fit_dictionary_tabular):
     expected = (r"0\s+|\s+SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing\s+"
                 r"|\s+no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential\s+|\s+1")
     assert re.search(expected, api.show_models()) is not None
+
+
+def test_search_results_sprint_statistics():
+    api = BaseTask()
+    run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                   '.tmp_api/runhistory.json'),
+                                      mode='r'))['data']
+    api._results_manager.run_history = MagicMock()
+    api.run_history.empty = MagicMock(return_value=False)
+    api.run_history.data = make_dict_run_history_data(run_history_data)
+    api._metric = accuracy
+    api.dataset_name = 'iris'
+    api._scoring_functions = [accuracy, balanced_accuracy]
+    api.search_space = MagicMock(spec=ConfigurationSpace)
+    search_results = api.get_search_results()
+
+    # assert that contents of search_results are of expected types
+    assert isinstance(search_results.opt_scores, np.ndarray)
+    assert search_results.opt_scores.dtype is np.dtype(np.float)
+    assert isinstance(search_results.fit_times, np.ndarray)
+    assert search_results.fit_times.dtype is np.dtype(np.float)
+
+    metric_dict = search_results.metric_dict
+    assert isinstance(metric_dict['accuracy'], list)
+    assert metric_dict['accuracy'][0] > 0
+    assert isinstance(metric_dict['balanced_accuracy'], list)
+    assert metric_dict['balanced_accuracy'][0] > 0
+    assert isinstance(search_results.configs, list)
+    assert isinstance(search_results.rank_test_scores, np.ndarray)
+    assert search_results.rank_test_scores.dtype is np.dtype(np.int)
+    assert isinstance(search_results.status, list)
+    assert isinstance(search_results.status[0], str)
+    assert isinstance(search_results.budgets, list)
+    assert isinstance(search_results.budgets[0], float)
+
+    assert isinstance(api.sprint_statistics(), str)
 
 
 def test_set_pipeline_config():
