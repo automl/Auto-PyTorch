@@ -35,8 +35,6 @@ python setup.py install
 
 ## Examples
 
-Code for the [paper](https://arxiv.org/abs/2006.13799) is available under `examples/ensemble`.
-
 In a nutshell:
 
 ```py
@@ -76,6 +74,9 @@ For more examples including customising the search space, parellising the code, 
 $ cd examples/
 ```
 
+
+Code for the [paper](https://arxiv.org/abs/2006.13799) is available under `examples/ensemble` in the [TPAMI.2021.3067763](https://github.com/automl/Auto-PyTorch/tree/TPAMI.2021.3067763`) branch.
+
 ## Contributing
 
 If you want to contribute to Auto-PyTorch, clone the repository and checkout our current development branch
@@ -106,8 +107,8 @@ Please refer to the branch `TPAMI.2021.3067763` to reproduce the paper *Auto-PyT
   title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
   journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year = {2021},
-  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
-  pages = {1-12}
+  note = {also available under https://arxiv.org/abs/2006.13799},
+  pages = {3079 - 3090}
 }
 ```
 
