@@ -3,17 +3,18 @@ import os
 from test.test_api.utils import make_dict_run_history_data
 from unittest.mock import MagicMock
 
-import pytest
+import ConfigSpace.hyperparameters as CSH
 
 import numpy as np
 
-import ConfigSpace.hyperparameters as CSH
+import pytest
+
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
-from smac.runhistory.runhistory import StatusType
+from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import ResultsManager
+from autoPyTorch.api.results_manager import cost2metric, ResultsManager
 from autoPyTorch.api.results_manager import STATUS2MSG
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
@@ -147,12 +148,10 @@ def test_search_results_sprint_statistics():
     assert all([m1 == m2 for m1, m2 in zip(api.sprint_statistics().split("\n"), msg)])
 
 
-@pytest.mark.parametrize('include_traditional', (True, False))
-@pytest.mark.parametrize('metric', (accuracy, log_loss))
-def test_get_incumbent_results(include_traditional, metric):
+@pytest.mark.parametrize('run_history', (None, RunHistory()))
+def test_check_run_history(run_history):
     manager = ResultsManager()
-    cs = ConfigurationSpace()
-    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+    manager.run_history = run_history
 
     try:
         manager._check_run_history()
@@ -161,37 +160,59 @@ def test_get_incumbent_results(include_traditional, metric):
     else:
         raise RuntimeError('The error was not properly catched.')
 
-    T, NT = 'traditional', 'non-traditional'
-    n_configs = 10
-    A = [0.1 * i for i in range(n_configs)]
-    origins = [T, NT] * 5
-    costs = A[:]
-    costs_of_interest = []
 
-    for a, origin, cost in zip(A, origins, costs):
+T, NT = 'traditional', 'non-traditional'
+SCORES = [0.1 * (i + 1) for i in range(10)]
+
+
+@pytest.mark.parametrize('include_traditional', (True, False))
+@pytest.mark.parametrize('metric', (accuracy, log_loss))
+@pytest.mark.parametrize('origins', ([T] * 5 + [NT] * 5, [T, NT] * 5, [NT] * 5 + [T] * 5))
+@pytest.mark.parametrize('scores', (SCORES, SCORES[::-1]))
+def test_get_incumbent_results(include_traditional, metric, origins, scores):
+    manager = ResultsManager()
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+
+    configs = [0.1 * (i + 1) for i in range(len(scores))]
+    if metric.name == "log_loss":
+        # This is to detect mis-computation in reversion
+        metric._optimum = 0.1
+
+    best_cost, best_idx = np.inf, -1
+    for idx, (a, origin, score) in enumerate(zip(configs, origins, scores)):
         config = Configuration(cs, {'a': a})
+
+        # conversion defined in:
+        # autoPyTorch/pipeline/components/training/metrics/utils.py::calculate_loss
+        cost = metric._optimum - metric._sign * score
         manager.run_history.add(
             config=config,
             cost=cost,
             time=1.0,
             status=StatusType.SUCCESS,
-            additional_info={'opt_loss': {metric.name: cost},
+            additional_info={'opt_loss': {metric.name: score},
                              'configuration_origin': origin}
         )
+        if cost > best_cost:
+            continue
+
         if include_traditional:
-            costs_of_interest.append(cost)
+            best_cost, best_idx = cost, idx
         elif origin != T:
-            costs_of_interest.append(cost)
+            best_cost, best_idx = cost, idx
 
     incumbent_config, incumbent_results = manager.get_incumbent_results(
         metric=metric,
         include_traditional=include_traditional
     )
-    print(metric, incumbent_config, incumbent_results)
 
     assert isinstance(incumbent_config, Configuration)
     assert isinstance(incumbent_results, dict)
-    assert incumbent_results['opt_loss'][metric.name] == min(costs_of_interest)
+    best_score, best_a = scores[best_idx], configs[best_idx]
+    assert abs(best_score - cost2metric(best_cost, metric)) < 1e-5
+    assert abs(incumbent_results['opt_loss'][metric.name] - best_score) < 1e-5
+    assert abs(incumbent_config['a'] - best_a) < 1e-5
 
     if not include_traditional:
         assert incumbent_results['configuration_origin'] != T

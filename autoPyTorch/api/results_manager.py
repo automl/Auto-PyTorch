@@ -27,7 +27,15 @@ STATUS2MSG = {
 
 
 def cost2metric(cost: float, metric: autoPyTorchMetric) -> float:
-    return metric._optimum - (metric._sign * cost)
+    """
+    Revert cost metric evaluated in SMAC to the original metric.
+
+    The conversion is defined in:
+        autoPyTorch/pipeline/components/training/metrics/utils.py::calculate_loss
+        cost = metric._optimum - metric._sign * original_metric_value
+        ==> original_metric_value = metric._sign * (metric._optimum - cost)
+    """
+    return metric._sign * (metric._optimum - cost)
 
 
 def _extract_metrics_info(
