@@ -176,6 +176,14 @@ def _check_metric_dict(metric_dict, status_types):
 
 def test_search_results_sprint_statistics():
     api = BaseTask()
+    for method in ['get_search_results', 'sprint_statistics']:
+        try:
+            getattr(api, method)()
+        except RuntimeError:
+            pass
+        else:
+            raise RuntimeError(f'The error was not raised for method {method} properly')
+
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
                                                    '.tmp_api/runhistory_B.json'),
                                       mode='r'))['data']
