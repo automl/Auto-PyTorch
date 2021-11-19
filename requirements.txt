@@ -1,7 +1,7 @@
 setuptools
 Cython==0.29.21
 netifaces==0.10.9
-numpy==1.19.5
+numpy==1.20.0
 pandas==1.2.0
 scipy==1.6.0
 statsmodels==0.12.1
@@ -19,3 +19,4 @@ openml==0.11.0
 lightgbm==3.1.1
 catboost==0.24.4
 pexpect==4.8.0
+IPython
