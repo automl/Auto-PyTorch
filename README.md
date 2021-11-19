@@ -1,14 +1,14 @@
 # Auto-PyTorch
 
-Copyright (C) 2019  [AutoML Group Freiburg](http://www.automl.org/)
+Copyright (C) 2021  [AutoML Groups Freiburg and Hannover](http://www.automl.org/)
 
-This an alpha version of Auto-PyTorch with improved API.
-So far, Auto-PyTorch supports tabular data (classification, regression).
-We plan to enable image data and time-series data.
+While early AutoML frameworks focused on optimizing traditional ML pipelines and their hyperparameters, another trend in AutoML is to focus on neural architecture search. To bring the best of these two worlds together, we developed **Auto-PyTorch**, which jointly and robustly optimizes the network architecture and the training hyperparameters to enable fully automated deep learning (AutoDL).
 
+Auto-PyTorch is mainly developed to support tabular data (classification, regression).
+The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below for bibtex ref).
 
-Find the documentation [here](https://automl.github.io/Auto-PyTorch/development)
-
+***From v0.1.0, AutoPyTorch has been updated to further improve usability, robustness and efficiency by using SMAC as the underlying optimization package as well as changing the code structure. Therefore, moving from v0.0.2 to v0.1.0 will break compatibility. 
+In case you would like to use the old API, you can find it at [`master_old`](https://github.com/automl/Auto-PyTorch/tree/master-old).***
 
 ## Installation
 
@@ -31,6 +31,49 @@ conda install swig
 cat requirements.txt | xargs -n 1 -L 1 pip install
 python setup.py install
 
+```
+
+## Examples
+
+Code for the [paper](https://arxiv.org/abs/2006.13799) is available under `examples/ensemble`.
+
+In a nutshell:
+
+```py
+from autoPyTorch.api.tabular_classification import TabularClassificationTask
+
+# data and metric imports
+import sklearn.model_selection
+import sklearn.datasets
+import sklearn.metrics
+X, y = sklearn.datasets.load_digits(return_X_y=True)
+X_train, X_test, y_train, y_test = \
+        sklearn.model_selection.train_test_split(X, y, random_state=1)
+
+# initialise Auto-PyTorch api
+api = TabularClassificationTask()
+
+# Search for an ensemble of machine learning algorithms
+api.search(
+    X_train=X_train,
+    y_train=y_train,
+    X_test=X_test.copy(),
+    y_test=y_test.copy(),
+    optimize_metric='accuracy',
+    total_walltime_limit=300,
+    func_eval_time_limit_secs=50
+)
+
+# Calculate test accuracy
+y_pred = api.predict(X_test)
+score = api.score(y_pred, y_test)
+print("Accuracy score", score)
+```
+
+For more examples including customising the search space, parellising the code, etc, checkout the `examples` folder
+
+```sh
+$ cd examples/
 ```
 
 ## Contributing

@@ -23,7 +23,7 @@ setuptools.setup(
     name="autoPyTorch",
     version="0.1.0",
     author="AutoML Freiburg",
-    author_email="zimmerl@informatik.uni-freiburg.de",
+    author_email="eddiebergmanhs@gmail.com",
     description=("Auto-PyTorch searches neural architectures using smac"),
     long_description=long_description,
     url="https://github.com/automl/Auto-PyTorch",
