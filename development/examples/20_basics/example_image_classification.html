@@ -30332,21 +30332,23 @@ Pipeline Random Config:
  ________________________________________
 Configuration:
   image_augmenter:GaussianBlur:use_augmenter, Value: False
-  image_augmenter:GaussianNoise:sigma_offset, Value: 2.9187627000740353
-  image_augmenter:GaussianNoise:use_augmenter, Value: True
-  image_augmenter:RandomAffine:use_augmenter, Value: False
-  image_augmenter:RandomCutout:p, Value: 0.9740940106250766
-  image_augmenter:RandomCutout:use_augmenter, Value: True
+  image_augmenter:GaussianNoise:use_augmenter, Value: False
+  image_augmenter:RandomAffine:rotate, Value: 39
+  image_augmenter:RandomAffine:scale_offset, Value: 0.37420105043067436
+  image_augmenter:RandomAffine:shear, Value: 20
+  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.20635900393110546
+  image_augmenter:RandomAffine:use_augmenter, Value: True
+  image_augmenter:RandomCutout:use_augmenter, Value: False
   image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.3379048205724533
-  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.2513656933857603
+  normalizer:__choice__, Value: &#39;ImageNormalizer&#39;
 
 Fitting the pipeline...
 ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        NoNormalizer
+        ImageNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -30411,7 +30413,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.728 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.965 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
