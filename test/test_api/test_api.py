@@ -3,7 +3,7 @@ import os
 import pathlib
 import pickle
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function, dummy_traditional_classification
+from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import Configuration
@@ -25,12 +25,10 @@ from smac.runhistory.runhistory import RunHistory
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
-from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
@@ -573,73 +571,6 @@ def test_portfolio_selection_failure(openml_id, backend, n_samples):
             enable_traditional_pipeline=False,
             portfolio_selection="random_path_to_test.json"
         )
-
-
-@pytest.mark.parametrize('dataset_name', ('iris',))
-@pytest.mark.parametrize('include_traditional', (True, False))
-def test_get_incumbent_results(dataset_name, backend, include_traditional):
-    # Get the data and check that contents of data-manager make sense
-    X, y = sklearn.datasets.fetch_openml(
-        name=dataset_name,
-        return_X_y=True, as_frame=True
-    )
-
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, random_state=1)
-
-    # Search for a good configuration
-    estimator = TabularClassificationTask(
-        backend=backend,
-        resampling_strategy=HoldoutValTypes.holdout_validation,
-    )
-
-    InputValidator = TabularInputValidator(
-        is_classification=True,
-    )
-
-    # Fit a input validator to check the provided data
-    # Also, an encoder is fit to both train and test data,
-    # to prevent unseen categories during inference
-    InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
-
-    dataset = TabularDataset(
-        X=X_train, Y=y_train,
-        X_test=X_test, Y_test=y_test,
-        validator=InputValidator,
-        resampling_strategy=estimator.resampling_strategy,
-        resampling_strategy_args=estimator.resampling_strategy_args,
-    )
-
-    pipeline_run_history = RunHistory()
-    pipeline_run_history.load_json(os.path.join(os.path.dirname(__file__), '.tmp_api/runhistory.json'),
-                                   estimator.get_search_space(dataset))
-
-    estimator._do_dummy_prediction = unittest.mock.MagicMock()
-
-    with unittest.mock.patch.object(AutoMLSMBO, 'run_smbo') as AutoMLSMBOMock:
-        with unittest.mock.patch.object(TabularClassificationTask, '_do_traditional_prediction',
-                                        new=dummy_traditional_classification):
-            AutoMLSMBOMock.return_value = (pipeline_run_history, {}, 'epochs')
-            estimator.search(
-                X_train=X_train, y_train=y_train,
-                X_test=X_test, y_test=y_test,
-                optimize_metric='accuracy',
-                total_walltime_limit=150,
-                func_eval_time_limit_secs=50,
-                enable_traditional_pipeline=True,
-                load_models=False,
-            )
-    config, results = estimator.get_incumbent_results(include_traditional=include_traditional)
-    assert isinstance(config, Configuration)
-    assert isinstance(results, dict)
-
-    run_history_data = estimator.run_history.data
-    costs = [run_value.cost for run_key, run_value in run_history_data.items() if run_value.additional_info is not None
-             and (run_value.additional_info['configuration_origin'] != 'traditional' or include_traditional)]
-    assert results['opt_loss']['accuracy'] == min(costs)
-
-    if not include_traditional:
-        assert results['configuration_origin'] != 'traditional'
 
 
 # TODO: Make faster when https://github.com/automl/Auto-PyTorch/pull/223 is incorporated

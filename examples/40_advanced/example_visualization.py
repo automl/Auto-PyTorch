@@ -113,7 +113,7 @@ for run_key, run_value in estimator.run_history.data.items():
         ),
         'single_best_optimization_accuracy': accuracy._optimum - run_value.cost,
         'single_best_test_accuracy': np.nan if run_value.additional_info is None else
-        accuracy._optimum - run_value.additional_info['test_loss'],
+        accuracy._optimum - run_value.additional_info['test_loss']['accuracy'],
     })
 individual_performance_frame = pd.DataFrame(individual_performances)
 
