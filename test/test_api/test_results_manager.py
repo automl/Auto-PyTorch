@@ -13,7 +13,7 @@ import pytest
 from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import ResultsManager, STATUS2MSG, cost2metric
+from autoPyTorch.api.results_manager import ResultsManager, SearchResults, STATUS2MSG, cost2metric
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
@@ -90,6 +90,23 @@ def _check_metric_dict(metric_dict, status_types):
         # True and False / False and True must be fulfilled
         assert all([(s == STATUS2MSG[StatusType.SUCCESS]) ^ isnan
                     for s, isnan in zip(status_types, np.isnan(vals))])
+
+
+def test_extract_results_from_run_history():
+    # test the raise error for the `status_msg is None`
+    run_history = RunHistory()
+    cs = ConfigurationSpace()
+    config = Configuration(cs, {})
+    run_history.add(
+        config=config,
+        cost=0.0,
+        time=1.0,
+        status=StatusType.CAPPED,
+    )
+    with pytest.raises(ValueError) as excinfo:
+        SearchResults(metric=accuracy, scoring_functions=[], run_history=run_history)
+
+        assert excinfo._excinfo[0] == ValueError
 
 
 def test_search_results_sprint_statistics():
