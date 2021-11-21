@@ -94,11 +94,13 @@ if __name__ == '__main__':
     ############################################################################
     # Print the final ensemble performance
     # ====================================
-    print(api.run_history, api.trajectory)
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
     print(api.show_models())
+
+    # Print statistics from search
+    print(api.sprint_statistics())
 
     ############################################################################
     # Build and fit a classifier with exclude components
@@ -125,8 +127,10 @@ if __name__ == '__main__':
     ############################################################################
     # Print the final ensemble performance
     # ====================================
-    print(api.run_history, api.trajectory)
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
     print(api.show_models())
+
+    # Print statistics from search
+    print(api.sprint_statistics())

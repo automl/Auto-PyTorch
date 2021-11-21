@@ -255,6 +255,12 @@ uses default</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_results">
+<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.api.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the interface to obtain the search results easily.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_space">
 <span class="sig-name descname"><span class="pre">get_search_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigSpace.configuration_space.ConfigurationSpace</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_space" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current search space as ConfigurationSpace object.</p>
@@ -480,6 +486,29 @@ configuration.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.sprint_statistics">
+<span class="sig-name descname"><span class="pre">sprint_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.sprint_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints statistics about the SMAC search.</p>
+<p>These statistics include:</p>
+<ol class="arabic simple">
+<li><p>Optimisation Metric</p></li>
+<li><p>Best Optimisation score achieved by individual pipelines</p></li>
+<li><p>Total number of target algorithm runs</p></li>
+<li><p>Total number of successful target algorithm runs</p></li>
+<li><p>Total number of crashed target algorithm runs</p></li>
+<li><p>Total number of target algorithm runs that exceeded the time limit</p></li>
+<li><p>Total number of successful target algorithm runs that exceeded the memory limit</p></li>
+</ol>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(str):</dt><dd><p>Formatted string with statistics</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -600,6 +629,12 @@ uses default</p>
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.get_pipeline_options">
 <span class="sig-name descname"><span class="pre">get_pipeline_options</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_pipeline_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current pipeline configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_results">
+<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.api.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the interface to obtain the search results easily.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -822,6 +857,29 @@ configuration.</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><dl class="simple">
 <dt>str:</dt><dd><p>Markdown table of models.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.sprint_statistics">
+<span class="sig-name descname"><span class="pre">sprint_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.sprint_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints statistics about the SMAC search.</p>
+<p>These statistics include:</p>
+<ol class="arabic simple">
+<li><p>Optimisation Metric</p></li>
+<li><p>Best Optimisation score achieved by individual pipelines</p></li>
+<li><p>Total number of target algorithm runs</p></li>
+<li><p>Total number of successful target algorithm runs</p></li>
+<li><p>Total number of crashed target algorithm runs</p></li>
+<li><p>Total number of target algorithm runs that exceeded the time limit</p></li>
+<li><p>Total number of successful target algorithm runs that exceeded the memory limit</p></li>
+</ol>
+<dl class="simple">
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>(str):</dt><dd><p>Formatted string with statistics</p>
 </dd>
 </dl>
 </dd>
