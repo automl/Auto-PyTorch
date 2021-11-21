@@ -846,11 +846,16 @@ class BaseTask:
                 information on what to save. Allowed elements in the list are:
 
                 + `y_optimization`:
-                    do not save the predictions for the optimization/validation set,
+                    do not save the predictions for the optimization set,
                     which would later on be used to build an ensemble. Note that SMAC
-                    optimizes a metric evaluated on the optimization (i.e. validation) set.
-                + 'pipeline':
-                    do not save any pipeline files
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
