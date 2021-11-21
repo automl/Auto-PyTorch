@@ -95,12 +95,10 @@ def _check_metric_dict(metric_dict, status_types):
 def test_search_results_sprint_statistics():
     api = BaseTask()
     for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
-        try:
+        with pytest.raises(RuntimeError) as excinfo:
             getattr(api, method)()
-        except RuntimeError:
-            pass
-        else:
-            raise RuntimeError(f'The error was not raised for method {method} properly')
+
+        assert excinfo._excinfo[0] == RuntimeError
 
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
                                                    '.tmp_api/runhistory_B.json'),
@@ -151,12 +149,10 @@ def test_check_run_history(run_history):
     manager = ResultsManager()
     manager.run_history = run_history
 
-    try:
+    with pytest.raises(RuntimeError) as excinfo:
         manager._check_run_history()
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError('The error was not properly catched.')
+
+    assert excinfo._excinfo[0] == RuntimeError
 
 
 T, NT = 'traditional', 'non-traditional'
@@ -208,9 +204,12 @@ def test_get_incumbent_results(include_traditional, metric, origins, scores):
     assert isinstance(incumbent_config, Configuration)
     assert isinstance(incumbent_results, dict)
     best_score, best_a = scores[best_idx], configs[best_idx]
-    assert abs(best_score - cost2metric(best_cost, metric)) < 1e-5
-    assert abs(incumbent_results['opt_loss'][metric.name] - best_score) < 1e-5
-    assert abs(incumbent_config['a'] - best_a) < 1e-5
+    assert np.allclose(
+        [best_score, best_score, best_a],
+        [cost2metric(best_cost, metric),
+         incumbent_results['opt_loss'][metric.name],
+         incumbent_config['a']]
+    )
 
     if not include_traditional:
         assert incumbent_results['configuration_origin'] != T
