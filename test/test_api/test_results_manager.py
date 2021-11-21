@@ -13,7 +13,7 @@ import pytest
 from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import ResultsManager, SearchResults, STATUS2MSG, cost2metric
+from autoPyTorch.api.results_manager import ResultsManager, STATUS2MSG, SearchResults, cost2metric
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
