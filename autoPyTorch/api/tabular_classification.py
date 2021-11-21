@@ -244,7 +244,8 @@ class TabularClassificationTask(BaseTask):
 
                 + `y_optimization`:
                     do not save the predictions for the optimization/validation set,
-                    which would later on be used to build an ensemble.
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization (i.e. validation) set.
                 + 'pipeline':
                     do not save any pipeline files
             load_models (bool: default=True):
