@@ -52,7 +52,7 @@ with AutoPyTorch using the greedy portfolio
     | 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     | 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: c92a44fa-4ba0-11ec-870d-13e6b1aae6bc
+            Dataset name: 36e8338e-4bc0-11ec-870e-7746ea156edb
             Optimisation Metric: accuracy
             Best validation score: 0.8771929824561403
             Number of target algorithm runs: 34
@@ -140,7 +140,7 @@ with AutoPyTorch using the greedy portfolio
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  30.296 seconds)
+   **Total running time of the script:** ( 5 minutes  32.000 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_run_with_portfolio.py:

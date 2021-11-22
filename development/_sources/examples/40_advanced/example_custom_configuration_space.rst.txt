@@ -57,7 +57,7 @@ the search. Currently, there are two changes that can be made to the space:-
     |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: c6d94f6c-4ba2-11ec-870d-13e6b1aae6bc
+            Dataset name: 4064d3b1-4bc2-11ec-870e-7746ea156edb
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
             Number of target algorithm runs: 17
@@ -66,25 +66,27 @@ the search. Currently, there are two changes that can be made to the space:-
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
-    {'accuracy': 0.8728323699421965}
+    {'accuracy': 0.861271676300578}
     |    | Preprocessing                                                 | Estimator                                                       |   Weight |
     |---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | None                                                          | RFLearner                                                       |     0.34 |
-    |  1 | None                                                          | ETLearner                                                       |     0.26 |
-    |  2 | None                                                          | LGBMLearner                                                     |     0.2  |
-    |  3 | None                                                          | KNNLearner                                                      |     0.08 |
-    |  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  5 | None                                                          | SVMLearner                                                      |     0.04 |
-    |  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  0 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.26 |
+    |  1 | None                                                          | KNNLearner                                                      |     0.14 |
+    |  2 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+    |  3 | None                                                          | RFLearner                                                       |     0.1  |
+    |  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+    |  5 | None                                                          | ETLearner                                                       |     0.08 |
+    |  6 | None                                                          | SVMLearner                                                      |     0.08 |
+    |  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+    |  8 | None                                                          | LGBMLearner                                                     |     0.04 |
     autoPyTorch results:
-            Dataset name: 306ecee6-4ba3-11ec-870d-13e6b1aae6bc
+            Dataset name: ad6f4912-4bc2-11ec-870e-7746ea156edb
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
             Number of target algorithm runs: 20
-            Number of successful target algorithm runs: 13
+            Number of successful target algorithm runs: 14
             Number of crashed target algorithm runs: 5
             Number of target algorithms that exceeded the time limit: 1
-            Number of target algorithms that exceeded the memory limit: 1
+            Number of target algorithms that exceeded the memory limit: 0
 
 
 
@@ -218,7 +220,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  55.214 seconds)
+   **Total running time of the script:** ( 5 minutes  59.297 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:
