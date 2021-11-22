@@ -6,7 +6,7 @@ While early AutoML frameworks focused on optimizing traditional ML pipelines and
 
 Auto-PyTorch is mainly developed to support tabular data (classification, regression).
 The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below for bibtex ref).
-Also, find the documentation [here](https://automl.github.io/Auto-PyTorch/development).
+Also, find the documentation [here](https://automl.github.io/Auto-PyTorch/master).
 
 ***From v0.1.0, AutoPyTorch has been updated to further improve usability, robustness and efficiency by using SMAC as the underlying optimization package as well as changing the code structure. Therefore, moving from v0.0.2 to v0.1.0 will break compatibility. 
 In case you would like to use the old API, you can find it at [`master_old`](https://github.com/automl/Auto-PyTorch/tree/master-old).***
