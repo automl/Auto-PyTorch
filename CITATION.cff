@@ -1,0 +1,19 @@
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Zimmer"
+    given-names: "Lucas"
+    affiliation: "University of Freiburg, Germany"    
+  - family-names: "Lindauer"
+    given-names: "Marius"
+    affiliation: "University of Freiburg, Germany"    
+  - family-names: "Hutter"
+    given-names: "Frank"
+    affiliation: "University of Freiburg, Germany"
+  doi: "10.1109/TPAMI.2021.3067763"
+  journal-title: "IEEE Transactions on Pattern Analysis and Machine Intelligence"
+  title: "Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"
+  year: 2021
+  note: "also available under https://arxiv.org/abs/2006.13799"
+  start: 3079
+  end: 3090
