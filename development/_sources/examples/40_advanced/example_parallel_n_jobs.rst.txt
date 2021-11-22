@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fdb0f882b50> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f5b8789c490> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -68,7 +68,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014412403106689453, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001440286636352539, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 142
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:PowerTransformer:standardize, Value: True
@@ -104,7 +104,7 @@ with AutoPyTorch
       trainer:MixUpTrainer:alpha, Value: 0.13179357367568267
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=1, ta_time_used=4.820499897003174, wallclock_time=5.998666286468506, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=5.004559516906738, wallclock_time=6.179516315460205, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -136,7 +136,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=2, ta_time_used=10.508300304412842, wallclock_time=6.852275848388672, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=2, ta_time_used=10.349637746810913, wallclock_time=6.549610614776611, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:PowerTransformer:standardize, Value: False
@@ -168,61 +168,66 @@ with AutoPyTorch
       trainer:MixUpTrainer:alpha, Value: 0.9660122415558304
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=6, ta_time_used=30.924509048461914, wallclock_time=29.76649260520935, budget=5.555555555555555), TrajEntry(train_perf=0.1286549707602339, incumbent_id=4, incumbent=Configuration:
-      data_loader:batch_size, Value: 268
+    , ta_runs=6, ta_time_used=30.700660943984985, wallclock_time=28.790034294128418, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=4, incumbent=Configuration:
+      data_loader:batch_size, Value: 44
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
       feature_preprocessor:__choice__, Value: 'TruncatedSVD'
       imputer:categorical_strategy, Value: 'constant_!missing!'
-      imputer:numerical_strategy, Value: 'mean'
-      lr_scheduler:CosineAnnealingLR:T_max, Value: 290
-      lr_scheduler:__choice__, Value: 'CosineAnnealingLR'
-      network_backbone:MLPBackbone:activation, Value: 'tanh'
-      network_backbone:MLPBackbone:num_groups, Value: 9
-      network_backbone:MLPBackbone:num_units_1, Value: 854
-      network_backbone:MLPBackbone:num_units_2, Value: 409
-      network_backbone:MLPBackbone:num_units_3, Value: 904
-      network_backbone:MLPBackbone:num_units_4, Value: 89
-      network_backbone:MLPBackbone:num_units_5, Value: 875
-      network_backbone:MLPBackbone:num_units_6, Value: 352
-      network_backbone:MLPBackbone:num_units_7, Value: 687
-      network_backbone:MLPBackbone:num_units_8, Value: 863
-      network_backbone:MLPBackbone:num_units_9, Value: 422
-      network_backbone:MLPBackbone:use_dropout, Value: False
-      network_backbone:__choice__, Value: 'MLPBackbone'
+      imputer:numerical_strategy, Value: 'most_frequent'
+      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.38994383134106064
+      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
+      lr_scheduler:ReduceLROnPlateau:patience, Value: 19
+      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
+      network_backbone:ShapedMLPBackbone:activation, Value: 'sigmoid'
+      network_backbone:ShapedMLPBackbone:max_dropout, Value: 0.07068347545677278
+      network_backbone:ShapedMLPBackbone:max_units, Value: 429
+      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'hexagon'
+      network_backbone:ShapedMLPBackbone:num_groups, Value: 1
+      network_backbone:ShapedMLPBackbone:output_dim, Value: 935
+      network_backbone:ShapedMLPBackbone:use_dropout, Value: True
+      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
       network_embedding:__choice__, Value: 'NoEmbedding'
       network_head:__choice__, Value: 'fully_connected'
       network_head:fully_connected:activation, Value: 'relu'
       network_head:fully_connected:num_layers, Value: 2
-      network_head:fully_connected:units_layer_1, Value: 229
-      network_init:KaimingInit:bias_strategy, Value: 'Zero'
-      network_init:__choice__, Value: 'KaimingInit'
-      optimizer:AdamOptimizer:beta1, Value: 0.8670243442016202
-      optimizer:AdamOptimizer:beta2, Value: 0.9877701057476191
-      optimizer:AdamOptimizer:lr, Value: 0.0005235907018237285
-      optimizer:AdamOptimizer:weight_decay, Value: 0.061106742612507106
-      optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:Normalizer:norm, Value: 'mean_abs'
-      scaler:__choice__, Value: 'Normalizer'
+      network_head:fully_connected:units_layer_1, Value: 299
+      network_init:XavierInit:bias_strategy, Value: 'Zero'
+      network_init:__choice__, Value: 'XavierInit'
+      optimizer:RMSpropOptimizer:alpha, Value: 0.9620648962707182
+      optimizer:RMSpropOptimizer:lr, Value: 0.00019982558002337654
+      optimizer:RMSpropOptimizer:momentum, Value: 0.4295990604422711
+      optimizer:RMSpropOptimizer:weight_decay, Value: 0.0024043931894195073
+      optimizer:__choice__, Value: 'RMSpropOptimizer'
+      scaler:__choice__, Value: 'MinMaxScaler'
       trainer:StandardTrainer:weighted_loss, Value: False
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=25, ta_time_used=212.33809208869934, wallclock_time=158.07232451438904, budget=50.0)]
-    {'accuracy': 0.861271676300578}
+    , ta_runs=25, ta_time_used=266.3682427406311, wallclock_time=169.28211450576782, budget=50.0)]
+    {'accuracy': 0.8728323699421965}
     |    | Preprocessing                                                     | Estimator                                                          |   Weight |
     |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,NoScaler,Nystroem                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.22 |
-    |  1 | SimpleImputer,OneHotEncoder,NoScaler,Nystroem                     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.16 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.14 |
-    |  3 | SimpleImputer,OneHotEncoder,MinMaxScaler,KernelPCA                | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.08 |
-    |  5 | None                                                              | RFLearner                                                          |     0.08 |
-    |  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing   | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.06 |
-    |  7 | None                                                              | CBLearner                                                          |     0.04 |
-    |  8 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
-    |  9 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-    | 10 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    | 11 | None                                                              | ETLearner                                                          |     0.02 |
-    | 12 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    |  0 | SimpleImputer,NoEncoder,Normalizer,TruncSVD                       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
+    |  1 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.1  |
+    |  3 | SimpleImputer,OneHotEncoder,Normalizer,Nystroem                   | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.08 |
+    |  4 | None                                                              | CBLearner                                                          |     0.08 |
+    |  5 | SimpleImputer,NoEncoder,NoScaler,PowerTransformer                 | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
+    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
+    |  7 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+    |  8 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.04 |
+    |  9 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
+    | 10 | None                                                              | RFLearner                                                          |     0.04 |
+    | 11 | None                                                              | ETLearner                                                          |     0.04 |
+    | 12 | None                                                              | KNNLearner                                                         |     0.04 |
+    | 13 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
+    | 14 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    | 15 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    | 16 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+    | 17 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.02 |
+    | 18 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    | 19 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer               | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    | 20 | None                                                              | SVMLearner                                                         |     0.02 |
+    | 21 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 
 
 
@@ -297,7 +302,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  31.351 seconds)
+   **Total running time of the script:** ( 5 minutes  52.256 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
