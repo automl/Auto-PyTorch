@@ -107,7 +107,16 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Tabular Classification with Custom Configuration Space</a></li>
+<li><a class="reference internal" href="#">Tabular Classification with Custom Configuration Space</a><ul>
+<li><a class="reference internal" href="#data-loading">Data Loading</a></li>
+<li><a class="reference internal" href="#build-and-fit-a-classifier-with-include-components">Build and fit a classifier with include components</a></li>
+<li><a class="reference internal" href="#search-for-an-ensemble-of-machine-learning-algorithms">Search for an ensemble of machine learning algorithms</a></li>
+<li><a class="reference internal" href="#print-the-final-ensemble-performance">Print the final ensemble performance</a></li>
+<li><a class="reference internal" href="#build-and-fit-a-classifier-with-exclude-components">Build and fit a classifier with exclude components</a></li>
+<li><a class="reference internal" href="#id1">Search for an ensemble of machine learning algorithms</a></li>
+<li><a class="reference internal" href="#id2">Print the final ensemble performance</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -122,11 +131,11 @@ to download the full example code or to run this example in your browser via Bin
 <section class="sphx-glr-example-title" id="tabular-classification-with-custom-configuration-space">
 <span id="sphx-glr-examples-40-advanced-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how adjust the configuration space of
-the search. Currently, there are two changes that can be made to the space:-
-1. Adjust individual hyperparameters in the pipeline
-2. Include or exclude components:</p>
-<blockquote>
-<div><ol class="loweralpha simple">
+the search. Currently, there are two changes that can be made to the space:-</p>
+<ol class="arabic simple">
+<li><p>Adjust individual hyperparameters in the pipeline</p></li>
+<li><dl class="simple">
+<dt>Include or exclude components:</dt><dd><ol class="loweralpha simple">
 <li><dl class="simple">
 <dt>include: Dictionary containing components to include. Key is the node</dt><dd><p>name and Value is an Iterable of the names of the components
 to include. Only these components will be present in the
@@ -142,52 +151,10 @@ the search space.</p>
 </dl>
 </li>
 </ol>
-</div></blockquote>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8554913294797688}
-|    | Preprocessing                                                     | Estimator                                                 |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-|  0 | None                                                              | CBLearner                                                 |     0.46 |
-|  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
-|  2 | None                                                              | SVMLearner                                                |     0.06 |
-|  3 | None                                                              | KNNLearner                                                |     0.06 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-autoPyTorch results:
-        Dataset name: 85726e36-4bc4-11ec-8727-df8c3c818998
-        Optimisation Metric: accuracy
-        Best validation score: 0.8654970760233918
-        Number of target algorithm runs: 18
-        Number of successful target algorithm runs: 14
-        Number of crashed target algorithm runs: 3
-        Number of target algorithms that exceeded the time limit: 1
-        Number of target algorithms that exceeded the memory limit: 0
-
-{&#39;accuracy&#39;: 0.861271676300578}
-|    | Preprocessing                                                 | Estimator                                                       |   Weight |
-|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-|  1 | None                                                          | RFLearner                                                       |     0.24 |
-|  2 | None                                                          | KNNLearner                                                      |     0.16 |
-|  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  4 | None                                                          | CBLearner                                                       |     0.08 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | None                                                          | ETLearner                                                       |     0.02 |
-|  8 | None                                                          | SVMLearner                                                      |     0.02 |
-autoPyTorch results:
-        Dataset name: ea262f4f-4bc4-11ec-8727-df8c3c818998
-        Optimisation Metric: accuracy
-        Best validation score: 0.8654970760233918
-        Number of target algorithm runs: 21
-        Number of successful target algorithm runs: 15
-        Number of crashed target algorithm runs: 5
-        Number of target algorithms that exceeded the time limit: 1
-        Number of target algorithms that exceeded the memory limit: 0
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+</dd>
+</dl>
+</li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -227,88 +194,143 @@ autoPyTorch results:
                    <span class="n">value_range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
                    <span class="n">default_value</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">updates</span>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Data Loading</span>
-    <span class="c1"># ============</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-        <span class="n">X</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier with include components</span>
-    <span class="c1"># ==================================================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
-        <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
-        <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
-                            <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Search for an ensemble of machine learning algorithms</span>
-    <span class="c1"># =====================================================</span>
-    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Print the final ensemble performance</span>
-    <span class="c1"># ====================================</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
-
-    <span class="c1"># Print statistics from search</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier with exclude components</span>
-    <span class="c1"># ==================================================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
-        <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
-        <span class="n">exclude_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">],</span>
-                            <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Search for an ensemble of machine learning algorithms</span>
-    <span class="c1"># =====================================================</span>
-    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Print the final ensemble performance</span>
-    <span class="c1"># ====================================</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
-
-    <span class="c1"># Print statistics from search</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  45.859 seconds)</p>
+<section id="data-loading">
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="build-and-fit-a-classifier-with-include-components">
+<h2>Build and fit a classifier with include components<a class="headerlink" href="#build-and-fit-a-classifier-with-include-components" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
+    <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="search-for-an-ensemble-of-machine-learning-algorithms">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4bee1254c0&gt;
+</pre></div>
+</div>
+</section>
+<section id="print-the-final-ensemble-performance">
+<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
+
+<span class="c1"># Print statistics from search</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
+|    | Preprocessing                                                     | Estimator                                                 |   Weight |
+|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+|  0 | None                                                              | RFLearner                                                 |     0.44 |
+|  1 | None                                                              | ETLearner                                                 |     0.26 |
+|  2 | None                                                              | LGBMLearner                                               |     0.1  |
+|  3 | None                                                              | SVMLearner                                                |     0.08 |
+|  4 | None                                                              | KNNLearner                                                |     0.08 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+autoPyTorch results:
+        Dataset name: 5482ec4e-4be2-11ec-877d-1fe05d8e2eef
+        Optimisation Metric: accuracy
+        Best validation score: 0.8596491228070176
+        Number of target algorithm runs: 16
+        Number of successful target algorithm runs: 10
+        Number of crashed target algorithm runs: 4
+        Number of target algorithms that exceeded the time limit: 2
+        Number of target algorithms that exceeded the memory limit: 0
+</pre></div>
+</div>
+</section>
+<section id="build-and-fit-a-classifier-with-exclude-components">
+<h2>Build and fit a classifier with exclude components<a class="headerlink" href="#build-and-fit-a-classifier-with-exclude-components" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
+    <span class="n">exclude_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4bffcdb5b0&gt;
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>Print the final ensemble performance<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
+
+<span class="c1"># Print statistics from search</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8728323699421965}
+|    | Preprocessing                                                 | Estimator                                                       |   Weight |
+|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | None                                                          | RFLearner                                                       |     0.34 |
+|  1 | None                                                          | ETLearner                                                       |     0.26 |
+|  2 | None                                                          | LGBMLearner                                                     |     0.2  |
+|  3 | None                                                          | KNNLearner                                                      |     0.08 |
+|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  5 | None                                                          | SVMLearner                                                      |     0.04 |
+|  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+autoPyTorch results:
+        Dataset name: c0472c05-4be2-11ec-877d-1fe05d8e2eef
+        Optimisation Metric: accuracy
+        Best validation score: 0.8596491228070176
+        Number of target algorithm runs: 20
+        Number of successful target algorithm runs: 13
+        Number of crashed target algorithm runs: 6
+        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithms that exceeded the memory limit: 0
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  57.148 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -321,6 +343,7 @@ autoPyTorch results:
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
 </section>
 
 

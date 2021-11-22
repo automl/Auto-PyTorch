@@ -1,10 +1,11 @@
 """
-======================
-Tabular Classification
-======================
+============================================
+Tabular Classification with n parallel jobs
+============================================
 
 The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch
+
 """
 import os
 import tempfile as tmp
@@ -60,9 +61,9 @@ if __name__ == '__main__':
     ############################################################################
     # Print the final ensemble performance
     # ====================================
-    print(api.run_history, api.trajectory)
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
     # Print the final ensemble built by AutoPyTorch
-    print(api.show_models())
+    print(api.sprint_statistics())
+
