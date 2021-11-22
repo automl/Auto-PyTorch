@@ -125,7 +125,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f5c2b1dbca0>
+    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f9155e95ca0>
 
 
 
@@ -167,7 +167,7 @@ Print the final ensemble performance
     |  2 | None                                                              | LGBMLearner                                                     |     0.08 |
     |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     autoPyTorch results:
-            Dataset name: 1126c30d-4b9d-11ec-8734-1bc53ddd4b3d
+            Dataset name: 70b3044c-4b9e-11ec-870d-13e6b1aae6bc
             Optimisation Metric: r2
             Best validation score: 0.8644967965917701
             Number of target algorithm runs: 23
@@ -183,7 +183,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  36.092 seconds)
+   **Total running time of the script:** ( 5 minutes  36.742 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_regression.py:

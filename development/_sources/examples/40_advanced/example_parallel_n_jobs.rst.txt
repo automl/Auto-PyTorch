@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7f5b8789c490> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    <smac.runhistory.runhistory.RunHistory object at 0x7f90b2b4c4c0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -68,7 +68,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.001440286636352539, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012407302856445312, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 142
       encoder:__choice__, Value: 'NoEncoder'
       feature_preprocessor:PowerTransformer:standardize, Value: True
@@ -104,7 +104,7 @@ with AutoPyTorch
       trainer:MixUpTrainer:alpha, Value: 0.13179357367568267
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=1, ta_time_used=5.004559516906738, wallclock_time=6.179516315460205, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+    , ta_runs=1, ta_time_used=4.805485248565674, wallclock_time=5.9671196937561035, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -136,7 +136,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'StandardScaler'
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=2, ta_time_used=10.349637746810913, wallclock_time=6.549610614776611, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
+    , ta_runs=2, ta_time_used=10.325108528137207, wallclock_time=6.79562520980835, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
       data_loader:batch_size, Value: 32
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:PowerTransformer:standardize, Value: False
@@ -168,7 +168,7 @@ with AutoPyTorch
       trainer:MixUpTrainer:alpha, Value: 0.9660122415558304
       trainer:MixUpTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'MixUpTrainer'
-    , ta_runs=6, ta_time_used=30.700660943984985, wallclock_time=28.790034294128418, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=4, incumbent=Configuration:
+    , ta_runs=6, ta_time_used=31.190066814422607, wallclock_time=29.54458737373352, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=4, incumbent=Configuration:
       data_loader:batch_size, Value: 44
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -202,7 +202,7 @@ with AutoPyTorch
       scaler:__choice__, Value: 'MinMaxScaler'
       trainer:StandardTrainer:weighted_loss, Value: False
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=25, ta_time_used=266.3682427406311, wallclock_time=169.28211450576782, budget=50.0)]
+    , ta_runs=25, ta_time_used=268.8976037502289, wallclock_time=171.64299654960632, budget=50.0)]
     {'accuracy': 0.8728323699421965}
     |    | Preprocessing                                                     | Estimator                                                          |   Weight |
     |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -302,7 +302,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  52.256 seconds)
+   **Total running time of the script:** ( 5 minutes  34.117 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:

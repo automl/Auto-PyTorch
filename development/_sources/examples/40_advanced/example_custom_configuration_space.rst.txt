@@ -57,7 +57,7 @@ the search. Currently, there are two changes that can be made to the space:-
     |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: 82ccc0cf-4ba1-11ec-8734-1bc53ddd4b3d
+            Dataset name: c6d94f6c-4ba2-11ec-870d-13e6b1aae6bc
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
             Number of target algorithm runs: 17
@@ -77,14 +77,14 @@ the search. Currently, there are two changes that can be made to the space:-
     |  5 | None                                                          | SVMLearner                                                      |     0.04 |
     |  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: ecc6b68d-4ba1-11ec-8734-1bc53ddd4b3d
+            Dataset name: 306ecee6-4ba3-11ec-870d-13e6b1aae6bc
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
             Number of target algorithm runs: 20
             Number of successful target algorithm runs: 13
-            Number of crashed target algorithm runs: 6
+            Number of crashed target algorithm runs: 5
             Number of target algorithms that exceeded the time limit: 1
-            Number of target algorithms that exceeded the memory limit: 0
+            Number of target algorithms that exceeded the memory limit: 1
 
 
 
@@ -218,7 +218,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  55.959 seconds)
+   **Total running time of the script:** ( 5 minutes  55.214 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:

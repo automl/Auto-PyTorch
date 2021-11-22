@@ -127,23 +127,24 @@ with AutoPyTorch using the greedy portfolio</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                     | Estimator                                                          |   Weight |
 |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
-|  1 | None                                                              | RFLearner                                                          |     0.16 |
-|  2 | None                                                              | ETLearner                                                          |     0.16 |
-|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
+|  2 | None                                                              | RFLearner                                                          |     0.14 |
+|  3 | None                                                              | ETLearner                                                          |     0.12 |
+|  4 | None                                                              | KNNLearner                                                         |     0.1  |
 |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  7 | None                                                              | KNNLearner                                                         |     0.04 |
-|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  9 | None                                                              | SVMLearner                                                         |     0.02 |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  8 | SimpleImputer,NoEncoder,Normalizer,Nystroem                       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
+|  9 | SimpleImputer,NoEncoder,Normalizer,Nystroem                       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
 | 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+| 11 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 autoPyTorch results:
-        Dataset name: 7589142e-4b9f-11ec-8734-1bc53ddd4b3d
+        Dataset name: c92a44fa-4ba0-11ec-870d-13e6b1aae6bc
         Optimisation Metric: accuracy
         Best validation score: 0.8771929824561403
-        Number of target algorithm runs: 33
-        Number of successful target algorithm runs: 23
+        Number of target algorithm runs: 34
+        Number of successful target algorithm runs: 24
         Number of crashed target algorithm runs: 9
         Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
@@ -219,7 +220,7 @@ autoPyTorch results:
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  38.989 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  30.296 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
