@@ -93,7 +93,8 @@ api = TabularClassificationTask(
 
 ############################################################################
 # Search for an ensemble of machine learning algorithms
-# ------------
+# -----------------------------------------------------------------------
+
 api.search(
     X_train=X_train,
     y_train=y_train,
