@@ -124,7 +124,7 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7ff9f547da00&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f1a2e9c37c0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -156,7 +156,7 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0013544559478759766, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001310586929321289, budget=0), TrajEntry(train_perf=0.4444444444444444, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 142
   encoder:__choice__, Value: &#39;NoEncoder&#39;
   feature_preprocessor:PowerTransformer:standardize, Value: True
@@ -192,7 +192,7 @@ with AutoPyTorch</p>
   trainer:MixUpTrainer:alpha, Value: 0.13179357367568267
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=1, ta_time_used=5.237339496612549, wallclock_time=6.397387981414795, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
+, ta_runs=1, ta_time_used=3.5967953205108643, wallclock_time=4.753196477890015, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -224,7 +224,7 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;StandardScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=2, ta_time_used=10.84374213218689, wallclock_time=6.789668560028076, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
+, ta_runs=2, ta_time_used=7.5005223751068115, wallclock_time=5.066388845443726, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:PowerTransformer:standardize, Value: False
@@ -256,7 +256,7 @@ with AutoPyTorch</p>
   trainer:MixUpTrainer:alpha, Value: 0.9660122415558304
   trainer:MixUpTrainer:weighted_loss, Value: True
   trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=6, ta_time_used=32.296473026275635, wallclock_time=29.1033878326416, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=4, incumbent=Configuration:
+, ta_runs=6, ta_time_used=23.1586971282959, wallclock_time=22.999270915985107, budget=5.555555555555555), TrajEntry(train_perf=0.13450292397660824, incumbent_id=4, incumbent=Configuration:
   data_loader:batch_size, Value: 44
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:TruncatedSVD:target_dim, Value: 5
@@ -290,30 +290,21 @@ with AutoPyTorch</p>
   scaler:__choice__, Value: &#39;MinMaxScaler&#39;
   trainer:StandardTrainer:weighted_loss, Value: False
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=25, ta_time_used=266.8409242630005, wallclock_time=167.8113033771515, budget=50.0)]
-{&#39;accuracy&#39;: 0.8728323699421965}
-|    | Preprocessing                                                     | Estimator                                                          |   Weight |
-|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
-|  1 | SimpleImputer,OneHotEncoder,Normalizer,Nystroem                   | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.1  |
-|  2 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-|  3 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD                     | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  4 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.06 |
-|  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.06 |
-|  7 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
-|  8 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  9 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-| 10 | SimpleImputer,NoEncoder,Normalizer,TruncSVD                       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
-| 11 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
-| 12 | None                                                              | CBLearner                                                          |     0.04 |
-| 13 | None                                                              | ETLearner                                                          |     0.04 |
-| 14 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-| 15 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
-| 16 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-| 17 | None                                                              | LGBMLearner                                                        |     0.02 |
-| 18 | None                                                              | RFLearner                                                          |     0.02 |
-| 19 | None                                                              | SVMLearner                                                         |     0.02 |
+, ta_runs=25, ta_time_used=207.46970129013062, wallclock_time=130.76389527320862, budget=50.0)]
+{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                     | Estimator                                                       |   Weight |
+|---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,Normalizer,TruncSVD                       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.28 |
+|  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+|  2 | SimpleImputer,OneHotEncoder,Normalizer,Nystroem                   | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.16 |
+|  3 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
+|  4 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  5 | SimpleImputer,OneHotEncoder,Normalizer,TruncSVD                   | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
+|  6 | None                                                              | CBLearner                                                       |     0.04 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,PowerTransformer       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+|  8 | SimpleImputer,OneHotEncoder,NoScaler,PolynomialFeatures           | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+|  9 | None                                                              | RFLearner                                                       |     0.02 |
+| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -381,7 +372,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  40.577 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  41.057 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_parallel_n_jobs.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

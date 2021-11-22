@@ -338,8 +338,8 @@ Calculate the evaluation measure on the test set.</p>
 <p>Fit both optimizes the machine learning models and builds an ensemble out of them.
 To disable ensembling, set ensemble_size==0.
 using the optimizer.</p>
-<dl>
-<dt>Args:</dt><dd><dl>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
 <dt>X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]</dt><dd><p>A pair of features (X_train) and targets (y_train) used to fit a
 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
 be provided to track the generalization performance of each stage.</p>
@@ -347,13 +347,14 @@ be provided to track the generalization performance of each stage.</p>
 <dt>optimize_metric (str):</dt><dd><p>name of the metric that is used to evaluate a pipeline.</p>
 </dd>
 <dt>budget_type (str):</dt><dd><p>Type of budget to be used when fitting the pipeline.
-It can be one of:
-+ <cite>epochs</cite>: The training of each pipeline will be terminated after</p>
-<blockquote>
-<div><p>a number of epochs have passed. This number of epochs is determined by the
-budget argument of this method.</p>
-</div></blockquote>
+It can be one of:</p>
 <ul class="simple">
+<li><dl class="simple">
+<dt><cite>epochs</cite>: The training of each pipeline will be terminated after</dt><dd><p>a number of epochs have passed. This number of epochs is determined by the
+budget argument of this method.</p>
+</dd>
+</dl>
+</li>
 <li><dl class="simple">
 <dt><cite>runtime</cite>: The training of each pipeline will be terminated after</dt><dd><p>a number of seconds have passed. This number of seconds is determined by the
 budget argument of this method. The overall fitting time of a pipeline is
@@ -433,13 +434,37 @@ for each pipeline and results will be available via cv_results</p>
 <dt>precision (int: default=32):</dt><dd><p>Numeric precision used when loading ensemble data.
 Can be either ‘16’, ‘32’ or ‘64’.</p>
 </dd>
+<dt>disable_file_output (Union[bool, List]):</dt><dd><p>If True, disable model and prediction output.
+Can also be used as a list to pass more fine-grained
+information on what to save. Allowed elements in the list are:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>y_optimization</cite>:</dt><dd><p>do not save the predictions for the optimization set,
+which would later on be used to build an ensemble. Note that SMAC
+optimizes a metric evaluated on the optimization set.</p>
+</dd>
 </dl>
-<p>disable_file_output (Union[bool, List]):
-load_models (bool: default=True):</p>
-<blockquote>
-<div><p>Whether to load the models after fitting AutoPyTorch.</p>
-</div></blockquote>
-<dl class="simple">
+</li>
+<li><dl class="simple">
+<dt><cite>pipeline</cite>:</dt><dd><p>do not save any individual pipeline files</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>pipelines</cite>:</dt><dd><p>In case of cross validation, disables saving the joint model of the
+pipelines fit on each fold.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>y_test</cite>:</dt><dd><p>do not save the predictions for the test set.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>load_models (bool: default=True):</dt><dd><p>Whether to load the models after fitting AutoPyTorch.</p>
+</dd>
 <dt>portfolio_selection (Optional[str]):</dt><dd><p>This argument controls the initial configurations that
 AutoPyTorch uses to warm start SMAC for hyperparameter
 optimization. By default, no warm-starting happens.
@@ -715,8 +740,8 @@ Calculate the evaluation measure on the test set.</p>
 <p>Fit both optimizes the machine learning models and builds an ensemble out of them.
 To disable ensembling, set ensemble_size==0.
 using the optimizer.</p>
-<dl>
-<dt>Args:</dt><dd><dl>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
 <dt>X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]</dt><dd><p>A pair of features (X_train) and targets (y_train) used to fit a
 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
 be provided to track the generalization performance of each stage.</p>
@@ -724,13 +749,14 @@ be provided to track the generalization performance of each stage.</p>
 <dt>optimize_metric (str): name of the metric that is used to</dt><dd><p>evaluate a pipeline.</p>
 </dd>
 <dt>budget_type (str):</dt><dd><p>Type of budget to be used when fitting the pipeline.
-It can be one of:
-+ <cite>epochs</cite>: The training of each pipeline will be terminated after</p>
-<blockquote>
-<div><p>a number of epochs have passed. This number of epochs is determined by the
-budget argument of this method.</p>
-</div></blockquote>
+It can be one of:</p>
 <ul class="simple">
+<li><dl class="simple">
+<dt><cite>epochs</cite>: The training of each pipeline will be terminated after</dt><dd><p>a number of epochs have passed. This number of epochs is determined by the
+budget argument of this method.</p>
+</dd>
+</dl>
+</li>
 <li><dl class="simple">
 <dt><cite>runtime</cite>: The training of each pipeline will be terminated after</dt><dd><p>a number of seconds have passed. This number of seconds is determined by the
 budget argument of this method. The overall fitting time of a pipeline is
@@ -745,7 +771,7 @@ min_budget will refer to seconds.</p>
 </li>
 </ul>
 </dd>
-<dt>min_budget (int):</dt><dd><p>Auto-PyTorch uses <cite>Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_</cite> to
+<dt>min_budget (int):</dt><dd><p>Auto-PyTorch uses <a class="reference external" href="https://arxiv.org/abs/1603.06560">Hyperband</a> to
 trade-off resources between running many pipelines at min_budget and
 running the top performing pipelines on max_budget.
 min_budget states the minimum resource allocation a pipeline should have
@@ -753,7 +779,7 @@ so that we can compare and quickly discard bad performing models.
 For example, if the budget_type is epochs, and min_budget=5, then we will
 run every pipeline to a minimum of 5 epochs before performance comparison.</p>
 </dd>
-<dt>max_budget (int):</dt><dd><p>Auto-PyTorch uses <cite>Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;_</cite> to
+<dt>max_budget (int):</dt><dd><p>Auto-PyTorch uses <a class="reference external" href="https://arxiv.org/abs/1603.06560">Hyperband</a> to
 trade-off resources between running many pipelines at min_budget and
 running the top performing pipelines on max_budget.
 max_budget states the maximum resource allocation a pipeline is going to
@@ -810,13 +836,37 @@ for each pipeline and results will be available via cv_results</p>
 <dt>precision (int: default=32):</dt><dd><p>Numeric precision used when loading ensemble data.
 Can be either ‘16’, ‘32’ or ‘64’.</p>
 </dd>
+<dt>disable_file_output (Union[bool, List]):</dt><dd><p>If True, disable model and prediction output.
+Can also be used as a list to pass more fine-grained
+information on what to save. Allowed elements in the list are:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>y_optimization</cite>:</dt><dd><p>do not save the predictions for the optimization set,
+which would later on be used to build an ensemble. Note that SMAC
+optimizes a metric evaluated on the optimization set.</p>
+</dd>
 </dl>
-<p>disable_file_output (Union[bool, List]):
-load_models (bool: default=True):</p>
-<blockquote>
-<div><p>Whether to load the models after fitting AutoPyTorch.</p>
-</div></blockquote>
-<dl class="simple">
+</li>
+<li><dl class="simple">
+<dt><cite>pipeline</cite>:</dt><dd><p>do not save any individual pipeline files</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>pipelines</cite>:</dt><dd><p>In case of cross validation, disables saving the joint model of the
+pipelines fit on each fold.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>y_test</cite>:</dt><dd><p>do not save the predictions for the test set.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>load_models (bool: default=True):</dt><dd><p>Whether to load the models after fitting AutoPyTorch.</p>
+</dd>
 <dt>portfolio_selection (Optional[str]):</dt><dd><p>This argument controls the initial configurations that
 AutoPyTorch uses to warm start SMAC for hyperparameter
 optimization. By default, no warm-starting happens.
@@ -840,7 +890,7 @@ which would use the default portfolio from
 then sets them to the current pipeline
 configuration.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p><a href="#id8"><span class="problematic" id="id9">**</span></a>pipeline_config_kwargs: Valid config options include “num_run”,
+<dt>Args:</dt><dd><p><a href="#id10"><span class="problematic" id="id11">**</span></a>pipeline_config_kwargs: Valid config options include “num_run”,
 “device”, “budget_type”, “epochs”, “runtime”, “torch_num_threads”,
 “early_stopping”, “use_tensorboard_logger”,
 “metrics_during_training”</p>

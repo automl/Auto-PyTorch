@@ -272,6 +272,7 @@
 <span class="sd">            budget_type (str):</span>
 <span class="sd">                Type of budget to be used when fitting the pipeline.</span>
 <span class="sd">                It can be one of:</span>
+
 <span class="sd">                + `epochs`: The training of each pipeline will be terminated after</span>
 <span class="sd">                    a number of epochs have passed. This number of epochs is determined by the</span>
 <span class="sd">                    budget argument of this method.</span>
@@ -350,6 +351,21 @@
 <span class="sd">                Numeric precision used when loading ensemble data.</span>
 <span class="sd">                Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
 <span class="sd">            disable_file_output (Union[bool, List]):</span>
+<span class="sd">                If True, disable model and prediction output.</span>
+<span class="sd">                Can also be used as a list to pass more fine-grained</span>
+<span class="sd">                information on what to save. Allowed elements in the list are:</span>
+
+<span class="sd">                + `y_optimization`:</span>
+<span class="sd">                    do not save the predictions for the optimization set,</span>
+<span class="sd">                    which would later on be used to build an ensemble. Note that SMAC</span>
+<span class="sd">                    optimizes a metric evaluated on the optimization set.</span>
+<span class="sd">                + `pipeline`:</span>
+<span class="sd">                    do not save any individual pipeline files</span>
+<span class="sd">                + `pipelines`:</span>
+<span class="sd">                    In case of cross validation, disables saving the joint model of the</span>
+<span class="sd">                    pipelines fit on each fold.</span>
+<span class="sd">                + `y_test`:</span>
+<span class="sd">                    do not save the predictions for the test set.</span>
 <span class="sd">            load_models (bool: default=True):</span>
 <span class="sd">                Whether to load the models after fitting AutoPyTorch.</span>
 <span class="sd">            portfolio_selection (Optional[str]):</span>
