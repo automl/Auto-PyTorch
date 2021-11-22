@@ -46,44 +46,42 @@ the search. Currently, there are two changes that can be made to the space:-
 
  .. code-block:: none
 
-    {'accuracy': 0.8670520231213873}
+    {'accuracy': 0.8554913294797688}
     |    | Preprocessing                                                     | Estimator                                                 |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-    |  0 | None                                                              | RFLearner                                                 |     0.44 |
-    |  1 | None                                                              | ETLearner                                                 |     0.26 |
-    |  2 | None                                                              | LGBMLearner                                               |     0.1  |
-    |  3 | None                                                              | SVMLearner                                                |     0.08 |
-    |  4 | None                                                              | KNNLearner                                                |     0.08 |
-    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  0 | None                                                              | CBLearner                                                 |     0.46 |
+    |  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
+    |  2 | None                                                              | SVMLearner                                                |     0.06 |
+    |  3 | None                                                              | KNNLearner                                                |     0.06 |
+    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     autoPyTorch results:
-            Dataset name: 4064d3b1-4bc2-11ec-870e-7746ea156edb
+            Dataset name: 85726e36-4bc4-11ec-8727-df8c3c818998
             Optimisation Metric: accuracy
-            Best validation score: 0.8596491228070176
-            Number of target algorithm runs: 17
-            Number of successful target algorithm runs: 11
-            Number of crashed target algorithm runs: 5
+            Best validation score: 0.8654970760233918
+            Number of target algorithm runs: 18
+            Number of successful target algorithm runs: 14
+            Number of crashed target algorithm runs: 3
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
     {'accuracy': 0.861271676300578}
     |    | Preprocessing                                                 | Estimator                                                       |   Weight |
     |---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,NoEncoder,Normalizer,PowerTransformer           | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.26 |
-    |  1 | None                                                          | KNNLearner                                                      |     0.14 |
-    |  2 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-    |  3 | None                                                          | RFLearner                                                       |     0.1  |
-    |  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-    |  5 | None                                                          | ETLearner                                                       |     0.08 |
-    |  6 | None                                                          | SVMLearner                                                      |     0.08 |
-    |  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-    |  8 | None                                                          | LGBMLearner                                                     |     0.04 |
+    |  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+    |  1 | None                                                          | RFLearner                                                       |     0.24 |
+    |  2 | None                                                          | KNNLearner                                                      |     0.16 |
+    |  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+    |  4 | None                                                          | CBLearner                                                       |     0.08 |
+    |  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  7 | None                                                          | ETLearner                                                       |     0.02 |
+    |  8 | None                                                          | SVMLearner                                                      |     0.02 |
     autoPyTorch results:
-            Dataset name: ad6f4912-4bc2-11ec-870e-7746ea156edb
+            Dataset name: ea262f4f-4bc4-11ec-8727-df8c3c818998
             Optimisation Metric: accuracy
-            Best validation score: 0.8596491228070176
-            Number of target algorithm runs: 20
-            Number of successful target algorithm runs: 14
+            Best validation score: 0.8654970760233918
+            Number of target algorithm runs: 21
+            Number of successful target algorithm runs: 15
             Number of crashed target algorithm runs: 5
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
@@ -220,7 +218,7 @@ the search. Currently, there are two changes that can be made to the space:-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  59.297 seconds)
+   **Total running time of the script:** ( 5 minutes  45.859 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:

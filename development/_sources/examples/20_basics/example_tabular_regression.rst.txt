@@ -125,7 +125,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f8217ed1ca0>
+    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f30125fdca0>
 
 
 
@@ -159,7 +159,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'r2': 0.944631023189658}
+    {'r2': 0.9445248186059718}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
     |  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.44 |
@@ -167,9 +167,9 @@ Print the final ensemble performance
     |  2 | None                                                              | LGBMLearner                                                     |     0.08 |
     |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     autoPyTorch results:
-            Dataset name: e0ac8c9c-4bbd-11ec-870e-7746ea156edb
+            Dataset name: 2b8bcd39-4bc0-11ec-8727-df8c3c818998
             Optimisation Metric: r2
-            Best validation score: 0.8644967965917701
+            Best validation score: 0.8645385039886702
             Number of target algorithm runs: 24
             Number of successful target algorithm runs: 20
             Number of crashed target algorithm runs: 2
@@ -183,7 +183,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  34.172 seconds)
+   **Total running time of the script:** ( 5 minutes  37.415 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_regression.py:
