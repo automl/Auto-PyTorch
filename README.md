@@ -18,8 +18,7 @@ The rough description of the workflow of Auto-Pytorch is drawn in the following 
 <img src="figs/apt_workflow.png" width="500">
 
 In the figure, **Data** is provided by user and
-**Portfolio** is a set of configurations of neural networks on diverse
-datasets.
+**Portfolio** is a set of configurations of neural networks that work well on diverse datasets.
 The current version only supports the *greedy portfolio* as described in the paper *Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL*
 This portfolio is used to warm-start the optimization of SMAC.
 In other words, we evaluate the portfolio on a provided data as initial configurations.
