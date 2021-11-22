@@ -135,7 +135,11 @@ class CatboostModel(BaseTraditionalLearner):
         X_train_pooled = Pool(data=X_train, label=y_train, cat_features=categoricals)
         X_val_pooled = Pool(data=X_val, label=y_val, cat_features=categoricals)
 
-        self.model.fit(X_train_pooled, eval_set=X_val_pooled, use_best_model=True, early_stopping_rounds=early_stopping)
+        self.model.fit(X_train_pooled,
+            eval_set=X_val_pooled,
+            use_best_model=True,
+            early_stopping_rounds=early_stopping,
+            verbose=False)
 
     @staticmethod
     def get_properties(
