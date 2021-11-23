@@ -36,14 +36,14 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    {'accuracy': 0.8554913294797688}
+    {'accuracy': 0.8728323699421965}
     autoPyTorch results:
-            Dataset name: 0bad0a6f-4c72-11ec-8982-7d7b6d635282
+            Dataset name: 0645e121-4c73-11ec-8755-6f4552dca699
             Optimisation Metric: accuracy
-            Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 47
-            Number of successful target algorithm runs: 36
-            Number of crashed target algorithm runs: 9
+            Best validation score: 0.8888888888888888
+            Number of target algorithm runs: 61
+            Number of successful target algorithm runs: 48
+            Number of crashed target algorithm runs: 11
             Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -121,7 +121,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  40.148 seconds)
+   **Total running time of the script:** ( 5 minutes  31.555 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
