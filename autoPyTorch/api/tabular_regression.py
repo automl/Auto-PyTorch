@@ -160,6 +160,7 @@ class TabularRegressionTask(BaseTask):
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
+
                 + `epochs`: The training of each pipeline will be terminated after
                     a number of epochs have passed. This number of epochs is determined by the
                     budget argument of this method.
@@ -173,7 +174,7 @@ class TabularRegressionTask(BaseTask):
                     is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
                     min_budget will refer to seconds.
             min_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 min_budget states the minimum resource allocation a pipeline should have
@@ -181,7 +182,7 @@ class TabularRegressionTask(BaseTask):
                 For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
             max_budget (int):
-                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>_` to
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
                 max_budget states the maximum resource allocation a pipeline is going to
@@ -238,6 +239,21 @@ class TabularRegressionTask(BaseTask):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
             disable_file_output (Union[bool, List]):
+                If True, disable model and prediction output.
+                Can also be used as a list to pass more fine-grained
+                information on what to save. Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
@@ -276,6 +292,7 @@ class TabularRegressionTask(BaseTask):
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             validator=self.InputValidator,
+            dataset_name=dataset_name,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
         )

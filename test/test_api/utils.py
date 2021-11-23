@@ -1,6 +1,6 @@
 import os
 
-from smac.runhistory.runhistory import DataOrigin, RunHistory
+from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue, StatusType
 
 from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
@@ -113,3 +113,24 @@ def dummy_eval_function(
 
 def dummy_do_dummy_prediction():
     return
+
+
+def make_dict_run_history_data(data):
+    run_history_data = dict()
+    for row in data:
+        run_key = RunKey(
+            config_id=row[0][0],
+            instance_id=row[0][1],
+            seed=row[0][2],
+            budget=row[0][3])
+
+        run_value = RunValue(
+            cost=row[1][0],
+            time=row[1][1],
+            status=getattr(StatusType, row[1][2]['__enum__'].split(".")[-1]),
+            starttime=row[1][3],
+            endtime=row[1][4],
+            additional_info=row[1][5],
+        )
+        run_history_data[run_key] = run_value
+    return run_history_data
