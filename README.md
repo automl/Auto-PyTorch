@@ -56,7 +56,6 @@ git submodule update --init --recursive
 conda create -n auto-pytorch python=3.8
 conda activate auto-pytorch
 conda install swig
-cat requirements.txt | xargs -n 1 -L 1 pip install
 python setup.py install
 
 ```
