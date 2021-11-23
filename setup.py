@@ -21,7 +21,7 @@ with open("requirements.txt", "r") as f:
 # noinspection PyInterpreter
 setuptools.setup(
     name="autoPyTorch",
-    version="0.1.0",
+    version="0.1.1",
     author="AutoML Freiburg",
     author_email="eddiebergmanhs@gmail.com",
     description=("Auto-PyTorch searches neural architectures using smac"),

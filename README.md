@@ -23,6 +23,7 @@ The current version only supports the *greedy portfolio* as described in the pap
 This portfolio is used to warm-start the optimization of SMAC.
 In other words, we evaluate the portfolio on a provided data as initial configurations.
 Then API starts the following procedures:
+
 1. **Validate input data**: Process each data type, e.g. encoding categorical data, so that Auto-Pytorch can handled.
 2. **Create dataset**: Create a dataset that can be handled in this API with a choice of cross validation or holdout splits.
 3. **Evaluate baselines** *1: Train each algorithm in the predefined pool with a fixed hyperparameter configuration and dummy model from `sklearn.dummy` that represents the worst possible performance.
