@@ -15,7 +15,7 @@ In case you would like to use the old API, you can find it at [`master_old`](htt
 
 The rough description of the workflow of Auto-Pytorch is drawn in the following figure.
 
-<img src="figs/apt_workflow.png" width="500">
+![AutoPyTorch Workflow](https://raw.githubusercontent.com/automl/Auto-PyTorch/master/figs/apt_workflow.png)
 
 In the figure, **Data** is provided by user and
 **Portfolio** is a set of configurations of neural networks that work well on diverse datasets.
