@@ -107,7 +107,16 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Tabular Classification with Custom Configuration Space</a></li>
+<li><a class="reference internal" href="#">Tabular Classification with Custom Configuration Space</a><ul>
+<li><a class="reference internal" href="#data-loading">Data Loading</a></li>
+<li><a class="reference internal" href="#build-and-fit-a-classifier-with-include-components">Build and fit a classifier with include components</a></li>
+<li><a class="reference internal" href="#search-for-an-ensemble-of-machine-learning-algorithms">Search for an ensemble of machine learning algorithms</a></li>
+<li><a class="reference internal" href="#print-the-final-ensemble-performance">Print the final ensemble performance</a></li>
+<li><a class="reference internal" href="#build-and-fit-a-classifier-with-exclude-components">Build and fit a classifier with exclude components</a></li>
+<li><a class="reference internal" href="#id1">Search for an ensemble of machine learning algorithms</a></li>
+<li><a class="reference internal" href="#id2">Print the final ensemble performance</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -122,11 +131,11 @@ to download the full example code or to run this example in your browser via Bin
 <section class="sphx-glr-example-title" id="tabular-classification-with-custom-configuration-space">
 <span id="sphx-glr-examples-40-advanced-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how adjust the configuration space of
-the search. Currently, there are two changes that can be made to the space:-
-1. Adjust individual hyperparameters in the pipeline
-2. Include or exclude components:</p>
-<blockquote>
-<div><ol class="loweralpha simple">
+the search. Currently, there are two changes that can be made to the space:-</p>
+<ol class="arabic simple">
+<li><p>Adjust individual hyperparameters in the pipeline</p></li>
+<li><dl class="simple">
+<dt>Include or exclude components:</dt><dd><ol class="loweralpha simple">
 <li><dl class="simple">
 <dt>include: Dictionary containing components to include. Key is the node</dt><dd><p>name and Value is an Iterable of the names of the components
 to include. Only these components will be present in the
@@ -142,169 +151,10 @@ the search space.</p>
 </dl>
 </li>
 </ol>
-</div></blockquote>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f21b02a4370&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 5
-  network_backbone:MLPBackbone:num_units_1, Value: 200
-  network_backbone:MLPBackbone:num_units_2, Value: 200
-  network_backbone:MLPBackbone:num_units_3, Value: 200
-  network_backbone:MLPBackbone:num_units_4, Value: 200
-  network_backbone:MLPBackbone:num_units_5, Value: 200
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016999244689941406, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 5
-  network_backbone:MLPBackbone:num_units_1, Value: 200
-  network_backbone:MLPBackbone:num_units_2, Value: 200
-  network_backbone:MLPBackbone:num_units_3, Value: 200
-  network_backbone:MLPBackbone:num_units_4, Value: 200
-  network_backbone:MLPBackbone:num_units_5, Value: 200
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=4.4289000034332275, wallclock_time=5.470310688018799, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.861271676300578}
-|    | Preprocessing                                                     | Estimator                                                 |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-|  0 | None                                                              | CBLearner                                                 |     0.44 |
-|  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-|  3 | None                                                              | ETLearner                                                 |     0.06 |
-|  4 | None                                                              | SVMLearner                                                |     0.06 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  6 | None                                                              | RFLearner                                                 |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f21b01a5400&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_units, Value: 200
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012967586517333984, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_units, Value: 200
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=3.3284835815429688, wallclock_time=4.375677108764648, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.861271676300578}
-|    | Preprocessing                                                 | Estimator                                                       |   Weight |
-|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-|  1 | None                                                          | RFLearner                                                       |     0.24 |
-|  2 | None                                                          | KNNLearner                                                      |     0.16 |
-|  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  4 | None                                                          | CBLearner                                                       |     0.08 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | None                                                          | ETLearner                                                       |     0.02 |
-|  8 | None                                                          | SVMLearner                                                      |     0.02 |
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
+</dd>
+</dl>
+</li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -344,84 +194,145 @@ the search space.</p>
                    <span class="n">value_range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
                    <span class="n">default_value</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">updates</span>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Data Loading</span>
-    <span class="c1"># ============</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-        <span class="n">X</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier with include components</span>
-    <span class="c1"># ==================================================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
-        <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
-        <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
-                            <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Search for an ensemble of machine learning algorithms</span>
-    <span class="c1"># =====================================================</span>
-    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Print the final ensemble performance</span>
-    <span class="c1"># ====================================</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">run_history</span><span class="p">,</span> <span class="n">api</span><span class="o">.</span><span class="n">trajectory</span><span class="p">)</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier with exclude components</span>
-    <span class="c1"># ==================================================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
-        <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
-        <span class="n">exclude_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">],</span>
-                            <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Search for an ensemble of machine learning algorithms</span>
-    <span class="c1"># =====================================================</span>
-    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Print the final ensemble performance</span>
-    <span class="c1"># ====================================</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">run_history</span><span class="p">,</span> <span class="n">api</span><span class="o">.</span><span class="n">trajectory</span><span class="p">)</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  45.300 seconds)</p>
+<section id="data-loading">
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="build-and-fit-a-classifier-with-include-components">
+<h2>Build and fit a classifier with include components<a class="headerlink" href="#build-and-fit-a-classifier-with-include-components" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
+    <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="search-for-an-ensemble-of-machine-learning-algorithms">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4398047490&gt;
+</pre></div>
+</div>
+</section>
+<section id="print-the-final-ensemble-performance">
+<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
+
+<span class="c1"># Print statistics from search</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                     | Estimator                                                 |   Weight |
+|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+|  0 | None                                                              | CBLearner                                                 |     0.44 |
+|  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
+|  3 | None                                                              | ETLearner                                                 |     0.06 |
+|  4 | None                                                              | SVMLearner                                                |     0.06 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  6 | None                                                              | RFLearner                                                 |     0.02 |
+autoPyTorch results:
+        Dataset name: 51dd4821-4c52-11ec-870d-815135d073d5
+        Optimisation Metric: accuracy
+        Best validation score: 0.8654970760233918
+        Number of target algorithm runs: 20
+        Number of successful target algorithm runs: 16
+        Number of crashed target algorithm runs: 3
+        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithms that exceeded the memory limit: 0
+</pre></div>
+</div>
+</section>
+<section id="build-and-fit-a-classifier-with-exclude-components">
+<h2>Build and fit a classifier with exclude components<a class="headerlink" href="#build-and-fit-a-classifier-with-exclude-components" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
+    <span class="n">exclude_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f439cfc9850&gt;
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>Print the final ensemble performance<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
+
+<span class="c1"># Print statistics from search</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                 | Estimator                                                       |   Weight |
+|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+|  1 | None                                                          | RFLearner                                                       |     0.24 |
+|  2 | None                                                          | KNNLearner                                                      |     0.16 |
+|  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  4 | None                                                          | CBLearner                                                       |     0.08 |
+|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  7 | None                                                          | ETLearner                                                       |     0.02 |
+|  8 | None                                                          | SVMLearner                                                      |     0.02 |
+autoPyTorch results:
+        Dataset name: b69fb477-4c52-11ec-870d-815135d073d5
+        Optimisation Metric: accuracy
+        Best validation score: 0.8654970760233918
+        Number of target algorithm runs: 22
+        Number of successful target algorithm runs: 16
+        Number of crashed target algorithm runs: 5
+        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithms that exceeded the memory limit: 0
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  37.887 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -434,6 +345,7 @@ the search space.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
 </section>
 
 

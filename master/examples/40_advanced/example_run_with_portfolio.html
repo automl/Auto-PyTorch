@@ -107,7 +107,13 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Tabular Classification with Greedy Portfolio</a></li>
+<li><a class="reference internal" href="#">Tabular Classification with Greedy Portfolio</a><ul>
+<li><a class="reference internal" href="#data-loading">Data Loading</a></li>
+<li><a class="reference internal" href="#build-and-fit-a-classifier">Build and fit a classifier</a></li>
+<li><a class="reference internal" href="#search-for-an-ensemble-of-machine-learning-algorithms">Search for an ensemble of machine learning algorithms</a></li>
+<li><a class="reference internal" href="#print-the-final-ensemble-performance">Print the final ensemble performance</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -123,193 +129,6 @@ to download the full example code or to run this example in your browser via Bin
 <span id="sphx-glr-examples-40-advanced-example-run-with-portfolio-py"></span><h1>Tabular Classification with Greedy Portfolio<a class="headerlink" href="#tabular-classification-with-greedy-portfolio" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch using the greedy portfolio</p>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f219f91d7f0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 60
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_dropout, Value: 0.023271935735825866
-  network_backbone:ShapedMLPBackbone:max_units, Value: 290
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 6
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.00020060142055000713
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0018320003468984575
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
-  trainer:MixUpTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00015115737915039062, budget=0), TrajEntry(train_perf=0.1871345029239766, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 60
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_dropout, Value: 0.023271935735825866
-  network_backbone:ShapedMLPBackbone:max_units, Value: 290
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 6
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.00020060142055000713
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0018320003468984575
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:MixUpTrainer:alpha, Value: 0.8448753109694546
-  trainer:MixUpTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
-, ta_runs=1, ta_time_used=4.497721195220947, wallclock_time=5.539557456970215, budget=5.555555555555555), TrajEntry(train_perf=0.14619883040935677, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 183
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 2
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.27204101593048097
-  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.4412292309825137
-  network_backbone:ShapedResNetBackbone:max_units, Value: 354
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 1
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 200
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: True
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.001780112494729604
-  optimizer:AdamOptimizer:weight_decay, Value: 0.004224029178574147
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=5, ta_time_used=21.597437381744385, wallclock_time=27.960829496383667, budget=5.555555555555555), TrajEntry(train_perf=0.14035087719298245, incumbent_id=3, incumbent=Configuration:
-  data_loader:batch_size, Value: 48
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_units, Value: 529
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 3
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:SGDOptimizer:lr, Value: 0.020107910011636462
-  optimizer:SGDOptimizer:momentum, Value: 0.5818716367708677
-  optimizer:SGDOptimizer:weight_decay, Value: 0.003995594064278902
-  optimizer:__choice__, Value: &#39;SGDOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=6, ta_time_used=26.011353492736816, wallclock_time=33.79848384857178, budget=5.555555555555555), TrajEntry(train_perf=0.1228070175438597, incumbent_id=4, incumbent=Configuration:
-  data_loader:batch_size, Value: 150
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:CosineAnnealingLR:T_max, Value: 50
-  lr_scheduler:__choice__, Value: &#39;CosineAnnealingLR&#39;
-  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 1
-  network_backbone:ShapedResNetBackbone:max_dropout, Value: 0.7133813761319248
-  network_backbone:ShapedResNetBackbone:max_shake_drop_probability, Value: 0.2808341606307928
-  network_backbone:ShapedResNetBackbone:max_units, Value: 314
-  network_backbone:ShapedResNetBackbone:num_groups, Value: 1
-  network_backbone:ShapedResNetBackbone:output_dim, Value: 200
-  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedResNetBackbone:use_dropout, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_drop, Value: True
-  network_backbone:ShapedResNetBackbone:use_shake_shake, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.003106362796390374
-  optimizer:AdamOptimizer:weight_decay, Value: 0.010492136888557045
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=8, ta_time_used=34.50659441947937, wallclock_time=45.06053805351257, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing                                                     | Estimator                                                          |   Weight |
-|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | None                                                              | CBLearner                                                          |     0.38 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  3 | None                                                              | ETLearner                                                          |     0.08 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  5 | None                                                              | RFLearner                                                          |     0.06 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 11 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
-| 12 | None                                                              | LGBMLearner                                                        |     0.02 |
-| 13 | None                                                              | SVMLearner                                                         |     0.02 |
-</pre></div>
-</div>
-<div class="line-block">
-<div class="line"><br /></div>
-</div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -326,56 +145,90 @@ with AutoPyTorch using the greedy portfolio</p>
 <span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
 
 <span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Data Loading</span>
-    <span class="c1"># ============</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-        <span class="n">X</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Build and fit a classifier</span>
-    <span class="c1"># ==========================</span>
-    <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Search for an ensemble of machine learning algorithms</span>
-    <span class="c1"># =====================================================</span>
-    <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
-        <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
-        <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-        <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-        <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-        <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
-        <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-        <span class="c1"># Setting this option to &quot;greedy&quot;</span>
-        <span class="c1"># will make smac run the configurations</span>
-        <span class="c1"># present in &#39;autoPyTorch/configs/greedy_portfolio.json&#39;</span>
-        <span class="n">portfolio_selection</span><span class="o">=</span><span class="s2">&quot;greedy&quot;</span>
-    <span class="p">)</span>
-
-    <span class="c1">############################################################################</span>
-    <span class="c1"># Print the final ensemble performance</span>
-    <span class="c1"># ====================================</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">run_history</span><span class="p">,</span> <span class="n">api</span><span class="o">.</span><span class="n">trajectory</span><span class="p">)</span>
-    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-    <span class="c1"># Print the final ensemble built by AutoPyTorch</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  26.369 seconds)</p>
+<section id="data-loading">
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="build-and-fit-a-classifier">
+<h2>Build and fit a classifier<a class="headerlink" href="#build-and-fit-a-classifier" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
+    <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="search-for-an-ensemble-of-machine-learning-algorithms">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="c1"># Setting this option to &quot;greedy&quot;</span>
+    <span class="c1"># will make smac run the configurations</span>
+    <span class="c1"># present in &#39;autoPyTorch/configs/greedy_portfolio.json&#39;</span>
+    <span class="n">portfolio_selection</span><span class="o">=</span><span class="s2">&quot;greedy&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f439cce05b0&gt;
+</pre></div>
+</div>
+</section>
+<section id="print-the-final-ensemble-performance">
+<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+<span class="c1"># Print the final ensemble built by AutoPyTorch</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
+
+<span class="c1"># Print statistics from search</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                     | Estimator                                                          |   Weight |
+|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | None                                                              | CBLearner                                                          |     0.34 |
+|  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
+|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  4 | None                                                              | RFLearner                                                          |     0.08 |
+|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+| 10 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
+| 11 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+| 12 | None                                                              | ETLearner                                                          |     0.02 |
+autoPyTorch results:
+        Dataset name: c4db800e-4c50-11ec-870d-815135d073d5
+        Optimisation Metric: accuracy
+        Best validation score: 0.8771929824561403
+        Number of target algorithm runs: 29
+        Number of successful target algorithm runs: 26
+        Number of crashed target algorithm runs: 3
+        Number of target algorithms that exceeded the time limit: 0
+        Number of target algorithms that exceeded the memory limit: 0
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  42.028 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -388,6 +241,7 @@ with AutoPyTorch using the greedy portfolio</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
 </section>
 
 

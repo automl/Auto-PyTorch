@@ -26,10 +26,13 @@ import sklearn.model_selection
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 
+############################################################################
+# Default Resampling Strategy
+# ============================
 
 ############################################################################
 # Data Loading
-# ============
+# ------------
 X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
 X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
     X,
@@ -39,7 +42,7 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 
 ############################################################################
 # Build and fit a classifier with default resampling strategy
-# ===========================================================
+# -----------------------------------------------------------
 api = TabularClassificationTask(
     # 'HoldoutValTypes.holdout_validation' with 'val_share': 0.33
     # is the default argument setting for TabularClassificationTask.
@@ -51,7 +54,7 @@ api = TabularClassificationTask(
 
 ############################################################################
 # Search for an ensemble of machine learning algorithms
-# =====================================================
+# -----------------------------------------------------
 api.search(
     X_train=X_train,
     y_train=y_train,
@@ -64,19 +67,25 @@ api.search(
 
 ############################################################################
 # Print the final ensemble performance
-# ====================================
-print(api.run_history, api.trajectory)
+# ------------------------------------
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)
 # Print the final ensemble built by AutoPyTorch
 print(api.show_models())
 
+# Print statistics from search
+print(api.sprint_statistics())
+
 ############################################################################
 
 ############################################################################
+# Cross validation Resampling Strategy
+# =====================================
+
+############################################################################
 # Build and fit a classifier with Cross validation resampling strategy
-# ====================================================================
+# --------------------------------------------------------------------
 api = TabularClassificationTask(
     resampling_strategy=CrossValTypes.k_fold_cross_validation,
     resampling_strategy_args={'num_splits': 3}
@@ -84,7 +93,8 @@ api = TabularClassificationTask(
 
 ############################################################################
 # Search for an ensemble of machine learning algorithms
-# =====================================================
+# -----------------------------------------------------------------------
+
 api.search(
     X_train=X_train,
     y_train=y_train,
@@ -97,19 +107,25 @@ api.search(
 
 ############################################################################
 # Print the final ensemble performance
-# ====================================
-print(api.run_history, api.trajectory)
+# ------------
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)
 # Print the final ensemble built by AutoPyTorch
 print(api.show_models())
 
+# Print statistics from search
+print(api.sprint_statistics())
+
 ############################################################################
 
 ############################################################################
+# Stratified Resampling Strategy
+# ===============================
+
+############################################################################
 # Build and fit a classifier with Stratified resampling strategy
-# ==============================================================
+# --------------------------------------------------------------
 api = TabularClassificationTask(
     # For demonstration purposes, we use
     # Stratified hold out validation. However,
@@ -120,7 +136,7 @@ api = TabularClassificationTask(
 
 ############################################################################
 # Search for an ensemble of machine learning algorithms
-# =====================================================
+# -----------------------------------------------------
 api.search(
     X_train=X_train,
     y_train=y_train,
@@ -134,9 +150,11 @@ api.search(
 ############################################################################
 # Print the final ensemble performance
 # ====================================
-print(api.run_history, api.trajectory)
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)
 # Print the final ensemble built by AutoPyTorch
 print(api.show_models())
+
+# Print statistics from search
+print(api.sprint_statistics())

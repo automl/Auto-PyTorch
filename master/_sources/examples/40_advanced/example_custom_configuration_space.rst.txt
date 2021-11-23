@@ -24,6 +24,7 @@ Tabular Classification with Custom Configuration Space
 
 The following example shows how adjust the configuration space of
 the search. Currently, there are two changes that can be made to the space:-
+
 1. Adjust individual hyperparameters in the pipeline
 2. Include or exclude components:
     a) include: Dictionary containing components to include. Key is the node
@@ -35,180 +36,7 @@ the search. Currently, there are two changes that can be made to the space:-
                 to exclude. All except these components will be present in
                 the search space.
 
-.. GENERATED FROM PYTHON SOURCE LINES 19-133
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    <smac.runhistory.runhistory.RunHistory object at 0x7f21b02a4370> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-      data_loader:batch_size, Value: 32
-      encoder:__choice__, Value: 'OneHotEncoder'
-      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
-      imputer:numerical_strategy, Value: 'mean'
-      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
-      lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
-      network_backbone:MLPBackbone:activation, Value: 'relu'
-      network_backbone:MLPBackbone:num_groups, Value: 5
-      network_backbone:MLPBackbone:num_units_1, Value: 200
-      network_backbone:MLPBackbone:num_units_2, Value: 200
-      network_backbone:MLPBackbone:num_units_3, Value: 200
-      network_backbone:MLPBackbone:num_units_4, Value: 200
-      network_backbone:MLPBackbone:num_units_5, Value: 200
-      network_backbone:MLPBackbone:use_dropout, Value: False
-      network_backbone:__choice__, Value: 'MLPBackbone'
-      network_embedding:__choice__, Value: 'NoEmbedding'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'relu'
-      network_head:fully_connected:num_layers, Value: 2
-      network_head:fully_connected:units_layer_1, Value: 128
-      network_init:XavierInit:bias_strategy, Value: 'Normal'
-      network_init:__choice__, Value: 'XavierInit'
-      optimizer:AdamOptimizer:beta1, Value: 0.9
-      optimizer:AdamOptimizer:beta2, Value: 0.9
-      optimizer:AdamOptimizer:lr, Value: 0.01
-      optimizer:AdamOptimizer:weight_decay, Value: 0.0
-      optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:StandardTrainer:weighted_loss, Value: True
-      trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0016999244689941406, budget=0), TrajEntry(train_perf=0.15204678362573099, incumbent_id=1, incumbent=Configuration:
-      data_loader:batch_size, Value: 32
-      encoder:__choice__, Value: 'OneHotEncoder'
-      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
-      imputer:numerical_strategy, Value: 'mean'
-      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
-      lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
-      network_backbone:MLPBackbone:activation, Value: 'relu'
-      network_backbone:MLPBackbone:num_groups, Value: 5
-      network_backbone:MLPBackbone:num_units_1, Value: 200
-      network_backbone:MLPBackbone:num_units_2, Value: 200
-      network_backbone:MLPBackbone:num_units_3, Value: 200
-      network_backbone:MLPBackbone:num_units_4, Value: 200
-      network_backbone:MLPBackbone:num_units_5, Value: 200
-      network_backbone:MLPBackbone:use_dropout, Value: False
-      network_backbone:__choice__, Value: 'MLPBackbone'
-      network_embedding:__choice__, Value: 'NoEmbedding'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'relu'
-      network_head:fully_connected:num_layers, Value: 2
-      network_head:fully_connected:units_layer_1, Value: 128
-      network_init:XavierInit:bias_strategy, Value: 'Normal'
-      network_init:__choice__, Value: 'XavierInit'
-      optimizer:AdamOptimizer:beta1, Value: 0.9
-      optimizer:AdamOptimizer:beta2, Value: 0.9
-      optimizer:AdamOptimizer:lr, Value: 0.01
-      optimizer:AdamOptimizer:weight_decay, Value: 0.0
-      optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:StandardTrainer:weighted_loss, Value: True
-      trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=4.4289000034332275, wallclock_time=5.470310688018799, budget=5.555555555555555)]
-    {'accuracy': 0.861271676300578}
-    |    | Preprocessing                                                     | Estimator                                                 |   Weight |
-    |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-    |  0 | None                                                              | CBLearner                                                 |     0.44 |
-    |  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-    |  3 | None                                                              | ETLearner                                                 |     0.06 |
-    |  4 | None                                                              | SVMLearner                                                |     0.06 |
-    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  6 | None                                                              | RFLearner                                                 |     0.02 |
-    <smac.runhistory.runhistory.RunHistory object at 0x7f21b01a5400> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-      data_loader:batch_size, Value: 32
-      encoder:__choice__, Value: 'NoEncoder'
-      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
-      imputer:numerical_strategy, Value: 'mean'
-      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
-      lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
-      network_backbone:ShapedMLPBackbone:activation, Value: 'relu'
-      network_backbone:ShapedMLPBackbone:max_units, Value: 200
-      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'funnel'
-      network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-      network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-      network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
-      network_embedding:__choice__, Value: 'NoEmbedding'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'relu'
-      network_head:fully_connected:num_layers, Value: 2
-      network_head:fully_connected:units_layer_1, Value: 128
-      network_init:XavierInit:bias_strategy, Value: 'Normal'
-      network_init:__choice__, Value: 'XavierInit'
-      optimizer:AdamOptimizer:beta1, Value: 0.9
-      optimizer:AdamOptimizer:beta2, Value: 0.9
-      optimizer:AdamOptimizer:lr, Value: 0.01
-      optimizer:AdamOptimizer:weight_decay, Value: 0.0
-      optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:StandardTrainer:weighted_loss, Value: True
-      trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0012967586517333984, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
-      data_loader:batch_size, Value: 32
-      encoder:__choice__, Value: 'NoEncoder'
-      feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
-      imputer:categorical_strategy, Value: 'most_frequent'
-      imputer:numerical_strategy, Value: 'mean'
-      lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-      lr_scheduler:ReduceLROnPlateau:mode, Value: 'min'
-      lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-      lr_scheduler:__choice__, Value: 'ReduceLROnPlateau'
-      network_backbone:ShapedMLPBackbone:activation, Value: 'relu'
-      network_backbone:ShapedMLPBackbone:max_units, Value: 200
-      network_backbone:ShapedMLPBackbone:mlp_shape, Value: 'funnel'
-      network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-      network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-      network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-      network_backbone:__choice__, Value: 'ShapedMLPBackbone'
-      network_embedding:__choice__, Value: 'NoEmbedding'
-      network_head:__choice__, Value: 'fully_connected'
-      network_head:fully_connected:activation, Value: 'relu'
-      network_head:fully_connected:num_layers, Value: 2
-      network_head:fully_connected:units_layer_1, Value: 128
-      network_init:XavierInit:bias_strategy, Value: 'Normal'
-      network_init:__choice__, Value: 'XavierInit'
-      optimizer:AdamOptimizer:beta1, Value: 0.9
-      optimizer:AdamOptimizer:beta2, Value: 0.9
-      optimizer:AdamOptimizer:lr, Value: 0.01
-      optimizer:AdamOptimizer:weight_decay, Value: 0.0
-      optimizer:__choice__, Value: 'AdamOptimizer'
-      scaler:__choice__, Value: 'StandardScaler'
-      trainer:StandardTrainer:weighted_loss, Value: True
-      trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=3.3284835815429688, wallclock_time=4.375677108764648, budget=5.555555555555555)]
-    {'accuracy': 0.861271676300578}
-    |    | Preprocessing                                                 | Estimator                                                       |   Weight |
-    |---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-    |  1 | None                                                          | RFLearner                                                       |     0.24 |
-    |  2 | None                                                          | KNNLearner                                                      |     0.16 |
-    |  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-    |  4 | None                                                          | CBLearner                                                       |     0.08 |
-    |  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    |  7 | None                                                          | ETLearner                                                       |     0.02 |
-    |  8 | None                                                          | SVMLearner                                                      |     0.02 |
-
-
-
-
-
-
-|
+.. GENERATED FROM PYTHON SOURCE LINES 20-61
 
 .. code-block:: default
 
@@ -253,84 +81,255 @@ the search. Currently, there are two changes that can be made to the space:-
         return updates
 
 
-    if __name__ == '__main__':
 
-        ############################################################################
-        # Data Loading
-        # ============
-        X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-            X,
-            y,
-            random_state=1,
-        )
 
-        ############################################################################
-        # Build and fit a classifier with include components
-        # ==================================================
-        api = TabularClassificationTask(
-            search_space_updates=get_search_space_updates(),
-            include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
-                                'encoder': ['OneHotEncoder']}
-        )
 
-        ############################################################################
-        # Search for an ensemble of machine learning algorithms
-        # =====================================================
-        api.search(
-            X_train=X_train.copy(),
-            y_train=y_train.copy(),
-            X_test=X_test.copy(),
-            y_test=y_test.copy(),
-            optimize_metric='accuracy',
-            total_walltime_limit=150,
-            func_eval_time_limit_secs=30
-        )
 
-        ############################################################################
-        # Print the final ensemble performance
-        # ====================================
-        print(api.run_history, api.trajectory)
-        y_pred = api.predict(X_test)
-        score = api.score(y_pred, y_test)
-        print(score)
-        print(api.show_models())
 
-        ############################################################################
-        # Build and fit a classifier with exclude components
-        # ==================================================
-        api = TabularClassificationTask(
-            search_space_updates=get_search_space_updates(),
-            exclude_components={'network_backbone': ['MLPBackbone'],
-                                'encoder': ['OneHotEncoder']}
-        )
 
-        ############################################################################
-        # Search for an ensemble of machine learning algorithms
-        # =====================================================
-        api.search(
-            X_train=X_train,
-            y_train=y_train,
-            X_test=X_test.copy(),
-            y_test=y_test.copy(),
-            optimize_metric='accuracy',
-            total_walltime_limit=150,
-            func_eval_time_limit_secs=30
-        )
 
-        ############################################################################
-        # Print the final ensemble performance
-        # ====================================
-        print(api.run_history, api.trajectory)
-        y_pred = api.predict(X_test)
-        score = api.score(y_pred, y_test)
-        print(score)
-        print(api.show_models())
+.. GENERATED FROM PYTHON SOURCE LINES 62-64
+
+Data Loading
+============
+
+.. GENERATED FROM PYTHON SOURCE LINES 64-71
+
+.. code-block:: default
+
+    X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X,
+        y,
+        random_state=1,
+    )
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 72-74
+
+Build and fit a classifier with include components
+==================================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 74-80
+
+.. code-block:: default
+
+    api = TabularClassificationTask(
+        search_space_updates=get_search_space_updates(),
+        include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
+                            'encoder': ['OneHotEncoder']}
+    )
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 81-83
+
+Search for an ensemble of machine learning algorithms
+=====================================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 83-93
+
+.. code-block:: default
+
+    api.search(
+        X_train=X_train.copy(),
+        y_train=y_train.copy(),
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=150,
+        func_eval_time_limit_secs=30
+    )
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4398047490>
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 94-96
+
+Print the final ensemble performance
+====================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 96-104
+
+.. code-block:: default
+
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    print(api.show_models())
+
+    # Print statistics from search
+    print(api.sprint_statistics())
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                                     | Estimator                                                 |   Weight |
+    |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+    |  0 | None                                                              | CBLearner                                                 |     0.44 |
+    |  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
+    |  3 | None                                                              | ETLearner                                                 |     0.06 |
+    |  4 | None                                                              | SVMLearner                                                |     0.06 |
+    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    |  6 | None                                                              | RFLearner                                                 |     0.02 |
+    autoPyTorch results:
+            Dataset name: 51dd4821-4c52-11ec-870d-815135d073d5
+            Optimisation Metric: accuracy
+            Best validation score: 0.8654970760233918
+            Number of target algorithm runs: 20
+            Number of successful target algorithm runs: 16
+            Number of crashed target algorithm runs: 3
+            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the memory limit: 0
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 105-107
+
+Build and fit a classifier with exclude components
+==================================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 107-113
+
+.. code-block:: default
+
+    api = TabularClassificationTask(
+        search_space_updates=get_search_space_updates(),
+        exclude_components={'network_backbone': ['MLPBackbone'],
+                            'encoder': ['OneHotEncoder']}
+    )
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 114-116
+
+Search for an ensemble of machine learning algorithms
+=====================================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 116-126
+
+.. code-block:: default
+
+    api.search(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=150,
+        func_eval_time_limit_secs=30
+    )
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f439cfc9850>
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 127-129
+
+Print the final ensemble performance
+====================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 129-136
+
+.. code-block:: default
+
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    print(api.show_models())
+
+    # Print statistics from search
+    print(api.sprint_statistics())
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                                 | Estimator                                                       |   Weight |
+    |---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+    |  1 | None                                                          | RFLearner                                                       |     0.24 |
+    |  2 | None                                                          | KNNLearner                                                      |     0.16 |
+    |  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+    |  4 | None                                                          | CBLearner                                                       |     0.08 |
+    |  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  7 | None                                                          | ETLearner                                                       |     0.02 |
+    |  8 | None                                                          | SVMLearner                                                      |     0.02 |
+    autoPyTorch results:
+            Dataset name: b69fb477-4c52-11ec-870d-815135d073d5
+            Optimisation Metric: accuracy
+            Best validation score: 0.8654970760233918
+            Number of target algorithm runs: 22
+            Number of successful target algorithm runs: 16
+            Number of crashed target algorithm runs: 5
+            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the memory limit: 0
+
+
+
+
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  45.300 seconds)
+   **Total running time of the script:** ( 5 minutes  37.887 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:

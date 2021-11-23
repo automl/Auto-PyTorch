@@ -195,7 +195,7 @@ we show how to further interact with <a class="reference external" href="https:/
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f21ac2e48b0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f439c22c640&gt;
 </pre></div>
 </div>
 </section>
@@ -233,7 +233,7 @@ we show how to further interact with <a class="reference external" href="https:/
         <span class="p">),</span>
         <span class="s1">&#39;single_best_optimization_accuracy&#39;</span><span class="p">:</span> <span class="n">accuracy</span><span class="o">.</span><span class="n">_optimum</span> <span class="o">-</span> <span class="n">run_value</span><span class="o">.</span><span class="n">cost</span><span class="p">,</span>
         <span class="s1">&#39;single_best_test_accuracy&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">run_value</span><span class="o">.</span><span class="n">additional_info</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span>
-        <span class="n">accuracy</span><span class="o">.</span><span class="n">_optimum</span> <span class="o">-</span> <span class="n">run_value</span><span class="o">.</span><span class="n">additional_info</span><span class="p">[</span><span class="s1">&#39;test_loss&#39;</span><span class="p">],</span>
+        <span class="n">accuracy</span><span class="o">.</span><span class="n">_optimum</span> <span class="o">-</span> <span class="n">run_value</span><span class="o">.</span><span class="n">additional_info</span><span class="p">[</span><span class="s1">&#39;test_loss&#39;</span><span class="p">][</span><span class="s1">&#39;accuracy&#39;</span><span class="p">],</span>
     <span class="p">})</span>
 <span class="n">individual_performance_frame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">individual_performances</span><span class="p">)</span>
 
@@ -290,7 +290,7 @@ we show how to further interact with <a class="reference external" href="https:/
 <li><img src="../../_images/sphx_glr_example_visualization_001.png" srcset="../../_images/sphx_glr_example_visualization_001.png" alt="Auto-PyTorch accuracy over time" class = "sphx-glr-multi-img"/></li>
 <li><img src="../../_images/sphx_glr_example_visualization_002.png" srcset="../../_images/sphx_glr_example_visualization_002.png" alt="Permutation Importances (Train set)" class = "sphx-glr-multi-img"/></li>
 </ul>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 3 minutes  54.130 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 4 minutes  1.416 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-visualization-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_visualization.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

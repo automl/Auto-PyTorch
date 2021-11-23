@@ -115,27 +115,6 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model parallely on 2 cores with ...">
-
-.. only:: html
-
- .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_parallel_n_jobs_thumb.png
-     :alt: Tabular Classification
-
-     :ref:`sphx_glr_examples_40_advanced_example_parallel_n_jobs.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/40_advanced/example_parallel_n_jobs
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with AutoPyTorch using the...">
 
 .. only:: html
@@ -157,14 +136,14 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with different resampling ...">
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model parallely on 2 cores with ...">
 
 .. only:: html
 
- .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_resampling_strategy_thumb.png
-     :alt: Tabular Classification with different resampling strategy
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_parallel_n_jobs_thumb.png
+     :alt: Tabular Classification with n parallel jobs
 
-     :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py`
+     :ref:`sphx_glr_examples_40_advanced_example_parallel_n_jobs.py`
 
 .. raw:: html
 
@@ -174,7 +153,7 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 .. toctree::
    :hidden:
 
-   /examples/40_advanced/example_resampling_strategy
+   /examples/40_advanced/example_parallel_n_jobs
 
 .. raw:: html
 
@@ -196,6 +175,27 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
    :hidden:
 
    /examples/40_advanced/example_custom_configuration_space
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with different resampling ...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_resampling_strategy_thumb.png
+     :alt: Tabular Classification with different resampling strategy
+
+     :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_resampling_strategy
 
 .. raw:: html
 
