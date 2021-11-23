@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@master
+        with:
+          submodules: recursive
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
@@ -48,4 +50,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.PYPI_TOKEN_NO_NEWLINE }}
+          password: ${{ secrets.PYPI_TOKEN }}
