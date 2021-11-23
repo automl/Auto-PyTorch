@@ -3,6 +3,7 @@ import time
 import warnings
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check
+from functools import partial
 
 from ConfigSpace import Configuration
 
@@ -33,6 +34,8 @@ from autoPyTorch.constants import (
     FORECASTING_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+
 from autoPyTorch.evaluation.utils import (
     VotingRegressorWrapper,
     convert_multioutput_multiclass_to_multilabel
@@ -178,6 +181,26 @@ class DummyRegressionPipeline(DummyRegressor):
                 'runtime': 1}
 
 
+class DummyTimeSeriesPredictionPipeline(DummyClassificationPipeline):
+    def __init__(self, config: Configuration,
+                 random_state: Optional[Union[int, np.random.RandomState]] = None,
+                 init_params: Optional[Dict] = None,
+                 n_prediction_steps: int = 1,
+                 ) -> None:
+        super(DummyTimeSeriesPredictionPipeline, self).__init__(config, random_state, init_params)
+        self.n_prediction_steps = n_prediction_steps
+
+    def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
+                      batch_size: int = 1000) -> np.array:
+        new_X = X[-self.n_prediction_steps:]
+        return super(DummyTimeSeriesPredictionPipeline, self).predict_proba(new_X)
+
+    def predict(self, X: Union[np.ndarray, pd.DataFrame],
+                batch_size: int = 1000) -> np.array:
+        new_X = X[-self.n_prediction_steps:]
+        return super(DummyTimeSeriesPredictionPipeline, self).predict(new_X).astype(np.float32)
+
+
 def fit_and_suppress_warnings(logger: PicklableClientLogger, pipeline: BaseEstimator,
                               X: Dict[str, Any], y: Any
                               ) -> BaseEstimator:
@@ -212,7 +235,7 @@ class AbstractEvaluator(object):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  ) -> None:
 
         self.starttime = time.time()
@@ -275,7 +298,7 @@ class AbstractEvaluator(object):
             else:
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression
-        else:
+        elif self.task_type in CLASSIFICATION_TASKS:
             if isinstance(self.configuration, int):
                 self.pipeline_class = DummyClassificationPipeline
             elif isinstance(self.configuration, str):
@@ -295,6 +318,23 @@ class AbstractEvaluator(object):
                 else:
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
+        elif self.task_type in FORECASTING_TASKS:
+            if not isinstance(self.datamanager, TimeSeriesForecastingDataset):
+                raise ValueError(f'to perform time series forecastin tasks, the dataset must be '
+                                 f'autopytorch.dataset.TimeSeriesForecastingDataset.'
+                                 f'However, it is {type(self.datamanager)}')
+            n_prediction_steps = self.datamanager.n_prediction_steps
+            if isinstance(self.configuration, int):
+                self.pipeline_class = partial(partial(DummyTimeSeriesPredictionPipeline,
+                                                      n_prediction_steps=n_prediction_steps))
+            elif isinstance(self.configuration, str):
+                raise ValueError("Only tabular classifications tasks "
+                                 "are currently supported with traditional methods")
+            elif isinstance(self.configuration, Configuration):
+                self.pipeline_class = autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline
+            else:
+                raise ValueError('task {} not available'.format(self.task_type))
+            self.predict_function = self._predict_regression
 
         self.dataset_properties = self.datamanager.get_dataset_properties(get_dataset_requirements(info))
 
@@ -367,7 +407,7 @@ class AbstractEvaluator(object):
             raise ValueError("Invalid configuration entered")
         return pipeline
 
-    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray) -> Dict[str, float]:
+    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **loss_kwargs: Dict) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
 
@@ -388,7 +428,7 @@ class AbstractEvaluator(object):
         else:
             metrics = [self.metric]
         score = calculate_score(
-            y_true, y_hat, self.task_type, metrics)
+            y_true, y_hat, self.task_type, metrics, **loss_kwargs)
 
         err = {metric.name: metric._optimum - score[metric.name] for metric in metrics
                if metric.name in score.keys()}

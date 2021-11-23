@@ -135,17 +135,17 @@ def get_configuration_space(info: Dict[str, Any],
     task_type: int = STRING_TO_TASK_TYPES[info['task_type']]
 
     if task_type in REGRESSION_TASKS:
-        if task_type in FORECASTING_TASKS:
-            return _get_forecasting_configuration_space(info,
-                                                        include if include is not None else {},
-                                                        exclude if exclude is not None else {},
-                                                        search_space_updates=search_space_updates
-                                                        )
         return _get_regression_configuration_space(info,
                                                    include if include is not None else {},
                                                    exclude if exclude is not None else {},
                                                    search_space_updates=search_space_updates
                                                    )
+    elif task_type in FORECASTING_TASKS:
+        return _get_forecasting_configuration_space(info,
+                                                    include if include is not None else {},
+                                                    exclude if exclude is not None else {},
+                                                    search_space_updates=search_space_updates
+                                                    )
     else:
         return _get_classification_configuration_space(info,
                                                        include if include is not None else {},

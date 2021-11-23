@@ -240,11 +240,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
         train_split, test_split = datamanager.splits[X['split_id']]
-        valid_indices = []
-        idx_start = 0
-
-
-
 
         num_instances_dataset = np.size(train_split)
         num_instances_train = self.num_batches_per_epoch * self.batch_size
@@ -258,6 +253,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         num_instances_per_seqs = np.ceil(num_instances_train / num_instances_dataset * seq_train_length)
         num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
         # at least one element of each sequence should be selected
+
+        # TODO consider the case where num_instances_train is greater than num_instances_dataset,
+        # In which case we simply iterate through all the datasets
 
         """
         # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size

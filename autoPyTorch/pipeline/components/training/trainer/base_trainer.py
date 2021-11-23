@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
@@ -279,7 +279,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             return loss_sum / N, {}
 
     def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
-        if self.task_type in REGRESSION_TASKS:
+        if self.task_type in REGRESSION_TASKS or FORECASTING_TASKS:
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
             if targets.ndim == 1:
@@ -302,6 +302,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
+
         targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)

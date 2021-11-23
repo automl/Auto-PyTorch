@@ -37,25 +37,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.utils.common import FitRequirement, hash_array_or_matrix
-
-# TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
-# TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
-# TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
-
-# seasonality map, maps a frequency value to a number
-SEASONALITY_MAP = {
-    "minutely": [1440, 10080, 525960],
-    "10_minutes": [144, 1008, 52596],
-    "half_hourly": [48, 336, 17532],
-    "hourly": [24, 168, 8766],
-    "daily": 7,
-    "weekly": 365.25 / 7,
-    "monthly": 12,
-    "quarterly": 4,
-    "yearly": 1
-}
-
-MAX_WIDNOW_SIZE_BASE = 500
+from autoPyTorch.constants_forecasting import SEASONALITY_MAP
 
 
 class TimeSeriesSequence(Dataset):
@@ -121,7 +103,7 @@ class TimeSeriesSequence(Dataset):
         Y = self.Y
         if Y is not None:
             # Y = Y[:index + self.n_prediction_steps]
-            #Y = Y[index + 1: index + self.n_prediction_steps + 1]
+            # Y = Y[index + 1: index + self.n_prediction_steps + 1]
             Y = Y[index + 1: index + self.n_prediction_steps + 1]
 
             Y = torch.from_numpy(Y)
@@ -167,6 +149,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+                 target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  dataset_name: Optional[str] = None,
                  resampling_strategy: Union[
@@ -182,6 +165,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  normalize_y: bool = True,
                  ):
         """
+        :param target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] used for multi-variant forecasting
+        tasks, the target_variables indicates which values in X corresponds to Y
         :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
         period
         :param n_prediction_steps: The number of steps you want to forecast into the future
@@ -208,9 +193,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.categorical_columns = self.validator.feature_validator.categorical_columns
 
         self.num_features = self.validator.feature_validator.num_features  # type: int
-        self.num_target =  self.validator.target_validator.out_dimensionality  # type: int
+        self.num_target = self.validator.target_validator.out_dimensionality  # type: int
 
         self.shift_input_data = shift_input_data
+        self.target_variables = target_variables
 
         X, sequence_lengths, Y = self.validator.transform(X, Y,
                                                           shift_input_data=shift_input_data,
@@ -279,7 +265,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 num_target = len(np.unique(Y))
-                #self.output_shape = len(np.unique(Y))
+                # self.output_shape = len(np.unique(Y))
             else:
                 # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
                 num_target = X.shape[-1] if X.ndim > 1 else 1
@@ -298,17 +284,22 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.splits = self.get_splits_from_resampling_strategy()
 
+        if freq is None:
+            self.freq = None
+            self.freq_value = None
+
         if isinstance(freq, str):
             if freq not in SEASONALITY_MAP:
                 Warning("The given freq name is not supported by our dataset, we will use the default "
                         "configuration space on the hyperparameter window_size, if you want to adapt this value"
                         "you could pass freq with a numerical value")
-            freq = SEASONALITY_MAP.get(freq, None)
+            freq_value = SEASONALITY_MAP.get(freq, None)
         if isinstance(freq, list):
             tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
-            freq = tmp_freq
+            freq_value = tmp_freq
 
-        self.freq = freq
+        self.freq: Optional[str] = freq
+        self.freq_value: Optional[int] = freq_value
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
@@ -374,7 +365,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             else:
                 Y_seq = Y[idx_start_train: idx_end_train]
 
-
             if normalize_y:
                 Y_seq_mean = np.mean(Y_seq)
                 Y_seq_std = np.std(Y_seq)
@@ -397,7 +387,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 else:
                     Y_test_seq = Y_test[idx_start_test: idx_end_test]
 
-
                 if normalize_y:
                     Y_test_seq_mean = np.mean(Y_test_seq)
                     Y_test_seq_std = np.std(Y_test_seq)
@@ -405,7 +394,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
                 if self.shift_input_data:
                     Y_test[idx_start_test + seq_idx * self.n_prediction_steps:
-                      idx_end_test + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
+                           idx_end_test + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
                 else:
                     Y_test[idx_start_test: idx_end_test] = Y_seq
 
@@ -421,7 +410,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sequence_datasets.append(sequence)
             idx_start_train = idx_end_train
 
-            #self.sequence_lengths_train[seq_idx] = len(sequence)
+            # self.sequence_lengths_train[seq_idx] = len(sequence)
 
             # X_seq_all.append(X_seq)
             # Y_seq_all.append(Y_seq)
@@ -578,7 +567,16 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_all = self._get_indices()
 
         for idx_seq, dataset in enumerate(self.datasets):
-            split = self.cross_validators[cross_val_type.name](num_splits, indices=np.arange(len(dataset)), **kwargs)
+            if self.shift_input_data:
+                split = self.cross_validators[cross_val_type.name](num_splits,
+                                                                   indices=np.arange(len(dataset)), **kwargs)
+            else:
+                # If the data is not shifted, we need to discard the last n_prediction_steps such that we have enough
+                # y values
+                split = self.cross_validators[cross_val_type.name](num_splits,
+                                                                   indices=np.arange(
+                                                                       len(dataset) - self.n_prediction_steps),
+                                                                   **kwargs)
             for idx_split in range(num_splits):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
@@ -623,9 +621,15 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
-            split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
-                                                                   indices=np.arange(len(dataset)),
-                                                                   **kwargs)
+            if self.shift_input_data:
+                split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
+                                                                       indices=np.arange(len(dataset)),
+                                                                       **kwargs)
+            else:
+                split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
+                                                                       indices=np.arange(
+                                                                           len(dataset) - self.n_prediction_steps),
+                                                                       **kwargs)
             for idx_split in range(2):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]

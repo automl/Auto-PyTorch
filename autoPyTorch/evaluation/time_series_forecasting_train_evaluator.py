@@ -15,34 +15,14 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
+
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-
-from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
-
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
-
-
-class DummyTimeSeriesPredictionPipeline(DummyClassificationPipeline):
-    def __init__(self, config: Configuration,
-                 random_state: Optional[Union[int, np.random.RandomState]] = None,
-                 init_params: Optional[Dict] = None,
-                 n_prediction_steps: int = 1,
-                 ) -> None:
-        super(DummyTimeSeriesPredictionPipeline, self).__init__(config, random_state, init_params)
-        self.n_prediction_steps = n_prediction_steps
-
-    def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
-        new_X = np.ones((self.n_prediction_steps, 1))
-        return super(DummyTimeSeriesPredictionPipeline, self).predict_proba(new_X)
-
-    def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
-        new_X = np.ones((self.n_prediction_steps, 1))
-        return super(DummyTimeSeriesPredictionPipeline, self).predict(new_X).astype(np.float32)
+from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
+from autoPyTorch.constants_forecasting import SEASONALITY_MAP
 
 
 class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
@@ -86,24 +66,12 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.datamanager: TimeSeriesForecastingDataset
         self.n_prediction_steps = self.datamanager.n_prediction_steps
         self.num_sequences = self.datamanager.num_sequences
+        self.seq_length_min = np.min(self.num_sequences)
+        seasonality = SEASONALITY_MAP.get(self.datamanager.freq, 1)
+        if isinstance(seasonality, list):
+            seasonality = min(seasonality)  # Use to calculate MASE
+        self.seasonality = int(seasonality)
 
-        if isinstance(self.configuration, int):
-            self.pipeline_class = partial(DummyTimeSeriesPredictionPipeline, n_prediction_steps=self.n_prediction_steps)
-        else:
-            self.pipeline_class = TimeSeriesForecastingPipeline
-
-        self.splits = self.datamanager.splits
-        if self.splits is None:
-            raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
-        self.num_folds: int = len(self.splits)
-        self.Y_targets: List[Optional[np.ndarray]] = [None] * self.num_folds
-        # TODO consider if we really need Y_train_targets
-        #self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN
-        self.pipelines: List[Optional[BaseEstimator]] = [None] * self.num_folds
-        self.indices: List[Optional[Tuple[Union[np.ndarray, List], Union[np.ndarray, List]]]] = [None] * self.num_folds
-
-        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
-        self.keep_models = keep_models
 
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
@@ -111,6 +79,8 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         assert self.splits is not None, "Can't fit pipeline in {} is datamanager.splits is None" \
             .format(self.__class__.__name__)
         additional_run_info: Optional[Dict] = None
+
+
         if self.num_folds == 1:
             split_id = 0
             self.logger.info("Starting fit {}".format(split_id))
@@ -119,29 +89,40 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             train_split, test_split = self.splits[split_id]
 
-            y_optimization = np.ones([len(test_split), self.n_prediction_steps])
+            # TODO move these lines to TimeSeriesForecastingDatasets (Create a new object there that inherents from
+            #  np.array while return multiple values by __get_item__)!
+            # the +1 in the end indicates that X and y are not aligned (y and x with the same index corresponds to
+            # the same time step).
+            test_split_base = test_split + np.arange(len(test_split)) * self.n_prediction_steps + 1
 
-            # We implement this with the following reasons:
-            # given a series data, we don't know which value to predict so we predict the last n_predicted values
-            # However, this makes the shape unaligned with the shape of "self.Y_optimization"
-            # TODO consider fixed this under data loader (use pipline to do a preprocessing)
-            y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
-                           np.tile(np.arange(self.n_prediction_steps)[::-1], len(test_split))
+            y_test_split = np.repeat(test_split_base, self.n_prediction_steps) + \
+                           np.tile(np.arange(self.n_prediction_steps), len(test_split_base))
 
             self.Y_optimization = self.y_train[y_test_split]
+
             #self.Y_actual_train = self.y_train[train_split]
             y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
                                                                                         train_indices=train_split,
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            #As each sequence contains one test split id, and the value to be predicted is the last n_prediction_steps
-            #we need to expand the current split.
+            # use for computing MASE losses
+            y_train_forecasting = []
+            for seq_idx, test_idx in enumerate(test_split):
+                # TODO consider multi-variants here
+                seq = self.datamanager[test_idx][0]
+                if seq.shape[-1] > 1:
+                     y_train_forecasting.append(seq[self.datamanager.target_variables].squeeze())
+                else:
+                    y_train_forecasting.append(seq.squeeze())
 
-            #train_loss = self._loss(self.y_train[train_split], y_train_pred)
-            # TODO do we really need train loss?
+            forecasting_kwargs = {'y_train': y_train_forecasting,
+                                  'sp': self.seasonality,
+                                  'n_prediction_steps': self.n_prediction_steps,
+                                  }
+
             train_loss = None
-            loss = self._loss(self.y_train[y_test_split], y_opt_pred)
+            loss = self._loss(self.y_train[y_test_split], y_opt_pred, **forecasting_kwargs)
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
@@ -177,9 +158,23 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             # weights for opt_losses.
             opt_fold_weights = [np.NaN] * self.num_folds
 
-            for i, (train_split, test_split) in enumerate(self.splits):
+            y_train_forecasting_all = []
+            for i, (train_split, test_split) in self.splits:
+                # use for computing MASE losses
+                y_train_forecasting = []
+                for seq_idx, test_idx in enumerate(test_split):
+                    # TODO consider multi-variants here
+                    seq = self.datamanager[test_idx][0]
+                    if seq.shape[-1] > 1:
+                        y_train_forecasting.append(seq[self.datamanager.target_variables].squeeze())
+                    else:
+                        y_train_forecasting.append(seq.squeeze())
+                y_train_forecasting_all.append(y_train_forecasting)
 
+            for i, (train_split, test_split) in enumerate(self.splits):
                 pipeline = self.pipelines[i]
+                test_split_base = test_split + np.arange(len(test_split)) * self.n_prediction_steps + 1
+
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
                                                                                     train_indices=train_split,
                                                                                     test_indices=test_split,
@@ -192,27 +187,29 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
                 #self.Y_train_targets[train_split] = self.y_train[train_split]
 
-                y_test_split = np.repeat(test_split, self.n_prediction_steps) - \
-                               np.tile(np.arange(self.n_prediction_steps)[::-1], len(test_split))
+                y_test_split = np.repeat(test_split_base, self.n_prediction_steps) + \
+                               np.tile(np.arange(self.n_prediction_steps), len(test_split_base))
 
                 self.Y_targets[i] = self.y_train[y_test_split]
                 # Compute train loss of this fold and store it. train_loss could
                 # either be a scalar or a dict of scalars with metrics as keys.
-                #train_loss = self._loss(
-                #    self.Y_train_targets[train_split],
-                #    train_pred,
-                #)
+
                 train_loss = 0.
                 train_losses[i] = train_loss
                 # number of training data points for this fold. Used for weighting
                 # the average.
                 train_fold_weights[i] = len(train_split)
 
+                forecasting_kwargs = {'y_train': y_train_forecasting_all[i],
+                                      'sp': self.seasonality,
+                                      'n_prediction_steps': self.n_prediction_steps,
+                                      }
 
                 # Compute validation loss of this fold and store it.
                 optimization_loss = self._loss(
                     self.Y_targets[i],
                     opt_pred,
+                    **forecasting_kwargs
                 )
                 opt_losses[i] = optimization_loss
                 # number of optimization data points for this fold.
@@ -296,15 +293,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  train_indices: Union[np.ndarray, List],
                  test_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-        datamanager = self.datamanager
-        y_pred = np.ones([len(test_indices), self.n_prediction_steps])
+        # TODO consider multile outputs
+        opt_pred = np.ones([len(test_indices), self.n_prediction_steps])
         for seq_idx, test_idx in enumerate(test_indices):
-            y_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).flatten()
-
-
-        #train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
-        #                                   self.y_train[train_indices])
-        opt_pred = y_pred.flatten()
+            opt_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).squeeze()
 
         #TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:

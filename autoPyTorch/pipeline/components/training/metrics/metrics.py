@@ -1,6 +1,6 @@
 from functools import partial
 
-
+import sktime.performance_metrics.forecasting as forecasting_metrics
 import sklearn.metrics
 
 from smac.utils.constants import MAXINT
@@ -46,6 +46,97 @@ balanced_accuracy = make_metric('balanced_accuracy',
 f1 = make_metric('f1',
                  sklearn.metrics.f1_score)
 
+# Standard Forecasting Scores
+mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
+                                    forecasting_metrics.mean_absolute_scaled_error,
+                                    optimum=0,
+                                    worst_possible_result=MAXINT,
+                                    greater_is_better=False,
+                                    do_forecasting=True,
+                                    aggregation='mean',
+                                    )
+
+median_MASE_forecasting = make_metric('median_absolute_scaled_error_forecasting',
+                                      forecasting_metrics.mean_absolute_scaled_error,
+                                      optimum=0,
+                                      worst_possible_result=MAXINT,
+                                      greater_is_better=False,
+                                      do_forecasting=True,
+                                      aggregation='median',
+                                      )
+
+mean_MSSE_forecasting = make_metric('mean_MSSE_forecasting',
+                                    forecasting_metrics.mean_squared_scaled_error,
+                                    optimum=0,
+                                    worst_possible_result=MAXINT,
+                                    greater_is_better=False,
+                                    do_forecasting=True,
+                                    aggregation='mean',
+                                    )
+
+median_MSSE_forecasting = make_metric('median_MSSE_forecasting',
+                                      forecasting_metrics.mean_squared_scaled_error,
+                                      optimum=0,
+                                      worst_possible_result=MAXINT,
+                                      greater_is_better=False,
+                                      do_forecasting=True,
+                                      aggregation='median',
+                                      )
+
+mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
+                                   forecasting_metrics.mean_absolute_error,
+                                   optimum=0,
+                                   worst_possible_result=MAXINT,
+                                   greater_is_better=False,
+                                   do_forecasting=True,
+                                   aggregation='mean',
+                                   )
+
+median_MAE_forecasting = make_metric('median_absolute_error_forecasting',
+                                     forecasting_metrics.mean_absolute_error,
+                                     optimum=0,
+                                     worst_possible_result=MAXINT,
+                                     greater_is_better=False,
+                                     do_forecasting=True,
+                                     aggregation='median',
+                                     )
+
+mean_MAPE_forecasting = make_metric('mean_MAPE_forecasting',
+                                    forecasting_metrics.mean_absolute_percentage_error,
+                                    optimum=0,
+                                    worst_possible_result=MAXINT,
+                                    greater_is_better=False,
+                                    do_forecasting=True,
+                                    aggregation='mean',
+                                    )
+
+median_MAPE_forecasting = make_metric('median_MAPE_forecasting',
+                                      forecasting_metrics.mean_absolute_percentage_error,
+                                      optimum=0,
+                                      worst_possible_result=MAXINT,
+                                      greater_is_better=False,
+                                      do_forecasting=True,
+                                      aggregation='median',
+                                      )
+
+mean_MSE_forecasting = make_metric('mean_MSE_forecasting',
+                                   forecasting_metrics.mean_squared_error,
+                                   optimum=0,
+                                   worst_possible_result=MAXINT,
+                                   greater_is_better=False,
+                                   do_forecasting=True,
+                                   aggregation='mean',
+                                   )
+
+median_MSE_forecasting = make_metric('median_MSE_forecasting',
+                                     forecasting_metrics.mean_squared_error,
+                                     optimum=0,
+                                     worst_possible_result=MAXINT,
+                                     greater_is_better=False,
+                                     do_forecasting=True,
+                                     aggregation='median',
+                                     )
+
 # Score functions that need decision values
 roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True)
 average_precision = make_metric('average_precision',
@@ -74,6 +165,14 @@ CLASSIFICATION_METRICS = dict()
 for scorer in [accuracy, balanced_accuracy, roc_auc, average_precision,
                log_loss]:
     CLASSIFICATION_METRICS[scorer.name] = scorer
+
+FORECASTING_METRICS = dict()
+for scorer in [mean_MASE_forecasting, median_MASE_forecasting,
+               mean_MSSE_forecasting, median_MSSE_forecasting,
+               mean_MAE_forecasting, median_MAE_forecasting,
+               mean_MAPE_forecasting, median_MAPE_forecasting,
+               mean_MSE_forecasting, median_MSE_forecasting]:
+    FORECASTING_METRICS[scorer.name] = scorer
 
 for name, metric in [('precision', sklearn.metrics.precision_score),
                      ('recall', sklearn.metrics.recall_score),

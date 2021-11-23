@@ -6,11 +6,13 @@ import numpy as np
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     REGRESSION_TASKS,
+    FORECASTING_TASKS,
     STRING_TO_TASK_TYPES,
     TASK_TYPES,
 )
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
+from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, \
+    REGRESSION_METRICS, FORECASTING_METRICS
 
 
 def sanitize_array(array: np.ndarray) -> np.ndarray:
@@ -40,6 +42,8 @@ def get_supported_metrics(dataset_properties: Dict[str, Any]) -> Dict[str, autoP
         return REGRESSION_METRICS
     elif STRING_TO_TASK_TYPES[task_type] in CLASSIFICATION_TASKS:
         return CLASSIFICATION_METRICS
+    elif STRING_TO_TASK_TYPES[task_type] in FORECASTING_TASKS:
+        return FORECASTING_METRICS
     else:
         raise NotImplementedError(task_type)
 
@@ -108,9 +112,14 @@ def calculate_score(
         prediction: np.ndarray,
         task_type: int,
         metrics: Iterable[autoPyTorchMetric],
+        **score_kwargs: Dict
 ) -> Dict[str, float]:
     score_dict = dict()
-    if task_type in REGRESSION_TASKS:
+    if task_type in FORECASTING_TASKS:
+        cprediction = sanitize_array(prediction)
+        for metric_ in metrics:
+            score_dict[metric_.name] = metric_(target, cprediction, **score_kwargs)
+    elif task_type in REGRESSION_TASKS:
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
             try:
@@ -122,7 +131,6 @@ def calculate_score(
                     continue
                 else:
                     raise e
-
     else:
         for metric_ in metrics:
             try:

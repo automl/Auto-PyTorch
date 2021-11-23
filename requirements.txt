@@ -19,3 +19,4 @@ openml==0.11.0
 lightgbm==3.1.1
 catboost==0.24.4
 pexpect==4.8.0
+sktime==0.8.0

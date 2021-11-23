@@ -29,7 +29,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         # Check that the data is valid
         if len(X_train) != len(y_train):
             raise ValueError("Inconsistent number of sequences for features and targets,"
-                             " {} for features and {} for targets".format(len(X_train), len(y_train),))
+                             " {} for features and {} for targets".format(len(X_train), len(y_train), ))
 
         if X_test is not None:
             if len(X_test) != len(y_test):
@@ -81,30 +81,32 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         sequence_lengths = [0] * num_sequences
         num_features = self.feature_validator.num_features
 
+        if shift_input_data:
+            for seq_idx in range(num_sequences):
+                X[seq_idx] = X[seq_idx][:-n_prediction_steps]
+                # y[seq_idx] = y[seq_idx][n_prediction_steps:]
+                sequence_lengths[seq_idx] = len(X[seq_idx])
+        else:
+            for seq_idx in range(num_sequences):
+                sequence_lengths[seq_idx] = len(X[seq_idx])
+
         if y is not None:
             num_targets = self.target_validator.out_dimensionality
-            if shift_input_data:
-                for seq_idx in range(num_sequences):
-                    X[seq_idx] = X[seq_idx][:-n_prediction_steps]
-                    #y[seq_idx] = y[seq_idx][n_prediction_steps:]
-                    sequence_lengths[seq_idx] = len(X[seq_idx])
-            else:
-                for seq_idx in range(num_sequences):
-                    sequence_lengths[seq_idx] = len(X[seq_idx])
 
             num_train_data = np.sum(sequence_lengths)
 
-
             # a matrix that is concatenated by all the time series sequences
             X_flat = np.empty([num_train_data, num_features])
-            y_flat = np.empty([num_train_data + n_prediction_steps*num_sequences, num_targets])
+            y_flat = np.empty([num_train_data + n_prediction_steps * num_sequences, num_targets])
 
             start_idx = 0
             for seq_idx, seq_length in enumerate(sequence_lengths):
                 end_idx = start_idx + seq_length
                 X_flat[start_idx: end_idx] = np.array(X[seq_idx]).reshape([-1, num_features])
                 if shift_input_data:
-                    y_flat[start_idx+n_prediction_steps*seq_idx: end_idx + n_prediction_steps* (seq_idx +1)] = np.array(y[seq_idx]).reshape([-1, num_targets])
+                    y_flat[
+                    start_idx + n_prediction_steps * seq_idx: end_idx + n_prediction_steps * (seq_idx + 1)] = np.array(
+                        y[seq_idx]).reshape([-1, num_targets])
                 else:
                     y_flat[start_idx: end_idx] = np.array(y[seq_idx]).reshape([-1, num_targets])
                 start_idx = end_idx
@@ -112,14 +114,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             X_transformed = self.feature_validator.transform(X_flat)
             y_transformed = self.target_validator.transform(y_flat)
             return X_transformed, sequence_lengths, y_transformed
-        else:
-            if shift_input_data:
-                for seq_idx in range(num_sequences):
-                    X[seq_idx] = X[seq_idx][:-n_prediction_steps]
-                    sequence_lengths[seq_idx] = len(X[seq_idx])
-            else:
-                for seq_idx in range(num_sequences):
-                    sequence_lengths[seq_idx] = len(X[seq_idx])
 
             num_train_data = np.sum(sequence_lengths)
 

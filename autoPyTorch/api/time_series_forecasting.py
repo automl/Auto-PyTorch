@@ -17,10 +17,11 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, MAX_WIDNOW_SIZE_BASE
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE
 
 
 class TimeSeriesForecastingTask(BaseTask):
@@ -49,24 +50,26 @@ class TimeSeriesForecastingTask(BaseTask):
             Otherwise specifies set of components not to use. Incompatible with include
             components
     """
+
     def __init__(
-        self,
-        seed: int = 1,
-        n_jobs: int = 1,
-        logging_config: Optional[Dict] = None,
-        ensemble_size: int = 50,
-        ensemble_nbest: int = 50,
-        max_models_on_disc: int = 50,
-        temporary_directory: Optional[str] = None,
-        output_directory: Optional[str] = None,
-        delete_tmp_folder_after_terminate: bool = True,
-        delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        backend: Optional[Backend] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            self,
+            seed: int = 1,
+            n_jobs: int = 1,
+            logging_config: Optional[Dict] = None,
+            ensemble_size: int = 50,
+            ensemble_nbest: int = 50,
+            max_models_on_disc: int = 50,
+            temporary_directory: Optional[str] = None,
+            output_directory: Optional[str] = None,
+            delete_tmp_folder_after_terminate: bool = True,
+            delete_output_folder_after_terminate: bool = True,
+            include_components: Optional[Dict] = None,
+            exclude_components: Optional[Dict] = None,
+            resampling_strategy: Union[
+                CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            backend: Optional[Backend] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
     ):
         super().__init__(
             seed=seed,
@@ -88,7 +91,7 @@ class TimeSeriesForecastingTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
         )
         # here fraction of subset could be number of images, tabular data or resolution of time-series datasets.
-        #TODO if budget type resolution is applied to all datasets, we will put it to configs
+        # TODO if budget type resolution is applied to all datasets, we will put it to configs
         self.pipeline_options.update({"min_resolution": 0.1,
                                       "full_resolution": 1.0})
 
@@ -111,30 +114,30 @@ class TimeSeriesForecastingTask(BaseTask):
         return TimeSeriesForecastingPipeline(dataset_properties=dataset_properties)
 
     def search(
-        self,
-        optimize_metric: str,
-        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
-        n_prediction_steps: int = 1,
-        freq: Optional[Union[str, int, List[int]]] = None,
-        dataset_name: Optional[str] = None,
-        budget_type: Optional[str] = None,
-        budget: Optional[float] = None,
-        total_walltime_limit: int = 100,
-        func_eval_time_limit: int = 60,
-        traditional_per_total_budget: float = 0.,
-        memory_limit: Optional[int] = 4096,
-        smac_scenario_args: Optional[Dict[str, Any]] = None,
-        get_smac_object_callback: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
-        precision: int = 32,
-        disable_file_output: List = [],
-        load_models: bool = True,
-        shift_input_data: bool = True,
-        normalize_y: bool = True,
+            self,
+            optimize_metric: str,
+            X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+            n_prediction_steps: int = 1,
+            freq: Optional[Union[str, int, List[int]]] = None,
+            dataset_name: Optional[str] = None,
+            budget_type: Optional[str] = None,
+            budget: Optional[float] = None,
+            total_walltime_limit: int = 100,
+            func_eval_time_limit: int = 60,
+            traditional_per_total_budget: float = 0.,
+            memory_limit: Optional[int] = 4096,
+            smac_scenario_args: Optional[Dict[str, Any]] = None,
+            get_smac_object_callback: Optional[Callable] = None,
+            all_supported_metrics: bool = True,
+            precision: int = 32,
+            disable_file_output: List = [],
+            load_models: bool = True,
+            shift_input_data: bool = True,
+            normalize_y: bool = True,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -217,9 +220,8 @@ class TimeSeriesForecastingTask(BaseTask):
 
         # we have to create a logger for at this point for the validator
         self._logger = self._get_logger(dataset_name)
-
+        #TODO we will only consider target variables as int here
         self.target_variables = target_variables
-
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         self.InputValidator = TimeSeriesForecastingInputValidator(
@@ -244,15 +246,15 @@ class TimeSeriesForecastingTask(BaseTask):
             normalize_y=normalize_y,
         )
 
-        if self.dataset.freq is not None or not self.customized_window_size:
-            base_window_size = int(np.ceil(self.dataset.freq))
+        if self.dataset.freq_value is not None or not self.customized_window_size:
+            base_window_size = int(np.ceil(self.dataset.freq_value))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
-            if base_window_size > self.dataset.upper_window_size or base_window_size > MAX_WIDNOW_SIZE_BASE:
+            if base_window_size > self.dataset.upper_window_size or base_window_size > MAX_WINDOW_SIZE_BASE:
                 # TODO considering padding to allow larger upper_window_size !!!
                 base_window_size = int(np.ceil(min(n_prediction_steps, self.dataset.upper_window_size)))
-            if base_window_size > MAX_WIDNOW_SIZE_BASE:
-                base_window_size = 50 # TODO this value comes from setting of solar dataset, do we have a better choice?
+            if base_window_size > MAX_WINDOW_SIZE_BASE:
+                base_window_size = 50  # TODO this value comes from setting of solar dataset, do we have a better choice?
             if self.search_space_updates is None:
                 self.search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -288,13 +290,13 @@ class TimeSeriesForecastingTask(BaseTask):
             time_series_prediction=self.time_series_prediction
         )
 
+
     def predict(
             self,
             X_test: List[np.ndarray],
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
-            y_train:Optional[List[np.ndarray]]=None,
-            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+            y_train: Optional[List[np.ndarray]] = None,
     ) -> np.ndarray:
         """
                     target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
@@ -304,11 +306,12 @@ class TimeSeriesForecastingTask(BaseTask):
         for seq_idx, seq in enumerate(X_test):
             if self.dataset.normalize_y:
                 if pd.DataFrame(seq).shape[-1] > 1:
-                    if target_variables is None and y_train is None:
-                        raise ValueError('For multi-variant prediction task, either target_variables or y_train needs to '
-                                         'be provided!')
+                    if self.target_variables is None and y_train is None:
+                        raise ValueError(
+                            'For multi-variant prediction task, either target_variables or y_train needs to '
+                            'be provided!')
                     if y_train is None:
-                        y_train = seq[target_variables]
+                        y_train = seq[self.target_variables]
                 else:
                     y_train = seq
                 if self.dataset.shift_input_data:
@@ -327,4 +330,3 @@ class TimeSeriesForecastingTask(BaseTask):
                 seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
             y_pred[seq_idx] = seq_pred
         return y_pred
-

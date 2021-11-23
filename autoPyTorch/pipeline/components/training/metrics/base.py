@@ -26,7 +26,7 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
     def __call__(self,
                  y_true: np.ndarray,
                  y_pred: np.ndarray,
-                 sample_weight: Optional[List[float]] = None
+                 sample_weight: Optional[List[float]] = None,
                  ) -> float:
         raise NotImplementedError()
 
@@ -35,6 +35,21 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
 
     def __repr__(self) -> str:
         return self.name
+
+
+# This is a mixin for computing time series forecasting losses, the  parameters are defined at:
+# https://www.sktime.org/en/stable/api_reference/performance_metrics.html
+# TODO considering adding more arguments to this function to allow more advanced loss function, e.g. asymmetric_error
+class ForecastingMetricMixin:
+    def __call__(self,
+                 y_true: np.ndarray,
+                 y_pred: np.ndarray,
+                 y_train: np.ndarray,
+                 sp: int,
+                 n_prediction_steps: int,
+                 horizon_weight: Optional[List[float]] = None
+                 ):
+        raise NotImplementedError()
 
 
 class _PredictMetric(autoPyTorchMetric):
@@ -75,7 +90,7 @@ class _PredictMetric(autoPyTorchMetric):
         elif type_true == 'multilabel-indicator':
             y_pred[y_pred > 0.5] = 1.0
             y_pred[y_pred <= 0.5] = 0.0
-        elif type_true in ['continuous-multioutput', 'multiclass-multioutput']:
+        elif type_true == 'continuous-multioutput':
             pass
         else:
             raise ValueError(type_true)
@@ -175,15 +190,95 @@ class _ThresholdMetric(autoPyTorchMetric):
             return self._sign * self._metric_func(y_true, y_pred, **self._kwargs)
 
 
+class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
+    def __call__(
+            self,
+            y_true: np.ndarray,
+            y_pred: np.ndarray,
+            y_train: np.ndarray,
+            sp: int,
+            n_prediction_steps: int,
+            horizon_weight: Optional[List[float]] = None
+    ) -> float:
+        """Evaluate time series forecastin losses given input data
+        The description is nearly the same as the one defined under
+        https://www.sktime.org/en/stable/api_reference/performance_metrics.html
+
+        Parameters
+        ----------
+        y_true : array-like
+            Ground truth (correct) target values.
+
+        y_pred : array-like, [n_samples x n_classes]
+            Forecasted values.
+
+        sp: int
+            Seasonal periodicity of training data.
+
+        horizon_weight : array-like, optional (default=None)
+            Forecast horizon weights.
+            TODO consider weights for each individual prediction, i.e., we could mask the unobserved values
+        Returns
+        -------
+        score : float
+            Score function applied to prediction of estimator on X.
+        """
+        type_true = type_of_target(y_true)
+        if type_true == 'binary' and type_of_target(y_pred) == 'continuous' and \
+                len(y_pred.shape) == 1:
+            # For a pred autoPyTorchMetric, no threshold, nor probability is required
+            # If y_true is binary, and y_pred is continuous
+            # it means that a rounding is necessary to obtain the binary class
+            y_pred = np.around(y_pred, decimals=0)
+        elif len(y_pred.shape) == 1 or y_pred.shape[1] == 1 or \
+                type_true == 'continuous':
+            # must be regression, all other task types would return at least
+            # two probabilities
+            pass
+        elif type_true in ['binary', 'multiclass']:
+            y_pred = np.argmax(y_pred, axis=1)
+        elif type_true == 'multilabel-indicator':
+            y_pred[y_pred > 0.5] = 1.0
+            y_pred[y_pred <= 0.5] = 0.0
+        elif type_true in ['continuous-multioutput', 'multiclass-multioutput']:
+            pass
+        else:
+            raise ValueError(type_true)
+
+        agg = self._kwargs['aggregation']
+        y_true = y_true.reshape([-1, n_prediction_steps])
+        y_pred = y_pred.reshape([-1, n_prediction_steps])
+
+        if not len(y_pred) == len(y_true) == len(y_train):
+            raise ValueError(f"The length of y_true, y_pred and y_train must equal, however, they are "
+                             f"{len(y_pred)}, {len(y_true)}, and {y_train} respectively")
+
+        losses_all = np.ones([len(y_true)])
+        for seq_idx in range(len(y_true)):
+            losses_all[seq_idx] = self._sign * self._metric_func(y_true=y_true[seq_idx],
+                                                                 y_pred=y_pred[seq_idx],
+                                                                 y_train=y_train[seq_idx],
+                                                                 sp=sp,
+                                                                 horizon_weight=horizon_weight,
+                                                                 **self._kwargs)
+        if agg == 'mean':
+            return np.mean(losses_all)
+        elif agg == 'median':
+            return np.median(losses_all)
+        else:
+            raise ValueError(f'Unsupported aggregation type {agg}')
+
+
 def make_metric(
-    name: str,
-    score_func: Callable,
-    optimum: float = 1.0,
-    worst_possible_result: float = 0.0,
-    greater_is_better: bool = True,
-    needs_proba: bool = False,
-    needs_threshold: bool = False,
-    **kwargs: Any
+        name: str,
+        score_func: Callable,
+        optimum: float = 1.0,
+        worst_possible_result: float = 0.0,
+        greater_is_better: bool = True,
+        needs_proba: bool = False,
+        needs_threshold: bool = False,
+        do_forecasting: bool = False,
+        **kwargs: Any
 ) -> autoPyTorchMetric:
     """Make a autoPyTorchMetric from a performance metric or loss function.
     Factory inspired by scikit-learn which wraps scikit-learn scoring functions
@@ -215,6 +310,8 @@ def make_metric(
     needs_threshold : boolean, default=False
         Whether score_func takes a continuous decision certainty.
         This only works for binary classification.
+    do_forecasting : boolean, default=False
+        Whether
     **kwargs : additional arguments
         Additional parameters to be passed to score_func.
     """
@@ -223,5 +320,7 @@ def make_metric(
         return _ProbaMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
     elif needs_threshold:
         return _ThresholdMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
+    elif do_forecasting:
+        return _ForecastingMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
     else:
         return _PredictMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
