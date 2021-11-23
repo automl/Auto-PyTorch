@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -55,7 +55,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -231,7 +231,7 @@ the search space.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe38e81b250&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1908433dc0&gt;
 </pre></div>
 </div>
 </section>
@@ -247,24 +247,25 @@ the search space.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
 |    | Preprocessing                                                     | Estimator                                                 |   Weight |
 |---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-|  0 | None                                                              | CBLearner                                                 |     0.44 |
-|  1 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,Nystroem               | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-|  3 | None                                                              | ETLearner                                                 |     0.06 |
-|  4 | None                                                              | SVMLearner                                                |     0.06 |
+|  0 | None                                                              | LGBMLearner                                               |     0.38 |
+|  1 | None                                                              | RFLearner                                                 |     0.22 |
+|  2 | None                                                              | ETLearner                                                 |     0.14 |
+|  3 | None                                                              | SVMLearner                                                |     0.12 |
+|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
 |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  6 | None                                                              | RFLearner                                                 |     0.02 |
+|  6 | None                                                              | KNNLearner                                                |     0.02 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 autoPyTorch results:
-        Dataset name: 8dc85722-4c5c-11ec-8713-e75066c65766
+        Dataset name: 953011be-4c70-11ec-88bc-dd3c60e63dcb
         Optimisation Metric: accuracy
-        Best validation score: 0.8654970760233918
+        Best validation score: 0.8596491228070176
         Number of target algorithm runs: 19
-        Number of successful target algorithm runs: 15
-        Number of crashed target algorithm runs: 3
-        Number of target algorithms that exceeded the time limit: 1
+        Number of successful target algorithm runs: 11
+        Number of crashed target algorithm runs: 6
+        Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
@@ -293,7 +294,7 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe37da50280&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f190aaf6910&gt;
 </pre></div>
 </div>
 </section>
@@ -309,30 +310,29 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
 |    | Preprocessing                                                 | Estimator                                                       |   Weight |
 |---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-|  1 | None                                                          | RFLearner                                                       |     0.24 |
-|  2 | None                                                          | KNNLearner                                                      |     0.16 |
-|  3 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  4 | None                                                          | CBLearner                                                       |     0.08 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  6 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | None                                                          | ETLearner                                                       |     0.02 |
-|  8 | None                                                          | SVMLearner                                                      |     0.02 |
+|  0 | None                                                          | LGBMLearner                                                     |     0.32 |
+|  1 | None                                                          | RFLearner                                                       |     0.2  |
+|  2 | None                                                          | ETLearner                                                       |     0.2  |
+|  3 | None                                                          | SVMLearner                                                      |     0.1  |
+|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
+|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 autoPyTorch results:
-        Dataset name: f4d84f5f-4c5c-11ec-8713-e75066c65766
+        Dataset name: f74f7cc3-4c70-11ec-88bc-dd3c60e63dcb
         Optimisation Metric: accuracy
-        Best validation score: 0.8654970760233918
-        Number of target algorithm runs: 21
-        Number of successful target algorithm runs: 16
-        Number of crashed target algorithm runs: 5
-        Number of target algorithms that exceeded the time limit: 0
+        Best validation score: 0.8596491228070176
+        Number of target algorithm runs: 27
+        Number of successful target algorithm runs: 14
+        Number of crashed target algorithm runs: 12
+        Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  38.254 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  43.702 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
