@@ -41,6 +41,14 @@ Then API starts the following procedures:
 
 ## Installation
 
+### PyPI Installation
+
+```sh
+
+pip install autoPyTorch
+
+```
+
 ### Manual Installation
 
 We recommend using Anaconda for developing as follows:
