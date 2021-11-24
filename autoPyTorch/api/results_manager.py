@@ -1,6 +1,6 @@
 import io
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -12,7 +12,6 @@ from smac.runhistory.runhistory import RunHistory, RunValue
 from smac.tae import StatusType
 from smac.utils.io.traj_logging import TrajEntry
 
-from autoPyTorch import metrics
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 
 
@@ -338,7 +337,7 @@ class MetricResults:
             order_by_endtime=True
         )
         try:
-            self.ensemble_results = EnsembleResults(
+            self.ensemble_results: Optional[EnsembleResults] = EnsembleResults(
                 metric=metric,
                 ensemble_performance_history=ensemble_performance_history,
                 order_by_endtime=True
@@ -356,7 +355,10 @@ class MetricResults:
         for inference_name in ['train', 'test', 'opt']:
 
             self.data[f'single::{inference_name}::{metric_name}'] = np.array([
-                cost2metric(info.get(f'{inference_name}_loss', worst_val)[metric_name], self.metric)
+                cost2metric(
+                    info.get(f'{inference_name}_loss', worst_val)[metric_name],  # type: ignore
+                    self.metric
+                )
                 for info in self.search_results.additional_infos
             ])
 
@@ -366,6 +368,47 @@ class MetricResults:
             self.data[f'ensemble::{inference_name}::{metric_name}'] = np.array(
                 getattr(self.ensemble_results, f'{inference_name}_scores')
             )
+
+    def get_ensemble_merged_data(self) -> Dict[str, np.ndarray]:
+        """
+        Merge the ensemble performance data to the closest time step
+        available in the run_history.
+        One performance metric will be allocated to one time step.
+        Other time steps will be filled by the worst possible value.
+
+        Returns:
+            data (Dict[str, np.ndarray]):
+                Merged data as mentioned above
+        """
+
+        data = {k: v.copy() for k, v in self.data.items()}  # deep copy
+
+        if self.ensemble_results is None:  # no ensemble data available
+            return data
+
+        train_scores, test_scores = self.ensemble_results.train_scores, self.ensemble_results.test_scores
+        end_times = self.ensemble_results.end_times
+        cur, timestep_size, sign = 0, self.search_results.end_times.size, self.metric._sign
+        key_train, key_test = f'ensemble::train::{self.metric.name}', f'ensemble::test::{self.metric.name}'
+
+        train_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
+        test_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
+
+        for timestamp, train_score, test_score in zip(end_times, train_scores, test_scores):
+            avail_time = timestamp - self.start_time
+            while cur < timestep_size and self.cum_times[cur] < avail_time:
+                # Guarantee that cum_times[cur] >= avail_time
+                cur += 1
+
+            # results[cur] is the closest available checkpoint after or at the avail_time
+            # ==> Assign this data to that checkpoint
+            time_index = min(cur, timestep_size - 1)
+            # If there already exists a previous allocated value, update by a better value
+            train_perfs[time_index] = sign * max(sign * train_perfs[time_index], sign * train_score)
+            test_perfs[time_index] = sign * max(sign * test_perfs[time_index], sign * test_score)
+
+        data.update({key_train: train_perfs, key_test: test_perfs})
+        return data
 
 
 class ResultsManager:

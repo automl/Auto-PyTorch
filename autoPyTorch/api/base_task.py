@@ -31,7 +31,8 @@ from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
-from autoPyTorch.api.results_manager import ResultsManager, SearchResults
+from autoPyTorch import metrics
+from autoPyTorch.api.results_manager import MetricResults, ResultsManager, SearchResults
 from autoPyTorch.api.run_history_visualizer import ColorLabelSettings, PlotSettingParams, RunHistoryVisualizer
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
@@ -1516,17 +1517,33 @@ class BaseTask:
                 Arguments for the ax.plot.
         """
 
+        if not hasattr(metrics, metric_name):
+            raise ValueError(
+                f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
+                f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
+            )
+
+        results = MetricResults(
+            metric=getattr(metrics, metric_name),
+            run_history=self.run_history,
+            ensemble_performance_history=self.ensemble_performance_history
+        )
+
         colors, labels = {}, {}
+
         for key, color_label in vars(color_label_settings).items():
             if color_label is None:
                 continue
 
-            new_key = '::'.join(key.split('_'))
-            colors[new_key], labels[new_key] = color_label
+            prefix = '::'.join(key.split('_'))
+            try:
+                new_key = [key for key in results.data.keys() if key.startswith(prefix)][0]
+                colors[new_key], labels[new_key] = color_label
+            except IndexError:  # ensemble does not always have results
+                pass
 
         self._visualizer.plot_perf_over_time(
-            metric_name=metric_name, ax=ax, colors=colors, labels=labels,
-            plot_setting_params=plot_setting_params, run_history=self.run_history,
-            ensemble_performance_history=self.ensemble_performance_history,
-            *args, **kwargs
+            results=results, plot_setting_params=plot_setting_params,
+            colors=colors, labels=labels, ax=ax,
+            *args, **kwargs  # type: ignore
         )

@@ -1,15 +1,11 @@
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from autoPyTorch import metrics
-
-from smac.runhistory.runhistory import RunHistory
-from smac.tae import StatusType
+from autoPyTorch.api.results_manager import MetricResults
 
 
 plt.rcParams["font.family"] = "Times New Roman"
@@ -94,7 +90,8 @@ class ScaleChoices(Enum):
 def _get_perf_and_time(
     results: np.ndarray,
     cum_times: np.ndarray,
-    plot_setting_params: PlotSettingParams
+    plot_setting_params: PlotSettingParams,
+    worst_val: float
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Get the performance and time step to plot.
@@ -106,6 +103,8 @@ def _get_perf_and_time(
             The cumulated runtime at each end of evaluations.
         plot_setting_params (PlotSettingParams):
             Parameters for the plot.
+        worst_val (float):
+            The worst possible value given a metric.
 
     Returns:
         check_points (np.ndarray):
@@ -129,7 +128,7 @@ def _get_perf_and_time(
         check_points = np.linspace(runtime_lb, runtime_ub, plot_setting_params.n_points)
 
     # The worst possible value is always at the head
-    perf_by_time_step = np.full_like(check_points, results[0])
+    perf_by_time_step = np.full_like(check_points, worst_val)
     cur = 0
 
     for i, check_point in enumerate(check_points):
@@ -148,95 +147,7 @@ def _get_perf_and_time(
     return check_points, perf_by_time_step
 
 
-def _split_perf_metric_name(perf_metric_name: str) -> Tuple[str, str, str]:
-    """
-    Check if the performance metric name is valid and
-    split the performance name if it is valid.
-
-    Args:
-        perf_metric_name (str):
-            The format of name must comply:
-                `(ensemble or single)::(train, test or opt)::(metric_name)`
-                e.g. `ensemble::train::accuracy`
-
-    Returns:
-        ensemble_name, inference_name, metric_name (Tuple[str, str, str]):
-            The splitted names.
-    """
-
-    err_msg = 'perf_metric_name must be `(ensemble or single)::(train, test or opt)::(metric_name)`, ' \
-              'e.g. `ensemble::train::accuracy`, but got '
-
-    try:
-        ensemble_name, inference_name, metric_name = perf_metric_name.split('::')
-    except ValueError:
-        raise ValueError(f'{err_msg}{perf_metric_name}')
-
-    if (
-        ensemble_name not in ['ensemble', 'single']
-        or inference_name not in ['train', 'opt', 'test']
-        or (metric_name not in metrics.CLASSIFICATION_METRICS
-            and metric_name not in metrics.REGRESSION_METRICS)
-    ):
-        raise ValueError(f'{err_msg}{perf_metric_name}')
-
-    return ensemble_name, inference_name, metric_name
-
-
-def _check_valid_metric(inference_name: str, inference_choices: List[str], metric_name: str) -> None:
-    """
-    Check whether the inputs are valid.
-
-    Args:
-        inference_name (str):
-            Stands which inference target metric are.
-        inference_choices (str):
-            The choices of possible inference names.
-        metric_name (str):
-            The name of metric to plot.
-    """
-
-    if inference_name not in inference_choices:
-        raise ValueError(
-            f'inference_name must be in {inference_choices}, but '
-            f'{inference_name}'
-        )
-    if not hasattr(metrics, metric_name):
-        raise ValueError(
-            f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
-            f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
-        )
-
-
 class RunHistoryVisualizer:
-    def __init__(self, *args: Any, **kwargs: Any):
-        """
-        Module that realizes the visualization of the results
-        obtained in the optimization.
-
-        Attributes:
-            starttime (float):
-                The start of the run.
-            cum_times (np.ndarray):
-                The runtime for each end of the evaluation of
-                each configuration
-        """
-        self._starttime: float = 0.0
-        self._cum_times: np.ndarray = np.array([])
-        self._order_by_runtime: np.ndarray = np.array([])
-
-    @property
-    def starttime(self) -> float:
-        return self._starttime
-
-    @property
-    def cum_times(self) -> np.ndarray:
-        return self._cum_times.copy()
-
-    @property
-    def order_by_runtime(self) -> np.ndarray:
-        return self._order_by_runtime.copy()
-
     @staticmethod
     def _set_plot_args(
         ax: plt.Axes,
@@ -267,167 +178,12 @@ class RunHistoryVisualizer:
         if plot_setting_params.show:
             plt.show()
 
-    def _get_results_from_perf_metric_name(
-        self,
-        perf_metric_name: str,
-        run_history: RunHistory,
-        ensemble_performance_history: List[Dict[str, Any]]
-    ) -> np.ndarray:
-        """
-        Args:
-            perf_metric_name (str):
-                The format of name must comply:
-                `(ensemble or single)::(train, test or opt)::(metric_name)`
-                    e.g. `ensemble::train::accuracy`
-            run_history (RunHistory):
-                The history of the optimization from SMAC
-            ensemble_performance_history (List[Dict[str, Any]]):
-                The history of the ensemble optimization from SMAC.
-                Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
-
-        Returns:
-            results (np.ndarray):
-                The extracted data from either run_history or ensemble_performance_history.
-        """
-
-        ensemble_name, inference_name, metric_name = _split_perf_metric_name(perf_metric_name)
-
-        if ensemble_name == 'ensemble':
-            results = self._extract_info_from_ensemble_history(
-                ensemble_performance_history,
-                metric_name=metric_name,
-                inference_name=inference_name
-            )
-        else:
-            results = self._extract_info_from_run_history(
-                run_history,
-                metric_name=metric_name,
-                inference_name=inference_name
-            )
-
-        return results
-
-    def _extract_info_from_run_history(
-        self,
-        run_history: RunHistory,
-        metric_name: str,
-        inference_name: str
-    ) -> np.ndarray:
-        """
-        Extract the needed information from the running history.
-
-        Args:
-            run_history (RunHistory):
-                The history of the optimization from SMAC
-            inference_name (str):
-                Which inference to retrieve.
-                Either `train`, `opt`, i.e. validation, `test`.
-            metric_name (str):
-                metric_name of the target.
-                The list of metric_name is available in autoPyTorch.metrics.
-
-        Returns:
-            results (np.ndarray):
-                The cumulated performance corresponding to the runtime.
-        """
-        _check_valid_metric(
-            inference_name=inference_name,
-            inference_choices=['train', 'test', 'opt'],
-            metric_name=metric_name
-        )
-
-        metric_cls = getattr(metrics, metric_name)
-        minimization = metric_cls._sign == -1
-        worst_val = metric_cls._worst_possible_result
-        results: List[float] = []
-        runtime: List[float] = []
-        self._starttime = min([d.starttime for d in run_history.data.values() if d.starttime > 0])
-
-        key = f'{inference_name}_loss'
-        for run_value in run_history.data.values():
-            if run_value.endtime == 0:  # Skip crushed runs
-                continue
-
-            runtime.append(run_value.endtime - self.starttime)
-            results.append(worst_val)
-
-            if run_value.status == StatusType.SUCCESS:
-                results[-1] = run_value.additional_info[key][metric_name]
-
-        if self.cum_times.size == 0:
-            # Runtime is not necessarily ascending order originally due to the parallel computation
-            self._cum_times = np.array(runtime)
-            self._order_by_runtime = np.argsort(self._cum_times)
-            self._cum_times = self._cum_times[self._order_by_runtime]
-
-        _results = np.array(results)[self._order_by_runtime]
-
-        # Calculate the cumulated results
-        return np.minimum.accumulate(_results) if minimization else np.maximum.accumulate(_results)
-
-    def _extract_info_from_ensemble_history(
-        self,
-        ensemble_performance_history: List[Dict[str, Any]],
-        metric_name: str,
-        inference_name: str
-    ) -> np.ndarray:
-        """
-        Extract the needed information from the ensemble performance history.
-        More strictly, this method will return an array with the same shape
-        as self.cum_times and each element corresponds to the best performance
-        up to this time.
-
-        Args:
-            ensemble_performance_history (List[Dict[str, Any]]):
-                The history of the ensemble optimization from SMAC.
-                Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
-            metric_name (str):
-                metric_name of the target.
-                The list of metric_name is available in autoPyTorch.metrics.
-            inference_name (str):
-                Which inference to retrieve.
-                Either `train` or `test`.
-
-        Returns:
-            results (np.ndarray):
-                The best performance at the corresponding time in second
-                where the plot will happen.
-        """
-        _check_valid_metric(
-            inference_name=inference_name,
-            inference_choices=['train', 'test'],
-            metric_name=metric_name
-        )
-
-        metric_cls = getattr(metrics, metric_name)
-        minimization = metric_cls._sign == -1
-        worst_val = metric_cls._worst_possible_result
-
-        cur, timestep_size, results = 0, self.cum_times.size, np.full_like(self.cum_times, worst_val)
-        key = [k for k in ensemble_performance_history[0].keys()
-               if k.startswith(inference_name)][0]
-
-        # Sort in the order of the timestamp
-        order = np.argsort(np.argsort([datetime.timestamp(data['Timestamp']) for data in ensemble_performance_history]))
-        for idx in order:
-            data = ensemble_performance_history[idx]
-            avail_time = datetime.timestamp(data['Timestamp']) - self.starttime
-            while cur < timestep_size and self.cum_times[cur] < avail_time:
-                # Guarantee that cum_times[cur] >= avail_time
-                cur += 1
-
-            # results[cur] is the closest available checkpoint after or at the avail_time
-            # ==> Assign this data to that checkpoint
-            # Do not assign this data to the checkpoint before avail_time
-            results[min(cur, results.size - 1)] = data[key]
-
-        # Calculate the cumulated results
-        return np.minimum.accumulate(results) if minimization else np.maximum.accumulate(results)
-
+    @staticmethod
     def _plot_individual_perf_over_time(
-        self,
         ax: plt.Axes,
+        cum_times: np.ndarray,
         results: np.ndarray,
+        worst_val: float,
         plot_setting_params: PlotSettingParams,
         label: Optional[str] = None,
         color: Optional[str] = None,
@@ -440,8 +196,12 @@ class RunHistoryVisualizer:
         Args:
             ax (plt.Axes):
                 axis to plot (subplots of matplotlib).
+            cum_times (np.ndarray):
+                The cumulated time until each end of config evaluation.
             results (np.ndarray):
                 The performance per evaluation.
+            worst_val (float):
+                The worst possible value given a metric.
             plot_setting_params (PlotSettingParams):
                 Parameters for the plot.
             label (Optional[str]):
@@ -453,20 +213,19 @@ class RunHistoryVisualizer:
         """
         check_points, perf_by_time_step = _get_perf_and_time(
             results=results,
-            cum_times=self.cum_times,
-            plot_setting_params=plot_setting_params
+            cum_times=cum_times,
+            plot_setting_params=plot_setting_params,
+            worst_val=worst_val
         )
 
         ax.plot(check_points, perf_by_time_step, color=color, label=label, *args, **kwargs)
 
     def plot_perf_over_time(
         self,
-        metric_name: str,
+        results: MetricResults,
         plot_setting_params: PlotSettingParams,
         colors: Dict[str, Optional[str]],
         labels: Dict[str, Optional[str]],
-        run_history: RunHistory,
-        ensemble_performance_history: Optional[List[Dict[str, Any]]] = None,
         ax: Optional[plt.Axes] = None,
         *args: Any,
         **kwargs: Any
@@ -475,55 +234,39 @@ class RunHistoryVisualizer:
         Plot the performance of the AutoPytorch over time.
 
         Args:
-            metric_name (str):
-                The name of metric to visualize.
-                The names are available in
-                    * autoPyTorch.metrics.CLASSIFICATION_METRICS
-                    * autoPyTorch.metrics.REGRESSION_METRICS
+            results (MetricResults):
+                The module that handles results from various sources.
+            plot_setting_params (PlotSettingParams):
+                Parameters for the plot.
             labels (Dict[str, Optional[str]]):
                 The name of the plot.
             colors (Dict[str, Optional[str]]):
                 Color of the plot.
-            run_history (RunHistory):
-                The history of the optimization from SMAC
-            ensemble_performance_history (Optional[List[Dict[str, Any]]]):
-                The history of the ensemble optimization from SMAC.
-                Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
             ax (Optional[plt.Axes]):
                 axis to plot (subplots of matplotlib).
                 If None, it will be created automatically.
-            plot_setting_params (PlotSettingParams):
-                Parameters for the plot.
             args, kwargs (Any):
                 Arguments for the ax.plot.
         """
         if ax is None:
             _, ax = plt.subplots(nrows=1, ncols=1)
 
-        # Initialize at every plot
-        self._cum_times, self._order_by_runtime = np.array([]), np.array([])
-        # Calculate cum_times and order_by_runtime
-        self._extract_info_from_run_history(run_history, metric_name=metric_name, inference_name='train')
+        data = results.get_ensemble_merged_data()
+        cum_times = results.cum_times
+        minimize = (results.metric._sign == -1)
 
-        for key in colors.keys():
-            _label, _color = labels[key], colors[key]
-            perf_metric_name = f'{key}::{metric_name}'
-            ensemble_name, inference_name, _metric_name = _split_perf_metric_name(perf_metric_name)
-            if metric_name != _metric_name:
-                raise ValueError(
-                    f'metric_name for a plot must be same, i.e. {metric_name}, '
-                    f'but got {_metric_name} from {perf_metric_name}'
-                )
-
-            results = self._get_results_from_perf_metric_name(
-                perf_metric_name=perf_metric_name, run_history=run_history,
-                ensemble_performance_history=ensemble_performance_history
-            )
+        for key in data.keys():
+            _label, _color, _perfs = labels[key], colors[key], data[key]
+            # Take the best results over time
+            _perfs = np.minimum.accumulate(_perfs) if minimize else np.maximum.accumulate(_perfs)
 
             self._plot_individual_perf_over_time(
-                ax=ax, results=results, plot_setting_params=plot_setting_params,
-                label=_label if _label is not None else f'{ensemble_name} {inference_name} {metric_name}',
-                color=_color, *args, **kwargs
+                ax=ax, results=_perfs, cum_times=cum_times,
+                plot_setting_params=plot_setting_params,
+                worst_val=results.metric._worst_possible_result,
+                label=_label if _label is not None else ' '.join(key.split('::')),
+                color=_color,
+                *args, **kwargs  # type: ignore
             )
 
         self._set_plot_args(ax=ax, plot_setting_params=plot_setting_params)
