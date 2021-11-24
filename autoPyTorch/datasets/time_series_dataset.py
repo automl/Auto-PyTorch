@@ -163,6 +163,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  n_prediction_steps: int = 1,
                  shift_input_data: bool = True,
                  normalize_y: bool = True,
+                 train_with_log_prob: bool = True,
                  ):
         """
         :param target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] used for multi-variant forecasting
@@ -175,6 +176,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
         :param normalize_y: bool
         if y values needs to be normalized with mean 0 and variance 1
+        :param train_with_log_prob: bool
+        if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
+        header's configspace can be built beforehand.
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
         self.n_prediction_steps = n_prediction_steps
@@ -300,6 +304,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.freq: Optional[str] = freq
         self.freq_value: Optional[int] = freq_value
+
+        # TODO in the future, if training losses types are considered as a type of hyperparameters, we need to remove
+        #  this line and create  conditional configspace under
+        #  autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice .
+        self.train_with_log_prob = train_with_log_prob
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
@@ -525,6 +534,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
             'upper_window_size': self.upper_window_size,
+            'train_with_log_prob': self.train_with_log_prob
         })
         return info
 

@@ -66,8 +66,10 @@ def get_dataset_requirements(info: Dict[str, Any],
 
     if task_type in REGRESSION_TASKS:
         return _get_regression_dataset_requirements(info, include, exclude)
-    else:
+    elif task_type in CLASSIFICATION_TASKS:
         return _get_classification_dataset_requirements(info, include, exclude)
+    else:
+        return _get_forecasting_dataset_requirements(info, include, exclude)
 
 
 def _get_regression_dataset_requirements(info: Dict[str, Any], include: Dict[str, List[str]],
@@ -86,13 +88,6 @@ def _get_regression_dataset_requirements(info: Dict[str, Any], include: Dict[str
             include=include,
             exclude=exclude
         ).get_dataset_requirements()
-    elif task_type in FORECASTING_TASKS:
-        return TimeSeriesForecastingPipeline(
-            dataset_properties=info,
-            include=include,
-            exclude=exclude
-        ).get_dataset_requirements()
-
     else:
         raise ValueError("Task_type not supported")
 
@@ -118,6 +113,21 @@ def _get_classification_dataset_requirements(info: Dict[str, Any],
 
     elif task_type in IMAGE_TASKS:
         return ImageClassificationPipeline(
+            dataset_properties=info,
+            include=include,
+            exclude=exclude
+        ).get_dataset_requirements()
+
+    else:
+        raise ValueError("Task_type not supported")
+
+
+def _get_forecasting_dataset_requirements(info: Dict[str, Any], include: Dict[str, List[str]],
+                                         exclude: Dict[str, List[str]]) -> List[FitRequirement]:
+    task_type = STRING_TO_TASK_TYPES[info['task_type']]
+
+    if task_type in FORECASTING_TASKS:
+        return TimeSeriesForecastingPipeline(
             dataset_properties=info,
             include=include,
             exclude=exclude

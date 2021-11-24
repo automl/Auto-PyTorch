@@ -29,7 +29,7 @@ class LogProbLoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean') -> None:
-        super(Loss, self).__init__(reduction)
+        super(LogProbLoss, self).__init__(reduction)
 
     def forward(self, input_dist: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
         scores = input_dist.log_prob(target_tensor)
@@ -82,6 +82,7 @@ def get_default(task: int) -> Type[Loss]:
     else:
         raise ValueError("Invalid task type {}".format(TASK_TYPES_TO_STRING[task]))
 
+
 def get_supported_losses(task: int, output_type: int) -> Dict[str, Type[Loss]]:
     """
     Utility function to get supported losses for a given task and output type
@@ -100,6 +101,10 @@ def get_supported_losses(task: int, output_type: int) -> Dict[str, Type[Loss]]:
                 supported_losses[key] = value['module']
     elif task in REGRESSION_TASKS:
         for key, value in losses['regression'].items():
+            if output_type in value['supported_output_types']:
+                supported_losses[key] = value['module']
+    elif task in FORECASTING_TASKS:
+        for key, value in losses['forecasting'].items():
             if output_type in value['supported_output_types']:
                 supported_losses[key] = value['module']
     return supported_losses

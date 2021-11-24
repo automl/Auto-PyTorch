@@ -138,6 +138,7 @@ class TimeSeriesForecastingTask(BaseTask):
             load_models: bool = True,
             shift_input_data: bool = True,
             normalize_y: bool = True,
+            train_with_log_prob: bool = True
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -211,6 +212,9 @@ class TimeSeriesForecastingTask(BaseTask):
                 if the input data needs to be shifted
             normalize_y: bool
                 if the input y values need to be normalized
+            train_with_log_prob: bool
+                if the network is trained with log_prob losses, this will create a network header that is different
+                from the current version.
         Returns:
             self
 
@@ -244,6 +248,7 @@ class TimeSeriesForecastingTask(BaseTask):
             n_prediction_steps=n_prediction_steps,
             shift_input_data=shift_input_data,
             normalize_y=normalize_y,
+            train_with_log_prob=train_with_log_prob,
         )
 
         if self.dataset.freq_value is not None or not self.customized_window_size:

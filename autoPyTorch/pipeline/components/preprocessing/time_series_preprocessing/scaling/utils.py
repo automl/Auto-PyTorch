@@ -9,7 +9,7 @@ from sklearn.base import BaseEstimator
 # Similar to / inspired by
 # https://github.com/tslearn-team/tslearn/blob/a3cf3bf/tslearn/preprocessing/preprocessing.py
 class TimeSeriesScaler(BaseEstimator):
-    def __init__(self, mode: str, sequence_lengths_train:List[int], is_training=True):
+    def __init__(self, mode: str, sequence_lengths_train: List[int], is_training=True):
         self.mode = mode
         self.sequence_lengths_train = sequence_lengths_train
         self.is_training = is_training

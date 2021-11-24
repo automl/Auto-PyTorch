@@ -21,7 +21,7 @@ import warnings
 
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
-from autoPyTorch.utils.common import  custom_collate_fn
+from autoPyTorch.utils.common import custom_collate_fn
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
@@ -90,9 +90,6 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
     def __len__(self):
         return self.num_instances
-
-
-
 
 
 class ExpandTransformTimeSeries(object):
