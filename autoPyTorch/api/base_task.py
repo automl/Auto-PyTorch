@@ -1542,8 +1542,8 @@ class BaseTask:
             except IndexError:  # ensemble does not always have results
                 pass
 
-        self._visualizer.plot_perf_over_time(
+        self._visualizer.plot_perf_over_time(  # type: ignore
             results=results, plot_setting_params=plot_setting_params,
             colors=colors, labels=labels, ax=ax,
-            *args, **kwargs  # type: ignore
+            *args, **kwargs
         )

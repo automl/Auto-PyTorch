@@ -62,7 +62,7 @@ def get_start_time(run_history: RunHistory) -> float:
 
         start_times.append(run_value.starttime)
 
-    return np.min(start_times)
+    return float(np.min(start_times))  # mypy redefinition
 
 
 def _extract_metrics_info(

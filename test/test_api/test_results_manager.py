@@ -85,8 +85,6 @@ def _check_metric_dict(metric_dict, status_types, worst_val):
     assert isinstance(metric_dict['balanced_accuracy'], list)
     assert metric_dict['balanced_accuracy'][0] > 0
 
-    print(metric_dict, status_types)
-
     for key, vals in metric_dict.items():
         # ^ is a XOR operator
         # True and False / False and True must be fulfilled

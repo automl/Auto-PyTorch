@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
-import numpy as np
 import matplotlib.pyplot as plt
+
+import numpy as np
 
 from autoPyTorch.api.results_manager import MetricResults
 
@@ -260,13 +261,13 @@ class RunHistoryVisualizer:
             # Take the best results over time
             _perfs = np.minimum.accumulate(_perfs) if minimize else np.maximum.accumulate(_perfs)
 
-            self._plot_individual_perf_over_time(
+            self._plot_individual_perf_over_time(  # type: ignore
                 ax=ax, results=_perfs, cum_times=cum_times,
                 plot_setting_params=plot_setting_params,
                 worst_val=results.metric._worst_possible_result,
                 label=_label if _label is not None else ' '.join(key.split('::')),
                 color=_color,
-                *args, **kwargs  # type: ignore
+                *args, **kwargs
             )
 
         self._set_plot_args(ax=ax, plot_setting_params=plot_setting_params)
