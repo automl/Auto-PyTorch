@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import numpy as np
 
@@ -16,9 +16,11 @@ class EnsembleSelection(AbstractEnsemble):
         metric: autoPyTorchMetric,
         task_type: int,
         random_state: np.random.RandomState,
+        metric_kwargs: Dict = {},
     ) -> None:
         self.ensemble_size = ensemble_size
         self.metric = metric
+        self.metric_kwargs = metric_kwargs
         self.random_state = random_state
         self.task_type = task_type
 
@@ -118,6 +120,7 @@ class EnsembleSelection(AbstractEnsemble):
                     target=labels,
                     prediction=fant_ensemble_prediction,
                     task_type=self.task_type,
+                    **self.metric_kwargs
                 )
                 scores[j] = self.metric._optimum - score[self.metric.name]
 

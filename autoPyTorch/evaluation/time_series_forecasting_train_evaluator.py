@@ -2,7 +2,7 @@ from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.abstract_evaluator import DummyClassificationPipeline
 
 from multiprocessing.queues import Queue
-from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar
+from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar, Sequence
 from functools import partial
 import warnings
 
@@ -15,8 +15,8 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
-
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -72,14 +72,12 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             seasonality = min(seasonality)  # Use to calculate MASE
         self.seasonality = int(seasonality)
 
-
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
         holdout"""
         assert self.splits is not None, "Can't fit pipeline in {} is datamanager.splits is None" \
             .format(self.__class__.__name__)
         additional_run_info: Optional[Dict] = None
-
 
         if self.num_folds == 1:
             split_id = 0
@@ -106,19 +104,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            # use for computing MASE losses
-            y_train_forecasting = []
-            for seq_idx, test_idx in enumerate(test_split):
-                # TODO consider multi-variants here
-                seq = self.datamanager[test_idx][0]
-                if seq.shape[-1] > 1:
-                     y_train_forecasting.append(seq[self.datamanager.target_variables].squeeze())
-                else:
-                    y_train_forecasting.append(seq.squeeze())
+            mase_cofficient = self.compute_mase_coefficient(test_split)
 
-            forecasting_kwargs = {'y_train': y_train_forecasting,
-                                  'sp': self.seasonality,
+            forecasting_kwargs = {'sp': self.seasonality,
                                   'n_prediction_steps': self.n_prediction_steps,
+                                  'mase_cofficient': mase_cofficient,
                                   }
 
             train_loss = None
@@ -129,10 +119,12 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             status = StatusType.SUCCESS
 
+            self.Y_optimization *= mase_cofficient
+
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
-                opt_pred=y_opt_pred,
+                opt_pred=y_opt_pred.flatten() * mase_cofficient,
                 valid_pred=y_valid_pred,
                 test_pred=y_test_pred,
                 additional_run_info=additional_run_info,
@@ -158,18 +150,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             # weights for opt_losses.
             opt_fold_weights = [np.NaN] * self.num_folds
 
-            y_train_forecasting_all = []
-            for i, (train_split, test_split) in self.splits:
-                # use for computing MASE losses
-                y_train_forecasting = []
-                for seq_idx, test_idx in enumerate(test_split):
-                    # TODO consider multi-variants here
-                    seq = self.datamanager[test_idx][0]
-                    if seq.shape[-1] > 1:
-                        y_train_forecasting.append(seq[self.datamanager.target_variables].squeeze())
-                    else:
-                        y_train_forecasting.append(seq.squeeze())
-                y_train_forecasting_all.append(y_train_forecasting)
+            mase_coefficient_all = []
+            for train_split, test_split in self.splits:
+                mase_coefficient = self.compute_mase_coefficient(test_split)
+                mase_coefficient_all.append(mase_coefficient)
 
             for i, (train_split, test_split) in enumerate(self.splits):
                 pipeline = self.pipelines[i]
@@ -200,7 +184,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 # the average.
                 train_fold_weights[i] = len(train_split)
 
-                forecasting_kwargs = {'y_train': y_train_forecasting_all[i],
+                forecasting_kwargs = {'mase_cofficient': mase_coefficient_all[i],
                                       'sp': self.seasonality,
                                       'n_prediction_steps': self.n_prediction_steps,
                                       }
@@ -244,10 +228,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             Y_train_targets = self.Y_train_targets
 
             Y_optimization_preds = np.concatenate(
-                [Y_optimization_pred[i] for i in range(self.num_folds)
+                [Y_optimization_pred[i] * mase_coefficient_all[i] for i in range(self.num_folds)
                  if Y_optimization_pred[i] is not None])
             Y_targets = np.concatenate([
-                Y_targets[i] for i in range(self.num_folds)
+                Y_targets[i] * mase_coefficient_all[i] for i in range(self.num_folds)
                 if Y_targets[i] is not None
             ])
 
@@ -281,13 +265,43 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             self.finish_up(
                 loss=opt_loss,
                 train_loss=train_loss,
-                opt_pred=Y_optimization_preds,
+                opt_pred=Y_optimization_preds.flatten(),
                 valid_pred=Y_valid_preds,
                 test_pred=Y_test_preds,
                 additional_run_info=additional_run_info,
                 file_output=True,
                 status=status,
             )
+
+    def compute_mase_coefficient(self, test_split: Sequence) -> np.ndarray:
+        """
+        Compute the denominator for Mean Absolute Scaled Losses,
+        For detail, please check sktime.performance_metrics.forecasting._functions.mean_absolute_scaled_error
+
+        Parameters:
+        ----------
+        test_split: Sequence
+            test splits, consistent of int
+        Return:
+        ----------
+        mase_coefficient: np.ndarray(self.num_sequence * self.n_prediction_steps)
+            inverse of the mase_denominator
+        """
+        mase_coefficient = np.ones(len(test_split))
+        if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
+            from sktime.performance_metrics.forecasting._functions import EPS, mean_absolute_error
+            for seq_idx, test_idx in enumerate(test_split):
+                seq = self.datamanager[test_idx][0]
+                if seq.shape[-1] > 1:
+                    seq = seq[self.datamanager.target_variables].squeeze()
+                else:
+                    seq = seq.squeeze()
+                mase_denominator = mean_absolute_error(seq[self.seasonality:],
+                                                       seq[:-self.seasonality],
+                                                       multioutput="uniform_average")
+                mase_coefficient[seq_idx] = 1.0 / np.maximum(mase_denominator, EPS)
+        mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps)
+        return mase_coefficient
 
     def _predict(self, pipeline: BaseEstimator,
                  train_indices: Union[np.ndarray, List],

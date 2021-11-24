@@ -530,7 +530,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
-        dataset_properties.update({'upper_window_size': self.upper_window_size,
+        dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
+                                   'upper_window_size': self.upper_window_size,
                                    'sequence_lengths_train': self.sequence_lengths_train})
         return dataset_properties
 

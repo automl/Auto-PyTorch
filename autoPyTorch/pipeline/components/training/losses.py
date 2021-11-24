@@ -82,7 +82,6 @@ def get_default(task: int) -> Type[Loss]:
     else:
         raise ValueError("Invalid task type {}".format(TASK_TYPES_TO_STRING[task]))
 
-
 def get_supported_losses(task: int, output_type: int) -> Dict[str, Type[Loss]]:
     """
     Utility function to get supported losses for a given task and output type

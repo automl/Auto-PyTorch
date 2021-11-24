@@ -21,7 +21,7 @@ from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDatase
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE
+from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE, SEASONALITY_MAP
 
 
 class TimeSeriesForecastingTask(BaseTask):
@@ -272,6 +272,12 @@ class TimeSeriesForecastingTask(BaseTask):
                                  "Setting traditional_per_total_budget to 0.")
             traditional_per_total_budget = 0.
 
+        seasonality = SEASONALITY_MAP.get(self.dataset.freq, 1)
+        if isinstance(seasonality, list):
+            seasonality = min(seasonality)  # Use to calculate MASE
+        self._metrics_kwargs = {'sp': seasonality,
+                                'n_prediction_steps': n_prediction_steps}
+
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
@@ -289,7 +295,6 @@ class TimeSeriesForecastingTask(BaseTask):
             load_models=load_models,
             time_series_prediction=self.time_series_prediction
         )
-
 
     def predict(
             self,

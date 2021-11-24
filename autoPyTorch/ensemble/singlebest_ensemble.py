@@ -25,8 +25,11 @@ class SingleBest(AbstractEnsemble):
         run_history: RunHistory,
         seed: int,
         backend: Backend,
+        metric_kwargs: Dict = {},
+
     ):
         self.metric = metric
+        self.metric_kwargs = metric_kwargs
         self.seed = seed
         self.backend = backend
 

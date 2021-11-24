@@ -44,7 +44,6 @@ class ForecastingMetricMixin:
     def __call__(self,
                  y_true: np.ndarray,
                  y_pred: np.ndarray,
-                 y_train: np.ndarray,
                  sp: int,
                  n_prediction_steps: int,
                  horizon_weight: Optional[List[float]] = None
@@ -195,7 +194,6 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             self,
             y_true: np.ndarray,
             y_pred: np.ndarray,
-            y_train: np.ndarray,
             sp: int,
             n_prediction_steps: int,
             horizon_weight: Optional[List[float]] = None
@@ -249,15 +247,14 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         y_true = y_true.reshape([-1, n_prediction_steps])
         y_pred = y_pred.reshape([-1, n_prediction_steps])
 
-        if not len(y_pred) == len(y_true) == len(y_train):
+        if not len(y_pred) == len(y_true):
             raise ValueError(f"The length of y_true, y_pred and y_train must equal, however, they are "
-                             f"{len(y_pred)}, {len(y_true)}, and {y_train} respectively")
+                             f"{len(y_pred)} and {len(y_true)} respectively")
 
         losses_all = np.ones([len(y_true)])
         for seq_idx in range(len(y_true)):
             losses_all[seq_idx] = self._sign * self._metric_func(y_true=y_true[seq_idx],
                                                                  y_pred=y_pred[seq_idx],
-                                                                 y_train=y_train[seq_idx],
                                                                  sp=sp,
                                                                  horizon_weight=horizon_weight,
                                                                  **self._kwargs)

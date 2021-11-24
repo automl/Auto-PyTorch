@@ -64,6 +64,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         ensemble_memory_limit: Optional[int],
         random_state: int,
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+        metrics_kwargs: Optional[Dict]=None,
     ):
         """ SMAC callback to handle ensemble building
         Parameters
@@ -112,6 +113,8 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
             read at most n new prediction files in each iteration
         logger_port: int
             port in where to publish a msg
+        metrics_kwargs:  Optional[Dict]
+            additional information for comuting metrics
     Returns
     -------
         List[Tuple[int, float, float, float]]:
@@ -125,6 +128,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         self.task_type = task_type
         self.output_type = output_type
         self.metrics = metrics
+        self.metrics_kwargs = metrics_kwargs
         self.opt_metric = opt_metric
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
@@ -240,6 +244,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                     pynisher_context=pynisher_context,
                     logger_port=self.logger_port,
                     unit_test=unit_test,
+                    metric_kwargs=self.metrics_kwargs,
                 ))
 
                 logger.info(
@@ -281,6 +286,7 @@ def fit_and_return_ensemble(
     pynisher_context: str,
     logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     unit_test: bool = False,
+    metric_kwargs: Dict = {}
 ) -> Tuple[
         List[Dict[str, float]],
         int,
@@ -341,6 +347,8 @@ def fit_and_return_ensemble(
             Having this is very bad coding style, but I did not find a way to make
             unittest.mock work through the pynisher with all spawn contexts. If you know a
             better solution, please let us know by opening an issue.
+        metric_kwargs: Dict
+            additional arguments for computing metrics, this is used for time series forecasting computation
     Returns
     -------
         List[Tuple[int, float, float, float]]
@@ -364,6 +372,7 @@ def fit_and_return_ensemble(
         random_state=random_state,
         logger_port=logger_port,
         unit_test=unit_test,
+        metric_kwargs=metric_kwargs,
     ).run(
         end_at=end_at,
         iteration=iteration,
@@ -393,6 +402,7 @@ class EnsembleBuilder(object):
         random_state: Optional[Union[int, np.random.RandomState]] = None,
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         unit_test: bool = False,
+        metric_kwargs: Dict = {}
     ):
         """
             Constructor
@@ -446,6 +456,8 @@ class EnsembleBuilder(object):
                 Having this is very bad coding style, but I did not find a way to make
                 unittest.mock work through the pynisher with all spawn contexts. If you know a
                 better solution, please let us know by opening an issue.
+            metric_kwargs: Dict
+            additional arguments for computing metrics, this is used for time series forecasting computation
         """
 
         super(EnsembleBuilder, self).__init__()
@@ -455,6 +467,7 @@ class EnsembleBuilder(object):
         self.task_type = task_type
         self.output_type = output_type
         self.metrics = metrics
+        self.metric_kwargs = metric_kwargs
         self.opt_metric = opt_metric
         self.ensemble_size = ensemble_size
         self.performance_range_threshold = performance_range_threshold
@@ -966,6 +979,7 @@ class EnsembleBuilder(object):
                 target=self.y_true_ensemble,
                 prediction=y_ensemble,
                 task_type=self.task_type,
+                **self.metric_kwargs
             )
             try:
                 y_ensemble = self._read_np_fn(y_ens_fn)
@@ -974,6 +988,7 @@ class EnsembleBuilder(object):
                     target=self.y_true_ensemble,
                     prediction=y_ensemble,
                     task_type=self.task_type,
+                    **self.metric_kwargs
                 )
 
                 if np.isfinite(self.read_scores[y_ens_fn]["ens_score"]):
@@ -1285,6 +1300,7 @@ class EnsembleBuilder(object):
             metric=opt_metric,
             random_state=self.random_state,
             task_type=self.task_type,
+            metric_kwargs=self.metric_kwargs
         )
 
         try:
@@ -1402,6 +1418,7 @@ class EnsembleBuilder(object):
             target=self.y_true_ensemble,
             prediction=train_pred,
             task_type=self.task_type,
+            **self.metric_kwargs
         )
         performance_stamp.update({'train_' + str(key): val for key, val in train_scores.items()})
         if self.y_test is not None:
@@ -1410,6 +1427,7 @@ class EnsembleBuilder(object):
                 target=self.y_test,
                 prediction=test_pred,
                 task_type=self.task_type,
+                **self.metric_kwargs
             )
             performance_stamp.update(
                 {'test_' + str(key): val for key, val in test_scores.items()})

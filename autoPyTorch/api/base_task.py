@@ -173,6 +173,7 @@ class BaseTask:
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
+        self._metrics_kwargs: Dict = {}
         self._logger: Optional[PicklableClientLogger] = None
         self.run_history: Optional[RunHistory] = None
         self.trajectory: Optional[List] = None
@@ -812,6 +813,7 @@ class BaseTask:
                 output_type=STRING_TO_OUTPUT_TYPES[dataset.output_type],
                 task_type=STRING_TO_TASK_TYPES[self.task_type],
                 metrics=[self._metric],
+                metrics_kwargs=self._metrics_kwargs,
                 opt_metric=optimize_metric,
                 ensemble_size=self.ensemble_size,
                 ensemble_nbest=self.ensemble_nbest,

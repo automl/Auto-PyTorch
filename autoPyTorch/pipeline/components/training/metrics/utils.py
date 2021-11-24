@@ -12,7 +12,7 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, \
-    REGRESSION_METRICS, FORECASTING_METRICS
+    REGRESSION_METRICS, FORECASTING_METRICS, MASE_LOSSES
 
 
 def sanitize_array(array: np.ndarray) -> np.ndarray:
@@ -118,7 +118,12 @@ def calculate_score(
     if task_type in FORECASTING_TASKS:
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
-            score_dict[metric_.name] = metric_(target, cprediction, **score_kwargs)
+            if metric_ in MASE_LOSSES and 'mase_cofficient' in score_kwargs:
+                target_scaled = target * score_kwargs['mase_cofficient']
+                cprediction_scaled = cprediction_scaled * score_kwargs['mase_cofficient']
+                score_dict[metric_.name] = metric_(target_scaled, cprediction_scaled, **score_kwargs)
+            else:
+                score_dict[metric_.name] = metric_(target, cprediction, **score_kwargs)
     elif task_type in REGRESSION_TASKS:
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:

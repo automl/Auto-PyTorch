@@ -47,8 +47,11 @@ f1 = make_metric('f1',
                  sklearn.metrics.f1_score)
 
 # Standard Forecasting Scores
+
+# To avoid storing unnecessary scale values here, we scale all the values under
+# AutoPytorch.evaluation.time_series_forecasting_train_evaluator
 mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
-                                    forecasting_metrics.mean_absolute_scaled_error,
+                                    forecasting_metrics.mean_absolute_error,
                                     optimum=0,
                                     worst_possible_result=MAXINT,
                                     greater_is_better=False,
@@ -57,13 +60,16 @@ mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
                                     )
 
 median_MASE_forecasting = make_metric('median_absolute_scaled_error_forecasting',
-                                      forecasting_metrics.mean_absolute_scaled_error,
+                                      forecasting_metrics.mean_absolute_error,
                                       optimum=0,
                                       worst_possible_result=MAXINT,
                                       greater_is_better=False,
                                       do_forecasting=True,
                                       aggregation='median',
                                       )
+
+MASE_LOSSES = [mean_MASE_forecasting, median_MASE_forecasting]
+
 
 mean_MSSE_forecasting = make_metric('mean_MSSE_forecasting',
                                     forecasting_metrics.mean_squared_scaled_error,

@@ -181,24 +181,35 @@ class DummyRegressionPipeline(DummyRegressor):
                 'runtime': 1}
 
 
-class DummyTimeSeriesPredictionPipeline(DummyClassificationPipeline):
+class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None,
                  n_prediction_steps: int = 1,
                  ) -> None:
-        super(DummyTimeSeriesPredictionPipeline, self).__init__(config, random_state, init_params)
+        super(DummyTimeSeriesForecastingPipeline, self).__init__(config, random_state, init_params)
         self.n_prediction_steps = n_prediction_steps
+
+    def fit(self, X: Dict[str, Any], y: Any,
+            sample_weight: Optional[np.ndarray] = None) -> object:
+        self.n_prediction_steps = X['dataset_properties']['n_prediction_steps']
+        return super(DummyTimeSeriesForecastingPipeline, self).fit(X, y)
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int = 1000) -> np.array:
         new_X = X[-self.n_prediction_steps:]
-        return super(DummyTimeSeriesPredictionPipeline, self).predict_proba(new_X)
+        return super(DummyTimeSeriesForecastingPipeline, self).predict_proba(new_X)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.array:
         new_X = X[-self.n_prediction_steps:]
-        return super(DummyTimeSeriesPredictionPipeline, self).predict(new_X).astype(np.float32)
+        return super(DummyTimeSeriesForecastingPipeline, self).predict(new_X).astype(np.float32)
+
+    @staticmethod
+    def get_default_pipeline_options() -> Dict[str, Any]:
+        return {'budget_type': 'epochs',
+                'epochs': 1,
+                'runtime': 1}
 
 
 def fit_and_suppress_warnings(logger: PicklableClientLogger, pipeline: BaseEstimator,
@@ -319,14 +330,8 @@ class AbstractEvaluator(object):
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
         elif self.task_type in FORECASTING_TASKS:
-            if not isinstance(self.datamanager, TimeSeriesForecastingDataset):
-                raise ValueError(f'to perform time series forecastin tasks, the dataset must be '
-                                 f'autopytorch.dataset.TimeSeriesForecastingDataset.'
-                                 f'However, it is {type(self.datamanager)}')
-            n_prediction_steps = self.datamanager.n_prediction_steps
             if isinstance(self.configuration, int):
-                self.pipeline_class = partial(partial(DummyTimeSeriesPredictionPipeline,
-                                                      n_prediction_steps=n_prediction_steps))
+                self.pipeline_class = DummyTimeSeriesForecastingPipeline
             elif isinstance(self.configuration, str):
                 raise ValueError("Only tabular classifications tasks "
                                  "are currently supported with traditional methods")
