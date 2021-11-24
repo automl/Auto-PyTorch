@@ -471,7 +471,7 @@ class ResultsManager:
             scores = results.opt_scores
             indices = np.arange(len(results.configs))
 
-        incumbent_idx = indices[np.nanargmax(metric._sign * scores)]
+        incumbent_idx = indices[np.argmax(metric._sign * scores)]
         incumbent_config = results.configs[incumbent_idx]
         incumbent_results = results.additional_infos[incumbent_idx]
 
@@ -547,7 +547,7 @@ class ResultsManager:
         num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status_types])
 
         if num_success > 0:
-            best_score = metric._sign * np.nanmax(metric._sign * search_results.opt_scores)
+            best_score = metric._sign * np.max(metric._sign * search_results.opt_scores)
             sio.write(f"\tBest validation score: {best_score}\n")
 
         sio.write(f"\tNumber of target algorithm runs: {num_runs}\n")

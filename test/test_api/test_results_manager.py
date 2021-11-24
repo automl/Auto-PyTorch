@@ -79,17 +79,19 @@ def _check_additional_infos(status_types, additional_infos):
             assert metric_info is None
 
 
-def _check_metric_dict(metric_dict, status_types):
+def _check_metric_dict(metric_dict, status_types, worst_val):
     assert isinstance(metric_dict['accuracy'], list)
     assert metric_dict['accuracy'][0] > 0
     assert isinstance(metric_dict['balanced_accuracy'], list)
     assert metric_dict['balanced_accuracy'][0] > 0
 
+    print(metric_dict, status_types)
+
     for key, vals in metric_dict.items():
         # ^ is a XOR operator
         # True and False / False and True must be fulfilled
-        assert all([(s == STATUS2MSG[StatusType.SUCCESS]) ^ isnan
-                    for s, isnan in zip(status_types, np.isnan(vals))])
+        assert all([(s == STATUS2MSG[StatusType.SUCCESS]) ^ np.isclose([val], [worst_val])
+                    for s, val in zip(status_types, vals)])
 
 
 def test_extract_results_from_run_history():
@@ -129,13 +131,14 @@ def test_search_results_sprint_statistics():
     api.dataset_name = 'iris'
     api._scoring_functions = [accuracy, balanced_accuracy]
     api.search_space = MagicMock(spec=ConfigurationSpace)
+    worst_val = api._metric._worst_possible_result
     search_results = api.get_search_results()
 
     _check_status(search_results.status_types)
     _check_costs(search_results.opt_scores)
     _check_fit_times(search_results.fit_times)
     _check_budgets(search_results.budgets)
-    _check_metric_dict(search_results.metric_dict, search_results.status_types)
+    _check_metric_dict(search_results.metric_dict, search_results.status_types, worst_val)
     _check_additional_infos(status_types=search_results.status_types,
                             additional_infos=search_results.additional_infos)
 
