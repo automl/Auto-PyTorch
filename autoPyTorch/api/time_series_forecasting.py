@@ -19,7 +19,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
-from autoPyTorch.utils.backend import Backend
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE, SEASONALITY_MAP
 

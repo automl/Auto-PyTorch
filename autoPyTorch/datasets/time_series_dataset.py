@@ -208,7 +208,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.sequence_lengths_tests = None
 
         self.shuffle = shuffle
-        self.rand = np.random.RandomState(seed=seed)
+        self.random_state = np.random.RandomState(seed=seed)
 
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -271,9 +271,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.numerical_features: List[int] = list(range(self.num_features))
         self.categorical_features: List[int] = []
-
-        self.cross_validators = CrossValFuncs(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = HoldOutFuncs(HoldoutValTypes.time_series_hold_out_validation)
+        self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
+        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
 
@@ -622,11 +621,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
             if self.shift_input_data:
-                split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
+                split = self.holdout_validators[holdout_val_type.name](self.random_state,
+                                                                       val_share,
                                                                        indices=np.arange(len(dataset)),
                                                                        **kwargs)
             else:
-                split = self.holdout_validators[holdout_val_type.name](holdout_val_type,
+                split = self.holdout_validators[holdout_val_type.name](self.random_state,
+                                                                       val_share,
                                                                        indices=np.arange(
                                                                            len(dataset) - self.n_prediction_steps),
                                                                        **kwargs)

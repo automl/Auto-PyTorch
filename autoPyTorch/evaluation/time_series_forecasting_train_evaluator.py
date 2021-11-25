@@ -17,7 +17,7 @@ from smac.tae import StatusType
 
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
-from autoPyTorch.utils.backend import Backend
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple, List
 
 import numpy as np
 
@@ -30,17 +30,41 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     def __init__(self,
                  **kwargs: Any):
         super().__init__()
-        self.add_fit_requirements([
-            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                           dataset_property=False),
-            FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
-            FitRequirement('network_embedding', (nn.Module,), user_defined=False, dataset_property=False)
-        ])
+        self.add_fit_requirements(
+            self._required_fit_arguments
+        )
         self.backbone: nn.Module = None
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
+
+    @property
+    def _required_fit_arguments(self) -> List[FitRequirement]:
+        if self.get_properties()['handles_tabular']:
+            return [
+                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                               dataset_property=False),
+                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+                FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
+                FitRequirement('network_embedding', (nn.Module,), user_defined=False, dataset_property=False)
+            ]
+        elif self.get_properties()['handles_time_series']:
+            return [
+                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                               dataset_property=False),
+                FitRequirement('time_series_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
+                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+            ]
+        elif self.get_properties()['handles_image']:
+            return [
+                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                               dataset_property=False),
+                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+            ]
+        else:
+            raise ValueError('Unsupported task type!')
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
@@ -64,8 +88,8 @@ class NetworkBackboneComponent(autoPyTorchComponent):
                 # get input shape by transforming first two elements of the training set
                 transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
                 input_shape = transforms(X_train[:1, ...]).shape[1:]
-
-        input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
+        if 'network_embedding' in X.keys():
+            input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
         self.input_shape = input_shape
 
         self.backbone = self.build_backbone(

@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,27 +7,31 @@ import numpy as np
 
 from sklearn.base import RegressorMixin
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesTransformer
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice
+)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
+    EncoderChoice
+)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice
+)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
+from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
-    NetworkInitializerChoice
-)
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
+from autoPyTorch.pipeline.components.setup.network_initializer import NetworkInitializerChoice
+from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.training.data_loader.time_series_data_loader import TimeSeriesDataLoader
-from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
-    TrainerChoice
-)
+from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
@@ -57,8 +61,8 @@ class TimeSeriesRegressionPipeline(RegressorMixin, BasePipeline):
 
     def __init__(self,
                  config: Optional[Configuration] = None,
-                 steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
+                 dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
                  random_state: Optional[np.random.RandomState] = None,
@@ -153,17 +157,27 @@ class TimeSeriesRegressionPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("scaler", ScalerChoice(default_dataset_properties)),
-            ("preprocessing", EarlyPreprocessing()),
-            ("time_series_transformer", TimeSeriesTransformer()),
-            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
-            ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent()),
-            ("network_init", NetworkInitializerChoice(default_dataset_properties)),
-            ("optimizer", OptimizerChoice(default_dataset_properties)),
-            ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
-            ("data_loader", TimeSeriesDataLoader()),
-            ("trainer", TrainerChoice(default_dataset_properties)),
+            ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
+            ("tabular_transformer", TimeSeriesTransformer(random_state=self.random_state)),
+            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
+                                                       random_state=self.random_state)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties,
+                                               random_state=self.random_state)),
+            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network_init", NetworkInitializerChoice(default_dataset_properties,
+                                                      random_state=self.random_state)),
+            ("optimizer", OptimizerChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
+            ("lr_scheduler", SchedulerChoice(default_dataset_properties,
+                                             random_state=self.random_state)),
+            ("data_loader", TimeSeriesDataLoader(random_state=self.random_state)),
+            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 

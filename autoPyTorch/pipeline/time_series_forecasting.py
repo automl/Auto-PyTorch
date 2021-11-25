@@ -1,40 +1,39 @@
+import copy
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformIntegerHyperparameter
+from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
 from sklearn.base import RegressorMixin
-from sklearn.pipeline import Pipeline
+
+import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesTransformer
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice
+)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
+from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
+from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
-from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import (
+from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
+from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
     TimeSeriesForecastingDataLoader
-)
-
-from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
-    TrainerChoice
-)
+from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from autoPyTorch.utils.common import subsampler
 
 
 class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
@@ -63,15 +62,14 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
     def __init__(self,
                  config: Optional[Configuration] = None,
-                 steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-                 dataset_properties: Optional[Dict[str, Any]] = None,
+                 steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
+                 dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
                  random_state: Optional[np.random.RandomState] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  ):
-        # TODO consider multi steps prediction
         if 'upper_sequence_length' not in dataset_properties:
             warnings.warn('max_sequence_length is not given in dataset property , might exists the risk of selecting '
                           'length that is greater than the maximal allowed length of the dataset')
@@ -82,6 +80,11 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
+
+        # Because a pipeline is passed to a worker, we need to honor the random seed
+        # in this context. A tabular regression pipeline will implement a torch
+        # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
+        torch.manual_seed(self.random_state.get_state()[1][0])
 
     def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Scores the fitted estimator on (X, y)
@@ -94,6 +97,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         Returns:
             np.ndarray: coefficient of determination R^2 of the prediction
         """
+        # TODO adjust to sktime's losses
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, ['r2'])
         y_pred = self.predict(X, batch_size=batch_size)
@@ -132,11 +136,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
-            dataset_properties['target_type'] = 'time_series_regression'
-        if dataset_properties['target_type'] != 'time_series_regression':
-            warnings.warn('Time series regression is being used, however the target_type'
-                          'is not given as "time_series_regression". Overriding it.')
-            dataset_properties['target_type'] = 'time_series_regression'
+            dataset_properties['target_type'] = 'time_series_forecasting'
+        if dataset_properties['target_type'] != 'time_series_forecasting':
+            warnings.warn('Time series forecasting is being used, however the target_type'
+                          'is not given as "time_series_forecasting". Overriding it.')
+            dataset_properties['target_type'] = 'time_series_forecasting'
+
         # get the base search space given this
         # dataset properties. Then overwrite with custom
         # regression requirements
@@ -146,6 +151,34 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         # Here we add custom code, like this with this
         # is not a valid configuration
+        # Learned Entity Embedding is only valid when encoder is one hot encoder
+        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
+            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
+            if 'LearnedEntityEmbedding' in embeddings:
+                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
+                possible_default_embeddings = copy.copy(list(embeddings))
+                del possible_default_embeddings[possible_default_embeddings.index(default)]
+
+                for encoder in encoders:
+                    if encoder == 'OneHotEncoder':
+                        continue
+                    while True:
+                        try:
+                            cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(cs.get_hyperparameter(
+                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                            ))
+                            break
+                        except ValueError:
+                            # change the default and try again
+                            try:
+                                default = possible_default_embeddings.pop()
+                            except IndexError:
+                                raise ValueError("Cannot find a legal default configuration")
+                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
@@ -167,18 +200,24 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("scaler", ScalerChoice(default_dataset_properties)),
-            ("time_series_transformer", TimeSeriesTransformer()),
-            ("preprocessing", EarlyPreprocessing()),
-            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
-            ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent()),
-            ("network_init", NetworkInitializerChoice(default_dataset_properties)),
-            ("optimizer", OptimizerChoice(default_dataset_properties)),
-            ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
+            ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
+            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
+                                                       random_state=self.random_state)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties,
+                                               random_state=self.random_state)),
+            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network_init", NetworkInitializerChoice(default_dataset_properties,
+                                                      random_state=self.random_state)),
+            ("optimizer", OptimizerChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
+            ("lr_scheduler", SchedulerChoice(default_dataset_properties,
+                                             random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
-                                                            )),
-            ("trainer", TrainerChoice(default_dataset_properties)),
+                                                            random_state=self.random_state)),
+            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 

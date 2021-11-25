@@ -42,7 +42,7 @@ def get_smac_object(
     ta_kwargs: Dict[str, Any],
     n_jobs: int,
     initial_budget: int,
-    max_budget: int,
+    max_budget: Union[int, float],
     dask_client: Optional[dask.distributed.Client],
     initial_configurations: Optional[List[Configuration]] = None,
 ) -> SMAC4AC:
@@ -189,7 +189,7 @@ class AutoMLSMBO(object):
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            time_series_prediction (bool):
+            time_series_forecasting (bool):
                 If we want to apply this optimizer to optimize time series prediction tasks (which has a different
                 tae)
         """
@@ -237,7 +237,7 @@ class AutoMLSMBO(object):
 
         self.search_space_updates = search_space_updates
 
-        self.time_series_prediction = time_series_prediction
+        self.time_series_forecasting = time_series_forecasting
 
         if logger_port is None:
             self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -307,7 +307,7 @@ class AutoMLSMBO(object):
             pynisher_context=self.pynisher_context,
         )
 
-        if self.time_series_prediction:
+        if self.time_series_forecasting:
             ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Finish creating Target Algorithm (TA) function")
@@ -356,16 +356,10 @@ class AutoMLSMBO(object):
             scenario_dict.update(self.smac_scenario_args)
 
         budget_type = self.pipeline_config['budget_type']
-        if budget_type == 'epochs':
-            initial_budget = self.pipeline_config['min_epochs']
-            max_budget = self.pipeline_config['epochs']
-        elif budget_type == 'resolution':
-            initial_budget = self.pipeline_config.get('min_resolution', 0.1)
-            max_budget = self.pipeline_config.get('full_resolution', 1.0)
-        else:
-            raise ValueError("Illegal value for budget type, must be one of "
-                             "('epochs', 'runtime'), but is : %s" %
-                             budget_type)
+        if budget_type == 'resolution':
+            if self.min_budget > 1. or self.max_budget > 1.:
+                self.min_budget = self.min_budget / self.max_budget
+                self.max_budget = 1.0
 
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,

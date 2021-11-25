@@ -12,6 +12,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class _LSTM(nn.Module):
@@ -71,46 +72,38 @@ class LSTMBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_layers: Tuple[Tuple, int] = ((1, 3), 1),
-                                        hidden_size: Tuple[Tuple, int] = ((64, 512), 256),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        dropout: Tuple[Tuple, float] = ((0, 0.5), 0.2),
-                                        bidirectional: Tuple[Tuple, bool] = ((True, False), True)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+            dataset_properties: Optional[Dict] = None,
+            num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
+                                                                              value_range=(1, 3),
+                                                                              default_value=1),
+            hidden_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='hidden_size',
+                                                                               value_range=(64, 512),
+                                                                               default_value=256),
+            use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='use_dropout',
+                                                                               value_range=(True, False),
+                                                                               default_value=False),
+            dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='dropout',
+                                                                           value_range=(0., 0.5),
+                                                                           default_value=0.2),
+            bidirectional: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='bidirectional',
+                                                                                 value_range=(True, False),
+                                                                                 default_value=True)
+    ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
-        min_num_layers, max_num_layers = num_layers[0]
-        num_layers = UniformIntegerHyperparameter('num_layers',
-                                                  lower=min_num_layers,
-                                                  upper=max_num_layers,
-                                                  default_value=num_layers[1])
-        cs.add_hyperparameter(num_layers)
+        # TODO consider lstm layers with different hidden size
+        num_layers = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
+        dropout = get_hyperparameter(dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameters([num_layers, use_dropout, dropout])
 
-        min_hidden_size, max_hidden_size = hidden_size[0]
-        hidden_size = UniformIntegerHyperparameter('hidden_size',
-                                                   lower=min_hidden_size,
-                                                   upper=max_hidden_size,
-                                                   default_value=hidden_size[1])
-        cs.add_hyperparameter(hidden_size)
+        # Add plain hyperparameters
+        add_hyperparameter(cs, hidden_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, bidirectional, CategoricalHyperparameter)
 
-        use_dropout = CategoricalHyperparameter('use_dropout',
-                                                choices=use_dropout[0],
-                                                default_value=use_dropout[1])
-
-        min_dropout, max_dropout = dropout[0]
-        dropout = UniformFloatHyperparameter('dropout',
-                                             lower=min_dropout,
-                                             upper=max_dropout,
-                                             default_value=dropout[1])
-
-        cs.add_hyperparameters([use_dropout, dropout])
         cs.add_condition(CS.AndConjunction(CS.EqualsCondition(dropout, use_dropout, True),
                                            CS.GreaterThanCondition(dropout, num_layers, 1)))
 
-        bidirectional = CategoricalHyperparameter('bidirectional',
-                                                  choices=bidirectional[0],
-                                                  default_value=bidirectional[1])
-        cs.add_hyperparameter(bidirectional)
 
         return cs

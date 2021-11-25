@@ -4,7 +4,6 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 from autoPyTorch.pipeline.components.training.data_loader.time_series_data_loader import TimeSeriesDataLoader
 
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter, Constant
@@ -18,10 +17,14 @@ import torchvision
 
 import warnings
 
-
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
-from autoPyTorch.utils.common import custom_collate_fn
+from autoPyTorch.utils.common import (
+    HyperparameterSearchSpace,
+    custom_collate_fn,
+    add_hyperparameter
+)
+
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
@@ -97,6 +100,7 @@ class ExpandTransformTimeSeries(object):
        a 2d Array, unlike the ExpandTransform defined under tabular dataset, the dimension is expanded
        along the last axis
     """
+
     def __call__(self, data: np.ndarray) -> np.ndarray:
         if len(data.shape) <= 1:
             data = np.expand_dims(data, axis=-1)
@@ -120,6 +124,7 @@ class SequenceBuilder(object):
     window_size : int, default=1
         sliding window size
     """
+
     def __init__(self, sample_interval: int = 1, window_size: int = 1, subseq_length=1, padding_value=0.):
         """
         initialization
@@ -158,13 +163,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
     datasets as described in:
     https://pytorch.org/docs/stable/data.html
     """
+
     def __init__(self,
                  batch_size: int = 64,
                  window_size: int = 1,
-                 #sample_interval: int = 1,
                  upper_sequence_length: int = np.iinfo(np.int32).max,
                  num_batches_per_epoch: Optional[int] = 50,
-                 n_prediction_steps: int = 1) -> None:
+                 n_prediction_steps: int = 1,
+                 random_state: Optional[np.random.RandomState] = None) -> None:
         """
         initialize a dataloader
         Args:
@@ -176,14 +182,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             num_batches_per_epoch: how
             n_prediction_steps: how many stpes to predict in advance
         """
-        super().__init__(batch_size=batch_size)
+        super().__init__(batch_size=batch_size, random_state=random_state)
         self.window_size: int = window_size
         self.upper_sequence_length = upper_sequence_length
         self.n_prediction_steps = n_prediction_steps
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
-        #self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
 
@@ -270,7 +276,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
         """
         # test_indices not required as testsets usually lies on the trail of hte sequence
-        #_, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
+        # _, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
 
         sampler_indices_train = np.arange(num_instances_dataset)
 
@@ -316,7 +322,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         candidate_transformations = []  # type: List[Callable]
 
-        #if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
+        # if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
         #    candidate_transformations.extend(X['preprocess_transforms'])
 
         candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
@@ -329,7 +335,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         return torchvision.transforms.Compose(candidate_transformations)
 
-    def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None, batch_size: int = np.inf,
+    def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None,
+                   batch_size: int = np.inf,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,
@@ -407,39 +414,18 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        batch_size: Tuple[Tuple, int] = ((32, 320), 64),
-                                        window_size: Tuple[Tuple, int] = ((20, 50), 25)
+                                        batch_size: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter="batch_size",
+                                                                  value_range=(32, 320),
+                                                                  default_value=64),
+                                        window_size: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter='window_size',
+                                                                  value_range=(20, 50),
+                                                                  default_value=30)
                                         ) -> ConfigurationSpace:
-        batch_size = UniformIntegerHyperparameter(
-            "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])
-        if "upper_window_size" not in dataset_properties:
-            warnings.warn('max_sequence_length is not given in dataset property , might exists the risk of selecting '
-                          'length that is greater than the maximal allowed length of the dataset')
-            upper_window_size = min(np.iinfo(np.int32).max, window_size[0][1])
-        else:
-            upper_window_size = min(dataset_properties["upper_window_size"], window_size[0][1])
-        if window_size[0][0] >= upper_window_size:
-            if upper_window_size == 1:
-                warnings.warn("window size is fixed as 1")
-                window_size = Constant("window_size", value=1)
-            else:
-                warnings.warn("the lower bound of window size is greater than the upper bound")
-                window_size = UniformIntegerHyperparameter("window_size",
-                                                           lower=1,
-                                                           upper=upper_window_size,
-                                                           default_value=upper_window_size)
-        elif window_size[0][0] <= upper_window_size < window_size[0][1]:
-            window_size = UniformIntegerHyperparameter("window_size",
-                                                       lower=window_size[0][0],
-                                                       upper=upper_window_size,
-                                                       default_value=upper_window_size)
-        else:
-            window_size = UniformIntegerHyperparameter("window_size",
-                                                       lower=window_size[0][0],
-                                                       upper=window_size[0][1],
-                                                       default_value=window_size[1])
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([batch_size, window_size])
+        add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, window_size, UniformIntegerHyperparameter)
         return cs
 
     def __str__(self) -> str:
