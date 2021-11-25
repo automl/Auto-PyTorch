@@ -13,7 +13,13 @@ import pytest
 from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import ResultsManager, STATUS2MSG, SearchResults, cost2metric
+from autoPyTorch.api.results_manager import (
+    ResultsManager,
+    STATUS2MSG,
+    SearchResults,
+    cost2metric,
+    get_start_time
+)
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
@@ -106,7 +112,52 @@ def test_extract_results_from_run_history():
     with pytest.raises(ValueError) as excinfo:
         SearchResults(metric=accuracy, scoring_functions=[], run_history=run_history)
 
-        assert excinfo._excinfo[0] == ValueError
+    assert excinfo._excinfo[0] == ValueError
+
+
+@pytest.mark.parametrize('starttimes', (list(range(10)), list(range(10))[::-1]))
+@pytest.mark.parametrize('status_types', (
+    [StatusType.SUCCESS] * 9 + [StatusType.STOP],
+    [StatusType.RUNNING] + [StatusType.SUCCESS] * 9
+))
+def test_get_start_time(starttimes, status_types):
+    run_history = RunHistory()
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+    endtime = 1e9
+    kwargs = dict(cost=1.0, endtime=endtime)
+    for starttime, status_type in zip(starttimes, status_types):
+        config = Configuration(cs, {'a': 0.1 * starttime})
+        run_history.add(
+            config=config,
+            starttime=starttime,
+            time=endtime - starttime,
+            status=status_type,
+            **kwargs
+        )
+    starttime = get_start_time(run_history)
+
+    # this rule is strictly defined on the inputs defined from pytest
+    ans = min(t for s, t in zip(status_types, starttimes) if s == StatusType.SUCCESS)
+    assert starttime == ans
+
+
+def test_raise_error_in_get_start_time():
+    # test the raise error for the `status_msg is None`
+    run_history = RunHistory()
+    cs = ConfigurationSpace()
+    config = Configuration(cs, {})
+    run_history.add(
+        config=config,
+        cost=0.0,
+        time=1.0,
+        status=StatusType.CAPPED,
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        get_start_time(run_history)
+
+    assert excinfo._excinfo[0] == ValueError
 
 
 def test_search_results_sprint_statistics():
