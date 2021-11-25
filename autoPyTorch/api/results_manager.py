@@ -321,7 +321,7 @@ class SearchResults:
         )
 
 
-class MetricResults:  # TODO: add tests
+class MetricResults:
     def __init__(
         self,
         metric: autoPyTorchMetric,
@@ -345,7 +345,15 @@ class MetricResults:  # TODO: add tests
         except KeyError:
             self.ensemble_results = None
 
-        self.cum_times = self.search_results.end_times - self.start_time
+        if self.search_results.end_times[-1] < self.ensemble_results.end_times[-1]:
+            # Augment runtime table with the final available end time
+            self.cum_times = np.hstack(
+                [self.search_results.end_times - self.start_time,
+                 [self.ensemble_results.end_times[-1] - self.start_time]]
+            )
+        else:
+            self.cum_times = self.search_results.end_times - self.start_time
+
         self.data: Dict[str, np.ndarray] = {}
         self._extract_results()
 
@@ -388,7 +396,7 @@ class MetricResults:  # TODO: add tests
 
         train_scores, test_scores = self.ensemble_results.train_scores, self.ensemble_results.test_scores
         end_times = self.ensemble_results.end_times
-        cur, timestep_size, sign = 0, self.search_results.end_times.size, self.metric._sign
+        cur, timestep_size, sign = 0, self.cum_times.size, self.metric._sign
         key_train, key_test = f'ensemble::train::{self.metric.name}', f'ensemble::test::{self.metric.name}'
 
         train_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)

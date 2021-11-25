@@ -16,6 +16,7 @@ from smac.runhistory.runhistory import RunHistory, StatusType
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.api.results_manager import (
     EnsembleResults,
+    MetricResults,
     ResultsManager,
     STATUS2MSG,
     SearchResults,
@@ -61,7 +62,7 @@ def _check_costs(costs):
 def _check_end_times(end_times):
     """ Based on runhistory_B.json """
     ans = [1637342642.7887495, 1637342647.2651122, 1637342675.2555833, 1637342681.334954,
-           1637342693.2717755, 1637342704.341065, 1637342726.1866672, 1637342743.3274522, 
+           1637342693.2717755, 1637342704.341065, 1637342726.1866672, 1637342743.3274522,
            1637342749.9442234, 1637342762.5487585, 1637342779.192385, 1637342804.3368232,
            1637342820.8067145, 1637342846.0210106, 1637342897.1205413, 1637342928.7456856]
 
@@ -115,6 +116,34 @@ def _check_metric_dict(metric_dict, status_types, worst_val):
         # True and False / False and True must be fulfilled
         assert all([(s == STATUS2MSG[StatusType.SUCCESS]) ^ np.isclose([val], [worst_val])
                     for s, val in zip(status_types, vals)])
+
+
+def _check_metric_results(scores, metric, run_history, ensemble_performance_history):
+    mr = MetricResults(metric, run_history, ensemble_performance_history)
+    perfs = np.array([cost2metric(s, metric) for s in scores])
+    modified_scores = scores[::2] + [0]
+    modified_scores.insert(2, 0)
+    ens_perfs = np.array([s for s in modified_scores])
+    assert np.allclose(mr.data[f'single::train::{metric.name}'], perfs)
+    assert np.allclose(mr.data[f'single::opt::{metric.name}'], perfs)
+    assert np.allclose(mr.data[f'single::test::{metric.name}'], perfs)
+    assert np.allclose(mr.data[f'ensemble::train::{metric.name}'], ens_perfs)
+    assert np.allclose(mr.data[f'ensemble::test::{metric.name}'], ens_perfs)
+
+    # the end times of synthetic ensemble is [0.25, 0.45, 0.45, 0.65, 0.85, 0.85]
+    # the end times of synthetic run history is 0.1 * np.arange(1, 9) or 0.1 * np.arange(2, 10)
+    ensemble_ends_later = np.allclose(mr.search_results.end_times, 0.1 * np.arange(1, 9))
+    indices = [2, 4, 4, 6, 8, 8] if ensemble_ends_later else [1, 3, 3, 5, 7, 7]
+
+    merged_data = mr.get_ensemble_merged_data()
+    worst_val = metric._worst_possible_result
+    minimize = metric._sign == -1
+    ans = np.full_like(mr.cum_times, worst_val)
+    for idx, s in zip(indices, mr.ensemble_results.train_scores):
+        ans[idx] = min(ans[idx], s) if minimize else max(ans[idx], s)
+
+    assert np.allclose(ans, merged_data[f'ensemble::train::{metric.name}'])
+    assert np.allclose(ans, merged_data[f'ensemble::test::{metric.name}'])
 
 
 def test_extract_results_from_run_history():
@@ -236,6 +265,51 @@ def test_ensemble_results():
     assert np.allclose(er.train_scores, np.array(SCORES)[order])
     assert np.allclose(er.test_scores, np.array(SCORES[::-1])[order])
     assert np.allclose(er.end_times, np.array(end_times)[order])
+
+
+@pytest.mark.parametrize('metric', (accuracy, log_loss))
+@pytest.mark.parametrize('scores', (SCORES[:8], SCORES[:8][::-1]))
+@pytest.mark.parametrize('ensemble_ends_later', (True, False))
+def test_metric_results(metric, scores, ensemble_ends_later):
+    t0, ms_unit = (1970, 1, 1, 9, 0, 0), 100000
+    ensemble_performance_history = [
+        {'Timestamp': datetime(*t0, ms_unit * 2 * (i + 1) + ms_unit // 2),
+         f'train_{metric.name}': s,
+         f'test_{metric.name}': s}
+        for i, s in enumerate(scores[::2])
+    ]
+    # Add a record with the exact same stamp as the last one
+    ensemble_performance_history.append(
+        {'Timestamp': datetime(*t0, ms_unit * 8 + ms_unit // 2),
+         f'train_{metric.name}': 0,
+         f'test_{metric.name}': 0}
+    )
+    # Add a record with the exact same stamp as a middle one
+    ensemble_performance_history.append(
+        {'Timestamp': datetime(*t0, ms_unit * 4 + ms_unit // 2),
+         f'train_{metric.name}': 0,
+         f'test_{metric.name}': 0}
+    )
+
+    run_history = RunHistory()
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+
+    for i, fixed_val in enumerate(scores):
+        config = Configuration(cs, {'a': fixed_val})
+        st, et = 0.1 * (i + 1 - ensemble_ends_later), 0.1 * (i + 2 - ensemble_ends_later)
+        run_history.add(
+            config=config, cost=1, budget=0,
+            time=0.1, starttime=st, endtime=et,
+            status=StatusType.SUCCESS,
+            additional_info={
+                'configuration_origin': T,
+                'train_loss': {f'{metric.name}': fixed_val},
+                'opt_loss': {f'{metric.name}': fixed_val},
+                'test_loss': {f'{metric.name}': fixed_val}
+            }
+        )
+    _check_metric_results(scores, metric, run_history, ensemble_performance_history)
 
 
 def test_search_results_sprint_statistics():
