@@ -1,5 +1,6 @@
+import os
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
-import warnings
+import uuid
 import bisect
 
 import numpy as np
@@ -156,6 +157,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  validator: Optional[TimeSeriesForecastingInputValidator] = None,
                  n_prediction_steps: int = 1,
+                 dataset_name: Optional[str] = None,
                  shift_input_data: bool = True,
                  normalize_y: bool = True,
                  train_with_log_prob: bool = True,
@@ -176,6 +178,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         header's configspace can be built beforehand.
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
+
+        self.dataset_name = dataset_name
+
+        if self.dataset_name is None:
+            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
         self.n_prediction_steps = n_prediction_steps
         if validator is None:
             validator = TimeSeriesForecastingInputValidator(is_classification=False)
