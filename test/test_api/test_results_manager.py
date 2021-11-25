@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from test.test_api.utils import make_dict_run_history_data
 from unittest.mock import MagicMock
 
@@ -14,6 +15,7 @@ from smac.runhistory.runhistory import RunHistory, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.api.results_manager import (
+    EnsembleResults,
     ResultsManager,
     STATUS2MSG,
     SearchResults,
@@ -25,6 +27,7 @@ from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 T, NT = 'traditional', 'non-traditional'
 SCORES = [0.1 * (i + 1) for i in range(10)]
+END_TIMES = [8, 4, 3, 6, 0, 7, 1, 9, 2, 5]
 
 
 def _check_status(status):
@@ -181,12 +184,11 @@ def test_search_results_sort_by_endtime():
     n_configs = len(SCORES)
     cs = ConfigurationSpace()
     cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
-    end_times = [8, 4, 3, 6, 0, 7, 1, 9, 2, 5]
-    order = np.argsort(end_times)
+    order = np.argsort(END_TIMES)
     ans = np.array(SCORES)[order].tolist()
     status_types = [StatusType.SUCCESS, StatusType.DONOTADVANCE] * (n_configs // 2)
 
-    for i, (fixed_val, et, status) in enumerate(zip(SCORES, end_times, status_types)):
+    for i, (fixed_val, et, status) in enumerate(zip(SCORES, END_TIMES, status_types)):
         config = Configuration(cs, {'a': fixed_val})
         run_history.add(
             config=config, cost=fixed_val,
@@ -208,6 +210,32 @@ def test_search_results_sort_by_endtime():
     assert np.all(np.array([STATUS2MSG[s] for s in status_types])[order] == np.array(sr.status_types))
     assert sr.is_traditionals == np.array([True, False] * 5)[order].tolist()
     assert np.allclose(sr.fit_times, np.subtract(np.arange(n_configs), ans))
+
+
+def test_ensemble_results():
+    order = np.argsort(END_TIMES)
+    end_times = [datetime.timestamp(datetime(2000, et + 1, 1)) for et in END_TIMES]
+    ensemble_performance_history = [
+        {'Timestamp': datetime(2000, et + 1, 1), 'train_accuracy': s1, 'test_accuracy': s2}
+        for et, s1, s2 in zip(END_TIMES, SCORES, SCORES[::-1])
+    ]
+
+    with pytest.raises(KeyError) as excinfo:
+        EnsembleResults(log_loss, ensemble_performance_history)
+
+    assert excinfo._excinfo[0] == KeyError
+
+    er = EnsembleResults(accuracy, ensemble_performance_history)
+    assert er._train_scores == SCORES
+    assert np.allclose(er.train_scores, SCORES)
+    assert er._test_scores == SCORES[::-1]
+    assert np.allclose(er.test_scores, SCORES[::-1])
+    assert np.allclose(er.end_times, end_times)
+
+    er = EnsembleResults(accuracy, ensemble_performance_history, order_by_endtime=True)
+    assert np.allclose(er.train_scores, np.array(SCORES)[order])
+    assert np.allclose(er.test_scores, np.array(SCORES[::-1])[order])
+    assert np.allclose(er.end_times, np.array(end_times)[order])
 
 
 def test_search_results_sprint_statistics():
