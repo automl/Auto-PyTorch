@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 
-from sklearn.compose import ColumnTransformer, make_column_transformer
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 
 import torch
@@ -57,9 +57,9 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         if len(X['dataset_properties']['categorical_columns']):
             categorical_pipeline = make_pipeline(*preprocessors['categorical'])
 
-        self.preprocessor = make_column_transformer(
-            (numerical_pipeline, X['dataset_properties']['numerical_columns']),
-            (categorical_pipeline, X['dataset_properties']['categorical_columns']),
+        self.preprocessor = ColumnTransformer([
+            ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns']),
+            ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])],
             remainder='passthrough'
         )
 
@@ -85,7 +85,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         X.update({'tabular_transformer': self})
         return X
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
 
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."

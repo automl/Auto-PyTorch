@@ -3,9 +3,11 @@ on: [pull_request, push]
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Setup Python
       uses: actions/setup-python@v2
       with:

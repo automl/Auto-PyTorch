@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging.handlers
-import typing
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -34,7 +34,7 @@ class BaseInputValidator(BaseEstimator):
     def __init__(
         self,
         is_classification: bool = False,
-        logger_port: typing.Optional[int] = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+        logger_port: Optional[int] = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     ) -> None:
         raise NotImplementedError()
 
@@ -42,8 +42,8 @@ class BaseInputValidator(BaseEstimator):
         self,
         X_train: SUPPORTED_FEAT_TYPES,
         y_train: SUPPORTED_TARGET_TYPES,
-        X_test: typing.Optional[SUPPORTED_FEAT_TYPES] = None,
-        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         """
         Validates and fit a categorical encoder (if needed) to the features, and
@@ -58,14 +58,14 @@ class BaseInputValidator(BaseEstimator):
             + Checks for dimensionality as well as missing values are performed.
             + If performing a classification task, the data is going to be encoded
 
-        Arguments:
+        Args:
             X_train (SUPPORTED_FEAT_TYPES):
                 A set of features that are going to be validated (type and dimensionality
                 checks). If this data contains categorical columns, an encoder is going to
                 be instantiated and trained with this data.
             y_train (SUPPORTED_TARGET_TYPES):
                 A set of targets that are going to be encoded if the task is for classification
-            X_test (typing.Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SUPPORTED_FEAT_TYPES]):
                 A hold out set of features used for checking
             y_test (SUPPORTED_TARGET_TYPES):
                 A hold out set of targets used for checking. Additionally, if the current task
@@ -97,15 +97,15 @@ class BaseInputValidator(BaseEstimator):
     def transform(
         self,
         X: SUPPORTED_FEAT_TYPES,
-        y: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
-    ) -> typing.Tuple[np.ndarray, typing.Optional[np.ndarray]]:
+        y: Optional[SUPPORTED_TARGET_TYPES] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Transform the given target or features to a numpy array
 
-        Arguments:
+        Args:
             X (SUPPORTED_FEAT_TYPES):
                 A set of features to transform
-            y (typing.Optional[SUPPORTED_TARGET_TYPES]):
+            y (Optional[SUPPORTED_TARGET_TYPES]):
                 A set of targets to transform
 
         Returns:

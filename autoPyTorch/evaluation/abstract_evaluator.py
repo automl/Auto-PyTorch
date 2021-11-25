@@ -23,6 +23,8 @@ import autoPyTorch.pipeline.tabular_regression
 import autoPyTorch.pipeline.time_series_classification
 import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.time_series_forecasting
+import autoPyTorch.pipeline.traditional_tabular_regression
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     IMAGE_TASKS,
@@ -33,7 +35,7 @@ from autoPyTorch.constants import (
     TABULAR_TASKS, TIMESERIES_TASKS,
     FORECASTING_TASKS,
 )
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 
 from autoPyTorch.evaluation.utils import (
@@ -43,11 +45,10 @@ from autoPyTorch.evaluation.utils import (
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_score,
+    calculate_loss,
     get_metrics,
 )
-from autoPyTorch.utils.backend import Backend
-from autoPyTorch.utils.common import subsampler
+from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements
@@ -59,39 +60,66 @@ __all__ = [
 
 
 class MyTraditionalTabularClassificationPipeline(BaseEstimator):
+    """
+    A wrapper class that holds a pipeline for traditional classification.
+    Estimators like CatBoost, and Random Forest are considered traditional machine
+    learning models and are fitted before neural architecture search.
+
+    This class is an interface to fit a pipeline containing a traditional machine
+    learning model, and is the final object that is stored for inference.
+
+    Attributes:
+        dataset_properties (Dict[str, BaseDatasetPropertiesType]):
+            A dictionary containing dataset specific information
+        random_state (Optional[np.random.RandomState]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
+
     def __init__(self, config: str,
-                 dataset_properties: Dict[str, Any],
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None):
         self.config = config
         self.dataset_properties = dataset_properties
         self.random_state = random_state
         self.init_params = init_params
-        self.pipeline = autoPyTorch.pipeline.traditional_tabular_classification.\
-            TraditionalTabularClassificationPipeline(dataset_properties=dataset_properties)
+        self.pipeline = autoPyTorch.pipeline.traditional_tabular_classification. \
+            TraditionalTabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                     random_state=self.random_state)
         configuration_space = self.pipeline.get_hyperparameter_search_space()
         default_configuration = configuration_space.get_default_configuration().get_dictionary()
-        default_configuration['model_trainer:tabular_classifier:classifier'] = config
-        configuration = Configuration(configuration_space, default_configuration)
-        self.pipeline.set_hyperparameters(configuration)
+        default_configuration['model_trainer:tabular_traditional_model:traditional_learner'] = config
+        self.configuration = Configuration(configuration_space, default_configuration)
+        self.pipeline.set_hyperparameters(self.configuration)
 
     def fit(self, X: Dict[str, Any], y: Any,
             sample_weight: Optional[np.ndarray] = None) -> object:
         return self.pipeline.fit(X, y)
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
+                      batch_size: int = 1000) -> np.ndarray:
         return self.pipeline.predict_proba(X, batch_size=batch_size)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         return self.pipeline.predict(X, batch_size=batch_size)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
-
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_additional_run_info(self) -> Dict[str, Any]:
+        """
+        Can be used to return additional info for the run.
+        Returns:
+            Dict[str, Any]:
+            Currently contains
+                1. pipeline_configuration: the configuration of the pipeline, i.e, the traditional model used
+                2. trainer_configuration: the parameters for the traditional model used.
+                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/estimator_configs
+        """
+        return {'pipeline_configuration': self.configuration,
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config(),
+                'configuration_origin': 'traditional'}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return self.pipeline.get_pipeline_representation()
@@ -102,12 +130,93 @@ class MyTraditionalTabularClassificationPipeline(BaseEstimator):
             TraditionalTabularClassificationPipeline.get_default_pipeline_options()
 
 
+class MyTraditionalTabularRegressionPipeline(BaseEstimator):
+    """
+    A wrapper class that holds a pipeline for traditional regression.
+    Estimators like CatBoost, and Random Forest are considered traditional machine
+    learning models and are fitted before neural architecture search.
+
+    This class is an interface to fit a pipeline containing a traditional machine
+    learning model, and is the final object that is stored for inference.
+
+    Attributes:
+        dataset_properties (Dict[str, Any]):
+            A dictionary containing dataset specific information
+        random_state (Optional[np.random.RandomState]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
+    def __init__(self, config: str,
+                 dataset_properties: Dict[str, Any],
+                 random_state: Optional[np.random.RandomState] = None,
+                 init_params: Optional[Dict] = None):
+        self.config = config
+        self.dataset_properties = dataset_properties
+        self.random_state = random_state
+        self.init_params = init_params
+        self.pipeline = autoPyTorch.pipeline.traditional_tabular_regression. \
+            TraditionalTabularRegressionPipeline(dataset_properties=dataset_properties,
+                                                 random_state=self.random_state)
+        configuration_space = self.pipeline.get_hyperparameter_search_space()
+        default_configuration = configuration_space.get_default_configuration().get_dictionary()
+        default_configuration['model_trainer:tabular_traditional_model:traditional_learner'] = config
+        self.configuration = Configuration(configuration_space, default_configuration)
+        self.pipeline.set_hyperparameters(self.configuration)
+
+    def fit(self, X: Dict[str, Any], y: Any,
+            sample_weight: Optional[np.ndarray] = None) -> object:
+        return self.pipeline.fit(X, y)
+
+    def predict(self, X: Union[np.ndarray, pd.DataFrame],
+                batch_size: int = 1000) -> np.ndarray:
+        return self.pipeline.predict(X, batch_size=batch_size)
+
+    def get_additional_run_info(self) -> Dict[str, Any]:
+        """
+        Can be used to return additional info for the run.
+        Returns:
+            Dict[str, Any]:
+            Currently contains
+                1. pipeline_configuration: the configuration of the pipeline, i.e, the traditional model used
+                2. trainer_configuration: the parameters for the traditional model used.
+                    Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/estimator_configs
+        """
+        return {'pipeline_configuration': self.configuration,
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
+
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return self.pipeline.get_pipeline_representation()
+
+    @staticmethod
+    def get_default_pipeline_options() -> Dict[str, Any]:
+        return autoPyTorch.pipeline.traditional_tabular_regression.\
+            TraditionalTabularRegressionPipeline.get_default_pipeline_options()
+
+
 class DummyClassificationPipeline(DummyClassifier):
+    """
+    A wrapper class that holds a pipeline for dummy classification.
+
+    A wrapper over DummyClassifier of scikit learn. This estimator is considered the
+    worst performing model. In case of failure, at least this model will be fitted.
+
+    Attributes:
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
+
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None
                  ) -> None:
-        self.configuration = config
+        self.config = config
+        self.init_params = init_params
+        self.random_state = random_state
         if config == 1:
             super(DummyClassificationPipeline, self).__init__(strategy="uniform")
         else:
@@ -121,7 +230,7 @@ class DummyClassificationPipeline(DummyClassifier):
                                                             sample_weight=sample_weight)
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
+                      batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         probas = super(DummyClassificationPipeline, self).predict_proba(new_X)
         probas = convert_multioutput_multiclass_to_multilabel(probas).astype(
@@ -129,15 +238,18 @@ class DummyClassificationPipeline(DummyClassifier):
         return probas
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         return super(DummyClassificationPipeline, self).predict(new_X).astype(np.float32)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
+    def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
+        return {'configuration_origin': 'DUMMY'}
 
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return {
+            'Preprocessing': 'None',
+            'Estimator': 'Dummy',
+        }
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
@@ -147,10 +259,26 @@ class DummyClassificationPipeline(DummyClassifier):
 
 
 class DummyRegressionPipeline(DummyRegressor):
+    """
+    A wrapper class that holds a pipeline for dummy regression.
+
+    A wrapper over DummyRegressor of scikit learn. This estimator is considered the
+    worst performing model. In case of failure, at least this model will be fitted.
+
+    Attributes:
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+    """
+
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None) -> None:
-        self.configuration = config
+        self.config = config
+        self.init_params = init_params
+        self.random_state = random_state
         if config == 1:
             super(DummyRegressionPipeline, self).__init__(strategy='mean')
         else:
@@ -164,15 +292,18 @@ class DummyRegressionPipeline(DummyRegressor):
                                                         sample_weight=sample_weight)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         new_X = np.ones((X.shape[0], 1))
         return super(DummyRegressionPipeline, self).predict(new_X).astype(np.float32)
 
-    def estimator_supports_iterative_fit(self) -> bool:  # pylint: disable=R0201
-        return False
+    def get_additional_run_info(self) -> Dict:  # pylint: disable=R0201
+        return {'configuration_origin': 'DUMMY'}
 
-    def get_additional_run_info(self) -> None:  # pylint: disable=R0201
-        return None
+    def get_pipeline_representation(self) -> Dict[str, str]:
+        return {
+            'Preprocessing': 'None',
+            'Estimator': 'Dummy',
+        }
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
@@ -230,13 +361,81 @@ def fit_and_suppress_warnings(logger: PicklableClientLogger, pipeline: BaseEstim
 
 
 class AbstractEvaluator(object):
+    """
+    This method defines the interface that pipeline evaluators should follow, when
+    interacting with SMAC through ExecuteTaFuncWithQueue.
+
+    An evaluator is an object that:
+        + constructs a pipeline (i.e. a classification or regression estimator) for a given
+          pipeline_config and run settings (budget, seed)
+        + Fits and trains this pipeline (TrainEvaluator) or tests a given
+          configuration (TestEvaluator)
+
+    The provided configuration determines the type of pipeline created. For more
+    details, please read the get_pipeline() method.
+
+    Attributes:
+        backend (Backend):
+            An object that allows interaction with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will append the result to a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of
+            scikit-learn accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type. Currently, only epoch and time are allowed.
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        configuration (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed. A dummy estimator is created for
+            integer configurations, a traditional machine learning pipeline is created
+            for string based configuration, and NAS is performed when a configuration
+            object is passed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Union[bool, List[str]]):
+            By default, the model, it's predictions and other metadata is stored on disk
+            for each finished configuration. This argument allows the user to skip
+            saving certain file type, for example the model, from being written to disk.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel.
+            If None is provided, the logging.handlers.DEFAULT_TCP_LOGGING_PORT is used.
+        all_supported_metrics  (bool):
+            Whether all supported metrics should be calculated for every configuration.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            An object used to fine tune the hyperparameter search space of the pipeline
+    """
     def __init__(self, backend: Backend,
                  queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
+                 configuration: Union[int, str, Configuration],
                  budget_type: str = None,
                  pipeline_config: Optional[Dict[str, Any]] = None,
-                 configuration: Optional[Configuration] = None,
                  seed: int = 1,
                  output_y_hat_optimization: bool = True,
                  num_run: Optional[int] = None,
@@ -294,13 +493,12 @@ class AbstractEvaluator(object):
             raise ValueError('disable_file_output should be either a bool or a list')
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
-        info = self.datamanager.get_required_dataset_info()
+
         if self.task_type in REGRESSION_TASKS:
             if isinstance(self.configuration, int):
-                self.pipeline_class = DummyClassificationPipeline
+                self.pipeline_class = DummyRegressionPipeline
             elif isinstance(self.configuration, str):
-                raise ValueError("Only tabular classifications tasks "
-                                 "are currently supported with traditional methods")
+                self.pipeline_class = MyTraditionalTabularRegressionPipeline
             elif isinstance(self.configuration, Configuration):
                 if self.task_type in TABULAR_TASKS:
                     self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
@@ -316,8 +514,7 @@ class AbstractEvaluator(object):
                 if self.task_type in TABULAR_TASKS:
                     self.pipeline_class = MyTraditionalTabularClassificationPipeline
                 else:
-                    raise ValueError("Only tabular classifications tasks "
-                                     "are currently supported with traditional methods")
+                    raise ValueError("Only tabular tasks are currently supported with traditional methods")
             elif isinstance(self.configuration, Configuration):
                 if self.task_type in TABULAR_TASKS:
                     self.pipeline_class = autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline
@@ -341,36 +538,32 @@ class AbstractEvaluator(object):
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression
 
-        self.dataset_properties = self.datamanager.get_dataset_properties(get_dataset_requirements(info))
+
+        self.dataset_properties = self.datamanager.get_dataset_properties(
+            get_dataset_requirements(info=self.datamanager.get_required_dataset_info(),
+                                     include=self.include,
+                                     exclude=self.exclude,
+                                     search_space_updates=self.search_space_updates
+                                     ))
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
+        metrics_dict: Optional[Dict[str, List[str]]] = None
         if all_supported_metrics:
             self.additional_metrics = get_metrics(dataset_properties=self.dataset_properties,
                                                   all_supported_metrics=all_supported_metrics)
+            # Update fit dictionary with metrics passed to the evaluator
+            metrics_dict = {'additional_metrics': []}
+            metrics_dict['additional_metrics'].append(self.metric.name)
+            for metric in self.additional_metrics:
+                metrics_dict['additional_metrics'].append(metric.name)
 
-        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
         self._init_params = init_params
-        self.fit_dictionary.update({
-            'X_train': self.X_train,
-            'y_train': self.y_train,
-            'X_test': self.X_test,
-            'y_test': self.y_test,
-            'backend': self.backend,
-            'logger_port': logger_port,
-        })
+
         assert self.pipeline_class is not None, "Could not infer pipeline class"
         pipeline_config = pipeline_config if pipeline_config is not None \
             else self.pipeline_class.get_default_pipeline_options()
         self.budget_type = pipeline_config['budget_type'] if budget_type is None else budget_type
         self.budget = pipeline_config[self.budget_type] if budget == 0 else budget
-        self.fit_dictionary = {**pipeline_config, **self.fit_dictionary}
-
-        # If the budget is epochs, we want to limit that in the fit dictionary
-        if self.budget_type == 'epochs':
-            self.fit_dictionary['epochs'] = budget
-        if self.budget_type == 'resolution':
-            if self.task_type in TIMESERIES_TASKS:
-                self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / budget))
 
         self.num_run = 0 if num_run is None else num_run
 
@@ -382,19 +575,95 @@ class AbstractEvaluator(object):
             name=logger_name,
             port=logger_port,
         )
+
+        self._init_fit_dictionary(logger_port=logger_port, pipeline_config=pipeline_config, metrics_dict=metrics_dict)
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
         self.pipeline: Optional[BaseEstimator] = None
-        self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(self.fit_dictionary))
+        self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
+    def _init_fit_dictionary(
+        self,
+        logger_port: int,
+        pipeline_config: Dict[str, Any],
+        metrics_dict: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
+        """
+        Initialises the fit dictionary
+
+        Args:
+            logger_port (int):
+                Logging is performed using a socket-server scheme to be robust against many
+                parallel entities that want to write to the same file. This integer states the
+                socket port for the communication channel.
+            pipeline_config (Dict[str, Any]):
+                Defines the content of the pipeline being evaluated. For example, it
+                contains pipeline specific settings like logging name, or whether or not
+                to use tensorboard.
+            metrics_dict (Optional[Dict[str, List[str]]]):
+            Contains a list of metric names to be evaluated in Trainer with key `additional_metrics`. Defaults to None.
+
+        Returns:
+            None
+        """
+
+        self.fit_dictionary: Dict[str, Any] = {'dataset_properties': self.dataset_properties}
+
+        if metrics_dict is not None:
+            self.fit_dictionary.update(metrics_dict)
+
+        self.fit_dictionary.update({
+            'X_train': self.X_train,
+            'y_train': self.y_train,
+            'X_test': self.X_test,
+            'y_test': self.y_test,
+            'backend': self.backend,
+            'logger_port': logger_port,
+            'optimize_metric': self.metric.name
+        })
+
+        self.fit_dictionary.update(pipeline_config)
+        # If the budget is epochs, we want to limit that in the fit dictionary
+        if self.budget_type == 'epochs':
+            self.fit_dictionary['epochs'] = self.budget
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'runtime':
+            self.fit_dictionary['runtime'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+        elif self.budget_type == 'resolution' and self.task_type in TIMESERIES_TASKS:
+            self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / self.budget))
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
+        else:
+            raise ValueError(f"budget type must be `epochs` or `runtime` or 'resolution' (Only used in forecasting "
+                             f"taskss), but got {self.budget_type}")
+
+
     def _get_pipeline(self) -> BaseEstimator:
+        """
+        Implements a pipeline object based on the self.configuration attribute.
+        int: A dummy classifier/dummy regressor is created. This estimator serves
+             as a baseline model to ignore all models that perform worst than this
+             fixed estimator. Also, in the worst case scenario, this is the final
+             estimator created (for instance, in case not enough memory was allocated).
+        str: A pipeline with traditional classifiers like random forest, SVM, etc is created,
+             as the configuration will contain an estimator name defining the configuration
+             to use, for example 'RandomForest'
+        Configuration: A pipeline object matching this configuration is created. This
+             is the case of neural architecture search, where different backbones
+             and head can be passed in the form of a configuration object.
+
+        Returns
+            pipeline (BaseEstimator):
+                A scikit-learn compliant pipeline which is not yet fit to the data.
+        """
         assert self.pipeline_class is not None, "Can't return pipeline, pipeline_class not initialised"
         if isinstance(self.configuration, int):
             pipeline = self.pipeline_class(config=self.configuration,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         elif isinstance(self.configuration, Configuration):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
@@ -407,7 +676,7 @@ class AbstractEvaluator(object):
             pipeline = self.pipeline_class(config=self.configuration,
                                            dataset_properties=self.dataset_properties,
                                            random_state=np.random.RandomState(self.seed),
-                                           init_params=self.fit_dictionary)
+                                           init_params=self._init_params)
         else:
             raise ValueError("Invalid configuration entered")
         return pipeline
@@ -415,30 +684,30 @@ class AbstractEvaluator(object):
     def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **loss_kwargs: Dict) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
+        The calculate_loss internally translate a score function to
+        a minimization problem
 
-        On this regard, to optimize a metric:
-            1- score is calculared with calculate_score, with the caveat, that if
-            for the metric greater is not better, a negative score is returned.
-            2- the err (the optimization goal) is then:
-                optimum - (metric.sign * actual_score)
-                For accuracy for example: optimum(1) - (+1 * actual score)
-                For logloss for example: optimum(0) - (-1 * actual score)
+        Args:
+            y_true (np.ndarray):
+                The expect labels given by the original dataset
+            y_hat (np.ndarray):
+                The prediction of the current pipeline being fit
+        Returns:
+            (Dict[str, float]):
+                A dictionary with metric_name -> metric_loss, for every
+                supported metric
         """
 
-        if not isinstance(self.configuration, Configuration):
-            return {self.metric.name: 1.0}
+        if isinstance(self.configuration, int):
+            # We do not calculate performance of the dummy configurations
+            return {self.metric.name: self.metric._optimum - self.metric._sign * self.metric._worst_possible_result}
 
         if self.additional_metrics is not None:
             metrics = self.additional_metrics
         else:
             metrics = [self.metric]
-        score = calculate_score(
+        return calculate_loss(
             y_true, y_hat, self.task_type, metrics, **loss_kwargs)
-
-        err = {metric.name: metric._optimum - score[metric.name] for metric in metrics
-               if metric.name in score.keys()}
-
-        return err
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],
@@ -451,8 +720,39 @@ class AbstractEvaluator(object):
         * saving the files for the ensembles_statistics
         * generate output for SMAC
         We use it as the signal handler so we can recycle the code for the
-        normal usecase and when the runsolver kills us here :)"""
+        normal usecase and when the runsolver kills us here :)
 
+        Args:
+            loss (Dict[str, float]):
+                The optimization loss, calculated on the validation set. This will
+                be the cost used in SMAC
+            train_loss (Dict[str, float]):
+                The train loss, calculated on the train set
+            opt_pred (np.ndarray):
+                The predictions on the validation set. This validation set is created
+                from the resampling strategy
+            valid_pred (Optional[np.ndarray]):
+                Predictions on a user provided validation set
+            test_pred (Optional[np.ndarray]):
+                Predictions on a user provided test set
+            additional_run_info (Optional[Dict]):
+                A dictionary with additional run information, like duration or
+                the crash error msg, if any.
+            file_output (bool):
+                Whether or not this pipeline should output information to disk
+            status (StatusType)
+                The status of the run, following SMAC StatusType syntax.
+
+        Returns:
+            duration (float):
+                The elapsed time of the training of this evaluator
+            loss (float):
+                The optimization loss of this run
+            seed (int):
+                The seed used while fitting the pipeline
+            additional_info (Dict):
+                Additional run information, like train/test loss
+        """
         self.duration = time.time() - self.starttime
 
         if file_output:
@@ -475,8 +775,7 @@ class AbstractEvaluator(object):
         additional_run_info = (
             {} if additional_run_info is None else additional_run_info
         )
-        for metric_name, value in loss.items():
-            additional_run_info[metric_name] = value
+        additional_run_info['opt_loss'] = loss
         additional_run_info['duration'] = self.duration
         additional_run_info['num_run'] = self.num_run
         if train_loss is not None:
@@ -494,32 +793,73 @@ class AbstractEvaluator(object):
         return None
 
     def calculate_auxiliary_losses(
-            self,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray,
-    ) -> Tuple[Optional[float], Optional[float]]:
+        self,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray,
+    ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
+        """
+        A helper function to calculate the performance estimate of the
+        current pipeline in the user provided validation/test set.
 
-        validation_loss: Optional[float] = None
+        Args:
+            Y_valid_pred (np.ndarray):
+                predictions on a validation set provided by the user,
+                matching self.y_valid
+            Y_test_pred (np.ndarray):
+                predictions on a test set provided by the user,
+                matching self.y_test
+
+        Returns:
+            validation_loss_dict (Optional[Dict[str, float]]):
+                Various validation losses available.
+            test_loss_dict (Optional[Dict[str, float]]):
+                Various test losses available.
+        """
+
+        validation_loss_dict: Optional[Dict[str, float]] = None
 
         if Y_valid_pred is not None:
             if self.y_valid is not None:
                 validation_loss_dict = self._loss(self.y_valid, Y_valid_pred)
-                validation_loss = validation_loss_dict[self.metric.name]
 
-        test_loss: Optional[float] = None
+        test_loss_dict: Optional[Dict[str, float]] = None
         if Y_test_pred is not None:
             if self.y_test is not None:
                 test_loss_dict = self._loss(self.y_test, Y_test_pred)
-                test_loss = test_loss_dict[self.metric.name]
 
-        return validation_loss, test_loss
+        return validation_loss_dict, test_loss_dict
 
     def file_output(
-            self,
-            Y_optimization_pred: np.ndarray,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray
+        self,
+        Y_optimization_pred: np.ndarray,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray
     ) -> Tuple[Optional[float], Dict]:
+        """
+        This method decides what file outputs are written to disk.
+
+        It is also the interface to the backed save_numrun_to_dir
+        which stores all the pipeline related information to a single
+        directory for easy identification of the current run.
+
+        Args:
+            Y_optimization_pred (np.ndarray):
+                The pipeline predictions on the validation set internally created
+                from self.y_train
+            Y_valid_pred (np.ndarray):
+                The pipeline predictions on the user provided validation set,
+                which should match self.y_valid
+            Y_test_pred (np.ndarray):
+                The pipeline predictions on the user provided test set,
+                which should match self.y_test
+        Returns:
+            loss (Optional[float]):
+                A loss in case the run failed to store files to
+                disk
+            error_dict (Dict):
+                A dictionary with an error that explains why a run
+                was not successfully stored to disk.
+        """
         # Abort if self.Y_optimization is None
         # self.Y_optimization can be None if we use partial-cv, then,
         # obviously no output should be saved.
@@ -589,6 +929,7 @@ class AbstractEvaluator(object):
         else:
             pipeline = None
 
+        self.logger.debug("Saving directory {}, {}, {}".format(self.seed, self.num_run, self.budget))
         self.backend.save_numrun_to_dir(
             seed=int(self.seed),
             idx=int(self.num_run),
@@ -613,6 +954,23 @@ class AbstractEvaluator(object):
 
     def _predict_proba(self, X: np.ndarray, pipeline: BaseEstimator,
                        Y_train: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        A wrapper function to handle the prediction of classification tasks.
+        It also makes sure that the predictions has the same dimensionality
+        as the expected labels
+
+        Args:
+            X (np.ndarray):
+                A set of features to feed to the pipeline
+            pipeline (BaseEstimator):
+                A model that will take the features X return a prediction y
+                This pipeline must be a classification estimator that supports
+                the predict_proba method.
+            Y_train (Optional[np.ndarray]):
+        Returns:
+            (np.ndarray):
+                The predictions of pipeline for the given features X
+        """
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):
@@ -629,6 +987,24 @@ class AbstractEvaluator(object):
 
     def _predict_regression(self, X: np.ndarray, pipeline: BaseEstimator,
                             Y_train: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        A wrapper function to handle the prediction of regression tasks.
+        It is a wrapper to provide the same interface to _predict_proba
+
+        Regression predictions expects an unraveled dimensionality.
+        To comply with scikit-learn VotingRegressor requirement, if the estimator
+        predicts a (N,) shaped array, it is converted to (N, 1)
+
+        Args:
+            X (np.ndarray):
+                A set of features to feed to the pipeline
+            pipeline (BaseEstimator):
+                A model that will take the features X return a prediction y
+            Y_train (Optional[np.ndarray]):
+        Returns:
+            (np.ndarray):
+                The predictions of pipeline for the given features X
+        """
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):
@@ -647,6 +1023,20 @@ class AbstractEvaluator(object):
 
     def _ensure_prediction_array_sizes(self, prediction: np.ndarray,
                                        Y_train: np.ndarray) -> np.ndarray:
+        """
+        This method formats a prediction to match the dimensionality of the provided
+        labels (Y_train). This should be used exclusively for classification tasks
+
+        Args:
+            prediction (np.ndarray):
+                The un-formatted predictions of a pipeline
+            Y_train (np.ndarray):
+                The labels from the dataset to give an intuition of the expected
+                predictions dimensionality
+        Returns:
+            (np.ndarray):
+                The formatted prediction
+        """
         assert self.datamanager.num_classes is not None, "Called function on wrong task"
         num_classes: int = self.datamanager.num_classes
 

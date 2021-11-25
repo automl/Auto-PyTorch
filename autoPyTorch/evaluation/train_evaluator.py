@@ -11,6 +11,7 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT,
@@ -20,8 +21,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     fit_and_suppress_warnings
 )
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.utils.backend import Backend
-from autoPyTorch.utils.common import subsampler
+from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
@@ -37,12 +37,74 @@ def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
 
 
 class TrainEvaluator(AbstractEvaluator):
+    """
+    This class builds a pipeline using the provided configuration.
+    A pipeline implementing the provided configuration is fitted
+    using the datamanager object retrieved from disc, via the backend.
+    After the pipeline is fitted, it is save to disc and the performance estimate
+    is communicated to the main process via a Queue.
+
+    Attributes:
+        backend (Backend):
+            An object to interface with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will return the evaluation result via a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of scikit
+            lean accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type, which can be epochs or time
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        configuration (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed. A dummy estimator is created for
+            integer configurations, a traditional machine learning pipeline is created
+            for string based configuration, and NAS is performed when a configuration
+            object is passed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Union[bool, List[str]]):
+            By default, the model, it's predictions and other metadata is stored on disk
+            for each finished configuration. This argument allows the user to skip
+            saving certain file type, for example the model, from being written to disk.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel. If None is provided, a traditional
+            logger is used.
+        all_supported_metrics  (bool):
+            Whether all supported metric should be calculated for every configuration.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            An object used to fine tune the hyperparameter search space of the pipeline
+    """
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
+                 configuration: Union[int, str, Configuration],
                  budget_type: str = None,
                  pipeline_config: Optional[Dict[str, Any]] = None,
-                 configuration: Optional[Configuration] = None,
                  seed: int = 1,
                  output_y_hat_optimization: bool = True,
                  num_run: Optional[int] = None,
@@ -113,6 +175,11 @@ class TrainEvaluator(AbstractEvaluator):
 
             status = StatusType.SUCCESS
 
+            self.logger.debug("In train evaluator.fit_predict_and_loss, num_run: {} loss:{},"
+                              " status: {},\nadditional run info:\n{}".format(self.num_run,
+                                                                              loss,
+                                                                              dict_repr(additional_run_info),
+                                                                              status))
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
@@ -141,6 +208,8 @@ class TrainEvaluator(AbstractEvaluator):
             opt_losses = [np.NaN] * self.num_folds
             # weights for opt_losses.
             opt_fold_weights = [np.NaN] * self.num_folds
+
+            additional_run_info = {}
 
             for i, (train_split, test_split) in enumerate(self.splits):
 
@@ -177,7 +246,8 @@ class TrainEvaluator(AbstractEvaluator):
                 # number of optimization data points for this fold.
                 # Used for weighting the average.
                 opt_fold_weights[i] = len(train_split)
-
+                additional_run_info.update(pipeline.get_additional_run_info() if hasattr(
+                    pipeline, 'get_additional_run_info') and pipeline.get_additional_run_info() is not None else {})
             # Compute weights of each fold based on the number of samples in each
             # fold.
             train_fold_weights = [w / sum(train_fold_weights)
@@ -239,7 +309,10 @@ class TrainEvaluator(AbstractEvaluator):
             self.pipeline = self._get_pipeline()
 
             status = StatusType.SUCCESS
-            self.logger.debug("In train evaluator fit_predict_and_loss, loss:{}".format(opt_loss))
+            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{}".format(
+                self.num_run,
+                opt_loss
+            ))
             self.finish_up(
                 loss=opt_loss,
                 train_loss=train_loss,
@@ -332,6 +405,70 @@ def eval_function(
         instance: str = None,
         evaluator_class: Optional[AbstractEvaluator] = None,
 ) -> None:
+    """
+    This closure allows the communication between the ExecuteTaFuncWithQueue and the
+    pipeline trainer (TrainEvaluator).
+
+    Fundamentally, smac calls the ExecuteTaFuncWithQueue.run() method, which internally
+    builds a TrainEvaluator. The TrainEvaluator builds a pipeline, stores the output files
+    to disc via the backend, and puts the performance result of the run in the queue.
+
+
+    Attributes:
+        backend (Backend):
+            An object to interface with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will return the evaluation result via a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of scikit
+            lean accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type, which can be epochs or time
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        config (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Union[bool, List[str]]):
+            By default, the model, it's predictions and other metadata is stored on disk
+            for each finished configuration. This argument allows the user to skip
+            saving certain file type, for example the model, from being written to disk.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel. If None is provided, a traditional
+            logger is used.
+        instance (str):
+            An instance on which to evaluate the current pipeline. By default we work
+            with a single instance, being the provided X_train, y_train of a single dataset.
+            This instance is a compatibility argument for SMAC, that is capable of working
+            with multiple datasets at the same time.
+        evaluator_class (Optional[AbstractEvaluator]):
+            the class name of evaluator, when not specified, it is set as vanilla TrainEvaluator
+    """
     if evaluator_class is None:
         evaluator_class = TrainEvaluator
     evaluator = evaluator_class(

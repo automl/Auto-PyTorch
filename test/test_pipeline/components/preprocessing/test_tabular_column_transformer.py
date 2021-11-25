@@ -1,4 +1,4 @@
-from test.test_pipeline.components.base import TabularPipeline
+from test.test_pipeline.components.preprocessing.base import TabularPipeline
 
 import numpy as np
 
@@ -33,7 +33,18 @@ class TestTabularTransformer:
         data = column_transformer.preprocessor.fit_transform(X['X_train'])
         assert isinstance(data, np.ndarray)
 
+        # Make sure no columns are unintentionally dropped after preprocessing
+        if len(fit_dictionary_tabular['dataset_properties']["numerical_columns"]) == 0:
+            categorical_pipeline = column_transformer.preprocessor.named_transformers_['categorical_pipeline']
+            categorical_data = categorical_pipeline.transform(X['X_train'])
+            assert data.shape[1] == categorical_data.shape[1]
+        elif len(fit_dictionary_tabular['dataset_properties']["categorical_columns"]) == 0:
+            numerical_pipeline = column_transformer.preprocessor.named_transformers_['numerical_pipeline']
+            numerical_data = numerical_pipeline.transform(X['X_train'])
+            assert data.shape[1] == numerical_data.shape[1]
+
     def test_sparse_data(self, fit_dictionary_tabular):
+
         X = np.random.binomial(1, 0.1, (100, 2000))
         sparse_X = csr_matrix(X)
         numerical_columns = list(range(2000))

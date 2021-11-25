@@ -1,49 +1,69 @@
+import copy
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
+from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
-import sklearn.preprocessing
 from sklearn.base import ClassifierMixin
 
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+import torch
+
+from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import (
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import SchedulerChoice
+from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
-    NetworkInitializerChoice
-)
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import OptimizerChoice
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
+from autoPyTorch.pipeline.components.setup.network_initializer import NetworkInitializerChoice
+from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
-from autoPyTorch.pipeline.components.training.trainer.base_trainer_choice import (
-    TrainerChoice
-)
+from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
-    """This class is a proof of concept to integrate AutoSklearn Components
+    """
+    This class is a wrapper around `Sklearn Pipeline
+    <https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html>`_
+    to integrate autoPyTorch components and choices for
+    tabular classification tasks.
 
-    It implements a pipeline, which includes as steps:
+    It implements a pipeline, which includes the following as steps:
 
-        ->One preprocessing step
-        ->One neural network
+    1. `imputer`
+    2. `encoder`
+    3. `scaler`
+    4. `feature_preprocessor`
+    5. `tabular_transformer`
+    6. `preprocessing`
+    7. `network_embedding`
+    8. `network_backbone`
+    9. `network_head`
+    10. `network`
+    11. `network_init`
+    12. `optimizer`
+    13. `lr_scheduler`
+    14. `data_loader`
+    15. `trainer`
 
     Contrary to the sklearn API it is not possible to enumerate the
     possible parameters in the __init__ function because we only know the
@@ -55,61 +75,86 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     Args:
         config (Configuration)
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        steps (Optional[List[Tuple[str, autoPyTorchChoice]]]):
+            The list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to honor during the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to avoid during the creation of the configuration space.
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
+            setting a seed for randomized settings
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            Search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
 
     Attributes:
-    Examples
+        steps (List[Tuple[str, PipelineStepType]]):
+            The steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            A configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
-            self,
-            config: Optional[Configuration] = None,
-            steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-            dataset_properties: Optional[Dict[str, Any]] = None,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            random_state: Optional[np.random.RandomState] = None,
-            init_params: Optional[Dict[str, Any]] = None,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        self,
+        config: Optional[Configuration] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        random_state: Optional[np.random.RandomState] = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
+
+        # Because a pipeline is passed to a worker, we need to honor the random seed
+        # in this context. A tabular classification pipeline will implement a torch
+        # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
+        torch.manual_seed(self.random_state.get_state()[1][0])
 
     def _predict_proba(self, X: np.ndarray) -> np.ndarray:
         # Pre-process X
         loader = self.named_steps['data_loader'].get_loader(X=X)
         pred = self.named_steps['network'].predict(loader)
         if isinstance(self.dataset_properties['output_shape'], int):
-            proba = pred[:, :self.dataset_properties['output_shape']]
-            normalizer = proba.sum(axis=1)[:, np.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
-            proba /= normalizer
-
-            return proba
-
+            # The final layer is always softmax now (`pred` already gives pseudo proba)
+            return pred
         else:
-            all_proba = []
-
-            for k in range(self.dataset_properties['output_shape']):
-                proba_k = pred[:, k, :self.dataset_properties['output_shape'][k]]
-                normalizer = proba_k.sum(axis=1)[:, np.newaxis]
-                normalizer[normalizer == 0.0] = 1.0
-                proba_k /= normalizer
-                all_proba.append(proba_k)
-
-            return all_proba
+            raise ValueError("Expected output_shape to be integer, got {},"
+                             "Tabular Classification only supports 'binary' and 'multiclass' outputs"
+                             "got {}".format(type(self.dataset_properties['output_shape']),
+                                             self.dataset_properties['output_type']))
 
     def predict_proba(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """predict_proba.
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
-                predict method on the whole array X results in a MemoryError.
+            X (np.ndarray):
+                Input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be called on small chunks
+                of the data. Useful when calling the predict method on the
+                whole array X results in a MemoryError.
         Returns:
-            np.ndarray: Probabilities of the target being certain class
+            np.ndarray:
+                Probabilities of the target being certain class
         """
         if batch_size is None:
             y = self._predict_proba(X)
@@ -135,15 +180,37 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                     pred_prob = self.predict_proba(X[batch_from:batch_to], batch_size=None)
                     y[batch_from:batch_to] = pred_prob.astype(np.float32)
 
-        # Neural networks might not be fit to produce a [0-1] output
-        # For instance, after small number of epochs.
-        y = np.clip(y, 0, 1)
-        y = sklearn.preprocessing.normalize(y, axis=1, norm='l1')
-
         return y
 
+    def score(self, X: np.ndarray, y: np.ndarray,
+              batch_size: Optional[int] = None,
+              metric_name: str = 'accuracy') -> float:
+        """Scores the fitted estimator on (X, y)
+
+        Args:
+            X (np.ndarray):
+                input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline
+                will be called on small chunks of the data.
+                Useful when calling the predict method on
+                the whole array X results in a MemoryError.
+            y (np.ndarray):
+                Ground Truth labels
+            metric_name (str: default = 'accuracy'):
+                 name of the metric to be calculated
+        Returns:
+            float: score based on the metric name
+        """
+        from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
+        metrics = get_metrics(self.dataset_properties, [metric_name])
+        y_pred = self.predict(X, batch_size=batch_size)
+        score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
+                                metrics=metrics)[metric_name]
+        return score
+
     def _get_hyperparameter_search_space(self,
-                                         dataset_properties: Dict[str, Any],
+                                         dataset_properties: Dict[str, BaseDatasetPropertiesType],
                                          include: Optional[Dict[str, Any]] = None,
                                          exclude: Optional[Dict[str, Any]] = None,
                                          ) -> ConfigurationSpace:
@@ -154,23 +221,26 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            include (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            exclude (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
 
         Returns:
-            cs (Configuration): The configuration space describing
-                the SimpleRegressionClassifier.
+            cs (ConfigurationSpace):
+                The configuration space describing
+                the TabularClassificationPipeline.
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
@@ -186,44 +256,78 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             cs=cs, dataset_properties=dataset_properties,
             exclude=exclude, include=include, pipeline=self.steps)
 
-        # Here we add custom code, like this with this
-        # is not a valid configuration
+        # Here we add custom code, that is used to ensure valid configurations, For example
+        # Learned Entity Embedding is only valid when encoder is one hot encoder
+        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
+            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
+            if 'LearnedEntityEmbedding' in embeddings:
+                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                possible_default_embeddings = copy.copy(list(embeddings))
+                del possible_default_embeddings[possible_default_embeddings.index('LearnedEntityEmbedding')]
+
+                for encoder in encoders:
+                    if encoder == 'OneHotEncoder':
+                        continue
+                    while True:
+                        try:
+                            cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(cs.get_hyperparameter(
+                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                            ))
+                            break
+                        except ValueError:
+                            # change the default and try again
+                            try:
+                                default = possible_default_embeddings.pop()
+                            except IndexError:
+                                raise ValueError("Cannot find a legal default configuration")
+                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]],
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
+            List[Tuple[str, PipelineStepType]]:
+                list of steps sequentially exercised by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
-
-        default_dataset_properties = {'target_type': 'tabular_classification'}
+        steps: List[Tuple[str, PipelineStepType]] = []
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("imputer", SimpleImputer()),
-            ("encoder", EncoderChoice(default_dataset_properties)),
-            ("scaler", ScalerChoice(default_dataset_properties)),
-            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties)),
-            ("tabular_transformer", TabularColumnTransformer()),
-            ("preprocessing", EarlyPreprocessing()),
-            ("network_backbone", NetworkBackboneChoice(default_dataset_properties)),
-            ("network_head", NetworkHeadChoice(default_dataset_properties)),
-            ("network", NetworkComponent()),
-            ("network_init", NetworkInitializerChoice(default_dataset_properties)),
-            ("optimizer", OptimizerChoice(default_dataset_properties)),
-            ("lr_scheduler", SchedulerChoice(default_dataset_properties)),
-            ("data_loader", FeatureDataLoader()),
-            ("trainer", TrainerChoice(default_dataset_properties)),
+            ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
+            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
+            ("tabular_transformer", TabularColumnTransformer(random_state=self.random_state)),
+            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
+                                                       random_state=self.random_state)),
+            ("network_head", NetworkHeadChoice(default_dataset_properties,
+                                               random_state=self.random_state)),
+            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network_init", NetworkInitializerChoice(default_dataset_properties,
+                                                      random_state=self.random_state)),
+            ("optimizer", OptimizerChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
+            ("lr_scheduler", SchedulerChoice(default_dataset_properties,
+                                             random_state=self.random_state)),
+            ("data_loader", FeatureDataLoader(random_state=self.random_state)),
+            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 
@@ -245,16 +349,16 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         for step_name, step_component in self.steps:
             if step_name in skip_steps:
                 continue
-            properties = {}
+            properties: Dict[str, Union[str, bool]] = {}
             if isinstance(step_component, autoPyTorchChoice) and step_component.choice is not None:
                 properties = step_component.choice.get_properties()
             elif isinstance(step_component, autoPyTorchComponent):
                 properties = step_component.get_properties()
             if 'shortname' in properties:
                 if 'network' in step_name:
-                    estimator.append(properties['shortname'])
+                    estimator.append(str(properties['shortname']))
                 else:
-                    preprocessing.append(properties['shortname'])
+                    preprocessing.append(str(properties['shortname']))
         return {
             'Preprocessing': ','.join(preprocessing),
             'Estimator': ','.join(estimator),

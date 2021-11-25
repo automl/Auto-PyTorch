@@ -17,23 +17,11 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
-
-
-class Value2Index(object):
-    def __init__(self, values: list):
-        assert all(not (pd.isna(v)) for v in values)
-        self.values = {v: i for i, v in enumerate(values)}
-
-    def __getitem__(self, item: Any) -> int:
-        if pd.isna(item):
-            return 0
-        else:
-            return self.values[item] + 1
 
 
 class TabularDataset(BaseDataset):
@@ -52,7 +40,7 @@ class TabularDataset(BaseDataset):
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
             shuffle:  Whether to shuffle the data before performing splits
-            seed (int), (default=1): seed to be used for reproducibility.
+            seed (int: default=1): seed to be used for reproducibility.
             train_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the training data.
             val_transforms (Optional[torchvision.transforms.Compose]):
@@ -110,11 +98,29 @@ class TabularDataset(BaseDataset):
         if STRING_TO_TASK_TYPES[self.task_type] in CLASSIFICATION_TASKS:
             self.num_classes: int = len(np.unique(self.train_tensors[1]))
 
-    def get_required_dataset_info(self) -> Dict[str, Any]:
+    def get_required_dataset_info(self) -> Dict[str, BaseDatasetPropertiesType]:
         """
-        Returns a dictionary containing required dataset properties to instantiate a pipeline,
+        Returns a dictionary containing required dataset
+        properties to instantiate a pipeline.
+        For a Tabular Dataset this includes-
+            1. 'output_type'- Enum indicating the type of the output for this problem.
+                We currently use the `sklearn type_of_target
+                <https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html>`
+                to infer the output type from the data and we encode it to an
+                Enum for which you can find more info in  `autopytorch/constants.py
+                <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/constants.py>`
+            2. 'issparse'- A flag indicating if the input is in a sparse matrix.
+            3. 'numerical_columns'- a list which contains the column numbers
+                for the numerical columns in the input dataset
+            4. 'categorical_columns'- a list which contains the column numbers
+                for the categorical columns in the input dataset
+            5. 'task_type'- Enum indicating the type of task. For tabular datasets,
+                currently we support 'tabular_classification' and 'tabular_regression'. and we encode it to an
+                Enum for which you can find more info in  `autopytorch/constants.py
+                <https://github.com/automl/Auto-PyTorch/blob/refactor_development/autoPyTorch/constants.py>`
         """
         info = super().get_required_dataset_info()
+        assert self.task_type is not None, "Expected value for task type but got None"
         info.update({
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,11 +11,15 @@ import torch
 
 import torchvision
 
-
-from autoPyTorch.datasets.base_dataset import BaseDataset
+from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.utils.backend import Backend
-from autoPyTorch.utils.common import FitRequirement, custom_collate_fn
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    HyperparameterSearchSpace,
+    add_hyperparameter,
+    custom_collate_fn
+)
 
 
 class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
@@ -27,25 +31,27 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
     """
 
-    def __init__(self, batch_size: int = 64) -> None:
-        super().__init__()
+    def __init__(self, batch_size: int = 64,
+                 random_state: Optional[np.random.RandomState] = None) -> None:
+        super().__init__(random_state=random_state)
         self.batch_size = batch_size
-        self.train_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
-        self.val_data_loader = None  # type: Optional[torch.utils.data.DataLoader]
+        self.train_data_loader: Optional[torch.utils.data.DataLoader] = None
+        self.val_data_loader: Optional[torch.utils.data.DataLoader] = None
+        self.test_data_loader: Optional[torch.utils.data.DataLoader] = None
 
         # We also support existing datasets!
         self.dataset = None
         self.vision_datasets = self.get_torchvision_datasets()
 
         # Save the transformations for reuse
-        self.train_transform = None  # type: Optional[torchvision.transforms.Compose]
+        self.train_transform: Optional[torchvision.transforms.Compose] = None
 
         # The only reason we have val/test transform separated is to speed up
         # prediction during training. Namely, if is_small_preprocess is set to true
         # X_train data will be pre-processed, so we do no need preprocessing in the transform
         # Regardless, test/inference always need this transformation
-        self.val_transform = None  # type: Optional[torchvision.transforms.Compose]
-        self.test_transform = None  # type: Optional[torchvision.transforms.Compose]
+        self.val_transform: Optional[torchvision.transforms.Compose] = None
+        self.test_transform: Optional[torchvision.transforms.Compose] = None
 
         # Define fit requirements
         self.add_fit_requirements([
@@ -64,7 +70,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             np.ndarray: Transformed features
         """
         X.update({'train_data_loader': self.train_data_loader,
-                  'val_data_loader': self.val_data_loader})
+                  'val_data_loader': self.val_data_loader,
+                  'test_data_loader': self.test_data_loader})
         return X
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
@@ -121,6 +128,11 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             collate_fn=custom_collate_fn,
         )
 
+        if X.get('X_test', None) is not None:
+            self.test_data_loader = self.get_loader(X=X['X_test'],
+                                                    y=X['y_test'],
+                                                    batch_size=self.batch_size)
+
         return self
 
     def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
@@ -132,6 +144,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         dataset = BaseDataset(
             train_tensors=(X, y),
+            seed=self.random_state.get_state()[1][0],
             # This dataset is used for loading test data in a batched format
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
@@ -201,10 +214,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         # or from X, Y pairs
         if 'split_id' not in X:
             raise ValueError("To fit a data loader, expected fit dictionary to have split_id. "
-                             "Currently X={}.".format(
-                                 X
-                             )
-                             )
+                             "Currently X={}.".format(X))
         if 'backend' not in X:
             raise ValueError("backend is needed to load the data from disk")
 
@@ -248,13 +258,14 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        batch_size: Tuple[Tuple, int] = ((32, 320), 64)
-                                        ) -> ConfigurationSpace:
-        batch_size = UniformIntegerHyperparameter(
-            "batch_size", batch_size[0][0], batch_size[0][1], default_value=batch_size[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        batch_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="batch_size",
+                                                                          value_range=(32, 320),
+                                                                          default_value=64)
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([batch_size])
+        add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
         return cs
 
     def __str__(self) -> str:

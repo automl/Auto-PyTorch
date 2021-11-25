@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -7,8 +7,10 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntege
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class _FullyConvolutional2DHead(nn.Module):
@@ -60,7 +62,8 @@ class FullyConvolutional2DHead(NetworkHeadComponent):
                                                        for i in range(1, self.config["num_layers"])])
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'FullyConvolutional2DHead',
             'name': 'FullyConvolutional2DHead',
@@ -70,32 +73,41 @@ class FullyConvolutional2DHead(NetworkHeadComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None,
-                                        min_num_layers: int = 1,
-                                        max_num_layers: int = 4,
-                                        min_num_filters: int = 16,
-                                        max_num_filters: int = 256) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_layers",
+                                                                          value_range=(1, 4),
+                                                                          default_value=2),
+        num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
+                                                                           value_range=(16, 256),
+                                                                           default_value=32),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0]),
+        pooling_method: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="pooling_method",
+                                                                              value_range=("average", "max"),
+                                                                              default_value="max"),
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        num_layers_hp = UniformIntegerHyperparameter("num_layers",
-                                                     lower=min_num_layers,
-                                                     upper=max_num_layers)
+        min_num_layers, max_num_layers = num_layers.value_range
+        num_layers_hp = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
 
-        pooling_method_hp = CategoricalHyperparameter("pooling_method",
-                                                      choices=["average", "max"])
+        add_hyperparameter(cs, pooling_method, CategoricalHyperparameter)
 
-        activation_hp = CategoricalHyperparameter('activation',
-                                                  choices=list(_activations.keys()))
+        activation_hp = get_hyperparameter(activation, CategoricalHyperparameter)
 
-        cs.add_hyperparameters([num_layers_hp, pooling_method_hp, activation_hp])
+        cs.add_hyperparameters([num_layers_hp, activation_hp])
         cs.add_condition(CS.GreaterThanCondition(activation_hp, num_layers_hp, 1))
 
-        for i in range(1, max_num_layers):
-            num_filters_hp = UniformIntegerHyperparameter(f"layer_{i}_filters",
-                                                          lower=min_num_filters,
-                                                          upper=max_num_filters)
+        for i in range(1, int(max_num_layers)):
+            num_filters_search_space = HyperparameterSearchSpace(f"layer_{i}_filters",
+                                                                 value_range=num_filters.value_range,
+                                                                 default_value=num_filters.default_value,
+                                                                 log=num_filters.log)
+            num_filters_hp = get_hyperparameter(num_filters_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_filters_hp)
-            if i >= min_num_layers:
+            if i >= int(min_num_layers):
                 cs.add_condition(CS.GreaterThanCondition(num_filters_hp, num_layers_hp, i))
 
         return cs

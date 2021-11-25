@@ -4,6 +4,7 @@ import numpy as np
 
 from sklearn.preprocessing import MinMaxScaler as SklearnMinMaxScaler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler import BaseScaler
 
 
@@ -26,7 +27,8 @@ class MinMaxScaler(BaseScaler):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'MinMaxScaler',
             'name': 'MinMaxScaler',

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,8 +10,10 @@ from ConfigSpace.hyperparameters import (
 
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class MLPBackbone(NetworkBackboneComponent):
@@ -26,7 +28,7 @@ class MLPBackbone(NetworkBackboneComponent):
     """
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        layers = list()  # type: List[nn.Module]
+        layers: List[nn.Module] = list()
         in_features = input_shape[0]
 
         self._add_layer(layers, in_features, self.config['num_units_1'], 1)
@@ -53,12 +55,14 @@ class MLPBackbone(NetworkBackboneComponent):
 
         """
         layers.append(nn.Linear(in_features, out_features))
+        layers.append(nn.BatchNorm1d(out_features))
         layers.append(_activations[self.config["activation"]]())
         if self.config['use_dropout']:
             layers.append(nn.Dropout(self.config["dropout_%d" % layer_id]))
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, Union[str, bool]]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'MLPBackbone',
             'name': 'MLPBackbone',
@@ -68,44 +72,53 @@ class MLPBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_groups: Tuple[Tuple, int] = ((1, 15), 5),
-                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
-                                                                         list(_activations.keys())[0]),
-                                        use_dropout: Tuple[Tuple, bool] = ((True, False), False),
-                                        num_units: Tuple[Tuple, int] = ((10, 1024), 200),
-                                        dropout: Tuple[Tuple, float] = ((0, 0.8), 0.5)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
+                                                                          value_range=(1, 15),
+                                                                          default_value=5,
+                                                                          ),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0],
+                                                                          ),
+        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                           value_range=(True, False),
+                                                                           default_value=False,
+                                                                           ),
+        num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
+                                                                         value_range=(10, 1024),
+                                                                         default_value=200,
+                                                                         ),
+        dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
+                                                                       value_range=(0, 0.8),
+                                                                       default_value=0.5,
+                                                                       ),
+    ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
 
         # The number of hidden layers the network will have.
         # Layer blocks are meant to have the same architecture, differing only
         # by the number of units
-        min_mlp_layers, max_mlp_layers = num_groups[0]
-        num_groups = UniformIntegerHyperparameter(
-            "num_groups", min_mlp_layers, max_mlp_layers, default_value=num_groups[1])
-
-        activation = CategoricalHyperparameter(
-            "activation", choices=activation[0],
-            default_value=activation[1]
-        )
-        cs.add_hyperparameters([num_groups, activation])
+        min_mlp_layers, max_mlp_layers = num_groups.value_range
+        num_groups = get_hyperparameter(num_groups, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
 
         # We can have dropout in the network for
         # better generalization
-        use_dropout = CategoricalHyperparameter(
-            "use_dropout", choices=use_dropout[0], default_value=use_dropout[1])
-        cs.add_hyperparameters([use_dropout])
+        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
+        cs.add_hyperparameters([num_groups, use_dropout])
 
-        for i in range(1, max_mlp_layers + 1):
-            n_units_hp = UniformIntegerHyperparameter("num_units_%d" % i,
-                                                      lower=num_units[0][0],
-                                                      upper=num_units[0][1],
-                                                      default_value=num_units[1])
+        for i in range(1, int(max_mlp_layers) + 1):
+            n_units_search_space = HyperparameterSearchSpace(hyperparameter='num_units_%d' % i,
+                                                             value_range=num_units.value_range,
+                                                             default_value=num_units.default_value,
+                                                             log=num_units.log)
+            n_units_hp = get_hyperparameter(n_units_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(n_units_hp)
 
-            if i > min_mlp_layers:
+            if i > int(min_mlp_layers):
                 # The units of layer i should only exist
                 # if there are at least i layers
                 cs.add_condition(
@@ -113,17 +126,16 @@ class MLPBackbone(NetworkBackboneComponent):
                         n_units_hp, num_groups, i - 1
                     )
                 )
-
-            dropout_hp = UniformFloatHyperparameter(
-                "dropout_%d" % i,
-                lower=dropout[0][0],
-                upper=dropout[0][1],
-                default_value=dropout[1]
-            )
+            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
+                                                             value_range=dropout.value_range,
+                                                             default_value=dropout.default_value,
+                                                             log=dropout.log)
+            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
             cs.add_hyperparameter(dropout_hp)
+
             dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
 
-            if i > min_mlp_layers:
+            if i > int(min_mlp_layers):
                 dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_groups, i - 1)
                 cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
             else:

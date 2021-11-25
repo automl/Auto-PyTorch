@@ -6,6 +6,7 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 
 
@@ -37,7 +38,7 @@ class BaseImageAugmenter(autoPyTorchSetupComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs

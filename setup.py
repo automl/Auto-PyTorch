@@ -1,4 +1,13 @@
 import setuptools
+import sys
+
+
+if sys.version_info < (3, 7):
+    raise ValueError(
+        'Auto-Pytorch requires Python 3.7 or higher, but found version {}.{}.{}'.format(
+            sys.version_info.major, sys.version_info.minor, sys.version_info.micro
+        )
+    )
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -8,13 +17,14 @@ with open("requirements.txt", "r") as f:
     for line in f:
         requirements.append(line.strip())
 
+
 # noinspection PyInterpreter
 setuptools.setup(
     name="autoPyTorch",
-    version="0.0.3",
+    version="0.1.1",
     author="AutoML Freiburg",
-    author_email="zimmerl@informatik.uni-freiburg.de",
-    description=("Auto-PyTorch searches neural architectures using BO-HB"),
+    author_email="eddiebergmanhs@gmail.com",
+    description=("Auto-PyTorch searches neural architectures using smac"),
     long_description=long_description,
     url="https://github.com/automl/Auto-PyTorch",
     long_description_content_type="text/markdown",
@@ -27,10 +37,12 @@ setuptools.setup(
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Programming Language :: Python :: 3",
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         "License :: OSI Approved :: BSD License",
     ],
-    python_requires='>=3',
+    python_requires='>=3.7',
     platforms=['Linux'],
     install_requires=requirements,
     include_package_data=True,
@@ -44,10 +56,14 @@ setuptools.setup(
             "pyarrow",
             "pre-commit",
             "pytest-cov",
+            'pytest-forked',
             "codecov",
             "pep8",
             "mypy",
-            "openml"
+            "openml",
+            "emcee",
+            "scikit-optimize",
+            "pyDOE",
         ],
         "examples": [
             "matplotlib",
@@ -59,5 +75,7 @@ setuptools.setup(
         "docs": ["sphinx", "sphinx-gallery", "sphinx_bootstrap_theme", "numpydoc"],
     },
     test_suite="pytest",
-    data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json'])]
+    data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json']),
+                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])],
+    dependency_links=['https://github.com/automl/automl_common.git/tarball/autoPyTorch#egg=package-0.0.1']
 )

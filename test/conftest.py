@@ -1,3 +1,4 @@
+import logging.handlers
 import os
 import re
 import shutil
@@ -18,13 +19,20 @@ from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 import torch
 
+from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+<<<<<<< HEAD
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesDataset
 from autoPyTorch.utils.backend import create
+=======
+>>>>>>> upstream/master
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
+
+
+N_SAMPLES = 300
 
 
 @pytest.fixture(scope="session")
@@ -90,6 +98,7 @@ def backend(request):
         output,
         delete_tmp_folder_after_terminate=True,
         delete_output_folder_after_terminate=True,
+        prefix='autoPyTorch'
     )
 
     def get_finalizer(tmp_dir, output_dir):
@@ -192,7 +201,7 @@ def dask_client(request):
 def get_tabular_data(task):
     if task == "classification_numerical_only":
         X, y = make_classification(
-            n_samples=200,
+            n_samples=N_SAMPLES,
             n_features=4,
             n_informative=3,
             n_redundant=1,
@@ -208,18 +217,18 @@ def get_tabular_data(task):
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "classification_numerical_and_categorical":
         X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_only":
-        X, y = make_regression(n_samples=200,
+        X, y = make_regression(n_samples=3 * N_SAMPLES,
                                n_features=4,
                                n_informative=3,
                                n_targets=1,
@@ -229,7 +238,7 @@ def get_tabular_data(task):
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_categorical_only":
-        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        X, y = fetch_openml("boston", return_X_y=True, as_frame=True)
         categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
         X = X[categorical_columns]
 
@@ -241,13 +250,13 @@ def get_tabular_data(task):
             else:
                 X[column] = X[column].fillna(0)
 
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         y = (y - y.mean()) / y.std()
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
 
     elif task == "regression_numerical_and_categorical":
-        X, y = fetch_openml("cholesterol", return_X_y=True, as_frame=True)
+        X, y = fetch_openml("boston", return_X_y=True, as_frame=True)
 
         # fill nan values for now since they are not handled properly yet
         for column in X.columns:
@@ -257,11 +266,13 @@ def get_tabular_data(task):
             else:
                 X[column] = X[column].fillna(0)
 
-        X = X.iloc[0:200]
-        y = y.iloc[0:200]
+        X = X.iloc[0:N_SAMPLES]
+        y = y.iloc[0:N_SAMPLES]
         y = (y - y.mean()) / y.std()
         validator = TabularInputValidator(is_classification=False).fit(X.copy(), y.copy())
-
+    elif task == 'iris':
+        X, y = fetch_openml("iris", return_X_y=True, as_frame=True)
+        validator = TabularInputValidator(is_classification=True).fit(X.copy(), y.copy())
     else:
         raise ValueError("Unsupported task {}".format(task))
 
@@ -307,7 +318,6 @@ def get_fit_dictionary(datamanager, backend):
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
-
     fit_dictionary = {
         'X_train': datamanager.train_tensors[0],
         'y_train': datamanager.train_tensors[1],
@@ -317,15 +327,15 @@ def get_fit_dictionary(datamanager, backend):
         'num_run': np.random.randint(50),
         'device': 'cpu',
         'budget_type': 'epochs',
-        'epochs': 100,
+        'epochs': 5,
         'torch_num_threads': 1,
         'early_stopping': 10,
         'working_dir': '/tmp',
         'use_tensorboard_logger': True,
-        'use_pynisher': False,
         'metrics_during_training': True,
         'split_id': 0,
         'backend': backend,
+        'logger_port': logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     }
     backend.save_datamanager(datamanager)
     return fit_dictionary
@@ -391,7 +401,7 @@ def dataset(request):
 @pytest.fixture
 def dataset_traditional_classifier_num_only():
     X, y = make_classification(
-        n_samples=200,
+        n_samples=N_SAMPLES,
         n_features=4,
         n_informative=3,
         n_redundant=1,
@@ -409,7 +419,7 @@ def dataset_traditional_classifier_categorical_only():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     categorical_columns = [column for column in X.columns if X[column].dtype.name == 'category']
     X = X[categorical_columns]
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    X, y = X[:N_SAMPLES].to_numpy(), y[:N_SAMPLES].to_numpy().astype(np.int)
     return X, y
 
 
@@ -417,7 +427,7 @@ def dataset_traditional_classifier_categorical_only():
 def dataset_traditional_classifier_num_categorical():
     X, y = fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
     y = y.astype(np.int)
-    X, y = X[:200].to_numpy(), y[:200].to_numpy().astype(np.int)
+    X, y = X[:N_SAMPLES].to_numpy(), y[:N_SAMPLES].to_numpy().astype(np.int)
     return X, y
 
 
@@ -513,3 +523,8 @@ def loss_mse():
 @pytest.fixture
 def loss_details(request):
     return request.getfixturevalue(request.param)
+
+
+@pytest.fixture
+def n_samples():
+    return N_SAMPLES

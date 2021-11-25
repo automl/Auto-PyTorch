@@ -19,7 +19,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        ref: development
+        ref: master
+        submodules: recursive
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:

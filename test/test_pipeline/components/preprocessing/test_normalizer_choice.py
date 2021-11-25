@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise.base_normalizer_choice import (
+from autoPyTorch.pipeline.components.preprocessing.image_preprocessing.normalise import (
     NormalizerChoice
 )
 

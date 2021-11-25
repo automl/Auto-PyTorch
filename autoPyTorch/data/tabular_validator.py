@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
-import typing
+from typing import Optional, Union
 
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
@@ -31,12 +31,12 @@ class TabularInputValidator(BaseInputValidator):
     def __init__(
         self,
         is_classification: bool = False,
-        logger_port: typing.Optional[int] = None,
+        logger_port: Optional[int] = None,
     ) -> None:
         self.is_classification = is_classification
         self.logger_port = logger_port
         if self.logger_port is not None:
-            self.logger: typing.Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
+            self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
                 name='Validation',
                 port=self.logger_port,
             )

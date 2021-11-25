@@ -10,42 +10,52 @@ from sklearn.base import clone
 import torch
 from torch import nn
 
-import autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice as lr_components
-import \
-    autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice as network_initializer_components  # noqa: E501
-import autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice as optimizer_components
+import autoPyTorch.pipeline.components.setup.lr_scheduler as lr_components
+import autoPyTorch.pipeline.components.setup.network_backbone as base_network_backbone_choice
+import autoPyTorch.pipeline.components.setup.network_head as base_network_head_choice
+import autoPyTorch.pipeline.components.setup.network_initializer as network_initializer_components  # noqa: E501
+import autoPyTorch.pipeline.components.setup.optimizer as optimizer_components
 from autoPyTorch import constants
 from autoPyTorch.pipeline.components.base_component import ThirdPartyComponents
-from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice import (
+from autoPyTorch.pipeline.components.setup.lr_scheduler import (
     BaseLRComponent,
-    SchedulerChoice
+    SchedulerChoice,
 )
-from autoPyTorch.pipeline.components.setup.network_backbone import base_network_backbone_choice
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import (
+    StepIntervalUnit,
+    StepIntervalUnitChoices
+)
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResBlock
+from autoPyTorch.pipeline.components.setup.network_backbone.ShapedResNetBackbone import ShapedResNetBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head import base_network_head_choice
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_shaped_neuron_counts
+from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice import NetworkHeadChoice
-from autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice import (
+from autoPyTorch.pipeline.components.setup.network_initializer import (
     BaseNetworkInitializerComponent,
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice import (
+from autoPyTorch.pipeline.components.setup.optimizer import (
     BaseOptimizerComponent,
     OptimizerChoice
 )
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpace,
+    HyperparameterSearchSpaceUpdates
+)
 
 
 class DummyLR(BaseLRComponent):
-    def __init__(self, random_state=None):
-        pass
+    def __init__(self, step_interval: StepIntervalUnit, random_state=None):
+        super().__init__(step_interval=step_interval)
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',
@@ -62,6 +72,7 @@ class DummyOptimizer(BaseOptimizerComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',
@@ -78,6 +89,7 @@ class DummyNetworkInitializer(BaseNetworkInitializerComponent):
         cs = ConfigurationSpace()
         return cs
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {
             'shortname': 'Dummy',
@@ -144,7 +156,7 @@ class TestScheduler:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -174,7 +186,7 @@ class TestScheduler:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             scheduler_choice.set_hyperparameters(config)
@@ -202,6 +214,21 @@ class TestScheduler:
         cs = SchedulerChoice(dataset_properties={}).get_hyperparameter_search_space()
         assert 'DummyLR' in str(cs)
 
+    def test_schduler_init(self):
+        for step_interval in StepIntervalUnitChoices:
+            DummyLR(step_interval=step_interval)
+
+        for step_interval in ['Batch', 'foo']:
+            try:
+                DummyLR(step_interval=step_interval)
+            except ValueError:
+                pass
+            except Exception as e:
+                pytest.fail("The initialization of lr_scheduler raised an unexpected exception {}.".format(e))
+            else:
+                pytest.fail("The initialization of lr_scheduler did not raise an Error "
+                            "although the step_unit is invalid.")
+
 
 class OptimizerTest:
     def test_every_optimizer_is_valid(self):
@@ -228,7 +255,7 @@ class OptimizerTest:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -258,7 +285,7 @@ class OptimizerTest:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             optimizer_choice.set_hyperparameters(config)
@@ -309,7 +336,7 @@ class TestNetworkBackbone:
                        value_range=[1, 3],
                        default_value=2)
         updates.append(node_name='network_backbone',
-                       hyperparameter='ConvNetImageBackbone:num_init_filters',
+                       hyperparameter='ConvNetImageBackbone:conv_init_filters',
                        value_range=[8, 16],
                        default_value=8)
         updates.append(node_name='network_backbone',
@@ -328,7 +355,7 @@ class TestNetworkBackbone:
         cs = network_backbone_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
 
         # test 10 random configurations
-        for i in range(10):
+        for _ in range(10):
             config = cs.sample_configuration()
             network_backbone_choice.set_hyperparameters(config)
             backbone = network_backbone_choice.choice.build_backbone(input_shape=input_shape)
@@ -352,7 +379,7 @@ class TestNetworkBackbone:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -381,7 +408,7 @@ class TestNetworkBackbone:
             # Whereas just one iteration will make sure the algorithm works,
             # doing five iterations increase the confidence. We will be able to
             # catch component specific crashes
-            for i in range(5):
+            for _ in range(5):
                 config = cs.sample_configuration()
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_backbone_choice.set_hyperparameters(config)
@@ -418,6 +445,58 @@ class TestNetworkBackbone:
         # clear addons
         base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
 
+    @pytest.mark.parametrize('resnet_shape', ['funnel', 'long_funnel',
+                                              'diamond', 'hexagon',
+                                              'brick', 'triangle',
+                                              'stairs'])
+    def test_dropout(self, resnet_shape):
+        # ensures that dropout is assigned to the resblock as expected
+        dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[1]}
+        max_dropout = 0.5
+        num_groups = 4
+        config_space = ShapedResNetBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
+                                                                            use_dropout=HyperparameterSearchSpace(
+                                                                                hyperparameter='use_dropout',
+                                                                                value_range=[True],
+                                                                                default_value=True),
+                                                                            max_dropout=HyperparameterSearchSpace(
+                                                                                hyperparameter='max_dropout',
+                                                                                value_range=[max_dropout],
+                                                                                default_value=max_dropout),
+                                                                            resnet_shape=HyperparameterSearchSpace(
+                                                                                hyperparameter='resnet_shape',
+                                                                                value_range=[resnet_shape],
+                                                                                default_value=resnet_shape),
+                                                                            num_groups=HyperparameterSearchSpace(
+                                                                                hyperparameter='num_groups',
+                                                                                value_range=[num_groups],
+                                                                                default_value=num_groups),
+                                                                            blocks_per_group=HyperparameterSearchSpace(
+                                                                                hyperparameter='blocks_per_group',
+                                                                                value_range=[1],
+                                                                                default_value=1
+                                                                            )
+                                                                            )
+
+        config = config_space.sample_configuration().get_dictionary()
+        resnet_backbone = ShapedResNetBackbone(**config)
+        backbone = resnet_backbone.build_backbone((100, 5))
+        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config if 'dropout_' in key]
+        dropout_shape = get_shaped_neuron_counts(
+            shape=resnet_shape,
+            in_feat=0,
+            out_feat=0,
+            max_neurons=max_dropout,
+            layer_count=num_groups + 1,
+        )[:-1]
+        blocks_dropout = []
+        for block in backbone:
+            if isinstance(block, torch.nn.Sequential):
+                for inner_block in block:
+                    if isinstance(inner_block, ResBlock):
+                        blocks_dropout.append(inner_block.dropout)
+        assert dropout_probabilites == dropout_shape == blocks_dropout
+
 
 class TestNetworkHead:
     def test_all_heads_available(self):
@@ -443,7 +522,7 @@ class TestNetworkHead:
 
         cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
         # test 10 random configurations
-        for i in range(10):
+        for _ in range(10):
             config = cs.sample_configuration()
             network_head_choice.set_hyperparameters(config)
             head = network_head_choice.choice.build_head(input_shape=input_shape,
@@ -477,7 +556,7 @@ class TestNetworkHead:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -506,7 +585,7 @@ class TestNetworkHead:
             # Whereas just one iteration will make sure the algorithm works,
             # doing five iterations increase the confidence. We will be able to
             # catch component specific crashes
-            for i in range(5):
+            for _ in range(5):
                 config = cs.sample_configuration()
                 config_dict = copy.deepcopy(config.get_dictionary())
                 network_head_choice.set_hyperparameters(config)
@@ -569,7 +648,7 @@ class TestNetworkInitializer:
             estimator_clone_params = estimator_clone.get_params()
 
             # Make sure all keys are copied properly
-            for k, v in estimator.get_params().items():
+            for k in estimator.get_params().keys():
                 assert k in estimator_clone_params
 
             # Make sure the params getter of estimator are honored
@@ -599,7 +678,7 @@ class TestNetworkInitializer:
         # Whereas just one iteration will make sure the algorithm works,
         # doing five iterations increase the confidence. We will be able to
         # catch component specific crashes
-        for i in range(5):
+        for _ in range(5):
             config = cs.sample_configuration()
             config_dict = copy.deepcopy(config.get_dictionary())
             network_initializer_choice.set_hyperparameters(config)

@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 
 
 class TestRescalerChoice(unittest.TestCase):

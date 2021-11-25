@@ -4,26 +4,35 @@ import pkgutil
 import sys
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
-from sklearn.base import BaseEstimator
+import numpy as np
 
-from autoPyTorch.utils.common import FitRequirement
+from sklearn.base import BaseEstimator
+from sklearn.utils import check_random_state
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 def find_components(
-        package: str,
-        directory: str,
-        base_class: BaseEstimator
+    package: str,
+    directory: str,
+    base_class: BaseEstimator
 ) -> Dict[str, BaseEstimator]:
     """Utility to find component on a given directory,
     that inherit from base_class
+
     Args:
-        package (str): The associated package that contains the components
-        directory (str): The directory from which to extract the components
-        base_class (BaseEstimator): base class to filter out desired components
+        package (str):
+            The associated package that contains the components
+        directory (str):
+            The directory from which to extract the components
+        base_class (BaseEstimator):
+            base class to filter out desired components
             that don't inherit from this class
     """
     components = OrderedDict()
@@ -34,8 +43,7 @@ def find_components(
             module = importlib.import_module(full_module_name)
 
             for member_name, obj in inspect.getmembers(module):
-                if inspect.isclass(obj) and issubclass(obj, base_class) and \
-                        obj != base_class:
+                if inspect.isclass(obj) and issubclass(obj, base_class) and obj != base_class:
                     # TODO test if the obj implements the interface
                     # Keep in mind that this only instantiates the ensemble_wrapper,
                     # but not the real target classifier
@@ -55,12 +63,13 @@ class ThirdPartyComponents(object):
     space to work.
 
     Args:
-        base_class (BaseEstimator) component type desired to be created
+        base_class (BaseEstimator):
+            Component type desired to be created
     """
 
-    def __init__(self, base_class: BaseEstimator) -> None:
+    def __init__(self, base_class: BaseEstimator):
         self.base_class = base_class
-        self.components = OrderedDict()  # type: Dict[str, BaseEstimator]
+        self.components: Dict[str, BaseEstimator] = OrderedDict()
 
     def add_component(self, obj: BaseEstimator) -> None:
         if inspect.isclass(obj) and self.base_class in obj.__bases__:
@@ -91,12 +100,26 @@ class ThirdPartyComponents(object):
 
 
 class autoPyTorchComponent(BaseEstimator):
+    """
+    Provides an abstract interface which can be used to
+    create steps of a pipeline in AutoPyTorch.
+
+    Args:
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
+
+    """
     _required_properties: Optional[List[str]] = None
 
-    def __init__(self) -> None:
+    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__()
+        if random_state is None:
+            self.random_state = check_random_state(1)
+        else:
+            self.random_state = check_random_state(random_state)
         self._fit_requirements: List[FitRequirement] = list()
-        self._cs_updates: Dict[str, Tuple] = dict()
+        self._cs_updates: Dict[str, HyperparameterSearchSpaceUpdate] = dict()
 
     @classmethod
     def get_required_properties(cls) -> Optional[List[str]]:
@@ -104,8 +127,10 @@ class autoPyTorchComponent(BaseEstimator):
         Function to get the properties in the component
         that are required for the properly fitting the pipeline.
         Usually defined in the base class of the component
+
         Returns:
-            List[str]: list of properties autopytorch component must have for proper functioning of the pipeline
+            List[str]:
+                list of properties autopytorch component must have for proper functioning of the pipeline
         """
         return cls._required_properties
 
@@ -113,63 +138,68 @@ class autoPyTorchComponent(BaseEstimator):
         """
         Function to get the required keys by the component
         that need to be in the fit dictionary
+
         Returns:
-            List[FitRequirement]: a list containing required keys
-                            in a named tuple (name: str, type: object)
+            List[FitRequirement]:
+                a list containing required keys in a named tuple (name: str, type: object)
         """
         return self._fit_requirements
 
     def add_fit_requirements(self, requirements: List[FitRequirement]) -> None:
-        if self._fit_requirements is not None:
-            self._fit_requirements.extend(requirements)
-        else:
-            self._fit_requirements = requirements
+        self._fit_requirements.extend(requirements)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
-                       ) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         """Get the properties of the underlying algorithm.
 
         Args:
-            dataset_properties (Optional[Dict[str, Union[str, int]]): Describes the dataset
-               to work on
+            dataset_properties (Optional[Dict[str, Union[str, int]]):
+                Describes the dataset to work on
+
         Returns:
-            Dict[str, Any]: Properties of the algorithm
+            Dict[str, Any]:
+                Properties of the algorithm
         """
         raise NotImplementedError()
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, str]] = None
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         """Return the configuration space of this classification algorithm.
 
         Args:
-            dataset_properties (Optional[Dict[str, Union[str, int]]): Describes the dataset
-               to work on
+            dataset_properties (Optional[Dict[str, Union[str, int]]):
+                Describes the dataset to work on
 
         Returns:
-            ConfigurationSpace: The configuration space of this algorithm.
+            ConfigurationSpace:
+                The configuration space of this algorithm.
         """
         raise NotImplementedError()
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> "autoPyTorchComponent":
         """The fit function calls the fit function of the underlying
         model and returns `self`.
 
         Args:
-            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
-            y (Any): Not Used -- to comply with API
+            y (Any):
+                Not Used -- to comply with API
 
         Returns:
-            self : returns an instance of self.
-        Notes
-        -----
-        Please see the `scikit-learn API documentation
-        <http://scikit-learn.org/dev/developers/index.html#apis-of-scikit
-        -learn-objects>`_ for further information."""
+            self:
+                returns an instance of self.
+
+        Notes:
+            Please see the `scikit-learn API documentation
+            <http://scikit-learn.org/dev/developers/index.html#apis-of-scikit
+            -learn-objects>`_ for further information.
+        """
         raise NotImplementedError()
 
     def set_hyperparameters(self,
@@ -182,10 +212,10 @@ class autoPyTorchComponent(BaseEstimator):
         to an actual parameter of the autoPyTorch component.
 
         Args:
-            configuration (Configuration): which configuration to apply to
-                the chosen component
-            init_params (Optional[Dict[str, any]]): Optional arguments to
-                initialize the chosen component
+            configuration (Configuration):
+                Which configuration to apply to the chosen component
+            init_params (Optional[Dict[str, any]]):
+                Optional arguments to initialize the chosen component
 
         Returns:
             An instance of self
@@ -216,7 +246,8 @@ class autoPyTorchComponent(BaseEstimator):
         are honored before fit.
 
         Args:
-            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
         """
@@ -253,36 +284,31 @@ class autoPyTorchComponent(BaseEstimator):
         name = self.get_properties()['name']
         return "autoPyTorch.pipeline %s" % name
 
-    def _apply_search_space_update(self, name: str, new_value_range: Union[List, Tuple],
-                                   default_value: Union[int, float, str], log: bool = False) -> None:
+    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
         """Allows the user to update a hyperparameter
 
-        Arguments:
-            name {string} -- name of hyperparameter
-            new_value_range {List[?] -- value range can be either lower, upper or a list of possible conditionals
-            log {bool} -- is hyperparameter logscale
+        Args:
+            name (str):
+                name of hyperparameter
+            new_value_range (List[Union[int, str, float]]):
+                value range can be either lower, upper or a list of possible candidates
+            log (bool):
+                Whether to use log scale
         """
 
-        if len(new_value_range) == 0:
-            raise ValueError("The new value range needs at least one value")
-        self._cs_updates[name] = tuple([new_value_range, default_value, log])
+        self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
-    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, Tuple]:
-        """Get the search space updates with the given prefix
-
-        Keyword Arguments:
-            prefix {str} -- Only return search space updates with given prefix (default: {None})
+    def _get_search_space_updates(self) -> Dict[str, HyperparameterSearchSpace]:
+        """Get the search space updates
 
         Returns:
-            dict -- Mapping of search space updates. Keys don't contain the prefix.
+            _ (Dict[str, HyperparameterSearchSpace]):
+                Mapping of search space updates. Keys don't contain the prefix.
         """
-        if prefix is None:
-            return self._cs_updates
-        result: Dict[str, Tuple] = dict()
+
+        result: Dict[str, HyperparameterSearchSpace] = dict()
 
         # iterate over all search space updates of this node and keep the ones that have the given prefix
         for key in self._cs_updates.keys():
-            if key.startswith(prefix):
-                # different for autopytorch component as the hyperparameter
-                result[key[len(prefix):]] = self._cs_updates[key]
+            result[key] = self._cs_updates[key].get_search_space()
         return result

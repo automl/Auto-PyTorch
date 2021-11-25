@@ -16,6 +16,7 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.constants import TIMESERIES_FORECASTING, TASK_TYPES_TO_STRING
 
@@ -34,7 +35,9 @@ class NetworkBackboneComponent(autoPyTorchComponent):
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('preprocess_transforms', (Iterable,), user_defined=False, dataset_property=False)])
+            FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
+            FitRequirement('network_embedding', (nn.Module,), user_defined=False, dataset_property=False)
+        ])
         self.backbone: nn.Module = None
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
@@ -62,6 +65,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
                 transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
                 input_shape = transforms(X_train[:1, ...]).shape[1:]
 
+        input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
         self.input_shape = input_shape
 
         self.backbone = self.build_backbone(
@@ -124,4 +128,4 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         Returns:
             str: Name of the backbone
         """
-        return cls.get_properties()["shortname"]
+        return str(cls.get_properties()["shortname"])

@@ -4,11 +4,12 @@ import json
 import logging
 import math
 import multiprocessing
+import os
 import time
 import traceback
-import typing
 import warnings
 from queue import Empty
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
 
@@ -22,18 +23,20 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 import autoPyTorch.evaluation.train_evaluator
+from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.utils.backend import Backend
+from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
+from autoPyTorch.utils.parallel import preload_modules
 
 
 def fit_predict_try_except_decorator(
-        ta: typing.Callable,
-        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: typing.Any) -> None:
+        ta: Callable,
+        queue: multiprocessing.Queue, cost_for_crash: float, **kwargs: Any) -> None:
     try:
-        return ta(queue=queue, **kwargs)
+        ta(queue=queue, **kwargs)
     except Exception as e:
         if isinstance(e, (MemoryError, pynisher.TimeoutException)):
             # Re-raise the memory error to let the pynisher handle that correctly
@@ -57,7 +60,7 @@ def fit_predict_try_except_decorator(
 def get_cost_of_crash(metric: autoPyTorchMetric) -> float:
     # The metric must always be defined to extract optimum/worst
     if not isinstance(metric, autoPyTorchMetric):
-        raise ValueError("The metric must be stricly be an instance of autoPyTorchMetric")
+        raise ValueError("The metric must be strictly be an instance of autoPyTorchMetric")
 
     # Autopytorch optimizes the err. This function translates
     # worst_possible_result to be a minimization problem.
@@ -96,24 +99,24 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             metric: autoPyTorchMetric,
             cost_for_crash: float,
             abort_on_first_run_crash: bool,
-            pipeline_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            pynisher_context: str,
+            pipeline_config: Optional[Dict[str, Any]] = None,
             initial_num_run: int = 1,
-            stats: typing.Optional[Stats] = None,
+            stats: Optional[Stats] = None,
             run_obj: str = 'quality',
             par_factor: int = 1,
             output_y_hat_optimization: bool = True,
-            include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            memory_limit: typing.Optional[int] = None,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            memory_limit: Optional[int] = None,
             disable_file_output: bool = False,
-            init_params: typing.Dict[str, typing.Any] = None,
+            init_params: Dict[str, Any] = None,
             budget_type: str = None,
-            ta: typing.Optional[typing.Callable] = None,
+            ta: Optional[Callable] = None,
             logger_port: int = None,
             all_supported_metrics: bool = True,
-            pynisher_context: str = 'spawn',
-            search_space_updates: typing.Optional[HyperparameterSearchSpaceUpdates] = None,
-            **eval_func_kwargs
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            **eval_func_kwargs: Dict
     ):
 
         eval_function = functools.partial(autoPyTorch.evaluation.train_evaluator.eval_function, **eval_func_kwargs)
@@ -145,11 +148,18 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.exclude = exclude
         self.disable_file_output = disable_file_output
         self.init_params = init_params
-        self.pipeline_config = pipeline_config
+
         self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
+
+        self.pipeline_config: Dict[str, Union[int, str, float]] = dict()
+        if pipeline_config is None:
+            pipeline_config = replace_string_bool_to_bool(json.load(open(
+                os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
+        self.pipeline_config.update(pipeline_config)
+
         self.logger_port = logger_port
         if self.logger_port is None:
-            self.logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
+            self.logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("TAE")
         else:
             self.logger = get_named_client_logger(
                 name="TAE",
@@ -177,9 +187,9 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.search_space_updates = search_space_updates
 
     def run_wrapper(
-            self,
-            run_info: RunInfo,
-    ) -> typing.Tuple[RunInfo, RunValue]:
+        self,
+        run_info: RunInfo,
+    ) -> Tuple[RunInfo, RunValue]:
         """
         wrapper function for ExecuteTARun.run_wrapper() to cap the target algorithm
         runtime if it would run over the total allowed runtime.
@@ -201,7 +211,12 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         else:
             if self.budget_type in ('epochs', 'runtime'):
                 if run_info.budget == 0:
-                    run_info = run_info._replace(budget=100.0)
+                    # SMAC can return budget zero for intensifiers that don't have a concept
+                    # of budget, for example a simple bayesian optimization intensifier.
+                    # Budget determines how our pipeline trains, which can be via runtime or epochs
+                    epochs_budget = self.pipeline_config.get('epochs', np.inf)
+                    runtime_budget = self.pipeline_config.get('runtime', np.inf)
+                    run_info = run_info._replace(budget=min(epochs_budget, runtime_budget))
                 elif run_info.budget <= 0 or run_info.budget > 100:
                     raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
                                      run_info.budget)
@@ -237,19 +252,21 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             run_info = run_info._replace(cutoff=int(np.ceil(run_info.cutoff)))
 
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
-        return super().run_wrapper(run_info=run_info)
+        run_info, run_value = super().run_wrapper(run_info=run_info)
+        return run_info, run_value
 
     def run(
-            self,
-            config: Configuration,
-            instance: typing.Optional[str] = None,
-            cutoff: typing.Optional[float] = None,
-            seed: int = 12345,
-            budget: float = 0.0,
-            instance_specific: typing.Optional[str] = None,
-    ) -> typing.Tuple[StatusType, float, float, typing.Dict[str, typing.Any]]:
+        self,
+        config: Configuration,
+        instance: Optional[str] = None,
+        cutoff: Optional[float] = None,
+        seed: int = 12345,
+        budget: float = 0.0,
+        instance_specific: Optional[str] = None,
+    ) -> Tuple[StatusType, float, float, Dict[str, Any]]:
 
         context = multiprocessing.get_context(self.pynisher_context)
+        preload_modules(context)
         queue: multiprocessing.queues.Queue = context.Queue()
 
         if not (instance_specific is None or instance_specific == '0'):
@@ -259,7 +276,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             init_params.update(self.init_params)
 
         if self.logger_port is None:
-            logger: typing.Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
+            logger: Union[logging.Logger, PicklableClientLogger] = logging.getLogger("pynisher")
         else:
             logger = get_named_client_logger(
                 name="pynisher",
@@ -304,8 +321,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             search_space_updates=self.search_space_updates
         )
 
-        info: typing.Optional[typing.List[RunValue]]
-        additional_run_info: typing.Dict[str, typing.Any]
+        info: Optional[List[RunValue]]
+        additional_run_info: Dict[str, Any]
         try:
             obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
             obj(**obj_kwargs)
@@ -323,10 +340,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             # it can be that the target algorithm wrote something into the queue
             #  - then we treat it as a successful run
             try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                info = read_queue(queue)  # type: ignore
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.stdout:
                     additional_run_info['subprocess_stdout'] = obj.stdout
@@ -370,10 +387,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         else:
             try:
-                info = read_queue(queue)
-                result = info[-1]['loss']
-                status = info[-1]['status']
-                additional_run_info = info[-1]['additional_run_info']
+                info = read_queue(queue)  # type: ignore
+                result = info[-1]['loss']  # type: ignore
+                status = info[-1]['status']  # type: ignore
+                additional_run_info = info[-1]['additional_run_info']  # type: ignore
 
                 if obj.exit_status == 0:
                     cost = result
@@ -451,7 +468,14 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         empty_queue(queue)
         self.logger.debug(
-            'Finished function evaluation. Status: %s, Cost: %f, Runtime: %f, Additional %s',
-            status, cost, runtime, additional_run_info,
+            "Finish function evaluation {}.\n"
+            "Status: {}, Cost: {}, Runtime: {},\n"
+            "Additional information:\n{}".format(
+                str(num_run),
+                status,
+                cost,
+                runtime,
+                dict_repr(additional_run_info)
+            )
         )
         return status, cost, runtime, additional_run_info

@@ -101,7 +101,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 # user has already specified a window_size range
                 if update.node_name == 'data_loader' and update.hyperparameter == 'window_size':
                     self.customized_window_size = True
-        self.time_series_prediction = True
+        self.time_series_forecasting = True
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):
@@ -124,11 +124,12 @@ class TimeSeriesForecastingTask(BaseTask):
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
             dataset_name: Optional[str] = None,
-            budget_type: Optional[str] = None,
-            budget: Optional[float] = None,
+            budget_type: str = 'epochs',
+            min_budget: Union[int, str] = 5,
+            max_budget: Union[int, str] = 50,
             total_walltime_limit: int = 100,
-            func_eval_time_limit: int = 60,
-            traditional_per_total_budget: float = 0.,
+            func_eval_time_limit_secs: Optional[int] = None,
+            enable_traditional_pipeline: bool = False,
             memory_limit: Optional[int] = 4096,
             smac_scenario_args: Optional[Dict[str, Any]] = None,
             get_smac_object_callback: Optional[Callable] = None,
@@ -136,6 +137,7 @@ class TimeSeriesForecastingTask(BaseTask):
             precision: int = 32,
             disable_file_output: List = [],
             load_models: bool = True,
+            portfolio_selection: Optional[str] = None,
             shift_input_data: bool = True,
             normalize_y: bool = True,
             train_with_log_prob: bool = True
@@ -162,13 +164,40 @@ class TimeSeriesForecastingTask(BaseTask):
                 dataset name
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline.
-            budget_type (Optional[str]):
+            budget_type (str):
                 Type of budget to be used when fitting the pipeline.
-                Either 'epochs' or 'runtime' or 'resolution'. If not provided, uses
-                the default in the pipeline config ('epochs')
-            budget (Optional[float]):
-                Budget to fit a single run of the pipeline. If not
-                provided, uses the default in the pipeline config
+                It can be one of:
+
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+                    budget_type will determine the units of min_budget/max_budget. If budget_type=='epochs'
+                    is used, min_budget will refer to epochs whereas if budget_type=='runtime' then
+                    min_budget will refer to seconds.
+                + 'resolution': The sample resolution of time series, for instance, if a time series sequence is
+                [0, 1, 2, 3, 4] with resolution 0.5, the sequence fed to the network is [0, 2, 4]
+            min_budget Union[int, str]:
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                min_budget states the minimum resource allocation a pipeline should have
+                so that we can compare and quickly discard bad performing models.
+                For example, if the budget_type is epochs, and min_budget=5, then we will
+                run every pipeline to a minimum of 5 epochs before performance comparison.
+            max_budget Union[int, str]:
+                Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
+                trade-off resources between running many pipelines at min_budget and
+                running the top performing pipelines on max_budget.
+                max_budget states the maximum resource allocation a pipeline is going to
+                be ran. For example, if the budget_type is epochs, and max_budget=50,
+                then the pipeline training will be terminated after 50 epochs.
+
             total_walltime_limit (int), (default=100): Time limit
                 in seconds for the search of appropriate models.
                 By increasing this value, autopytorch has a higher
@@ -272,11 +301,6 @@ class TimeSeriesForecastingTask(BaseTask):
                                              default_value=int(np.ceil(1.25 * base_window_size)),
                                              )
 
-        if traditional_per_total_budget > 0.:
-            self._logger.warning("Time series Forecasting for now does not support traditional classifiers. "
-                                 "Setting traditional_per_total_budget to 0.")
-            traditional_per_total_budget = 0.
-
         seasonality = SEASONALITY_MAP.get(self.dataset.freq, 1)
         if isinstance(seasonality, list):
             seasonality = min(seasonality)  # Use to calculate MASE
@@ -287,10 +311,11 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset=self.dataset,
             optimize_metric=optimize_metric,
             budget_type=budget_type,
-            budget=budget,
+            min_budget=min_budget,
+            max_budget=max_budget,
             total_walltime_limit=total_walltime_limit,
-            func_eval_time_limit=func_eval_time_limit,
-            traditional_per_total_budget=traditional_per_total_budget,
+            func_eval_time_limit_secs=func_eval_time_limit_secs,
+            enable_traditional_pipeline=enable_traditional_pipeline,
             memory_limit=memory_limit,
             smac_scenario_args=smac_scenario_args,
             get_smac_object_callback=get_smac_object_callback,
@@ -298,7 +323,8 @@ class TimeSeriesForecastingTask(BaseTask):
             precision=precision,
             disable_file_output=disable_file_output,
             load_models=load_models,
-            time_series_prediction=self.time_series_prediction
+            portfolio_selection=portfolio_selection,
+            time_series_forecasting=self.time_series_forecasting
         )
 
     def predict(

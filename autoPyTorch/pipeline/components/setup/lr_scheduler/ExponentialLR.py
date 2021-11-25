@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -8,9 +8,11 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ExponentialLR(BaseLRComponent):
@@ -25,13 +27,13 @@ class ExponentialLR(BaseLRComponent):
     def __init__(
         self,
         gamma: float,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         random_state: Optional[np.random.RandomState] = None
     ):
 
-        super().__init__()
+        super().__init__(step_interval)
         self.gamma = gamma
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -55,18 +57,23 @@ class ExponentialLR(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ExponentialLR',
-            'name': 'ExponentialLR',
+            'name': 'Exponential Learning Rate Scheduler',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        gamma: Tuple[Tuple, float] = ((0.7, 0.9999), 0.9)
-                                        ) -> ConfigurationSpace:
-        gamma = UniformFloatHyperparameter(
-            "gamma", gamma[0][0], gamma[0][1], default_value=gamma[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
+                                                                     value_range=(0.7, 0.9999),
+                                                                     default_value=0.9,
+                                                                     )
+    ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([gamma])
+        add_hyperparameter(cs, gamma, UniformFloatHyperparameter)
+
         return cs

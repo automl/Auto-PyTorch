@@ -11,6 +11,7 @@ import imgaug.augmenters as iaa
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     find_components,
@@ -49,7 +50,7 @@ class ImageAugmenter(BaseImageAugmenter):
 
     def __init__(self, random_state: Optional[Union[int, np.random.RandomState]] = None):
         super().__init__()
-        self.available_augmenters = get_components()  # type: Dict[str, BaseImageAugmenter]
+        self.available_augmenters: Dict[str, BaseImageAugmenter] = get_components()
         self.random_state = random_state
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseImageAugmenter:
@@ -107,10 +108,11 @@ class ImageAugmenter(BaseImageAugmenter):
         return self
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, str]] = None) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                                        ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        available_augmenters = get_components()  # type: Dict[str, BaseImageAugmenter]
+        available_augmenters: Dict[str, BaseImageAugmenter] = get_components()
 
         if dataset_properties is None:
             dataset_properties = dict()
@@ -124,7 +126,7 @@ class ImageAugmenter(BaseImageAugmenter):
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'ImageAugmenter'}
 

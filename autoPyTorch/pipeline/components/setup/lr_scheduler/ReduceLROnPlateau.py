@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,9 +10,11 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ReduceLROnPlateau(BaseLRComponent):
@@ -29,22 +31,26 @@ class ReduceLROnPlateau(BaseLRComponent):
         factor (float): Factor by which the learning rate will be reduced. new_lr = lr * factor.
         patience (int): Number of epochs with no improvement after which learning
             rate will be reduced.
+        step_interval (str): step should be called after validation in the case of ReduceLROnPlateau
         random_state (Optional[np.random.RandomState]): random state
+
+    Reference:
+        https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
     """
+
     def __init__(
         self,
         mode: str,
         factor: float,
         patience: int,
-        random_state: Optional[np.random.RandomState] = None
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.valid,
+        random_state: Optional[np.random.RandomState] = None,
     ):
-
-        super().__init__()
+        super().__init__(step_interval)
         self.mode = mode
         self.factor = factor
         self.patience = patience
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -70,23 +76,34 @@ class ReduceLROnPlateau(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'ReduceLROnPlateau',
             'name': 'ReduceLROnPlateau',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        mode: Tuple[Tuple, str] = (('min', 'max'), 'min'),
-                                        patience: Tuple[Tuple, int] = ((5, 20), 10),
-                                        factor: Tuple[Tuple[float, float], float] = ((0.01, 0.9), 0.1)
-                                        ) -> ConfigurationSpace:
-        mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
-        patience = UniformIntegerHyperparameter(
-            "patience", patience[0][0], patience[0][1], default_value=patience[1])
-        factor = UniformFloatHyperparameter(
-            "factor", factor[0][0], factor[0][1], default_value=factor[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        mode: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='mode',
+                                                                    value_range=('min', 'max'),
+                                                                    default_value='min',
+                                                                    ),
+        patience: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='patience',
+                                                                        value_range=(5, 20),
+                                                                        default_value=10,
+                                                                        ),
+        factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='factor',
+                                                                      value_range=(0.01, 0.9),
+                                                                      default_value=0.1,
+                                                                      )
+    ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([mode, patience, factor])
+
+        add_hyperparameter(cs, mode, CategoricalHyperparameter)
+        add_hyperparameter(cs, patience, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, factor, UniformFloatHyperparameter)
+
         return cs

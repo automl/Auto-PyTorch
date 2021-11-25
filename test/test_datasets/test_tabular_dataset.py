@@ -1,5 +1,8 @@
+import numpy as np
+
 import pytest
 
+from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
@@ -38,3 +41,8 @@ def test_get_dataset_properties(backend, fit_dictionary_tabular):
     assert datamanager.train_tensors[0].shape == fit_dictionary_tabular['X_train'].shape
     assert datamanager.train_tensors[1].shape == fit_dictionary_tabular['y_train'].shape
     assert datamanager.task_type == 'tabular_classification'
+
+
+def test_not_supported():
+    with pytest.raises(ValueError, match=r".*A feature validator is required to build.*"):
+        TabularDataset(np.ones(10), np.ones(10))

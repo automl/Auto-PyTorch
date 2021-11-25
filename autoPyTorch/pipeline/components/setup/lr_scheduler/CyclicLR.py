@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,9 +10,11 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class CyclicLR(BaseLRComponent):
@@ -31,22 +33,22 @@ class CyclicLR(BaseLRComponent):
             base_lr. This simplifies the learning space
 
     """
+
     def __init__(
         self,
         base_lr: float,
         mode: str,
         step_size_up: int,
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
         max_lr: float = 0.1,
         random_state: Optional[np.random.RandomState] = None
     ):
-
-        super().__init__()
+        super().__init__(step_interval)
         self.base_lr = base_lr
         self.mode = mode
         self.max_lr = max_lr
         self.step_size_up = step_size_up
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -79,27 +81,40 @@ class CyclicLR(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'CyclicLR',
-            'name': 'CyclicLR',
+            'name': 'Cyclic Learning Rate Scheduler',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        base_lr: Tuple[Tuple, float] = ((1e-6, 1e-1), 0.01),
-                                        mode: Tuple[Tuple, str] = (('triangular', 'triangular2', 'exp_range'),
-                                                                   'triangular'),
-                                        step_size_up: Tuple[Tuple, int] = ((1000, 4000), 2000),
-                                        max_lr: Tuple[Tuple, float] = ((1e-3, 1e-1), 0.1)
-                                        ) -> ConfigurationSpace:
-        base_lr = UniformFloatHyperparameter(
-            "base_lr", base_lr[0][0], base_lr[0][1], default_value=base_lr[1])
-        mode = CategoricalHyperparameter('mode', choices=mode[0], default_value=mode[1])
-        step_size_up = UniformIntegerHyperparameter(
-            "step_size_up", step_size_up[0][0], step_size_up[0][1], default_value=step_size_up[1])
-        max_lr = UniformFloatHyperparameter(
-            "max_lr", max_lr[0][0], max_lr[0][1], default_value=max_lr[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        base_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='base_lr',
+                                                                       value_range=(1e-6, 1e-1),
+                                                                       default_value=0.01,
+                                                                       ),
+        mode: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='mode',
+                                                                    value_range=('triangular',
+                                                                                 'triangular2',
+                                                                                 'exp_range'),
+                                                                    default_value='triangular',
+                                                                    ),
+        step_size_up: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='step_size_up',
+                                                                            value_range=(1000, 4000),
+                                                                            default_value=2000,
+                                                                            ),
+        max_lr: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='max_lr',
+                                                                      value_range=(1e-3, 1e-1),
+                                                                      default_value=0.1,
+                                                                      )
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([base_lr, mode, step_size_up, max_lr])
+
+        add_hyperparameter(cs, base_lr, UniformFloatHyperparameter)
+        add_hyperparameter(cs, mode, CategoricalHyperparameter)
+        add_hyperparameter(cs, step_size_up, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, max_lr, UniformFloatHyperparameter)
+
         return cs

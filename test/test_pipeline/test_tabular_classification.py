@@ -1,5 +1,6 @@
 import os
 import re
+import unittest
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -12,9 +13,10 @@ import numpy as np
 import pytest
 
 import torch
+from torch.optim.lr_scheduler import _LRScheduler
 
-from autoPyTorch import metrics
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
+from autoPyTorch.pipeline.components.setup.lr_scheduler.NoScheduler import NoScheduler
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
@@ -35,7 +37,13 @@ class TestTabularClassification:
                 assert any(update.node_name + ':' + update.hyperparameter in name
                            for name in config_space.get_hyperparameter_names()), \
                     "Can't find hyperparameter: {}".format(update.hyperparameter)
-                hyperparameter = config_space.get_hyperparameter(update.node_name + ':' + update.hyperparameter + '_1')
+                # dimension reduction in embedding starts from 0
+                if 'embedding' in update.node_name:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_0')
+                else:
+                    hyperparameter = config_space.get_hyperparameter(
+                        update.node_name + ':' + update.hyperparameter + '_1')
             assert update.default_value == hyperparameter.default_value
             if isinstance(hyperparameter, (UniformIntegerHyperparameter, UniformFloatHyperparameter)):
                 assert update.value_range[0] == hyperparameter.lower
@@ -54,7 +62,10 @@ class TestTabularClassification:
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"Failed due to {e} for config={config}")
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy
@@ -69,34 +80,6 @@ class TestTabularClassification:
         # Make sure a network was fit
         assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
 
-    @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
-    def test_pipeline_score(self, fit_dictionary_tabular_dummy, fit_dictionary_tabular):
-        """This test makes sure that the pipeline is able to achieve a decent score on dummy data
-        given the default configuration"""
-        X = fit_dictionary_tabular_dummy['X_train'].copy()
-        y = fit_dictionary_tabular_dummy['y_train'].copy()
-        pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
-
-        cs = pipeline.get_hyperparameter_search_space()
-        config = cs.get_default_configuration()
-        pipeline.set_hyperparameters(config)
-
-        pipeline.fit(fit_dictionary_tabular_dummy)
-
-        # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
-        expected_output_shape = (X.shape[0],
-                                 fit_dictionary_tabular_dummy["dataset_properties"]["output_shape"])
-
-        prediction = pipeline.predict(X)
-        assert isinstance(prediction, np.ndarray)
-        assert prediction.shape == expected_output_shape
-
-        # we should be able to get a decent score on this dummy data
-        accuracy = metrics.accuracy(y, prediction.squeeze())
-        assert accuracy >= 0.8
-
     def test_pipeline_predict(self, fit_dictionary_tabular):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
@@ -108,7 +91,10 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of outputs
@@ -131,7 +117,13 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+                 as patch_train:
+                patch_train.return_value = 1, {}
+                pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"Failed on config={config} with {e}")
 
         # we expect the output to have the same batch size as the test input,
         # and number of outputs per batch sample equal to the number of classes ("num_classes" in dataset_properties)
@@ -155,8 +147,11 @@ class TestTabularClassification:
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
 
-        # We do not want to make the same early preprocessing operation to the fit dictionary
-        pipeline.fit(fit_dictionary_tabular.copy())
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            # We do not want to make the same early preprocessing operation to the fit dictionary
+            pipeline.fit(fit_dictionary_tabular.copy())
 
         transformed_fit_dictionary_tabular = pipeline.transform(fit_dictionary_tabular)
 
@@ -184,14 +179,16 @@ class TestTabularClassification:
 
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
-
-        pipeline.fit(fit_dictionary_tabular)
+        with unittest.mock.patch.object(pipeline.named_steps['trainer'].choice, 'train_epoch') \
+             as patch_train:
+            patch_train.return_value = 1, {}
+            pipeline.fit(fit_dictionary_tabular)
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
-        for key in ['num_run', 'device', 'split_id', 'use_pynisher', 'torch_num_threads', 'dataset_properties']:
+        for key in ['num_run', 'device', 'split_id', 'torch_num_threads', 'dataset_properties']:
             fit_dictionary_tabular_copy = fit_dictionary_tabular.copy()
             fit_dictionary_tabular_copy.pop(key)
             with pytest.raises(ValueError, match=r"To fit .+?, expected fit dictionary to have"):
@@ -208,6 +205,7 @@ class TestTabularClassification:
 
         # Make sure that fitting a network adds a "network" to X
         assert 'network' in pipeline.named_steps.keys()
+        fit_dictionary_tabular['network_embedding'] = torch.nn.Linear(3, 3)
         fit_dictionary_tabular['network_backbone'] = torch.nn.Linear(3, 4)
         fit_dictionary_tabular['network_head'] = torch.nn.Linear(4, 1)
         X = pipeline.named_steps['network'].fit(
@@ -227,6 +225,7 @@ class TestTabularClassification:
         # No error when network is passed
         X = pipeline.named_steps['optimizer'].fit(X, None).transform(X)
         assert 'optimizer' in X
+        assert isinstance(pipeline.named_steps['optimizer'].choice.get_optimizer(), torch.optim.Optimizer)
 
         # Then fitting a optimizer should fail if no network:
         assert 'lr_scheduler' in pipeline.named_steps.keys()
@@ -238,7 +237,13 @@ class TestTabularClassification:
 
         # No error when network is passed
         X = pipeline.named_steps['lr_scheduler'].fit(X, None).transform(X)
-        assert 'optimizer' in X
+        assert 'lr_scheduler' in X
+        if isinstance(pipeline.named_steps['lr_scheduler'].choice, NoScheduler):
+            pytest.skip("This scheduler does not support `get_scheduler`")
+        lr_scheduler = pipeline.named_steps['lr_scheduler'].choice.get_scheduler()
+        if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            pytest.skip("This scheduler is not a child of _LRScheduler")
+        assert isinstance(lr_scheduler, _LRScheduler)
 
     def test_get_fit_requirements(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [], 'categorical_columns': [],
@@ -316,4 +321,173 @@ class TestTabularClassification:
         except AssertionError as e:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
-            assert 'fully_connected:units_layer' in e.args[0]
+            assert 'fully_connected:units_layer' in e.args[0], e.args[0]
+
+    def test_set_choices_updates(self, fit_dictionary_tabular):
+        dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
+                              'task_type': 'tabular_classification'}
+        config_dict = TabularClassificationPipeline(dataset_properties=dataset_properties). \
+            get_hyperparameter_search_space()._hyperparameters
+        updates = HyperparameterSearchSpaceUpdates()
+        for i, (name, hyperparameter) in enumerate(config_dict.items()):
+            if '__choice__' not in name:
+                continue
+            name = name.split(':')
+            hyperparameter_name = ':'.join(name[1:])
+            # Using NoEmbedding is safer for this test
+            # to avoid forbidden configuration errors
+            if name[0] == 'network_embedding' and hyperparameter_name == '__choice__':
+                value_range = ('NoEmbedding',)
+                default_value = 'NoEmbedding'
+            else:
+                value_range = (hyperparameter.choices[0],)
+                default_value = hyperparameter.choices[0]
+            updates.append(node_name=name[0], hyperparameter=hyperparameter_name,
+                           value_range=value_range, default_value=default_value)
+        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                                 search_space_updates=updates)
+        self._assert_pipeline_search_space(pipeline, updates)
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
+def test_constant_pipeline_iris(fit_dictionary_tabular):
+    search_space_updates = HyperparameterSearchSpaceUpdates()
+    search_space_updates.append(node_name='feature_preprocessor',
+                                hyperparameter='__choice__',
+                                value_range=['PolynomialFeatures'],
+                                default_value='PolynomialFeatures')
+    search_space_updates.append(node_name='scaler',
+                                hyperparameter='__choice__',
+                                value_range=['StandardScaler'],
+                                default_value='StandardScaler')
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='__choice__',
+                                value_range=['MLPBackbone', 'ShapedMLPBackbone'],
+                                default_value='MLPBackbone')
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_groups',
+                                value_range=[1, 1],
+                                default_value=1)
+    search_space_updates.append(node_name='network_backbone',
+                                hyperparameter='MLPBackbone:num_units',
+                                value_range=[100],
+                                default_value=100)
+    search_space_updates.append(node_name='trainer',
+                                hyperparameter='__choice__',
+                                value_range=['StandardTrainer'],
+                                default_value='StandardTrainer')
+    search_space_updates.append(node_name='lr_scheduler',
+                                hyperparameter='__choice__',
+                                value_range=['NoScheduler'],
+                                default_value='NoScheduler')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='__choice__',
+                                value_range=['AdamOptimizer'],
+                                default_value='AdamOptimizer')
+    search_space_updates.append(node_name='optimizer',
+                                hyperparameter='AdamOptimizer:lr',
+                                value_range=[1e-2],
+                                default_value=1e-2)
+    pipeline = TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'],
+                                             search_space_updates=search_space_updates)
+
+    fit_dictionary_tabular['additional_metrics'] = ['balanced_accuracy']
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular['epochs'] = 50
+
+    try:
+        pipeline.fit(fit_dictionary_tabular)
+    except Exception as e:
+        pytest.fail(f"Failed due to {e}")
+
+    configuration = pipeline.configuration
+
+    assert 'PolynomialFeatures' == configuration.get('feature_preprocessor:__choice__')
+    assert 'StandardScaler' == configuration.get('scaler:__choice__')
+    assert 'MLPBackbone' == configuration.get('network_backbone:__choice__')
+    assert 'StandardTrainer' == configuration.get('trainer:__choice__')
+    assert 'NoScheduler' == configuration.get('lr_scheduler:__choice__')
+    assert 'AdamOptimizer' == configuration.get('optimizer:__choice__')
+    assert 1 == configuration.get('network_backbone:MLPBackbone:num_groups')
+    assert 100 == configuration.get('network_backbone:MLPBackbone:num_units_1')
+    assert 1e-2 == configuration.get('optimizer:AdamOptimizer:lr')
+
+    # To make sure we fitted the model, there should be a
+    # run summary object with accuracy
+    run_summary = pipeline.named_steps['trainer'].run_summary
+    assert run_summary is not None
+
+    # Make sure that performance was properly captured
+    assert run_summary.performance_tracker['train_loss'][1] > 0
+    assert run_summary.total_parameter_count > 0
+    assert 'balanced_accuracy' in run_summary.performance_tracker['train_metrics'][1]
+
+    # Make sure default pipeline achieves a good score for dummy datasets
+    epoch2loss = run_summary.performance_tracker['val_loss']
+    best_loss = min(list(epoch2loss.values()))
+    epoch_where_best = list(epoch2loss.keys())[list(epoch2loss.values()).index(best_loss)]
+    val_score = run_summary.performance_tracker['val_metrics'][epoch_where_best]['balanced_accuracy']
+    train_score = run_summary.performance_tracker['train_metrics'][epoch_where_best]['balanced_accuracy']
+
+    assert val_score >= 0.8, run_summary.performance_tracker['val_metrics']
+    assert train_score >= 0.8, run_summary.performance_tracker['train_metrics']
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
+def test_pipeline_score(fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+    X = fit_dictionary_tabular_dummy['X_train'].copy()
+    y = fit_dictionary_tabular_dummy['y_train'].copy()
+
+    # increase number of epochs to test for performance
+    fit_dictionary_tabular_dummy['epochs'] = 50
+
+    pipeline = TabularClassificationPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    pipeline.fit(fit_dictionary_tabular_dummy)
+
+    # Ensure that the network is an instance of torch Module
+    assert isinstance(pipeline.named_steps['network'].get_network(), torch.nn.Module)
+
+    accuracy = pipeline.score(X, y)
+
+    # we should be able to get a decent score on this dummy data
+    assert accuracy >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}"
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
+def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
+    """This test makes sure that the pipeline is able to achieve a decent score on dummy data
+    given the default configuration"""
+
+    # Convert the training to runtime
+    fit_dictionary_tabular_dummy.pop('epochs', None)
+    fit_dictionary_tabular_dummy['budget_type'] = 'runtime'
+    fit_dictionary_tabular_dummy['runtime'] = 5
+    fit_dictionary_tabular_dummy['early_stopping'] = -1
+
+    pipeline = TabularClassificationPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    pipeline.fit(fit_dictionary_tabular_dummy)
+    run_summary = pipeline.named_steps['trainer'].run_summary
+    budget_tracker = pipeline.named_steps['trainer'].budget_tracker
+    assert budget_tracker.budget_type == 'runtime'
+    assert budget_tracker.max_runtime == 5
+    assert budget_tracker.is_max_time_reached()
+
+    # There is no epoch limitation
+    assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
+
+    # More than 200 epochs would have pass in 5 seconds for this dataset
+    assert len(run_summary.performance_tracker['start_time']) > 100

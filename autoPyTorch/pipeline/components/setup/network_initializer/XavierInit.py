@@ -24,7 +24,7 @@ class XavierInit(BaseNetworkInitializerComponent):
                               torch.nn.Conv2d,
                               torch.nn.Conv3d,
                               torch.nn.Linear)):
-                torch.nn.init.xavier_uniform_(m.weight.data)
+                torch.nn.init.xavier_normal(m.weight.data)
                 if m.bias is not None and self.bias_strategy == 'Zero':
                     torch.nn.init.constant_(m.bias.data, 0.0)
         return initialization

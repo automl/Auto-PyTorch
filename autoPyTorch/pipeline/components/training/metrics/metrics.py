@@ -36,7 +36,8 @@ median_absolute_error = make_metric('median_absolute_error',
                                     worst_possible_result=MAXINT,
                                     greater_is_better=False)
 r2 = make_metric('r2',
-                 sklearn.metrics.r2_score)
+                 sklearn.metrics.r2_score,
+                 worst_possible_result=-MAXINT)
 
 # Standard Classification Scores
 accuracy = make_metric('accuracy',

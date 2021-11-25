@@ -89,7 +89,7 @@ class VotingRegressorWrapper(VotingRegressor):
     predictions with shape (B, 1)
     """
 
-    def _predict(self, X: np.array) -> np.array:
+    def _predict(self, X: np.ndarray) -> np.ndarray:
         # overriding the _predict function should be enough
         predictions = []
         for est in self.estimators_:

@@ -70,7 +70,7 @@ class FeatureDataLoader(BaseDataLoaderComponent):
         #   + scaler
         # This transformations apply for both train/val/test, so no
         # distinction is performed
-        candidate_transformations = []  # type: List[Callable]
+        candidate_transformations: List[Callable] = []
 
         if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
             candidate_transformations.append((ExpandTransform()))

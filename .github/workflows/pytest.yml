@@ -8,12 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
-      fail-fast:  false
+        python-version: [3.7, 3.8, 3.9]
+        include:
+          - python-version: 3.8
+            code-cov: true
+      fail-fast: false
       max-parallel: 2
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -28,8 +33,10 @@ jobs:
         echo "::set-output name=BEFORE::$(git status --porcelain -b)"
     - name: Run tests
       run: |
-        if [ ${{ matrix.code-cov }} ]; then codecov='--cov=autoPyTorch --cov-report=xml'; fi
-        python -m pytest --durations=20 --timeout=300 --timeout-method=thread -v $codecov test
+        if [ ${{ matrix.code-cov }} ]; then
+          codecov='--cov=autoPyTorch --cov-report=xml --cov-config=.coveragerc';
+        fi
+        python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v $codecov test
     - name: Check for files left behind by test
       if: ${{ always() }}
       run: |

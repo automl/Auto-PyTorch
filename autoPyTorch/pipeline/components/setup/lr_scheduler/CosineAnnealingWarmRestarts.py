@@ -1,18 +1,23 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
+from ConfigSpace.hyperparameters import (
+    UniformFloatHyperparameter,
+    UniformIntegerHyperparameter
+)
 
 import numpy as np
 
 import torch.optim.lr_scheduler
-from torch.optim.lr_scheduler import _LRScheduler
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
+from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class CosineAnnealingWarmRestarts(BaseLRComponent):
-    """
+    r"""
     Set the learning rate of each parameter group using a cosine annealing schedule,
     where \eta_{max}ηmax is set to the initial lr, T_{cur} is the number of epochs
     since the last restart and T_{i} is the number of epochs between two warm
@@ -28,14 +33,13 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         self,
         T_0: int,
         T_mult: int,
-        random_state: Optional[np.random.RandomState] = None
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.epoch,
+        random_state: Optional[np.random.RandomState] = None,
     ):
-
-        super().__init__()
+        super().__init__(step_interval)
         self.T_0 = T_0
         self.T_mult = T_mult
         self.random_state = random_state
-        self.scheduler = None  # type: Optional[_LRScheduler]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseLRComponent:
         """
@@ -60,21 +64,28 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         return self
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'CosineAnnealingWarmRestarts',
             'name': 'Cosine Annealing WarmRestarts',
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        T_0: Tuple[Tuple[int, int], int] = ((1, 20), 1),
-                                        T_mult: Tuple[Tuple[float, float], float] = ((1.0, 2.0), 1.0)
-                                        ) -> ConfigurationSpace:
-        T_0 = UniformIntegerHyperparameter(
-            "T_0", T_0[0][0], T_0[0][1], default_value=T_0[1])
-        T_mult = UniformFloatHyperparameter(
-            "T_mult", T_mult[0][0], T_mult[0][1], default_value=T_mult[1])
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        T_0: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_0',
+                                                                   value_range=(1, 20),
+                                                                   default_value=1,
+                                                                   ),
+        T_mult: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='T_mult',
+                                                                      value_range=(1.0, 2.0),
+                                                                      default_value=1.0,
+                                                                      )
+    ) -> ConfigurationSpace:
+
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([T_0, T_mult])
+        add_hyperparameter(cs, T_0, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, T_mult, UniformFloatHyperparameter)
+
         return cs

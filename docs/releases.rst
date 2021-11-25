@@ -12,6 +12,13 @@
 Releases
 ========
 
-Version 0.0.3
+Version 0.1.1
 ==============
-TODO
+[refactor] Completely refactored version with a new scikit-learn compatible API.
+
+Contributors v0.1.1
+********************
+
+* Ravin Kohli
+* Shuhei Watanabe
+* Francisco Rivera

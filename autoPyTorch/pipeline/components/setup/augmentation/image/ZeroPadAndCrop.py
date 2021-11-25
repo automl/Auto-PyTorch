@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,8 +10,9 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
 class ZeroPadAndCrop(BaseImageAugmenter):
@@ -41,17 +42,18 @@ class ZeroPadAndCrop(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
-        percent: Tuple[Tuple, float] = ((0, 0.5), 0.1)
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        percent: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='percent',
+                                                                       value_range=(0, 0.5),
+                                                                       default_value=0.1,
+                                                                       )
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        percent = UniformFloatHyperparameter('percent', lower=percent[0][0], upper=percent[0][1],
-                                             default_value=percent[1])
-        cs.add_hyperparameters([percent])
+        add_hyperparameter(cs, percent, UniformFloatHyperparameter)
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'ZeroPadAndCrop'}

@@ -1,3 +1,5 @@
+import flaky
+
 import numpy as np
 
 import pytest
@@ -5,11 +7,17 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing import (
+    FeatureProprocessorChoice
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     NoFeaturePreprocessor import NoFeaturePreprocessor
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
-    base_feature_preprocessor_choice import FeatureProprocessorChoice
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
+
+
+@pytest.fixture
+def random_state():
+    return 11
 
 
 @pytest.fixture(params=['TruncatedSVD', 'PolynomialFeatures', 'PowerTransformer',
@@ -22,10 +30,10 @@ def preprocessor(request):
                                                     'classification_numerical_and_categorical'], indirect=True)
 class TestFeaturePreprocessors:
 
-    def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor):
+    def test_feature_preprocessor(self, fit_dictionary_tabular, preprocessor, random_state):
         preprocessor = FeatureProprocessorChoice(
             dataset_properties=fit_dictionary_tabular['dataset_properties']
-        ).get_components()[preprocessor]()
+        ).get_components()[preprocessor](random_state=random_state)
         configuration = preprocessor. \
             get_hyperparameter_search_space(dataset_properties=fit_dictionary_tabular["dataset_properties"]) \
             .get_default_configuration().get_dictionary()
@@ -51,6 +59,7 @@ class TestFeaturePreprocessors:
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)
 
+    @flaky.flaky(max_runs=3)
     def test_pipeline_fit_include(self, fit_dictionary_tabular, preprocessor):
         """
         This test ensures that a tabular classification
@@ -66,7 +75,10 @@ class TestFeaturePreprocessors:
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
-        pipeline.fit(fit_dictionary_tabular)
+        try:
+            pipeline.fit(fit_dictionary_tabular)
+        except Exception as e:
+            pytest.fail(f"For config {config} failed with {e}")
 
         # To make sure we fitted the model, there should be a
         # run summary object with accuracy

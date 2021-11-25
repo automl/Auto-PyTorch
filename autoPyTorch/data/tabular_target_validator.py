@@ -1,4 +1,4 @@
-import typing
+from typing import List, Optional, Union, cast
 
 import numpy as np
 
@@ -20,7 +20,7 @@ class TabularTargetValidator(BaseTargetValidator):
     def _fit(
         self,
         y_train: SUPPORTED_TARGET_TYPES,
-        y_test: typing.Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
     ) -> BaseEstimator:
         """
         If dealing with classification, this utility encodes the targets.
@@ -28,11 +28,11 @@ class TabularTargetValidator(BaseTargetValidator):
         It does so by also using the classes from the test data, to prevent encoding
         errors
 
-        Arguments:
+        Args:
             y_train (SUPPORTED_TARGET_TYPES)
                 The labels of the current task. They are going to be encoded in case
                 of classification
-            y_test (typing.Optional[SUPPORTED_TARGET_TYPES])
+            y_test (Optional[SUPPORTED_TARGET_TYPES])
                 A holdout set of labels
         """
         if not self.is_classification or self.type_of_target == 'multilabel-indicator':
@@ -72,7 +72,7 @@ class TabularTargetValidator(BaseTargetValidator):
             self.encoder.fit(y_train)
         else:
             if hasattr(y_train, 'iloc'):
-                y_train = typing.cast(pd.DataFrame, y_train)
+                y_train = cast(pd.DataFrame, y_train)
                 self.encoder.fit(y_train.to_numpy().reshape(-1, 1))
             else:
                 self.encoder.fit(np.array(y_train).reshape(-1, 1))
@@ -81,29 +81,32 @@ class TabularTargetValidator(BaseTargetValidator):
         if hasattr(y_train, 'dtype'):
             # Series and numpy arrays are checked here
             # Cast is as numpy for mypy checks
-            y_train = typing.cast(np.ndarray, y_train)
+            y_train = cast(np.ndarray, y_train)
             if is_numeric_dtype(y_train.dtype):
                 self.dtype = y_train.dtype
-        elif hasattr(y_train, 'dtypes') and is_numeric_dtype(typing.cast(pd.DataFrame,
-                                                                         y_train).dtypes[0]):
+        elif (
+            hasattr(y_train, 'dtypes')
+            and is_numeric_dtype(cast(pd.DataFrame, y_train).dtypes[0])
+        ):
             # This case is for pandas array with a single column
-            y_train = typing.cast(pd.DataFrame, y_train)
+            y_train = cast(pd.DataFrame, y_train)
             self.dtype = y_train.dtypes[0]
 
         return self
 
     def transform(
         self,
-        y: typing.Union[SUPPORTED_TARGET_TYPES],
+        y: Union[SUPPORTED_TARGET_TYPES],
     ) -> np.ndarray:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
-        Arguments:
+        Args:
             y (SUPPORTED_TARGET_TYPES)
                 A set of targets that are going to be encoded if the current task
                 is classification
+
         Returns:
             np.ndarray:
                 The transformed array
@@ -123,7 +126,7 @@ class TabularTargetValidator(BaseTargetValidator):
                 # The Ordinal encoder expects a 2 dimensional input.
                 # The targets are 1 dimensional, so reshape to match the expected shape
                 if hasattr(y, 'iloc'):
-                    y = typing.cast(pd.DataFrame, y)
+                    y = cast(pd.DataFrame, y)
                     y = self.encoder.transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
                 else:
                     y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
@@ -152,8 +155,8 @@ class TabularTargetValidator(BaseTargetValidator):
         """
         Revert any encoding transformation done on a target array
 
-        Arguments:
-            y (typing.Union[np.ndarray, pd.DataFrame, pd.Series]):
+        Args:
+            y (Union[np.ndarray, pd.DataFrame, pd.Series]):
                 Target array to be transformed back to original form before encoding
         Returns:
             np.ndarray:
@@ -170,7 +173,7 @@ class TabularTargetValidator(BaseTargetValidator):
         else:
             # The targets should be a flattened array, hence reshape with -1
             if hasattr(y, 'iloc'):
-                y = typing.cast(pd.DataFrame, y)
+                y = cast(pd.DataFrame, y)
                 y = self.encoder.inverse_transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
             else:
                 y = self.encoder.inverse_transform(np.array(y).reshape(-1, 1)).reshape(-1)
@@ -189,13 +192,14 @@ class TabularTargetValidator(BaseTargetValidator):
         """
         Perform dimensionality and data type checks on the targets
 
-        Arguments:
-            y (typing.Union[np.ndarray, pd.DataFrame, pd.Series]):
+        Args:
+            y (Union[np.ndarray, pd.DataFrame, pd.Series]):
                 A set of features whose dimensionality and data type is going to be checked
         """
 
-        if not isinstance(
-                y, (np.ndarray, pd.DataFrame, list, pd.Series)) and not scipy.sparse.issparse(y):
+        if not isinstance(y, (np.ndarray, pd.DataFrame,
+                              List, pd.Series)) \
+                and not scipy.sparse.issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
                              "the provided input is of type {}".format(
@@ -225,9 +229,9 @@ class TabularTargetValidator(BaseTargetValidator):
         # No Nan is supported
         has_nan_values = False
         if hasattr(y, 'iloc'):
-            has_nan_values = typing.cast(pd.DataFrame, y).isnull().values.any()
+            has_nan_values = cast(pd.DataFrame, y).isnull().values.any()
         if scipy.sparse.issparse(y):
-            y = typing.cast(scipy.sparse.spmatrix, y)
+            y = cast(scipy.sparse.spmatrix, y)
             has_nan_values = not np.array_equal(y.data, y.data)
         else:
             # List and array like values are considered here

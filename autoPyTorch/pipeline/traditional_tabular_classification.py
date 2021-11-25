@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -7,44 +7,79 @@ import numpy as np
 
 from sklearn.base import ClassifierMixin
 
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.setup.traditional_ml.base_model_choice import ModelChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from autoPyTorch.pipeline.components.setup.traditional_ml import ModelChoice
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
     """
-    A pipeline that contains steps to fit traditional ML methods for tabular classification.
+    A pipeline to fit traditional ML methods for tabular classification.
 
     Args:
         config (Configuration)
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        steps (Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]]):
+            the list of `autoPyTorchComponent` or `autoPyTorchChoice`
+            that build the pipeline. If provided, they won't be
+            dynamically produced.
+        include (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to honor during the creation of the configuration space.
+        exclude (Optional[Dict[str, Any]]):
+            Allows the caller to specify which configurations
+            to avoid during the creation of the configuration space.
+        random_state (np.random.RandomState):
+            Allows to produce reproducible results by
+            setting a seed for randomized settings
+        init_params (Optional[Dict[str, Any]]):
+            Optional initial settings for the config
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            Search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline
 
     Attributes:
+        steps (List[Tuple[str, PipelineStepType]]):
+            The steps of the current pipeline. Each step in an AutoPyTorch
+            pipeline is either a autoPyTorchChoice or autoPyTorchComponent.
+            Both of these are child classes of sklearn 'BaseEstimator' and
+            they perform operations on and transform the fit dictionary.
+            For more info, check documentation of 'autoPyTorchChoice' or
+            'autoPyTorchComponent'.
+        config (Configuration):
+            A configuration to delimit the current component choice
+        random_state (Optional[np.random.RandomState]):
+            Allows to produce reproducible results by setting a
+            seed for randomized settings
     """
 
     def __init__(
         self,
         config: Optional[Configuration] = None,
-        steps: Optional[List[Tuple[str, autoPyTorchChoice]]] = None,
-        dataset_properties: Optional[Dict[str, Any]] = None,
+        steps: Optional[List[Tuple[str, Union[autoPyTorchComponent, autoPyTorchChoice]]]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         random_state: Optional[np.random.RandomState] = None,
-        init_params: Optional[Dict[str, Any]] = None
+        init_params: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
         super().__init__(
             config, steps, dataset_properties, include, exclude,
-            random_state, init_params)
+            random_state, init_params, search_space_updates)
 
     def predict(self, X: np.ndarray, batch_size: Optional[int] = None
                 ) -> np.ndarray:
         """Predict the output using the selected model.
 
         Args:
-            X (np.ndarray): input data to the array
-            batch_size (Optional[int]): batch_size controls whether the pipeline will be
+            X (np.ndarray):
+                Input data to the array
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be
                 called on small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
 
@@ -83,12 +118,15 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """predict_proba.
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
+            X (np.ndarray):
+                Input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                Controls whether the pipeline will be called on
+                small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
         Returns:
-            np.ndarray: Probabilities of the target being certain class
+            np.ndarray:
+                Probabilities of the target being certain class
         """
         if batch_size is None:
             return self.named_steps['model_trainer'].predict_proba(X)
@@ -118,7 +156,7 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
 
     def _get_hyperparameter_search_space(
             self,
-            dataset_properties: Dict[str, Any],
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
             include: Optional[Dict[str, Any]] = None,
             exclude: Optional[Dict[str, Any]] = None,
     ) -> ConfigurationSpace:
@@ -129,23 +167,26 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            include (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            exclude (Optional[Dict[str, Any]]):
+                What hyper-parameter configurations
                 to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices
+                of components
 
         Returns:
-            cs (Configuration): The configuration space describing
-                the SimpleRegressionClassifier.
+            cs (Configuration):
+                The configuration space describing
+                the TraditionalTabularClassificationPipeline.
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
             dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
@@ -168,24 +209,28 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         self.dataset_properties = dataset_properties
         return cs
 
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
+    def _get_pipeline_steps(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]],
+    ) -> List[Tuple[str, PipelineStepType]]:
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
+            List[Tuple[str, PipelineStepType]]:
+                List of steps sequentially exercised
                 by the pipeline.
         """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
+        steps: List[Tuple[str, PipelineStepType]] = []
 
-        default_dataset_properties = {'target_type': 'tabular_classification'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'tabular_classification'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 
         steps.extend([
-            ("model_trainer", ModelChoice(default_dataset_properties)),
+            ("model_trainer", ModelChoice(default_dataset_properties,
+                                          random_state=self.random_state)),
         ])
         return steps
 
@@ -194,9 +239,10 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         Returns the name of the current estimator.
 
         Returns:
-            str: name of the pipeline type
+            str:
+                Name of the pipeline type
         """
-        return "tabular_classifier"
+        return "traditional_tabular_learner"
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         """
@@ -207,12 +253,18 @@ class TraditionalTabularClassificationPipeline(ClassifierMixin, BasePipeline):
         [{'PreProcessing': <>, 'Estimator': <>}]
 
         Returns:
-            Dict: contains the pipeline representation in a short format
+            Dict:
+                Contains the pipeline representation in a short format
         """
         estimator_name = 'TraditionalTabularClassification'
         if self.steps[0][1].choice is not None:
-            estimator_name = cast(str,
-                                  self.steps[0][1].choice.model.get_properties()['shortname'])
+            if self.steps[0][1].choice.model is None:
+                estimator_name = self.steps[0][1].choice.__class__.__name__
+            else:
+                estimator_name = cast(
+                    str,
+                    self.steps[0][1].choice.model.get_properties()['shortname']
+                )
         return {
             'Preprocessing': 'None',
             'Estimator': estimator_name,

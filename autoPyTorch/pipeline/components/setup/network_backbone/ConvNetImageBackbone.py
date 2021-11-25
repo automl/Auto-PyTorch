@@ -9,8 +9,10 @@ from ConfigSpace.hyperparameters import (
 
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ConvNetImageBackbone(NetworkBackboneComponent):
@@ -57,7 +59,7 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
         return backbone
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
             'shortname': 'ConvNetImageBackbone',
             'name': 'ConvNetImageBackbone',
@@ -67,56 +69,45 @@ class ConvNetImageBackbone(NetworkBackboneComponent):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
-                                        num_layers: Tuple[Tuple, int] = ((2, 8), 4),
-                                        num_init_filters: Tuple[Tuple, int] = ((16, 64), 32),
-                                        activation: Tuple[Tuple, str] = (tuple(_activations.keys()),
-                                                                         list(_activations.keys())[0]),
-                                        kernel_size: Tuple[Tuple, int] = ((3, 5), 3),
-                                        stride: Tuple[Tuple, int] = ((1, 3), 1),
-                                        padding: Tuple[Tuple, int] = ((2, 3), 2),
-                                        pool_size: Tuple[Tuple, int] = ((2, 3), 2)
-                                        ) -> ConfigurationSpace:
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
+                                                                          value_range=(2, 8),
+                                                                          default_value=4,
+                                                                          ),
+        conv_init_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_init_filters',
+                                                                                 value_range=(16, 64),
+                                                                                 default_value=32,
+                                                                                 ),
+        activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='activation',
+                                                                          value_range=tuple(_activations.keys()),
+                                                                          default_value=list(_activations.keys())[0],
+                                                                          ),
+        conv_kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_size',
+                                                                                value_range=(3, 5),
+                                                                                default_value=3,
+                                                                                ),
+        conv_kernel_stride: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_stride',
+                                                                                  value_range=(1, 3),
+                                                                                  default_value=1,
+                                                                                  ),
+        conv_kernel_padding: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='conv_kernel_padding',
+                                                                                   value_range=(2, 3),
+                                                                                   default_value=2,
+                                                                                   ),
+        pool_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='pool_size',
+                                                                         value_range=(2, 3),
+                                                                         default_value=2,
+                                                                         )
+    ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
-        min_num_layers, max_num_layers = num_layers[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('num_layers',
-                                                           lower=min_num_layers,
-                                                           upper=max_num_layers,
-                                                           default_value=num_layers[1]))
-
-        cs.add_hyperparameter(CategoricalHyperparameter('activation',
-                                                        choices=activation[0],
-                                                        default_value=activation[1]))
-
-        min_init_filters, max_init_filters = num_init_filters[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('conv_init_filters',
-                                                           lower=min_init_filters,
-                                                           upper=max_init_filters,
-                                                           default_value=num_init_filters[1]))
-
-        min_kernel_size, max_kernel_size = kernel_size[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('conv_kernel_size',
-                                                           lower=min_kernel_size,
-                                                           upper=max_kernel_size,
-                                                           default_value=kernel_size[1]))
-
-        min_stride, max_stride = stride[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('conv_kernel_stride',
-                                                           lower=min_stride,
-                                                           upper=max_stride,
-                                                           default_value=stride[1]))
-
-        min_padding, max_padding = padding[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('conv_kernel_padding',
-                                                           lower=min_padding,
-                                                           upper=max_padding,
-                                                           default_value=padding[1]))
-
-        min_pool_size, max_pool_size = pool_size[0]
-        cs.add_hyperparameter(UniformIntegerHyperparameter('pool_size',
-                                                           lower=min_pool_size,
-                                                           upper=max_pool_size,
-                                                           default_value=pool_size[1]))
+        add_hyperparameter(cs, num_layers, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_init_filters, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        add_hyperparameter(cs, conv_kernel_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_kernel_stride, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, conv_kernel_padding, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, pool_size, UniformIntegerHyperparameter)
 
         return cs

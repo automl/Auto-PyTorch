@@ -81,4 +81,4 @@ class NetworkHeadComponent(autoPyTorchComponent):
         Returns:
             str: Name of the head
         """
-        return cls.get_properties()["shortname"]
+        return str(cls.get_properties()["shortname"])

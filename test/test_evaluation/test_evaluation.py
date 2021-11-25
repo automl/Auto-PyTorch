@@ -10,12 +10,15 @@ import numpy as np
 
 import pynisher
 
+import pytest
+
 from smac.runhistory.runhistory import RunInfo
 from smac.stats.stats import Stats
 from smac.tae import StatusType
+from smac.utils.constants import MAXINT
 
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, log_loss
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
@@ -106,7 +109,7 @@ class EvaluationTest(unittest.TestCase):
         info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
                                       instance_specific=None, seed=1, capped=False))
         self.assertEqual(info[0].config.config_id, 198)
-        self.assertEqual(info[1].status, StatusType.SUCCESS)
+        self.assertEqual(info[1].status, StatusType.SUCCESS, info)
         self.assertEqual(info[1].cost, 0.5)
         self.assertIsInstance(info[1].time, float)
 
@@ -380,8 +383,18 @@ class EvaluationTest(unittest.TestCase):
                 """'save_targets_ensemble'",)""",
                 """AttributeError("'BackendMock' object has no attribute """
                 """'save_targets_ensemble'")""",
+                """AttributeError('save_targets_ensemble')"""
+                """AttributeError("'BackendMock' object has no attribute """
+                """'setup_logger'",)""",
+                """AttributeError("'BackendMock' object has no attribute """
+                """'setup_logger'")""",
             )
         )
         self.assertNotIn('exitcode', info[1].additional_info)
         self.assertNotIn('exit_status', info[1].additional_info)
         self.assertNotIn('traceback', info[1])
+
+
+@pytest.mark.parametrize("metric,expected", [(accuracy, 1.0), (log_loss, MAXINT)])
+def test_get_cost_of_crash(metric, expected):
+    assert get_cost_of_crash(metric) == expected

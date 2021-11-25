@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -12,7 +12,9 @@ from imgaug.augmenters.meta import Augmenter
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.augmentation.image.base_image_augmenter import BaseImageAugmenter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 class GaussianNoise(BaseImageAugmenter):
@@ -29,22 +31,26 @@ class GaussianNoise(BaseImageAugmenter):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, str]] = None,
-        use_augmenter: Tuple[Tuple[bool, bool], bool] = ((True, False), True),
-        sigma_offset: Tuple[Tuple[float, float], float] = ((0.0, 3.0), 0.3)
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        use_augmenter: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_augmenter",
+                                                                             value_range=(True, False),
+                                                                             default_value=True,
+                                                                             ),
+        sigma_offset: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="sigma_offset",
+                                                                            value_range=(0.0, 3.0),
+                                                                            default_value=0.3,
+                                                                            ),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()
-        sigma_offset = UniformFloatHyperparameter('sigma_offset', lower=sigma_offset[0][0], upper=sigma_offset[0][1],
-                                                  default_value=sigma_offset[1])
-        use_augmenter = CategoricalHyperparameter('use_augmenter', choices=use_augmenter[0],
-                                                  default_value=use_augmenter[1])
+        use_augmenter = get_hyperparameter(use_augmenter, CategoricalHyperparameter)
+        sigma_offset = get_hyperparameter(sigma_offset, UniformFloatHyperparameter)
         cs.add_hyperparameters([use_augmenter, sigma_offset])
         # only add hyperparameters to configuration space if we are using the augmenter
         cs.add_condition(CS.EqualsCondition(sigma_offset, use_augmenter, True))
         return cs
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {'name': 'GaussianNoise'}
