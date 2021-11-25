@@ -23,6 +23,10 @@ from autoPyTorch.api.results_manager import (
 from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
+T, NT = 'traditional', 'non-traditional'
+SCORES = [0.1 * (i + 1) for i in range(10)]
+
+
 def _check_status(status):
     """ Based on runhistory_B.json """
     ans = [
@@ -49,6 +53,18 @@ def _check_costs(costs):
     assert np.allclose(1 - np.array(costs), ans)
     assert isinstance(costs, np.ndarray)
     assert costs.dtype is np.dtype(np.float)
+
+
+def _check_end_times(end_times):
+    """ Based on runhistory_B.json """
+    ans = [1637342642.7887495, 1637342647.2651122, 1637342675.2555833, 1637342681.334954,
+           1637342693.2717755, 1637342704.341065, 1637342726.1866672, 1637342743.3274522, 
+           1637342749.9442234, 1637342762.5487585, 1637342779.192385, 1637342804.3368232,
+           1637342820.8067145, 1637342846.0210106, 1637342897.1205413, 1637342928.7456856]
+
+    assert np.allclose(end_times, ans)
+    assert isinstance(end_times, np.ndarray)
+    assert end_times.dtype is np.dtype(np.float)
 
 
 def _check_fit_times(fit_times):
@@ -160,6 +176,40 @@ def test_raise_error_in_get_start_time():
     assert excinfo._excinfo[0] == ValueError
 
 
+def test_search_results_sort_by_endtime():
+    run_history = RunHistory()
+    n_configs = len(SCORES)
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+    end_times = [8, 4, 3, 6, 0, 7, 1, 9, 2, 5]
+    order = np.argsort(end_times)
+    ans = np.array(SCORES)[order].tolist()
+    status_types = [StatusType.SUCCESS, StatusType.DONOTADVANCE] * (n_configs // 2)
+
+    for i, (fixed_val, et, status) in enumerate(zip(SCORES, end_times, status_types)):
+        config = Configuration(cs, {'a': fixed_val})
+        run_history.add(
+            config=config, cost=fixed_val,
+            status=status, budget=fixed_val,
+            time=et - fixed_val, starttime=fixed_val, endtime=et,
+            additional_info={
+                'a': fixed_val,
+                'configuration_origin': [T, NT][i % 2],
+                'opt_loss': {}
+            }
+        )
+
+    sr = SearchResults(accuracy, scoring_functions=[], run_history=run_history, order_by_endtime=True)
+    assert sr.budgets == ans
+    assert np.allclose(1 - sr.opt_scores, ans)
+    assert sr._end_times == list(range(n_configs))
+    assert all(c.get('a') == val for val, c in zip(ans, sr.configs))
+    assert all(info['a'] == val for val, info in zip(ans, sr.additional_infos))
+    assert np.all(np.array([STATUS2MSG[s] for s in status_types])[order] == np.array(sr.status_types))
+    assert sr.is_traditionals == np.array([True, False] * 5)[order].tolist()
+    assert np.allclose(sr.fit_times, np.subtract(np.arange(n_configs), ans))
+
+
 def test_search_results_sprint_statistics():
     api = BaseTask()
     for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
@@ -185,6 +235,7 @@ def test_search_results_sprint_statistics():
 
     _check_status(search_results.status_types)
     _check_costs(search_results.opt_scores)
+    _check_end_times(search_results.end_times)
     _check_fit_times(search_results.fit_times)
     _check_budgets(search_results.budgets)
     _check_metric_dict(search_results.metric_dict, search_results.status_types, worst_val)
@@ -222,10 +273,6 @@ def test_check_run_history(run_history):
         manager._check_run_history()
 
     assert excinfo._excinfo[0] == RuntimeError
-
-
-T, NT = 'traditional', 'non-traditional'
-SCORES = [0.1 * (i + 1) for i in range(10)]
 
 
 @pytest.mark.parametrize('include_traditional', (True, False))

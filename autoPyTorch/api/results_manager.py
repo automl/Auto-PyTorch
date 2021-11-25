@@ -94,7 +94,7 @@ def _extract_metrics_info(
     }
 
 
-class EnsembleResults:
+class EnsembleResults:  # TODO: Add tests
     def __init__(
         self,
         metric: autoPyTorchMetric,
@@ -321,7 +321,7 @@ class SearchResults:
         )
 
 
-class MetricResults:
+class MetricResults:  # TODO: add tests
     def __init__(
         self,
         metric: autoPyTorchMetric,
