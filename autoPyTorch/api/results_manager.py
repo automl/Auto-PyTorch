@@ -345,7 +345,10 @@ class MetricResults:
         except KeyError:
             self.ensemble_results = None
 
-        if self.search_results.end_times[-1] < self.ensemble_results.end_times[-1]:
+        if (
+            self.ensemble_results is not None
+            and self.search_results.end_times[-1] < self.ensemble_results.end_times[-1]
+        ):
             # Augment runtime table with the final available end time
             self.cum_times = np.hstack(
                 [self.search_results.end_times - self.start_time,

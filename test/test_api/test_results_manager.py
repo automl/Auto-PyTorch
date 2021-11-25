@@ -119,6 +119,13 @@ def _check_metric_dict(metric_dict, status_types, worst_val):
 
 
 def _check_metric_results(scores, metric, run_history, ensemble_performance_history):
+    if metric.name == 'accuracy':
+        dummy_history = [{'Timestamp': datetime(2000, 1, 1), 'train_log_loss': 1, 'test_log_loss': 1}]
+        mr = MetricResults(metric, run_history, dummy_history)
+        assert mr.ensemble_results is None
+        data = mr.get_ensemble_merged_data()
+        assert all(np.allclose(data[key], mr.data[key]) for key in data.keys())
+
     mr = MetricResults(metric, run_history, ensemble_performance_history)
     perfs = np.array([cost2metric(s, metric) for s in scores])
     modified_scores = scores[::2] + [0]
