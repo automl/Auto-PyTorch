@@ -18,7 +18,6 @@ from autoPyTorch.api.results_manager import (
     EnsembleResults,
     MetricResults,
     ResultsManager,
-    STATUS2MSG,
     SearchResults,
     cost2metric,
     get_start_time
@@ -34,17 +33,17 @@ END_TIMES = [8, 4, 3, 6, 0, 7, 1, 9, 2, 5]
 def _check_status(status):
     """ Based on runhistory_B.json """
     ans = [
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.CRASHED], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.SUCCESS],
-        STATUS2MSG[StatusType.TIMEOUT], STATUS2MSG[StatusType.TIMEOUT],
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.CRASHED, StatusType.SUCCESS,
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.SUCCESS, StatusType.SUCCESS,
+        StatusType.TIMEOUT, StatusType.TIMEOUT,
     ]
     assert isinstance(status, list)
-    assert isinstance(status[0], str)
+    assert isinstance(status[0], StatusType)
     assert status == ans
 
 
@@ -97,7 +96,7 @@ def _check_budgets(budgets):
 def _check_additional_infos(status_types, additional_infos):
     for i, status in enumerate(status_types):
         info = additional_infos[i]
-        if status in (STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.DONOTADVANCE]):
+        if status in (StatusType.SUCCESS, StatusType.DONOTADVANCE):
             metric_info = info.get('opt_loss', None)
             assert metric_info is not None
         elif info is not None:
@@ -114,7 +113,7 @@ def _check_metric_dict(metric_dict, status_types, worst_val):
     for key, vals in metric_dict.items():
         # ^ is a XOR operator
         # True and False / False and True must be fulfilled
-        assert all([(s == STATUS2MSG[StatusType.SUCCESS]) ^ np.isclose([val], [worst_val])
+        assert all([(s == StatusType.SUCCESS) ^ np.isclose([val], [worst_val])
                     for s, val in zip(status_types, vals)])
 
 
@@ -243,7 +242,7 @@ def test_search_results_sort_by_endtime():
     assert sr._end_times == list(range(n_configs))
     assert all(c.get('a') == val for val, c in zip(ans, sr.configs))
     assert all(info['a'] == val for val, info in zip(ans, sr.additional_infos))
-    assert np.all(np.array([STATUS2MSG[s] for s in status_types])[order] == np.array(sr.status_types))
+    assert np.all(np.array([s for s in status_types])[order] == np.array(sr.status_types))
     assert sr.is_traditionals == np.array([True, False] * 5)[order].tolist()
     assert np.allclose(sr.fit_times, np.subtract(np.arange(n_configs), ans))
 

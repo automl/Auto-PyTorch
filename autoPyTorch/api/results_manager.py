@@ -17,14 +17,15 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 
 # TODO remove StatusType.RUNNING at some point in the future when the new SMAC 0.13.2
 #  is the new minimum required version!
-STATUS2MSG = {
-    StatusType.SUCCESS: 'Success',
-    StatusType.DONOTADVANCE: 'Success (but did not advance to higher budget)',
-    StatusType.TIMEOUT: 'Timeout',
-    StatusType.CRASHED: 'Crash',
-    StatusType.ABORT: 'Abort',
-    StatusType.MEMOUT: 'Memory out'
-}
+STATUS_TYPES = [
+    StatusType.SUCCESS,
+    # Success (but did not advance to higher budget such as cutoff by hyperband)
+    StatusType.DONOTADVANCE,
+    StatusType.TIMEOUT,
+    StatusType.CRASHED,
+    StatusType.ABORT,
+    StatusType.MEMOUT
+]
 
 
 def cost2metric(cost: float, metric: autoPyTorchMetric) -> float:
@@ -54,10 +55,9 @@ def get_start_time(run_history: RunHistory) -> float:
 
     start_times = []
     for run_value in run_history.data.values():
-        status_msg = STATUS2MSG.get(run_value.status, None)
         if run_value.status in (StatusType.STOP, StatusType.RUNNING):
             continue
-        elif status_msg is None:
+        elif run_value.status not in STATUS_TYPES:
             raise ValueError(f'Unexpected run status: {run_value.status}')
 
         start_times.append(run_value.starttime)
@@ -191,7 +191,7 @@ class SearchResults:
         self._fit_times: List[float] = []
         self._end_times: List[float] = []
         self.configs: List[Configuration] = []
-        self.status_types: List[str] = []
+        self.status_types: List[StatusType] = []
         self.budgets: List[float] = []
         self.config_ids: List[int] = []
         self.is_traditionals: List[bool] = []
@@ -219,7 +219,7 @@ class SearchResults:
     def update(
         self,
         config: Configuration,
-        status: str,
+        status: StatusType,
         budget: float,
         fit_time: float,
         end_time: float,
@@ -264,15 +264,17 @@ class SearchResults:
         """
         order = np.argsort(self._end_times)
 
-        self._opt_scores = np.array(self._opt_scores)[order].tolist()
-        self._fit_times = np.array(self._fit_times)[order].tolist()
-        self._end_times = np.array(self._end_times)[order].tolist()
-        self.configs = np.array(self.configs)[order].tolist()
-        self.status_types = np.array(self.status_types)[order].tolist()
-        self.budgets = np.array(self.budgets)[order].tolist()
-        self.config_ids = np.array(self.config_ids)[order].tolist()
-        self.is_traditionals = np.array(self.is_traditionals)[order].tolist()
-        self.additional_infos = np.array(self.additional_infos)[order].tolist()
+        self._opt_scores = [self._opt_scores[idx] for idx in order]
+        self._fit_times = [self._fit_times[idx] for idx in order]
+        self._end_times = [self._end_times[idx] for idx in order]
+        self.status_types = [self.status_types[idx] for idx in order]
+        self.budgets = [self.budgets[idx] for idx in order]
+        self.config_ids = [self.config_ids[idx] for idx in order]
+        self.is_traditionals = [self.is_traditionals[idx] for idx in order]
+        self.additional_infos = [self.additional_infos[idx] for idx in order]
+
+        # Don't use numpy slicing to avoid version dependency (cast config to object might cause issues)
+        self.configs = [self.configs[idx] for idx in order]
 
         # Only rank_test_scores is np.ndarray
         self.rank_test_scores = self.rank_test_scores[order]
@@ -292,10 +294,9 @@ class SearchResults:
             config_id = run_key.config_id
             config = run_history.ids_config[config_id]
 
-            status_msg = STATUS2MSG.get(run_value.status, None)
             if run_value.status in (StatusType.STOP, StatusType.RUNNING):
                 continue
-            elif status_msg is None:
+            elif run_value.status not in STATUS_TYPES:
                 raise ValueError(f'Unexpected run status: {run_value.status}')
 
             is_traditional = False  # If run is not successful, unsure ==> not True ==> False
@@ -303,7 +304,7 @@ class SearchResults:
                 is_traditional = run_value.additional_info['configuration_origin'] == 'traditional'
 
             self.update(
-                status=status_msg,
+                status=run_value.status,
                 config=config,
                 budget=run_key.budget,
                 fit_time=run_value.time,
@@ -545,17 +546,17 @@ class ResultsManager:
                 Formatted string with statistics
         """
         search_results = self.get_search_results(scoring_functions, metric)
-        success_msgs = (STATUS2MSG[StatusType.SUCCESS], STATUS2MSG[StatusType.DONOTADVANCE])
+        success_status = (StatusType.SUCCESS, StatusType.DONOTADVANCE)
         sio = io.StringIO()
         sio.write("autoPyTorch results:\n")
         sio.write(f"\tDataset name: {dataset_name}\n")
         sio.write(f"\tOptimisation Metric: {metric}\n")
 
         num_runs = len(search_results.status_types)
-        num_success = sum([s in success_msgs for s in search_results.status_types])
-        num_crash = sum([s == STATUS2MSG[StatusType.CRASHED] for s in search_results.status_types])
-        num_timeout = sum([s == STATUS2MSG[StatusType.TIMEOUT] for s in search_results.status_types])
-        num_memout = sum([s == STATUS2MSG[StatusType.MEMOUT] for s in search_results.status_types])
+        num_success = sum([s in success_status for s in search_results.status_types])
+        num_crash = sum([s == StatusType.CRASHED for s in search_results.status_types])
+        num_timeout = sum([s == StatusType.TIMEOUT for s in search_results.status_types])
+        num_memout = sum([s == StatusType.MEMOUT for s in search_results.status_types])
 
         if num_success > 0:
             best_score = metric._sign * np.max(metric._sign * search_results.opt_scores)
