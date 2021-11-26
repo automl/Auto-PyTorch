@@ -139,7 +139,7 @@ def _check_metric_results(scores, metric, run_history, ensemble_performance_hist
 
     # the end times of synthetic ensemble is [0.25, 0.45, 0.45, 0.65, 0.85, 0.85]
     # the end times of synthetic run history is 0.1 * np.arange(1, 9) or 0.1 * np.arange(2, 10)
-    ensemble_ends_later = np.allclose(mr.search_results.end_times, 0.1 * np.arange(1, 9))
+    ensemble_ends_later = mr.search_results.end_times[-1] < mr.ensemble_results.end_times[-1]
     indices = [2, 4, 4, 6, 8, 8] if ensemble_ends_later else [1, 3, 3, 5, 7, 7]
 
     merged_data = mr.get_ensemble_merged_data()
@@ -278,6 +278,9 @@ def test_ensemble_results():
 @pytest.mark.parametrize('scores', (SCORES[:8], SCORES[:8][::-1]))
 @pytest.mark.parametrize('ensemble_ends_later', (True, False))
 def test_metric_results(metric, scores, ensemble_ends_later):
+    # since datetime --> timestamp variates between machines and float64 might not
+    # be able to handle time precisely enough, we might need to change t0 in the future.
+    # Basically, it happens because this test is checking by the precision of milli second
     t0, ms_unit = (1970, 1, 1, 9, 0, 0), 100000
     ensemble_performance_history = [
         {'Timestamp': datetime(*t0, ms_unit * 2 * (i + 1) + ms_unit // 2),
@@ -304,7 +307,8 @@ def test_metric_results(metric, scores, ensemble_ends_later):
 
     for i, fixed_val in enumerate(scores):
         config = Configuration(cs, {'a': fixed_val})
-        st, et = 0.1 * (i + 1 - ensemble_ends_later), 0.1 * (i + 2 - ensemble_ends_later)
+        st = datetime.timestamp(datetime(*t0, ms_unit * (i + 1 - ensemble_ends_later)))
+        et = datetime.timestamp(datetime(*t0, ms_unit * (i + 2 - ensemble_ends_later)))
         run_history.add(
             config=config, cost=1, budget=0,
             time=0.1, starttime=st, endtime=et,
