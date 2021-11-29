@@ -1,8 +1,18 @@
+import json
+import os
+from datetime import datetime
+from test.test_api.utils import make_dict_run_history_data
+from unittest.mock import MagicMock
+
+from ConfigSpace import ConfigurationSpace
+
 import matplotlib.pyplot as plt
 
 import pytest
 
+from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.api.results_visualizer import PlotSettingParams, ResultsVisualizer
+from autoPyTorch.metrics import accuracy, balanced_accuracy
 
 
 @pytest.mark.parametrize('params', (
@@ -49,4 +59,63 @@ def test_set_plot_args(params):
     else:
         assert ax.get_legend() is None
 
+    plt.close()
+
+
+@pytest.mark.parametrize('metric_name', ('unknown', 'accuracy'))
+def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
+    api = BaseTask()
+
+    if metric_name == 'unknown':
+        with pytest.raises(ValueError) as excinfo:
+            api.plot_perf_over_time(metric_name)
+        assert excinfo._excinfo[0] == ValueError
+    else:
+        with pytest.raises(RuntimeError) as excinfo:
+            api.plot_perf_over_time(metric_name)
+        assert excinfo._excinfo[0] == RuntimeError
+
+
+def test_plot_perf_over_time():
+    dummy_history = [{'Timestamp': datetime(2022, 1, 1), 'train_accuracy': 1, 'test_accuracy': 1}]
+    api = BaseTask()
+    run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                   '.tmp_api/runhistory_B.json'),
+                                      mode='r'))['data']
+    api._results_manager.run_history = MagicMock()
+    api.run_history.empty = MagicMock(return_value=False)
+
+    # The run_history has 16 runs + 1 run interruption ==> 16 runs
+    api.run_history.data = make_dict_run_history_data(run_history_data)
+    api._results_manager.ensemble_performance_history = dummy_history
+    api._metric = accuracy
+    api.dataset_name = 'iris'
+    api._scoring_functions = [accuracy, balanced_accuracy]
+    api.search_space = MagicMock(spec=ConfigurationSpace)
+
+    api.plot_perf_over_time(metric_name=accuracy.name)
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    api.plot_perf_over_time(metric_name=accuracy.name, ax=ax)
+
+    ans = set([
+        'single train accuracy',
+        'single test accuracy',
+        'single opt accuracy',
+        'ensemble train accuracy',
+        'ensemble test accuracy',
+    ])
+    legend_set = set([txt._text for txt in ax.get_legend().texts])
+    assert ans == legend_set
+    plt.close()
+
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    api.plot_perf_over_time(metric_name=balanced_accuracy.name, ax=ax)
+
+    ans = set([  # ensemble will be removed if history does not have the metric
+        'single train balanced_accuracy',
+        'single test balanced_accuracy',
+        'single opt balanced_accuracy'
+    ])
+    legend_set = set([txt._text for txt in ax.get_legend().texts])
+    assert ans == legend_set
     plt.close()

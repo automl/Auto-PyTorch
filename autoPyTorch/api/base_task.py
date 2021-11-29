@@ -1522,6 +1522,8 @@ class BaseTask:
                 f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
                 f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
             )
+        if len(self.ensemble_performance_history) == 0:
+            raise RuntimeError('Visualization is available only after ensembles are evaluated.')
 
         results = MetricResults(
             metric=getattr(metrics, metric_name),
