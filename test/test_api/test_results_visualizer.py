@@ -76,7 +76,8 @@ def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
         assert excinfo._excinfo[0] == RuntimeError
 
 
-def test_plot_perf_over_time():
+@pytest.mark.parametrize('metric_name', ('balanced_accuracy', 'accuracy'))
+def test_plot_perf_over_time(metric_name):
     dummy_history = [{'Timestamp': datetime(2022, 1, 1), 'train_accuracy': 1, 'test_accuracy': 1}]
     api = BaseTask()
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
@@ -93,28 +94,18 @@ def test_plot_perf_over_time():
     api._scoring_functions = [accuracy, balanced_accuracy]
     api.search_space = MagicMock(spec=ConfigurationSpace)
 
-    api.plot_perf_over_time(metric_name=accuracy.name)
+    api.plot_perf_over_time(metric_name=metric_name)
     _, ax = plt.subplots(nrows=1, ncols=1)
-    api.plot_perf_over_time(metric_name=accuracy.name, ax=ax)
+    api.plot_perf_over_time(metric_name=metric_name, ax=ax)
 
     ans = set([
-        'single train accuracy',
-        'single test accuracy',
-        'single opt accuracy',
-        'ensemble train accuracy',
-        'ensemble test accuracy',
-    ])
-    legend_set = set([txt._text for txt in ax.get_legend().texts])
-    assert ans == legend_set
-    plt.close()
-
-    _, ax = plt.subplots(nrows=1, ncols=1)
-    api.plot_perf_over_time(metric_name=balanced_accuracy.name, ax=ax)
-
-    ans = set([  # ensemble will be removed if history does not have the metric
-        'single train balanced_accuracy',
-        'single test balanced_accuracy',
-        'single opt balanced_accuracy'
+        name
+        for name in [f'single train {metric_name}',
+                     f'single test {metric_name}',
+                     f'single opt {metric_name}',
+                     f'ensemble train {metric_name}',
+                     f'ensemble test {metric_name}']
+        if name.startswith('single') or metric_name == api._metric.name
     ])
     legend_set = set([txt._text for txt in ax.get_legend().texts])
     assert ans == legend_set
