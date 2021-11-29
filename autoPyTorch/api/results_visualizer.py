@@ -89,7 +89,7 @@ class ScaleChoices(Enum):
 
 
 def _get_perf_and_time(  # TODO: Add tests
-    results: np.ndarray,
+    cum_results: np.ndarray,
     cum_times: np.ndarray,
     plot_setting_params: PlotSettingParams,
     worst_val: float
@@ -98,7 +98,7 @@ def _get_perf_and_time(  # TODO: Add tests
     Get the performance and time step to plot.
 
     Args:
-        results (np.ndarray):
+        cum_results (np.ndarray):
             The cumulated performance per evaluation.
         cum_times (np.ndarray):
             The cumulated runtime at each end of evaluations.
@@ -120,13 +120,15 @@ def _get_perf_and_time(  # TODO: Add tests
         raise ValueError(f'xscale and yscale must be in {scale_choices}, '
                          f'but got xscale={plot_setting_params.xscale}, yscale={plot_setting_params.yscale}')
 
-    n_evals, runtime_lb, runtime_ub = results.size, cum_times[0], cum_times[-1]
+    n_evals, runtime_lb, runtime_ub = cum_results.size, cum_times[0], cum_times[-1]
 
     if plot_setting_params.xscale == 'log':
         # Take the even time interval in the log scale and revert
         check_points = np.exp(np.linspace(np.log(runtime_lb), np.log(runtime_ub), plot_setting_params.n_points))
     else:
         check_points = np.linspace(runtime_lb, runtime_ub, plot_setting_params.n_points)
+
+    check_points += 1e-8  # Prevent float error
 
     # The worst possible value is always at the head
     perf_by_time_step = np.full_like(check_points, worst_val)
@@ -140,7 +142,7 @@ def _get_perf_and_time(  # TODO: Add tests
         if cur:  # filter cur - 1 == -1
             # results[cur - 1] was obtained before or at the checkpoint
             # ==> The best performance up to this checkpoint
-            perf_by_time_step[i] = results[cur - 1]
+            perf_by_time_step[i] = cum_results[cur - 1]
 
     if plot_setting_params.yscale == 'log' and np.any(perf_by_time_step < 0):
         raise ValueError('log scale is not available when performance metric can be negative.')
@@ -183,7 +185,7 @@ class ResultsVisualizer:
     def _plot_individual_perf_over_time(
         ax: plt.Axes,
         cum_times: np.ndarray,
-        results: np.ndarray,
+        cum_results: np.ndarray,
         worst_val: float,
         plot_setting_params: PlotSettingParams,
         label: Optional[str] = None,
@@ -200,7 +202,7 @@ class ResultsVisualizer:
             cum_times (np.ndarray):
                 The cumulated time until each end of config evaluation.
             results (np.ndarray):
-                The performance per evaluation.
+                The cumulated performance per evaluation.
             worst_val (float):
                 The worst possible value given a metric.
             plot_setting_params (PlotSettingParams):
@@ -213,7 +215,7 @@ class ResultsVisualizer:
                 Arguments for the ax.plot.
         """
         check_points, perf_by_time_step = _get_perf_and_time(
-            results=results,
+            cum_results=cum_results,
             cum_times=cum_times,
             plot_setting_params=plot_setting_params,
             worst_val=worst_val
@@ -259,10 +261,10 @@ class ResultsVisualizer:
         for key in data.keys():
             _label, _color, _perfs = labels[key], colors[key], data[key]
             # Take the best results over time
-            _perfs = np.minimum.accumulate(_perfs) if minimize else np.maximum.accumulate(_perfs)
+            _cum_perfs = np.minimum.accumulate(_perfs) if minimize else np.maximum.accumulate(_perfs)
 
             self._plot_individual_perf_over_time(  # type: ignore
-                ax=ax, results=_perfs, cum_times=cum_times,
+                ax=ax, cum_results=_cum_perfs, cum_times=cum_times,
                 plot_setting_params=plot_setting_params,
                 worst_val=results.metric._worst_possible_result,
                 label=_label if _label is not None else ' '.join(key.split('::')),
