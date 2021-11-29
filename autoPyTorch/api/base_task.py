@@ -33,7 +33,7 @@ from smac.tae import StatusType
 
 from autoPyTorch import metrics
 from autoPyTorch.api.results_manager import MetricResults, ResultsManager, SearchResults
-from autoPyTorch.api.run_history_visualizer import ColorLabelSettings, PlotSettingParams, RunHistoryVisualizer
+from autoPyTorch.api.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
@@ -194,7 +194,7 @@ class BaseTask:
         self.pipeline_options = replace_string_bool_to_bool(json.load(open(
             os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
 
-        self._visualizer = RunHistoryVisualizer()
+        self._visualizer = ResultsVisualizer()
 
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None

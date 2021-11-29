@@ -148,7 +148,7 @@ def _get_perf_and_time(  # TODO: Add tests
     return check_points, perf_by_time_step
 
 
-class RunHistoryVisualizer:  # TODO: Add tests
+class ResultsVisualizer:  # TODO: Add tests
     @staticmethod
     def _set_plot_args(
         ax: plt.Axes,
