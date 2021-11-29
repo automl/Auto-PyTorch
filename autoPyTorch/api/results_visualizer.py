@@ -88,7 +88,7 @@ class ScaleChoices(Enum):
     log = 'log'
 
 
-def _get_perf_and_time(
+def _get_perf_and_time(  # TODO: Add tests
     results: np.ndarray,
     cum_times: np.ndarray,
     plot_setting_params: PlotSettingParams,
@@ -148,7 +148,7 @@ def _get_perf_and_time(
     return check_points, perf_by_time_step
 
 
-class RunHistoryVisualizer:
+class RunHistoryVisualizer:  # TODO: Add tests
     @staticmethod
     def _set_plot_args(
         ax: plt.Axes,
