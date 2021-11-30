@@ -105,7 +105,6 @@ class EnsembleResults:
         The wrapper class for ensemble_performance_history.
         This class extracts the information from ensemble_performance_history
         and allows other class to easily handle the history.
-        TODO: Think about removing KeyError and make each array just empty
 
         Attributes:
             train_scores (List[float]):
@@ -115,6 +114,8 @@ class EnsembleResults:
             end_times (List[float]):
                 The end time of the end of each ensemble evaluation.
                 Each element is a float timestamp.
+            empty (bool):
+                Whether the ensemble history about `self.metric` is empty or not.
             metric (autoPyTorchMetric):
                 The information about the metric to contain.
                 In the case when such a metric does not exist in the record,
@@ -124,6 +125,7 @@ class EnsembleResults:
         self._train_scores: List[float] = []
         self._end_times: List[float] = []
         self._metric = metric
+        self._empty = True  # Initial state is empty.
 
         self._extract_results_from_ensemble_performance_history(ensemble_performance_history)
         if order_by_endtime:
@@ -141,6 +143,10 @@ class EnsembleResults:
     def end_times(self) -> np.ndarray:
         return np.asarray(self._end_times)
 
+    def empty(self) -> bool:
+        """ This is not property to follow coding conventions. """
+        return self._empty
+
     def update(self, train_score: float, test_score: float, end_time: float) -> None:
         self._train_scores.append(train_score)
         self._test_scores.append(test_score)
@@ -150,6 +156,7 @@ class EnsembleResults:
         self._test_scores = []
         self._train_scores = []
         self._end_times = []
+        self._empty = True
 
     def sort_by_endtime(self) -> None:
         """
@@ -180,13 +187,14 @@ class EnsembleResults:
 
         self.clear()  # Delete cache before the extraction
 
-        if f'train_{self._metric.name}' not in ensemble_performance_history[0].keys():
-            metric_name = '_'.join([
-                key for key in ensemble_performance_history[0].keys() if key.startswith('train')
-            ][0].split('_')[1:])
+        if (
+            len(ensemble_performance_history) == 0
+            or f'train_{self._metric.name}' not in ensemble_performance_history[0].keys()
+        ):
+            self._empty = True
+            return
 
-            raise KeyError(f'metric_name must be {metric_name}, but got {self._metric.name}')
-
+        self._empty = False  # We can extract ==> not empty
         for data in ensemble_performance_history:
             self.update(
                 train_score=data[f'train_{self._metric.name}'],
@@ -395,7 +403,6 @@ class MetricResults:
         This class extracts the information from ensemble_performance_history
         and allows other class to easily handle the history.
         Note that all the data is sorted by endtime!
-        TODO: Think about removing KeyError and make each array just empty
 
         Attributes:
             start_time (float):
@@ -408,10 +415,10 @@ class MetricResults:
             search_results (SearchResults):
                 The instance to fetch the metric values of `self.metric`
                 from run_history.
-            ensemble_results (Optional[EnsembleResults]):
+            ensemble_results (EnsembleResults):
                 The instance to fetch the metric values of `self.metric`
                 from ensemble_performance_history.
-                If there is no information available it is set to None.
+                If there is no information available, self.empty() returns True.
             data (Dict[str, np.ndarray]):
                 Keys are `{single, ensemble}::{train, opt, test}::{metric.name}`.
                 Each array contains the evaluated values for the corresponding category.
@@ -422,20 +429,17 @@ class MetricResults:
         self.search_results = SearchResults(
             metric=metric,
             run_history=run_history,
-            scoring_functions=[],
+            scoring_functions=[metric],
             order_by_endtime=True
         )
-        try:
-            self.ensemble_results: Optional[EnsembleResults] = EnsembleResults(
-                metric=metric,
-                ensemble_performance_history=ensemble_performance_history,
-                order_by_endtime=True
-            )
-        except KeyError:  # Consider avoiding try-catch statement
-            self.ensemble_results = None
+        self.ensemble_results = EnsembleResults(
+            metric=metric,
+            ensemble_performance_history=ensemble_performance_history,
+            order_by_endtime=True
+        )
 
         if (
-            self.ensemble_results is not None
+            not self.ensemble_results.empty()
             and self.search_results.end_times[-1] < self.ensemble_results.end_times[-1]
         ):
             # Augment runtime table with the final available end time
@@ -463,7 +467,7 @@ class MetricResults:
                 for info in self.search_results.additional_infos
             ])
 
-            if self.ensemble_results is None or inference_name == 'opt':
+            if self.ensemble_results.empty() or inference_name == 'opt':
                 continue
 
             self.data[f'ensemble::{inference_name}::{metric_name}'] = np.array(
@@ -484,7 +488,7 @@ class MetricResults:
 
         data = {k: v.copy() for k, v in self.data.items()}  # deep copy
 
-        if self.ensemble_results is None:  # no ensemble data available
+        if self.ensemble_results.empty():  # no ensemble data available
             return data
 
         train_scores, test_scores = self.ensemble_results.train_scores, self.ensemble_results.test_scores

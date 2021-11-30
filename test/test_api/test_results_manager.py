@@ -122,7 +122,7 @@ def _check_metric_results(scores, metric, run_history, ensemble_performance_hist
         dummy_history = [{'Timestamp': datetime(2000, 1, 1), 'train_log_loss': 1, 'test_log_loss': 1}]
         mr = MetricResults(metric, run_history, dummy_history)
         # ensemble_results should be None because ensemble evaluated log_loss
-        assert mr.ensemble_results is None
+        assert mr.ensemble_results.empty()
         data = mr.get_ensemble_merged_data()
         # since ensemble_results is None, merged_data must be identical to the run_history data
         assert all(np.allclose(data[key], mr.data[key]) for key in data.keys())
@@ -257,10 +257,8 @@ def test_ensemble_results():
         for et, s1, s2 in zip(END_TIMES, SCORES, SCORES[::-1])
     ]
 
-    with pytest.raises(KeyError) as excinfo:
-        EnsembleResults(log_loss, ensemble_performance_history)
-
-    assert excinfo._excinfo[0] == KeyError
+    er = EnsembleResults(log_loss, ensemble_performance_history)
+    assert er.empty()
 
     er = EnsembleResults(accuracy, ensemble_performance_history)
     assert er._train_scores == SCORES
