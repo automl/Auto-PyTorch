@@ -268,12 +268,17 @@ def test_search_results_sort_by_endtime():
             additional_info={
                 'a': fixed_val,
                 'configuration_origin': [T, NT][i % 2],
-                'opt_loss': {}
+                'train_loss': {accuracy.name: fixed_val - 0.1},
+                'opt_loss': {accuracy.name: fixed_val},
+                'test_loss': {accuracy.name: fixed_val + 0.1}
             }
         )
 
     sr = SearchResults(accuracy, scoring_functions=[], run_history=run_history, order_by_endtime=True)
     assert sr.budgets == ans
+    assert np.allclose(accuracy._optimum - accuracy._sign * sr.opt_scores, ans)
+    assert np.allclose(accuracy._optimum - accuracy._sign * sr.train_scores, np.array(ans) - accuracy._sign * 0.1)
+    assert np.allclose(accuracy._optimum - accuracy._sign * sr.test_scores, np.array(ans) + accuracy._sign * 0.1)
     assert np.allclose(1 - sr.opt_scores, ans)
     assert sr._end_times == list(range(n_configs))
     assert all(c.get('a') == val for val, c in zip(ans, sr.configs))
@@ -384,7 +389,7 @@ def test_search_results_sprint_statistics():
     _check_end_times(search_results.end_times)
     _check_fit_times(search_results.fit_times)
     _check_budgets(search_results.budgets)
-    _check_metric_dict(search_results.metric_dict, search_results.status_types, worst_val)
+    _check_metric_dict(search_results.opt_metric_dict, search_results.status_types, worst_val)
     _check_additional_infos(status_types=search_results.status_types,
                             additional_infos=search_results.additional_infos)
 
@@ -447,7 +452,9 @@ def test_get_incumbent_results(include_traditional, metric, origins, scores):
             cost=cost,
             time=1.0,
             status=StatusType.SUCCESS,
-            additional_info={'opt_loss': {metric.name: score},
+            additional_info={'train_loss': {metric.name: cost},
+                             'opt_loss': {metric.name: cost},
+                             'test_loss': {metric.name: cost},
                              'configuration_origin': origin}
         )
         if cost > best_cost:
@@ -469,7 +476,7 @@ def test_get_incumbent_results(include_traditional, metric, origins, scores):
     assert np.allclose(
         [best_score, best_score, best_a],
         [cost2metric(best_cost, metric),
-         incumbent_results['opt_loss'][metric.name],
+         cost2metric(incumbent_results['opt_loss'][metric.name], metric),
          incumbent_config['a']]
     )
 
