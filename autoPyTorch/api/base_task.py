@@ -194,8 +194,6 @@ class BaseTask:
         self.pipeline_options = replace_string_bool_to_bool(json.load(open(
             os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
 
-        self._visualizer = ResultsVisualizer()
-
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
@@ -1544,7 +1542,7 @@ class BaseTask:
             except IndexError:  # ensemble does not always have results
                 pass
 
-        self._visualizer.plot_perf_over_time(  # type: ignore
+        ResultsVisualizer().plot_perf_over_time(  # type: ignore
             results=results, plot_setting_params=plot_setting_params,
             colors=colors, labels=labels, ax=ax,
             *args, **kwargs
