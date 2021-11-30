@@ -217,9 +217,6 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
-    # test fit on dummy data
-    assert isinstance(estimator.fit(dataset=backend.load_datamanager()), BasePipeline)
-
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',

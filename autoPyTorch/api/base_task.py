@@ -252,6 +252,48 @@ class BaseTask:
                                   "specific task which is a child of the BaseTask")
 
     @abstractmethod
+    def _get_dataset_input_validator(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+    ) -> Tuple[BaseDataset, BaseInputValidator]:
+        """
+        Returns an object of a child class of `BaseDataset` and
+        an object of a child class of `BaseInputValidator` according
+        to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                Strategy to split the training data.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str], optional):
+                name of the dataset, used as experiment name.
+
+        Returns:
+            BaseDataset:
+                the dataset object
+            BaseInputValidator:
+                fitted input validator
+        """
+        raise NotImplementedError("Function called on BaseTask, this can only be called by "
+                                  "specific task which is a child of the BaseTask")
+
     def get_dataset(
         self,
         X_train: Union[List, pd.DataFrame, np.ndarray],
@@ -287,8 +329,16 @@ class BaseTask:
             BaseDataset:
                 the dataset object
         """
-        raise NotImplementedError("Function called on BaseTask, this can only be called by "
-                                  "specific task which is a child of the BaseTask")
+        dataset, _ = self._get_dataset_input_validator(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            dataset_name=dataset_name)
+
+        return dataset
 
     @property
     def run_history(self) -> RunHistory:

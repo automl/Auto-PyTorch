@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -116,7 +116,7 @@ class TabularClassificationTask(BaseTask):
                                              exclude=exclude_components,
                                              search_space_updates=search_space_updates)
 
-    def get_dataset(
+    def _get_dataset_input_validator(
         self,
         X_train: Union[List, pd.DataFrame, np.ndarray],
         y_train: Union[List, pd.DataFrame, np.ndarray],
@@ -125,9 +125,10 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
-    ) -> TabularDataset:
+    ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
-        Returns an object of `TabularDataset` according to the current task.
+        Returns an object of `TabularDataset` and an object of
+        `TabularInputValidator` according to the current task.
 
         Args:
             X_train (Union[List, pd.DataFrame, np.ndarray]):
@@ -144,12 +145,13 @@ class TabularClassificationTask(BaseTask):
                 arguments required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
-            dataset_name (Optional[str], optional):
+            dataset_name (Optional[str]):
                 name of the dataset, used as experiment name.
-
         Returns:
             TabularDataset:
-                the dataset object
+                the dataset object.
+            TabularInputValidator:
+                the input validator fitted on the data.
         """
 
         resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
@@ -177,7 +179,7 @@ class TabularClassificationTask(BaseTask):
             dataset_name=dataset_name
         )
 
-        return dataset
+        return dataset, InputValidator
 
     def search(
         self,
@@ -331,7 +333,7 @@ class TabularClassificationTask(BaseTask):
 
         """
 
-        self.dataset = self.get_dataset(
+        self.dataset, self.InputValidator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
             X_test=X_test,
@@ -377,7 +379,7 @@ class TabularClassificationTask(BaseTask):
         """
         if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
-                             "the estimator fit() method.")
+                             "the estimator search() method.")
 
         X_test = self.InputValidator.feature_validator.transform(X_test)
         predicted_probabilities = super().predict(X_test, batch_size=batch_size,
@@ -397,6 +399,6 @@ class TabularClassificationTask(BaseTask):
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
         if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
-                             "the estimator fit() method.")
+                             "the estimator search() method.")
         X_test = self.InputValidator.feature_validator.transform(X_test)
         return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)
