@@ -121,7 +121,7 @@ class ScaleChoices(Enum):
     log = 'log'
 
 
-def _get_perf_and_time(  # TODO: Add tests
+def _get_perf_and_time(
     cum_results: np.ndarray,
     cum_times: np.ndarray,
     plot_setting_params: PlotSettingParams,

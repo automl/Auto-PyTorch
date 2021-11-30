@@ -54,6 +54,20 @@ def test_extract_dicts(cl_settings, with_ensemble):
 
 
 @pytest.mark.parametrize('params', (
+    PlotSettingParams(show=True),
+    PlotSettingParams(show=False)
+))
+def test_plt_show_in_set_plot_args(params):
+    plt.show = MagicMock()
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    viz = ResultsVisualizer()
+
+    viz._set_plot_args(ax, params)
+    assert plt.show._mock_called == params.show
+    plt.close()
+
+
+@pytest.mark.parametrize('params', (
     PlotSettingParams(xscale='none', yscale='none'),
     PlotSettingParams(xscale='none', yscale='log'),
     PlotSettingParams(xscale='none', yscale='none'),
