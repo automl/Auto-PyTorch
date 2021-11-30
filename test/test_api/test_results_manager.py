@@ -11,7 +11,7 @@ import numpy as np
 
 import pytest
 
-from smac.runhistory.runhistory import RunHistory, StatusType
+from smac.runhistory.runhistory import RunHistory, RunKey, RunValue, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.api.results_manager import (
@@ -169,6 +169,40 @@ def test_extract_results_from_run_history():
         SearchResults(metric=accuracy, scoring_functions=[], run_history=run_history)
 
     assert excinfo._excinfo[0] == ValueError
+
+
+def test_raise_error_in_update_and_sort_by_time():
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(CSH.UniformFloatHyperparameter('a', lower=0, upper=1))
+    config = Configuration(cs, {'a': 0.1})
+
+    sr = SearchResults(metric=accuracy, scoring_functions=[], run_history=RunHistory())
+    er = EnsembleResults(metric=accuracy, ensemble_performance_history=[])
+
+    with pytest.raises(RuntimeError) as excinfo:
+        sr._update(
+            config=config,
+            run_key=RunKey(config_id=0, instance_id=0, seed=0),
+            run_value=RunValue(
+                cost=0, time=1, status=StatusType.SUCCESS,
+                starttime=0, endtime=1, additional_info={}
+            )
+        )
+
+    assert excinfo._excinfo[0] == RuntimeError
+
+    with pytest.raises(RuntimeError) as excinfo:
+        sr._sort_by_endtime()
+
+    assert excinfo._excinfo[0] == RuntimeError
+
+    with pytest.raises(RuntimeError) as excinfo:
+        er._update(data={})
+
+    assert excinfo._excinfo[0] == RuntimeError
+
+    with pytest.raises(RuntimeError) as excinfo:
+        er._sort_by_endtime()
 
 
 @pytest.mark.parametrize('starttimes', (list(range(10)), list(range(10))[::-1]))

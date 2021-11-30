@@ -1,6 +1,6 @@
 import io
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -8,7 +8,7 @@ import numpy as np
 
 import scipy
 
-from smac.runhistory.runhistory import RunHistory, RunValue
+from smac.runhistory.runhistory import RunHistory, RunKey, RunValue
 from smac.tae import StatusType
 from smac.utils.io.traj_logging import TrajEntry
 
@@ -126,10 +126,13 @@ class EnsembleResults:
         self._end_times: List[float] = []
         self._metric = metric
         self._empty = True  # Initial state is empty.
+        self._instantiated = False
 
         self._extract_results_from_ensemble_performance_history(ensemble_performance_history)
         if order_by_endtime:
-            self.sort_by_endtime()
+            self._sort_by_endtime()
+
+        self._instantiated = True
 
     @property
     def train_scores(self) -> np.ndarray:
@@ -143,28 +146,38 @@ class EnsembleResults:
     def end_times(self) -> np.ndarray:
         return np.asarray(self._end_times)
 
+    @property
+    def metric_name(self) -> str:
+        return self._metric.name
+
     def empty(self) -> bool:
         """ This is not property to follow coding conventions. """
         return self._empty
 
-    def update(self, train_score: float, test_score: float, end_time: float) -> None:
-        self._train_scores.append(train_score)
-        self._test_scores.append(test_score)
-        self._end_times.append(end_time)
+    def _update(self, data: Dict[str, float]) -> None:
+        if self._instantiated:
+            raise RuntimeError(
+                'EnsembleResults should not be overwritten once instantiated. '
+                'Instantiate new object rather than using update.'
+            )
 
-    def clear(self) -> None:
-        self._test_scores = []
-        self._train_scores = []
-        self._end_times = []
-        self._empty = True
+        self._train_scores.append(data[f'train_{self.metric_name}'])
+        self._test_scores.append(data[f'test_{self.metric_name}'])
+        self._end_times.append(datetime.timestamp(data['Timestamp']))
 
-    def sort_by_endtime(self) -> None:
+    def _sort_by_endtime(self) -> None:
         """
         Since the default order is by start time
         and parallel computation might change the order of ending,
         this method provides the feature to sort by end time.
         Note that this method is destructive.
         """
+        if self._instantiated:
+            raise RuntimeError(
+                'EnsembleResults should not be overwritten once instantiated. '
+                'Instantiate new object with order_by_endtime=True.'
+            )
+
         order = np.argsort(self._end_times)
 
         self._train_scores = self.train_scores[order].tolist()
@@ -182,10 +195,8 @@ class EnsembleResults:
         Args:
             ensemble_performance_history (List[Dict[str, Any]]):
                 The history of the ensemble performance from EnsembleBuilder.
-                Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
+                Its key must be either `train_xxx`, `test_xxx` or `Timestamp`.
         """
-
-        self.clear()  # Delete cache before the extraction
 
         if (
             len(ensemble_performance_history) == 0
@@ -196,11 +207,7 @@ class EnsembleResults:
 
         self._empty = False  # We can extract ==> not empty
         for data in ensemble_performance_history:
-            self.update(
-                train_score=data[f'train_{self._metric.name}'],
-                test_score=data[f'test_{self._metric.name}'],
-                end_time=datetime.timestamp(data['Timestamp'])
-            )
+            self._update(data)
 
 
 class SearchResults:
@@ -268,10 +275,13 @@ class SearchResults:
         self.rank_opt_scores: np.ndarray = np.array([])
         self._scoring_functions = scoring_functions
         self._metric = metric
+        self._instantiated = False
 
         self._extract_results_from_run_history(run_history)
         if order_by_endtime:
-            self.sort_by_endtime()
+            self._sort_by_endtime()
+
+        self._instantiated = True
 
     @property
     def opt_scores(self) -> np.ndarray:
@@ -285,52 +295,54 @@ class SearchResults:
     def end_times(self) -> np.ndarray:
         return np.asarray(self._end_times)
 
-    def update(
+    def _update(
         self,
         config: Configuration,
-        status: StatusType,
-        budget: float,
-        fit_time: float,
-        end_time: float,
-        config_id: int,
-        is_traditional: bool,
-        additional_info: Dict[str, float],
-        score: float,
-        metric_info: Dict[str, float]
+        run_key: RunKey,
+        run_value: RunValue
     ) -> None:
 
-        self.status_types.append(status)
-        self.configs.append(config)
-        self.budgets.append(budget)
-        self.config_ids.append(config_id)
-        self.is_traditionals.append(is_traditional)
-        self.additional_infos.append(additional_info)
-        self._end_times.append(end_time)
-        self._fit_times.append(fit_time)
-        self._opt_scores.append(score)
+        if self._instantiated:
+            raise RuntimeError(
+                'SearchResults should not be overwritten once instantiated. '
+                'Instantiate new object rather than using update.'
+            )
+        elif run_value.status in (StatusType.STOP, StatusType.RUNNING):
+            return
+        elif run_value.status not in STATUS_TYPES:
+            raise ValueError(f'Unexpected run status: {run_value.status}')
 
+        is_traditional = False  # If run is not successful, unsure ==> not True ==> False
+        if run_value.additional_info is not None:
+            is_traditional = run_value.additional_info['configuration_origin'] == 'traditional'
+
+        self.status_types.append(run_value.status)
+        self.configs.append(config)
+        self.budgets.append(run_key.budget)
+        self.config_ids.append(run_key.config_id)
+        self.is_traditionals.append(is_traditional)
+        self.additional_infos.append(run_value.additional_info)
+        self._fit_times.append(run_value.time)
+        self._end_times.append(run_value.endtime)
+        self._opt_scores.append(cost2metric(cost=run_value.cost, metric=self._metric))
+
+        metric_info = _extract_metrics_info(run_value=run_value, scoring_functions=self._scoring_functions)
         for metric_name, val in metric_info.items():
             self.metric_dict[metric_name].append(val)
 
-    def clear(self) -> None:
-        self._opt_scores = []
-        self._fit_times = []
-        self._end_times = []
-        self.configs = []
-        self.status_types = []
-        self.budgets = []
-        self.config_ids = []
-        self.additional_infos = []
-        self.is_traditionals = []
-        self.rank_opt_scores = np.array([])
-
-    def sort_by_endtime(self) -> None:
+    def _sort_by_endtime(self) -> None:
         """
         Since the default order is by start time
         and parallel computation might change the order of ending,
         this method provides the feature to sort by end time.
         Note that this method is destructive.
         """
+        if self._instantiated:
+            raise RuntimeError(
+                'SearchResults should not be overwritten once instantiated. '
+                'Instantiate new object with order_by_endtime=True.'
+            )
+
         order = np.argsort(self._end_times)
 
         self._opt_scores = [self._opt_scores[idx] for idx in order]
@@ -357,33 +369,9 @@ class SearchResults:
                 The history of config evals from SMAC.
         """
 
-        self.clear()  # Delete cache before the extraction
-
         for run_key, run_value in run_history.data.items():
-            config_id = run_key.config_id
-            config = run_history.ids_config[config_id]
-
-            if run_value.status in (StatusType.STOP, StatusType.RUNNING):
-                continue
-            elif run_value.status not in STATUS_TYPES:
-                raise ValueError(f'Unexpected run status: {run_value.status}')
-
-            is_traditional = False  # If run is not successful, unsure ==> not True ==> False
-            if run_value.additional_info is not None:
-                is_traditional = run_value.additional_info['configuration_origin'] == 'traditional'
-
-            self.update(
-                status=run_value.status,
-                config=config,
-                budget=run_key.budget,
-                fit_time=run_value.time,
-                end_time=run_value.endtime,
-                score=cost2metric(cost=run_value.cost, metric=self._metric),
-                metric_info=_extract_metrics_info(run_value=run_value, scoring_functions=self._scoring_functions),
-                is_traditional=is_traditional,
-                additional_info=run_value.additional_info,
-                config_id=config_id
-            )
+            config = run_history.ids_config[run_key.config_id]
+            self._update(config=config, run_key=run_key, run_value=run_value)
 
         self.rank_opt_scores = scipy.stats.rankdata(
             -1 * self._metric._sign * self.opt_scores,  # rank order
