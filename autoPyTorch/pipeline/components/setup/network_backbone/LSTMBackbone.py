@@ -11,7 +11,8 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import\
+    NetworkBackboneComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -51,8 +52,9 @@ class LSTMBackbone(NetworkBackboneComponent):
     """
     Standard searchable LSTM backbone for time series data
     """
+    _fixed_seq_length = False
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
@@ -104,6 +106,5 @@ class LSTMBackbone(NetworkBackboneComponent):
 
         cs.add_condition(CS.AndConjunction(CS.EqualsCondition(dropout, use_dropout, True),
                                            CS.GreaterThanCondition(dropout, num_layers, 1)))
-
 
         return cs

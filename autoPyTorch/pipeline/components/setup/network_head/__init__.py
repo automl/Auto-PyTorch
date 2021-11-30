@@ -18,11 +18,19 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
     NetworkHeadComponent,
 )
 
+
 directory = os.path.split(__file__)[0]
 _heads = find_components(__package__,
                          directory,
                          NetworkHeadComponent)
 _addons = ThirdPartyComponents(NetworkHeadComponent)
+
+# avoid path pollution, (otherwise FC layer will not be correctly detected)
+from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head import _distributed_heads, \
+    _distributed_addons
+
+from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head.distributed_network_head import \
+    DistributionNetworkHeadComponents
 
 
 def add_head(head: NetworkHeadComponent) -> None:
@@ -44,6 +52,10 @@ class NetworkHeadChoice(autoPyTorchChoice):
         components = OrderedDict()
         components.update(_heads)
         components.update(_addons.components)
+
+        components.update(_distributed_heads)
+        components.update(_distributed_addons.components)
+
         return components
 
     def get_available_components(
@@ -104,6 +116,10 @@ class NetworkHeadChoice(autoPyTorchChoice):
                 continue
             elif 'time_series' in task_type and not bool(properties['handles_time_series']):
                 continue
+            train_with_log_prob = dataset_properties.get("train_with_log_prob", False)
+            if train_with_log_prob:
+                if not issubclass(entry, DistributionNetworkHeadComponents):
+                    continue
 
             # target_type = dataset_properties['target_type']
             # Apply some automatic filtering here for
@@ -112,7 +128,6 @@ class NetworkHeadChoice(autoPyTorchChoice):
             # is not recommended for a certain dataset
 
             components_dict[name] = entry
-
         return components_dict
 
     def get_hyperparameter_search_space(
@@ -147,16 +162,27 @@ class NetworkHeadChoice(autoPyTorchChoice):
 
         if len(available_heads) == 0:
             raise ValueError("No head found")
+        train_with_log_prob = dataset_properties.get("train_with_log_prob", False)
+        if train_with_log_prob:
+            if default is None:
+                defaults = [
+                    'DistributionFullyConnectedHead',
+                ]
+                for default_ in defaults:
+                    if default_ in available_heads:
+                        default = default_
+                        break
+        else:
+            if default is None:
+                defaults = [
+                    'FullyConnectedHead',
+                    'FullyConvolutional2DHead',
+                ]
+                for default_ in defaults:
+                    if default_ in available_heads:
+                        default = default_
+                        break
 
-        if default is None:
-            defaults = [
-                'FullyConnectedHead',
-                'FullyConvolutional2DHead',
-            ]
-            for default_ in defaults:
-                if default_ in available_heads:
-                    default = default_
-                    break
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():
             choice_hyperparameter = updates['__choice__']
@@ -184,6 +210,7 @@ class NetworkHeadChoice(autoPyTorchChoice):
                 config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
+
 
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties

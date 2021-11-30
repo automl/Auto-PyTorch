@@ -204,6 +204,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Returns:
             A instance of self
         """
+        X["window_size"] = self.window_size
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
 

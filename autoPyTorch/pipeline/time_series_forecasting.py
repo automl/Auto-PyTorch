@@ -188,6 +188,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         Defines what steps a pipeline should follow.
         The step itself has choices given via autoPyTorchChoice.
+        One key difference between Forecasting pipeline and others is that we put "data_loader"
+        before "network_backbone" such that
 
         Returns:
             List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
@@ -204,6 +206,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
+                                                            random_state=self.random_state)),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
                                                        random_state=self.random_state)),
             ("network_head", NetworkHeadChoice(default_dataset_properties,
@@ -215,8 +219,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                           random_state=self.random_state)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties,
                                              random_state=self.random_state)),
-            ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
-                                                            random_state=self.random_state)),
             ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps

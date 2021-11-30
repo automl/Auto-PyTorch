@@ -26,6 +26,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     Base class for network backbones. Holds the backbone module and the config which was used to create it.
     """
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
+    _fixed_seq_length = False  # only used for time series tasks, if the input seq_length needs to be fixed
 
     def __init__(self,
                  **kwargs: Any):
@@ -153,3 +154,4 @@ class NetworkBackboneComponent(autoPyTorchComponent):
             str: Name of the backbone
         """
         return str(cls.get_properties()["shortname"])
+

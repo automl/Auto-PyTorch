@@ -13,7 +13,8 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import \
+    NetworkBackboneComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -100,6 +101,7 @@ class TCNBackbone(NetworkBackboneComponent):
     """
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
+    _fixed_seq_length = False
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_0"]]
@@ -126,22 +128,22 @@ class TCNBackbone(NetworkBackboneComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                          value_range=(1, 10),
-                                                                          default_value=5),
-        num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
-                                                                           value_range=(4, 64),
-                                                                           default_value=32),
-        kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
-                                                                           value_range=(4, 64),
-                                                                           default_value=32),
-        use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
-                                                                           value_range=(True, False),
-                                                                           default_value=False),
-        dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
-                                                                       value_range=(0, 0.5),
-                                                                       default_value=0.1),
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
+                                                                              value_range=(1, 10),
+                                                                              default_value=5),
+            num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
+                                                                               value_range=(4, 64),
+                                                                               default_value=32),
+            kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
+                                                                               value_range=(4, 64),
+                                                                               default_value=32),
+            use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
+                                                                               value_range=(True, False),
+                                                                               default_value=False),
+            dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
+                                                                           value_range=(0, 0.5),
+                                                                           default_value=0.1),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
