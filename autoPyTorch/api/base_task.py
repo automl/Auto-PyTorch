@@ -252,15 +252,41 @@ class BaseTask:
                                   "specific task which is a child of the BaseTask")
 
     @abstractmethod
-    def get_dataset(self,
-                    X_train: Union[List, pd.DataFrame, np.ndarray],
-                    y_train: Union[List, pd.DataFrame, np.ndarray],
-                    X_test: Union[List, pd.DataFrame, np.ndarray],
-                    y_test: Union[List, pd.DataFrame, np.ndarray],
-                    resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
-                    resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                    dataset_name: Optional[str] = None,
-                    ) -> BaseDataset:
+    def get_dataset(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+    ) -> BaseDataset:
+        """
+        Returns an object of a child class of `BaseDataset` according to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                Strategy to split the training data.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str], optional):
+                name of the dataset, used as experiment name.
+
+        Returns:
+            BaseDataset:
+                the dataset object
+        """
         raise NotImplementedError("Function called on BaseTask, this can only be called by "
                                   "specific task which is a child of the BaseTask")
 
@@ -1356,10 +1382,14 @@ class BaseTask:
                 configuration to fit the pipeline with.
 
         Returns:
-            (BasePipeline): fitted pipeline
-            (RunInfo): Run information
-            (RunValue): Result of fitting the pipeline
-            (BaseDataset): Dataset created from the given tensors
+            (BasePipeline):
+                fitted pipeline
+            (RunInfo):
+                Run information
+            (RunValue):
+                Result of fitting the pipeline
+            (BaseDataset):
+                Dataset created from the given tensors
         """
 
         if dataset is None:

@@ -120,12 +120,37 @@ class TabularClassificationTask(BaseTask):
         self,
         X_train: Union[List, pd.DataFrame, np.ndarray],
         y_train: Union[List, pd.DataFrame, np.ndarray],
-        X_test: Union[List, pd.DataFrame, np.ndarray],
-        y_test: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
     ) -> TabularDataset:
+        """
+        Returns an object of `TabularDataset` according to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                Strategy to split the training data.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str], optional):
+                name of the dataset, used as experiment name.
+
+        Returns:
+            TabularDataset:
+                the dataset object
+        """
 
         resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
         resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
