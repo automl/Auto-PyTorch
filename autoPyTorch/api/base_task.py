@@ -1327,7 +1327,7 @@ class BaseTask:
                 no memory limit is set. In case of multi-processing, memory_limit
                 will be per job. This memory limit also applies to the ensemble
                 creation process.
-            eval_metric (str):
+            eval_metric (Optional[str]):
                 Name of the metric that is used to evaluate a pipeline.
             all_supported_metrics (bool: default=True):
                 if True, all metrics supporting current task will be calculated
