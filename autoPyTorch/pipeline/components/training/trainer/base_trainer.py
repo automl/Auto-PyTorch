@@ -302,9 +302,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
             loss, outputs = self.train_step(data, targets)
 
-            # save for metric evaluation
-            outputs_data.append(outputs.detach().cpu())
-            targets_data.append(targets.detach().cpu())
+            if self.metrics_during_training:
+                # save for metric evaluation
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
