@@ -101,7 +101,7 @@ def _get_perf_and_time(  # TODO: Add tests
         cum_results (np.ndarray):
             The cumulated performance per evaluation.
         cum_times (np.ndarray):
-            The cumulated runtime at each end of evaluations.
+            The cumulated runtime at the end of each evaluation.
         plot_setting_params (PlotSettingParams):
             Parameters for the plot.
         worst_val (float):
@@ -194,7 +194,9 @@ class ResultsVisualizer:
         **kwargs: Any
     ) -> None:
         """
-        Plot the performance of the AutoPytorch over time.
+        Plot the incumbent performance of the AutoPytorch over time.
+        This method is created to make plot_perf_over_time more readable
+        and it is not supposed to be used only in this class, but not from outside.
 
         Args:
             ax (plt.Axes):
@@ -234,7 +236,7 @@ class ResultsVisualizer:
         **kwargs: Any
     ) -> None:
         """
-        Plot the performance of the AutoPytorch over time.
+        Plot the incumbent performance of the AutoPytorch over time.
 
         Args:
             results (MetricResults):

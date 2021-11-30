@@ -1495,7 +1495,7 @@ class BaseTask:
     ) -> None:
         """
         Visualize the performance over time using matplotlib.
-        The plot relate arguments are based on matplotlib.
+        The plot related arguments are based on matplotlib.
         Please refer to the matplotlib documentation for more details.
 
         Args:
