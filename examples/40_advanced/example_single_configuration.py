@@ -68,7 +68,6 @@ print("Passed Configuration:", configuration)
 # ==================================
 
 pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
-                                                                disable_file_output=False,
                                                                 configuration=configuration,
                                                                 budget_type='epochs',
                                                                 budget=20,
