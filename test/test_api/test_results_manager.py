@@ -118,11 +118,13 @@ def _check_metric_dict(metric_dict, status_types, worst_val):
 
 
 def _check_metric_results(scores, metric, run_history, ensemble_performance_history):
-    if metric.name == 'accuracy':
+    if metric.name == 'accuracy':  # Check the case when ensemble does not have the metric name
         dummy_history = [{'Timestamp': datetime(2000, 1, 1), 'train_log_loss': 1, 'test_log_loss': 1}]
         mr = MetricResults(metric, run_history, dummy_history)
+        # ensemble_results should be None because ensemble evaluated log_loss
         assert mr.ensemble_results is None
         data = mr.get_ensemble_merged_data()
+        # since ensemble_results is None, merged_data must be identical to the run_history data
         assert all(np.allclose(data[key], mr.data[key]) for key in data.keys())
 
     mr = MetricResults(metric, run_history, ensemble_performance_history)
@@ -359,8 +361,8 @@ def test_search_results_sprint_statistics():
     assert config_ids == search_results.config_ids
 
     # assert that contents of search_results are of expected types
-    assert isinstance(search_results.rank_test_scores, np.ndarray)
-    assert search_results.rank_test_scores.dtype is np.dtype(np.int)
+    assert isinstance(search_results.rank_opt_scores, np.ndarray)
+    assert search_results.rank_opt_scores.dtype is np.dtype(np.int)
     assert isinstance(search_results.configs, list)
 
     n_success, n_timeout, n_memoryout, n_crashed = 13, 2, 0, 1

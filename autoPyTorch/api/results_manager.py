@@ -101,6 +101,25 @@ class EnsembleResults:
         ensemble_performance_history: List[Dict[str, Any]],
         order_by_endtime: bool = False
     ):
+        """
+        The wrapper class for ensemble_performance_history.
+        This class extracts the information from ensemble_performance_history
+        and allows other class to easily handle the history.
+        TODO: Think about removing KeyError and make each array just empty
+
+        Attributes:
+            train_scores (List[float]):
+                The ensemble scores on the training dataset.
+            test_scores (List[float]):
+                The ensemble scores on the test dataset.
+            end_times (List[float]):
+                The end time of the end of each ensemble evaluation.
+                Each element is a float timestamp.
+            metric (autoPyTorchMetric):
+                The information about the metric to contain.
+                In the case when such a metric does not exist in the record,
+                This class raises KeyError.
+        """
         self._test_scores: List[float] = []
         self._train_scores: List[float] = []
         self._end_times: List[float] = []
@@ -150,11 +169,12 @@ class EnsembleResults:
         ensemble_performance_history: List[Dict[str, Any]]
     ) -> None:
         """
-        Extract the information to match this class format.
+        Extract information to from `ensemble_performance_history`
+        to match the format of this class format.
 
         Args:
             ensemble_performance_history (List[Dict[str, Any]]):
-                The history of the ensemble optimization from SMAC.
+                The history of the ensemble performance from EnsembleBuilder.
                 Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
         """
 
@@ -183,6 +203,47 @@ class SearchResults:
         run_history: RunHistory,
         order_by_endtime: bool = False
     ):
+        """
+        The wrapper class for run_history.
+        This class extracts the information from run_history
+        and allows other class to easily handle the history.
+        Note that the data is sorted by starttime by default.
+
+        Attributes:
+            opt_scores (List[float]):
+                The scores that were used for the optimization by SMAC.
+                In other words, the performance on the validation dataset.
+            fit_times (List[float]):
+                The time needed to fit each model.
+            end_times (List[float]):
+                The end time of the end of each evaluation.
+                Each element is a float timestamp.
+            configs (List[Configuration]):
+                The configurations at each evaluation.
+            status_types (List[StatusType]):
+                The list of status types of each evaluation (e.g. success, crush).
+            budgets (List[float]):
+                The budgets used for each evaluation.
+                Here, budget refers to the definition in Hyperband or Successive halving.
+            config_ids (List[int]):
+                The ID of each configuration. Since we use cutoff such as in Hyperband,
+                we need to store it to know whether each configuration is a suvivor.
+            is_traditionals (List[bool]):
+                Whether each configuration is from traditional machine learning methods.
+            additional_infos (List[Dict[str, float]]):
+                It usually serves as the source of each metric at each evaluation.
+                In other words, train or test performance is extracted from this info.
+            rank_opt_scores (np.ndarray):
+                The rank of each evaluation among all the evaluations.
+            metric (autoPyTorchMetric):
+                The metric that was used in the optimization by SMAC.
+                opt_scores will be this metric.
+            scoring_functions (List[autoPyTorchMetric]):
+                The list of metrics to contain in the additional_infos.
+            metric_dict (Dict[str, List[float]]):
+                The extracted metric information at each evaluation.
+                Each list keeps the metric information specified by scoring_functions.
+        """
         self.metric_dict: Dict[str, List[float]] = {
             metric.name: []
             for metric in scoring_functions
@@ -196,7 +257,7 @@ class SearchResults:
         self.config_ids: List[int] = []
         self.is_traditionals: List[bool] = []
         self.additional_infos: List[Dict[str, float]] = []
-        self.rank_test_scores: np.ndarray = np.array([])
+        self.rank_opt_scores: np.ndarray = np.array([])
         self._scoring_functions = scoring_functions
         self._metric = metric
 
@@ -253,7 +314,7 @@ class SearchResults:
         self.config_ids = []
         self.additional_infos = []
         self.is_traditionals = []
-        self.rank_test_scores = np.array([])
+        self.rank_opt_scores = np.array([])
 
     def sort_by_endtime(self) -> None:
         """
@@ -276,8 +337,8 @@ class SearchResults:
         # Don't use numpy slicing to avoid version dependency (cast config to object might cause issues)
         self.configs = [self.configs[idx] for idx in order]
 
-        # Only rank_test_scores is np.ndarray
-        self.rank_test_scores = self.rank_test_scores[order]
+        # Only rank_opt_scores is np.ndarray
+        self.rank_opt_scores = self.rank_opt_scores[order]
 
     def _extract_results_from_run_history(self, run_history: RunHistory) -> None:
         """
@@ -316,7 +377,7 @@ class SearchResults:
                 config_id=config_id
             )
 
-        self.rank_test_scores = scipy.stats.rankdata(
+        self.rank_opt_scores = scipy.stats.rankdata(
             -1 * self._metric._sign * self.opt_scores,  # rank order
             method='min'
         )
@@ -329,8 +390,35 @@ class MetricResults:
         run_history: RunHistory,
         ensemble_performance_history: List[Dict[str, Any]]
     ):
+        """
+        The wrapper class for ensemble_performance_history.
+        This class extracts the information from ensemble_performance_history
+        and allows other class to easily handle the history.
+        Note that all the data is sorted by endtime!
+        TODO: Think about removing KeyError and make each array just empty
+
+        Attributes:
+            start_time (float):
+                The timestamp at the very beginning of the optimization.
+            cum_times (np.ndarray):
+                The runtime needed to reach the end of each evaluation.
+                The time unit is second.
+            metric (autoPyTorchMetric):
+                The information about the metric to contain.
+            search_results (SearchResults):
+                The instance to fetch the metric values of `self.metric`
+                from run_history.
+            ensemble_results (Optional[EnsembleResults]):
+                The instance to fetch the metric values of `self.metric`
+                from ensemble_performance_history.
+                If there is no information available it is set to None.
+            data (Dict[str, np.ndarray]):
+                Keys are `{single, ensemble}::{train, opt, test}::{metric.name}`.
+                Each array contains the evaluated values for the corresponding category.
+        """
         self.start_time = get_start_time(run_history)
         self.metric = metric
+        # TODO: metric should not be metric and scoring_functions should be [metric]
         self.search_results = SearchResults(
             metric=metric,
             run_history=run_history,
@@ -343,7 +431,7 @@ class MetricResults:
                 ensemble_performance_history=ensemble_performance_history,
                 order_by_endtime=True
             )
-        except KeyError:
+        except KeyError:  # Consider avoiding try-catch statement
             self.ensemble_results = None
 
         if (
@@ -362,10 +450,11 @@ class MetricResults:
         self._extract_results()
 
     def _extract_results(self) -> None:
+        """ Extract metric values of `self.metric` and store them in `self.data`. """
         metric_name = self.metric.name
         worst_val = {metric_name: self.metric._worst_possible_result}
         for inference_name in ['train', 'test', 'opt']:
-
+            # TODO: Extract information from self.search_results
             self.data[f'single::{inference_name}::{metric_name}'] = np.array([
                 cost2metric(
                     info.get(f'{inference_name}_loss', worst_val)[metric_name],  # type: ignore
@@ -434,8 +523,8 @@ class ResultsManager:
                 A `SMAC Runshistory <https://automl.github.io/SMAC3/master/apidoc/smac.runhistory.runhistory.html>`_
                 object that holds information about the runs of the target algorithm made during search
             ensemble_performance_history (List[Dict[str, Any]]):
-                The list of ensemble performance in the optimization.
-                The list includes the `timestamp`, `result on train set`, and `result on test set`
+                The history of the ensemble performance from EnsembleBuilder.
+                Its keys are `train_xxx`, `test_xxx` or `Timestamp`.
             trajectory (List[TrajEntry]):
                 A list of all incumbent configurations during search
         """
