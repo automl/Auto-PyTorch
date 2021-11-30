@@ -1163,6 +1163,10 @@ class BaseTask:
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
+        if self.time_series_forecasting:
+            warnings.WarningMessage("Currently Time Series Forecasting tasks do not allow computing metrics "
+                                    "during training. It will be automatically set as False")
+            self.pipeline_options["metrics_during_training"] = False
         X.update(self.pipeline_options)
         return X
 

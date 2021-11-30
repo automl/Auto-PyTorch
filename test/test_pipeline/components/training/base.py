@@ -1,3 +1,4 @@
+from typing import Any, Optional, Dict, List, Tuple
 import logging
 
 from sklearn.datasets import make_classification, make_regression
@@ -11,16 +12,15 @@ from autoPyTorch.constants import (
     CONTINUOUS,
     OUTPUT_TYPES_TO_STRING,
     REGRESSION_TASKS,
-    TASK_TYPES_TO_STRING
-<<<<<<< HEAD:test/test_pipeline/components/base.py
+    TASK_TYPES_TO_STRING)
+
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import \
     TabularColumnTransformer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice import \
-    EncoderChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import EncoderChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice as TabularScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice as\
+    TabularScalerChoice
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
@@ -29,11 +29,7 @@ from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
-=======
-)
-from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
->>>>>>> upstream/master:test/test_pipeline/components/training/base.py
+
 
 
 class BaseTraining:
@@ -144,7 +140,6 @@ class BaseTraining:
                 # Backward pass
                 loss.backward()
                 optimizer.step()
-<<<<<<< HEAD:test/test_pipeline/components/base.py
 
 
 class TabularPipeline(TabularClassificationPipeline):
@@ -195,5 +190,4 @@ class TimeSeriesPipeline(TimeSeriesClassificationPipeline):
             ("time_series_transformer", TimeSeriesTransformer()),
         ])
         return steps
-=======
->>>>>>> upstream/master:test/test_pipeline/components/training/base.py
+
