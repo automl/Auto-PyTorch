@@ -29,22 +29,19 @@ class SimpleImputer(BaseImputer):
         categorical_strategy: str = 'most_frequent'
     ):
         """
-        Parameters
-        ----------
-        random_state: Optional[Union[np.random.RandomState, int]] = None
-            The random state to use for the imputer
+        Note:
+            Using 'constant' defaults to fill_value of 0 where 'constant_!missing!'
+            uses a fill_value of -1. This behaviour should probably be fixed.
 
-        numerical_strategy: str = 'mean',
-            The strategy to use for imputing numerical columns.
-            Can be one of ['mean', 'median', 'most_frequent', 'constant', 'constant_!missing!']
-
-            Note:
-                Using 'constant' defaults to fill_value of 0 where 'constant_!missing!'
-                uses a fill_value of -1. This behaviour should probably be fixed.
-
-        categorical_strategy: str = 'most_frequent'
-            The strategy to use for imputing categorical columns.
-            Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
+        Args:
+            random_state (Optional[Union[np.random.RandomState, int]]):
+                The random state to use for the imputer.
+            numerical_strategy (str: default='mean'):
+                The strategy to use for imputing numerical columns.
+                Can be one of ['mean', 'median', 'most_frequent', 'constant', 'constant_!missing!']
+            categorical_strategy (str: default='most_frequent')
+                The strategy to use for imputing categorical columns.
+                Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
         """
         super().__init__()
         self.random_state = random_state
@@ -52,22 +49,16 @@ class SimpleImputer(BaseImputer):
         self.categorical_strategy = categorical_strategy
 
     def fit(self, X: Dict[str, Any], y: Optional[Any] = None) -> BaseImputer:
-        """
-        The fit function calls the fit function of the underlying model
-        and returns the transformed array.
+        """ Fits the underlying model and returns the transformed array.
 
-        Parameters
-        ----------
-        X: np.ndarray
-            The input features to fit on
+        Args:
+            X (np.ndarray):
+                The input features to fit on
+            y (Optional[np.ndarray]):
+                The labels for the input features `X`
 
-        y: Optional[np.ndarray]
-            The labels for the input features `X`
-
-        Returns
-        -------
-        SimpleImputer
-            returns self
+        Returns:
+            SimpleImputer: returns the object itself
         """
         self.check_requirements(X, y)
 
@@ -102,7 +93,7 @@ class SimpleImputer(BaseImputer):
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         numerical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter='numerical_strategy',
-            value_range=("mean", "median", "most_frequet", "constant_zero"),
+            value_range=("mean", "median", "most_frequent", "constant_zero"),
             default_value="mean",
         ),
         categorical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
@@ -113,22 +104,19 @@ class SimpleImputer(BaseImputer):
     ) -> ConfigurationSpace:
         """Get the hyperparameter search space for the SimpleImputer
 
-        Parameters
-        ----------
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
-            Properties that describe the dataset
+        Args:
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]])
+                Properties that describe the dataset
+                Note: Not actually Optional, just adhering to its supertype
+            numerical_strategy (HyperparameterSearchSpace: default = ...)
+                The strategy to use for numerical imputation
+            caterogical_strategy (HyperparameterSearchSpace: default = ...)
+                The strategy to use for categorical imputation
 
-        numerical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(...)
-            The strategy to use for numerical imputation
-
-        caterogical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(...)
-            The strategy to use for categorical imputation
-
-        Returns
-        -------
-        ConfigurationSpace
-            The space of possible configurations for a SimpleImputer with the given
-            `dataset_properties`
+        Returns:
+            ConfigurationSpace
+                The space of possible configurations for a SimpleImputer with the given
+                `dataset_properties`
         """
         cs = ConfigurationSpace()
 
@@ -156,10 +144,8 @@ class SimpleImputer(BaseImputer):
     ) -> Dict[str, Union[str, bool]]:
         """Get the properties of the SimpleImputer class and what it can handle
 
-        Returns
-        -------
-        Dict[str, Union[str, bool]]
-            A dict from property names to values
+        Returns:
+            Dict[str, Union[str, bool]]: A dict from property names to values
         """
         return {
             'shortname': 'SimpleImputer',
