@@ -1,5 +1,3 @@
-import os
-import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -106,18 +104,55 @@ class TabularClassificationTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularClassificationPipeline:
-        """
-        Build pipeline according to current task and for the passed dataset properties
+    def build_pipeline(
+        self,
+        dataset_properties: Dict[str, Any],
+        include_components: Optional[Dict] = None,
+        exclude_components: Optional[Dict] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ) -> TabularClassificationPipeline:
+        return TabularClassificationPipeline(dataset_properties=dataset_properties,
+                                             include=include_components,
+                                             exclude=exclude_components,
+                                             search_space_updates=search_space_updates)
 
-        Args:
-            dataset_properties (Dict[str,Any])
+    def get_dataset(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Union[List, pd.DataFrame, np.ndarray],
+        y_test: Union[List, pd.DataFrame, np.ndarray],
+        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+    ) -> TabularDataset:
 
-        Returns:
-            TabularClassificationPipeline:
-                Pipeline compatible with the given dataset properties.
-        """
-        return TabularClassificationPipeline(dataset_properties=dataset_properties)
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+            self.resampling_strategy_args
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        InputValidator = TabularInputValidator(
+            is_classification=True,
+            logger_port=self._logger_port,
+        )
+
+        # Fit a input validator to check the provided data
+        # Also, an encoder is fit to both train and test data,
+        # to prevent unseen categories during inference
+        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+
+        dataset = TabularDataset(
+            X=X_train, Y=y_train,
+            X_test=X_test, Y_test=y_test,
+            validator=InputValidator,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            dataset_name=dataset_name
+        )
+
+        return dataset
 
     def search(
         self,
@@ -138,7 +173,7 @@ class TabularClassificationTask(BaseTask):
         get_smac_object_callback: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: List = [],
+        disable_file_output: Optional[List[str]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
     ) -> 'BaseTask':
@@ -237,9 +272,8 @@ class TabularClassificationTask(BaseTask):
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (Union[bool, List]):
-                If True, disable model and prediction output.
-                Can also be used as a list to pass more fine-grained
+            disable_file_output (List):
+                Used as a list to pass more fine-grained
                 information on what to save. Allowed elements in the list are:
 
                 + `y_optimization`:
@@ -253,6 +287,8 @@ class TabularClassificationTask(BaseTask):
                     pipelines fit on each fold.
                 + `y_test`:
                     do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
@@ -269,32 +305,15 @@ class TabularClassificationTask(BaseTask):
             self
 
         """
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
-        # we have to create a logger for at this point for the validator
-        self._logger = self._get_logger(dataset_name)
-
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(
-            is_classification=True,
-            logger_port=self._logger_port,
-        )
-
-        # Fit a input validator to check the provided data
-        # Also, an encoder is fit to both train and test data,
-        # to prevent unseen categories during inference
-        self.InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
-
-        self.dataset = TabularDataset(
-            X=X_train, Y=y_train,
-            X_test=X_test, Y_test=y_test,
-            validator=self.InputValidator,
-            dataset_name=dataset_name,
+        self.dataset = self.get_dataset(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-        )
+            dataset_name=dataset_name)
 
         return self._search(
             dataset=self.dataset,

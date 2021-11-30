@@ -79,10 +79,23 @@ class TrainEvaluator(AbstractEvaluator):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Union[bool, List[str]]):
-            By default, the model, it's predictions and other metadata is stored on disk
-            for each finished configuration. This argument allows the user to skip
-            saving certain file type, for example the model, from being written to disk.
+        disable_file_output (Optional[List]):
+                Used as a list to pass more fine-grained
+                information on what to save. Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -107,7 +120,7 @@ class TrainEvaluator(AbstractEvaluator):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Union[bool, List] = False,
+                 disable_file_output: Optional[List] = [],
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
@@ -397,7 +410,7 @@ def eval_function(
         num_run: int,
         include: Optional[Dict[str, Any]],
         exclude: Optional[Dict[str, Any]],
-        disable_file_output: Union[bool, List],
+        disable_file_output: List,
         pipeline_config: Optional[Dict[str, Any]] = None,
         budget_type: str = None,
         init_params: Optional[Dict[str, Any]] = None,

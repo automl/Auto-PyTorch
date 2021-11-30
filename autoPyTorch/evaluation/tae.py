@@ -109,7 +109,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         memory_limit: Optional[int] = None,
-        disable_file_output: bool = False,
+        disable_file_output: Optional[List] = None,
         init_params: Dict[str, Any] = None,
         budget_type: str = None,
         ta: Optional[Callable] = None,
