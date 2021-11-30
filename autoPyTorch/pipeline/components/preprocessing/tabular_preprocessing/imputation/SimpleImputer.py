@@ -58,7 +58,8 @@ class SimpleImputer(BaseImputer):
                 The labels for the input features `X`
 
         Returns:
-            SimpleImputer: returns the object itself
+            SimpleImputer:
+                returns self
         """
         self.check_requirements(X, y)
 
@@ -145,7 +146,8 @@ class SimpleImputer(BaseImputer):
         """Get the properties of the SimpleImputer class and what it can handle
 
         Returns:
-            Dict[str, Union[str, bool]]: A dict from property names to values
+            Dict[str, Union[str, bool]]:
+                A dict from property names to values
         """
         return {
             'shortname': 'SimpleImputer',
