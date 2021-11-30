@@ -13,8 +13,44 @@ import numpy as np
 import pytest
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_visualizer import PlotSettingParams, ResultsVisualizer, _get_perf_and_time
+from autoPyTorch.api.results_visualizer import (
+    ColorLabelSettings,
+    PlotSettingParams,
+    ResultsVisualizer,
+    _get_perf_and_time
+)
 from autoPyTorch.metrics import accuracy, balanced_accuracy
+
+
+TEST_CL = ('test color', 'test label')
+
+
+@pytest.mark.parametrize('cl_settings', (
+    ColorLabelSettings(single_opt=TEST_CL),
+    ColorLabelSettings(single_opt=TEST_CL, single_test=None, single_train=None)
+))
+@pytest.mark.parametrize('with_ensemble', (True, False))
+def test_extract_dicts(cl_settings, with_ensemble):
+    dummy_keys = [name for name in [
+        'single::train::dummy',
+        'single::opt::dummy',
+        'single::test::dummy',
+        'ensemble::train::dummy',
+        'ensemble::test::dummy'
+    ] if (
+        (with_ensemble or not name.startswith('ensemble'))
+        and getattr(cl_settings, "_".join(name.split('::')[:2])) is not None
+    )
+    ]
+
+    results = MagicMock()
+    results.data.keys = MagicMock(return_value=dummy_keys)
+    cd, ld = cl_settings.extract_dicts(results)
+    assert set(dummy_keys) == set(cd.keys())
+    assert set(dummy_keys) == set(ld.keys())
+
+    opt_key = 'single::opt::dummy'
+    assert TEST_CL == (cd[opt_key], ld[opt_key])
 
 
 @pytest.mark.parametrize('params', (
@@ -100,6 +136,7 @@ def test_plot_perf_over_time(metric_name):
     _, ax = plt.subplots(nrows=1, ncols=1)
     api.plot_perf_over_time(metric_name=metric_name, ax=ax)
 
+    # remove ensemble keys if metric name is not for the opt score
     ans = set([
         name
         for name in [f'single train {metric_name}',
@@ -107,7 +144,7 @@ def test_plot_perf_over_time(metric_name):
                      f'single opt {metric_name}',
                      f'ensemble train {metric_name}',
                      f'ensemble test {metric_name}']
-        if name.startswith('single') or metric_name == api._metric.name
+        if metric_name == api._metric.name or not name.startswith('ensemble')
     ])
     legend_set = set([txt._text for txt in ax.get_legend().texts])
     assert ans == legend_set

@@ -52,6 +52,7 @@ class ColorLabelSettings:
                 The dicts for colors and labels.
                 The keys are determined by results and each label and color
                 are determined by each instantiation.
+                Note that the keys include the metric name.
         """
 
         colors, labels = {}, {}
