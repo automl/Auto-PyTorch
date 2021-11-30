@@ -1529,18 +1529,7 @@ class BaseTask:
             ensemble_performance_history=self.ensemble_performance_history
         )
 
-        colors, labels = {}, {}
-
-        for key, color_label in vars(color_label_settings).items():
-            if color_label is None:
-                continue
-
-            prefix = '::'.join(key.split('_'))
-            try:
-                new_key = [key for key in results.data.keys() if key.startswith(prefix)][0]
-                colors[new_key], labels[new_key] = color_label
-            except IndexError:  # ensemble does not always have results
-                pass
+        colors, labels = color_label_settings.extract_dicts(results)
 
         ResultsVisualizer().plot_perf_over_time(  # type: ignore
             results=results, plot_setting_params=plot_setting_params,

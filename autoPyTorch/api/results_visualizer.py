@@ -37,6 +37,38 @@ class ColorLabelSettings:
     ensemble_train: Optional[Tuple[Optional[str], Optional[str]]] = ('brown', None)
     ensemble_test: Optional[Tuple[Optional[str], Optional[str]]] = ('purple', None)
 
+    def extract_dicts(
+        self,
+        results: MetricResults
+    ) -> Tuple[Dict[str, Optional[str]], Dict[str, Optional[str]]]:
+        """
+        Args:
+            results (MetricResults):
+                The results of the optimization in the base task API.
+                It determines what keys to include.
+
+        Returns:
+            colors, labels (Tuple[Dict[str, Optional[str]], Dict[str, Optional[str]]]):
+                The dicts for colors and labels.
+                The keys are determined by results and each label and color
+                are determined by each instantiation.
+        """
+
+        colors, labels = {}, {}
+
+        for key, color_label in vars(self).items():
+            if color_label is None:
+                continue
+
+            prefix = '::'.join(key.split('_'))
+            try:
+                new_key = [key for key in results.data.keys() if key.startswith(prefix)][0]
+                colors[new_key], labels[new_key] = color_label
+            except IndexError:  # ensemble does not always have results
+                pass
+
+        return colors, labels
+
 
 @dataclass(frozen=True)
 class PlotSettingParams:
