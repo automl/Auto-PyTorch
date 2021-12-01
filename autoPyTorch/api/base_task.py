@@ -21,6 +21,8 @@ import dask.distributed
 
 import joblib
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 import pandas as pd
@@ -29,7 +31,7 @@ from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
-from autoPyTorch.api.results_manager import ResultsManager, SearchResults
+from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
@@ -58,6 +60,8 @@ from autoPyTorch.utils.logging_ import (
 )
 from autoPyTorch.utils.parallel import preload_modules
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
+from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, SearchResults
+from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
 
@@ -1478,4 +1482,57 @@ class BaseTask:
             dataset_name=self.dataset_name,
             scoring_functions=self._scoring_functions,
             metric=self._metric
+        )
+
+    def plot_perf_over_time(
+        self,
+        metric_name: str,
+        ax: Optional[plt.Axes] = None,
+        plot_setting_params: PlotSettingParams = PlotSettingParams(),
+        color_label_settings: ColorLabelSettings = ColorLabelSettings(),
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
+        """
+        Visualize the performance over time using matplotlib.
+        The plot related arguments are based on matplotlib.
+        Please refer to the matplotlib documentation for more details.
+
+        Args:
+            metric_name (str):
+                The name of metric to visualize.
+                The names are available in
+                    * autoPyTorch.metrics.CLASSIFICATION_METRICS
+                    * autoPyTorch.metrics.REGRESSION_METRICS
+            ax (Optional[plt.Axes]):
+                axis to plot (subplots of matplotlib).
+                If None, it will be created automatically.
+            plot_setting_params (PlotSettingParams):
+                Parameters for the plot.
+            color_label_settings (ColorLabelSettings):
+                The settings of a pair of color and label for each plot.
+            args, kwargs (Any):
+                Arguments for the ax.plot.
+        """
+
+        if not hasattr(metrics, metric_name):
+            raise ValueError(
+                f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
+                f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
+            )
+        if len(self.ensemble_performance_history) == 0:
+            raise RuntimeError('Visualization is available only after ensembles are evaluated.')
+
+        results = MetricResults(
+            metric=getattr(metrics, metric_name),
+            run_history=self.run_history,
+            ensemble_performance_history=self.ensemble_performance_history
+        )
+
+        colors, labels = color_label_settings.extract_dicts(results)
+
+        ResultsVisualizer().plot_perf_over_time(  # type: ignore
+            results=results, plot_setting_params=plot_setting_params,
+            colors=colors, labels=labels, ax=ax,
+            *args, **kwargs
         )

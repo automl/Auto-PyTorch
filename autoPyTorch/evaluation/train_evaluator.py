@@ -254,10 +254,15 @@ class TrainEvaluator(AbstractEvaluator):
 
             # train_losses is a list of dicts. It is
             # computed using the target metric (self.metric).
-            train_loss = np.average([train_losses[i][str(self.metric)]
-                                     for i in range(self.num_folds)],
-                                    weights=train_fold_weights,
-                                    )
+            train_loss = {}
+            for metric in train_losses[0].keys():
+                train_loss[metric] = np.average(
+                    [
+                        train_losses[i][metric]
+                        for i in range(self.num_folds)
+                    ],
+                    weights=train_fold_weights
+                )
 
             opt_loss = {}
             # self.logger.debug("OPT LOSSES: {}".format(opt_losses if opt_losses is not None else None))
