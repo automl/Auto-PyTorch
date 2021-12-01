@@ -33,7 +33,7 @@ class SimpleImputer(BaseImputer):
     """
 
     def __init__(
-        random_state: Optional[Union[np.random.RandomState, int]] = None,
+        self,
         random_state: Optional[np.random.RandomState] = None,
         numerical_strategy: str = 'mean',
         categorical_strategy: str = 'most_frequent'
