@@ -26,7 +26,7 @@ class SimpleImputer(BaseImputer):
             The random state to use for the imputer.
         numerical_strategy (str: default='mean'):
             The strategy to use for imputing numerical columns.
-            Can be one of ['mean', 'median', 'most_frequent', 'constant', 'constant_!missing!']
+            Can be one of ['most_frequent', 'constant_!missing!']
         categorical_strategy (str: default='most_frequent')
             The strategy to use for imputing categorical columns.
             Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
