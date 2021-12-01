@@ -23,8 +23,8 @@ import pandas as pd
 
 from sklearn import model_selection
 
-from autoPyTorch.api.results_visualizer import PlotSettingParams
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
+from autoPyTorch.utils.results_visualizer import PlotSettingParams
 
 
 warnings.simplefilter(action='ignore', category=UserWarning)
@@ -48,7 +48,7 @@ X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y)
 api = TabularClassificationTask(seed=42)
 
 api.search(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
-           optimize_metric='accuracy', total_walltime_limit=300, func_eval_time_limit_secs=20)
+           optimize_metric='accuracy', total_walltime_limit=120, func_eval_time_limit_secs=10)
 
 ############################################################################
 # Create Setting Parameters Object

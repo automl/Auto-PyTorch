@@ -32,8 +32,6 @@ from smac.stats.stats import Stats
 from smac.tae import StatusType
 
 from autoPyTorch import metrics
-from autoPyTorch.api.results_manager import MetricResults, ResultsManager, SearchResults
-from autoPyTorch.api.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
@@ -62,6 +60,8 @@ from autoPyTorch.utils.logging_ import (
 )
 from autoPyTorch.utils.parallel import preload_modules
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
+from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, SearchResults
+from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
 

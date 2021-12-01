@@ -13,13 +13,13 @@ import numpy as np
 import pytest
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_visualizer import (
+from autoPyTorch.metrics import accuracy, balanced_accuracy
+from autoPyTorch.utils.results_visualizer import (
     ColorLabelSettings,
     PlotSettingParams,
     ResultsVisualizer,
     _get_perf_and_time
 )
-from autoPyTorch.metrics import accuracy, balanced_accuracy
 
 
 TEST_CL = ('test color', 'test label')
@@ -57,7 +57,7 @@ def test_extract_dicts(cl_settings, with_ensemble):
     PlotSettingParams(show=True),
     PlotSettingParams(show=False)
 ))
-def test_plt_show_in_set_plot_args(params):
+def test_plt_show_in_set_plot_args(params):  # TODO
     plt.show = MagicMock()
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
@@ -73,7 +73,7 @@ def test_plt_show_in_set_plot_args(params):
     PlotSettingParams(xscale='none', yscale='none'),
     PlotSettingParams(xscale='none', yscale='log')
 ))
-def test_raise_value_error_in_set_plot_args(params):
+def test_raise_value_error_in_set_plot_args(params):  # TODO
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
 
@@ -90,7 +90,7 @@ def test_raise_value_error_in_set_plot_args(params):
     PlotSettingParams(xscale='log', yscale='log'),
     PlotSettingParams(legend=False, title='Title')
 ))
-def test_set_plot_args(params):
+def test_set_plot_args(params):  # TODO
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
     viz._set_plot_args(ax, params)
@@ -129,11 +129,11 @@ def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
 
 
 @pytest.mark.parametrize('metric_name', ('balanced_accuracy', 'accuracy'))
-def test_plot_perf_over_time(metric_name):
+def test_plot_perf_over_time(metric_name):  # TODO
     dummy_history = [{'Timestamp': datetime(2022, 1, 1), 'train_accuracy': 1, 'test_accuracy': 1}]
     api = BaseTask()
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
-                                                   '.tmp_api/runhistory_B.json'),
+                                                   'runhistory.json'),
                                       mode='r'))['data']
     api._results_manager.run_history = MagicMock()
     api.run_history.empty = MagicMock(return_value=False)

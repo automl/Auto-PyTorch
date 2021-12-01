@@ -14,7 +14,8 @@ import pytest
 from smac.runhistory.runhistory import RunHistory, RunKey, RunValue, StatusType
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.api.results_manager import (
+from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
+from autoPyTorch.utils.results_manager import (
     EnsembleResults,
     MetricResults,
     ResultsManager,
@@ -22,7 +23,6 @@ from autoPyTorch.api.results_manager import (
     cost2metric,
     get_start_time
 )
-from autoPyTorch.metrics import accuracy, balanced_accuracy, log_loss
 
 
 T, NT = 'traditional', 'non-traditional'
@@ -31,7 +31,7 @@ END_TIMES = [8, 4, 3, 6, 0, 7, 1, 9, 2, 5]
 
 
 def _check_status(status):
-    """ Based on runhistory_B.json """
+    """ Based on runhistory.json """
     ans = [
         StatusType.SUCCESS, StatusType.SUCCESS,
         StatusType.SUCCESS, StatusType.SUCCESS,
@@ -48,7 +48,7 @@ def _check_status(status):
 
 
 def _check_costs(costs):
-    """ Based on runhistory_B.json """
+    """ Based on runhistory.json """
     ans = [0.15204678362573099, 0.4444444444444444, 0.5555555555555556, 0.29824561403508776,
            0.4444444444444444, 0.4444444444444444, 1.0, 0.5555555555555556, 0.4444444444444444,
            0.15204678362573099, 0.15204678362573099, 0.4035087719298246, 0.4444444444444444,
@@ -59,7 +59,7 @@ def _check_costs(costs):
 
 
 def _check_end_times(end_times):
-    """ Based on runhistory_B.json """
+    """ Based on runhistory.json """
     ans = [1637342642.7887495, 1637342647.2651122, 1637342675.2555833, 1637342681.334954,
            1637342693.2717755, 1637342704.341065, 1637342726.1866672, 1637342743.3274522,
            1637342749.9442234, 1637342762.5487585, 1637342779.192385, 1637342804.3368232,
@@ -71,7 +71,7 @@ def _check_end_times(end_times):
 
 
 def _check_fit_times(fit_times):
-    """ Based on runhistory_B.json """
+    """ Based on runhistory.json """
     ans = [3.154788017272949, 3.2763524055480957, 22.723600149154663, 4.990685224533081, 10.684926509857178,
            9.947429180145264, 11.687273979187012, 8.478890419006348, 5.485020637512207, 11.514830589294434,
            15.370736837387085, 23.846530199050903, 6.757539510726929, 15.061991930007935, 50.010520696640015,
@@ -83,7 +83,7 @@ def _check_fit_times(fit_times):
 
 
 def _check_budgets(budgets):
-    """ Based on runhistory_B.json """
+    """ Based on runhistory.json """
     ans = [5.555555555555555, 5.555555555555555, 5.555555555555555, 5.555555555555555,
            5.555555555555555, 5.555555555555555, 5.555555555555555, 5.555555555555555,
            5.555555555555555, 16.666666666666664, 50.0, 16.666666666666664, 16.666666666666664,
@@ -370,7 +370,7 @@ def test_search_results_sprint_statistics():
         assert excinfo._excinfo[0] == RuntimeError
 
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
-                                                   '.tmp_api/runhistory_B.json'),
+                                                   'runhistory.json'),
                                       mode='r'))['data']
     api._results_manager.run_history = MagicMock()
     api.run_history.empty = MagicMock(return_value=False)
