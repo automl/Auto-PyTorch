@@ -55,15 +55,18 @@ def test_extract_dicts(cl_settings, with_ensemble):
 
 @pytest.mark.parametrize('params', (
     PlotSettingParams(show=True),
-    PlotSettingParams(show=False)
+    PlotSettingParams(show=False),
+    PlotSettingParams(show=True, figname='dummy')
 ))
 def test_plt_show_in_set_plot_args(params):  # TODO
     plt.show = MagicMock()
+    plt.savefig = MagicMock()
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
 
     viz._set_plot_args(ax, params)
-    assert plt.show._mock_called == params.show
+    # if figname is not None, show will not be called. (due to the matplotlib design)
+    assert plt.show._mock_called == (params.figname is None and params.show)
     plt.close()
 
 
