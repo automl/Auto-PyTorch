@@ -1,4 +1,5 @@
 import unittest
+import pytest
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -212,6 +213,17 @@ class TestSimpleImputer(unittest.TestCase):
         assert_array_equal(transformed.astype(str), np.array([['-1', 8, 9],
                                                              [7.0, '0', 9],
                                                              [4.0, '0', '0']], dtype=str))
+
+    def test_imputation_without_dataset_properties_raises_error(self):
+        """Tests SimpleImputer checks for dataset properties when querying for
+        HyperparameterSearchSpace, even though the arg is marked `Optional`.
+
+        Expects:
+            * Should raise a ValueError that no dataset_properties were passed
+        """
+        with pytest.raises(ValueError):
+            SimpleImputer.get_hyperparameter_search_space()
+
 
 
 if __name__ == '__main__':

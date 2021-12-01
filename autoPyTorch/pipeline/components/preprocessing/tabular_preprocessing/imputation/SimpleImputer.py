@@ -20,28 +20,29 @@ class SimpleImputer(BaseImputer):
     Note:
         In case of numpy data, the constant value is set to -1, under the assumption
         that categorical data is fit with an Ordinal Scaler.
+
+    Attributes:
+        random_state (Optional[np.random.RandomState]):
+            The random state to use for the imputer.
+        numerical_strategy (str: default='mean'):
+            The strategy to use for imputing numerical columns.
+            Can be one of ['mean', 'median', 'most_frequent', 'constant', 'constant_!missing!']
+        categorical_strategy (str: default='most_frequent')
+            The strategy to use for imputing categorical columns.
+            Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
     """
 
     def __init__(
-        self,
         random_state: Optional[Union[np.random.RandomState, int]] = None,
+        random_state: Optional[np.random.RandomState] = None,
         numerical_strategy: str = 'mean',
         categorical_strategy: str = 'most_frequent'
     ):
         """
         Note:
-            Using 'constant' defaults to fill_value of 0 where 'constant_!missing!'
-            uses a fill_value of -1. This behaviour should probably be fixed.
-
-        Args:
-            random_state (Optional[Union[np.random.RandomState, int]]):
-                The random state to use for the imputer.
-            numerical_strategy (str: default='mean'):
-                The strategy to use for imputing numerical columns.
-                Can be one of ['mean', 'median', 'most_frequent', 'constant', 'constant_!missing!']
-            categorical_strategy (str: default='most_frequent')
-                The strategy to use for imputing categorical columns.
-                Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
+            'constant' as numerical_strategy uses 0 as the default fill_value while
+            'constant_!missing!' uses a fill_value of -1.
+            This behaviour should probably be fixed.
         """
         super().__init__()
         self.random_state = random_state
