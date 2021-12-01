@@ -23,6 +23,8 @@ import pandas as pd
 
 from sklearn import model_selection
 
+import matplotlib.pyplot as plt
+
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.utils.results_visualizer import PlotSettingParams
 
@@ -60,15 +62,21 @@ params = PlotSettingParams(
     xlabel='Runtime',
     ylabel='Accuracy',
     title='Toy Example',
-    show=True
+    show=False  # If you would like to show, make it True
 )
 
 ############################################################################
 # Plot with the Specified Setting Parameters
 # ==========================================
+_, ax = plt.subplots()
+
 api.plot_perf_over_time(
+    ax=ax,  # You do not have to provide.
     metric_name=metric_name,
     plot_setting_params=params,
     marker='*',
     markersize=10
 )
+
+# plt.show() might cause issue depending on environments
+plt.savefig('example_plot_over_time.png')
