@@ -256,7 +256,7 @@ uses default</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_results">
-<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.api.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_results" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.utils.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the interface to obtain the search results easily.</p>
 </dd></dl>
 
@@ -264,6 +264,37 @@ uses default</p>
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_space">
 <span class="sig-name descname"><span class="pre">get_search_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigSpace.configuration_space.ConfigurationSpace</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_search_space" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current search space as ConfigurationSpace object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.plot_perf_over_time">
+<span class="sig-name descname"><span class="pre">plot_perf_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_setting_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">autoPyTorch.utils.results_visualizer.PlotSettingParams</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PlotSettingParams(n_points=20,</span> <span class="pre">xscale='linear',</span> <span class="pre">yscale='linear',</span> <span class="pre">xlabel=None,</span> <span class="pre">ylabel=None,</span> <span class="pre">title=None,</span> <span class="pre">xlim=None,</span> <span class="pre">ylim=None,</span> <span class="pre">legend=True,</span> <span class="pre">legend_loc='best',</span> <span class="pre">show=False,</span> <span class="pre">figsize=None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_label_settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">autoPyTorch.utils.results_visualizer.ColorLabelSettings</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ColorLabelSettings(single_train=('red',</span> <span class="pre">None),</span> <span class="pre">single_opt=('blue',</span> <span class="pre">None),</span> <span class="pre">single_test=('green',</span> <span class="pre">None),</span> <span class="pre">ensemble_train=('brown',</span> <span class="pre">None),</span> <span class="pre">ensemble_test=('purple',</span> <span class="pre">None))</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.plot_perf_over_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualize the performance over time using matplotlib.
+The plot related arguments are based on matplotlib.
+Please refer to the matplotlib documentation for more details.</p>
+<dl>
+<dt>Args:</dt><dd><dl>
+<dt>metric_name (str):</dt><dd><p>The name of metric to visualize.
+The names are available in</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>autoPyTorch.metrics.CLASSIFICATION_METRICS</p></li>
+<li><p>autoPyTorch.metrics.REGRESSION_METRICS</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>ax (Optional[plt.Axes]):</dt><dd><p>axis to plot (subplots of matplotlib).
+If None, it will be created automatically.</p>
+</dd>
+<dt>plot_setting_params (PlotSettingParams):</dt><dd><p>Parameters for the plot.</p>
+</dd>
+<dt>color_label_settings (ColorLabelSettings):</dt><dd><p>The settings of a pair of color and label for each plot.</p>
+</dd>
+<dt>args, kwargs (Any):</dt><dd><p>Arguments for the ax.plot.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -658,7 +689,7 @@ uses default</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_results">
-<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.api.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_results" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_search_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.utils.results_manager.SearchResults</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the interface to obtain the search results easily.</p>
 </dd></dl>
 
@@ -666,6 +697,37 @@ uses default</p>
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_space">
 <span class="sig-name descname"><span class="pre">get_search_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigSpace.configuration_space.ConfigurationSpace</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_search_space" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the current search space as ConfigurationSpace object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.plot_perf_over_time">
+<span class="sig-name descname"><span class="pre">plot_perf_over_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_setting_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">autoPyTorch.utils.results_visualizer.PlotSettingParams</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PlotSettingParams(n_points=20,</span> <span class="pre">xscale='linear',</span> <span class="pre">yscale='linear',</span> <span class="pre">xlabel=None,</span> <span class="pre">ylabel=None,</span> <span class="pre">title=None,</span> <span class="pre">xlim=None,</span> <span class="pre">ylim=None,</span> <span class="pre">legend=True,</span> <span class="pre">legend_loc='best',</span> <span class="pre">show=False,</span> <span class="pre">figsize=None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_label_settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">autoPyTorch.utils.results_visualizer.ColorLabelSettings</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ColorLabelSettings(single_train=('red',</span> <span class="pre">None),</span> <span class="pre">single_opt=('blue',</span> <span class="pre">None),</span> <span class="pre">single_test=('green',</span> <span class="pre">None),</span> <span class="pre">ensemble_train=('brown',</span> <span class="pre">None),</span> <span class="pre">ensemble_test=('purple',</span> <span class="pre">None))</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.plot_perf_over_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visualize the performance over time using matplotlib.
+The plot related arguments are based on matplotlib.
+Please refer to the matplotlib documentation for more details.</p>
+<dl>
+<dt>Args:</dt><dd><dl>
+<dt>metric_name (str):</dt><dd><p>The name of metric to visualize.
+The names are available in</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>autoPyTorch.metrics.CLASSIFICATION_METRICS</p></li>
+<li><p>autoPyTorch.metrics.REGRESSION_METRICS</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>ax (Optional[plt.Axes]):</dt><dd><p>axis to plot (subplots of matplotlib).
+If None, it will be created automatically.</p>
+</dd>
+<dt>plot_setting_params (PlotSettingParams):</dt><dd><p>Parameters for the plot.</p>
+</dd>
+<dt>color_label_settings (ColorLabelSettings):</dt><dd><p>The settings of a pair of color and label for each plot.</p>
+</dd>
+<dt>args, kwargs (Any):</dt><dd><p>Arguments for the ax.plot.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1721,7 +1783,7 @@ to an actual parameter of the autoPyTorch component.</p>
     </p>
     <p>
         &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

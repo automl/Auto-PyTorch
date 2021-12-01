@@ -136,6 +136,27 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Auto-Pytorch uses SMAC to fit individual machine learning algorithms and then ensembles them to...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_plot_over_time_thumb.png
+     :alt: Plot the Performance over Time
+
+     :ref:`sphx_glr_examples_40_advanced_example_plot_over_time.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_plot_over_time
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model parallely on 2 cores with ...">
 
 .. only:: html

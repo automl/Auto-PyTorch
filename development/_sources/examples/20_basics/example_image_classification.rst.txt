@@ -85,22 +85,22 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration:
-      image_augmenter:GaussianBlur:sigma_min, Value: 1.6194687445458993
-      image_augmenter:GaussianBlur:sigma_offset, Value: 0.15419645415994476
-      image_augmenter:GaussianBlur:use_augmenter, Value: True
-      image_augmenter:GaussianNoise:use_augmenter, Value: False
+      image_augmenter:GaussianBlur:use_augmenter, Value: False
+      image_augmenter:GaussianNoise:sigma_offset, Value: 0.34378220529402603
+      image_augmenter:GaussianNoise:use_augmenter, Value: True
       image_augmenter:RandomAffine:use_augmenter, Value: False
-      image_augmenter:RandomCutout:use_augmenter, Value: False
+      image_augmenter:RandomCutout:p, Value: 0.6073713136709832
+      image_augmenter:RandomCutout:use_augmenter, Value: True
       image_augmenter:Resize:use_augmenter, Value: True
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.09356660599930805
-      normalizer:__choice__, Value: 'ImageNormalizer'
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.4430360788212591
+      normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
     ________________________________________
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            ImageNormalizer
+            NoNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -172,7 +172,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.174 seconds)
+   **Total running time of the script:** ( 0 minutes  6.062 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
