@@ -86,13 +86,12 @@ Image Classification
      ________________________________________ 
     Configuration:
       image_augmenter:GaussianBlur:use_augmenter, Value: False
-      image_augmenter:GaussianNoise:sigma_offset, Value: 0.34378220529402603
-      image_augmenter:GaussianNoise:use_augmenter, Value: True
+      image_augmenter:GaussianNoise:use_augmenter, Value: False
       image_augmenter:RandomAffine:use_augmenter, Value: False
-      image_augmenter:RandomCutout:p, Value: 0.6073713136709832
+      image_augmenter:RandomCutout:p, Value: 0.5876458962649975
       image_augmenter:RandomCutout:use_augmenter, Value: True
       image_augmenter:Resize:use_augmenter, Value: True
-      image_augmenter:ZeroPadAndCrop:percent, Value: 0.4430360788212591
+      image_augmenter:ZeroPadAndCrop:percent, Value: 0.2913850064337656
       normalizer:__choice__, Value: 'NoNormalizer'
 
     Fitting the pipeline...
@@ -172,7 +171,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.062 seconds)
+   **Total running time of the script:** ( 0 minutes  8.272 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
