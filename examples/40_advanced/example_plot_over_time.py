@@ -62,21 +62,20 @@ params = PlotSettingParams(
     xlabel='Runtime',
     ylabel='Accuracy',
     title='Toy Example',
-    show=False  # If you would like to show, make it True
+    figname='example_plot_over_time.png',
+    savefig_kwargs={'bbox_inches': 'tight'},
+    show=False  # If you would like to show, make it True and set figname=None
 )
 
 ############################################################################
 # Plot with the Specified Setting Parameters
 # ==========================================
-_, ax = plt.subplots()
+# _, ax = plt.subplots()  <=== You can feed it to post-process the figure.
 
+# You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.
 api.plot_perf_over_time(
-    ax=ax,  # You do not have to provide.
     metric_name=metric_name,
     plot_setting_params=params,
     marker='*',
     markersize=10
 )
-
-# plt.show() might cause issue depending on environments
-plt.savefig('example_plot_over_time.png')
