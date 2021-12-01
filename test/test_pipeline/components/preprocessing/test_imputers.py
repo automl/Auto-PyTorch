@@ -1,8 +1,9 @@
 import unittest
-import pytest
 
 import numpy as np
 from numpy.testing import assert_array_equal
+
+import pytest
 
 from sklearn.base import BaseEstimator, clone
 from sklearn.compose import make_column_transformer
@@ -223,7 +224,6 @@ class TestSimpleImputer(unittest.TestCase):
         """
         with pytest.raises(ValueError):
             SimpleImputer.get_hyperparameter_search_space()
-
 
 
 if __name__ == '__main__':
