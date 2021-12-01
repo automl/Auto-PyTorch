@@ -31,45 +31,44 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-if __name__ == '__main__':
-    ############################################################################
-    # Task Definition
-    # ===============
-    n_samples, dim = 100, 2
-    X = np.random.random((n_samples, dim)) * 2 - 1
-    y = ((X ** 2).sum(axis=-1) < 2 / np.pi).astype(np.int32)
-    print(y)
+############################################################################
+# Task Definition
+# ===============
+n_samples, dim = 100, 2
+X = np.random.random((n_samples, dim)) * 2 - 1
+y = ((X ** 2).sum(axis=-1) < 2 / np.pi).astype(np.int32)
+print(y)
 
-    X, y = pd.DataFrame(X), pd.DataFrame(y)
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y)
+X, y = pd.DataFrame(X), pd.DataFrame(y)
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y)
 
-    ############################################################################
-    # API Instantiation and Searching
-    # ===============================
-    api = TabularClassificationTask(seed=42)
+############################################################################
+# API Instantiation and Searching
+# ===============================
+api = TabularClassificationTask(seed=42)
 
-    api.search(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
-               optimize_metric='accuracy', total_walltime_limit=300, func_eval_time_limit_secs=20)
+api.search(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
+           optimize_metric='accuracy', total_walltime_limit=300, func_eval_time_limit_secs=20)
 
-    ############################################################################
-    # Create Setting Parameters Object
-    # ================================
-    metric_name = 'accuracy'
+############################################################################
+# Create Setting Parameters Object
+# ================================
+metric_name = 'accuracy'
 
-    params = PlotSettingParams(
-        xscale='log',
-        xlabel='Runtime',
-        ylabel='Accuracy',
-        title='Toy Example',
-        show=True
-    )
+params = PlotSettingParams(
+    xscale='log',
+    xlabel='Runtime',
+    ylabel='Accuracy',
+    title='Toy Example',
+    show=True
+)
 
-    ############################################################################
-    # Plot with the Specified Setting Parameters
-    # ==========================================
-    api.plot_perf_over_time(
-        metric_name=metric_name,
-        plot_setting_params=params,
-        marker='*',
-        markersize=10
-    )
+############################################################################
+# Plot with the Specified Setting Parameters
+# ==========================================
+api.plot_perf_over_time(
+    metric_name=metric_name,
+    plot_setting_params=params,
+    marker='*',
+    markersize=10
+)
