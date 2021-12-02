@@ -179,7 +179,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                 raise ValueError("Cannot find a legal default configuration")
                             cs.get_hyperparameter('network_embedding:__choice__').default_value = default
 
-
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs
@@ -200,7 +199,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         default_dataset_properties = {'target_type': 'time_series_prediction'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
-
+        # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
             ("imputer", SimpleImputer(random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),

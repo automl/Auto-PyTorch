@@ -29,6 +29,8 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
+    TimeSeriesTransformer
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.constants_forecasting import SEASONALITY_MAP
 
@@ -71,7 +73,7 @@ class TimeSeriesSequence(Dataset):
         self.train_transform = train_transforms
         self.val_transform = val_transforms
 
-    def __getitem__(self, index: int, train: bool = True) -> Tuple[np.ndarray, ...]:
+    def __getitem__(self, index: int, train: bool = True) -> Tuple[Dict[str, torch.Tensor], Optional[torch.Tensor]]:
         """
         get a subsequent of time series data, unlike vanilla tabular dataset, we obtain all the previous sequences
         until the given index, this allows us to do further transformation when the
@@ -92,9 +94,12 @@ class TimeSeriesSequence(Dataset):
             X = self.X[:index + 1]
 
         if self.train_transform is not None and train:
-            X = self.train_transform(X)
+            X, loc, scale = self.train_transform(X)
         elif self.val_transform is not None and not train:
-            X = self.val_transform(X)
+            X, loc, scale = self.val_transform(X)
+        else:
+            loc = 0.0
+            scale = 1.0
 
         # In case of prediction, the targets are not provided
         Y = self.Y
@@ -107,7 +112,7 @@ class TimeSeriesSequence(Dataset):
         else:
             Y = None
 
-        return X, Y
+        return {"value": torch.from_numpy(X), "loc": torch.from_numpy(loc), "scale": torch.from_numpy(scale)}, Y
 
     def __len__(self) -> int:
         return self.X.shape[0]
@@ -273,7 +278,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.output_shape = [self.n_prediction_steps, num_target]
 
         # TODO: Look for a criteria to define small enough to preprocess
-        self.is_small_preprocess = True
+        self.is_small_preprocess = False
 
         self.task_type = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
 

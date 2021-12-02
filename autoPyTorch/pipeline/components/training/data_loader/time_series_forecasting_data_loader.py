@@ -2,8 +2,6 @@ from typing import Any, Dict, Optional, Tuple, Union, Sequence, List
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from autoPyTorch.pipeline.components.training.data_loader.time_series_data_loader import TimeSeriesDataLoader
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter, Constant
@@ -236,7 +234,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
             self.dataset_small_preprocess = True
-            self.preprocess_transforms_test = X['preprocess_transforms']
         else:
             self.dataset_small_preprocess = False
 
@@ -330,10 +327,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                                           window_size=self.window_size,
                                                           subseq_length=self.subseq_length)))
         candidate_transformations.append((ExpandTransformTimeSeries()))
+        if "test" in mode or not X['dataset_properties']['is_small_preprocess']:
+            candidate_transformations.extend(X['preprocess_transforms'])
 
-        # Transform to tensor
-        candidate_transformations.append(torch.from_numpy)
-
+        # We transform to tensor under dataset
         return torchvision.transforms.Compose(candidate_transformations)
 
     def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None,
@@ -347,15 +344,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # TODO any better way to deal with prediction data loader for multiple sequences
         if isinstance(X, np.ndarray):
             X = X[-self.subseq_length - self.n_prediction_steps + 1:]
-
-            if self.dataset_small_preprocess:
-                for preprocess in self.preprocess_transforms_test:
-                    if isinstance(preprocess, TimeSeriesTransformer):
-                        if preprocess.is_training:
-                            preprocess.eval()
-
-                transform = torchvision.transforms.Compose(self.preprocess_transforms_test)
-                X = transform(X)
 
             if y is not None:
                 # we want to make sure that X, and y can be mapped one to one (as sampling y requires a shifted value)

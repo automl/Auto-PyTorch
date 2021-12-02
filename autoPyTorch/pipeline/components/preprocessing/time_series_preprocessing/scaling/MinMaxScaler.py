@@ -21,9 +21,7 @@ class MinMaxScaler(BaseScaler):
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseScaler:
         self.check_requirements(X, y)
 
-        sequence_lengths_train = X['dataset_properties']['sequence_lengths_train']
-
-        self.preprocessor["numerical"] = TimeSeriesScaler(mode="min_max", sequence_lengths_train=sequence_lengths_train)
+        self.preprocessor["numerical"] = TimeSeriesScaler(mode="min_max")
         return self
 
     @staticmethod

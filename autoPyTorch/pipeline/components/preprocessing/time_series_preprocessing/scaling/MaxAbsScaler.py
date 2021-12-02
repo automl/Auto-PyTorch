@@ -22,9 +22,7 @@ class MaxAbsScaler(BaseScaler):
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseScaler:
         self.check_requirements(X, y)
 
-        sequence_lengths_train = X['dataset_properties']['sequence_lengths_train']
-        self.preprocessor['numerical'] = TimeSeriesScaler(mode="max_abs",
-                                                          sequence_lengths_train=sequence_lengths_train)
+        self.preprocessor['numerical'] = TimeSeriesScaler(mode="max_abs")
         return self
 
     @staticmethod
