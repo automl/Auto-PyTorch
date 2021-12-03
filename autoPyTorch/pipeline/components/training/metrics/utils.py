@@ -82,7 +82,10 @@ def get_metrics(dataset_properties: Dict[str, Any],
                                                 'binary': 'accuracy',
                                                 'multiclass-multioutput': 'f1'}),
                            regression=dict({'continuous': 'r2',
-                                            'continuous-multioutput': 'r2'}))
+                                            'continuous-multioutput': 'r2'}),
+                           forecasting=dict({'continuous': 'mean_MASE_forecasting',
+                                             'continuous-multioutput': 'mean_MASE_forecasting'})
+                           )
 
     supported_metrics = get_supported_metrics(dataset_properties)
     metrics: List[autoPyTorchMetric] = list()
@@ -103,6 +106,8 @@ def get_metrics(dataset_properties: Dict[str, Any],
                 metrics.append(supported_metrics[default_metrics['classification'][dataset_properties['output_type']]])
             if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in REGRESSION_TASKS:
                 metrics.append(supported_metrics[default_metrics['regression'][dataset_properties['output_type']]])
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in FORECASTING_TASKS:
+                metrics.append(supported_metrics[default_metrics['forecasting'][dataset_properties['output_type']]])
 
     return metrics
 

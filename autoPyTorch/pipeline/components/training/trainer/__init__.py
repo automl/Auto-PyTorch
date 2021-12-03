@@ -255,6 +255,7 @@ class TrainerChoice(autoPyTorchChoice):
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
         if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
+
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
         self.choice.prepare(
             model=X['network'],
@@ -268,7 +269,8 @@ class TrainerChoice(autoPyTorchChoice):
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
-            step_interval=X['step_interval']
+            step_interval=X['step_interval'],
+            dataset_properties=X['dataset_properties'],
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(

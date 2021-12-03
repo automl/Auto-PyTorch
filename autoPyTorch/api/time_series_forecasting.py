@@ -304,7 +304,7 @@ class TimeSeriesForecastingTask(BaseTask):
         seasonality = SEASONALITY_MAP.get(self.dataset.freq, 1)
         if isinstance(seasonality, list):
             seasonality = min(seasonality)  # Use to calculate MASE
-        self._metrics_kwargs = {'sp': seasonality,
+        self._metrics_kwargs = {'sp': self.dataset.seasonality,
                                 'n_prediction_steps': n_prediction_steps}
 
         return self._search(

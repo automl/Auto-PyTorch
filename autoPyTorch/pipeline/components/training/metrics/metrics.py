@@ -1,11 +1,16 @@
 from functools import partial
 
+import numpy as np
+from typing import List, Union
+
 import sktime.performance_metrics.forecasting as forecasting_metrics
 import sklearn.metrics
 
 from smac.utils.constants import MAXINT
 
 from autoPyTorch.pipeline.components.training.metrics.base import make_metric
+
+
 
 # Standard regression scores
 mean_absolute_error = make_metric('mean_absolute_error',
@@ -49,8 +54,27 @@ f1 = make_metric('f1',
 
 # Standard Forecasting Scores
 
+
 # To avoid storing unnecessary scale values here, we scale all the values under
 # AutoPytorch.evaluation.time_series_forecasting_train_evaluator
+
+def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> float:
+    """
+    compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
+    this function aims at reducing the memroy requirement
+    Args:
+        past_target:  Optional[List, np.ndarray] past target observations
+        sp: seasonality parameter to compute sp
+
+    Returns:
+        mase_coefficient: inverse of mase_denominator
+    """
+    mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
+                                                               past_target[:-sp],
+                                                               multioutput="uniform_average")
+    return 1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
+
+
 mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
                                     forecasting_metrics.mean_absolute_error,
                                     optimum=0,
@@ -60,7 +84,7 @@ mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
                                     aggregation='mean',
                                     )
 
-median_MASE_forecasting = make_metric('median_absolute_scaled_error_forecasting',
+median_MASE_forecasting = make_metric('median_MASE_forecasting',
                                       forecasting_metrics.mean_absolute_error,
                                       optimum=0,
                                       worst_possible_result=MAXINT,
@@ -99,7 +123,7 @@ mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
                                    aggregation='mean',
                                    )
 
-median_MAE_forecasting = make_metric('median_absolute_error_forecasting',
+median_MAE_forecasting = make_metric('median_MAE_forecasting',
                                      forecasting_metrics.mean_absolute_error,
                                      optimum=0,
                                      worst_possible_result=MAXINT,

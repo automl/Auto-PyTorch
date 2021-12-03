@@ -205,7 +205,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        **kwargs: Dict
     ) -> None:
 
         # Save the device to be used

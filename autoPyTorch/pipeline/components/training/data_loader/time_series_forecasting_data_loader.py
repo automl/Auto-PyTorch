@@ -32,7 +32,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
     def __init__(self,
                  indices: Sequence[int],
                  seq_lengths: Sequence[int],
-                 num_instances_per_seqs: List[int],
+                 num_instances_per_seqs: Optional[List[int]]=None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
         """
@@ -47,32 +47,38 @@ class TimeSeriesSampler(SubsetRandomSampler):
             The set of all the possible indices that can be sampled from
         seq_lengths: Sequence[int]
             lengths of each sequence, applied to unsqueeze indices
-        num_instances_per_seqs: List[int]
-            how many instances are sampled in each sequence
+        num_instances_per_seqs: OPtional[List[int]]=None
+            how many instances are sampled in each sequence, if it is None, all the sequences are sampled
         min_start: int
             the how many first instances we want to skip (the first few sequences need to be padded with 0)
         generator: Optional[torch.Generator]
             pytorch generator to control the randomness
         """
         super(TimeSeriesSampler, self).__init__(indices, generator)
-        if len(seq_lengths) != len(num_instances_per_seqs):
-            raise ValueError(f'the lengths of seq_lengths must equal the lengths of num_instances_per_seqs.'
-                             f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
-        if np.sum(seq_lengths) != len(indices):
-            raise ValueError(f'the sum of sequence length must correspond to the number of indices. '
-                             f'However, they are {np.sum(seq_lengths)} versus {len(indices)}')
-        seq_intervals = []
-        idx_tracker = 0
-        for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
-            idx_end = idx_tracker + seq_length
-            idx_start = idx_tracker + min_start
-            interval = np.linspace(idx_start, idx_end, num_instances + 1, endpoint=True, dtype=np.int)
-            seq_intervals.append(interval)
-        self.seq_lengths = seq_lengths
-        self.num_instances = np.sum(num_instances_per_seqs)
-        self.seq_intervals = seq_intervals
+        if num_instances_per_seqs is None:
+            self.iter_all_seqs = True
+        else:
+            self.iter_all_seqs = False
+            if len(seq_lengths) != len(num_instances_per_seqs):
+                raise ValueError(f'the lengths of seq_lengths must equal the lengths of num_instances_per_seqs.'
+                                 f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
+            if np.sum(seq_lengths) != len(indices):
+                raise ValueError(f'the sum of sequence length must correspond to the number of indices. '
+                                 f'However, they are {np.sum(seq_lengths)} versus {len(indices)}')
+            seq_intervals = []
+            idx_tracker = 0
+            for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
+                idx_end = idx_tracker + seq_length
+                idx_start = idx_tracker + min_start
+                interval = np.linspace(idx_start, idx_end, num_instances + 1, endpoint=True, dtype=np.int)
+                seq_intervals.append(interval)
+            self.seq_lengths = seq_lengths
+            self.num_instances = np.sum(num_instances_per_seqs)
+            self.seq_intervals = seq_intervals
 
     def __iter__(self):
+        if self.iter_all_seqs:
+            return super().__iter__()
         samples = torch.ones(self.num_instances, dtype=torch.int)
         idx_samples_start = 0
         idx_seq_tracker = 0
@@ -245,15 +251,18 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         num_instances_dataset = np.size(train_split)
         num_instances_train = self.num_batches_per_epoch * self.batch_size
 
-        # get the length of each sequence of training data (after split)
-        # as we already know that the elements in 'train_split' increases consecutively with a certain number of
-        # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
-        #  A new sequence must start from the index 7. We could then split each unique values to represent the length
-        # of each split
-        _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
-        num_instances_per_seqs = np.ceil(num_instances_train / num_instances_dataset * seq_train_length)
-        num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
-        # at least one element of each sequence should be selected
+        if num_instances_train > np.sum(train_split):
+            num_instances_per_seqs = None
+        else:
+            # get the length of each sequence of training data (after split)
+            # as we already know that the elements in 'train_split' increases consecutively with a certain number of
+            # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
+            #  A new sequence must start from the index 7. We could then split each unique values to represent the length
+            # of each split
+            _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
+            num_instances_per_seqs = np.ceil(num_instances_train / num_instances_dataset * seq_train_length)
+            num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
+            # at least one element of each sequence should be selected
 
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
         # In which case we simply iterate through all the datasets
@@ -410,7 +419,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                         window_size: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='window_size',
                                                                   value_range=(20, 50),
-                                                                  default_value=30)
+                                                                  default_value=30),
+                                        num_batch_per_epoch: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter="num_batches_per_epoch",
+                                                                  value_range=(30, 200),
+                                                                  default_value=100)
                                         ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)

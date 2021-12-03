@@ -73,7 +73,8 @@ class TimeSeriesSequence(Dataset):
         self.train_transform = train_transforms
         self.val_transform = val_transforms
 
-    def __getitem__(self, index: int, train: bool = True) -> Tuple[Dict[str, torch.Tensor], Optional[torch.Tensor]]:
+    def __getitem__(self, index: int, train: bool = True) \
+            -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
         """
         get a subsequent of time series data, unlike vanilla tabular dataset, we obtain all the previous sequences
         until the given index, this allows us to do further transformation when the
@@ -83,7 +84,7 @@ class TimeSeriesSequence(Dataset):
             train (bool): Whether to apply a train or test transformation, if any
 
         Returns:
-            A transformed single point prediction
+            features from past, targets from past and future
         """
         if index < 0:
             index = self.__len__() + 1 - index
@@ -98,21 +99,26 @@ class TimeSeriesSequence(Dataset):
         elif self.val_transform is not None and not train:
             X, loc, scale = self.val_transform(X)
         else:
-            loc = 0.0
-            scale = 1.0
+            loc = None
+            scale = None
 
         # In case of prediction, the targets are not provided
         Y = self.Y
         if Y is not None:
             # Y = Y[:index + self.n_prediction_steps]
             # Y = Y[index + 1: index + self.n_prediction_steps + 1]
-            Y = Y[index + 1: index + self.n_prediction_steps + 1]
+            Y_future = Y[index + 1: index + self.n_prediction_steps + 1]
 
-            Y = torch.from_numpy(Y)
+            Y_future = torch.from_numpy(Y_future)
+            # Y_Past does not need to be fed to the network, we keep it as np array
         else:
-            Y = None
+            Y_future = None
 
-        return {"value": torch.from_numpy(X), "loc": torch.from_numpy(loc), "scale": torch.from_numpy(scale)}, Y
+        # TODO consider static information and missing information
+        return {"value": torch.from_numpy(X),
+                "loc": torch.from_numpy(loc) if loc is not None else loc,
+                "scale": torch.from_numpy(scale) if scale is not None else scale}, \
+               Y_future
 
     def __len__(self) -> int:
         return self.X.shape[0]
@@ -302,6 +308,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if isinstance(freq, list):
             tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
             freq_value = tmp_freq
+
+        seasonality = SEASONALITY_MAP.get(freq, 1)
+        if isinstance(seasonality, list):
+            seasonality = min(seasonality)  # Use to calculate MASE
+        self.seasonality = seasonality
 
         self.freq: Optional[str] = freq
         self.freq_value: Optional[int] = freq_value
@@ -543,6 +554,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
                                    'upper_window_size': self.upper_window_size,
+                                   'sp': self.seasonality,  # For metric compuation
                                    'sequence_lengths_train': self.sequence_lengths_train})
         return dataset_properties
 

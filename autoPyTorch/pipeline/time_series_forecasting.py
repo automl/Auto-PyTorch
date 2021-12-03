@@ -32,7 +32,7 @@ from autoPyTorch.pipeline.components.setup.network_initializer import (
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
     TimeSeriesForecastingDataLoader
-from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
+from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
@@ -218,7 +218,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                           random_state=self.random_state)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties,
                                              random_state=self.random_state)),
-            ("trainer", TrainerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("trainer", ForecastingTrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
 

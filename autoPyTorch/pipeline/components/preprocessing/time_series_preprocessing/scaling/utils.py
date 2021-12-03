@@ -18,10 +18,11 @@ class TimeSeriesScaler(BaseEstimator):
         """
         The transformer is transformed on the fly (for each batch)
         """
-        # we assuem that the last two
+        # we assuem that the last two dimensions are [seq, features]
         if self.mode == "standard":
             self.loc = np.mean(X, axis=-2, keepdims=True)
             self.scale = np.std(X, axis=-2, keepdims=True)
+            self.scale[self.scale == 0.0] = 1.0
 
         elif self.mode == "min_max":
             min_ = np.min(X, axis=-2, keepdims=True)
@@ -30,16 +31,17 @@ class TimeSeriesScaler(BaseEstimator):
             diff_ = max_ - min_
             self.loc = min_
             self.scale = diff_
+            self.scale[self.scale == 0.0] = 1.0
 
         elif self.mode == "max_abs":
             max_abs_ = np.max(np.abs(X), axis=-2, keepdims=True)
             max_abs_[max_abs_ == 0.0] = 1.0
-            self.loc = np.zeros_like(max_abs_)
+            self.loc = None
             self.scale = max_abs_
 
         elif self.mode == "none":
-            self.loc = np.zeros([*X.shape[:-2], 1, X.shape[-1]])
-            self.scale = np.ones([*X.shape[:-2], 1, X.shape[-1]])
+            self.loc = None
+            self.scale = None
         else:
             raise ValueError(f"Unknown mode {self.mode} for time series scaler")
         return self
@@ -56,6 +58,11 @@ class TimeSeriesScaler(BaseEstimator):
         ) # type: np.ndarray
         """
 
-        return (X - self.loc) / self.scale
+        if self.mode in ['standard', 'min_max']:
+            return (X - self.loc) / self.scale
+        elif self.mode == "max_abs":
+            return X / self.scale
+        else:
+            return X
 
 

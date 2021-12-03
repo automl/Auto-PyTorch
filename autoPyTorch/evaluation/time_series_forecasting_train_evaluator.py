@@ -16,7 +16,7 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
+from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES, compute_mase_coefficient
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -104,7 +104,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            mase_cofficient = self.compute_mase_coefficient(test_split)
+            mase_cofficient = self.generate_mase_coefficient_for_validation(test_split)
 
             forecasting_kwargs = {'sp': self.seasonality,
                                   'n_prediction_steps': self.n_prediction_steps,
@@ -152,7 +152,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             mase_coefficient_all = []
             for train_split, test_split in self.splits:
-                mase_coefficient = self.compute_mase_coefficient(test_split)
+                mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)
                 mase_coefficient_all.append(mase_coefficient)
 
             for i, (train_split, test_split) in enumerate(self.splits):
@@ -273,7 +273,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 status=status,
             )
 
-    def compute_mase_coefficient(self, test_split: Sequence) -> np.ndarray:
+    def generate_mase_coefficient_for_validation(self, test_split: Sequence) -> np.ndarray:
         """
         Compute the denominator for Mean Absolute Scaled Losses,
         For detail, please check sktime.performance_metrics.forecasting._functions.mean_absolute_scaled_error
@@ -289,17 +289,13 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         """
         mase_coefficient = np.ones(len(test_split))
         if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
-            from sktime.performance_metrics.forecasting._functions import EPS, mean_absolute_error
             for seq_idx, test_idx in enumerate(test_split):
                 seq = self.datamanager[test_idx][0]
                 if seq.shape[-1] > 1:
                     seq = seq[self.datamanager.target_variables].squeeze()
                 else:
                     seq = seq.squeeze()
-                mase_denominator = mean_absolute_error(seq[self.seasonality:],
-                                                       seq[:-self.seasonality],
-                                                       multioutput="uniform_average")
-                mase_coefficient[seq_idx] = 1.0 / np.maximum(mase_denominator, EPS)
+                mase_coefficient[seq_idx] = compute_mase_coefficient(seq, self.seasonality)
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps)
         return mase_coefficient
 
