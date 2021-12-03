@@ -30,6 +30,7 @@ class DistributionNetworkHeadComponents(NetworkHeadComponent):
             FitRequirement('train_with_log_prob', (str,), user_defined=True, dataset_property=True),
             FitRequirement('n_prediction_steps', (int,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable, int), user_defined=True, dataset_property=True),
+            FitRequirement('window_size', (int,), user_defined=False, dataset_property=False)
         ])
         self.head: Optional[nn.Module] = None
         self.config = kwargs
@@ -52,6 +53,9 @@ class DistributionNetworkHeadComponents(NetworkHeadComponent):
         # TODO consider Auto-regressive model on vanilla network head
         if auto_regressive:
             output_shape[0] = 1
+        mlp_backbone = X.get("MLP_backbone", False)
+        if mlp_backbone:
+            input_shape = (X["window_size"], input_shape[-1])
         self.head = self.build_head(
             input_shape=get_output_shape(X['network_backbone'], input_shape=input_shape),
             output_shape=output_shape,

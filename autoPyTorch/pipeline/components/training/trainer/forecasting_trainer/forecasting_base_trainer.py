@@ -41,7 +41,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
     ) -> None:
         for metric in metrics:
             if metric in MASE_LOSSES:
-                warnings.warn("MASE Losses are unsupported for trainer!")
+                warnings.warn("MASE Losses are not supported for trainer! We remove them here")
                 metrics.remove(metric)
 
         super().prepare(metrics=metrics,

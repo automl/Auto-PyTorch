@@ -23,7 +23,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputat
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
-from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer import (
@@ -211,7 +211,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                                        random_state=self.random_state)),
             ("network_head", NetworkHeadChoice(default_dataset_properties,
                                                random_state=self.random_state)),
-            ("network", NetworkComponent(random_state=self.random_state)),
+            ("network", ForecastingNetworkComponent(random_state=self.random_state)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties,
                                                       random_state=self.random_state)),
             ("optimizer", OptimizerChoice(default_dataset_properties,
