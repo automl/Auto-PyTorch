@@ -58,11 +58,13 @@ def _return_output_shape(output_type: str, target_labels: np.ndarray) -> int:
     Returns:
         output_shape (int):
             The shape of outputs.
+
+    TODO: Add tests
     """
     if STRING_TO_OUTPUT_TYPES.get(output_type, None) in CLASSIFICATION_OUTPUTS:
         return len(np.unique(target_labels))
     elif target_labels.ndim > 1:
-        return target_labels.shape[-1]
+        return int(target_labels.shape[-1])
 
     return 1
 
@@ -92,6 +94,8 @@ def _double_check_and_return_property_of_target(train_tensors: BaseDatasetInputT
 
     Reference:
         https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html#exampleshttps://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html  # noqa: E501
+
+    TODO: Add tests for both `Dataset` and `np.ndarray`
     """
     if len(train_tensors) != 2 or train_tensors[1] is None:
         raise ValueError(
