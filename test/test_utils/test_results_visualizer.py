@@ -55,15 +55,46 @@ def test_extract_dicts(cl_settings, with_ensemble):
 
 @pytest.mark.parametrize('params', (
     PlotSettingParams(show=True),
-    PlotSettingParams(show=False)
+    PlotSettingParams(show=False),
+    PlotSettingParams(show=True, figname='dummy')
 ))
 def test_plt_show_in_set_plot_args(params):  # TODO
     plt.show = MagicMock()
+    plt.savefig = MagicMock()
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
 
     viz._set_plot_args(ax, params)
-    assert plt.show._mock_called == params.show
+    # if figname is not None, show will not be called. (due to the matplotlib design)
+    assert plt.show._mock_called == (params.figname is None and params.show)
+    plt.close()
+
+
+@pytest.mark.parametrize('params', (
+    PlotSettingParams(),
+    PlotSettingParams(figname='fig')
+))
+def test_plt_savefig_in_set_plot_args(params):  # TODO
+    plt.savefig = MagicMock()
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    viz = ResultsVisualizer()
+
+    viz._set_plot_args(ax, params)
+    assert plt.savefig._mock_called == (params.figname is not None)
+    plt.close()
+
+
+@pytest.mark.parametrize('params', (
+    PlotSettingParams(grid=True),
+    PlotSettingParams(grid=False)
+))
+def test_ax_grid_in_set_plot_args(params):  # TODO
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    ax.grid = MagicMock()
+    viz = ResultsVisualizer()
+
+    viz._set_plot_args(ax, params)
+    assert ax.grid._mock_called == params.grid
     plt.close()
 
 
@@ -77,10 +108,9 @@ def test_raise_value_error_in_set_plot_args(params):  # TODO
     _, ax = plt.subplots(nrows=1, ncols=1)
     viz = ResultsVisualizer()
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         viz._set_plot_args(ax, params)
 
-    assert excinfo._excinfo[0] == ValueError
     plt.close()
 
 
@@ -119,13 +149,11 @@ def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
     api = BaseTask()
 
     if metric_name == 'unknown':
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError):
             api.plot_perf_over_time(metric_name)
-        assert excinfo._excinfo[0] == ValueError
     else:
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(RuntimeError):
             api.plot_perf_over_time(metric_name)
-        assert excinfo._excinfo[0] == RuntimeError
 
 
 @pytest.mark.parametrize('metric_name', ('balanced_accuracy', 'accuracy'))
@@ -175,15 +203,13 @@ def test_raise_error_get_perf_and_time(params):
     results = np.linspace(-1, 1, 10)
     cum_times = np.linspace(0, 1, 10)
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         _get_perf_and_time(
             cum_results=results,
             cum_times=cum_times,
             plot_setting_params=params,
             worst_val=np.inf
         )
-
-    assert excinfo._excinfo[0] == ValueError
 
 
 @pytest.mark.parametrize('params', (
