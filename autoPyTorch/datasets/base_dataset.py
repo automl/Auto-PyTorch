@@ -45,6 +45,82 @@ def type_check(train_tensors: BaseDatasetInputType,
             check_valid_data(val_tensors[i])
 
 
+def _return_output_shape(output_type: str, target_labels: np.ndarray) -> int:
+    """
+    Returns the shape of output given a target_labels and output_type.
+
+    Args:
+        output_type (str):
+            The output type according to sklearn specification.
+        target_labels (np.ndarray):
+            Target labels of the training dataset.
+
+    Returns:
+        output_shape (int):
+            The shape of outputs.
+    """
+    if STRING_TO_OUTPUT_TYPES.get(output_type, None) in CLASSIFICATION_OUTPUTS:
+        return len(np.unique(target_labels))
+    elif target_labels.ndim > 1:
+        return target_labels.shape[-1]
+
+    return 1
+
+
+def _double_check_and_return_property_of_target(train_tensors: BaseDatasetInputType) -> Tuple[str, int]:
+    """
+    Since task type inference by sklearn (see Reference below) for continuous is
+    not suitable for AutoPytorch, we double-check the task type in the case
+    when we get `multiclass` from the inference.
+
+    Args:
+        train_tensors (BaseDatasetInputType):
+            feature and label tensors that are used for training.
+
+    Returns:
+        output_type (str):
+            output_type of the label tensor.
+            The return will be either:
+                - continuous
+                - binary
+                - multiclass
+                - multiclass-multioutput
+                - continuous-multioutput  # TODO: Check usecases
+                - multilabel-indicator
+        output_shape (int):
+            The shape of the output.
+
+    Reference:
+        https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html#exampleshttps://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html  # noqa: E501
+    """
+    if len(train_tensors) != 2 or train_tensors[1] is None:
+        raise ValueError(
+            'Unsupervised learning has not been supported yet. '
+            'Make sure that your dataset has labels and the format is correct.'
+        )
+
+    if isinstance(train_tensors, Dataset):
+        target_labels = np.array([sample[-1] for sample in train_tensors])
+    else:
+        target_labels = np.array(train_tensors[1])
+
+    output_type: str = type_of_target(target_labels)
+    is_numerical_multiclass = (output_type == 'multiclass' and target_labels.dtype != np.dtype('O'))
+
+    if is_numerical_multiclass:
+        # From sklearn design, it is guaranteed that elements are not float-like.
+        target_labels = target_labels.astype(np.int64)
+        unique_labels = np.unique(target_labels)
+
+        # We assume that every label vector includes [0, C) if the task is C-class classification.
+        # e.g. labels = [0, 1, 3, 1, 3] will be viewed as regression since it does not have `2`.
+        is_continuous = np.any(unique_labels != np.arange(unique_labels.size))
+
+        output_type = output_type if not is_continuous else 'continuous'
+
+    return output_type, _return_output_shape(output_type, target_labels)
+
+
 class TransformSubset(Subset):
     """Wrapper of BaseDataset for splitted datasets
 
@@ -126,16 +202,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
-        if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
-            self.output_type: str = type_of_target(self.train_tensors[1])
 
-            if (
-                self.output_type in STRING_TO_OUTPUT_TYPES
-                and STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS
-            ):
-                self.output_shape = len(np.unique(self.train_tensors[1]))
-            else:
-                self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
+        self.output_type, self.output_shape = _double_check_and_return_property_of_target(train_tensors)
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
