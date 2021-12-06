@@ -16,7 +16,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
+from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS, \
+    FORECASTING_METRICS
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -123,11 +124,12 @@ class RunSummary(object):
         # If we compute validation scores, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
-            scorer = CLASSIFICATION_METRICS[
-                self.optimize_metric
-            ] if self.optimize_metric in CLASSIFICATION_METRICS else REGRESSION_METRICS[
-                self.optimize_metric
-            ]
+            if self.optimize_metric in CLASSIFICATION_METRICS:
+                scorer = CLASSIFICATION_METRICS[self.optimize_metric]
+            elif self.optimize_metric in REGRESSION_METRICS:
+                scorer = REGRESSION_METRICS[self.optimize_metric]
+            else:
+                scorer = FORECASTING_METRICS[self.optimize_metric]
             # Some metrics maximize, other minimize!
             opt_func = np.argmax if scorer._sign > 0 else np.argmin
             return int(opt_func(

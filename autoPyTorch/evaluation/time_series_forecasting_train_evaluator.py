@@ -66,6 +66,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.datamanager: TimeSeriesForecastingDataset
         self.n_prediction_steps = self.datamanager.n_prediction_steps
         self.num_sequences = self.datamanager.num_sequences
+        self.num_targets = self.datamanager.num_target
         self.seq_length_min = np.min(self.num_sequences)
         seasonality = SEASONALITY_MAP.get(self.datamanager.freq, 1)
         if isinstance(seasonality, list):
@@ -124,7 +125,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
-                opt_pred=y_opt_pred.flatten() * mase_cofficient,
+                opt_pred=y_opt_pred * mase_cofficient,
                 valid_pred=y_valid_pred,
                 test_pred=y_test_pred,
                 additional_run_info=additional_run_info,
@@ -287,16 +288,17 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         mase_coefficient: np.ndarray(self.num_sequence * self.n_prediction_steps)
             inverse of the mase_denominator
         """
-        mase_coefficient = np.ones(len(test_split))
+        mase_coefficient = np.ones([len(test_split), self.num_targets])
         if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
             for seq_idx, test_idx in enumerate(test_split):
-                seq = self.datamanager[test_idx][0]
+                seq = self.datamanager[test_idx][0]['past_target']
                 if seq.shape[-1] > 1:
                     seq = seq[self.datamanager.target_variables].squeeze()
                 else:
                     seq = seq.squeeze()
                 mase_coefficient[seq_idx] = compute_mase_coefficient(seq, self.seasonality)
-        mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps)
+
+        mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
 
     def _predict(self, pipeline: BaseEstimator,
@@ -304,9 +306,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  test_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         # TODO consider multile outputs
-        opt_pred = np.ones([len(test_indices), self.n_prediction_steps])
+        opt_pred = np.ones([len(test_indices), self.n_prediction_steps, self.num_targets])
         for seq_idx, test_idx in enumerate(test_indices):
-            opt_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0], pipeline).squeeze()
+            opt_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0]['past_target'], pipeline)
+        opt_pred = opt_pred.reshape(-1, self.num_targets)
 
         #TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:

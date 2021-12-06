@@ -33,6 +33,8 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.Tim
     TimeSeriesTransformer
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.constants_forecasting import SEASONALITY_MAP
+from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
+
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
 TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
@@ -48,6 +50,7 @@ class TimeSeriesSequence(Dataset):
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  n_prediction_steps: int = 1,
+                 sp: int = 1,
                  ):
         """
         A dataset representing a time series sequence.
@@ -72,6 +75,7 @@ class TimeSeriesSequence(Dataset):
         # or for augmentation
         self.train_transform = train_transforms
         self.val_transform = val_transforms
+        self.sp = sp
 
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
@@ -94,10 +98,13 @@ class TimeSeriesSequence(Dataset):
         else:
             X = self.X[:index + 1]
 
+        if not train:
+            mase_coefficient = compute_mase_coefficient(X, sp=self.sp)
+
         if self.train_transform is not None and train:
-            X, loc, scale = self.train_transform(X)
+            X = self.train_transform(X)
         elif self.val_transform is not None and not train:
-            X, loc, scale = self.val_transform(X)
+            X = self.val_transform(X)
         else:
             loc = None
             scale = None
@@ -113,12 +120,12 @@ class TimeSeriesSequence(Dataset):
             # Y_Past does not need to be fed to the network, we keep it as np array
         else:
             Y_future = None
-
-        # TODO consider static information and missing information
-        return {"value": torch.from_numpy(X),
-                "loc": torch.from_numpy(loc) if loc is not None else loc,
-                "scale": torch.from_numpy(scale) if scale is not None else scale}, \
-               Y_future
+        if train:
+            # TODO consider static information and missing information
+            return {"past_target": torch.from_numpy(X)},  Y_future
+        else:
+            return {"past_target": torch.from_numpy(X),
+                    "mase_coefficient": mase_coefficient},  Y_future
 
     def __len__(self) -> int:
         return self.X.shape[0]
@@ -157,7 +164,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+                 target_variables: Optional[Union[Tuple[int], int]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  resampling_strategy: Union[
                      CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
@@ -174,8 +181,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  train_with_log_prob: bool = True,
                  ):
         """
-        :param target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] used for multi-variant forecasting
-        tasks, the target_variables indicates which values in X corresponds to Y
+        :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
+        tasks, the target_variables indicates which values in X corresponds to Y.
+        TODO add supports on X for pandas and target variables can be str or Tuple[str]
         :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
         period
         :param n_prediction_steps: The number of steps you want to forecast into the future
@@ -189,6 +197,28 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         header's configspace can be built beforehand.
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
+
+        if freq is None:
+            self.freq = None
+            self.freq_value = None
+
+        if isinstance(freq, str):
+            if freq not in SEASONALITY_MAP:
+                Warning("The given freq name is not supported by our dataset, we will use the default "
+                        "configuration space on the hyperparameter window_size, if you want to adapt this value"
+                        "you could pass freq with a numerical value")
+            freq_value = SEASONALITY_MAP.get(freq, None)
+        if isinstance(freq, list):
+            tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
+            freq_value = tmp_freq
+
+        seasonality = SEASONALITY_MAP.get(freq, 1)
+        if isinstance(seasonality, list):
+            seasonality = min(seasonality)  # Use to calculate MASE
+        self.seasonality = seasonality
+
+        self.freq: Optional[str] = freq
+        self.freq_value: Optional[int] = freq_value
 
         self.dataset_name = dataset_name
 
@@ -215,6 +245,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.shift_input_data = shift_input_data
         self.target_variables = target_variables
+        if target_variables is None:
+            if self.num_target != 1:
+                raise ValueError("target_variables must be specified if more the input has more than one feature value")
+            self.target_columns = (0, ) # to keep the output dimension unchanged
+        elif isinstance(target_variables, int):
+            self.target_columns = (target_variables, )
+        else:
+            self.target_columns = target_variables
 
         X, sequence_lengths, Y = self.validator.transform(X, Y,
                                                           shift_input_data=shift_input_data,
@@ -222,7 +260,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if X_test is not None:
             X_test, self.sequence_lengths_tests, Y_test = self.validator.transform(X_test, Y_test,
                                                                                    shift_input_data=shift_input_data,
-                                                                                   n_prediction_steps=n_prediction_steps)
+                                                                                   n_prediction_steps=n_prediction_steps
+                                                                                   )
         else:
             self.sequence_lengths_tests = None
 
@@ -243,7 +282,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         # initialize datasets
         sequences_kwargs = {"train_transforms": self.train_transform,
                             "val_transforms": self.val_transform,
-                            "n_prediction_steps": n_prediction_steps}
+                            "n_prediction_steps": n_prediction_steps,
+                            "sp": self.seasonality}
 
         self.y_train_mean = [0] * len(self.sequence_lengths_train)
         self.y_train_std = [1] * len(self.sequence_lengths_train)
@@ -284,7 +324,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.output_shape = [self.n_prediction_steps, num_target]
 
         # TODO: Look for a criteria to define small enough to preprocess
-        self.is_small_preprocess = False
+        self.is_small_preprocess = True
 
         self.task_type = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
 
@@ -294,28 +334,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
-
-        if freq is None:
-            self.freq = None
-            self.freq_value = None
-
-        if isinstance(freq, str):
-            if freq not in SEASONALITY_MAP:
-                Warning("The given freq name is not supported by our dataset, we will use the default "
-                        "configuration space on the hyperparameter window_size, if you want to adapt this value"
-                        "you could pass freq with a numerical value")
-            freq_value = SEASONALITY_MAP.get(freq, None)
-        if isinstance(freq, list):
-            tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
-            freq_value = tmp_freq
-
-        seasonality = SEASONALITY_MAP.get(freq, 1)
-        if isinstance(seasonality, list):
-            seasonality = min(seasonality)  # Use to calculate MASE
-        self.seasonality = seasonality
-
-        self.freq: Optional[str] = freq
-        self.freq_value: Optional[int] = freq_value
 
         # TODO in the future, if training losses types are considered as a type of hyperparameters, we need to remove
         #  this line and create  conditional configspace under
@@ -546,7 +564,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
             'upper_window_size': self.upper_window_size,
-            'train_with_log_prob': self.train_with_log_prob
+            'train_with_log_prob': self.train_with_log_prob,
+            'target_columns': self.target_columns
         })
         return info
 
@@ -554,7 +573,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
                                    'upper_window_size': self.upper_window_size,
-                                   'sp': self.seasonality,  # For metric compuation
+                                   'sp': self.seasonality,  # For metric computation
                                    'sequence_lengths_train': self.sequence_lengths_train})
         return dataset_properties
 

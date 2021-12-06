@@ -8,6 +8,7 @@ from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 import numpy as np
 
 from sklearn.base import RegressorMixin
+from sklearn.pipeline import Pipeline
 
 import torch
 
@@ -29,6 +30,8 @@ from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling import \
+    TargetScalerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
     TimeSeriesForecastingDataLoader
@@ -81,6 +84,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
 
+        self.target_scaler = None
+
         # Because a pipeline is passed to a worker, we need to honor the random seed
         # in this context. A tabular regression pipeline will implement a torch
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
@@ -104,6 +109,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
                              metrics=metrics)['r2']
         return r2
+
+
+    def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
+            **fit_params: Any) -> Pipeline:
+        super().fit(X, y, ** fit_params)
+        self.target_scaler = X['target_scaler']
 
     def _get_hyperparameter_search_space(self,
                                          dataset_properties: Dict[str, Any],
@@ -202,7 +213,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
             ("imputer", SimpleImputer(random_state=self.random_state)),
-            ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+            # ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
@@ -218,6 +229,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                           random_state=self.random_state)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties,
                                              random_state=self.random_state)),
+            ("target_scaler", TargetScalerChoice(default_dataset_properties,
+                                                 random_state=self.random_state)),
             ("trainer", ForecastingTrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps
@@ -284,4 +297,4 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             batch_size = X.shape[0]
 
         loader = self.named_steps['data_loader'].get_loader(X=X, batch_size=batch_size)
-        return self.named_steps['network'].predict(loader)
+        return self.named_steps['network'].predict(loader, self.target_scaler)

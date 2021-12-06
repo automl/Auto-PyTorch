@@ -66,18 +66,20 @@ class TrainerChoice(autoPyTorchChoice):
                          random_state=random_state)
         self.run_summary: Optional[RunSummary] = None
         self.writer: Optional[SummaryWriter] = None
-        self._fit_requirements: Optional[List[FitRequirement]] = [
-            FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
-            FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
-            FitRequirement(
-                "optimizer", (Optimizer,), user_defined=False, dataset_property=False),
-            FitRequirement("train_data_loader",
-                           (torch.utils.data.DataLoader,),
-                           user_defined=False, dataset_property=False),
-            FitRequirement("val_data_loader",
-                           (torch.utils.data.DataLoader,),
-                           user_defined=False, dataset_property=False)]
         self.checkpoint_dir: Optional[str] = None
+
+    @property
+    def _fit_requirements(self) -> Optional[List[FitRequirement]]:
+        return [FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
+                FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
+                FitRequirement(
+                    "optimizer", (Optimizer,), user_defined=False, dataset_property=False),
+                FitRequirement("train_data_loader",
+                               (torch.utils.data.DataLoader,),
+                               user_defined=False, dataset_property=False),
+                FitRequirement("val_data_loader",
+                               (torch.utils.data.DataLoader,),
+                               user_defined=False, dataset_property=False)]
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
@@ -98,11 +100,11 @@ class TrainerChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -204,7 +206,7 @@ class TrainerChoice(autoPyTorchChoice):
             name=f"{X['num_run']}_{time.time()}",
             # Log to a user provided port else to the default logging port
             port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
 
         # Call the actual fit function.
@@ -215,6 +217,33 @@ class TrainerChoice(autoPyTorchChoice):
         )
 
         return cast(autoPyTorchComponent, self.choice)
+
+    def prepare_trainer(self, X):
+        """
+        prepare trainer, forecasting tasks require more parameters
+        """
+        # Support additional user metrics
+        metrics = get_metrics(dataset_properties=X['dataset_properties'])
+        if 'additional_metrics' in X:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
+        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
+
+        additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+        self.choice.prepare(
+            model=X['network'],
+            metrics=metrics,
+            criterion=get_loss(X['dataset_properties'],
+                               name=additional_losses),
+            budget_tracker=self.budget_tracker,
+            optimizer=X['optimizer'],
+            device=get_device_from_fit_dictionary(X),
+            metrics_during_training=X['metrics_during_training'],
+            scheduler=X['lr_scheduler'],
+            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
+            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
+            step_interval=X['step_interval'],
+        )
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
         """
@@ -249,29 +278,7 @@ class TrainerChoice(autoPyTorchChoice):
             max_epochs=X['epochs'] if 'epochs' in X else None,
         )
 
-        # Support additional user metrics
-        metrics = get_metrics(dataset_properties=X['dataset_properties'])
-        if 'additional_metrics' in X:
-            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
-        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
-            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
-
-        additional_losses = X['additional_losses'] if 'additional_losses' in X else None
-        self.choice.prepare(
-            model=X['network'],
-            metrics=metrics,
-            criterion=get_loss(X['dataset_properties'],
-                               name=additional_losses),
-            budget_tracker=self.budget_tracker,
-            optimizer=X['optimizer'],
-            device=get_device_from_fit_dictionary(X),
-            metrics_during_training=X['metrics_during_training'],
-            scheduler=X['lr_scheduler'],
-            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
-            step_interval=X['step_interval'],
-            dataset_properties=X['dataset_properties'],
-        )
+        self.prepare_trainer(X)
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
             total_parameter_count,

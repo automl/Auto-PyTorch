@@ -22,8 +22,6 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         self.add_fit_requirements([
             FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_features', (List,), user_defined=True, dataset_property=True)])
-        self.loc = 0.
-        self.scale = 1.
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> "TimeSeriesTransformer":
         """
@@ -53,6 +51,7 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             remainder='passthrough'
         )
 
+
         """
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
@@ -61,6 +60,8 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
         """
+        X_train = X['backend'].load_datamanager().train_tensors[0]
+        self.preprocessor.fit(X_train)
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -80,14 +81,8 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
-        self.preprocessor.fit(X)
 
         #if len(X.shape) == 2:
         #    # expand batch dimension when called on a single record
         #    X = X[np.newaxis, ...]
-
-        scaler = self.preprocessor.named_transformers_['numerical_pipeline']['timeseriesscaler']
-        loc = scaler.loc
-        scale = scaler.scale
-
-        return self.preprocessor.transform(X), loc, scale
+        return self.preprocessor.transform(X)

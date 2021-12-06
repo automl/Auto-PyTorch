@@ -16,6 +16,10 @@ from torch.distributions import (
     TransformedDistribution,
 )
 
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
+    base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
+    TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
@@ -37,13 +41,11 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             task_type: int,
             labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
             step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
-            dataset_properties: Optional[Dict]=None
+            dataset_properties: Optional[Dict] = None,
+            target_scaler: BaseTargetScaler = TargetNoScaler(),
     ) -> None:
-        for metric in metrics:
-            if metric in MASE_LOSSES:
-                warnings.warn("MASE Losses are not supported for trainer! We remove them here")
-                metrics.remove(metric)
-
+        # metrics_during_training is not appliable when computing scaled values
+        metrics_during_training = False
         super().prepare(metrics=metrics,
                         model=model,
                         criterion=criterion,
@@ -59,6 +61,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         metric_kwargs = {"sp": dataset_properties.get("sp", 1),
                          "n_prediction_steps": dataset_properties.get("n_prediction_steps", 1)}
         self.metrics_kwargs = metric_kwargs
+        self.target_scaler = target_scaler  # typing: BaseTargetScaler
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -74,7 +77,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
-
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -92,7 +94,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 outputs_data.append(outputs.detach().cpu())
                 targets_data.append(targets.detach().cpu())
 
-            batch_size = data["value"].size(0)
+            batch_size = data["past_target"].size(0)
             loss_sum += loss * batch_size
             N += batch_size
 
@@ -111,18 +113,18 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             return loss_sum / N, {}
 
     def rescale_output_distribution(self,
-                                      outputs: torch.distributions.Distribution,
-                                      loc: Optional[torch.Tensor],
-                                      scale: Optional[torch.Tensor]):
+                                    outputs: torch.distributions.Distribution,
+                                    loc: Optional[torch.Tensor],
+                                    scale: Optional[torch.Tensor]):
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
         if loc is not None or scale is not None:
-            transfomr = AffineTransform(loc=0.0 if loc is None else loc,
-                                        scale=1.0 if scale is None else scale,
+            transfomr = AffineTransform(loc=0.0 if loc is None else loc.to(self.device),
+                                        scale=1.0 if scale is None else scale.to(self.device),
                                         )
             outputs = TransformedDistribution(outputs, [transfomr])
         return outputs
 
-    def train_step(self, data: Dict[str, torch.Tensor], targets:  Dict[str, Union[torch.Tensor, np.ndarray]])\
+    def train_step(self, data: Dict[str, torch.Tensor], targets: Dict[str, Union[torch.Tensor, np.ndarray]]) \
             -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -135,12 +137,14 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        X = data['value']
-        loc = data['loc']
-        scale = data['scale']
+        X = data['past_target']
 
         # prepare
-        X = X.float().to(self.device)
+        X = X.float()
+
+        X, loc, scale = self.target_scaler(X)
+
+        X = X.to(self.device)
 
         targets = self.cast_targets(targets)
 
@@ -181,16 +185,22 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         outputs_data = list()
         targets_data = list()
 
+        mase_coefficients = list()
+
         with torch.no_grad():
             for step, (data, targets) in enumerate(test_loader):
-                X = data['value']
-                loc = data['loc']
-                scale = data['scale']
+                X = data['past_target']
+
+                mase_coefficients.append(data['mase_coefficient'])
 
                 batch_size = X.shape[0]
 
                 # prepare
-                X = X.float().to(self.device)
+                X = X.float()
+
+                X, loc, scale = self.target_scaler(X)
+
+                X = X.to(self.device)
 
                 targets = self.cast_targets(targets)
 
@@ -211,7 +221,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                         loc = 0.
                     if scale is None:
                         scale = 1.
-                    outputs_data.append(outputs.base_dist.mean * scale + loc)
+                    outputs_data.append(outputs.base_dist.mean.detach().cpu() * scale + loc)
                 targets_data.append(targets.detach().cpu())
 
                 if writer:
@@ -220,6 +230,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                         loss.item(),
                         epoch * len(test_loader) + step,
                     )
+        # mase_coefficent has the shape [B, 1, 1]
+        # to be compatible with outputs_data with shape [B, n_prediction_steps, num_output]
+        mase_coefficients = np.expand_dims(torch.cat(mase_coefficients, dim=0).numpy(), axis=[1])
+        self.metrics_kwargs.update({'mase_cofficient': mase_coefficients})
 
         self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
 
@@ -231,4 +245,5 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         # TODO: change once Ravin Provides the PR
         outputs_data = torch.cat(outputs_data, dim=0).numpy()
         targets_data = torch.cat(targets_data, dim=0).numpy()
+
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics, **self.metrics_kwargs)

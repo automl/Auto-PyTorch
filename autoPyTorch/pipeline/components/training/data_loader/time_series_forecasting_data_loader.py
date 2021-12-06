@@ -350,8 +350,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         applying the transformations meant to validation objects
         This is a lazy loaded test set, each time only one piece of series
         """
-        # TODO any better way to deal with prediction data loader for multiple sequences
-        if isinstance(X, np.ndarray):
+        # TODO more supported inputs
+        if isinstance(X, (np.ndarray, torch.Tensor)):
             X = X[-self.subseq_length - self.n_prediction_steps + 1:]
 
             if y is not None:

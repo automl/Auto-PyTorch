@@ -1,10 +1,11 @@
 from abc import ABCMeta
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Dict
 
 import numpy as np
 
 import sklearn.metrics
 from sklearn.utils.multiclass import type_of_target
+
 
 
 class autoPyTorchMetric(object, metaclass=ABCMeta):
@@ -197,7 +198,8 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             y_pred: np.ndarray,
             sp: int,
             n_prediction_steps: int,
-            horizon_weight: Optional[List[float]] = None
+            horizon_weight: Optional[List[float]] = None,
+            **kwarg: Dict,
     ) -> float:
         """Evaluate time series forecastin losses given input data
         The description is nearly the same as the one defined under
@@ -222,31 +224,8 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         score : float
             Score function applied to prediction of estimator on X.
         """
-        type_true = type_of_target(y_true)
-        if type_true == 'binary' and type_of_target(y_pred) == 'continuous' and \
-                len(y_pred.shape) == 1:
-            # For a pred autoPyTorchMetric, no threshold, nor probability is required
-            # If y_true is binary, and y_pred is continuous
-            # it means that a rounding is necessary to obtain the binary class
-            y_pred = np.around(y_pred, decimals=0)
-        elif len(y_pred.shape) == 1 or y_pred.shape[1] == 1 or \
-                type_true == 'continuous':
-            # must be regression, all other task types would return at least
-            # two probabilities
-            pass
-        elif type_true in ['binary', 'multiclass']:
-            y_pred = np.argmax(y_pred, axis=1)
-        elif type_true == 'multilabel-indicator':
-            y_pred[y_pred > 0.5] = 1.0
-            y_pred[y_pred <= 0.5] = 0.0
-        elif type_true in ['continuous-multioutput', 'multiclass-multioutput']:
-            pass
-        else:
-            raise ValueError(type_true)
 
         agg = self._kwargs['aggregation']
-        y_true = y_true.reshape([-1, n_prediction_steps])
-        y_pred = y_pred.reshape([-1, n_prediction_steps])
 
         if not len(y_pred) == len(y_true):
             raise ValueError(f"The length of y_true, y_pred and y_train must equal, however, they are "
@@ -260,9 +239,9 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
                                                                  horizon_weight=horizon_weight,
                                                                  **self._kwargs)
         if agg == 'mean':
-            return np.mean(losses_all)
+            return self._sign * np.mean(losses_all)
         elif agg == 'median':
-            return np.median(losses_all)
+            return self._sign * np.median(losses_all)
         else:
             raise ValueError(f'Unsupported aggregation type {agg}')
 

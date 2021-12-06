@@ -124,7 +124,7 @@ def calculate_score(
         for metric_ in metrics:
             if metric_ in MASE_LOSSES and 'mase_cofficient' in score_kwargs:
                 target_scaled = target * score_kwargs['mase_cofficient']
-                cprediction_scaled = cprediction_scaled * score_kwargs['mase_cofficient']
+                cprediction_scaled = cprediction * score_kwargs['mase_cofficient']
                 score_dict[metric_.name] = metric_(target_scaled, cprediction_scaled, **score_kwargs)
             else:
                 score_dict[metric_.name] = metric_(target, cprediction, **score_kwargs)

@@ -71,7 +71,7 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> f
     """
     mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
                                                                past_target[:-sp],
-                                                               multioutput="uniform_average")
+                                                               multioutput="raw_values")
     return 1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
 
 
@@ -95,24 +95,6 @@ median_MASE_forecasting = make_metric('median_MASE_forecasting',
 
 MASE_LOSSES = [mean_MASE_forecasting, median_MASE_forecasting]
 
-
-mean_MSSE_forecasting = make_metric('mean_MSSE_forecasting',
-                                    forecasting_metrics.mean_squared_scaled_error,
-                                    optimum=0,
-                                    worst_possible_result=MAXINT,
-                                    greater_is_better=False,
-                                    do_forecasting=True,
-                                    aggregation='mean',
-                                    )
-
-median_MSSE_forecasting = make_metric('median_MSSE_forecasting',
-                                      forecasting_metrics.mean_squared_scaled_error,
-                                      optimum=0,
-                                      worst_possible_result=MAXINT,
-                                      greater_is_better=False,
-                                      do_forecasting=True,
-                                      aggregation='median',
-                                      )
 
 mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
                                    forecasting_metrics.mean_absolute_error,
@@ -199,7 +181,6 @@ for scorer in [accuracy, balanced_accuracy, roc_auc, average_precision,
 
 FORECASTING_METRICS = dict()
 for scorer in [mean_MASE_forecasting, median_MASE_forecasting,
-               mean_MSSE_forecasting, median_MSSE_forecasting,
                mean_MAE_forecasting, median_MAE_forecasting,
                mean_MAPE_forecasting, median_MAPE_forecasting,
                mean_MSE_forecasting, median_MSE_forecasting]:

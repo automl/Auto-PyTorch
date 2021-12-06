@@ -113,6 +113,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
             X_transformed = self.feature_validator.transform(X_flat)
             y_transformed = self.target_validator.transform(y_flat)
+            if y_transformed.ndim == 1:
+                y_transformed = np.expand_dims(y_transformed, -1)
             return X_transformed, sequence_lengths, y_transformed
 
             num_train_data = np.sum(sequence_lengths)
