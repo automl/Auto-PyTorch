@@ -164,9 +164,9 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 1 1 1 0 1 1 1 1 0 1 1 0 1 1 0 1 1 0 0 1 1 1
- 1 0 1 1 1 0 0 1 1 1 1 1 0 1 1 1 1 0 0 1 0 0 1 0 0 0 1 0 1 1 1 0 0 1 1 0 0
- 0 1 1 1 0 0 1 0 0 1 1 1 1 1 1 0 0 0 0 1 0 0 0 0 0 0]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[0 1 1 1 1 0 1 1 0 1 0 0 0 0 0 1 1 1 1 0 0 0 1 0 0 0 1 0 0 1 1 1 1 0 0 1 1
+ 1 0 1 0 0 0 1 1 0 1 1 0 1 1 0 1 1 1 1 0 1 0 0 1 0 0 0 1 0 1 1 0 0 1 1 0 0
+ 1 1 0 1 0 0 0 1 0 0 0 1 1 0 0 1 1 1 1 1 0 1 0 1 0 1]
 </pre></div>
 </div>
 </section>
@@ -179,7 +179,7 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa1eb83bc70&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7efcdd2d2c10&gt;
 </pre></div>
 </div>
 </section>
@@ -192,28 +192,26 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
     <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Runtime&#39;</span><span class="p">,</span>
     <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Toy Example&#39;</span><span class="p">,</span>
-    <span class="n">show</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># If you would like to show, make it True</span>
+    <span class="n">figname</span><span class="o">=</span><span class="s1">&#39;example_plot_over_time.png&#39;</span><span class="p">,</span>
+    <span class="n">savefig_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;bbox_inches&#39;</span><span class="p">:</span> <span class="s1">&#39;tight&#39;</span><span class="p">},</span>
+    <span class="n">show</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># If you would like to show, make it True and set figname=None</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="plot-with-the-specified-setting-parameters">
 <h2>Plot with the Specified Setting Parameters<a class="headerlink" href="#plot-with-the-specified-setting-parameters" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-
+<p>_, ax = plt.subplots()  &lt;=== You can feed it to post-process the figure.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.</span>
 <span class="n">api</span><span class="o">.</span><span class="n">plot_perf_over_time</span><span class="p">(</span>
-    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>  <span class="c1"># You do not have to provide.</span>
     <span class="n">metric_name</span><span class="o">=</span><span class="n">metric_name</span><span class="p">,</span>
     <span class="n">plot_setting_params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
     <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span>
     <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
-
-<span class="c1"># plt.show() might cause issue depending on environments</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;example_plot_over_time.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_example_plot_over_time_001.png" srcset="../../_images/sphx_glr_example_plot_over_time_001.png" alt="Toy Example" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  28.587 seconds)</p>
+<img src="../../_images/sphx_glr_example_plot_over_time_001.png" srcset="../../_images/sphx_glr_example_plot_over_time_001.png" alt="Toy Example" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  23.980 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-plot-over-time-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_plot_over_time.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

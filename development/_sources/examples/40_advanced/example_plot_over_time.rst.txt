@@ -89,9 +89,9 @@ Task Definition
 
  .. code-block:: none
 
-    [1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 1 1 1 0 1 1 1 1 0 1 1 0 1 1 0 1 1 0 0 1 1 1
-     1 0 1 1 1 0 0 1 1 1 1 1 0 1 1 1 1 0 0 1 0 0 1 0 0 0 1 0 1 1 1 0 0 1 1 0 0
-     0 1 1 1 0 0 1 0 0 1 1 1 1 1 1 0 0 0 0 1 0 0 0 0 0 0]
+    [0 1 1 1 1 0 1 1 0 1 0 0 0 0 0 1 1 1 1 0 0 0 1 0 0 0 1 0 0 1 1 1 1 0 0 1 1
+     1 0 1 0 0 0 1 1 0 1 1 0 1 1 0 1 1 1 1 0 1 0 0 1 0 0 0 1 0 1 1 0 0 1 1 0 0
+     1 1 0 1 0 0 0 1 0 0 0 1 1 0 0 1 1 1 1 1 0 1 0 1 0 1]
 
 
 
@@ -121,7 +121,7 @@ API Instantiation and Searching
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa1eb83bc70>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7efcdd2d2c10>
 
 
 
@@ -130,7 +130,7 @@ API Instantiation and Searching
 Create Setting Parameters Object
 ================================
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-68
+.. GENERATED FROM PYTHON SOURCE LINES 58-70
 
 .. code-block:: default
 
@@ -141,7 +141,9 @@ Create Setting Parameters Object
         xlabel='Runtime',
         ylabel='Accuracy',
         title='Toy Example',
-        show=False  # If you would like to show, make it True
+        figname='example_plot_over_time.png',
+        savefig_kwargs={'bbox_inches': 'tight'},
+        show=False  # If you would like to show, make it True and set figname=None
     )
 
 
@@ -151,27 +153,24 @@ Create Setting Parameters Object
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 69-71
+.. GENERATED FROM PYTHON SOURCE LINES 71-74
 
 Plot with the Specified Setting Parameters
 ==========================================
+_, ax = plt.subplots()  <=== You can feed it to post-process the figure.
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-83
+.. GENERATED FROM PYTHON SOURCE LINES 74-82
 
 .. code-block:: default
 
-    _, ax = plt.subplots()
 
+    # You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.
     api.plot_perf_over_time(
-        ax=ax,  # You do not have to provide.
         metric_name=metric_name,
         plot_setting_params=params,
         marker='*',
         markersize=10
     )
-
-    # plt.show() might cause issue depending on environments
-    plt.savefig('example_plot_over_time.png')
 
 
 
@@ -187,7 +186,7 @@ Plot with the Specified Setting Parameters
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 2 minutes  28.587 seconds)
+   **Total running time of the script:** ( 2 minutes  23.980 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_plot_over_time.py:
