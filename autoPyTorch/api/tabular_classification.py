@@ -16,6 +16,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -200,7 +201,7 @@ class TabularClassificationTask(BaseTask):
         get_smac_object_callback: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: Optional[List[str]] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
     ) -> 'BaseTask':
@@ -299,7 +300,7 @@ class TabularClassificationTask(BaseTask):
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (List[Union[str, DisableFileOutputParameters]]):
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
                 Used as a list to pass more fine-grained
                 information on what to save. Must be a member of `DisableFileOutputParameters`.
                 Allowed elements in the list are:

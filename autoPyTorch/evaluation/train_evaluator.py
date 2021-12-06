@@ -18,6 +18,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
 )
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -79,25 +80,25 @@ class TrainEvaluator(AbstractEvaluator):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (List[Union[str, DisableFileOutputParameters]]):
-                Used as a list to pass more fine-grained
-                information on what to save. Must be a member of `DisableFileOutputParameters`.
-                Allowed elements in the list are:
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
 
-                + `y_optimization`:
-                    do not save the predictions for the optimization set,
-                    which would later on be used to build an ensemble. Note that SMAC
-                    optimizes a metric evaluated on the optimization set.
-                + `pipeline`:
-                    do not save any individual pipeline files
-                + `pipelines`:
-                    In case of cross validation, disables saving the joint model of the
-                    pipelines fit on each fold.
-                + `y_test`:
-                    do not save the predictions for the test set.
-                + `all`:
-                    do not save any of the above.
-                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -122,7 +123,7 @@ class TrainEvaluator(AbstractEvaluator):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List[str]] = None,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
@@ -412,7 +413,7 @@ def eval_function(
         num_run: int,
         include: Optional[Dict[str, Any]],
         exclude: Optional[Dict[str, Any]],
-        disable_file_output: List,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         pipeline_config: Optional[Dict[str, Any]] = None,
         budget_type: str = None,
         init_params: Optional[Dict[str, Any]] = None,

@@ -376,25 +376,25 @@ class AbstractEvaluator(object):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (List[Union[str, DisableFileOutputParameters]]):
-                Used as a list to pass more fine-grained
-                information on what to save. Must be a member of `DisableFileOutputParameters`.
-                Allowed elements in the list are:
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
 
-                + `y_optimization`:
-                    do not save the predictions for the optimization set,
-                    which would later on be used to build an ensemble. Note that SMAC
-                    optimizes a metric evaluated on the optimization set.
-                + `pipeline`:
-                    do not save any individual pipeline files
-                + `pipelines`:
-                    In case of cross validation, disables saving the joint model of the
-                    pipelines fit on each fold.
-                + `y_test`:
-                    do not save the predictions for the test set.
-                + `all`:
-                    do not save any of the above.
-                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -420,7 +420,7 @@ class AbstractEvaluator(object):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List[str]] = None,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,

@@ -24,7 +24,12 @@ from smac.tae.execute_func import AbstractTAFunc
 
 import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
+from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters,
+    empty_queue,
+    extract_learning_curve,
+    read_queue
+)
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -109,7 +114,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
         memory_limit: Optional[int] = None,
-        disable_file_output: Optional[List] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         init_params: Dict[str, Any] = None,
         budget_type: str = None,
         ta: Optional[Callable] = None,

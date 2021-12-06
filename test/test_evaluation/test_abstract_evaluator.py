@@ -13,6 +13,7 @@ from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend, BackendContext
 from autoPyTorch.evaluation.abstract_evaluator import AbstractEvaluator
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 this_directory = os.path.dirname(__file__)
@@ -129,7 +130,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
         ae = AbstractEvaluator(
             backend=self.backend_mock,
             queue=queue_mock,
-            disable_file_output=['all'],
+            disable_file_output=[DisableFileOutputParameters.all],
             metric=accuracy,
             logger_port=unittest.mock.Mock(),
             budget=0,

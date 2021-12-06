@@ -45,6 +45,7 @@ from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
@@ -837,7 +838,7 @@ class BaseTask:
         tae_func: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: Optional[List[str]] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None
@@ -938,7 +939,7 @@ class BaseTask:
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (List[Union[str, DisableFileOutputParameters]]):
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
                 Used as a list to pass more fine-grained
                 information on what to save. Must be a member of `DisableFileOutputParameters`.
                 Allowed elements in the list are:
@@ -1341,7 +1342,7 @@ class BaseTask:
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         budget: Optional[float] = None,
         pipeline_options: Optional[Dict] = None,
-        disable_file_output: Optional[List[str]] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     ) -> Tuple[Optional[BasePipeline], RunInfo, RunValue, BaseDataset]:
         """
         Fit a pipeline on the given task for the budget.
@@ -1413,7 +1414,7 @@ class BaseTask:
                 Valid config options include "device",
                 "torch_num_threads", "early_stopping", "use_tensorboard_logger",
                 "metrics_during_training"
-            disable_file_output (List[Union[str, DisableFileOutputParameters]]):
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
                 Used as a list to pass more fine-grained
                 information on what to save. Must be a member of `DisableFileOutputParameters`.
                 Allowed elements in the list are:
