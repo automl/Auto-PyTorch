@@ -53,10 +53,10 @@ class TabularClassificationTask(BaseTask):
         delete_tmp_folder_after_terminate (bool):
             Determines whether to delete the temporary directory,
             when finished
-        include_components (Optional[Dict]):
+        include_components (Optional[Dict[str, Any]]):
             If None, all possible components are used.
             Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]):
+        exclude_components (Optional[Dict[str, Any]]):
             If None, all possible components are used.
             Otherwise specifies set of components not to use.
             Incompatible with include components.
@@ -77,8 +77,8 @@ class TabularClassificationTask(BaseTask):
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
         delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
