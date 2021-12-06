@@ -129,7 +129,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
         ae = AbstractEvaluator(
             backend=self.backend_mock,
             queue=queue_mock,
-            disable_file_output=True,
+            disable_file_output=['all'],
             metric=accuracy,
             logger_port=unittest.mock.Mock(),
             budget=0,

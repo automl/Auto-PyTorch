@@ -45,10 +45,6 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 estimator = TabularClassificationTask(
     resampling_strategy=HoldoutValTypes.holdout_validation,
     resampling_strategy_args={'val_share': 0.33},
-    temporary_directory='./tmp/temp',
-    output_directory='./tmp/out',
-    delete_output_folder_after_terminate=False,
-    delete_tmp_folder_after_terminate=False
 )
 
 ############################################################################
@@ -71,7 +67,7 @@ pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                 configuration=configuration,
                                                                 budget_type='epochs',
                                                                 budget=20,
-                                                                run_time_limit_secs=70
+                                                                run_time_limit_secs=100
                                                                 )
 
 # This object complies with Scikit-Learn Pipeline API.
