@@ -352,6 +352,7 @@ def test_metric_results(metric, scores, ensemble_ends_later):
 
 
 def test_search_results_sprint_statistics():
+    BaseTask.__abstractmethods__ = set()
     api = BaseTask()
     for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
         with pytest.raises(RuntimeError):

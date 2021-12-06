@@ -146,6 +146,7 @@ def test_set_plot_args(params):  # TODO
 
 @pytest.mark.parametrize('metric_name', ('unknown', 'accuracy'))
 def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
+    BaseTask.__abstractmethods__ = set()
     api = BaseTask()
 
     if metric_name == 'unknown':
@@ -159,6 +160,7 @@ def test_raise_error_in_plot_perf_over_time_in_base_task(metric_name):
 @pytest.mark.parametrize('metric_name', ('balanced_accuracy', 'accuracy'))
 def test_plot_perf_over_time(metric_name):  # TODO
     dummy_history = [{'Timestamp': datetime(2022, 1, 1), 'train_accuracy': 1, 'test_accuracy': 1}]
+    BaseTask.__abstractmethods__ = set()
     api = BaseTask()
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
                                                    'runhistory.json'),
