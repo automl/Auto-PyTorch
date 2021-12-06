@@ -165,10 +165,8 @@ def test_extract_results_from_run_history():
         time=1.0,
         status=StatusType.CAPPED,
     )
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         SearchResults(metric=accuracy, scoring_functions=[], run_history=run_history)
-
-    assert excinfo._excinfo[0] == ValueError
 
 
 def test_raise_error_in_update_and_sort_by_time():
@@ -179,7 +177,7 @@ def test_raise_error_in_update_and_sort_by_time():
     sr = SearchResults(metric=accuracy, scoring_functions=[], run_history=RunHistory())
     er = EnsembleResults(metric=accuracy, ensemble_performance_history=[])
 
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(RuntimeError):
         sr._update(
             config=config,
             run_key=RunKey(config_id=0, instance_id=0, seed=0),
@@ -189,19 +187,13 @@ def test_raise_error_in_update_and_sort_by_time():
             )
         )
 
-    assert excinfo._excinfo[0] == RuntimeError
-
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(RuntimeError):
         sr._sort_by_endtime()
 
-    assert excinfo._excinfo[0] == RuntimeError
-
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(RuntimeError):
         er._update(data={})
 
-    assert excinfo._excinfo[0] == RuntimeError
-
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(RuntimeError):
         er._sort_by_endtime()
 
 
@@ -244,10 +236,8 @@ def test_raise_error_in_get_start_time():
         status=StatusType.CAPPED,
     )
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         get_start_time(run_history)
-
-    assert excinfo._excinfo[0] == ValueError
 
 
 def test_search_results_sort_by_endtime():
@@ -364,10 +354,8 @@ def test_metric_results(metric, scores, ensemble_ends_later):
 def test_search_results_sprint_statistics():
     api = BaseTask()
     for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(RuntimeError):
             getattr(api, method)()
-
-        assert excinfo._excinfo[0] == RuntimeError
 
     run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
                                                    'runhistory.json'),
@@ -420,10 +408,8 @@ def test_check_run_history(run_history):
     manager = ResultsManager()
     manager.run_history = run_history
 
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(RuntimeError):
         manager._check_run_history()
-
-    assert excinfo._excinfo[0] == RuntimeError
 
 
 @pytest.mark.parametrize('include_traditional', (True, False))

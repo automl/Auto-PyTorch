@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -71,8 +71,7 @@ class ColorLabelSettings:
         return colors, labels
 
 
-@dataclass(frozen=True)
-class PlotSettingParams:
+class PlotSettingParams(NamedTuple):
     """
     Parameters for the plot environment.
 
@@ -93,12 +92,28 @@ class PlotSettingParams:
             The range of x axis.
         ylim (Tuple[float, float]):
             The range of y axis.
+        grid (bool):
+            Whether to have grid lines.
+            If users would like to define lines in detail,
+            they need to deactivate it.
         legend (bool):
             Whether to have legend in the figure.
-        legend_loc (str):
-            The location of the legend.
+        legend_kwargs (Dict[str, Any]):
+            The kwargs for ax.legend.
+            Ref: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+        title (Optional[str]):
+            The title of the figure.
+        title_kwargs (Dict[str, Any]):
+            The kwargs for ax.set_title except title label.
+            Ref: https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.set_title.html
         show (bool):
             Whether to show the plot.
+            If figname is not None, the save will be prioritized.
+        figname (Optional[str]):
+            Name of a figure to save. If None, no figure will be saved.
+        savefig_kwargs (Dict[str, Any]):
+            The kwargs for plt.savefig except filename.
+            Ref: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html
         args, kwargs (Any):
             Arguments for the ax.plot.
     """
@@ -108,12 +123,16 @@ class PlotSettingParams:
     xlabel: Optional[str] = None
     ylabel: Optional[str] = None
     title: Optional[str] = None
+    title_kwargs: Dict[str, Any] = {}
     xlim: Optional[Tuple[float, float]] = None
     ylim: Optional[Tuple[float, float]] = None
+    grid: bool = True
     legend: bool = True
-    legend_loc: str = 'best'
+    legend_kwargs: Dict[str, Any] = {}
     show: bool = False
+    figname: Optional[str] = None
     figsize: Optional[Tuple[int, int]] = None
+    savefig_kwargs: Dict[str, Any] = {}
 
 
 class ScaleChoices(Enum):
@@ -201,17 +220,22 @@ class ResultsVisualizer:
 
         ax.set_xscale(plot_setting_params.xscale)
         ax.set_yscale(plot_setting_params.yscale)
-        if plot_setting_params.xscale == 'log' or plot_setting_params.yscale == 'log':
-            ax.grid(True, which='minor', color='gray', linestyle=':')
 
-        ax.grid(True, which='major', color='black')
+        if plot_setting_params.grid:
+            if plot_setting_params.xscale == 'log' or plot_setting_params.yscale == 'log':
+                ax.grid(True, which='minor', color='gray', linestyle=':')
+
+            ax.grid(True, which='major', color='black')
 
         if plot_setting_params.legend:
-            ax.legend(loc=plot_setting_params.legend_loc)
+            ax.legend(**plot_setting_params.legend_kwargs)
 
         if plot_setting_params.title is not None:
-            ax.set_title(plot_setting_params.title)
-        if plot_setting_params.show:
+            ax.set_title(plot_setting_params.title, **plot_setting_params.title_kwargs)
+
+        if plot_setting_params.figname is not None:
+            plt.savefig(plot_setting_params.figname, **plot_setting_params.savefig_kwargs)
+        elif plot_setting_params.show:
             plt.show()
 
     @staticmethod

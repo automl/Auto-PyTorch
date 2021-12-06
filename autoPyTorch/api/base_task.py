@@ -1513,6 +1513,9 @@ class BaseTask:
                 The settings of a pair of color and label for each plot.
             args, kwargs (Any):
                 Arguments for the ax.plot.
+
+        Note:
+            You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.
         """
 
         if not hasattr(metrics, metric_name):
