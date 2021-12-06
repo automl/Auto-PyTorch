@@ -79,9 +79,10 @@ class TrainEvaluator(AbstractEvaluator):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Optional[List]):
+        disable_file_output (List[Union[str, DisableFileOutputParameters]]):
                 Used as a list to pass more fine-grained
-                information on what to save. Allowed elements in the list are:
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
 
                 + `y_optimization`:
                     do not save the predictions for the optimization set,
@@ -96,6 +97,7 @@ class TrainEvaluator(AbstractEvaluator):
                     do not save the predictions for the test set.
                 + `all`:
                     do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -120,7 +122,7 @@ class TrainEvaluator(AbstractEvaluator):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List] = [],
+                 disable_file_output: Optional[List[str]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,

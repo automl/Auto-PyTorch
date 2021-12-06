@@ -40,7 +40,7 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 
 ############################################################################
 # Define an estimator
-# ============================
+# ===================
 
 estimator = TabularClassificationTask(
     resampling_strategy=HoldoutValTypes.holdout_validation,
@@ -65,13 +65,13 @@ configuration = estimator.get_search_space(dataset).sample_configuration()
 print("Passed Configuration:", configuration)
 ###########################################################################
 # Fit the configuration
-# ==================================
+# =====================
 
 pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                 configuration=configuration,
                                                                 budget_type='epochs',
                                                                 budget=20,
-                                                                run_time_limit_secs=200
+                                                                run_time_limit_secs=70
                                                                 )
 
 # This object complies with Scikit-Learn Pipeline API.

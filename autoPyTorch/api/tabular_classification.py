@@ -299,9 +299,10 @@ class TabularClassificationTask(BaseTask):
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (List):
+            disable_file_output (List[Union[str, DisableFileOutputParameters]]):
                 Used as a list to pass more fine-grained
-                information on what to save. Allowed elements in the list are:
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
 
                 + `y_optimization`:
                     do not save the predictions for the optimization set,
@@ -316,6 +317,7 @@ class TabularClassificationTask(BaseTask):
                     do not save the predictions for the test set.
                 + `all`:
                     do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):

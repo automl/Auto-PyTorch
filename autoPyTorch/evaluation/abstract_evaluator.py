@@ -33,8 +33,9 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters,
     VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel
+    convert_multioutput_multiclass_to_multilabel,
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
@@ -375,9 +376,10 @@ class AbstractEvaluator(object):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Optional[List]):
+        disable_file_output (List[Union[str, DisableFileOutputParameters]]):
                 Used as a list to pass more fine-grained
-                information on what to save. Allowed elements in the list are:
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
 
                 + `y_optimization`:
                     do not save the predictions for the optimization set,
@@ -392,6 +394,7 @@ class AbstractEvaluator(object):
                     do not save the predictions for the test set.
                 + `all`:
                     do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -461,7 +464,11 @@ class AbstractEvaluator(object):
         # Flag to save target for ensemble
         self.output_y_hat_optimization = output_y_hat_optimization
 
-        self.disable_file_output = disable_file_output if disable_file_output is not None else []
+        disable_file_output = disable_file_output if disable_file_output is not None else []
+        # check compatibility of disable file output
+        DisableFileOutputParameters.check_compatibility(disable_file_output)
+
+        self.disable_file_output = disable_file_output
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
         if self.task_type in REGRESSION_TASKS:
