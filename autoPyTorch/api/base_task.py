@@ -934,7 +934,7 @@ class BaseTask:
 
 
         # Incorporate budget to pipeline config
-        if budget_type not in ('epochs', 'runtime') or (budget_type == 'resolution' and not time_series_forecasting):
+        if budget_type not in ('epochs', 'runtime') and (budget_type == 'resolution' and not time_series_forecasting):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
