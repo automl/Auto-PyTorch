@@ -11,6 +11,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -54,12 +55,15 @@ class TabularRegressionTask(BaseTask):
             Determines whether to delete the temporary directory,
             when finished
         include_components (Optional[Dict[str, Any]]):
-            If None, all possible components are used.
-            Otherwise specifies set of components to use.
+            Dictionary containing components to include. Key is the node
+            name and Value is an Iterable of the names of the components
+            to include. Only these components will be present in the
+            search space.
         exclude_components (Optional[Dict[str, Any]]):
-            If None, all possible components are used.
-            Otherwise specifies set of components not to use.
-            Incompatible with include components.
+            Dictionary containing components to exclude. Key is the node
+            name and Value is an Iterable of the names of the components
+            to exclude. All except these components will be present in
+            the search space.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
@@ -108,11 +112,37 @@ class TabularRegressionTask(BaseTask):
 
     def build_pipeline(
         self,
-        dataset_properties: Dict[str, Any],
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
+        dataset_properties: Dict[str, BaseDatasetPropertiesType],
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ) -> TabularRegressionPipeline:
+        """
+        Build pipeline according to current task
+        and for the passed dataset properties
+
+        Args:
+            dataset_properties (Dict[str, Any]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
+            include_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to include. Key is the node
+                name and Value is an Iterable of the names of the components
+                to include. Only these components will be present in the
+                search space.
+            exclude_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to exclude. Key is the node
+                name and Value is an Iterable of the names of the components
+                to exclude. All except these components will be present in
+                the search space.
+            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+                Search space updates that can be used to modify the search
+                space of particular components or choice modules of the pipeline
+
+        Returns:
+            TabularRegressionPipeline:
+
+        """
         return TabularRegressionPipeline(dataset_properties=dataset_properties,
                                          include=include_components,
                                          exclude=exclude_components,
@@ -143,7 +173,7 @@ class TabularRegressionTask(BaseTask):
                 Testing target set
             resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
                 Strategy to split the training data. if None, uses
-                HoldoutValTypes.holdout_validation
+                HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 arguments required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
