@@ -521,7 +521,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if len(diff_cols) == 0:
                 return True
             else:
-                return False
+                return all(X[diff_cols].isna().all())
 
         # dtype is different ==> the column in at least either of train or test datasets must be all NaN
         # inconsistent <==> dtype is different and the col in both train and test is not all NaN
