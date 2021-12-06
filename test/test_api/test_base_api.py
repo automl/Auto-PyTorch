@@ -1,7 +1,7 @@
 import logging
 import re
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
@@ -20,6 +20,7 @@ from autoPyTorch.pipeline.tabular_classification import TabularClassificationPip
 # ====
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
 def test_nonsupported_arguments(fit_dictionary_tabular):
+    BaseTask.__abstractmethods__ = set()
     with pytest.raises(ValueError, match=r".*Expected search space updates to be of instance.*"):
         api = BaseTask(search_space_updates='None')
 
@@ -82,6 +83,7 @@ def test_pipeline_predict_function():
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
 def test_show_models(fit_dictionary_tabular):
+    BaseTask.__abstractmethods__ = set()
     api = BaseTask()
     api.ensemble_ = MagicMock()
     api.models_ = [TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'])]
@@ -94,6 +96,7 @@ def test_show_models(fit_dictionary_tabular):
 
 def test_set_pipeline_config():
     # checks if we can correctly change the pipeline options
+    BaseTask.__abstractmethods__ = set()
     estimator = BaseTask()
     pipeline_options = {"device": "cuda",
                         "budget_type": "epochs",
@@ -110,6 +113,7 @@ def test_set_pipeline_config():
         (3, 50, 'runtime', {'budget_type': 'runtime', 'runtime': 50}),
     ])
 def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, budget_type, expected):
+    BaseTask.__abstractmethods__ = set()
     estimator = BaseTask(task_type='tabular_classification', ensemble_size=0)
 
     # Fixture pipeline config
