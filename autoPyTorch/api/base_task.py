@@ -33,6 +33,7 @@ from autoPyTorch.api.results_manager import ResultsManager, SearchResults
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
+    FORECASTING_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
 )
@@ -77,7 +78,7 @@ def _pipeline_predict(pipeline: BasePipeline,
     X_ = X.copy()
     with warnings.catch_warnings():
         warnings.showwarning = send_warnings_to_log
-        if task in REGRESSION_TASKS:
+        if task in REGRESSION_TASKS or task in FORECASTING_TASKS:
             # Voting regressor does not support batch size
             prediction = pipeline.predict(X_)
         else:
