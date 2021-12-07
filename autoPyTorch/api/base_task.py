@@ -1773,7 +1773,7 @@ class BaseTask(ABC):
         Args:
             optimize_metric (str): name of the metric that is used to
                 evaluate a pipeline. if not specified, value passed to search will be used
-            precision (int), (default=32): Numeric precision used when loading
+            precision (Optional[int]): Numeric precision used when loading
                 ensemble data. Can be either 16, 32 or 64.
             ensemble_nbest (Optional[int]):
                 only consider the ensemble_nbest models to build the ensemble.
@@ -1816,6 +1816,7 @@ class BaseTask(ABC):
                              "Please call the `search()` method of {} prior to "
                              "fit_ensemble().".format(self.__class__.__name__))
 
+        precision = precision if precision is not None else self.precision
         if precision not in [16, 32, 64]:
             raise ValueError("precision must be one of 16, 32, 64 but got {}".format(precision))
 
@@ -1866,7 +1867,7 @@ class BaseTask(ABC):
         manager = self._init_ensemble_builder(
             time_left_for_ensembles=time_left_for_ensemble,
             optimize_metric=self.opt_metric if optimize_metric is None else optimize_metric,
-            precision=self.precision if precision is None else precision,
+            precision=precision,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
         )

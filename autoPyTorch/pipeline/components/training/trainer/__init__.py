@@ -282,6 +282,7 @@ class TrainerChoice(autoPyTorchChoice):
             y=y,
             **kwargs
         )
+
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
         self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)

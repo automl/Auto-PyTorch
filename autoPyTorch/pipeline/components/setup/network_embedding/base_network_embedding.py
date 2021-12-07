@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
-=======
-# import copy
-from typing import Any, Dict, Optional, Tuple
->>>>>>> Bug fixes (#249)
+
 
 import numpy as np
 
@@ -40,6 +36,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                 self.feature_shapes = feature_shapes
             else:
                 self.feature_shapes = X['dataset_properties']['feature_shapes']
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
