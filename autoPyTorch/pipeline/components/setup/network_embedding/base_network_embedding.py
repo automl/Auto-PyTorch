@@ -38,9 +38,14 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             num_numerical_columns = 0
         else:
             X_train = copy.deepcopy(X['backend'].load_datamanager().train_tensors[0][:2])
-
-            numerical_column_transformer = X['tabular_transformer'].preprocessor. \
-                named_transformers_['numerical_pipeline']
+            if 'tabular_transformer' in X:
+                numerical_column_transformer = X['tabular_transformer'].preprocessor. \
+                    named_transformers_['numerical_pipeline']
+            elif 'time_series_transformer' in X:
+                numerical_column_transformer = X['time_series_transformer'].preprocessor. \
+                    named_transformers_['numerical_pipeline']
+            else:
+                raise ValueError("Either a tabular or time_series transformer must be contained!")
             num_numerical_columns = numerical_column_transformer.transform(
                 X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
         num_input_features = np.zeros((num_numerical_columns + len(X['dataset_properties']['categorical_columns'])),

@@ -1,5 +1,4 @@
 from typing import Any, Dict, Optional, Union
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
@@ -13,6 +12,25 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
     base_target_scaler import BaseTargetScaler
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
+
+
+class ForecastingNet(nn.Module):
+    def __init__(self,
+                 network_backbone: nn.Module,
+                 network_head: nn.Module,
+                 network_embedding: Optional[nn.embedding] = None,
+                 network_properties: Dict = {}):
+        super(ForecastingNet, self).__init__()
+        if network_embedding is not None:
+            self.backbone = nn.Sequential(network_embedding, network_backbone)
+        else:
+            self.backbone = nn.Sequential(network_backbone)
+        self.backbone_output_tuple = network_properties.get("backbone_output_tuple", False)
+        self.network_head = network_head
+
+    def forward(self, X: torch.Tensor):
+        # TODO find a proper way to pass hx to lstm
+        pass
 
 
 class ForecastingNetworkComponent(NetworkComponent):

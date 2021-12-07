@@ -11,7 +11,8 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import\
+from autoPyTorch.pipeline.components.base_component import BaseEstimator
+from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import \
     NetworkBackboneComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
@@ -22,6 +23,7 @@ class _LSTM(nn.Module):
                  config: Dict[str, Any]):
         super().__init__()
         self.config = config
+        self.only_return_final_stage = True
         self.lstm = nn.LSTM(input_size=in_features,
                             hidden_size=config["hidden_size"],
                             num_layers=config["num_layers"],
@@ -29,23 +31,28 @@ class _LSTM(nn.Module):
                             bidirectional=config["bidirectional"],
                             batch_first=True)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor,
+                hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
         B, T, _ = x.shape
 
-        hidden_states, (_, _) = self.lstm(x)
-        if not self.config["bidirectional"]:
-            return hidden_states[:, -1, :]
+        outputs, hidden_state, = self.lstm(x, hx)
+
+        if self.only_return_final_stage:
+            if not self.config["bidirectional"]:
+                return outputs[:, -1, :],
+            else:
+                # concatenate last forward hidden state with first backward hidden state
+                outputs_by_direction = outputs.view(B,
+                                                    T,
+                                                    2,
+                                                    self.config["hidden_size"])
+                out = torch.cat([
+                    outputs_by_direction[:, -1, 0, :],
+                    outputs_by_direction[:, 0, 1, :]
+                ], dim=1)
+                return out,
         else:
-            # concatenate last forward hidden state with first backward hidden state
-            hidden_states_by_direction = hidden_states.view(B,
-                                                            T,
-                                                            2,
-                                                            self.config["hidden_size"])
-            out = torch.cat([
-                hidden_states_by_direction[:, -1, 0, :],
-                hidden_states_by_direction[:, 0, 1, :]
-            ], dim=1)
-            return out
+            return outputs, hidden_state
 
 
 class LSTMBackbone(NetworkBackboneComponent):
@@ -62,6 +69,18 @@ class LSTMBackbone(NetworkBackboneComponent):
                          config=self.config)
         self.backbone = backbone
         return backbone
+
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        X['network_output_tuple'] = True
+        return super().fit(X, y)
+
+    @property
+    def only_return_final_stage(self):
+        return self.backbone.only_return_final_stage
+
+    @only_return_final_stage.setter
+    def only_return_final_stage(self, only_return_final_stage):
+        self.backbone.only_return_final_stage = only_return_final_stage
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:

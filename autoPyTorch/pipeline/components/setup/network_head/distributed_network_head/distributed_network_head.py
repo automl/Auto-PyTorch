@@ -54,10 +54,12 @@ class DistributionNetworkHeadComponents(NetworkHeadComponent):
         if auto_regressive:
             output_shape[0] = 1
         mlp_backbone = X.get("MLP_backbone", False)
+        network_output_tuple = X.get("network_output_tuple", False)
         if mlp_backbone:
             input_shape = (X["window_size"], input_shape[-1])
         self.head = self.build_head(
-            input_shape=get_output_shape(X['network_backbone'], input_shape=input_shape),
+            input_shape=get_output_shape(X['network_backbone'], input_shape=input_shape,
+                                         network_output_tuple=network_output_tuple),
             output_shape=output_shape,
         )
         return self

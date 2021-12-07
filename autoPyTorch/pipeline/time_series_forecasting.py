@@ -21,10 +21,12 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.Tim
     TimeSeriesTransformer
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
+    ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
+from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer import (
@@ -110,10 +112,9 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                              metrics=metrics)['r2']
         return r2
 
-
     def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
             **fit_params: Any) -> Pipeline:
-        super().fit(X, y, ** fit_params)
+        super().fit(X, y, **fit_params)
         self.target_scaler = X['target_scaler']
 
     def _get_hyperparameter_search_space(self,
@@ -152,7 +153,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             warnings.warn('Time series forecasting is being used, however the target_type'
                           'is not given as "time_series_forecasting". Overriding it.')
             dataset_properties['target_type'] = 'time_series_forecasting'
-
         # get the base search space given this
         # dataset properties. Then overwrite with custom
         # regression requirements
@@ -218,6 +218,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
                                                             random_state=self.random_state)),
+            ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
             ("network_backbone", NetworkBackboneChoice(default_dataset_properties,
                                                        random_state=self.random_state)),
             ("network_head", NetworkHeadChoice(default_dataset_properties,

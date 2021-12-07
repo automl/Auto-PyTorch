@@ -28,7 +28,16 @@ class DistributionFullyConnectedHead(DistributionNetworkHeadComponents, FullyCon
         }
 
     def _build_head(self, input_shape: Tuple[int, ...]) -> Tuple[List[nn.Module], int]:
-        return FullyConnectedHead._build_head(self, input_shape)
+        layers = []
+        in_features = input_shape[-1]
+        for i in range(1, self.config["num_layers"]):
+            layers.append(nn.Linear(in_features=in_features,
+                                    out_features=self.config[f"units_layer_{i}"]))
+            layers.append(_activations[self.config["activation"]]())
+            in_features = self.config[f"units_layer_{i}"]
+        head_base_output_features = in_features
+
+        return layers, head_base_output_features
 
     @staticmethod
     def get_hyperparameter_search_space(
@@ -45,9 +54,9 @@ class DistributionFullyConnectedHead(DistributionNetworkHeadComponents, FullyCon
         dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dist_cls",
                                                                         value_range=tuple(ALL_DISTRIBUTIONS.keys()),
                                                                         default_value=list(ALL_DISTRIBUTIONS.keys())[0]),
-        auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
-                                                                               value_range=(True, False),
-                                                                               default_value=False)
+        #auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
+        #                                                                       value_range=(True, False),
+        #                                                                       default_value=False)
     ) -> ConfigurationSpace:
         cs = FullyConnectedHead.get_hyperparameter_search_space(dataset_properties=dataset_properties,
                                                                 num_layers=num_layers,
@@ -55,5 +64,6 @@ class DistributionFullyConnectedHead(DistributionNetworkHeadComponents, FullyCon
                                                                 activation=activation)
 
         add_hyperparameter(cs, dist_cls, CategoricalHyperparameter)
-        add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
+        # TODO let dataset_properties decide if autoregressive models is applied
+        #add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
         return cs

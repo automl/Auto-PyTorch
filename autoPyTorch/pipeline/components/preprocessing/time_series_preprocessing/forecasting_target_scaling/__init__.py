@@ -112,4 +112,4 @@ class TargetScalerChoice(ScalerChoice):
         """
         super()._check_dataset_properties(dataset_properties)
         assert "target_columns" in dataset_properties, \
-            "Dataset properties must contain information about the type of target_columns"
+            "Dataset properties must contain information about the target_columns"

@@ -243,6 +243,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_features = self.validator.feature_validator.num_features  # type: int
         self.num_target = self.validator.target_validator.out_dimensionality  # type: int
 
+        self.categories = self.validator.feature_validator.categories
+
         self.shift_input_data = shift_input_data
         self.target_variables = target_variables
         if target_variables is None:
@@ -563,7 +565,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'categorical_features': self.categorical_features,
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
-            'upper_window_size': self.upper_window_size,
+            'categories': self.categories,
             'train_with_log_prob': self.train_with_log_prob,
             'target_columns': self.target_columns
         })

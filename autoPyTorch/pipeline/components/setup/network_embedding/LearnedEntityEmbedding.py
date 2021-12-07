@@ -131,5 +131,5 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
             'name': 'LearnedEntityEmbedding',
             'handles_tabular': True,
             'handles_image': False,
-            'handles_time_series': False,
+            'handles_time_series': True,
         }
