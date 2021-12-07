@@ -133,11 +133,10 @@ class DisableFileOutputParameters(Enum):
     @classmethod
     def check_compatibility(cls, disable_file_output: List) -> None:
         for item in disable_file_output:
-            if item not in cls.__members__:
-                if not isinstance(item, cls):
-                    raise ValueError(f"Expected {item} to be in the members ("
-                                     f"{list(cls.__members__.keys())}) of {cls.__name__}"
-                                     f" or an instance.")
+            if item not in cls.__members__ and not isinstance(item, cls):
+                raise ValueError(f"Expected {item} to be in the members ("
+                                 f"{list(cls.__members__.keys())}) of {cls.__name__}"
+                                 f" or an instance.")
 
     @staticmethod
     def check_value_in_iterable(container: Iterable, parameter: "DisableFileOutputParameters") -> bool:

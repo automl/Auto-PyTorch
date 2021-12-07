@@ -1588,7 +1588,7 @@ class BaseTask(ABC):
         if run_value.status == StatusType.SUCCESS:
             if 'all' in disable_file_output or 'pipeline' in disable_file_output:
                 self._logger.warning("File output is disabled. No pipeline can returned")
-            elif run_value.status == StatusType.SUCCESS:
+            else:
                 if self.resampling_strategy in CrossValTypes:
                     load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
                 else:
@@ -1600,7 +1600,7 @@ class BaseTask(ABC):
                 )
         else:
             warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
-                          f", aditional_info: {run_value.additional_info}")
+                          f", additional_info: {run_value.additional_info}")
         self._clean_logger()
 
         return fitted_pipeline, run_info, run_value, dataset

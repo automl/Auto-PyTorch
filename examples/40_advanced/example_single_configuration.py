@@ -78,5 +78,4 @@ print(run_value)
 
 # This object complies with Scikit-Learn Pipeline API.
 # https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
-if pipeline is not None:
 print(pipeline.named_steps)
