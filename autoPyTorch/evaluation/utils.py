@@ -1,7 +1,7 @@
 import queue
 from enum import Enum
 from multiprocessing.queues import Queue
-from typing import List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 
@@ -138,3 +138,20 @@ class DisableFileOutputParameters(Enum):
                     raise ValueError(f"Expected {item} to be in the members ("
                                      f"{list(cls.__members__.keys())}) of {cls.__name__}"
                                      f" or an instance.")
+
+    @staticmethod
+    def check_value_in_iterable(container: Iterable, parameter: "DisableFileOutputParameters") -> bool:
+        """
+        checks if parameter is in the container either as
+        the parameter itself or as its value.
+
+        Args:
+            container (Iterable):
+                Iterable to check in.
+            parameter (DisableFileOutputParameters):
+                parameter to check.
+        Returns:
+            bool:
+                whether parameter is in `container`
+        """
+        return parameter in container or parameter.value in container

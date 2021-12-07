@@ -1023,6 +1023,14 @@ class BaseTask(ABC):
 
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output if disable_file_output is not None else []
+        if (
+            DisableFileOutputParameters.check_value_in_iterable(self._disable_file_output,
+                                                                DisableFileOutputParameters.y_optimization)
+            and self.ensemble_size > 1
+        ):
+            self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
+                                 f" is in disable_file_output")
+
         self._memory_limit = memory_limit
         self._time_for_task = total_walltime_limit
         # Save start time to backend
