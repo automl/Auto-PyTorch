@@ -305,7 +305,7 @@ class BaseTask(ABC):
                 arguments required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
-            dataset_name (Optional[str], optional):
+            dataset_name (Optional[str]):
                 name of the dataset, used as experiment name.
 
         Returns:
