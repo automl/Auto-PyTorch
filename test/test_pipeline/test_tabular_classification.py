@@ -66,7 +66,8 @@ class TestTabularClassification:
         fit_dictionary_tabular['epochs'] = 5
 
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'network_embedding': ['LearnedEntityEmbedding']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
@@ -96,7 +97,8 @@ class TestTabularClassification:
 
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'network_embedding': ['LearnedEntityEmbedding']})
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -125,7 +127,8 @@ class TestTabularClassification:
 
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'network_embedding': ['LearnedEntityEmbedding']})
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -158,7 +161,8 @@ class TestTabularClassification:
         fit_dictionary_tabular['epochs'] = 5
 
         pipeline = TabularClassificationPipeline(
-            dataset_properties=fit_dictionary_tabular['dataset_properties'])
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            exclude={'network_embedding': ['LearnedEntityEmbedding']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
@@ -175,9 +179,11 @@ class TestTabularClassification:
         assert fit_dictionary_tabular.items() <= transformed_fit_dictionary_tabular.items()
 
         # Then the pipeline should have added the following keys
-        expected_keys = {'imputer', 'encoder', 'scaler', 'tabular_transformer',
-                         'preprocess_transforms', 'network', 'optimizer', 'lr_scheduler',
-                         'train_data_loader', 'val_data_loader', 'run_summary'}
+        # Removing 'imputer', 'encoder', 'scaler', these will be
+        # added back after a PR fixing preprocessing
+        expected_keys = {'tabular_transformer', 'preprocess_transforms', 'network',
+                         'optimizer', 'lr_scheduler', 'train_data_loader',
+                         'val_data_loader', 'run_summary', 'feature_preprocessor'}
         assert expected_keys.issubset(set(transformed_fit_dictionary_tabular.keys()))
 
         # Then we need to have transformations being created.
@@ -309,8 +315,8 @@ class TestTabularClassification:
                                               search_space_updates=error_search_space_updates)
         except Exception as e:
             assert isinstance(e, ValueError)
-            assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
-                            r'hyperparameter to be in \[.*?\] got .+', e.args[0])
+            assert re.match(r'Unknown hyperparameter for .*?\. Expected update '
+                            r'hyperparameter to be in \[.*?\], but got .+', e.args[0])
 
     def test_set_range_search_space_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
@@ -381,7 +387,7 @@ class TestTabularClassification:
                                               'ReduceLROnPlateau'])
     def test_trainer_cocktails(self, fit_dictionary_tabular, mocker, lr_scheduler, trainer):  # noqa F811
         fit_dictionary_tabular['epochs'] = 45
-        fit_dictionary_tabular['early_stopping'] = 20
+        fit_dictionary_tabular['early_stopping'] = -1
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'lr_scheduler': [lr_scheduler], 'trainer': [trainer]})

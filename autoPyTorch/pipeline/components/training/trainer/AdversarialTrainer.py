@@ -109,11 +109,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         loss = loss_func(self.criterion, original_outputs, adversarial_outputs)
         loss.backward()
         self.optimizer.step()
-        if self.scheduler:
-            if 'ReduceLROnPlateau' in self.scheduler.__class__.__name__:
-                self.scheduler.step(loss)
-            else:
-                self.scheduler.step()
+
         # only passing the original outputs since we do not care about
         # the adversarial performance.
         return loss.item(), original_outputs
