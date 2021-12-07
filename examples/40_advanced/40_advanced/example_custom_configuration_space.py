@@ -59,7 +59,7 @@ def get_search_space_updates():
                    value_range=['shake-shake'],
                    default_value='shake-shake')
     updates.append(node_name='network_backbone',
-                   hyperparameter='ResNetBackbone:shake_shake_method',
+                   hyperparameter='ResNetBackbone:shake_shake_update_func',
                    value_range=['M3'],
                    default_value='M3'
                    )
