@@ -1,0 +1,79 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Publish Docker image
+
+on:
+  push:
+    # Push  to `master` or `development`
+    branches:
+      - master
+      - development
+      - add_docker-publish
+
+jobs:
+  push_to_registries:
+    name: Push Docker image to multiple registries
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: |
+            automlorg/autopytorch
+            ghcr.io/${{ github.repository }}
+      
+      - name: Build and push Docker images
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.extract_branch.outputs.branch }}
+
+      - name: Docker Login
+        run: docker login ghcr.io -u $GITHUB_ACTOR -p $GITHUB_TOKEN
+        env:
+            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Pull Docker image
+        run: docker pull ghcr.io/$GITHUB_REPOSITORY/autoPyTorch:$BRANCH
+        env:
+            BRANCH: ${{ steps.extract_branch.outputs.branch }}
+
+      - name: Run image
+        run: docker run -i -d --name unittester -v $GITHUB_WORKSPACE:/workspace -w /workspace ghcr.io/$GITHUB_REPOSITORY/autoPyTorch:$BRANCH
+        env:
+            BRANCH: ${{ steps.extract_branch.outputs.branch }}
+
+      - name: Auto-PyTorch loaded
+        run: docker exec  -i unittester python3 -c 'import autoPyTorch; print(f"Auto-PyTorch imported from {autoPyTorch.__file__}")'
+
+      - name: Run unit testing
+        run: docker exec  -i unittester python3 -m pytest -v test
