@@ -71,7 +71,7 @@ def _return_output_shape(output_type: str, target_labels: np.ndarray) -> int:
 
 def _double_check_and_return_property_of_target(
     train_tensors: BaseDatasetInputType
-) -> Tuple[Optional[str], Optional[int]]:
+) -> Tuple[str, int]:
     """
     Since task type inference by sklearn (see Reference below) for continuous is
     not suitable for AutoPytorch, we double-check the task type in the case
@@ -99,10 +99,6 @@ def _double_check_and_return_property_of_target(
 
     TODO: Add tests for both `Dataset` and `np.ndarray`
     """
-    if len(train_tensors) != 2 or train_tensors[1] is None:
-        # Unsupervised learning has not been supported yet.
-        # Or at the prediction phase, we might want to instantiate dataset without labels.
-        return None, None
 
     if isinstance(train_tensors, Dataset):
         target_labels = np.array([sample[-1] for sample in train_tensors])
@@ -208,7 +204,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
 
-        self.output_type, self.output_shape = _double_check_and_return_property_of_target(train_tensors)
+        if len(train_tensors) >= 2 and train_tensors[1] is not None:
+            # Unsupervised learning has not been supported yet.
+            # Or at the prediction phase, we might want to instantiate dataset without labels.
+            self.output_type, self.output_shape = _double_check_and_return_property_of_target(train_tensors)
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
