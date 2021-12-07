@@ -44,7 +44,7 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 
 estimator = TabularClassificationTask(
     resampling_strategy=HoldoutValTypes.holdout_validation,
-    resampling_strategy_args={'val_share': 0.33},
+    resampling_strategy_args={'val_share': 0.5},
 )
 
 ############################################################################
