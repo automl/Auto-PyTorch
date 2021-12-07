@@ -20,6 +20,27 @@ We explain
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model and create an ensemble pos...">
+
+.. only:: html
+
+ .. figure:: /advanced_tabular/images/thumb/sphx_glr_example_posthoc_ensemble_fit_thumb.png
+     :alt: Tabular Classification with Post-Hoc Ensemble Fitting
+
+     :ref:`sphx_glr_advanced_tabular_example_posthoc_ensemble_fit.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /advanced_tabular/example_posthoc_ensemble_fit
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how one can fit one of these pipelines, both, with a user defined configurat...">
 
 .. only:: html

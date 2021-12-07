@@ -40,7 +40,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
 
  .. code-block:: none
 
-    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7F23ADCE8240), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7f23ac8a1430>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7f23ac8a1310>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7f23ace8ddf0>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7F23ADCE8240), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7F23ADCE8240), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7f23aef10be0>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7f23aef10d60>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7f23adb7ff40>, 'network': NetworkComponent(network=Sequential(
+    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7F5BFB051E40), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7f5bf84d8d30>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7f5bf84d8b20>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7f5be9a7a430>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7F5BFB051E40), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7F5BFB051E40), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7f5bd9ccf460>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7f5bd9ccf640>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7f5be81e8fa0>, 'network': NetworkComponent(network=Sequential(
       (0): _NoEmbedding()
       (1): Sequential(
         (0): Linear(in_features=4, out_features=200, bias=True)
@@ -65,7 +65,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
         )
       )
     )],
-                     random_state=RandomState(MT19937) at 0x7F23ADCE8240), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7f23adaa7280>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7f23adaa7310>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7f23ad522a90>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7F23ADCE8240), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7f23ade62700>}
+                     random_state=RandomState(MT19937) at 0x7F5BFB051E40), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7f5bf855f400>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7f5be975f2b0>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7f5be8449550>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7F5BFB051E40), 'trainer': <autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7f5bd9b0e580>}
     RunInfo(config=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'NoEncoder'
@@ -102,10 +102,10 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
     , instance=None, instance_specific=None, seed=1, cutoff=94, capped=False, budget=50, source_id=0)
-    RunValue(cost=0.0, time=10.455004692077637, status=<StatusType.SUCCESS: 1>, starttime=1622731610.7693102, endtime=1622731622.6510668, additional_info={'accuracy': 0.0, 'duration': 7.682782888412476, 'num_run': 2, 'train_loss': {'accuracy': 0.0}, 'test_loss': 0.06666666666666665, 'configuration_origin': None})
+    RunValue(cost=0.0, time=9.44908595085144, status=<StatusType.SUCCESS: 1>, starttime=1638908740.3075576, endtime=1638908751.3583562, additional_info={'accuracy': 0.0, 'duration': 6.031243562698364, 'num_run': 2, 'train_loss': {'accuracy': 0.0}, 'test_loss': 0.05833333333333335, 'configuration_origin': None})
     Passed Configuration: Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'NoEncoder'
@@ -142,7 +142,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
       trainer:StandardTrainer:use_lookahead_optimizer, Value: True
       trainer:StandardTrainer:use_snapshot_ensemble, Value: True
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-      trainer:StandardTrainer:weighted_loss, Value: True
+      trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
 
     Network: Sequential(
@@ -255,7 +255,7 @@ get further documentation about Scikit-Learn models here: <https://scikit-learn.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  21.772 seconds)
+   **Total running time of the script:** ( 0 minutes  20.456 seconds)
 
 
 .. _sphx_glr_download_advanced_tabular_example_single_configuration.py:

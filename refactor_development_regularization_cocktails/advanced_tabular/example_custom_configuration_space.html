@@ -8,10 +8,10 @@
     <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.0.3 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
@@ -22,9 +22,9 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
 <script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
 <script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
 
   </head><body>
@@ -144,7 +144,8 @@ the search space.</p>
 </ol>
 </div></blockquote>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7f23aef65a00&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Task has already stopped
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f5be825beb0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -154,15 +155,26 @@ the search space.</p>
   lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
   lr_scheduler:ReduceLROnPlateau:patience, Value: 10
   lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 5
-  network_backbone:MLPBackbone:num_units_1, Value: 200
-  network_backbone:MLPBackbone:num_units_2, Value: 200
-  network_backbone:MLPBackbone:num_units_3, Value: 200
-  network_backbone:MLPBackbone:num_units_4, Value: 200
-  network_backbone:MLPBackbone:num_units_5, Value: 200
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
+  network_backbone:ResNetBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ResNetBackbone:blocks_per_group_0, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_2, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_3, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_4, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_5, Value: 2
+  network_backbone:ResNetBackbone:multi_branch_choice, Value: &#39;shake-shake&#39;
+  network_backbone:ResNetBackbone:num_groups, Value: 5
+  network_backbone:ResNetBackbone:num_units_0, Value: 200
+  network_backbone:ResNetBackbone:num_units_1, Value: 200
+  network_backbone:ResNetBackbone:num_units_2, Value: 200
+  network_backbone:ResNetBackbone:num_units_3, Value: 200
+  network_backbone:ResNetBackbone:num_units_4, Value: 200
+  network_backbone:ResNetBackbone:num_units_5, Value: 200
+  network_backbone:ResNetBackbone:shake_shake_update_func, Value: &#39;M3&#39;
+  network_backbone:ResNetBackbone:use_batch_norm, Value: False
+  network_backbone:ResNetBackbone:use_dropout, Value: False
+  network_backbone:ResNetBackbone:use_skip_connection, Value: True
+  network_backbone:__choice__, Value: &#39;ResNetBackbone&#39;
   network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
   network_head:fully_connected:activation, Value: &#39;relu&#39;
@@ -183,9 +195,9 @@ the search space.</p>
   trainer:StandardTrainer:use_lookahead_optimizer, Value: True
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Value: True
+  trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.00153350830078125, budget=0), TrajEntry(train_perf=0.16959064327485385, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015649795532226562, budget=0), TrajEntry(train_perf=0.17543859649122806, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 32
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
   feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
@@ -195,15 +207,26 @@ the search space.</p>
   lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
   lr_scheduler:ReduceLROnPlateau:patience, Value: 10
   lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 5
-  network_backbone:MLPBackbone:num_units_1, Value: 200
-  network_backbone:MLPBackbone:num_units_2, Value: 200
-  network_backbone:MLPBackbone:num_units_3, Value: 200
-  network_backbone:MLPBackbone:num_units_4, Value: 200
-  network_backbone:MLPBackbone:num_units_5, Value: 200
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
+  network_backbone:ResNetBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ResNetBackbone:blocks_per_group_0, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_1, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_2, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_3, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_4, Value: 2
+  network_backbone:ResNetBackbone:blocks_per_group_5, Value: 2
+  network_backbone:ResNetBackbone:multi_branch_choice, Value: &#39;shake-shake&#39;
+  network_backbone:ResNetBackbone:num_groups, Value: 5
+  network_backbone:ResNetBackbone:num_units_0, Value: 200
+  network_backbone:ResNetBackbone:num_units_1, Value: 200
+  network_backbone:ResNetBackbone:num_units_2, Value: 200
+  network_backbone:ResNetBackbone:num_units_3, Value: 200
+  network_backbone:ResNetBackbone:num_units_4, Value: 200
+  network_backbone:ResNetBackbone:num_units_5, Value: 200
+  network_backbone:ResNetBackbone:shake_shake_update_func, Value: &#39;M3&#39;
+  network_backbone:ResNetBackbone:use_batch_norm, Value: False
+  network_backbone:ResNetBackbone:use_dropout, Value: False
+  network_backbone:ResNetBackbone:use_skip_connection, Value: True
+  network_backbone:__choice__, Value: &#39;ResNetBackbone&#39;
   network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
   network_head:__choice__, Value: &#39;fully_connected&#39;
   network_head:fully_connected:activation, Value: &#39;relu&#39;
@@ -224,146 +247,162 @@ the search space.</p>
   trainer:StandardTrainer:use_lookahead_optimizer, Value: True
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Value: True
+  trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=15.69832968711853, wallclock_time=17.184927701950073, budget=5.555555555555555), TrajEntry(train_perf=0.1578947368421053, incumbent_id=2, incumbent=Configuration:
-  data_loader:batch_size, Value: 109
-  encoder:__choice__, Value: &#39;OneHotEncoder&#39;
-  feature_preprocessor:RandomKitchenSinks:gamma, Value: 0.08890013438983504
-  feature_preprocessor:RandomKitchenSinks:n_components, Value: 6
-  feature_preprocessor:__choice__, Value: &#39;RandomKitchenSinks&#39;
+, ta_runs=1, ta_time_used=11.665368556976318, wallclock_time=13.352454662322998, budget=5.555555555555555)]
+{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                     | Estimator                                                    |   Weight |
+|---:|:------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
+|  0 | None                                                              | CatBoostClassifier                                           |     0.18 |
+|  1 | None                                                              | KNNClassifier                                                |     0.14 |
+|  2 | SimpleImputer,OneHotEncoder,StandardScaler,KitchenSink            | no embedding,ResNetBackbone,NoHead,nn.Sequential             |     0.12 |
+|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+|  4 | None                                                              | SVC                                                          |     0.1  |
+|  5 | None                                                              | LGBMClassifier                                               |     0.08 |
+|  6 | None                                                              | RFClassifier                                                 |     0.08 |
+|  7 | SimpleImputer,OneHotEncoder,StandardScaler,KitchenSink            | no embedding,ResNetBackbone,NoHead,nn.Sequential             |     0.06 |
+|  8 | SimpleImputer,OneHotEncoder,NoScaler,TruncSVD                     | no embedding,ResNetBackbone,NoHead,nn.Sequential             |     0.04 |
+|  9 | None                                                              | ExtraTreesClassifier                                         |     0.04 |
+| 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+Task has already stopped
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7f5bf822f100&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+  data_loader:batch_size, Value: 32
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  imputer:numerical_strategy, Value: &#39;mean&#39;
+  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
+  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
+  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
+  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 200
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;fully_connected&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
+  network_head:fully_connected:num_layers, Value: 2
+  network_head:fully_connected:units_layer_1, Value: 128
+  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
+  network_init:__choice__, Value: &#39;XavierInit&#39;
+  optimizer:AdamOptimizer:beta1, Value: 0.9
+  optimizer:AdamOptimizer:beta2, Value: 0.9
+  optimizer:AdamOptimizer:lr, Value: 0.01
+  optimizer:AdamOptimizer:use_weight_decay, Value: True
+  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
+  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  scaler:__choice__, Value: &#39;StandardScaler&#39;
+  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+  trainer:StandardTrainer:se_lastk, Constant: 3
+  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
+  trainer:StandardTrainer:weighted_loss, Constant: 1
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.001667022705078125, budget=0), TrajEntry(train_perf=0.18128654970760238, incumbent_id=1, incumbent=Configuration:
+  data_loader:batch_size, Value: 32
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
+  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  imputer:numerical_strategy, Value: &#39;mean&#39;
+  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
+  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
+  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
+  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 200
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;fully_connected&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
+  network_head:fully_connected:num_layers, Value: 2
+  network_head:fully_connected:units_layer_1, Value: 128
+  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
+  network_init:__choice__, Value: &#39;XavierInit&#39;
+  optimizer:AdamOptimizer:beta1, Value: 0.9
+  optimizer:AdamOptimizer:beta2, Value: 0.9
+  optimizer:AdamOptimizer:lr, Value: 0.01
+  optimizer:AdamOptimizer:use_weight_decay, Value: True
+  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
+  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  scaler:__choice__, Value: &#39;StandardScaler&#39;
+  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
+  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
+  trainer:StandardTrainer:se_lastk, Constant: 3
+  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
+  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
+  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
+  trainer:StandardTrainer:weighted_loss, Constant: 1
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=1, ta_time_used=8.837650775909424, wallclock_time=10.565325498580933, budget=5.555555555555555), TrajEntry(train_perf=0.15204678362573099, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 306
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:Nystroem:coef0, Value: -0.0949783621375686
+  feature_preprocessor:Nystroem:kernel, Value: &#39;sigmoid&#39;
+  feature_preprocessor:Nystroem:n_components, Value: 5
+  feature_preprocessor:__choice__, Value: &#39;Nystroem&#39;
+  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
   imputer:numerical_strategy, Value: &#39;median&#39;
-  lr_scheduler:StepLR:gamma, Value: 0.2572191700148576
-  lr_scheduler:StepLR:step_size, Value: 8
+  lr_scheduler:StepLR:gamma, Value: 0.8149995369572995
+  lr_scheduler:StepLR:step_size, Value: 9
   lr_scheduler:__choice__, Value: &#39;StepLR&#39;
-  network_backbone:MLPBackbone:activation, Value: &#39;tanh&#39;
-  network_backbone:MLPBackbone:num_groups, Value: 8
-  network_backbone:MLPBackbone:num_units_1, Value: 44
-  network_backbone:MLPBackbone:num_units_2, Value: 250
-  network_backbone:MLPBackbone:num_units_3, Value: 106
-  network_backbone:MLPBackbone:num_units_4, Value: 16
-  network_backbone:MLPBackbone:num_units_5, Value: 876
-  network_backbone:MLPBackbone:num_units_6, Value: 240
-  network_backbone:MLPBackbone:num_units_7, Value: 96
-  network_backbone:MLPBackbone:num_units_8, Value: 17
-  network_backbone:MLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;MLPBackbone&#39;
+  network_backbone:ShapedResNetBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedResNetBackbone:blocks_per_group, Value: 2
+  network_backbone:ShapedResNetBackbone:max_units, Value: 33
+  network_backbone:ShapedResNetBackbone:num_groups, Value: 5
+  network_backbone:ShapedResNetBackbone:output_dim, Value: 184
+  network_backbone:ShapedResNetBackbone:resnet_shape, Value: &#39;diamond&#39;
+  network_backbone:ShapedResNetBackbone:use_batch_norm, Value: True
+  network_backbone:ShapedResNetBackbone:use_dropout, Value: False
+  network_backbone:ShapedResNetBackbone:use_skip_connection, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedResNetBackbone&#39;
   network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
   network_head:__choice__, Value: &#39;no_head&#39;
   network_head:no_head:activation, Value: &#39;relu&#39;
-  network_init:NoInit:bias_strategy, Value: &#39;Zero&#39;
-  network_init:__choice__, Value: &#39;NoInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.8748509928891899
-  optimizer:AdamOptimizer:beta2, Value: 0.9685375299545561
-  optimizer:AdamOptimizer:lr, Value: 0.0032894380542801208
-  optimizer:AdamOptimizer:use_weight_decay, Value: False
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  network_init:XavierInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;XavierInit&#39;
+  optimizer:RMSpropOptimizer:alpha, Value: 0.7685403786764007
+  optimizer:RMSpropOptimizer:lr, Value: 0.005509731025758796
+  optimizer:RMSpropOptimizer:momentum, Value: 0.8642852923057781
+  optimizer:RMSpropOptimizer:use_weight_decay, Value: False
+  optimizer:__choice__, Value: &#39;RMSpropOptimizer&#39;
   scaler:Normalizer:norm, Value: &#39;max&#39;
   scaler:__choice__, Value: &#39;Normalizer&#39;
-  trainer:RowCutMixTrainer:alpha, Value: 0.9240641112549663
-  trainer:RowCutMixTrainer:se_lastk, Constant: 3
-  trainer:RowCutMixTrainer:use_lookahead_optimizer, Value: False
-  trainer:RowCutMixTrainer:use_snapshot_ensemble, Value: True
-  trainer:RowCutMixTrainer:use_stochastic_weight_averaging, Value: False
-  trainer:RowCutMixTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;RowCutMixTrainer&#39;
-, ta_runs=9, ta_time_used=170.7749261856079, wallclock_time=192.11866116523743, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing                                                     | Estimator                                                 |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,NoScaler,Nystroem                     | embedding,MLPBackbone,NoHead,nn.Sequential                |     0.9  |
-|  1 | None                                                              | RFClassifier                                              |     0.04 |
-|  2 | None                                                              | LGBMClassifier                                            |     0.02 |
-|  3 | None                                                              | SVC                                                       |     0.02 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-&lt;smac.runhistory.runhistory.RunHistory object at 0x7f23adec0af0&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_units, Value: 200
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:use_weight_decay, Value: True
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
-  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
-  trainer:StandardTrainer:se_lastk, Constant: 3
-  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
-  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
-  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0011212825775146484, budget=0), TrajEntry(train_perf=0.19298245614035092, incumbent_id=1, incumbent=Configuration:
-  data_loader:batch_size, Value: 32
-  encoder:__choice__, Value: &#39;NoEncoder&#39;
-  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
-  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
-  imputer:numerical_strategy, Value: &#39;mean&#39;
-  lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
-  lr_scheduler:ReduceLROnPlateau:mode, Value: &#39;min&#39;
-  lr_scheduler:ReduceLROnPlateau:patience, Value: 10
-  lr_scheduler:__choice__, Value: &#39;ReduceLROnPlateau&#39;
-  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
-  network_backbone:ShapedMLPBackbone:max_units, Value: 200
-  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;funnel&#39;
-  network_backbone:ShapedMLPBackbone:num_groups, Value: 5
-  network_backbone:ShapedMLPBackbone:output_dim, Value: 200
-  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
-  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
-  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
-  network_head:__choice__, Value: &#39;fully_connected&#39;
-  network_head:fully_connected:activation, Value: &#39;relu&#39;
-  network_head:fully_connected:num_layers, Value: 2
-  network_head:fully_connected:units_layer_1, Value: 128
-  network_init:XavierInit:bias_strategy, Value: &#39;Normal&#39;
-  network_init:__choice__, Value: &#39;XavierInit&#39;
-  optimizer:AdamOptimizer:beta1, Value: 0.9
-  optimizer:AdamOptimizer:beta2, Value: 0.9
-  optimizer:AdamOptimizer:lr, Value: 0.01
-  optimizer:AdamOptimizer:use_weight_decay, Value: True
-  optimizer:AdamOptimizer:weight_decay, Value: 0.0001
-  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
-  scaler:__choice__, Value: &#39;StandardScaler&#39;
-  trainer:StandardTrainer:Lookahead:la_alpha, Value: 0.6
-  trainer:StandardTrainer:Lookahead:la_steps, Value: 6
-  trainer:StandardTrainer:se_lastk, Constant: 3
-  trainer:StandardTrainer:use_lookahead_optimizer, Value: True
-  trainer:StandardTrainer:use_snapshot_ensemble, Value: True
-  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
-  trainer:StandardTrainer:weighted_loss, Value: True
-  trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=10.127033948898315, wallclock_time=11.634387731552124, budget=5.555555555555555)]
-{&#39;accuracy&#39;: 0.8728323699421965}
-|    | Preprocessing   | Estimator            |   Weight |
-|---:|:----------------|:---------------------|---------:|
-|  0 | None            | ExtraTreesClassifier |     0.38 |
-|  1 | None            | LGBMClassifier       |     0.2  |
-|  2 | None            | RFClassifier         |     0.2  |
-|  3 | None            | KNNClassifier        |     0.14 |
-|  4 | None            | CatBoostClassifier   |     0.08 |
+  trainer:AdversarialTrainer:Lookahead:la_alpha, Value: 0.5926210942083824
+  trainer:AdversarialTrainer:Lookahead:la_steps, Value: 8
+  trainer:AdversarialTrainer:epsilon, Constant: 0.007
+  trainer:AdversarialTrainer:use_lookahead_optimizer, Value: True
+  trainer:AdversarialTrainer:use_snapshot_ensemble, Value: False
+  trainer:AdversarialTrainer:use_stochastic_weight_averaging, Value: False
+  trainer:AdversarialTrainer:weighted_loss, Constant: 1
+  trainer:__choice__, Value: &#39;AdversarialTrainer&#39;
+, ta_runs=15, ta_time_used=213.18989634513855, wallclock_time=261.9260311126709, budget=50.0)]
+{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                 | Estimator                                                          |   Weight |
+|---:|:--------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,MinMaxScaler,KitchenSink              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+|  1 | None                                                          | SVC                                                                |     0.14 |
+|  2 | None                                                          | CatBoostClassifier                                                 |     0.12 |
+|  3 | SimpleImputer,NoEncoder,Normalizer,KernelPCA                  | no embedding,ResNetBackbone,NoHead,nn.Sequential                   |     0.08 |
+|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
+|  5 | None                                                          | LGBMClassifier                                                     |     0.06 |
+|  6 | None                                                          | KNNClassifier                                                      |     0.06 |
+|  7 | None                                                          | RFClassifier                                                       |     0.04 |
+|  8 | None                                                          | ExtraTreesClassifier                                               |     0.04 |
+|  9 | SimpleImputer,NoEncoder,StandardScaler,KernelPCA              | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+| 10 | SimpleImputer,NoEncoder,Normalizer,Nystroem                   | no embedding,ShapedResNetBackbone,NoHead,nn.Sequential             |     0.02 |
+| 11 | SimpleImputer,NoEncoder,Normalizer,Nystroem                   | no embedding,ShapedResNetBackbone,NoHead,nn.Sequential             |     0.02 |
+| 12 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+| 13 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -407,6 +446,15 @@ the search space.</p>
                    <span class="n">hyperparameter</span><span class="o">=</span><span class="s1">&#39;ResNetBackbone:dropout&#39;</span><span class="p">,</span>
                    <span class="n">value_range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
                    <span class="n">default_value</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_name</span><span class="o">=</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">,</span>
+                   <span class="n">hyperparameter</span><span class="o">=</span><span class="s1">&#39;ResNetBackbone:multi_branch_choice&#39;</span><span class="p">,</span>
+                   <span class="n">value_range</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;shake-shake&#39;</span><span class="p">],</span>
+                   <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;shake-shake&#39;</span><span class="p">)</span>
+    <span class="n">updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_name</span><span class="o">=</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">,</span>
+                   <span class="n">hyperparameter</span><span class="o">=</span><span class="s1">&#39;ResNetBackbone:shake_shake_update_func&#39;</span><span class="p">,</span>
+                   <span class="n">value_range</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;M3&#39;</span><span class="p">],</span>
+                   <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;M3&#39;</span>
+                   <span class="p">)</span>
     <span class="k">return</span> <span class="n">updates</span>
 
 
@@ -427,7 +475,7 @@ the search space.</p>
     <span class="c1"># ==================================================</span>
     <span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
         <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
-        <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
+        <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
                             <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">]}</span>
     <span class="p">)</span>
 
@@ -485,7 +533,7 @@ the search space.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 11 minutes  40.629 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 12 minutes  9.380 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -520,7 +568,7 @@ the search space.</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.0.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>
