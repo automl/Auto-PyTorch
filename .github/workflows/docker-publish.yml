@@ -12,6 +12,7 @@ on:
       - master
       - development
       - add_docker-publish
+  workflow_dispatch:
 
 jobs:
   push_to_registries:
