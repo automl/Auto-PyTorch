@@ -748,6 +748,7 @@ def test_pipeline_fit(openml_id,
         elif resampling_strategy in HoldoutValTypes:
             assert not os.path.exists(cv_model_path)
 
+
 @pytest.mark.parametrize('openml_id', (40984,))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
