@@ -21,7 +21,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
         self.embedding = self.build_embedding(
             num_input_features=num_input_features,
-            num_numerical_features=num_numerical_columns)
+            num_numerical_features=num_numerical_columns)  # type: ignore[arg-type]
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

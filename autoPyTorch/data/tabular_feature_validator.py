@@ -133,6 +133,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if cmp1 not in choices or cmp2 not in choices:
             raise ValueError('The comparator for the column order only accepts {}, '
                              'but got {} and {}'.format(choices, cmp1, cmp2))
+
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
@@ -279,13 +280,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # having a value for a categorical column.
         # We need to convert the column in test data to
         # object otherwise the test column is interpreted as float
-        if len(self.categorical_columns) > 0:
-            categorical_columns = self.column_transformer.transformers_[0][-1]
-            for column in categorical_columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype('object')
-
         if self.column_transformer is not None:
+            if len(self.categorical_columns) > 0:
+                categorical_columns = self.column_transformer.transformers_[0][-1]
+                for column in categorical_columns:
+                    if X[column].isna().all():
+                        X[column] = X[column].astype('object')
             X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -371,16 +371,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             dtypes = [dtype.name for dtype in X.dtypes]
 
-            dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+            diff_cols = X.columns[[s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]]
             if len(self.dtypes) == 0:
                 self.dtypes = dtypes
-            elif (
-                any(dtypes_diff)  # the dtypes of some columns are different in train and test dataset
-                and self.all_nan_columns is not None  # Ignore all_nan_columns is None
-                and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
-            ):
-                # The dtypes can be different if and only if the column belongs
-                # to all_nan_columns as these columns would be imputed.
+            elif not self._is_datasets_consistent(diff_cols, X):
                 raise ValueError("The dtype of the features must not be changed after fit(), but"
                                  " the dtypes of some columns are different between training ({}) and"
                                  " test ({}) datasets.".format(self.dtypes, dtypes))
@@ -547,6 +541,33 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
 
         return X
+
+    def _is_datasets_consistent(self, diff_cols: List[Union[int, str]], X: pd.DataFrame) -> bool:
+        """
+        Check the consistency of dtypes between training and test datasets.
+        The dtypes can be different if the column belongs to `self.all_nan_columns`
+        (list of column names with all nans in training data) or if the column is
+        all nan as these columns would be imputed.
+
+        Args:
+            diff_cols (List[bool]):
+                The column labels that have different dtypes.
+            X (pd.DataFrame):
+                A validation or test dataset to be compared with the training dataset
+        Returns:
+            _ (bool): Whether the training and test datasets are consistent.
+        """
+        if self.all_nan_columns is None:
+            if len(diff_cols) == 0:
+                return True
+            else:
+                return all(X[diff_cols].isna().all())
+
+        # dtype is different ==> the column in at least either of train or test datasets must be all NaN
+        # inconsistent <==> dtype is different and the col in both train and test is not all NaN
+        inconsistent_cols = list(set(diff_cols) - self.all_nan_columns)
+
+        return len(inconsistent_cols) == 0 or all(X[inconsistent_cols].isna().all())
 
 
 def has_object_columns(

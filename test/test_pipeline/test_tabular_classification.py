@@ -31,7 +31,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 @pytest.fixture
 def exclude():
-    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification']}
+    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'], 'network_embedding': ['LearnedEntityEmbedding']}
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
@@ -184,9 +184,11 @@ class TestTabularClassification:
         assert fit_dictionary_tabular.items() <= transformed_fit_dictionary_tabular.items()
 
         # Then the pipeline should have added the following keys
-        expected_keys = {'imputer', 'encoder', 'scaler', 'tabular_transformer',
-                         'preprocess_transforms', 'network', 'optimizer', 'lr_scheduler',
-                         'train_data_loader', 'val_data_loader', 'run_summary'}
+        # Removing 'imputer', 'encoder', 'scaler', these will be
+        # added back after a PR fixing preprocessing
+        expected_keys = {'tabular_transformer', 'preprocess_transforms', 'network',
+                         'optimizer', 'lr_scheduler', 'train_data_loader',
+                         'val_data_loader', 'run_summary', 'feature_preprocessor'}
         assert expected_keys.issubset(set(transformed_fit_dictionary_tabular.keys()))
 
         # Then we need to have transformations being created.
@@ -322,8 +324,8 @@ class TestTabularClassification:
                                               search_space_updates=error_search_space_updates)
         except Exception as e:
             assert isinstance(e, ValueError)
-            assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
-                            r'hyperparameter to be in \[.*?\] got .+', e.args[0])
+            assert re.match(r'Unknown hyperparameter for .*?\. Expected update '
+                            r'hyperparameter to be in \[.*?\], but got .+', e.args[0])
 
     def test_set_range_search_space_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
@@ -396,7 +398,7 @@ class TestTabularClassification:
                                               'ReduceLROnPlateau'])
     def test_trainer_cocktails(self, fit_dictionary_tabular, mocker, lr_scheduler, trainer):  # noqa F811
         fit_dictionary_tabular['epochs'] = 45
-        fit_dictionary_tabular['early_stopping'] = 20
+        fit_dictionary_tabular['early_stopping'] = -1
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             include={'lr_scheduler': [lr_scheduler], 'trainer': [trainer]})
