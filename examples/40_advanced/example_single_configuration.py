@@ -66,7 +66,7 @@ print("Passed Configuration:", configuration)
 pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                 configuration=configuration,
                                                                 budget_type='epochs',
-                                                                budget=20,
+                                                                budget=10,
                                                                 run_time_limit_secs=100
                                                                 )
 
@@ -78,4 +78,5 @@ print(run_value)
 
 # This object complies with Scikit-Learn Pipeline API.
 # https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
+if pipeline is not None:
 print(pipeline.named_steps)
