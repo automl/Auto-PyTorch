@@ -747,3 +747,45 @@ def test_pipeline_fit(openml_id,
             assert os.path.exists(cv_model_path)
         elif resampling_strategy in HoldoutValTypes:
             assert not os.path.exists(cv_model_path)
+
+@pytest.mark.parametrize('openml_id', (40984,))
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
+                          )
+                         )
+def test_pipeline_fit_error(
+    openml_id,
+    resampling_strategy,
+    resampling_strategy_args,
+    backend,
+    n_samples
+):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        data_id=int(openml_id),
+        return_X_y=True, as_frame=True
+    )
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X[:n_samples], y[:n_samples], random_state=1)
+
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+    )
+
+    dataset = estimator.get_dataset(X_train=X_train,
+                                    y_train=y_train,
+                                    X_test=X_test,
+                                    y_test=y_test,
+                                    resampling_strategy=resampling_strategy,
+                                    resampling_strategy_args=resampling_strategy_args)
+
+    configuration = estimator.get_search_space(dataset).get_default_configuration()
+    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
+                                                                    configuration=configuration,
+                                                                    run_time_limit_secs=7,
+                                                                    )
+
+    assert 'TIMEOUT' in str(run_value.status)
+    assert pipeline is None

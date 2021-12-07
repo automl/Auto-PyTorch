@@ -1576,19 +1576,23 @@ class BaseTask(ABC):
         )
 
         fitted_pipeline: Optional[BasePipeline] = None
-        if 'all' in disable_file_output or 'pipeline' in disable_file_output:
-            self._logger.warning("File output is disabled. No pipeline can returned")
-        elif run_value.status == StatusType.SUCCESS:
-            if self.resampling_strategy in CrossValTypes:
-                load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
-            else:
-                load_function = self._backend.load_model_by_seed_and_id_and_budget
-            fitted_pipeline = load_function(
-                seed=self.seed,
-                idx=run_info.config.config_id + tae.initial_num_run,
-                budget=float(run_info.budget),
-            )
 
+        if run_value.status == StatusType.SUCCESS:
+            if 'all' in disable_file_output or 'pipeline' in disable_file_output:
+                self._logger.warning("File output is disabled. No pipeline can returned")
+            elif run_value.status == StatusType.SUCCESS:
+                if self.resampling_strategy in CrossValTypes:
+                    load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
+                else:
+                    load_function = self._backend.load_model_by_seed_and_id_and_budget
+                fitted_pipeline = load_function(
+                    seed=self.seed,
+                    idx=run_info.config.config_id + tae.initial_num_run,
+                    budget=float(run_info.budget),
+                )
+        else:
+            warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
+                          f", aditional_info: {run_value.additional_info}")
         self._clean_logger()
 
         return fitted_pipeline, run_info, run_value, dataset

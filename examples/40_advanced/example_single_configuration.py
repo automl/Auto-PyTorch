@@ -70,12 +70,12 @@ pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                 run_time_limit_secs=100
                                                                 )
 
-# This object complies with Scikit-Learn Pipeline API.
-# https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
-print(pipeline.named_steps)
-
 # The fit_pipeline command also returns a named tuple with the pipeline constraints
 print(run_info)
 
 # The fit_pipeline command also returns a named tuple with train/test performance
 print(run_value)
+
+# This object complies with Scikit-Learn Pipeline API.
+# https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
+print(pipeline.named_steps)
