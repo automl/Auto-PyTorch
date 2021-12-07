@@ -37,5 +37,31 @@ Installing Auto-Pytorch
 
 
 Docker Image
-=========================
- TODO
+============
+A Docker image is also provided on dockerhub. To download from dockerhub,
+use:
+
+.. code:: bash
+
+    docker pull automlorg/autopytorch:master
+
+You can also verify that the image was downloaded via:
+
+.. code:: bash
+
+    docker images  # Verify that the image was downloaded
+
+This image can be used to start an interactive session as follows:
+
+.. code:: bash
+
+    docker run -it automlorg/autopytorch:master
+
+To start a Jupyter notebook, you could instead run e.g.:
+
+.. code:: bash
+
+    docker run -it -v ${PWD}:/opt/nb -p 8888:8888 automlorg/autopytorch:master /bin/bash -c "mkdir -p /opt/nb && jupyter notebook --notebook-dir=/opt/nb --ip='0.0.0.0' --port=8888 --no-browser --allow-root"
+
+Alternatively, it is possible to use the development version of autoPyTorch by replacing all
+occurences of ``master`` by ``development``.
