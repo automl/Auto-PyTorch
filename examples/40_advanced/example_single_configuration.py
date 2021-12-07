@@ -48,7 +48,7 @@ estimator = TabularClassificationTask(
 )
 
 ############################################################################
-# Get a random configuration of the pipeline for current dataset
+# Get a configuration of the pipeline for current dataset
 # ===============================================================
 
 dataset = estimator.get_dataset(X_train=X_train,
@@ -56,7 +56,7 @@ dataset = estimator.get_dataset(X_train=X_train,
                                 X_test=X_test,
                                 y_test=y_test,
                                 dataset_name='kr-vs-kp')
-configuration = estimator.get_search_space(dataset).sample_configuration()
+configuration = estimator.get_search_space(dataset).get_default_configuration()
 
 print("Passed Configuration:", configuration)
 ###########################################################################
