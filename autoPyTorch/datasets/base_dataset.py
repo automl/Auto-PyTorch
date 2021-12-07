@@ -69,7 +69,9 @@ def _return_output_shape(output_type: str, target_labels: np.ndarray) -> int:
     return 1
 
 
-def _double_check_and_return_property_of_target(train_tensors: BaseDatasetInputType) -> Tuple[str, int]:
+def _double_check_and_return_property_of_target(
+    train_tensors: BaseDatasetInputType
+) -> Tuple[Optional[str], Optional[int]]:
     """
     Since task type inference by sklearn (see Reference below) for continuous is
     not suitable for AutoPytorch, we double-check the task type in the case
@@ -98,10 +100,9 @@ def _double_check_and_return_property_of_target(train_tensors: BaseDatasetInputT
     TODO: Add tests for both `Dataset` and `np.ndarray`
     """
     if len(train_tensors) != 2 or train_tensors[1] is None:
-        raise ValueError(
-            'Unsupervised learning has not been supported yet. '
-            'Make sure that your dataset has labels and the format is correct.'
-        )
+        # Unsupervised learning has not been supported yet.
+        # Or at the prediction phase, we might want to instantiate dataset without labels.
+        return None, None
 
     if isinstance(train_tensors, Dataset):
         target_labels = np.array([sample[-1] for sample in train_tensors])
