@@ -5,13 +5,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>autoPyTorch.api.tabular_classification &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/gallery-binder.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/gallery-dataframe.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
@@ -21,9 +21,9 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js "></script>
 <script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
 <script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
 
   </head><body>
@@ -66,6 +66,7 @@
                 <li><a href="../../../manual.html">Manual</a></li>
                 <li><a href="../../../examples/index.html">Examples</a></li>
                 <li><a href="../../../api.html">API</a></li>
+                <li><a href="../../../dev.html">Dev</a></li>
                 <li><a href="../../../extending.html">Extending</a></li>
             
             
@@ -139,11 +140,14 @@
 <div class="viewcode-block" id="TabularClassificationTask"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask">[docs]</a><span class="k">class</span> <span class="nc">TabularClassificationTask</span><span class="p">(</span><span class="n">BaseTask</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Tabular Classification API to the pipelines.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        seed (int):</span>
 <span class="sd">            seed to be used for reproducibility.</span>
 <span class="sd">        n_jobs (int), (default=1):</span>
 <span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        n_threads (int), (default=1):</span>
+<span class="sd">            number of threads to use for each process.</span>
 <span class="sd">        logging_config (Optional[Dict]):</span>
 <span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
 <span class="sd">        ensemble_size (int), (default=50):</span>
@@ -175,6 +179,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">logging_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">ensemble_nbest</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
@@ -195,6 +200,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="n">n_threads</span><span class="o">=</span><span class="n">n_threads</span><span class="p">,</span>
             <span class="n">logging_config</span><span class="o">=</span><span class="n">logging_config</span><span class="p">,</span>
             <span class="n">ensemble_size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">,</span>
             <span class="n">ensemble_nbest</span><span class="o">=</span><span class="n">ensemble_nbest</span><span class="p">,</span>
@@ -243,7 +249,7 @@
                                                         <span class="n">NoResamplingStrategyTypes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="n">return_only</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">update_dataset_attribute</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseDataset</span><span class="p">:</span>
 
         <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -255,7 +261,7 @@
 
         <span class="c1"># Create a validator object to make sure that the data provided by</span>
         <span class="c1"># the user matches the autopytorch requirements</span>
-        <span class="n">InputValidator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
+        <span class="n">input_validator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
             <span class="n">is_classification</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
         <span class="p">)</span>
@@ -263,18 +269,19 @@
         <span class="c1"># Fit a input validator to check the provided data</span>
         <span class="c1"># Also, an encoder is fit to both train and test data,</span>
         <span class="c1"># to prevent unseen categories during inference</span>
-        <span class="n">InputValidator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+        <span class="n">input_validator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
             <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
             <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
-            <span class="n">validator</span><span class="o">=</span><span class="n">InputValidator</span><span class="p">,</span>
+            <span class="n">validator</span><span class="o">=</span><span class="n">input_validator</span><span class="p">,</span>
             <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
             <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
-            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">return_only</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="o">=</span> <span class="n">InputValidator</span>
+        <span class="k">if</span> <span class="n">update_dataset_attribute</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="o">=</span> <span class="n">input_validator</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
 
         <span class="k">return</span> <span class="n">dataset</span>
@@ -312,7 +319,7 @@
 <span class="sd">                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can</span>
 <span class="sd">                be provided to track the generalization performance of each stage.</span>
 <span class="sd">            dataset_name (Optional[str]):</span>
-<span class="sd">                Name of the dayaset, if None, random value is used</span>
+<span class="sd">                Name of the dayaset, if None, time hashed value is used</span>
 <span class="sd">            optimize_metric (str): name of the metric that is used to</span>
 <span class="sd">                evaluate a pipeline.</span>
 <span class="sd">            budget_type (Optional[str]):</span>
@@ -375,10 +382,12 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span> <span class="p">(</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">)),</span> \
-            <span class="s2">&quot;Val Split is required for HPO search. &quot;</span> \
-            <span class="s2">&quot;Expected &#39;self.resampling_strategy&#39; in&quot;</span> \
-            <span class="s2">&quot; &#39;(CrossValTypes, HoldoutValTypes) got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span> <span class="p">(</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Hyperparameter optimization requires a validation split. &#39;</span>
+                <span class="s1">&#39;Expected `self.resampling_strategy` to be either &#39;</span>
+                <span class="s1">&#39;(CrossValTypes, HoldoutValTypes), but got </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
                          <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
@@ -386,6 +395,8 @@
                          <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
                          <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`dataset` in </span><span class="si">{}</span><span class="s2"> must be initialized, but got None&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
             <span class="n">optimize_metric</span><span class="o">=</span><span class="n">optimize_metric</span><span class="p">,</span>
@@ -409,30 +420,30 @@
             <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
                              <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>
 
-        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="n">predicted_probabilities</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
                                                   <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">is_single_column_target</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">is_single_column_target</span><span class="p">():</span>
             <span class="n">predicted_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">predicted_probabilities</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">predicted_indexes</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted_probabilities</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="c1"># Allow to predict in the original domain -- that is, the user is not interested</span>
         <span class="c1"># in our encoded values</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_indexes</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_indexes</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                       <span class="n">X_test</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
                       <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
                              <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>
-        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span></div>
 </pre></div>
 
@@ -451,7 +462,7 @@
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

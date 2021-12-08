@@ -25,7 +25,7 @@ Tabular Classification
 The following example shows how to fit a sample classification model
 with AutoPyTorch
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-72
+.. GENERATED FROM PYTHON SOURCE LINES 9-73
 
 
 
@@ -36,7 +36,8 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    <smac.runhistory.runhistory.RunHistory object at 0x7fea20c67760> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+    Task has already stopped
+    <smac.runhistory.runhistory.RunHistory object at 0x7fe8c99c15e0> [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -75,7 +76,7 @@ with AutoPyTorch
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0022339820861816406, budget=0), TrajEntry(train_perf=0.1871345029239766, incumbent_id=1, incumbent=Configuration:
+    , ta_runs=0, ta_time_used=0.0, wallclock_time=0.0015230178833007812, budget=0), TrajEntry(train_perf=0.1228070175438597, incumbent_id=1, incumbent=Configuration:
       data_loader:batch_size, Value: 64
       encoder:__choice__, Value: 'OneHotEncoder'
       feature_preprocessor:__choice__, Value: 'NoFeaturePreprocessor'
@@ -114,16 +115,18 @@ with AutoPyTorch
       trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
       trainer:StandardTrainer:weighted_loss, Constant: 1
       trainer:__choice__, Value: 'StandardTrainer'
-    , ta_runs=1, ta_time_used=14.17734146118164, wallclock_time=15.65822958946228, budget=5.555555555555555)]
-    {'accuracy': 0.8786127167630058}
+    , ta_runs=1, ta_time_used=6.236465692520142, wallclock_time=7.763268709182739, budget=5.555555555555555)]
+    {'accuracy': 0.861271676300578}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | None                                                              | CatBoostClassifier                                              |     0.3  |
-    |  1 | SimpleImputer,OneHotEncoder,NoScaler,PolynomialFeatures           | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.28 |
-    |  2 | None                                                              | ExtraTreesClassifier                                            |     0.18 |
-    |  3 | None                                                              | RFClassifier                                                    |     0.16 |
-    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  5 | None                                                              | KNNClassifier                                                   |     0.02 |
+    |  0 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures               | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.34 |
+    |  1 | SimpleImputer,NoEncoder,NoScaler,PolynomialFeatures               | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.32 |
+    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+    |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+    |  4 | None                                                              | KNNClassifier                                                   |     0.06 |
+    |  5 | None                                                              | CatBoostClassifier                                              |     0.04 |
+    |  6 | SimpleImputer,NoEncoder,Normalizer,NoFeaturePreprocessing         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+    |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 
 
 
@@ -161,7 +164,7 @@ with AutoPyTorch
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
             X,
             y,
-            random_state=1,
+            random_state=42,
         )
 
         ############################################################################
@@ -172,7 +175,8 @@ with AutoPyTorch
             output_directory='./tmp/autoPyTorch_example_out_01',
             # To maintain logs of the run, set the next two as False
             delete_tmp_folder_after_terminate=True,
-            delete_output_folder_after_terminate=True
+            delete_output_folder_after_terminate=True,
+            seed=42,
         )
 
         ############################################################################
@@ -201,7 +205,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 6 minutes  6.183 seconds)
+   **Total running time of the script:** ( 6 minutes  6.720 seconds)
 
 
 .. _sphx_glr_download_basics_tabular_example_tabular_classification.py:

@@ -3,15 +3,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Tabular Regression &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -21,9 +22,9 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
 <script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
 <script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
 
   </head><body>
@@ -66,6 +67,7 @@
                 <li><a href="../manual.html">Manual</a></li>
                 <li><a href="../examples/index.html">Examples</a></li>
                 <li><a href="../api.html">API</a></li>
+                <li><a href="../dev.html">Dev</a></li>
                 <li><a href="../extending.html">Extending</a></li>
             
             
@@ -117,14 +119,16 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-basics-tabular-example-tabular-regression-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="tabular-regression">
+<section class="sphx-glr-example-title" id="tabular-regression">
 <span id="sphx-glr-basics-tabular-example-tabular-regression-py"></span><h1>Tabular Regression<a class="headerlink" href="#tabular-regression" title="Permalink to this headline">¶</a></h1>
 <p>The following example shows how to fit a sample regression model
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;smac.runhistory.runhistory.RunHistory object at 0x7fea19887a00&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Task has already stopped
+&lt;smac.runhistory.runhistory.RunHistory object at 0x7fe8c8c09e20&gt; [TrajEntry(train_perf=2147483648, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
+  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
   lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
@@ -159,9 +163,10 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=0, ta_time_used=0.0, wallclock_time=0.002454042434692383, budget=0), TrajEntry(train_perf=0.3994701030525838, incumbent_id=1, incumbent=Configuration:
+, ta_runs=0, ta_time_used=0.0, wallclock_time=0.0014803409576416016, budget=0), TrajEntry(train_perf=0.54780236882708, incumbent_id=1, incumbent=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;OneHotEncoder&#39;
+  feature_preprocessor:__choice__, Value: &#39;NoFeaturePreprocessor&#39;
   imputer:categorical_strategy, Value: &#39;most_frequent&#39;
   imputer:numerical_strategy, Value: &#39;mean&#39;
   lr_scheduler:ReduceLROnPlateau:factor, Value: 0.1
@@ -196,13 +201,79 @@ with AutoPyTorch</p>
   trainer:StandardTrainer:use_snapshot_ensemble, Value: True
   trainer:StandardTrainer:use_stochastic_weight_averaging, Value: True
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
-, ta_runs=1, ta_time_used=9.187701940536499, wallclock_time=12.815777063369751, budget=5.555555555555555)]
-{&#39;r2&#39;: 0.8880598278753047}
-|    | Preprocessing                              | Estimator                                                       |   Weight |
-|---:|:-------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.86 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-|  2 | SimpleImputer,NoEncoder,Normalizer         | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.04 |
+, ta_runs=1, ta_time_used=5.28707480430603, wallclock_time=9.043576955795288, budget=5.555555555555555), TrajEntry(train_perf=0.49618901582214026, incumbent_id=2, incumbent=Configuration:
+  data_loader:batch_size, Value: 83
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:TruncatedSVD:target_dim, Value: 6
+  feature_preprocessor:__choice__, Value: &#39;TruncatedSVD&#39;
+  imputer:categorical_strategy, Value: &#39;most_frequent&#39;
+  imputer:numerical_strategy, Value: &#39;most_frequent&#39;
+  lr_scheduler:__choice__, Value: &#39;NoScheduler&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;tanh&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 81
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;triangle&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 8
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 27
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;no_head&#39;
+  network_head:no_head:activation, Value: &#39;relu&#39;
+  network_init:NoInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;NoInit&#39;
+  optimizer:AdamOptimizer:beta1, Value: 0.9648340795283806
+  optimizer:AdamOptimizer:beta2, Value: 0.9097323977620342
+  optimizer:AdamOptimizer:lr, Value: 0.002414047524172292
+  optimizer:AdamOptimizer:use_weight_decay, Value: False
+  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  scaler:__choice__, Value: &#39;MinMaxScaler&#39;
+  trainer:MixUpTrainer:Lookahead:la_alpha, Value: 0.7058731781223049
+  trainer:MixUpTrainer:Lookahead:la_steps, Value: 7
+  trainer:MixUpTrainer:alpha, Value: 0.510247963429182
+  trainer:MixUpTrainer:se_lastk, Constant: 3
+  trainer:MixUpTrainer:use_lookahead_optimizer, Value: True
+  trainer:MixUpTrainer:use_snapshot_ensemble, Value: True
+  trainer:MixUpTrainer:use_stochastic_weight_averaging, Value: False
+  trainer:__choice__, Value: &#39;MixUpTrainer&#39;
+, ta_runs=4, ta_time_used=20.00540566444397, wallclock_time=29.150705099105835, budget=5.555555555555555), TrajEntry(train_perf=0.13739077211084072, incumbent_id=3, incumbent=Configuration:
+  data_loader:batch_size, Value: 66
+  encoder:__choice__, Value: &#39;NoEncoder&#39;
+  feature_preprocessor:TruncatedSVD:target_dim, Value: 6
+  feature_preprocessor:__choice__, Value: &#39;TruncatedSVD&#39;
+  imputer:categorical_strategy, Value: &#39;constant_!missing!&#39;
+  imputer:numerical_strategy, Value: &#39;median&#39;
+  lr_scheduler:ExponentialLR:gamma, Value: 0.9645348079043651
+  lr_scheduler:__choice__, Value: &#39;ExponentialLR&#39;
+  network_backbone:ShapedMLPBackbone:activation, Value: &#39;relu&#39;
+  network_backbone:ShapedMLPBackbone:max_units, Value: 104
+  network_backbone:ShapedMLPBackbone:mlp_shape, Value: &#39;diamond&#39;
+  network_backbone:ShapedMLPBackbone:num_groups, Value: 11
+  network_backbone:ShapedMLPBackbone:output_dim, Value: 51
+  network_backbone:ShapedMLPBackbone:use_dropout, Value: False
+  network_backbone:__choice__, Value: &#39;ShapedMLPBackbone&#39;
+  network_embedding:__choice__, Value: &#39;NoEmbedding&#39;
+  network_head:__choice__, Value: &#39;fully_connected&#39;
+  network_head:fully_connected:activation, Value: &#39;relu&#39;
+  network_head:fully_connected:num_layers, Value: 2
+  network_head:fully_connected:units_layer_1, Value: 102
+  network_init:OrthogonalInit:bias_strategy, Value: &#39;Zero&#39;
+  network_init:__choice__, Value: &#39;OrthogonalInit&#39;
+  optimizer:AdamOptimizer:beta1, Value: 0.9708697149249353
+  optimizer:AdamOptimizer:beta2, Value: 0.9389925191381899
+  optimizer:AdamOptimizer:lr, Value: 0.0009171673878467377
+  optimizer:AdamOptimizer:use_weight_decay, Value: False
+  optimizer:__choice__, Value: &#39;AdamOptimizer&#39;
+  scaler:__choice__, Value: &#39;MinMaxScaler&#39;
+  trainer:StandardTrainer:use_lookahead_optimizer, Value: False
+  trainer:StandardTrainer:use_snapshot_ensemble, Value: False
+  trainer:StandardTrainer:use_stochastic_weight_averaging, Value: False
+  trainer:__choice__, Value: &#39;StandardTrainer&#39;
+, ta_runs=29, ta_time_used=181.57333827018738, wallclock_time=274.39461398124695, budget=50.0)]
+{&#39;r2&#39;: 0.9034995590198241}
+|    | Preprocessing                                             | Estimator                                                          |   Weight |
+|---:|:----------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,NoEncoder,MinMaxScaler,TruncSVD             | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.94 |
+|  1 | SimpleImputer,NoEncoder,StandardScaler,PolynomialFeatures | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
 </pre></div>
 </div>
 <div class="line-block">
@@ -287,7 +358,7 @@ with AutoPyTorch</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">show_models</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  21.468 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  15.548 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-basics-tabular-example-tabular-regression-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/basics_tabular/example_tabular_regression.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -300,7 +371,7 @@ with AutoPyTorch</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
+</section>
 
 
     </div>
@@ -322,7 +393,7 @@ with AutoPyTorch</p>
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

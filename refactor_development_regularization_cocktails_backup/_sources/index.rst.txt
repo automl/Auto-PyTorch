@@ -31,6 +31,7 @@ Manual
 * :ref:`installation`
 * :ref:`manual`
 * :ref:`api`
+* :ref:`dev`
 * :ref:`extending`
 
 

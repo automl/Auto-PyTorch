@@ -3,15 +3,16 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Fit a single configuration &#8212; AutoPyTorch 0.0.3 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-binder.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-dataframe.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/gallery-rendered-html.css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -21,9 +22,9 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
 <script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
 <script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
 
   </head><body>
@@ -66,6 +67,7 @@
                 <li><a href="../manual.html">Manual</a></li>
                 <li><a href="../examples/index.html">Examples</a></li>
                 <li><a href="../api.html">API</a></li>
+                <li><a href="../dev.html">Dev</a></li>
                 <li><a href="../extending.html">Extending</a></li>
             
             
@@ -117,7 +119,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-advanced-tabular-example-single-configuration-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<div class="sphx-glr-example-title section" id="fit-a-single-configuration">
+<section class="sphx-glr-example-title" id="fit-a-single-configuration">
 <span id="sphx-glr-advanced-tabular-example-single-configuration-py"></span><h1>Fit a single configuration<a class="headerlink" href="#fit-a-single-configuration" title="Permalink to this headline">¶</a></h1>
 <p><em>Auto-PyTorch</em> searches for the best combination of machine learning algorithms
 and their hyper-parameter configuration for a given task.</p>
@@ -126,13 +128,7 @@ configuration, and a randomly sampled one form the configuration space.
 The pipelines that Auto-PyTorch fits are compatible with Scikit-Learn API. You can
 get further documentation about Scikit-Learn models here: &lt;<a class="reference external" href="https://scikit-learn.org/stable/getting_started">https://scikit-learn.org/stable/getting_started</a>.html`&gt;_</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/runner/work/Auto-PyTorch/Auto-PyTorch/examples/tabular/40_advanced/example_single_configuration.py:61: DeprecationWarning: `np.int` is a deprecated alias for the builtin `int`. To silence this warning, use `int` by itself. Doing this will not modify any behavior and is safe. When replacing `np.int`, you may wish to use e.g. `np.int64` or `np.int32` to specify the precision. If you wish to review your current use, check the release note link for additional information.
-Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
-  configuration = estimator.get_search_space(dataset).get_default_configuration()
-/home/runner/work/Auto-PyTorch/Auto-PyTorch/examples/tabular/40_advanced/example_single_configuration.py:61: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
-Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
-  configuration = estimator.get_search_space(dataset).get_default_configuration()
-{&#39;imputer&#39;: SimpleImputer(), &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7fea1952fe50&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7fea1952f580&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7fea19895a60&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(), &#39;preprocessing&#39;: EarlyPreprocessing(), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7fea1ad961f0&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7fea1ad968e0&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7fea1af43cd0&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;imputer&#39;: SimpleImputer(random_state=RandomState(MT19937) at 0x7FE8C8934740), &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder_choice.EncoderChoice object at 0x7fe8c8c09a90&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.base_scaler_choice.ScalerChoice object at 0x7fe8c8c09b20&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.base_feature_preprocessor_choice.FeatureProprocessorChoice object at 0x7fe8c03c0f70&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7FE8C8934740), &#39;preprocessing&#39;: EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7FE8C8934740), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding_choice.NetworkEmbeddingChoice object at 0x7fe8c004dc40&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone_choice.NetworkBackboneChoice object at 0x7fe8c004dee0&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice.NetworkHeadChoice object at 0x7fe8c0b6d850&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
   (0): _NoEmbedding()
   (1): Sequential(
     (0): Linear(in_features=4, out_features=200, bias=True)
@@ -144,7 +140,6 @@ Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdo
     (6): Linear(in_features=200, out_features=200, bias=True)
     (7): ReLU()
     (8): Linear(in_features=200,...
-      (4): Linear(in_features=200, out_features=200, bias=True)
       (5): ReLU()
       (6): Linear(in_features=200, out_features=200, bias=True)
       (7): ReLU()
@@ -157,7 +152,8 @@ Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdo
       (3): Linear(in_features=128, out_features=3, bias=True)
     )
   )
-)]), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7fea1823e4c0&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7fea1823eee0&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7fea1af4e370&gt;, &#39;data_loader&#39;: FeatureDataLoader(), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7fea1ad07100&gt;}
+)],
+                 random_state=RandomState(MT19937) at 0x7FE8C8934740), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.base_network_init_choice.NetworkInitializerChoice object at 0x7fe8b0ac84f0&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.base_optimizer_choice.OptimizerChoice object at 0x7fe8b0ac8610&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler_choice.SchedulerChoice object at 0x7fe8c0ba80d0&gt;, &#39;data_loader&#39;: FeatureDataLoader(random_state=RandomState(MT19937) at 0x7FE8C8934740), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.base_trainer_choice.TrainerChoice object at 0x7fe8b0999e80&gt;}
 RunInfo(config=Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;NoEncoder&#39;
@@ -197,7 +193,7 @@ RunInfo(config=Configuration:
   trainer:StandardTrainer:weighted_loss, Constant: 1
   trainer:__choice__, Value: &#39;StandardTrainer&#39;
 , instance=None, instance_specific=None, seed=1, cutoff=94, capped=False, budget=50, source_id=0)
-RunValue(cost=0.09999999999999998, time=8.578272104263306, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1620126248.2768674, endtime=1620126258.1787384, additional_info={&#39;accuracy&#39;: 0.09999999999999998, &#39;duration&#39;: 6.08005428314209, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.0}, &#39;test_loss&#39;: 0.06666666666666665, &#39;configuration_origin&#39;: None})
+RunValue(cost=0.0, time=6.833261489868164, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1638982927.3138058, endtime=1638982935.6158566, additional_info={&#39;accuracy&#39;: 0.0, &#39;duration&#39;: 4.156226396560669, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.0}, &#39;test_loss&#39;: 0.05833333333333335, &#39;configuration_origin&#39;: None})
 Passed Configuration: Configuration:
   data_loader:batch_size, Value: 64
   encoder:__choice__, Value: &#39;NoEncoder&#39;
@@ -340,7 +336,7 @@ Network: Sequential(
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Network:&quot;</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;network&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  24.572 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  16.330 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-advanced-tabular-example-single-configuration-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/refactor_development?urlpath=lab/tree/notebooks/advanced_tabular/example_single_configuration.ipynb"><img alt="Launch binder" src="../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -353,7 +349,7 @@ Network: Sequential(
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
+</section>
 
 
     </div>
@@ -375,7 +371,7 @@ Network: Sequential(
     </p>
     <p>
         &copy; Copyright 2014-2019, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>
