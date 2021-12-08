@@ -9,8 +9,8 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head.distribution import ALL_DISTRIBUTIONS
-from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head.distributed_network_head import \
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distributed_network_head import \
     DistributionNetworkHeadComponents
 from autoPyTorch.pipeline.components.setup.network_head.fully_connected import FullyConnectedHead
 

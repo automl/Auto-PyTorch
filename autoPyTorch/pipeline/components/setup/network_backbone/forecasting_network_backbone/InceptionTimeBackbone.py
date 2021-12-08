@@ -9,7 +9,8 @@ import torch
 from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
+    import BaseForecastingNetworkBackbone
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -122,10 +123,15 @@ class _InceptionTime(nn.Module):
         return x
 
 
-class InceptionTimeBackbone(NetworkBackboneComponent):
+class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
     """
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
+    @property
+    def backbone_properties(self):
+        # TODO consider property for the network
+        backbone_properties = {}
+        return backbone_properties
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         backbone = _InceptionTime(in_features=input_shape[-1],

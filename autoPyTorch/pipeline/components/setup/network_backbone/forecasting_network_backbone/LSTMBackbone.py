@@ -12,8 +12,8 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import \
-    NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
+    import BaseForecastingNetworkBackbone
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -55,7 +55,7 @@ class _LSTM(nn.Module):
             return outputs, hidden_state
 
 
-class LSTMBackbone(NetworkBackboneComponent):
+class LSTMBackbone(BaseForecastingNetworkBackbone):
     """
     Standard searchable LSTM backbone for time series data
     """
@@ -69,6 +69,13 @@ class LSTMBackbone(NetworkBackboneComponent):
                          config=self.config)
         self.backbone = backbone
         return backbone
+
+    @property
+    def backbone_properties(self):
+        backbone_properties = {'network_output_tuple': True,
+                               'accept_additional_input': True,
+                               'hidden_states': True}
+        return backbone_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         X['network_output_tuple'] = True

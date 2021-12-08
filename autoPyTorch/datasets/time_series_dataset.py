@@ -105,9 +105,6 @@ class TimeSeriesSequence(Dataset):
             X = self.train_transform(X)
         elif self.val_transform is not None and not train:
             X = self.val_transform(X)
-        else:
-            loc = None
-            scale = None
 
         # In case of prediction, the targets are not provided
         Y = self.Y
@@ -215,7 +212,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         seasonality = SEASONALITY_MAP.get(freq, 1)
         if isinstance(seasonality, list):
             seasonality = min(seasonality)  # Use to calculate MASE
-        self.seasonality = seasonality
+        self.seasonality = int(seasonality)
 
         self.freq: Optional[str] = freq
         self.freq_value: Optional[int] = freq_value

@@ -25,13 +25,6 @@ _heads = find_components(__package__,
                          NetworkHeadComponent)
 _addons = ThirdPartyComponents(NetworkHeadComponent)
 
-# avoid path pollution, (otherwise FC layer will not be correctly detected)
-from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head import _distributed_heads, \
-    _distributed_addons
-
-from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head.distributed_network_head import \
-    DistributionNetworkHeadComponents
-
 
 def add_head(head: NetworkHeadComponent) -> None:
     _addons.add_component(head)
@@ -52,9 +45,6 @@ class NetworkHeadChoice(autoPyTorchChoice):
         components = OrderedDict()
         components.update(_heads)
         components.update(_addons.components)
-
-        components.update(_distributed_heads)
-        components.update(_distributed_addons.components)
 
         return components
 
@@ -210,7 +200,6 @@ class NetworkHeadChoice(autoPyTorchChoice):
                 config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
-
 
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties

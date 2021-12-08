@@ -10,7 +10,7 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
 
-from autoPyTorch.pipeline.components.setup.network_head.distributed_network_head.distribution import ALL_DISTRIBUTIONS
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
 
 
 class DistributionNetworkHeadComponents(NetworkHeadComponent):

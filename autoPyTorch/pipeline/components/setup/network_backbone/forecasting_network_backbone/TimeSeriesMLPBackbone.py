@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing import Tuple
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
+    import BaseForecastingNetworkBackbone
 
 import torch
 from torch import nn
@@ -25,9 +27,15 @@ class _TimeSeriesMLP(nn.Module):
         return self.module_layers(x)
 
 
-class TimeSeriesMLPBackbone(MLPBackbone):
+class TimeSeriesMLPBackbone(BaseForecastingNetworkBackbone, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
+
+    @property
+    def backbone_properties(self):
+        # TODO
+        backbone_properties = {}
+        return backbone_properties
 
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:

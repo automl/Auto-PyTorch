@@ -13,8 +13,8 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import \
-    NetworkBackboneComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
+    import BaseForecastingNetworkBackbone
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -97,11 +97,17 @@ class _TemporalConvNet(nn.Module):
         return x
 
 
-class TCNBackbone(NetworkBackboneComponent):
+class TCNBackbone(BaseForecastingNetworkBackbone):
     """
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
-    _fixed_seq_length = False
+
+    @property
+    def backbone_properties(self):
+        # TODO
+        backbone_properties = {}
+        return backbone_properties
+
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_0"]]

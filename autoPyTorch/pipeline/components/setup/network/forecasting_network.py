@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Tuple
 from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
@@ -13,24 +13,24 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 
-
+"""
 class ForecastingNet(nn.Module):
     def __init__(self,
+                 network_embedding: nn.Module,
                  network_backbone: nn.Module,
                  network_head: nn.Module,
-                 network_embedding: Optional[nn.embedding] = None,
                  network_properties: Dict = {}):
         super(ForecastingNet, self).__init__()
-        if network_embedding is not None:
-            self.backbone = nn.Sequential(network_embedding, network_backbone)
-        else:
-            self.backbone = nn.Sequential(network_backbone)
+        self.embedding = network_embedding
+        self.backbone = network_backbone
         self.backbone_output_tuple = network_properties.get("backbone_output_tuple", False)
+        self.accept_hidden_states_as_input = network_properties.get("_accept_hidden_states_as_input", False)
         self.network_head = network_head
 
-    def forward(self, X: torch.Tensor):
-        # TODO find a proper way to pass hx to lstm
-        pass
+    def forward(self, X: torch.Tensor, hx: Optional[Tuple[torch.Tensor]]=None):
+
+"""
+
 
 
 class ForecastingNetworkComponent(NetworkComponent):
@@ -69,6 +69,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             X = X.to(self.device)
 
             with torch.no_grad():
+
                 Y_batch_pred = self.network(X).mean
                 if loc is not None or scale is not None:
                     if loc is None:
