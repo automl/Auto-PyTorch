@@ -1,4 +1,4 @@
-andas
+pandas
 torch
 torchvision
 tensorboard
