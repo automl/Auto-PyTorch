@@ -486,11 +486,16 @@ class BaseTask:
             raise ValueError("Resampling strategy is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
-        if isinstance(self._disable_file_output, List):
-            disabled_file_outputs = self._disable_file_output
+        # TODO: remove this code after `fit_pipeline` is rebased.
+        if hasattr(self, '_disable_file_output'):
+            if isinstance(self._disable_file_output, List):
+                disabled_file_outputs = self._disable_file_output
+                disable_file_output = False
+            elif isinstance(self._disable_file_output, bool):
+                disable_file_output = self._disable_file_output
+                disabled_file_outputs = []
+        else:
             disable_file_output = False
-        elif isinstance(self._disable_file_output, bool):
-            disable_file_output = self._disable_file_output
             disabled_file_outputs = []
 
         # If no ensemble is loaded, try to get the best performing model
@@ -794,18 +799,15 @@ class BaseTask:
                 learning algorithm runs over the time limit.
         """
         assert self._logger is not None  # for mypy compliancy
-        if STRING_TO_TASK_TYPES[self.task_type] in REGRESSION_TASKS:
-            self._logger.warning("Traditional Pipeline is not enabled for regression. Skipping...")
-        else:
-            traditional_task_name = 'runTraditional'
-            self._stopwatch.start_task(traditional_task_name)
-            elapsed_time = self._stopwatch.wall_elapsed(current_task_name)
-            time_for_traditional = int(runtime_limit - elapsed_time)
-            self._do_traditional_prediction(
-                func_eval_time_limit_secs=func_eval_time_limit_secs,
-                time_left=time_for_traditional,
-            )
-            self._stopwatch.stop_task(traditional_task_name)
+        traditional_task_name = 'runTraditional'
+        self._stopwatch.start_task(traditional_task_name)
+        elapsed_time = self._stopwatch.wall_elapsed(current_task_name)
+        time_for_traditional = int(runtime_limit - elapsed_time)
+        self._do_traditional_prediction(
+            func_eval_time_limit_secs=func_eval_time_limit_secs,
+            time_left=time_for_traditional,
+        )
+        self._stopwatch.stop_task(traditional_task_name)
 
     def _search(
         self,

@@ -5,7 +5,6 @@ Tabular Classification with Custom Configuration Space
 
 The following example shows how adjust the configuration space of
 the search. Currently, there are two changes that can be made to the space:-
-
 1. Adjust individual hyperparameters in the pipeline
 2. Include or exclude components:
     a) include: Dictionary containing components to include. Key is the node
@@ -55,81 +54,88 @@ def get_search_space_updates():
                    hyperparameter='ResNetBackbone:dropout',
                    value_range=[0, 0.5],
                    default_value=0.2)
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:multi_branch_choice',
+                   value_range=['shake-shake'],
+                   default_value='shake-shake')
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:shake_shake_update_func',
+                   value_range=['M3'],
+                   default_value='M3'
+                   )
     return updates
 
 
-############################################################################
-# Data Loading
-# ============
-X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
-X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-    X,
-    y,
-    random_state=1,
-)
+if __name__ == '__main__':
 
-############################################################################
-# Build and fit a classifier with include components
-# ==================================================
-api = TabularClassificationTask(
-    search_space_updates=get_search_space_updates(),
-    include_components={'network_backbone': ['MLPBackbone', 'ResNetBackbone'],
-                        'encoder': ['OneHotEncoder']}
-)
+    ############################################################################
+    # Data Loading
+    # ============
+    X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X,
+        y,
+        random_state=1,
+    )
 
-############################################################################
-# Search for an ensemble of machine learning algorithms
-# =====================================================
-api.search(
-    X_train=X_train.copy(),
-    y_train=y_train.copy(),
-    X_test=X_test.copy(),
-    y_test=y_test.copy(),
-    optimize_metric='accuracy',
-    total_walltime_limit=150,
-    func_eval_time_limit_secs=30
-)
+    ############################################################################
+    # Build and fit a classifier with include components
+    # ==================================================
+    api = TabularClassificationTask(
+        search_space_updates=get_search_space_updates(),
+        include_components={'network_backbone': ['ResNetBackbone'],
+                            'encoder': ['OneHotEncoder']}
+    )
 
-############################################################################
-# Print the final ensemble performance
-# ====================================
-y_pred = api.predict(X_test)
-score = api.score(y_pred, y_test)
-print(score)
-print(api.show_models())
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
+    api.search(
+        X_train=X_train.copy(),
+        y_train=y_train.copy(),
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=300,
+        func_eval_time_limit_secs=50
+    )
 
-# Print statistics from search
-print(api.sprint_statistics())
+    ############################################################################
+    # Print the final ensemble performance
+    # ====================================
+    print(api.run_history, api.trajectory)
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    print(api.show_models())
 
-############################################################################
-# Build and fit a classifier with exclude components
-# ==================================================
-api = TabularClassificationTask(
-    search_space_updates=get_search_space_updates(),
-    exclude_components={'network_backbone': ['MLPBackbone'],
-                        'encoder': ['OneHotEncoder']}
-)
+    ############################################################################
+    # Build and fit a classifier with exclude components
+    # ==================================================
+    api = TabularClassificationTask(
+        search_space_updates=get_search_space_updates(),
+        exclude_components={'network_backbone': ['MLPBackbone'],
+                            'encoder': ['OneHotEncoder']}
+    )
 
-############################################################################
-# Search for an ensemble of machine learning algorithms
-# =====================================================
-api.search(
-    X_train=X_train,
-    y_train=y_train,
-    X_test=X_test.copy(),
-    y_test=y_test.copy(),
-    optimize_metric='accuracy',
-    total_walltime_limit=150,
-    func_eval_time_limit_secs=30
-)
+    ############################################################################
+    # Search for an ensemble of machine learning algorithms
+    # =====================================================
+    api.search(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test.copy(),
+        y_test=y_test.copy(),
+        optimize_metric='accuracy',
+        total_walltime_limit=300,
+        func_eval_time_limit_secs=50
+    )
 
-############################################################################
-# Print the final ensemble performance
-# ====================================
-y_pred = api.predict(X_test)
-score = api.score(y_pred, y_test)
-print(score)
-print(api.show_models())
-
-# Print statistics from search
-print(api.sprint_statistics())
+    ############################################################################
+    # Print the final ensemble performance
+    # ====================================
+    print(api.run_history, api.trajectory)
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+    print(api.show_models())

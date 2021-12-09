@@ -498,6 +498,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     del estimator
 
 
+@unittest.skip("Skipping tests as portfolio is not compatible with reg_cocktails")
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function',
                      new=dummy_eval_function)
 @pytest.mark.parametrize('openml_id', (40981, ))

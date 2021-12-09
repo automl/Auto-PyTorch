@@ -92,7 +92,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
         original_data = data[0]
@@ -132,7 +132,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         """
         data_copy = deepcopy(data)
         data_copy = data_copy.float().to(self.device)
-        targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
         data_copy = torch.autograd.Variable(data_copy)
         data_copy.requires_grad = True
 

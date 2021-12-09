@@ -19,8 +19,8 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_p
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import (
-    HyperparameterSearchSpaceUpdates,
     HyperparameterSearchSpaceUpdate,
+    HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
 )
 
@@ -325,11 +325,11 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     pipeline = TabularRegressionPipeline(
         dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'],
         search_space_updates=HyperparameterSearchSpaceUpdates([
-                HyperparameterSearchSpaceUpdate("optimizer",
-                                                "AdamOptimizer:lr",
-                                                value_range=[0.0001, 0.001],
-                                                default_value=0.001)
-            ]),
+            HyperparameterSearchSpaceUpdate("optimizer",
+                                            "AdamOptimizer:lr",
+                                            value_range=[0.0001, 0.001],
+                                            default_value=0.001)]
+        ),
         exclude={'trainer': ['AdversarialTrainer']},
         random_state=2
     )
