@@ -849,9 +849,8 @@ class AbstractEvaluator(object):
                 )
 
         # Abort if we don't want to output anything.
-        if hasattr(self, 'disable_file_output'):
-            if 'all' in self.disable_file_output:
-                return None, {}
+        if 'all' in self.disable_file_output:
+            return None, {}
 
         # This file can be written independently of the others down bellow
         if 'y_optimization' not in self.disable_file_output:

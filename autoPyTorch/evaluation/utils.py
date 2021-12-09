@@ -131,15 +131,18 @@ class DisableFileOutputParameters(Enum):
     all = 'all'
 
     @classmethod
-    def check_compatibility(cls, disable_file_output: List) -> None:
+    def check_compatibility(
+        cls,
+        disable_file_output: List[Union[str, 'DisableFileOutputParameters']]
+    ) -> None:
         for item in disable_file_output:
             if item not in cls.__members__ and not isinstance(item, cls):
                 raise ValueError(f"Expected {item} to be in the members ("
                                  f"{list(cls.__members__.keys())}) of {cls.__name__}"
-                                 f" or an instance.")
+                                 f" either as an instance or the string value of the member.")
 
     @staticmethod
-    def check_value_in_iterable(container: Iterable, parameter: "DisableFileOutputParameters") -> bool:
+    def is_in_iterable(container: Iterable, parameter: "DisableFileOutputParameters") -> bool:
         """
         checks if parameter is in the container either as
         the parameter itself or as its value.
