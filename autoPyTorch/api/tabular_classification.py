@@ -13,6 +13,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -109,7 +110,7 @@ class TabularClassificationTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularClassificationPipeline:
+    def build_pipeline(self, dataset_properties: Dict[str, BaseDatasetPropertiesType]) -> TabularClassificationPipeline:
         """
         Build pipeline according to current task and for the passed dataset properties
 
@@ -120,16 +121,7 @@ class TabularClassificationTask(BaseTask):
             TabularClassificationPipeline:
                 Pipeline compatible with the given dataset properties.
         """
-
-    def build_pipeline(self, dataset_properties: Dict[str, Any],
-                       include_components: Optional[Dict] = None,
-                       exclude_components: Optional[Dict] = None,
-                       search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-                       ) -> TabularClassificationPipeline:
-        return TabularClassificationPipeline(dataset_properties=dataset_properties,
-                                             include=include_components,
-                                             exclude=exclude_components,
-                                             search_space_updates=search_space_updates)
+        return TabularClassificationPipeline(dataset_properties=dataset_properties)
 
     def search(
         self,
@@ -281,6 +273,18 @@ class TabularClassificationTask(BaseTask):
             self
 
         """
+        if dataset_name is None:
+            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+
+        # we have to create a logger for at this point for the validator
+        self._logger = self._get_logger(dataset_name)
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        self.InputValidator = TabularInputValidator(
+            is_classification=True,
+            logger_port=self._logger_port,
+        )
 
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
@@ -303,9 +307,9 @@ class TabularClassificationTask(BaseTask):
                 '(CrossValTypes, HoldoutValTypes), but got {}'.format(self.resampling_strategy)
             )
 
-
         if self.dataset is None:
             raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
+
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
@@ -345,24 +349,24 @@ class TabularClassificationTask(BaseTask):
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")
 
-        X_test = self.input_validator.feature_validator.transform(X_test)
+        X_test = self.InputValidator.feature_validator.transform(X_test)
         predicted_probabilities = super().predict(X_test, batch_size=batch_size,
                                                   n_jobs=n_jobs)
 
-        if self.input_validator.target_validator.is_single_column_target():
+        if self.InputValidator.target_validator.is_single_column_target():
             predicted_indexes = np.argmax(predicted_probabilities, axis=1)
         else:
             predicted_indexes = (predicted_probabilities > 0.5).astype(int)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.input_validator.target_validator.inverse_transform(predicted_indexes)
+        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
 
     def predict_proba(self,
                       X_test: Union[np.ndarray, pd.DataFrame, List],
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
-        if self.input_validator is None or not self.input_validator._is_fitted:
+        if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator fit() method.")
-        X_test = self.input_validator.feature_validator.transform(X_test)
+        X_test = self.InputValidator.feature_validator.transform(X_test)
         return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)

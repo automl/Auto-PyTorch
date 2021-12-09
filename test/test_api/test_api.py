@@ -19,15 +19,13 @@ import sklearn.datasets
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
-from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue
+from smac.runhistory.runhistory import RunHistory
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
-from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
-    NoResamplingStrategyTypes
 )
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -149,7 +147,6 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
-        time.sleep(5)
         assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(

@@ -23,6 +23,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -98,23 +99,15 @@ class AutoMLSMBO(object):
                  pipeline_config: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-<<<<<<< HEAD
-                 resampling_strategy: Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[HoldoutValTypes,
+                                            CrossValTypes,
+                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: List = [],
+                 disable_file_output: Union[bool, List[str]] = False,
                  smac_scenario_args: Optional[Dict[str, Any]] = None,
                  get_smac_object_callback: Optional[Callable] = None,
-=======
-                 resampling_strategy: typing.Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
-                 resampling_strategy_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 include: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 exclude: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 disable_file_output: typing.Union[bool, typing.List] = [],
-                 smac_scenario_args: typing.Optional[typing.Dict[str, typing.Any]] = None,
-                 get_smac_object_callback: typing.Optional[typing.Callable] = None,
->>>>>>> Working fit_pipeline method, with test and example
                  all_supported_metrics: bool = True,
                  ensemble_callback: Optional[EnsembleBuilderManager] = None,
                  logger_port: Optional[int] = None,

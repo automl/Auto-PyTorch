@@ -21,12 +21,11 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
-from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
-from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_update
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
@@ -580,7 +579,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
             value_range=(1, ),
@@ -651,7 +650,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # remove the code below. Also update the method signature, so the weighted loss
         # is not a constant.
         if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+            if STRING_TO_TASK_TYPES[str(dataset_properties['task_type'])] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs

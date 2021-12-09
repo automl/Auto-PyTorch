@@ -154,7 +154,6 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             train_tensors=(X, y),
             seed=self.random_state.get_state()[1][0],
             # This dataset is used for loading test data in a batched format
-            seed=self.random_state.get_state()[1][0],
             shuffle=False,
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,

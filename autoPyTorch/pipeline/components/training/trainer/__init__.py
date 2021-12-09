@@ -85,7 +85,7 @@ class TrainerChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Dict[str, autoPyTorchComponent]:
@@ -128,7 +128,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             # Allow training schemes exclusive for some task types
             entry = available_comp[name]
-            task_type = dataset_properties['task_type']
+            task_type = str(dataset_properties['task_type'])
             properties = entry.get_properties()
             if 'tabular' in task_type and not properties['handles_tabular']:
                 continue
@@ -283,9 +283,14 @@ class TrainerChoice(autoPyTorchChoice):
             **kwargs
         )
 
+        # Comply with mypy
+        # Notice that choice here stands for the component choice framework,
+        # where we dynamically build the configuration space by selecting the available
+        # component choices. In this case, is what trainer choices are available
+        assert self.choice is not None
+
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
-        self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
         return self.choice
@@ -478,7 +483,6 @@ class TrainerChoice(autoPyTorchChoice):
             X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
-
         Returns:
             bool: If true, training should be stopped
         """
@@ -492,10 +496,7 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
-        target_metrics = 'val_loss'
-        if X['val_indices'] is None:
-            target_metrics = 'test_loss' if X['X_test'] is not None else 'train_loss'
-        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch(target_metrics)
+        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')

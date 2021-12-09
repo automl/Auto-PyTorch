@@ -75,8 +75,6 @@ class HyperparameterSearchSpace(NamedTuple):
             self.hyperparameter, self.value_range, self.default_value, self.log)
 
 
-<<<<<<< HEAD
-=======
 def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: str = "") -> Dict[str, Any]:
     """
     Replace the prefix in all keys with the specified replacement string (the empty string by
@@ -97,7 +95,6 @@ def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: 
             k.startswith(prefix)}
 
 
->>>>>>> Bug fixes (#249)
 def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
     """
     In the case of not providing a y tensor, in a

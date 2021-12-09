@@ -137,23 +137,10 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             # The final layer is always softmax now (`pred` already gives pseudo proba)
             return pred
         else:
-<<<<<<< HEAD
             raise ValueError("Expected output_shape to be integer, got {},"
                              "Tabular Classification only supports 'binary' and 'multiclass' outputs"
                              "got {}".format(type(self.dataset_properties['output_shape']),
                                              self.dataset_properties['output_type']))
-=======
-            all_proba = []
-
-            for k in range(self.dataset_properties['output_shape']):
-                proba_k = pred[:, k, :self.dataset_properties['output_shape'][k]]
-                normalizer = proba_k.sum(axis=1)[:, np.newaxis]
-                normalizer[normalizer == 0.0] = 1.0
-                proba_k /= normalizer
-                all_proba.append(proba_k)
-
-            return np.array(all_proba)
->>>>>>> Bug fixes (#249)
 
     def predict_proba(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """predict_proba.

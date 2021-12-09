@@ -27,7 +27,7 @@ import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import DataOrigin, RunHistory, RunInfo, RunValue
+from smac.runhistory.runhistory import DataOrigin, RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
@@ -238,7 +238,7 @@ class BaseTask:
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
 
     @abstractmethod
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> BasePipeline:
+    def build_pipeline(self, dataset_properties: Dict[str, BaseDatasetPropertiesType]) -> BasePipeline:
         """
         Build pipeline according to current task
         and for the passed dataset properties
@@ -1165,22 +1165,7 @@ class BaseTask:
         self._logger.info("Starting Shutdown")
 
         if proc_ensemble is not None:
-            self._results_manager.ensemble_performance_history = list(proc_ensemble.history)
-
-            if len(proc_ensemble.futures) > 0:
-                # Also add ensemble runs that did not finish within smac time
-                # and add them into the ensemble history
-                self._logger.info("Ensemble script still running, waiting for it to finish.")
-                result = proc_ensemble.futures.pop().result()
-                if result:
-                    ensemble_history, _, _, _ = result
-                    self._results_manager.ensemble_performance_history.extend(ensemble_history)
-                self._logger.info("Ensemble script finished, continue shutdown.")
-
-            # save the ensemble performance history file
-            if len(self.ensemble_performance_history) > 0:
-                pd.DataFrame(self.ensemble_performance_history).to_json(
-                    os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
+            self._collect_results_ensemble(proc_ensemble)
 
         if load_models:
             self._logger.info("Loading models...")
@@ -1321,7 +1306,7 @@ class BaseTask:
             exclude=self.exclude_components,
             search_space_updates=self.search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
-        self._backend.replace_datamanager(dataset)
+        self._backend.save_datamanager(dataset)
 
         # build pipeline
         pipeline = self.build_pipeline(dataset_properties)
@@ -1338,7 +1323,6 @@ class BaseTask:
 
         self._clean_logger()
         return pipeline
-
 
     def fit_ensemble(
             self,
@@ -1418,7 +1402,7 @@ class BaseTask:
         ensemble_fit_task_name = 'EnsembleFit'
         self._stopwatch.start_task(ensemble_fit_task_name)
         if enable_traditional_pipeline:
-            if func_eval_time_limit_secs is None or func_eval_time_limit_secs > time_for_task:
+            if func_eval_time_limit_secs > time_for_task:
                 self._logger.warning(
                     'Time limit for a single run is higher than total time '
                     'limit. Capping the limit for a single run to the total '
@@ -1459,12 +1443,8 @@ class BaseTask:
         )
 
         manager.build_ensemble(self._dask_client)
-        future = manager.futures.pop()
-        result = future.result()
-        if result is None:
-            raise ValueError("Errors occurred while building the ensemble - please"
-                             " check the log file and command line output for error messages.")
-        self.ensemble_performance_history, _, _, _ = result
+        if manager is not None:
+            self._collect_results_ensemble(manager)
 
         if load_models:
             self._load_models()
@@ -1541,6 +1521,31 @@ class BaseTask:
         self._stopwatch.stop_task(ensemble_task_name)
 
         return proc_ensemble
+
+    def _collect_results_ensemble(
+        self,
+        manager: EnsembleBuilderManager
+    ) -> None:
+
+        if self._logger is None:
+            raise ValueError("logger should be initialized to fit ensemble")
+
+        self._results_manager.ensemble_performance_history = list(manager.history)
+
+        if len(manager.futures) > 0:
+            # Also add ensemble runs that did not finish within smac time
+            # and add them into the ensemble history
+            self._logger.info("Ensemble script still running, waiting for it to finish.")
+            result = manager.futures.pop().result()
+            if result:
+                ensemble_history, _, _, _ = result
+                self._results_manager.ensemble_performance_history.extend(ensemble_history)
+            self._logger.info("Ensemble script finished, continue shutdown.")
+
+        # save the ensemble performance history file
+        if len(self.ensemble_performance_history) > 0:
+            pd.DataFrame(self.ensemble_performance_history).to_json(
+                os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
     def predict(
         self,
