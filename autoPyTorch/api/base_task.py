@@ -1024,8 +1024,7 @@ class BaseTask(ABC):
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output if disable_file_output is not None else []
         if (
-            DisableFileOutputParameters.is_in_iterable(self._disable_file_output,
-                                                       DisableFileOutputParameters.y_optimization)
+            DisableFileOutputParameters.y_optimization in self._disable_file_output
             and self.ensemble_size > 1
         ):
             self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"

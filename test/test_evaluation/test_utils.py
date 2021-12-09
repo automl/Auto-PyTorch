@@ -30,5 +30,6 @@ def test_disable_file_output_error():
     """
     disable_file_output = ['model']
     with pytest.raises(ValueError, match=r"Expected .*? to be in the members (.*?) of"
-                                         r" DisableFileOutputParameters or an instance."):
+                                         r" DisableFileOutputParameters or as string value"
+                                         r" of a member."):
         DisableFileOutputParameters.check_compatibility(disable_file_output=disable_file_output)

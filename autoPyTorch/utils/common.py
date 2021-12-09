@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -73,6 +74,25 @@ class HyperparameterSearchSpace(NamedTuple):
         """
         return "Hyperparameter: %s | Range: %s | Default: %s | log: %s" % (
             self.hyperparameter, self.value_range, self.default_value, self.log)
+
+
+class autoPyTorchEnum(str, Enum):
+    """
+    Utility class for enums in autoPyTorch.
+    Allows users to use strings, while we internally use
+    this enum
+    """
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, autoPyTorchEnum):
+            return type(self) == type(other) and self.value == other.value
+        elif isinstance(other, str):
+            return bool(self.value == other)
+        else:
+            raise RuntimeError(f"Unsupported type {type(other)}."
+                               f"{self} only supports `str` and `{self}`")
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:

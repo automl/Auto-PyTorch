@@ -1,13 +1,15 @@
 import queue
-from enum import Enum
 from multiprocessing.queues import Queue
-from typing import Iterable, List, Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 
 from sklearn.ensemble import VotingRegressor
 
 from smac.runhistory.runhistory import RunValue
+
+from autoPyTorch.utils.common import autoPyTorchEnum
+
 
 __all__ = [
     'read_queue',
@@ -105,7 +107,7 @@ class VotingRegressorWrapper(VotingRegressor):
         return np.asarray(predictions).T
 
 
-class DisableFileOutputParameters(Enum):
+class DisableFileOutputParameters(autoPyTorchEnum):
     """
     Contains literals that can be passed in to `disable_file_output` list.
     These include:
@@ -139,21 +141,4 @@ class DisableFileOutputParameters(Enum):
             if item not in cls.__members__ and not isinstance(item, cls):
                 raise ValueError(f"Expected {item} to be in the members ("
                                  f"{list(cls.__members__.keys())}) of {cls.__name__}"
-                                 f" either as an instance or the string value of the member.")
-
-    @staticmethod
-    def is_in_iterable(container: Iterable, parameter: "DisableFileOutputParameters") -> bool:
-        """
-        checks if parameter is in the container either as
-        the parameter itself or as its value.
-
-        Args:
-            container (Iterable):
-                Iterable to check in.
-            parameter (DisableFileOutputParameters):
-                parameter to check.
-        Returns:
-            bool:
-                whether parameter is in `container`
-        """
-        return parameter in container or parameter.value in container
+                                 f" or as string value of a member.")
