@@ -14,6 +14,7 @@ from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
+    CrossValTypes,
     ResamplingStrategies,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
@@ -88,17 +89,9 @@ class TabularRegressionTask(BaseTask):
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
         delete_output_folder_after_terminate: bool = True,
-<<<<<<< HEAD
         include_components: Optional[Dict[str, Any]] = None,
         exclude_components: Optional[Dict[str, Any]] = None,
         resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
-=======
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
-        resampling_strategy:Union[CrossValTypes,
-                                    HoldoutValTypes,
-                                    NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
->>>>>>> Create fit evaluator, no resampling strategy and fix bug for test statistics
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
@@ -398,9 +391,9 @@ class TabularRegressionTask(BaseTask):
                 '(CrossValTypes, HoldoutValTypes), but got {}'.format(self.resampling_strategy)
             )
 
-
         if self.dataset is None:
             raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
+
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
@@ -426,14 +419,14 @@ class TabularRegressionTask(BaseTask):
             batch_size: Optional[int] = None,
             n_jobs: int = 1
     ) -> np.ndarray:
-        if self.input_validator is None or not self.input_validator._is_fitted:
+        if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
 
-        X_test = self.input_validator.feature_validator.transform(X_test)
+        X_test = self.InputValidator.feature_validator.transform(X_test)
         predicted_values = super().predict(X_test, batch_size=batch_size,
                                            n_jobs=n_jobs)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.input_validator.target_validator.inverse_transform(predicted_values)
+        return self.InputValidator.target_validator.inverse_transform(predicted_values)

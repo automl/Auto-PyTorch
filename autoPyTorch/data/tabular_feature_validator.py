@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
 import numpy as np
 
@@ -263,7 +263,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_to_pandas(X)
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
-            X = cast(pd.DataFrame, X)
+            X = cast(Type[pd.DataFrame], X)
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
@@ -390,9 +390,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             feat_type (List[str])
                 Type of each column numerical/categorical
         """
-
-        if len(self.transformed_columns) > 0 and self.feat_type is not None:
-            return self.transformed_columns, self.feat_type
 
         # Register if a column needs encoding
         numerical_columns = []

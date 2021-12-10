@@ -105,7 +105,7 @@ class Lookahead(Optimizer):
         return self._la_step
 
     def state_dict(self) -> Dict[str, Any]:
-        return self.optimizer.state_dict()
+        return self.optimizer.state_dict()  # type: ignore[no-any-return]
 
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.optimizer.load_state_dict(state_dict)
@@ -129,7 +129,7 @@ class Lookahead(Optimizer):
 
     @property
     def param_groups(self) -> List[Dict]:
-        return self.optimizer.param_groups
+        return self.optimizer.param_groups  # type: ignore[no-any-return]
 
     def step(self, closure: Optional[Callable] = None) -> torch.Tensor:
         """Performs a single Lookahead optimization step.

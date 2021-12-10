@@ -15,6 +15,7 @@ import torch
 
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
@@ -91,7 +92,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         """
         # prepare
         data = data.float().to(self.device)
-        targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)
         original_data = data[0]
@@ -131,7 +132,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         """
         data_copy = deepcopy(data)
         data_copy = data_copy.float().to(self.device)
-        targets = targets.long().to(self.device)
+        targets = self.cast_targets(targets)
         data_copy = torch.autograd.Variable(data_copy)
         data_copy.requires_grad = True
 
@@ -146,7 +147,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         return adv_data
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, Any]] = None
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
 
         return {
@@ -159,7 +160,7 @@ class AdversarialTrainer(BaseTrainerComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="weighted_loss",
             value_range=(1, ),
@@ -240,7 +241,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         # remove the code below. Also update the method signature, so the weighted loss
         # is not a constant.
         if dataset_properties is not None:
-            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+            if STRING_TO_TASK_TYPES[str(dataset_properties['task_type'])] in CLASSIFICATION_TASKS:
                 add_hyperparameter(cs, weighted_loss, Constant)
 
         return cs
