@@ -277,29 +277,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
-        if hasattr(X, "iloc") and not issparse(X):
-            X = cast(pd.DataFrame, X)
-            # If we had null columns in our fit call and we made them numeric, then:
-            # - If the columns are null even in transform, apply the same procedure.
-            # - Otherwise, substitute the values with np.NaN and then make the columns numeric.
-            # If the column is null here, but it was not in fit, it does not matter.
-            for column in self.null_columns:
-                # The column is not null, make it null since it was null in fit.
-                if not X[column].isna().all():
-                    X[column] = np.NaN
-                X[column] = pd.to_numeric(X[column])
-
-            # for the test set, if we have columns with only null values
-            # they will probably have a numeric type. If these columns were not
-            # with only null values in the train set, they should be converted
-            # to the type that they had during fitting.
-            for column in X.columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype(self.dtypes[list(X.columns).index(column)])
-
-            # Also remove the object dtype for new data
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
+        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+            X = cast(Type[pd.DataFrame], X)
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
@@ -457,9 +436,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             feat_type (List[str])
                 Type of each column numerical/categorical
         """
-
-        if len(self.transformed_columns) > 0 and self.feat_type is not None:
-            return self.transformed_columns, self.feat_type
 
         # Register if a column needs encoding
         numerical_columns = []

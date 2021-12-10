@@ -104,7 +104,7 @@ class AutoMLSMBO(object):
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: List = [],
+                 disable_file_output: Union[bool, List[str]] = False,
                  smac_scenario_args: Optional[Dict[str, Any]] = None,
                  get_smac_object_callback: Optional[Callable] = None,
                  all_supported_metrics: bool = True,
@@ -249,6 +249,10 @@ class AutoMLSMBO(object):
             # incase we dont have any valid configuration from the portfolio
             self.initial_configurations = initial_configurations \
                 if len(initial_configurations) > 0 else None
+
+            if len(self.initial_configurations) == 0:
+                self.logger.warning("None of the portfolio configurations are compatible"
+                                    " with the current search space. Skipping initial configuration...")
 
     def run_smbo(self, func: Optional[Callable] = None
                  ) -> Tuple[RunHistory, List[TrajEntry], str]:

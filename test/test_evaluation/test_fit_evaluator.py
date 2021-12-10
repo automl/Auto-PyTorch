@@ -14,12 +14,12 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
+from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
 from autoPyTorch.evaluation.fit_evaluator import FitEvaluator
 from autoPyTorch.evaluation.utils import read_queue
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-from autoPyTorch.utils import backend
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
@@ -93,9 +93,10 @@ class TestFitEvaluator(BaseEvaluatorTest, unittest.TestCase):
             lambda X, batch_size=None: np.tile([0.6, 0.4], (len(X), 1))
         pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
         pipeline_mock.get_additional_run_info.return_value = None
+        pipeline_mock.get_default_pipeline_options.return_value = {'budget_type': 'epochs', 'epochs': 10}
 
         configuration = unittest.mock.Mock(spec=Configuration)
-        backend_api = backend.create(self.tmp_dir, self.output_dir)
+        backend_api = create(self.tmp_dir, self.output_dir, 'autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
 
@@ -182,7 +183,7 @@ class TestFitEvaluator(BaseEvaluatorTest, unittest.TestCase):
             [[0.1, 0.9]] * y.shape[0]
         )
         mock.side_effect = lambda **kwargs: mock
-
+        mock.get_default_pipeline_options.return_value = {'budget_type': 'epochs', 'epochs': 10}
         configuration = unittest.mock.Mock(spec=Configuration)
         queue_ = multiprocessing.Queue()
 
