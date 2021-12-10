@@ -27,5 +27,5 @@ def test_autopytorch_enum(iter):
     """
 
     e = SubEnum.x
-    
+
     assert e in iter
