@@ -411,7 +411,6 @@ def test_comparator():
     assert ans == feat_type
 
 
-<<<<<<< HEAD
 @pytest.fixture
 def input_data_feature_feat_types(request):
     if request.param == 'pandas_categoricalonly':
@@ -531,8 +530,6 @@ def test_feature_validator_get_columns_to_encode_error_feat_type(input_data_feat
     with pytest.raises(ValueError, match=r"Expected type of features to be in .*"):
         validator._validate_feat_types(X)
 
-=======
->>>>>>> [FIX] Passing checks (#298)
 def test_feature_validator_imbalanced_data():
 
     # Null columns in the train split but not necessarily in the test split
@@ -587,14 +584,13 @@ def test_feature_validator_imbalanced_data():
 
     transformed_X_test = validator.transform(X_test)
     transformed_X_test = pd.DataFrame(transformed_X_test)
-<<<<<<< HEAD
     assert not len(validator.all_nan_columns)
+    for column in transformed_X_test.columns:
+        if transformed_X_test[column].isna().all():
+            null_columns.append(column)
 
-
-<<<<<<< HEAD
     assert null_columns == [1]
->>>>>>> Fixing issues with imbalanced datasets (#197)
-=======
+
 def test_comparator():
     numerical = 'numerical'
     categorical = 'categorical'
@@ -616,12 +612,3 @@ def test_comparator():
         key=functools.cmp_to_key(validator._comparator)
     )
     assert ans == feat_type
->>>>>>> Bug fixes (#249)
-=======
-    null_columns = []
-    for column in transformed_X_test.columns:
-        if transformed_X_test[column].isna().all():
-            null_columns.append(column)
-
-    assert null_columns == [1]
->>>>>>> [FIX] Passing checks (#298)

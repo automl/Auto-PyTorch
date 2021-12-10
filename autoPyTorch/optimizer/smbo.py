@@ -120,7 +120,7 @@ class AutoMLSMBO(object):
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: List = [],
+                 disable_file_output: Union[bool, List[str]] = False,
                  smac_scenario_args: Optional[Dict[str, Any]] = None,
                  get_smac_object_callback: Optional[Callable] = None,
                  all_supported_metrics: bool = True,

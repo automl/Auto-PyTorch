@@ -2,6 +2,7 @@ import functools
 from logging import Logger
 from typing import Dict, List, Optional, Tuple, Union, cast
 
+
 import numpy as np
 
 import pandas as pd
@@ -275,7 +276,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
-        if hasattr(X, "iloc") and not issparse(X):
+        if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
 
         # Check the data here so we catch problems on new test data

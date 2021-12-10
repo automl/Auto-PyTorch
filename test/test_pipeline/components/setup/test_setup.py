@@ -445,11 +445,11 @@ class TestNetworkBackbone:
         # clear addons
         base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
 
-    @pytest.mark.parametrize('resnet_shape', ['funnel', 'long_funnel',
-                                              'diamond', 'hexagon',
-                                              'brick', 'triangle',
-                                              'stairs'])
-    def test_dropout(self, resnet_shape):
+    @pytest.mark.parametrize('dropout_shape', ['funnel', 'long_funnel',
+                                               'diamond', 'hexagon',
+                                               'brick', 'triangle',
+                                               'stairs'])
+    def test_dropout(self, dropout_shape):
         # ensures that dropout is assigned to the resblock as expected
         dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[1]}
         max_dropout = 0.5
@@ -463,10 +463,10 @@ class TestNetworkBackbone:
                                                                                 hyperparameter='max_dropout',
                                                                                 value_range=[max_dropout],
                                                                                 default_value=max_dropout),
-                                                                            resnet_shape=HyperparameterSearchSpace(
-                                                                                hyperparameter='resnet_shape',
-                                                                                value_range=[resnet_shape],
-                                                                                default_value=resnet_shape),
+                                                                            dropout_shape=HyperparameterSearchSpace(
+                                                                                hyperparameter='dropout_shape',
+                                                                                value_range=[dropout_shape],
+                                                                                default_value=dropout_shape),
                                                                             num_groups=HyperparameterSearchSpace(
                                                                                 hyperparameter='num_groups',
                                                                                 value_range=[num_groups],
@@ -481,9 +481,10 @@ class TestNetworkBackbone:
         config = config_space.sample_configuration().get_dictionary()
         resnet_backbone = ShapedResNetBackbone(**config)
         backbone = resnet_backbone.build_backbone((100, 5))
-        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config if 'dropout_' in key]
+        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config
+                                if 'dropout_' in key and 'shape' not in key]
         dropout_shape = get_shaped_neuron_counts(
-            shape=resnet_shape,
+            shape=dropout_shape,
             in_feat=0,
             out_feat=0,
             max_neurons=max_dropout,

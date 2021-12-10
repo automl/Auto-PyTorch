@@ -4,6 +4,7 @@ import numpy as np
 
 import torch
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.mixup_utils import MixUp
 
@@ -67,7 +68,7 @@ class GridCutMixTrainer(MixUp, BaseTrainerComponent):
         return X, {'y_a': y_a, 'y_b': y_b, 'lam': lam}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
+    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'GridCutMixTrainer',

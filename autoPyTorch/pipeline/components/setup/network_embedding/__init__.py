@@ -146,62 +146,71 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
         if default is None:
             defaults = [
                 'NoEmbedding',
-                'LearnedEntityEmbedding',
+                # 'LearnedEntityEmbedding',
             ]
             for default_ in defaults:
                 if default_ in available_embedding:
                     default = default_
                     break
 
-        categorical_columns = dataset_properties['categorical_columns'] \
-            if isinstance(dataset_properties['categorical_columns'], List) else []
-
-        updates = self._get_search_space_updates()
-        if '__choice__' in updates.keys():
-            choice_hyperparameter = updates['__choice__']
-            if not set(choice_hyperparameter.value_range).issubset(available_embedding):
-                raise ValueError("Expected given update for {} to have "
-                                 "choices in {} got {}".format(self.__class__.__name__,
-                                                               available_embedding,
-                                                               choice_hyperparameter.value_range))
-            if len(categorical_columns) == 0:
-                assert len(choice_hyperparameter.value_range) == 1
-                if 'NoEmbedding' not in choice_hyperparameter.value_range:
-                    raise ValueError("Provided {} in choices, however, the dataset "
-                                     "is incompatible with it".format(choice_hyperparameter.value_range))
-            embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                      choice_hyperparameter.value_range,
-                                                      default_value=choice_hyperparameter.default_value)
-        else:
-
-            if len(categorical_columns) == 0:
-                default = 'NoEmbedding'
-                if include is not None and default not in include:
-                    raise ValueError("Provided {} in include, however, the dataset "
-                                     "is incompatible with it".format(include))
-                embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                          ['NoEmbedding'],
-                                                          default_value=default)
-            else:
-                embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                          list(available_embedding.keys()),
-                                                          default_value=default)
-
+        # Restrict embedding to NoEmbedding until preprocessing is fixed
+        embedding = CSH.CategoricalHyperparameter('__choice__',
+                                                  ['NoEmbedding'],
+                                                  default_value=default)
         cs.add_hyperparameter(embedding)
-        for name in embedding.choices:
-            updates = self._get_search_space_updates(prefix=name)
-            config_space = available_embedding[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
-                                                                                     **updates)
-            parent_hyperparameter = {'parent': embedding, 'value': name}
-            cs.add_configuration_space(
-                name,
-                config_space,
-                parent_hyperparameter=parent_hyperparameter
-            )
-
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
         return cs
+        # categorical_columns = dataset_properties['categorical_columns'] \
+        #     if isinstance(dataset_properties['categorical_columns'], List) else []
+
+        # updates = self._get_search_space_updates()
+        # if '__choice__' in updates.keys():
+        #     choice_hyperparameter = updates['__choice__']
+        #     if not set(choice_hyperparameter.value_range).issubset(available_embedding):
+        #         raise ValueError("Expected given update for {} to have "
+        #                          "choices in {} got {}".format(self.__class__.__name__,
+        #                                                        available_embedding,
+        #                                                        choice_hyperparameter.value_range))
+        #     if len(categorical_columns) == 0:
+        #         assert len(choice_hyperparameter.value_range) == 1
+        #         if 'NoEmbedding' not in choice_hyperparameter.value_range:
+        #             raise ValueError("Provided {} in choices, however, the dataset "
+        #                              "is incompatible with it".format(choice_hyperparameter.value_range))
+        #     embedding = CSH.CategoricalHyperparameter('__choice__',
+        #                                               choice_hyperparameter.value_range,
+        #                                               default_value=choice_hyperparameter.default_value)
+        # else:
+
+        #     if len(categorical_columns) == 0:
+        #         default = 'NoEmbedding'
+        #         if include is not None and default not in include:
+        #             raise ValueError("Provided {} in include, however, the dataset "
+        #                              "is incompatible with it".format(include))
+        #         embedding = CSH.CategoricalHyperparameter('__choice__',
+        #                                                   ['NoEmbedding'],
+        #                                                   default_value=default)
+        #     else:
+        #         embedding = CSH.CategoricalHyperparameter('__choice__',
+        #                                                   list(available_embedding.keys()),
+        #                                                   default_value=default)
+
+        # cs.add_hyperparameter(embedding)
+        # for name in embedding.choices:
+        #     updates = self._get_search_space_updates(prefix=name)
+        #     config_space = available_embedding[name].get_hyperparameter_search_space(
+        # dataset_properties,  # type: ignore
+        #                                                                              **updates)
+        #     parent_hyperparameter = {'parent': embedding, 'value': name}
+        #     cs.add_configuration_space(
+        #         name,
+        #         config_space,
+        #         parent_hyperparameter=parent_hyperparameter
+        #     )
+
+        # self.configuration_space_ = cs
+        # self.dataset_properties_ = dataset_properties
+        # return cs
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.choice is not None, "Cannot call transform before the object is initialized"

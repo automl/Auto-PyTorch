@@ -129,7 +129,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             # Allow training schemes exclusive for some task types
             entry = available_comp[name]
-            task_type = dataset_properties['task_type']
+            task_type = str(dataset_properties['task_type'])
             properties = entry.get_properties()
             if 'tabular' in task_type and not properties['handles_tabular']:
                 continue
@@ -283,9 +283,14 @@ class TrainerChoice(autoPyTorchChoice):
             **kwargs
         )
 
+        # Comply with mypy
+        # Notice that choice here stands for the component choice framework,
+        # where we dynamically build the configuration space by selecting the available
+        # component choices. In this case, is what trainer choices are available
+        assert self.choice is not None
+
         # Add snapshots to base network to enable
         # predicting with snapshot ensemble
-        self.choice: autoPyTorchComponent = cast(autoPyTorchComponent, self.choice)
         if self.choice.use_snapshot_ensemble:
             X['network_snapshots'].extend(self.choice.model_snapshots)
         return self.choice
@@ -526,7 +531,6 @@ class TrainerChoice(autoPyTorchChoice):
             X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
-
         Returns:
             bool: If true, training should be stopped
         """
