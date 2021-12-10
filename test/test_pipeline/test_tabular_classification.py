@@ -579,4 +579,4 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
 
     # More than 40 epochs would have pass in 15 seconds for this dataset
-    assert len(run_summary.performance_tracker['start_time']) > 20
+    assert len(run_summary.performance_tracker['start_time']) > 15

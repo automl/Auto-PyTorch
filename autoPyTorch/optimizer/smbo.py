@@ -1,5 +1,6 @@
 import copy
 import json
+from logging import warning
 import logging.handlers
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -248,6 +249,10 @@ class AutoMLSMBO(object):
         if portfolio_selection is not None:
             self.initial_configurations = read_return_initial_configurations(config_space=config_space,
                                                                              portfolio_selection=portfolio_selection)
+            if len(self.initial_configurations) == 0:
+                self.initial_configurations = None
+                self.logger.warning("None of the portfolio configurations are compatible"
+                                    " with the current search space. Skipping initial configuration...")
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
