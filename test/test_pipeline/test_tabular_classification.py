@@ -25,8 +25,10 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.NoScheduler import NoSch
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
+)
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
@@ -559,6 +561,12 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
 
     cs = pipeline.get_hyperparameter_search_space()
     config = cs.get_default_configuration()
+    trainer = config.get('trainer:__choice__')
+    config_dict = config.get_dictionary()
+    config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = False
+    config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = False
+    del config_dict[f'trainer:{trainer}:se_lastk']
+    config = Configuration(cs, values=config_dict)
     pipeline.set_hyperparameters(config)
 
     pipeline.fit(fit_dictionary_tabular_dummy)

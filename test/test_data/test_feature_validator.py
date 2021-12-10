@@ -758,26 +758,3 @@ def test_feature_validator_imbalanced_data():
     transformed_X_test = validator.transform(X_test)
     transformed_X_test = pd.DataFrame(transformed_X_test)
     assert not len(validator.all_nan_columns)
-
-
-def test_comparator():
-    numerical = 'numerical'
-    categorical = 'categorical'
-
-    validator = TabularFeatureValidator
-
-    feat_type = [numerical, categorical] * 10
-    ans = [categorical] * 10 + [numerical] * 10
-    feat_type = sorted(
-        feat_type,
-        key=functools.cmp_to_key(validator._comparator)
-    )
-    assert ans == feat_type
-
-    feat_type = [numerical] * 10 + [categorical] * 10
-    ans = [categorical] * 10 + [numerical] * 10
-    feat_type = sorted(
-        feat_type,
-        key=functools.cmp_to_key(validator._comparator)
-    )
-    assert ans == feat_type
