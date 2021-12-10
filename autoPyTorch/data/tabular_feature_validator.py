@@ -2,6 +2,7 @@ import functools
 from logging import Logger
 from typing import Dict, List, Optional, Tuple, Union, cast
 
+
 import numpy as np
 
 import pandas as pd
@@ -270,7 +271,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
-        if hasattr(X, "iloc") and not issparse(X):
+        if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
 
         # Check the data here so we catch problems on new test data
@@ -399,9 +400,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             feat_type (List[str])
                 Type of each column numerical/categorical
         """
-
-        if len(self.transformed_columns) > 0 and self.feat_type is not None:
-            return self.transformed_columns, self.feat_type
 
         # Register if a column needs encoding
         numerical_columns = []

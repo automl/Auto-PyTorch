@@ -21,6 +21,7 @@ from autoPyTorch.pipeline.components.training.data_loader.base_data_loader impor
 )
 from autoPyTorch.pipeline.components.training.trainer import (
     TrainerChoice,
+)
 from autoPyTorch.pipeline.components.training.trainer.AdversarialTrainer import (
     AdversarialTrainer
 )
@@ -352,6 +353,7 @@ class TestMixUpTrainer(BaseTraining):
             if counter > epochs:
                 pytest.fail(f"Could not overfit a dummy classification under {epochs} epochs")
 
+
 def test_every_trainer_is_valid():
     """
     Makes sure that every trainer is a valid estimator.
@@ -517,7 +519,7 @@ def test_early_stopping():
         'step_interval': StepIntervalUnit.batch
     }
     for item in ['backend', 'lr_scheduler', 'network', 'optimizer', 'train_data_loader', 'val_data_loader',
-                 'device', 'y_train']:
+                 'device', 'y_train', 'network_snapshots']:
         fit_dictionary[item] = unittest.mock.MagicMock()
 
     fit_dictionary['backend'].temporary_directory = tempfile.mkdtemp()
@@ -537,9 +539,9 @@ def test_early_stopping():
     shutil.rmtree(fit_dictionary['backend'].temporary_directory)
 
 
-class AdversarialTrainerTest(BaseTraining, unittest.TestCase):
+class TestAdversarialTrainer(BaseTraining):
 
-    def test_epoch_training(self):
+    def test_epoch_training(self, n_samples):
         """
         Makes sure we are able to train a model and produce good
         training performance
@@ -550,8 +552,10 @@ class AdversarialTrainerTest(BaseTraining, unittest.TestCase):
          loader,
          _,
          epochs,
-         logger) = self.prepare_trainer(AdversarialTrainer(epsilon=0.07),
-                                        constants.TABULAR_CLASSIFICATION)
+         logger) = self.prepare_trainer(n_samples,
+                                        AdversarialTrainer(epsilon=0.07),
+                                        constants.TABULAR_CLASSIFICATION,
+                                        OVERFIT_EPOCHS)
 
         # Train the model
         counter = 0

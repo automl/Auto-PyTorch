@@ -465,9 +465,4 @@ def test_feature_validator_imbalanced_data():
 
     transformed_X_test = validator.transform(X_test)
     transformed_X_test = pd.DataFrame(transformed_X_test)
-    null_columns = []
-    for column in transformed_X_test.columns:
-        if transformed_X_test[column].isna().all():
-            null_columns.append(column)
-
-    assert null_columns == [1]
+    assert not len(validator.all_nan_columns)

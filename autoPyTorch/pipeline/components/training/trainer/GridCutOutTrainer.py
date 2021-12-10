@@ -2,6 +2,7 @@ import typing
 
 import numpy as np
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent
 from autoPyTorch.pipeline.components.training.trainer.cutout_utils import CutOut
 
@@ -52,7 +53,7 @@ class GridCutOutTrainer(CutOut, BaseTrainerComponent):
         return X, {'y_a': y, 'y_b': y, 'lam': 1}
 
     @staticmethod
-    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, typing.Any]] = None
+    def get_properties(dataset_properties: typing.Optional[typing.Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> typing.Dict[str, typing.Union[str, bool]]:
         return {
             'shortname': 'GridCutOutTrainer',
