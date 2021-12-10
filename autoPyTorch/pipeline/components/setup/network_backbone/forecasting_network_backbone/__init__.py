@@ -14,6 +14,7 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
     find_components,
 )
+from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
     import (
     BaseForecastingNetworkBackbone,
@@ -30,7 +31,7 @@ def add_backbone(backbone: BaseForecastingNetworkBackbone) -> None:
     _addons.add_component(backbone)
 
 
-class NetworkBackboneChoice(autoPyTorchChoice):
+class ForecastingNetworkBackboneChoice(NetworkBackboneChoice):
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
 
@@ -45,3 +46,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         components.update(_backbones)
         components.update(_addons.components)
         return components
+
+    @property
+    def _defaults_network(self):
+        return ['RNNBackbone', 'TSMLPBackbone']

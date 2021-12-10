@@ -65,6 +65,7 @@ default_losses: Dict[str, Type[Loss]] = dict(classification=CrossEntropyLoss,
                                              regression=MSELoss,
                                              forecasting=LogProbLoss)
 
+LOSS_TYPES = ['regression', 'distribution']
 
 def get_default(task: int) -> Type[Loss]:
     """

@@ -149,12 +149,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
             raise ValueError("No backbone found")
 
         if default is None:
-            defaults = [
-                'ShapedMLPBackbone',
-                'MLPBackbone',
-                'ConvNetImageBackbone',
-                'InceptionTimeBackbone',
-            ]
+            defaults = self._defaults_network
             for default_ in defaults:
                 if default_ in available_backbones:
                     default = default_
@@ -191,6 +186,11 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
         return cs
+
+    @property
+    def _defaults_network(self):
+        return ['ShapedMLPBackbone',
+                'MLPBackbone']
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         assert self.choice is not None, "Cannot call transform before the object is initialized"

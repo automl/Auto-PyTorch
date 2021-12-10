@@ -171,7 +171,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
     def __init__(self,
                  batch_size: int = 64,
                  window_size: int = 1,
-                 upper_sequence_length: int = np.iinfo(np.int32).max,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
                  random_state: Optional[np.random.RandomState] = None) -> None:
@@ -181,14 +180,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             batch_size: batch size
             sequence_length: length of each sequence
             sample_interval: sample interval ,its value is the interval of the resolution
-            upper_sequence_length: upper limit of sequence length, to avoid a sequence length larger than dataset length
-            or specified by the users
+
             num_batches_per_epoch: how
-            n_prediction_steps: how many stpes to predict in advance
+            n_prediction_steps: how many steps to predict in advance
         """
         super().__init__(batch_size=batch_size, random_state=random_state)
         self.window_size: int = window_size
-        self.upper_sequence_length = upper_sequence_length
         self.n_prediction_steps = n_prediction_steps
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
@@ -428,6 +425,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, window_size, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
         return cs
 
     def __str__(self) -> str:

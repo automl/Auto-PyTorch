@@ -103,7 +103,7 @@ class TCNBackbone(BaseForecastingNetworkBackbone):
     """
 
     @property
-    def backbone_properties(self):
+    def encoder_properties(self):
         # TODO
         backbone_properties = {}
         return backbone_properties

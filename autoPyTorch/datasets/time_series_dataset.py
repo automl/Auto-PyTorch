@@ -77,6 +77,8 @@ class TimeSeriesSequence(Dataset):
         self.val_transform = val_transforms
         self.sp = sp
 
+        self.mase_coefficient = compute_mase_coefficient(self.X, sp=self.sp)
+
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
         """
@@ -97,9 +99,6 @@ class TimeSeriesSequence(Dataset):
             X = self.X.iloc[:index + 1]
         else:
             X = self.X[:index + 1]
-
-        if not train:
-            mase_coefficient = compute_mase_coefficient(X, sp=self.sp)
 
         if self.train_transform is not None and train:
             X = self.train_transform(X)
@@ -122,7 +121,7 @@ class TimeSeriesSequence(Dataset):
             return {"past_target": torch.from_numpy(X)},  Y_future
         else:
             return {"past_target": torch.from_numpy(X),
-                    "mase_coefficient": mase_coefficient},  Y_future
+                    "mase_coefficient": self.mase_coefficient},  Y_future
 
     def __len__(self) -> int:
         return self.X.shape[0]
@@ -175,7 +174,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  dataset_name: Optional[str] = None,
                  shift_input_data: bool = True,
                  normalize_y: bool = True,
-                 train_with_log_prob: bool = True,
                  ):
         """
         :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
@@ -189,7 +187,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
         :param normalize_y: bool
         if y values needs to be normalized with mean 0 and variance 1
-        :param train_with_log_prob: bool
         if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
         header's configspace can be built beforehand.
         """
@@ -334,10 +331,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.splits = self.get_splits_from_resampling_strategy()
 
-        # TODO in the future, if training losses types are considered as a type of hyperparameters, we need to remove
-        #  this line and create  conditional configspace under
-        #  autoPyTorch.pipeline.components.setup.network_head.base_network_head_choice .
-        self.train_with_log_prob = train_with_log_prob
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
@@ -563,7 +556,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
             'categories': self.categories,
-            'train_with_log_prob': self.train_with_log_prob,
             'target_columns': self.target_columns
         })
         return info

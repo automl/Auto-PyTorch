@@ -1,9 +1,12 @@
 import copy
 import warnings
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
+from ConfigSpace.hyperparameters import Constant
+from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenInClause
+from ConfigSpace.conditions import EqualsCondition, NotEqualsCondition, AndConjunction
 
 import numpy as np
 
@@ -14,21 +17,19 @@ import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.base_pipeline import BasePipeline, PipelineStepType
+from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesTransformer
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone import \
-    BaseForecastingNetworkBackbone
+    ForecastingNetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head import ForecastingNetworkHeadChoice
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
@@ -36,6 +37,7 @@ from autoPyTorch.pipeline.components.setup.network_initializer import (
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling import \
     TargetScalerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
+from autoPyTorch.pipeline.components.setup.forecasting_training_losses import ForecastingLossChoices
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
     TimeSeriesForecastingDataLoader
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
@@ -76,13 +78,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                  init_params: Optional[Dict[str, Any]] = None,
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  ):
-        if 'upper_sequence_length' not in dataset_properties:
-            warnings.warn('max_sequence_length is not given in dataset property , might exists the risk of selecting '
-                          'length that is greater than the maximal allowed length of the dataset')
-            self.upper_sequence_length = np.iinfo(np.int32).max
-        else:
-            self.upper_sequence_length = dataset_properties['upper_sequence_length']
-
         super().__init__(
             config, steps, dataset_properties, include, exclude,
             random_state, init_params, search_space_updates)
@@ -191,6 +186,59 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                 raise ValueError("Cannot find a legal default configuration")
                             cs.get_hyperparameter('network_embedding:__choice__').default_value = default
 
+        # dist_cls and auto_regressive are only activate if the network outputs distribution
+        if 'loss' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
+            hp_loss = cs.get_hyperparameter('loss:__choice__')
+            hp_distribution_heads = []
+            for hp_name in cs.get_hyperparameter_names():
+                if hp_name.startswith('network_head:'):
+                    if hp_name.endswith(':dist_cls') or hp_name.endswith(':auto_regressive'):
+                        hp_distribution_heads.append(cs.get_hyperparameter(hp_name))
+
+            # in this case we cannot deactivate the hps, we might need to think about this
+            if 'distribution_losses' in hp_loss.choices:
+                for hp_dist in hp_distribution_heads:
+                    hp_dist_parent_condition = cs.get_parent_conditions_of(hp_dist.name)
+                    new_cond = AndConjunction(EqualsCondition(hp_dist, hp_loss, 'distribution_losses'),
+                                              *hp_dist_parent_condition)
+
+                    # TODO: this is only a temporal solution, we need to create a PR for ConfigSpace to allow replacing or
+                    # deleting conditions!!!
+
+                    # delete the old condition
+                    cs._parents[hp_dist.name] = OrderedDict()
+                    cs._parents[hp_dist.name]['__HPOlib_configuration_space_root__'] = None
+                    cs.add_condition(new_cond)
+            else:
+                # we set a placeholder and use it to inactivate the related values
+                placeholder = Constant("loss_place_holder", 0)
+                cs.add_hyperparameter(placeholder)
+                for hp_dist in hp_distribution_heads:
+                    hp_dist_parent_condition = cs.get_parent_conditions_of(hp_dist.name)
+                    new_cond = AndConjunction(NotEqualsCondition(hp_dist, placeholder, 0),
+                                              *hp_dist_parent_condition)
+
+                    # delete the old condition
+                    cs._parents[hp_dist.name] = OrderedDict()
+                    cs._parents[hp_dist.name]['__HPOlib_configuration_space_root__'] = None
+                    cs.add_condition(new_cond)
+
+        # rnn head only allow rnn backbone
+        if 'network_backbone' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
+            hp_backbone_choice = cs.get_hyperparameter('network_backbone:__choice__')
+            hp_head_choice = cs.get_hyperparameter('network_head:__choice__')
+
+            if 'ForecastingRNNHeader' in hp_head_choice.choices:
+                if len(hp_head_choice.choices) == 1 and 'RNNBackbone' not in hp_backbone_choice.choices:
+                    raise ValueError("RNN Header is only compatible with RNNBackbone, RNNHead is not allowed to be "
+                                     "the only network head choice if the backbone choices do not contain RNN!")
+                backbone_choices = [choice for choice in hp_backbone_choice.choices if choice != 'RNNBackbone']
+                forbidden_clause_backbone = ForbiddenInClause(hp_backbone_choice, backbone_choices)
+                forbidden_clause_head = ForbiddenEqualsClause(hp_head_choice, 'ForecastingRNNHeader')
+
+                cs.add_forbidden_clause(ForbiddenAndConjunction(forbidden_clause_backbone, forbidden_clause_head))
+            cs.get_hyperparameter_names()
+
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs
@@ -213,15 +261,15 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
+            ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
             ("imputer", SimpleImputer(random_state=self.random_state)),
             # ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
-            ("data_loader", TimeSeriesForecastingDataLoader(upper_sequence_length=self.upper_sequence_length,
-                                                            random_state=self.random_state)),
+            ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
-            ("network_backbone", BaseForecastingNetworkBackbone(default_dataset_properties,
+            ("network_backbone", ForecastingNetworkBackboneChoice(default_dataset_properties,
                                                        random_state=self.random_state)),
             ("network_head", ForecastingNetworkHeadChoice(default_dataset_properties,
                                                random_state=self.random_state)),

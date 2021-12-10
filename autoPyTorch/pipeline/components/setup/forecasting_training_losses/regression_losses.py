@@ -1,0 +1,55 @@
+from typing import Optional, Dict, Union
+
+import numpy as np
+from ConfigSpace import ConfigurationSpace, CategoricalHyperparameter
+
+from autoPyTorch.utils.common import (
+    HyperparameterSearchSpace,
+    add_hyperparameter
+)
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.setup.forecasting_training_losses.base_forecasting_losses import \
+    ForecastingLossComponents
+from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss
+
+
+class RegressionLosses(ForecastingLossComponents):
+    required_net_out_put_type = 'regression'
+
+    def __init__(self,
+                 loss_name: str,
+                 random_state: Optional[np.random.RandomState] = None,
+                 ):
+        super(RegressionLosses).__init__()
+        if loss_name == "l1":
+            self.loss = L1Loss
+        elif loss_name == 'mse':
+            self.loss = MSELoss
+        else:
+            raise ValueError(f"Unsupported loss type {loss_name}!")
+        self.random_state = random_state
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+        return {
+            'shortname': 'RegressionLoss',
+            'name': 'RegressionLoss',
+            "handles_tabular": True,
+            "handles_image": True,
+            "handles_time_series": True,
+            'handles_regression': True,
+            'handles_classification': False
+        }
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            loss_name: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="loss_name",
+                                                                             value_range=('l1', 'mse'),
+                                                                             default_value='mse'),
+    ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+        add_hyperparameter(cs, loss_name, CategoricalHyperparameter)
+        return cs

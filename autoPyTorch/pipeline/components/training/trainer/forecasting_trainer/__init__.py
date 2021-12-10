@@ -57,8 +57,7 @@ class ForecastingTrainerChoice(TrainerChoice):
         self.choice.prepare(
             model=X['network'],
             metrics=metrics,
-            criterion=get_loss(X['dataset_properties'],
-                               name=additional_losses),
+            criterion=X['loss'],
             budget_tracker=self.budget_tracker,
             optimizer=X['optimizer'],
             device=get_device_from_fit_dictionary(X),

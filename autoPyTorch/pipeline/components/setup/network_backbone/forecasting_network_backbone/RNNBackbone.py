@@ -12,24 +12,30 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
     import BaseForecastingNetworkBackbone
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
-class _LSTM(nn.Module):
+class _RNN(nn.Module):
+    # we only consder GRU and LSTM here
     def __init__(self,
                  in_features: int,
                  config: Dict[str, Any]):
         super().__init__()
         self.config = config
         self.only_return_final_stage = True
-        self.lstm = nn.LSTM(input_size=in_features,
-                            hidden_size=config["hidden_size"],
-                            num_layers=config["num_layers"],
-                            dropout=config.get("dropout", 0.0),
-                            bidirectional=config["bidirectional"],
-                            batch_first=True)
+        if config['cell_type'] == 'lstm':
+            cell_type = nn.LSTM
+        else:
+            cell_type = nn.GRU
+
+        self.lstm = cell_type(input_size=in_features,
+                              hidden_size=config["hidden_size"],
+                              num_layers=config["num_layers"],
+                              dropout=config.get("dropout", 0.0),
+                              bidirectional=config["bidirectional"],
+                              batch_first=True)
 
     def forward(self, x: torch.Tensor,
                 hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
@@ -39,7 +45,7 @@ class _LSTM(nn.Module):
 
         if self.only_return_final_stage:
             if not self.config["bidirectional"]:
-                return outputs[:, -1, :],
+                return outputs[:, [-1], :], hidden_state
             else:
                 # concatenate last forward hidden state with first backward hidden state
                 outputs_by_direction = outputs.view(B,
@@ -47,15 +53,15 @@ class _LSTM(nn.Module):
                                                     2,
                                                     self.config["hidden_size"])
                 out = torch.cat([
-                    outputs_by_direction[:, -1, 0, :],
-                    outputs_by_direction[:, 0, 1, :]
-                ], dim=1)
-                return out,
+                    outputs_by_direction[:, [-1], 0, :],
+                    outputs_by_direction[:, [0], 1, :]
+                ], dim=-1)
+                return out, hidden_state
         else:
             return outputs, hidden_state
 
 
-class LSTMBackbone(BaseForecastingNetworkBackbone):
+class RNNBackbone(BaseForecastingNetworkBackbone):
     """
     Standard searchable LSTM backbone for time series data
     """
@@ -65,20 +71,25 @@ class LSTMBackbone(BaseForecastingNetworkBackbone):
         super().__init__(**kwargs)
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        backbone = _LSTM(in_features=input_shape[-1],
-                         config=self.config)
+        backbone = _RNN(in_features=input_shape[-1],
+                        config=self.config)
         self.backbone = backbone
         return backbone
 
     @property
-    def backbone_properties(self):
-        backbone_properties = {'network_output_tuple': True,
-                               'accept_additional_input': True,
-                               'hidden_states': True}
-        return backbone_properties
+    def encoder_properties(self):
+        encoder_properties = {'network_output_tuple': True,
+                              'accept_additional_input': True,
+                              'hidden_states': True}
+        arch_kwargs = {'hidden_size': self.config['hidden_size'],
+                       'num_layers': self.config['num_layers'],
+                       'bidirectional': self.config['bidirectional'],
+                       'cell_type': self.config['cell_type']}  # used for initialize
+        encoder_properties.update({"arch_kwargs": arch_kwargs})
+        return encoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        X['network_output_tuple'] = True
+        # the setting are utilized to build decoder
         return super().fit(X, y)
 
     @property
@@ -92,8 +103,8 @@ class LSTMBackbone(BaseForecastingNetworkBackbone):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return {
-            'shortname': 'LSTMBackbone',
-            'name': 'LSTMBackbone',
+            'shortname': 'RNNBackbone',
+            'name': 'RNNBackbone',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,
@@ -102,6 +113,9 @@ class LSTMBackbone(BaseForecastingNetworkBackbone):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict] = None,
+            cell_type: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="cell_type",
+                                                                             value_range=['lstm', 'gru'],
+                                                                             default_value='lstm'),
             num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_layers',
                                                                               value_range=(1, 3),
                                                                               default_value=1),
@@ -121,12 +135,14 @@ class LSTMBackbone(BaseForecastingNetworkBackbone):
         cs = CS.ConfigurationSpace()
 
         # TODO consider lstm layers with different hidden size
+        # TODO bidirectional needs to be set as false for DeepAR model
         num_layers = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         dropout = get_hyperparameter(dropout, UniformFloatHyperparameter)
         cs.add_hyperparameters([num_layers, use_dropout, dropout])
 
         # Add plain hyperparameters
+        add_hyperparameter(cs, cell_type, CategoricalHyperparameter)
         add_hyperparameter(cs, hidden_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, bidirectional, CategoricalHyperparameter)
 

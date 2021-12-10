@@ -128,7 +128,7 @@ class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
     @property
-    def backbone_properties(self):
+    def encoder_properties(self):
         # TODO consider property for the network
         backbone_properties = {}
         return backbone_properties
