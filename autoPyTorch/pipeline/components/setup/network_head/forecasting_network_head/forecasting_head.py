@@ -84,10 +84,11 @@ class ForecastingHead(NetworkHeadComponent):
 
         # TODO consider Auto-regressive model on vanilla network head
         if auto_regressive:
-            output_shape = output_shape[1:]
             n_prediction_heads = 1
         else:
             n_prediction_heads = output_shape[0]
+        # output shape now doe not contain information about n_prediction_steps
+        output_shape = output_shape[1:]
 
         fixed_input_seq_length = encoder_properties.get("fixed_input_seq_length", False)
         has_hidden_states = encoder_properties.get("has_hidden_states", False)
@@ -147,7 +148,8 @@ class ForecastingHead(NetworkHeadComponent):
             auto_regressive=auto_regressive,
             net_out_put_type=self.required_net_out_put_type,
             dist_cls=dist_cls,
-            )
+            n_prediction_heads=arch_kwargs['n_prediction_heads']
+        )
         proj_layer.append(output_layer)
         return nn.Sequential(*base_header_layer, *proj_layer)
 
@@ -169,6 +171,7 @@ class ForecastingHead(NetworkHeadComponent):
     @staticmethod
     def build_proj_layer(num_head_base_output_features: int,
                          output_shape: Tuple[int, ...],
+                         n_prediction_heads: int,
                          auto_regressive: bool,
                          net_out_put_type: str,
                          dist_cls: Optional[str] = None) -> torch.nn.Module:
@@ -178,6 +181,7 @@ class ForecastingHead(NetworkHeadComponent):
             num_head_base_output_features (int): output feature of head base,
             is used to initialize size of the linear layer
             output_shape (Tuple[int, ..]): deserved output shape
+            n_prediction_heads: int, how many steps the head want to predict
             auto_regressive (bool): if the network is auto-regressive
             net_out_put_type (str), type of the loss, it determines the output of the network
             dist_cls (str), distribution class, only activate if output is a distribution
@@ -194,6 +198,7 @@ class ForecastingHead(NetworkHeadComponent):
                 raise ValueError(f'Unsupported distribution class type: {dist_cls}')
             proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=num_head_base_output_features,
                                                      output_shape=output_shape,
+                                                     n_prediction_heads=n_prediction_heads,
                                                      auto_regressive=auto_regressive)
             return proj_layer
         elif net_out_put_type == 'regression':

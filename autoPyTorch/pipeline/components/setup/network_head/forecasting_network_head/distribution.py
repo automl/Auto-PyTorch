@@ -47,6 +47,7 @@ class ProjectionLayer(nn.Module):
     def __init__(self,
                  num_in_features: int,
                  output_shape: Tuple[int, ...],
+                 n_prediction_heads: int,
                  auto_regressive: bool,
                  **kwargs, ):
         super().__init__(**kwargs)
@@ -58,18 +59,22 @@ class ProjectionLayer(nn.Module):
             """
             build a single proj layer given the input dims, the output is unflattened to fit the required output_shape
             and n_prediction_steps.
+            we note that output_shape's first dimensions is always n_prediction_steps
             Args:
                 arg_dim: dimension of the target distribution
 
             Returns:
 
             """
-            if not auto_regressive:
-                return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
-                                     nn.Unflatten(-1, (*output_shape, arg_dim)))
+            if auto_regressive:
+                unflatten_layer = []
             else:
-                return nn.Sequential(nn.Unflatten(-1, *output_shape),
-                                     nn.Linear(num_in_features, arg_dim))
+                # we need to unflatten the input from 2D to 3D such that local MLP can be applied to each prediction
+                # separately
+                unflatten_layer = [nn.Unflatten(-1, (n_prediction_heads, num_in_features))]
+            return nn.Sequential(*unflatten_layer,
+                                 nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
+                                 nn.Unflatten(-1, (*output_shape, arg_dim)))
 
         self.proj = nn.ModuleList(
             [build_single_proj_layer(dim) for dim in self.arg_dims.values()]

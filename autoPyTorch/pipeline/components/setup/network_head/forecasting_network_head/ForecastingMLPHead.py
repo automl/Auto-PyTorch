@@ -39,7 +39,7 @@ class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
                                 out_features=self.config['units_final_layer'] * n_prediction_steps))
         if 'activation' in self.config:
             layers.append(_activations[self.config["activation"]]())
-        head_base_output_features = self.config['units_final_layer'] * n_prediction_steps
+        head_base_output_features = self.config['units_final_layer']
 
         return layers, head_base_output_features
 
