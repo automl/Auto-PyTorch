@@ -16,7 +16,7 @@ from autoPyTorch.pipeline.components.base_component import (
 
 from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, FORECASTING_TASKS, STRING_TO_TASK_TYPES
 
-from autoPyTorch.pipeline.components.setup.forecasting_training_losses.base_forecasting_losses import\
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import\
     ForecastingLossComponents
 
 directory = os.path.split(__file__)[0]

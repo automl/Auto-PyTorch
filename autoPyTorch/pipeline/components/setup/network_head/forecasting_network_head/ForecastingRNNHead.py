@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, List
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -18,7 +18,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
     ForecastingHead
 
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
 
 
 class _RNN_Decoder(nn.Module):
@@ -51,27 +51,41 @@ class ForecastingRNNHeader(ForecastingHead):
     """
     Standard searchable RNN decoder for time series data, only works when the encoder is
     """
+
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
         self.auto_regressive = True
+        self.rnn_kwargs = None
+
+    @property
+    def _required_fit_requirements(self) -> List[FitRequirement]:
+        fit_requirement = super(ForecastingRNNHeader, self)._required_fit_requirements
+        fit_requirement.append(FitRequirement('rnn_kwargs', (Dict,), user_defined=False, dataset_property=False))
+        return fit_requirement
 
     def _build_head(self, input_shape: Tuple[int, ...], **arch_kwargs) -> nn.Module:
+        # RNN decoder only allows RNN encoder, these parameters need to exists.
+        hidden_size = self.rnn_kwargs['hidden_size']
+        num_layers = 2 * self.rnn_kwargs['num_layers'] if self.rnn_kwargs['bidirectional'] else self.rnn_kwargs['num_layers']
+        cell_type = self.rnn_kwargs['cell_type']
         head = _RNN_Decoder(in_features=input_shape[-1],
                             config=self.config,
-                            **arch_kwargs)
+                            hidden_size=hidden_size,
+                            num_layers=num_layers,
+                            cell_type=cell_type)
         self.head = head
         return head
 
     @property
     def decoder_properties(self):
-        decoder_properties = {'network_output_tuple': True,
-                              'accept_additional_input': True,
-                              'recurrent': True}
+        decoder_properties = {'has_hidden_states': True,
+                              'recurrent': True,
+                              }
         return decoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        X['network_output_tuple'] = True
+        self.rnn_kwargs = X['rnn_kwargs']
         return super().fit(X, y)
 
     @property
@@ -101,10 +115,6 @@ class ForecastingRNNHeader(ForecastingHead):
             dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='dropout',
                                                                            value_range=(0., 0.5),
                                                                            default_value=0.2),
-            dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dist_cls",
-                                                                            value_range=tuple(ALL_DISTRIBUTIONS.keys()),
-                                                                            default_value=
-                                                                            list(ALL_DISTRIBUTIONS.keys())[0]),
     ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
 
@@ -117,7 +127,4 @@ class ForecastingRNNHeader(ForecastingHead):
         # Hidden size is given by the encoder architecture
         cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
-        add_hyperparameter(cs, dist_cls, CategoricalHyperparameter)
-
         return cs
-

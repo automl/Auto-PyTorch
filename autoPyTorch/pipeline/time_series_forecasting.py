@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 from ConfigSpace.hyperparameters import Constant
 from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenInClause
-from ConfigSpace.conditions import EqualsCondition, NotEqualsCondition, AndConjunction
+from ConfigSpace.conditions import EqualsCondition, NotEqualsCondition
 
 import numpy as np
 
@@ -37,7 +37,7 @@ from autoPyTorch.pipeline.components.setup.network_initializer import (
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling import \
     TargetScalerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
-from autoPyTorch.pipeline.components.setup.forecasting_training_losses import ForecastingLossChoices
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
     TimeSeriesForecastingDataLoader
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
@@ -185,43 +185,53 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                             except IndexError:
                                 raise ValueError("Cannot find a legal default configuration")
                             cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+                            """
+                            # in this case we cannot deactivate the hps, we might need to think about this
+                            if 'RegressionLoss' in hp_loss.choices:
+                                forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
+                                for hp_dist in hp_distribution_children:
+                                    forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
+                                    forbidden_hp_dist = AndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
+                                    forbidden_regression_losses_all.append(forbidden_hp_dist)
+                            else:
+                                for hp_dist in hp_distribution_children:
+                                    forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
+                                    forbidden_regression_losses_all.append(forbidden_hp_dist)
+                            """
 
         # dist_cls and auto_regressive are only activate if the network outputs distribution
         if 'loss' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
             hp_loss = cs.get_hyperparameter('loss:__choice__')
-            hp_distribution_heads = []
+
+            hp_auto_regressive = []
             for hp_name in cs.get_hyperparameter_names():
                 if hp_name.startswith('network_head:'):
-                    if hp_name.endswith(':dist_cls') or hp_name.endswith(':auto_regressive'):
-                        hp_distribution_heads.append(cs.get_hyperparameter(hp_name))
+                    if hp_name.endswith(':auto_regressive'):
+                        hp_auto_regressive.append(cs.get_hyperparameter(hp_name))
+
+            # Auto-Regressive is incompatible with regression losses
+            forbidden_regression_losses_all = []
+            if 'RegressionLoss' in hp_loss.choices:
+                forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
+                for hp_ar in hp_auto_regressive:
+                    forbidden_hp_dist = ForbiddenEqualsClause(hp_ar, True)
+                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
+                    forbidden_regression_losses_all.append(forbidden_hp_dist)
+
+            hp_distribution_children = []
+            if 'network' in self.named_steps.keys():
+                hp_distribution_children.append(cs.get_hyperparameter('network:forecast_strategy'))
 
             # in this case we cannot deactivate the hps, we might need to think about this
-            if 'distribution_losses' in hp_loss.choices:
-                for hp_dist in hp_distribution_heads:
-                    hp_dist_parent_condition = cs.get_parent_conditions_of(hp_dist.name)
-                    new_cond = AndConjunction(EqualsCondition(hp_dist, hp_loss, 'distribution_losses'),
-                                              *hp_dist_parent_condition)
-
-                    # TODO: this is only a temporal solution, we need to create a PR for ConfigSpace to allow replacing or
-                    # deleting conditions!!!
-
-                    # delete the old condition
-                    cs._parents[hp_dist.name] = OrderedDict()
-                    cs._parents[hp_dist.name]['__HPOlib_configuration_space_root__'] = None
-                    cs.add_condition(new_cond)
+            if 'DistributionLoss' in hp_loss.choices:
+                for hp_dist in hp_distribution_children:
+                    cs.add_condition(EqualsCondition(hp_dist, hp_loss, 'DistributionLoss'))
             else:
                 # we set a placeholder and use it to inactivate the related values
                 placeholder = Constant("loss_place_holder", 0)
                 cs.add_hyperparameter(placeholder)
-                for hp_dist in hp_distribution_heads:
-                    hp_dist_parent_condition = cs.get_parent_conditions_of(hp_dist.name)
-                    new_cond = AndConjunction(NotEqualsCondition(hp_dist, placeholder, 0),
-                                              *hp_dist_parent_condition)
-
-                    # delete the old condition
-                    cs._parents[hp_dist.name] = OrderedDict()
-                    cs._parents[hp_dist.name]['__HPOlib_configuration_space_root__'] = None
-                    cs.add_condition(new_cond)
+                for hp_dist in hp_distribution_children:
+                    cs.add_condition(NotEqualsCondition(hp_dist, placeholder, 0))
 
         # rnn head only allow rnn backbone
         if 'network_backbone' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
@@ -270,9 +280,9 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
             ("network_backbone", ForecastingNetworkBackboneChoice(default_dataset_properties,
-                                                       random_state=self.random_state)),
+                                                                  random_state=self.random_state)),
             ("network_head", ForecastingNetworkHeadChoice(default_dataset_properties,
-                                               random_state=self.random_state)),
+                                                          random_state=self.random_state)),
             ("network", ForecastingNetworkComponent(random_state=self.random_state)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties,
                                                       random_state=self.random_state)),

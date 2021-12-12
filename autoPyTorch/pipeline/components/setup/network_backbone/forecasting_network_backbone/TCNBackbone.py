@@ -14,7 +14,7 @@ from torch.nn.utils import weight_norm
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
-    import BaseForecastingNetworkBackbone
+    import BaseForecastingNetworkBackbone, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -71,7 +71,7 @@ class _TemporalBlock(nn.Module):
         return self.relu(out + res)
 
 
-class _TemporalConvNet(nn.Module):
+class _TemporalConvNet(EncoderNetwork):
     def __init__(self, num_inputs: int, num_channels: List[int], kernel_size: int = 2, dropout: float = 0.2):
         super(_TemporalConvNet, self).__init__()
         layers: List[Any] = []
@@ -89,12 +89,17 @@ class _TemporalConvNet(nn.Module):
                                       dropout=dropout)]
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
+        import pdb
+        pdb.set_trace()
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         x = self.network(x)
         x = x.transpose(1, 2).contiguous()
-        return x
+        if output_seq:
+            return x
+        else:
+            return x[:, -1, :]
 
 
 class TCNBackbone(BaseForecastingNetworkBackbone):
@@ -104,10 +109,11 @@ class TCNBackbone(BaseForecastingNetworkBackbone):
 
     @property
     def encoder_properties(self):
-        # TODO
-        backbone_properties = {}
-        return backbone_properties
-
+        encoder_properties = {'has_hidden_states': False,
+                              'bijective_seq_output': True,
+                              'fixed_input_seq_length': False
+                              }
+        return encoder_properties
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_0"]]
@@ -140,7 +146,8 @@ class TCNBackbone(BaseForecastingNetworkBackbone):
                                                                               default_value=5),
             num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                                value_range=(4, 64),
-                                                                               default_value=32),
+                                                                               default_value=32,
+                                                                               log=True),
             kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
                                                                                value_range=(4, 64),
                                                                                default_value=32),

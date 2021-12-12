@@ -23,6 +23,6 @@ class ForecastingLossComponents(autoPyTorchComponent):
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
-        X.update({"loss": self.loss})
-        X.update({'required_net_out_put_type': self.required_net_out_put_type})
+        X.update({"loss": self.loss,
+                  'required_net_out_put_type': self.required_net_out_put_type})
         return X

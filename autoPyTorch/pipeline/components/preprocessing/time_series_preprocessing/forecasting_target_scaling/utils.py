@@ -29,7 +29,7 @@ class TargetScaler(BaseEstimator):
             max_ = torch.max(X, dim=-2, keepdim=True)[0]
 
             diff_ = max_ - min_
-            loc = min_
+            loc = min_ - 1e-10
             scale = diff_
             scale[scale == 0.0] = 1.0
             return (X - loc) / scale, loc, scale

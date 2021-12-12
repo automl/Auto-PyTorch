@@ -38,12 +38,16 @@ from torch.distributions import (
 
 class ProjectionLayer(nn.Module):
     """
-    A projection layer that
+    A projection layer that project features to a torch distribution
     """
+
+    value_in_support = 0.0
+    # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
 
     def __init__(self,
                  num_in_features: int,
                  output_shape: Tuple[int, ...],
+                 auto_regressive: bool,
                  **kwargs, ):
         super().__init__(**kwargs)
 
@@ -60,8 +64,12 @@ class ProjectionLayer(nn.Module):
             Returns:
 
             """
-            return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
-                                 nn.Unflatten(-1, (*output_shape, arg_dim)))
+            if not auto_regressive:
+                return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
+                                     nn.Unflatten(-1, (*output_shape, arg_dim)))
+            else:
+                return nn.Sequential(nn.Unflatten(-1, *output_shape),
+                                     nn.Linear(num_in_features, arg_dim))
 
         self.proj = nn.ModuleList(
             [build_single_proj_layer(dim) for dim in self.arg_dims.values()]
@@ -127,6 +135,8 @@ class StudentTOutput(ProjectionLayer):
 
 
 class BetaOutput(ProjectionLayer):
+    value_in_support = 0.5
+
     @property
     def arg_dims(self) -> Dict[str, int]:
         return {"concentration1": 1, "concentration0": 1}
@@ -137,14 +147,16 @@ class BetaOutput(ProjectionLayer):
         epsilon = 1e-10
         concentration1 = F.softplus(concentration1) + epsilon
         concentration0 = F.softplus(concentration0) + epsilon
-        return concentration1.squeeze(-1), concentration0.squeeze(-1).squeeze(-1)
+        return concentration1.squeeze(-1), concentration0.squeeze(-1)
 
     @property
     def dist_cls(self) -> type(Distribution):
+        # TODO there is a bug with Beta implementation!!!
         return Beta
 
 
 class GammaOutput(ProjectionLayer):
+    value_in_support = 0.5
     @property
     def arg_dims(self) -> Dict[str, int]:
         return {"concentration": 1, "rate": 1}
@@ -178,9 +190,12 @@ class PoissonOutput(ProjectionLayer):
 
 ALL_DISTRIBUTIONS = {'studentT': StudentTOutput,
                      'normal': NormalOutput,
-                     'beta': BetaOutput,
-                     'gamma': GammaOutput,
-                     'poisson': PoissonOutput}  # type: Dict[str, type(ProjectionLayer)]
+                     #'beta': BetaOutput,
+                     #'gamma': GammaOutput,
+                     #'poisson': PoissonOutput
+                    }  # type: Dict[str, ProjectionLayer]
+
+# TODO find components that are compatible with beta, gamma and poisson distrubtion!
 
 # TODO consider how to implement NegativeBinomialOutput without scale information
 # class NegativeBinomialOutput(ProjectionLayer):

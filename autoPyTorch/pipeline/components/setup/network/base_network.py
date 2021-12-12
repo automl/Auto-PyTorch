@@ -27,13 +27,17 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         super(NetworkComponent, self).__init__()
         self.random_state = random_state
         self.device = None
-        self.add_fit_requirements([
+        self.add_fit_requirements(self._required_fit_requirements)
+        self.network = network
+        self.final_activation: Optional[torch.nn.Module] = None
+
+    @property
+    def _required_fit_requirements(self):
+        return [
             FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
-        ])
-        self.network = network
-        self.final_activation: Optional[torch.nn.Module] = None
+        ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         """

@@ -21,13 +21,6 @@ class FullyConnectedHead(NetworkHeadComponent):
     """
 
     def build_head(self, input_shape: Tuple[int, ...], output_shape: Tuple[int, ...]) -> nn.Module:
-        layers, head_base_output_features = self._build_head(input_shape)
-        out_features = np.prod(output_shape).item()
-        layers.append(nn.Linear(in_features=head_base_output_features,
-                                out_features=out_features))
-        return nn.Sequential(*layers)
-
-    def _build_head(self, input_shape: Tuple[int, ...]) -> Tuple[List[nn.Module], int]:
         layers = [nn.Flatten()]
         in_features = np.prod(input_shape).item()
         for i in range(1, self.config["num_layers"]):
@@ -35,8 +28,10 @@ class FullyConnectedHead(NetworkHeadComponent):
                                     out_features=self.config[f"units_layer_{i}"]))
             layers.append(_activations[self.config["activation"]]())
             in_features = self.config[f"units_layer_{i}"]
-        head_base_output_features = in_features
-        return layers, head_base_output_features
+        out_features = np.prod(output_shape).item()
+        layers.append(nn.Linear(in_features=in_features,
+                                out_features=out_features))
+        return nn.Sequential(*layers)
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None

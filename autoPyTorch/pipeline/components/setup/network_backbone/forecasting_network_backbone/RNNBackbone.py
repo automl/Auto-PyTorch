@@ -13,18 +13,17 @@ from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
-    import BaseForecastingNetworkBackbone
+    import BaseForecastingNetworkBackbone, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
-class _RNN(nn.Module):
+class _RNN(EncoderNetwork):
     # we only consder GRU and LSTM here
     def __init__(self,
                  in_features: int,
                  config: Dict[str, Any]):
         super().__init__()
         self.config = config
-        self.only_return_final_stage = True
         if config['cell_type'] == 'lstm':
             cell_type = nn.LSTM
         else:
@@ -37,15 +36,19 @@ class _RNN(nn.Module):
                               bidirectional=config["bidirectional"],
                               batch_first=True)
 
-    def forward(self, x: torch.Tensor,
+    def forward(self,
+                x: torch.Tensor,
+                output_seq: bool = False,
                 hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
         B, T, _ = x.shape
 
         outputs, hidden_state, = self.lstm(x, hx)
 
-        if self.only_return_final_stage:
+        if output_seq:
+            return outputs, hidden_state
+        else:
             if not self.config["bidirectional"]:
-                return outputs[:, [-1], :], hidden_state
+                return outputs[:, -1, :], hidden_state
             else:
                 # concatenate last forward hidden state with first backward hidden state
                 outputs_by_direction = outputs.view(B,
@@ -53,12 +56,11 @@ class _RNN(nn.Module):
                                                     2,
                                                     self.config["hidden_size"])
                 out = torch.cat([
-                    outputs_by_direction[:, [-1], 0, :],
-                    outputs_by_direction[:, [0], 1, :]
+                    outputs_by_direction[:, -1, 0, :],
+                    outputs_by_direction[:, 0, 1, :]
                 ], dim=-1)
                 return out, hidden_state
-        else:
-            return outputs, hidden_state
+
 
 
 class RNNBackbone(BaseForecastingNetworkBackbone):
@@ -78,27 +80,19 @@ class RNNBackbone(BaseForecastingNetworkBackbone):
 
     @property
     def encoder_properties(self):
-        encoder_properties = {'network_output_tuple': True,
-                              'accept_additional_input': True,
-                              'hidden_states': True}
-        arch_kwargs = {'hidden_size': self.config['hidden_size'],
+        encoder_properties = {'has_hidden_states': True,
+                              'bijective_seq_output': True,
+                              'fixed_input_seq_length': False
+                              }
+        return encoder_properties
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        rnn_kwargs = {'hidden_size': self.config['hidden_size'],
                        'num_layers': self.config['num_layers'],
                        'bidirectional': self.config['bidirectional'],
                        'cell_type': self.config['cell_type']}  # used for initialize
-        encoder_properties.update({"arch_kwargs": arch_kwargs})
-        return encoder_properties
-
-    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        # the setting are utilized to build decoder
-        return super().fit(X, y)
-
-    @property
-    def only_return_final_stage(self):
-        return self.backbone.only_return_final_stage
-
-    @only_return_final_stage.setter
-    def only_return_final_stage(self, only_return_final_stage):
-        self.backbone.only_return_final_stage = only_return_final_stage
+        X.update({'rnn_kwargs': rnn_kwargs})
+        return super().transform(X)
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
@@ -120,8 +114,9 @@ class RNNBackbone(BaseForecastingNetworkBackbone):
                                                                               value_range=(1, 3),
                                                                               default_value=1),
             hidden_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='hidden_size',
-                                                                               value_range=(64, 512),
-                                                                               default_value=256),
+                                                                               value_range=(32, 512),
+                                                                               default_value=256,
+                                                                               log=True),
             use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='use_dropout',
                                                                                value_range=(True, False),
                                                                                default_value=False),

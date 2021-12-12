@@ -130,8 +130,10 @@ class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
     @property
     def encoder_properties(self):
         # TODO consider property for the network
-        backbone_properties = {}
-        return backbone_properties
+        encoder_properties = {'has_hidden_states': False,
+                              'bijective_seq_output': True,
+                              'fixed_input_seq_length': False}
+        return encoder_properties
 
     def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
         backbone = _InceptionTime(in_features=input_shape[-1],
@@ -159,6 +161,7 @@ class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
         num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                            value_range=(4, 64),
                                                                            default_value=32,
+                                                                           log=True
                                                                            ),
         kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
                                                                            value_range=(4, 64),
@@ -167,6 +170,7 @@ class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
         bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
                                                                                value_range=(16, 64),
                                                                                default_value=32,
+                                                                               log=True
                                                                                ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()

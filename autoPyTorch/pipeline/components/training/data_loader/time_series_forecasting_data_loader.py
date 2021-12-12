@@ -193,6 +193,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
+        self.padding_value = 0.0
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -208,6 +209,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         X["window_size"] = self.window_size
         sample_interval = X.get('sample_interval', 1)
         self.sample_interval = sample_interval
+
+        self.padding_value = X.get('required_padding_value', 0.0)
 
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         # we want models with different sample_interval to have similar length scale
@@ -331,7 +334,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
                                                           window_size=self.window_size,
-                                                          subseq_length=self.subseq_length)))
+                                                          subseq_length=self.subseq_length,
+                                                          padding_value=self.padding_value)))
         candidate_transformations.append((ExpandTransformTimeSeries()))
         if "test" in mode or not X['dataset_properties']['is_small_preprocess']:
             candidate_transformations.extend(X['preprocess_transforms'])

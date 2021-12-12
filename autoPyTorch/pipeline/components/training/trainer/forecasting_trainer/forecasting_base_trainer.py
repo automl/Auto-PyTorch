@@ -21,7 +21,8 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
-from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet
+
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
@@ -31,7 +32,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
     def prepare(
             self,
             metrics: List[Any],
-            model: torch.nn.Module,
+            model: ForecastingNet,
             criterion: Type[torch.nn.Module],
             budget_tracker: BudgetTracker,
             optimizer: Optimizer,
@@ -158,6 +159,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         loss_func = self.criterion_preparation(**criterion_kwargs)
         loss = loss_func(self.criterion, outputs)
+
         loss.backward()
         self.optimizer.step()
         self._scheduler_step(step_interval=StepIntervalUnit.batch, loss=loss.item())
@@ -208,20 +210,22 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 outputs = self.model(X)
 
-                outputs = self.rescale_output_distribution(outputs, loc=loc, scale=scale)
+                outputs_rescaled = self.rescale_output_distribution(outputs, loc=loc, scale=scale)
 
-                loss = self.criterion(outputs, targets)
+                loss = self.criterion(outputs_rescaled, targets)
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size
+
+                outputs = self.model.pred_from_net_output(outputs).detach().cpu()
                 if loc is None and scale is None:
-                    outputs_data.append(outputs.mean.detach().cpu())
+                    outputs_data.append(outputs)
                 else:
                     if loc is None:
                         loc = 0.
                     if scale is None:
                         scale = 1.
-                    outputs_data.append(outputs.base_dist.mean.detach().cpu() * scale + loc)
+                    outputs_data.append(outputs * scale + loc)
                 targets_data.append(targets.detach().cpu())
 
                 if writer:
@@ -230,6 +234,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                         loss.item(),
                         epoch * len(test_loader) + step,
                     )
+
         # mase_coefficent has the shape [B, 1, 1]
         # to be compatible with outputs_data with shape [B, n_prediction_steps, num_output]
         mase_coefficients = np.expand_dims(torch.cat(mase_coefficients, dim=0).numpy(), axis=[1])

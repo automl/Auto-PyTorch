@@ -9,7 +9,7 @@ from autoPyTorch.utils.common import (
 )
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.forecasting_training_losses.base_forecasting_losses import \
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
 from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss
 
@@ -21,7 +21,7 @@ class RegressionLosses(ForecastingLossComponents):
                  loss_name: str,
                  random_state: Optional[np.random.RandomState] = None,
                  ):
-        super(RegressionLosses).__init__()
+        super(RegressionLosses, self).__init__()
         if loss_name == "l1":
             self.loss = L1Loss
         elif loss_name == 'mse':
