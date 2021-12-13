@@ -29,9 +29,9 @@ class ForecastingNet(nn.Module):
                  encoder_properties: Dict = {},
                  decoder_properties: Dict = {},
                  output_type: str = 'regression',
-                 forecast_strategy: str = 'mean',
-                 num_samples: int = 100,
-                 aggregation: str = 'mean'
+                 forecast_strategy: Optional[str] = 'mean',
+                 num_samples: Optional[int] = 100,
+                 aggregation: Optional[str] = 'mean'
                  ):
         super(ForecastingNet, self).__init__()
         self.embedding = network_embedding
@@ -70,11 +70,11 @@ class ForecastingNet(nn.Module):
             if self.forecast_strategy == 'mean':
                 return net_output.mean
             elif self.forecast_strategy == 'sample':
-                samples = net_output.sample(self.num_samples)
+                samples = net_output.sample((self.num_samples, ))
                 if self.aggregation == 'mean':
                     return torch.mean(samples, dim=0)
                 elif self.aggregation == 'median':
-                    return torch.median(samples, 0)
+                    return torch.median(samples, 0)[0]
                 else:
                     raise ValueError(f'Unknown aggregation: {self.aggregation}')
             else:
@@ -92,15 +92,17 @@ class ForecastingNetworkComponent(NetworkComponent):
             self,
             network: Optional[torch.nn.Module] = None,
             random_state: Optional[np.random.RandomState] = None,
-            forecast_strategy: str = 'mean',
+            net_out_type: str = 'regression',
+            forecast_strategy: Optional[str] = 'mean',
             num_samples: Optional[int] = None,
-            aggregation: Optional[str] = None
+            aggregation: Optional[str] = None,
+
     ) -> None:
         super(ForecastingNetworkComponent, self).__init__(network=network, random_state=random_state)
+        self.net_out_type = net_out_type
         self.forecast_strategy = forecast_strategy
         self.num_samples = num_samples
         self.aggregation = aggregation
-        self.output_type = None
 
     @property
     def _required_fit_requirements(self):
@@ -119,12 +121,17 @@ class ForecastingNetworkComponent(NetworkComponent):
         self.check_requirements(X, y)
         self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
+        if self.net_out_type != X['required_net_out_put_type']:
+            raise ValueError(f"network output type must be the same as required_net_out_put_type defiend by "
+                             f"loss function. However, net_out_type is {self.net_out_type} and "
+                             f"required_net_out_put_type is {X['required_net_out_put_type']}")
+
         self.network = ForecastingNet(network_embedding=X['network_embedding'],
                                       network_backbone=X['network_backbone'],
                                       network_head=X['network_head'],
                                       encoder_properties=X['encoder_properties'],
                                       decoder_properties=X['decoder_properties'],
-                                      output_type=X['required_net_out_put_type'],
+                                      output_type=self.net_out_type,
                                       forecast_strategy=self.forecast_strategy,
                                       num_samples=self.num_samples,
                                       aggregation=self.aggregation,
@@ -183,6 +190,11 @@ class ForecastingNetworkComponent(NetworkComponent):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            net_out_type: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='net_out_type',
+                                                                                value_range=('regression',
+                                                                                             'distribution'),
+                                                                                default_value='distribution'
+                                                                                ),
             forecast_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='forecast_strategy',
                                                                                      value_range=('sample', 'mean'),
                                                                                      default_value='mean'),
@@ -193,15 +205,23 @@ class ForecastingNetworkComponent(NetworkComponent):
                                                                                value_range=('mean', 'median'),
                                                                                default_value='mean')
     ) -> ConfigurationSpace:
+        """
+        prediction steagy
+        """
         cs = ConfigurationSpace()
+
+        net_out_type = get_hyperparameter(net_out_type, CategoricalHyperparameter)
+
         forecast_strategy = get_hyperparameter(forecast_strategy, CategoricalHyperparameter)
         num_samples = get_hyperparameter(num_samples, UniformIntegerHyperparameter)
         aggregation = get_hyperparameter(aggregation, CategoricalHyperparameter)
 
+        cond_net_out_type = EqualsCondition(forecast_strategy, net_out_type, 'distribution')
+
         cond_num_sample = EqualsCondition(num_samples, forecast_strategy, 'sample')
         cond_aggregation = EqualsCondition(aggregation, forecast_strategy, 'sample')
 
-        cs.add_hyperparameters([forecast_strategy, num_samples, aggregation])
-        cs.add_conditions([cond_aggregation, cond_num_sample])
+        cs.add_hyperparameters([net_out_type, forecast_strategy, num_samples, aggregation])
+        cs.add_conditions([cond_net_out_type, cond_aggregation, cond_num_sample])
 
         return cs

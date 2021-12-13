@@ -113,16 +113,24 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         else:
             return loss_sum / N, {}
 
-    def rescale_output_distribution(self,
-                                    outputs: torch.distributions.Distribution,
-                                    loc: Optional[torch.Tensor],
-                                    scale: Optional[torch.Tensor]):
+    def rescale_output(self,
+                       outputs: Union[torch.distributions.Distribution, torch.Tensor],
+                       loc: Optional[torch.Tensor],
+                       scale: Optional[torch.Tensor]):
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
         if loc is not None or scale is not None:
-            transfomr = AffineTransform(loc=0.0 if loc is None else loc.to(self.device),
-                                        scale=1.0 if scale is None else scale.to(self.device),
-                                        )
-            outputs = TransformedDistribution(outputs, [transfomr])
+            if isinstance(outputs, torch.distributions.Distribution):
+                transform = AffineTransform(loc=0.0 if loc is None else loc.to(self.device),
+                                            scale=1.0 if scale is None else scale.to(self.device),
+                                            )
+                outputs = TransformedDistribution(outputs, [transform])
+            else:
+                if loc is None:
+                    outputs = outputs * scale.to(self.device)
+                elif scale is None:
+                    outputs = outputs + loc.to(self.device)
+                else:
+                    outputs = outputs * scale.to(self.device) + loc.to(self.device)
         return outputs
 
     def train_step(self, data: Dict[str, torch.Tensor], targets: Dict[str, Union[torch.Tensor, np.ndarray]]) \
@@ -155,7 +163,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.optimizer.zero_grad()
         outputs = self.model(X)
 
-        outputs = self.rescale_output_distribution(outputs, loc=loc, scale=scale)
+        outputs = self.rescale_output(outputs, loc=loc, scale=scale)
 
         loss_func = self.criterion_preparation(**criterion_kwargs)
         loss = loss_func(self.criterion, outputs)
@@ -210,7 +218,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 outputs = self.model(X)
 
-                outputs_rescaled = self.rescale_output_distribution(outputs, loc=loc, scale=scale)
+                outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale)
 
                 loss = self.criterion(outputs_rescaled, targets)
 
@@ -218,6 +226,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 N += batch_size
 
                 outputs = self.model.pred_from_net_output(outputs).detach().cpu()
+
                 if loc is None and scale is None:
                     outputs_data.append(outputs)
                 else:

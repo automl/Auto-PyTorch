@@ -74,7 +74,14 @@ class ForecastingHead(NetworkHeadComponent):
 
         dist_cls = X.get('dist_cls', None)
 
+
+
         auto_regressive = self.auto_regressive
+
+        auto_regressive = False # TODO implement auto_regressive mdoels!!
+
+
+
         X.update({"auto_regressive": auto_regressive})
         encoder_properties = X['encoder_properties']
 
@@ -88,7 +95,6 @@ class ForecastingHead(NetworkHeadComponent):
         else:
             n_prediction_heads = output_shape[0]
         # output shape now doe not contain information about n_prediction_steps
-        output_shape = output_shape[1:]
 
         fixed_input_seq_length = encoder_properties.get("fixed_input_seq_length", False)
         has_hidden_states = encoder_properties.get("has_hidden_states", False)
@@ -197,13 +203,15 @@ class ForecastingHead(NetworkHeadComponent):
             if dist_cls not in ALL_DISTRIBUTIONS.keys():
                 raise ValueError(f'Unsupported distribution class type: {dist_cls}')
             proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=num_head_base_output_features,
-                                                     output_shape=output_shape,
+                                                     output_shape=output_shape[1:],
                                                      n_prediction_heads=n_prediction_heads,
                                                      auto_regressive=auto_regressive)
             return proj_layer
         elif net_out_put_type == 'regression':
-            proj_layer = nn.Sequential(nn.Linear(num_head_base_output_features, np.product(output_shape)),
-                                       nn.Unflatten(-1, *output_shape))
+            proj_layer = nn.Sequential(nn.Unflatten(-1, (n_prediction_heads, num_head_base_output_features)),
+                                       nn.Linear(num_head_base_output_features, np.product(output_shape[1:])),
+                                       # nn.Unflatten(-1, tuple(output_shape)),
+                                       )
             return proj_layer
         else:
             raise ValueError(f"Unsupported network type "

@@ -59,7 +59,7 @@ class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_layers",
                                                                               value_range=(0, 3),
-                                                                              default_value=1),
+                                                                              default_value=2),
             units_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="units_layer",
                                                                                value_range=(64, 512),
                                                                                default_value=128,

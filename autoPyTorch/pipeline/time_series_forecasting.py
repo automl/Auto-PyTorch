@@ -210,28 +210,37 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                         hp_auto_regressive.append(cs.get_hyperparameter(hp_name))
 
             # Auto-Regressive is incompatible with regression losses
-            forbidden_regression_losses_all = []
+            forbidden_losses_all = []
             if 'RegressionLoss' in hp_loss.choices:
                 forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
                 for hp_ar in hp_auto_regressive:
                     forbidden_hp_dist = ForbiddenEqualsClause(hp_ar, True)
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
-                    forbidden_regression_losses_all.append(forbidden_hp_dist)
+                    forbidden_losses_all.append(forbidden_hp_dist)
 
-            hp_distribution_children = []
+            hp_net_output_type = []
             if 'network' in self.named_steps.keys():
-                hp_distribution_children.append(cs.get_hyperparameter('network:forecast_strategy'))
+                hp_net_output_type.append(cs.get_hyperparameter('network:net_out_type'))
 
-            # in this case we cannot deactivate the hps, we might need to think about this
+            if 'RegressionLoss' in hp_loss.choices:
+                # TODO Quantile loses need to be added here
+                forbidden_hp_loss = ForbiddenInClause(hp_loss, ['RegressionLoss'])
+                # RegressionLos only allow regression hp_net_out
+                for hp_net_out in hp_net_output_type:
+                    forbidden_hp_dist = ForbiddenInClause(hp_net_out, ['distribution'])
+                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
+                    forbidden_losses_all.append(forbidden_hp_dist)
+
             if 'DistributionLoss' in hp_loss.choices:
-                for hp_dist in hp_distribution_children:
-                    cs.add_condition(EqualsCondition(hp_dist, hp_loss, 'DistributionLoss'))
-            else:
-                # we set a placeholder and use it to inactivate the related values
-                placeholder = Constant("loss_place_holder", 0)
-                cs.add_hyperparameter(placeholder)
-                for hp_dist in hp_distribution_children:
-                    cs.add_condition(NotEqualsCondition(hp_dist, placeholder, 0))
+                # TODO Quantile loses need to be added here
+                forbidden_hp_loss = ForbiddenInClause(hp_loss, ['DistributionLoss'])
+                # DistributionLoss only allow distribution hp_net_out
+                for hp_net_out in hp_net_output_type:
+                    forbidden_hp_dist = ForbiddenInClause(hp_net_out, ['regression'])
+                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
+                    forbidden_losses_all.append(forbidden_hp_dist)
+
+            cs.add_forbidden_clauses(forbidden_losses_all)
 
         # rnn head only allow rnn backbone
         if 'network_backbone' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():

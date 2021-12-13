@@ -231,7 +231,6 @@ class BasePipeline(Pipeline):
                     new_name = param.replace('%s:' % node_name, '', 1)
                     sub_config_dict[new_name] = value
 
-
             sub_configuration = Configuration(sub_configuration_space,
                                               values=sub_config_dict)
 

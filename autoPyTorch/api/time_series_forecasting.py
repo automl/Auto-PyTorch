@@ -140,7 +140,6 @@ class TimeSeriesForecastingTask(BaseTask):
             portfolio_selection: Optional[str] = None,
             shift_input_data: bool = True,
             normalize_y: bool = True,
-            train_with_log_prob: bool = True
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -277,7 +276,6 @@ class TimeSeriesForecastingTask(BaseTask):
             n_prediction_steps=n_prediction_steps,
             shift_input_data=shift_input_data,
             normalize_y=normalize_y,
-            train_with_log_prob=train_with_log_prob,
         )
 
         if self.dataset.freq_value is not None or not self.customized_window_size:
