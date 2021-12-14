@@ -9,8 +9,8 @@ import torch
 from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
-    import BaseForecastingNetworkBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder\
+    import BaseForecastingEncoder
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -123,23 +123,21 @@ class _InceptionTime(nn.Module):
         return x
 
 
-class InceptionTimeBackbone(BaseForecastingNetworkBackbone):
+class InceptionTimeEncoder(BaseForecastingEncoder):
     """
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
     @property
     def encoder_properties(self):
-        # TODO consider property for the network
         encoder_properties = {'has_hidden_states': False,
                               'bijective_seq_output': True,
                               'fixed_input_seq_length': False}
         return encoder_properties
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        backbone = _InceptionTime(in_features=input_shape[-1],
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        encoder = _InceptionTime(in_features=input_shape[-1],
                                   config=self.config)
-        self.backbone = backbone
-        return backbone
+        return encoder
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:

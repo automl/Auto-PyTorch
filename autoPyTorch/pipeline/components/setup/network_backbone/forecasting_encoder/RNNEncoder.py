@@ -12,8 +12,8 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
-    import BaseForecastingNetworkBackbone, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
+    import BaseForecastingEncoder, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -62,8 +62,7 @@ class _RNN(EncoderNetwork):
                 return out, hidden_state
 
 
-
-class RNNBackbone(BaseForecastingNetworkBackbone):
+class RNNEncoder(BaseForecastingEncoder):
     """
     Standard searchable LSTM backbone for time series data
     """
@@ -72,11 +71,10 @@ class RNNBackbone(BaseForecastingNetworkBackbone):
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        backbone = _RNN(in_features=input_shape[-1],
-                        config=self.config)
-        self.backbone = backbone
-        return backbone
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        encoder = _RNN(in_features=input_shape[-1],
+                       config=self.config)
+        return encoder
 
     @property
     def encoder_properties(self):
@@ -88,9 +86,9 @@ class RNNBackbone(BaseForecastingNetworkBackbone):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         rnn_kwargs = {'hidden_size': self.config['hidden_size'],
-                       'num_layers': self.config['num_layers'],
-                       'bidirectional': self.config['bidirectional'],
-                       'cell_type': self.config['cell_type']}  # used for initialize
+                      'num_layers': self.config['num_layers'],
+                      'bidirectional': self.config['bidirectional'],
+                      'cell_type': self.config['cell_type']}  # used for initialize
         X.update({'rnn_kwargs': rnn_kwargs})
         return super().transform(X)
 

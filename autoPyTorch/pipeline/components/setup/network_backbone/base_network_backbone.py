@@ -30,46 +30,21 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     def __init__(self,
                  **kwargs: Any):
         super().__init__()
-        self.add_fit_requirements(
-            self._required_fit_arguments
-        )
+        self.add_fit_requirements([
+            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                           dataset_property=False),
+            FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
+            FitRequirement('network_embedding', (nn.Module,), user_defined=False, dataset_property=False)
+        ])
         self.backbone: nn.Module = None
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
 
-    @property
-    def _required_fit_arguments(self) -> List[FitRequirement]:
-        if self.get_properties()['handles_tabular']:
-            return [
-                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                               dataset_property=False),
-                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-                FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
-                FitRequirement('network_embedding', (nn.Module,), user_defined=False, dataset_property=False)
-            ]
-        elif self.get_properties()['handles_time_series']:
-            return [
-                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                               dataset_property=False),
-                FitRequirement('time_series_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
-                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            ]
-        elif self.get_properties()['handles_image']:
-            return [
-                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                               dataset_property=False),
-                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            ]
-        else:
-            raise ValueError('Unsupported task type!')
-
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
         Builds the backbone component and assigns it to self.backbone
-
         Args:
             X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
             y (Any): not used. To comply with sklearn API
@@ -78,18 +53,15 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         """
         self.check_requirements(X, y)
         X_train = X['X_train']
-        if X["dataset_properties"]["task_type"] == TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]:
-            input_shape = X["dataset_properties"]['input_shape']
-        else:
 
-            if X["dataset_properties"]["is_small_preprocess"]:
-                input_shape = X_train.shape[1:]
-            else:
-                # get input shape by transforming first two elements of the training set
-                transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
-                input_shape = transforms(X_train[:1, ...]).shape[1:]
-        if 'network_embedding' in X.keys():
-            input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
+        if X["dataset_properties"]["is_small_preprocess"]:
+            input_shape = X_train.shape[1:]
+        else:
+            # get input shape by transforming first two elements of the training set
+            column_transformer = X['tabular_transformer'].preprocessor
+            input_shape = column_transformer.transform(X_train[:1]).shape[1:]
+
+        input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
         self.input_shape = input_shape
 
         self.backbone = self.build_backbone(

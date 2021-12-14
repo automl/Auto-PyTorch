@@ -13,7 +13,7 @@ from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
     import EncoderNetwork
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
@@ -24,7 +24,8 @@ from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTr
 class ForecastingNet(nn.Module):
     def __init__(self,
                  network_embedding: nn.Module,
-                 network_backbone: EncoderNetwork,
+                 network_encoder: EncoderNetwork,
+                 network_decoder: nn.Module,
                  network_head: nn.Module,
                  encoder_properties: Dict = {},
                  decoder_properties: Dict = {},
@@ -35,8 +36,9 @@ class ForecastingNet(nn.Module):
                  ):
         super(ForecastingNet, self).__init__()
         self.embedding = network_embedding
-        self.backbone = network_backbone
-        self.network_head = network_head
+        self.encoder = network_encoder
+        self.decoder = network_decoder
+        self.head = network_head
 
         self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
         self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
@@ -56,11 +58,14 @@ class ForecastingNet(nn.Module):
     def forward(self, X: torch.Tensor, hx: Optional[Tuple[torch.Tensor]] = None):
         X = self.embedding(X)
         if self.encoder_has_hidden_states:
-            X, hidden_state = self.backbone(X)
+            X, hidden_state_encoder = self.encoder(X)
         else:
-            X = self.backbone(X)
-
-        X = self.network_head(X)
+            X = self.encoder(X)
+        if self.decoder_has_hidden_states:
+            X, hidden_state_decoder = self.decoder(X, hidden_state_encoder)
+        else:
+            X = self.decoder(X)
+        X = self.head(X)
         return X
 
     def pred_from_net_output(self, net_output):
@@ -107,9 +112,10 @@ class ForecastingNetworkComponent(NetworkComponent):
     @property
     def _required_fit_requirements(self):
         return [
-            FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_encoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_decoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
             FitRequirement("encoder_properties", (Dict,), user_defined=False, dataset_property=False),
             FitRequirement("decoder_properties", (Dict,), user_defined=False, dataset_property=False),
@@ -119,7 +125,6 @@ class ForecastingNetworkComponent(NetworkComponent):
         # Make sure that input dictionary X has the required
         # information to fit this stage
         self.check_requirements(X, y)
-        self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
         if self.net_out_type != X['required_net_out_put_type']:
             raise ValueError(f"network output type must be the same as required_net_out_put_type defiend by "
@@ -127,7 +132,8 @@ class ForecastingNetworkComponent(NetworkComponent):
                              f"required_net_out_put_type is {X['required_net_out_put_type']}")
 
         self.network = ForecastingNet(network_embedding=X['network_embedding'],
-                                      network_backbone=X['network_backbone'],
+                                      network_encoder=X['network_encoder'],
+                                      network_decoder=X['network_decoder'],
                                       network_head=X['network_head'],
                                       encoder_properties=X['encoder_properties'],
                                       decoder_properties=X['decoder_properties'],

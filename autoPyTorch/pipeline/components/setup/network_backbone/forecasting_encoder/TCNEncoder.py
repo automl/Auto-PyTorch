@@ -13,8 +13,8 @@ from torch import nn
 from torch.nn.utils import weight_norm
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
-    import BaseForecastingNetworkBackbone, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
+    import BaseForecastingEncoder, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -102,7 +102,7 @@ class _TemporalConvNet(EncoderNetwork):
             return x[:, -1, :]
 
 
-class TCNBackbone(BaseForecastingNetworkBackbone):
+class TCNEncoder(BaseForecastingEncoder):
     """
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
@@ -115,17 +115,16 @@ class TCNBackbone(BaseForecastingNetworkBackbone):
                               }
         return encoder_properties
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_0"]]
         for i in range(1, self.config["num_blocks"]):
             num_channels.append(self.config[f"num_filters_{i}"])
-        backbone = _TemporalConvNet(input_shape[-1],
-                                    num_channels,
-                                    kernel_size=self.config["kernel_size"],
-                                    dropout=self.config["dropout"] if self.config["use_dropout"] else 0.0
-                                    )
-        self.backbone = backbone
-        return backbone
+        encoder = _TemporalConvNet(input_shape[-1],
+                                   num_channels,
+                                   kernel_size=self.config["kernel_size"],
+                                   dropout=self.config["dropout"] if self.config["use_dropout"] else 0.0
+                                   )
+        return encoder
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None

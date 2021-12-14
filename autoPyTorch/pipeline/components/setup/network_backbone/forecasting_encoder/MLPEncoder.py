@@ -7,8 +7,8 @@ from ConfigSpace import ConfigurationSpace
 
 
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone \
-    import BaseForecastingNetworkBackbone, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
+    import BaseForecastingEncoder, EncoderNetwork
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
@@ -50,7 +50,7 @@ class _TimeSeriesMLP(EncoderNetwork):
         return self.module_layers(x)
 
 
-class TimeSeriesMLPBackbone(BaseForecastingNetworkBackbone, MLPBackbone):
+class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
 
@@ -73,7 +73,7 @@ class TimeSeriesMLPBackbone(BaseForecastingNetworkBackbone, MLPBackbone):
         self.window_size = X["window_size"]
         return super().fit(X, y)
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1] * self.window_size
         return _TimeSeriesMLP(self.window_size, self._build_backbone(in_features))
 

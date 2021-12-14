@@ -11,13 +11,11 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import \
-    ForecastingHead
-from autoPyTorch.pipeline.components.setup.network_head.fully_connected import FullyConnectedHead
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import \
+    BaseForecastingDecoder
 
 
-class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
+class ForecastingMLPHeader(BaseForecastingDecoder):
     @property
     def decoder_properties(self):
         decoder_properties = {'has_hidden_states': False,
@@ -25,10 +23,9 @@ class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
                               }
         return decoder_properties
 
-    def _build_head(self, input_shape: Tuple[int, ...], **arch_kwargs) -> Tuple[List[nn.Module], int]:
+    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int) -> Tuple[nn.Module, int]:
         layers = []
         in_features = input_shape[-1]
-        n_prediction_steps = arch_kwargs['n_prediction_heads']
         if self.config["num_layers"] > 0:
             for i in range(1, self.config["num_layers"]):
                 layers.append(nn.Linear(in_features=in_features,
@@ -36,19 +33,19 @@ class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
                 layers.append(_activations[self.config["activation"]]())
                 in_features = self.config[f"units_layer_{i}"]
         layers.append(nn.Linear(in_features=in_features,
-                                out_features=self.config['units_final_layer'] * n_prediction_steps))
+                                out_features=self.config['units_final_layer'] * n_prediction_heads))
         if 'activation' in self.config:
             layers.append(_activations[self.config["activation"]]())
-        head_base_output_features = self.config['units_final_layer']
+        num_decoder_output_features = self.config['units_final_layer']
 
-        return layers, head_base_output_features
+        return nn.Sequential(*layers), num_decoder_output_features
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
         return {
-            'shortname': 'ForecastingMLPHead',
-            'name': 'ForecastingMLPHead',
+            'shortname': 'MLPDecoder',
+            'name': 'MLPDecoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,
@@ -98,8 +95,6 @@ class ForecastingMLPHeader(ForecastingHead, FullyConnectedHead):
             activation (HyperparameterSearchSpace): activation function
             units_final_layer (HyperparameterSearchSpace): number of units of final layer. The size of this layer is
             smaller as it needs to be expanded to adapt to the number of predictions
-            dist_cls (HyperparameterSearchSpace): only activate when required_output_tpe is distribution, the sorts of
-            distribution that the network could output
             auto_regressive (HyperparameterSearchSpace): if the model acts as a DeepAR model
         Returns:
             cs (ConfigurationSpace): ConfigurationSpace

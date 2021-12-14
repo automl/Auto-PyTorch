@@ -28,9 +28,10 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone import \
-    ForecastingNetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head import ForecastingNetworkHeadChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder import \
+    ForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder import ForecastingDecoderChoice
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
@@ -205,7 +206,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             hp_auto_regressive = []
             for hp_name in cs.get_hyperparameter_names():
-                if hp_name.startswith('network_head:'):
+                if hp_name.startswith('network_decoder:'):
                     if hp_name.endswith(':auto_regressive'):
                         hp_auto_regressive.append(cs.get_hyperparameter(hp_name))
 
@@ -288,10 +289,11 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
-            ("network_backbone", ForecastingNetworkBackboneChoice(default_dataset_properties,
-                                                                  random_state=self.random_state)),
-            ("network_head", ForecastingNetworkHeadChoice(default_dataset_properties,
-                                                          random_state=self.random_state)),
+            ("network_encoder", ForecastingEncoderChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_decoder", ForecastingDecoderChoice(default_dataset_properties,
+                                                         random_state=self.random_state)),
+            ("network_head", ForecastingHead(random_state=self.random_state)),
             ("network", ForecastingNetworkComponent(random_state=self.random_state)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties,
                                                       random_state=self.random_state)),

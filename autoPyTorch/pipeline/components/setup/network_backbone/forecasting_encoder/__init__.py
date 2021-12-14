@@ -15,23 +15,22 @@ from autoPyTorch.pipeline.components.base_component import (
     find_components,
 )
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_network_backbone.base_forecasting_backbone\
-    import (
-    BaseForecastingNetworkBackbone,
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder import (
+    BaseForecastingEncoder,
 )
 
 directory = os.path.split(__file__)[0]
 _backbones = find_components(__package__,
                              directory,
-                             BaseForecastingNetworkBackbone)
-_addons = ThirdPartyComponents(BaseForecastingNetworkBackbone)
+                             BaseForecastingEncoder)
+_addons = ThirdPartyComponents(BaseForecastingEncoder)
 
 
-def add_backbone(backbone: BaseForecastingNetworkBackbone) -> None:
-    _addons.add_component(backbone)
+def add_encoder(encoder: BaseForecastingEncoder) -> None:
+    _addons.add_component(encoder)
 
 
-class ForecastingNetworkBackboneChoice(NetworkBackboneChoice):
+class ForecastingEncoderChoice(NetworkBackboneChoice):
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
 

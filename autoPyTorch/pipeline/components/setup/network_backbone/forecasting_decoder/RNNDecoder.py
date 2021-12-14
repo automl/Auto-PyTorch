@@ -14,8 +14,8 @@ from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import \
-    ForecastingHead
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import \
+    BaseForecastingDecoder
 
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
@@ -43,11 +43,13 @@ class _RNN_Decoder(nn.Module):
 
     def forward(self, x: torch.Tensor,
                 hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
+        if x.ndim == 2:
+            x = x.unsqueeze(1)
         outputs, hidden_state, = self.lstm(x, hx)
-        return outputs, hidden_state
+        return outputs[:, -1, :], hidden_state
 
 
-class ForecastingRNNHeader(ForecastingHead):
+class ForecastingRNNHeader(BaseForecastingDecoder):
     """
     Standard searchable RNN decoder for time series data, only works when the encoder is
     """
@@ -64,18 +66,18 @@ class ForecastingRNNHeader(ForecastingHead):
         fit_requirement.append(FitRequirement('rnn_kwargs', (Dict,), user_defined=False, dataset_property=False))
         return fit_requirement
 
-    def _build_head(self, input_shape: Tuple[int, ...], **arch_kwargs) -> nn.Module:
+    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int) -> Tuple[List[nn.Module], int]:
         # RNN decoder only allows RNN encoder, these parameters need to exists.
         hidden_size = self.rnn_kwargs['hidden_size']
         num_layers = 2 * self.rnn_kwargs['num_layers'] if self.rnn_kwargs['bidirectional'] else self.rnn_kwargs['num_layers']
         cell_type = self.rnn_kwargs['cell_type']
-        head = _RNN_Decoder(in_features=input_shape[-1],
-                            config=self.config,
+        decoder = _RNN_Decoder(in_features=input_shape[-1],
                             hidden_size=hidden_size,
                             num_layers=num_layers,
-                            cell_type=cell_type)
-        self.head = head
-        return head
+                            cell_type=cell_type,
+                            config=self.config,
+                            )
+        return decoder, hidden_size
 
     @property
     def decoder_properties(self):
@@ -88,19 +90,11 @@ class ForecastingRNNHeader(ForecastingHead):
         self.rnn_kwargs = X['rnn_kwargs']
         return super().fit(X, y)
 
-    @property
-    def only_return_final_stage(self):
-        return self.backbone.only_return_final_stage
-
-    @only_return_final_stage.setter
-    def only_return_final_stage(self, only_return_final_stage):
-        self.backbone.only_return_final_stage = only_return_final_stage
-
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
-            'shortname': 'ForecastingRNNHead',
-            'name': 'ForecastingRNNHead',
+            'shortname': 'RNNDecoder',
+            'name': 'RNNDecoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,
