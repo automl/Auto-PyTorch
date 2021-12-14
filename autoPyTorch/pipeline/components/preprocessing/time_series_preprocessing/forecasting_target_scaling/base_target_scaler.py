@@ -56,14 +56,17 @@ class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
         X.update({'target_scaler': self})
         return X
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self,
+                 past_target: Union[np.ndarray, torch.tensor],
+                 future_targets: Optional[Union[np.ndarray, torch.Tensor]]=None,
+                 ) -> Union[np.ndarray, torch.tensor]:
 
         if self.scaler is None:
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
 
-        if len(X.shape) == 2:
+        if len(past_target.shape) == 2:
             # expand batch dimension when called on a single record
-            X = X[np.newaxis, ...]
-        X[:, :, self.target_columns], loc, scale = self.scaler.transform(X[:, :, self.target_columns])
-        return X, loc, scale
+            past_target = past_target[np.newaxis, ...]
+        past_target, future_targets, loc, scale = self.scaler.transform(past_target, future_targets)
+        return past_target, future_targets, loc, scale

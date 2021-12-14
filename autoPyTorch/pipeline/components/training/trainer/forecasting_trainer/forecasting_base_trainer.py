@@ -133,7 +133,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                     outputs = outputs * scale.to(self.device) + loc.to(self.device)
         return outputs
 
-    def train_step(self, data: Dict[str, torch.Tensor], targets: Dict[str, Union[torch.Tensor, np.ndarray]]) \
+    def train_step(self, data: Dict[str, torch.Tensor], future_targets: torch.Tensor) \
             -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -146,22 +146,26 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        X = data['past_target']
+        past_target = data['past_target']
 
         # prepare
-        X = X.float()
+        past_target = past_target.float()
+        if self.model.future_target_required:
+            past_target, scaled_future_targets, loc, scale = self.target_scaler(past_target, future_targets)
+        else:
+            past_target, _, loc, scale = self.target_scaler(past_target)
+            scaled_future_targets = future_targets
 
-        X, loc, scale = self.target_scaler(X)
+        past_target = past_target.to(self.device)
 
-        X = X.to(self.device)
+        future_targets = self.cast_targets(future_targets)
 
-        targets = self.cast_targets(targets)
-
-        X, criterion_kwargs = self.data_preparation(X, targets)
+        past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
         # training
         self.optimizer.zero_grad()
-        outputs = self.model(X)
+
+        outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
 
         outputs = self.rescale_output(outputs, loc=loc, scale=scale)
 
@@ -198,29 +202,29 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         mase_coefficients = list()
 
         with torch.no_grad():
-            for step, (data, targets) in enumerate(test_loader):
-                X = data['past_target']
+            for step, (data, future_targets) in enumerate(test_loader):
+                past_target = data['past_target']
 
                 mase_coefficients.append(data['mase_coefficient'])
 
-                batch_size = X.shape[0]
+                batch_size = past_target.shape[0]
 
                 # prepare
-                X = X.float()
+                past_target = past_target.float()
 
-                X, loc, scale = self.target_scaler(X)
+                past_target, _, loc, scale = self.target_scaler(past_target)
 
-                X = X.to(self.device)
+                past_target = past_target.to(self.device)
 
-                targets = self.cast_targets(targets)
+                future_targets = self.cast_targets(future_targets)
 
-                X, criterion_kwargs = self.data_preparation(X, targets)
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
-                outputs = self.model(X)
+                outputs = self.model(past_target)
 
                 outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale)
 
-                loss = self.criterion(outputs_rescaled, targets)
+                loss = self.criterion(outputs_rescaled, future_targets)
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size
@@ -235,7 +239,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                     if scale is None:
                         scale = 1.
                     outputs_data.append(outputs * scale + loc)
-                targets_data.append(targets.detach().cpu())
+                targets_data.append(future_targets.detach().cpu())
 
                 if writer:
                     writer.add_scalar(

@@ -22,51 +22,68 @@ from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTr
 
 
 class ForecastingNet(nn.Module):
+    future_target_required = False
+
     def __init__(self,
-                 network_embedding: nn.Module,
+                 network_embedding: nn.Module,  # TODO consider  embedding for past, future and static features
                  network_encoder: EncoderNetwork,
                  network_decoder: nn.Module,
                  network_head: nn.Module,
-                 encoder_properties: Dict = {},
-                 decoder_properties: Dict = {},
+                 n_prediction_steps: int,
                  output_type: str = 'regression',
                  forecast_strategy: Optional[str] = 'mean',
                  num_samples: Optional[int] = 100,
                  aggregation: Optional[str] = 'mean'
                  ):
+        """
+        This is a basic forecasting network. It is only composed of a embedding net, an encoder and a head (including
+        MLP decoder and the final head).
+
+        This structure is active when the decoder is a MLP with auto_regressive set as false
+
+        Args:
+            network_embedding (nn.Module): network embedding
+            network_encoder (EncoderNetwork): Encoder network, could be selected to return a sequence or a
+            network_decoder (nn.Module): network decoder
+            network_head (nn.Module): network head, maps the output of decoder to the final output
+            n_prediction_steps (int): how many steps the network want to predict
+            encoder_properties (Dict): encoder properties
+            decoder_properties: (Dict): decoder properties
+            output_type (str): the form that the network outputs. It could be regression, distribution and
+            (TODO) quantile
+            forecast_strategy (str): only valid if output_type is distribution or quantile, how the network transforms
+            its output to predicted values, could be mean or sample
+            num_samples (int): only valid if output_type is not regression and forecast_strategy is sample. this
+            indicates the number of the points to sample when doing prediction
+            aggregation (str): how the samples are aggregated. We could take their mean or median values.
+        """
         super(ForecastingNet, self).__init__()
         self.embedding = network_embedding
-        self.encoder = network_encoder
+        self.encoder = network_encoder  # type:EncoderNetwork
         self.decoder = network_decoder
         self.head = network_head
 
-        self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
-        self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
-
-        if self.decoder_has_hidden_states:
-            if not self.encoder_has_hidden_states:
-                raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
-                                 'for decoder!')
-
-        self.recurrent_decoder = decoder_properties['recurrent']
-
+        self.n_prediction_steps = n_prediction_steps
         self.output_type = output_type
         self.forecast_strategy = forecast_strategy
         self.num_samples = num_samples
         self.aggregation = aggregation
 
-    def forward(self, X: torch.Tensor, hx: Optional[Tuple[torch.Tensor]] = None):
-        X = self.embedding(X)
-        if self.encoder_has_hidden_states:
-            X, hidden_state_encoder = self.encoder(X)
+    def forward(self,
+                targets_past: torch.Tensor,
+                targets_future: Optional[torch.Tensor] = None,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None,
+                hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        if features_past is not None:
+            x_past = torch.cat([targets_past, features_past], dim=1)
         else:
-            X = self.encoder(X)
-        if self.decoder_has_hidden_states:
-            X, hidden_state_decoder = self.decoder(X, hidden_state_encoder)
-        else:
-            X = self.decoder(X)
-        X = self.head(X)
-        return X
+            x_past = targets_past
+        x_past = self.embedding(x_past)
+        x_past = self.decoder(x_past)
+        output = self.head(x_past)
+        return output
 
     def pred_from_net_output(self, net_output):
         if self.output_type == 'regression':
@@ -75,7 +92,7 @@ class ForecastingNet(nn.Module):
             if self.forecast_strategy == 'mean':
                 return net_output.mean
             elif self.forecast_strategy == 'sample':
-                samples = net_output.sample((self.num_samples, ))
+                samples = net_output.sample((self.num_samples,))
                 if self.aggregation == 'mean':
                     return torch.mean(samples, dim=0)
                 elif self.aggregation == 'median':
@@ -87,8 +104,76 @@ class ForecastingNet(nn.Module):
         else:
             raise ValueError(f'Unknown output_type: {self.output_type}')
 
-    def predict(self, X: torch.Tensor):
-        net_output = self(X)
+    def predict(self,
+                targets_past: torch.Tensor,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None
+                ):
+        net_output = self(targets_past, features_past)
+        return self.pred_from_net_output(net_output)
+
+
+class ForecastingSeq2SeqNet(ForecastingNet):
+    future_target_required = True
+    """
+    Forecasting network with Seq2Seq structure.
+
+    This structure is activate when the decoder is recurrent (RNN). We train the network with teacher forcing, thus
+    targets_future is required for the network. To train the network, past targets and past features are fed to the
+    encoder to obtain the hidden states whereas future targets and future features
+    """
+
+    def forward(self,
+                targets_past: torch.Tensor,
+                targets_future: Optional[torch.Tensor] = None,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None,
+                hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        x_past = targets_past if features_past is None else torch.cat([targets_past, features_past], dim=-1)
+
+        x_past = self.embedding(x_past)
+
+        if self.training:
+            # we do one step ahead forecasting
+            targets_future = torch.cat([targets_past[:, [-1], :], targets_future[:, :-1, :]], dim=1)
+
+            x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
+                                                                                dim=-1)
+
+            _, hidden_states = self.encoder(x_past)
+            x_future, _ = self.decoder(x_future, hidden_states)
+            net_output = self.head(x_future)
+
+            return net_output
+        else:
+            all_predictions = []
+            predicted_target = targets_past[:, [-1]]
+
+            dist_keys = None
+
+            _, hidden_states = self.encoder(x_past)
+            for idx_pred in range(self.n_prediction_steps):
+                x_future = predicted_target if features_future is None else torch.cat(
+                    [predicted_target, features_future[:, [idx_pred], :]],
+                    dim=-1)
+
+                x_future, hidden_states = self.decoder(x_future, hidden_states)
+                net_output = self.head(x_future[:, -1:, ])
+                predicted_target = self.pred_from_net_output(net_output)
+
+                all_predictions.append(net_output)
+
+            return all_predictions
+
+    def predict(self,
+                targets_past: torch.Tensor,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None
+                ):
+        net_output = self(targets_past, features_past, features_future)
         return self.pred_from_net_output(net_output)
 
 
@@ -131,17 +216,29 @@ class ForecastingNetworkComponent(NetworkComponent):
                              f"loss function. However, net_out_type is {self.net_out_type} and "
                              f"required_net_out_put_type is {X['required_net_out_put_type']}")
 
-        self.network = ForecastingNet(network_embedding=X['network_embedding'],
-                                      network_encoder=X['network_encoder'],
-                                      network_decoder=X['network_decoder'],
-                                      network_head=X['network_head'],
-                                      encoder_properties=X['encoder_properties'],
-                                      decoder_properties=X['decoder_properties'],
-                                      output_type=self.net_out_type,
-                                      forecast_strategy=self.forecast_strategy,
-                                      num_samples=self.num_samples,
-                                      aggregation=self.aggregation,
-                                      )
+        if X['decoder_properties']['has_hidden_states']:
+            if not X['encoder_properties']['has_hidden_states']:
+                raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
+                                 'for decoder!')
+
+        network_init_kwargs = dict(network_embedding=X['network_embedding'],
+                                   network_encoder=X['network_encoder'],
+                                   network_decoder=X['network_decoder'],
+                                   network_head=X['network_head'],
+                                   n_prediction_steps=X['dataset_properties']['n_prediction_steps'],
+                                   output_type=self.net_out_type,
+                                   forecast_strategy=self.forecast_strategy,
+                                   num_samples=self.num_samples,
+                                   aggregation=self.aggregation, )
+
+        if X['decoder_properties']['has_hidden_states']:
+            # decoder is RNN
+            self.network = ForecastingSeq2SeqNet(**network_init_kwargs)
+        elif X['auto_regressive']:
+            # decoder is MLP and auto_regressive, we have deep AR model
+            raise NotImplementedError
+        else:
+            self.network = ForecastingNet(**network_init_kwargs)
 
         # Properly set the network training device
         if self.device is None:

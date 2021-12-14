@@ -21,7 +21,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
 
 
-class _RNN_Decoder(nn.Module):
+class RNN_Module(nn.Module):
     def __init__(self,
                  in_features: int,
                  hidden_size: int,
@@ -46,7 +46,7 @@ class _RNN_Decoder(nn.Module):
         if x.ndim == 2:
             x = x.unsqueeze(1)
         outputs, hidden_state, = self.lstm(x, hx)
-        return outputs[:, -1, :], hidden_state
+        return outputs, hidden_state
 
 
 class ForecastingRNNHeader(BaseForecastingDecoder):
@@ -66,17 +66,21 @@ class ForecastingRNNHeader(BaseForecastingDecoder):
         fit_requirement.append(FitRequirement('rnn_kwargs', (Dict,), user_defined=False, dataset_property=False))
         return fit_requirement
 
-    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int) -> Tuple[List[nn.Module], int]:
+    def _build_decoder(self,
+                       input_shape: Tuple[int, ...],
+                       n_prediction_heads: int,
+                       dataset_properties: Dict) -> Tuple[List[nn.Module], int]:
         # RNN decoder only allows RNN encoder, these parameters need to exists.
         hidden_size = self.rnn_kwargs['hidden_size']
-        num_layers = 2 * self.rnn_kwargs['num_layers'] if self.rnn_kwargs['bidirectional'] else self.rnn_kwargs['num_layers']
+        num_layers = 2 * self.rnn_kwargs['num_layers'] if self.rnn_kwargs['bidirectional'] else self.rnn_kwargs[
+            'num_layers']
         cell_type = self.rnn_kwargs['cell_type']
-        decoder = _RNN_Decoder(in_features=input_shape[-1],
-                            hidden_size=hidden_size,
-                            num_layers=num_layers,
-                            cell_type=cell_type,
-                            config=self.config,
-                            )
+        decoder = RNN_Module(in_features=dataset_properties['output_shape'][-1],
+                             hidden_size=hidden_size,
+                             num_layers=num_layers,
+                             cell_type=cell_type,
+                             config=self.config,
+                             )
         return decoder, hidden_size
 
     @property

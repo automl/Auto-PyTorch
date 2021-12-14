@@ -88,7 +88,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         self.decoder, self.n_decoder_output_features = self.build_decoder(
             input_shape=get_output_shape(X['network_encoder'], input_shape=input_shape,
                                          has_hidden_states=has_hidden_states),
-            n_prediction_heads=self.n_prediction_heads
+            n_prediction_heads=self.n_prediction_heads,
+            dataset_properties=X['dataset_properties']
         )
 
         X['n_decoder_output_features'] = self.n_decoder_output_features
@@ -111,22 +112,25 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         return X
 
     def build_decoder(self,
-                   input_shape: Tuple[int, ...],
-                   n_prediction_heads: int) -> Tuple[nn.Module, int]:
+                      input_shape: Tuple[int, ...],
+                      n_prediction_heads: int,
+                      dataset_properties: Dict) -> Tuple[nn.Module, int]:
         """
         Builds the head module and returns it
 
         Args:
             input_shape (Tuple[int, ...]): shape of the input to the head (usually the shape of the backbone output)
             n_prediction_heads (int): how many prediction heads the network has, used for final forecasting heads
+            dataset_properties (Dict): dataset properties
         Returns:
             nn.Module: head module
         """
-        decoder, n_decoder_features = self._build_decoder(input_shape, n_prediction_heads)
+        decoder, n_decoder_features = self._build_decoder(input_shape, n_prediction_heads, dataset_properties)
         return decoder, n_decoder_features
 
     @abstractmethod
-    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads) -> Tuple[List[nn.Module], int]:
+    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int,
+                       dataset_properties:Dict) -> Tuple[nn.Module, int]:
         """
         Builds the head module and returns it
 

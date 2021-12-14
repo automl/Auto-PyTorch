@@ -92,7 +92,10 @@ class ProjectionLayer(nn.Module):
              with shape (batch_size, n_prediction_steps, output_shape)
         """
         params_unbounded = [proj(x) for proj in self.proj]
-        return self.dist_cls(*self.domain_map(*params_unbounded))
+
+        # TODO consider how to handle network parameter issues (or register a hook)
+        parameters_bounded = self.domain_map(*params_unbounded)
+        return self.dist_cls(*parameters_bounded)
 
     @property
     @abstractmethod

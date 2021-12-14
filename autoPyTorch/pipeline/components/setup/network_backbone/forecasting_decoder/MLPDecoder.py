@@ -23,7 +23,10 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                               }
         return decoder_properties
 
-    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int) -> Tuple[nn.Module, int]:
+    def _build_decoder(self,
+                       input_shape: Tuple[int, ...],
+                       n_prediction_heads: int,
+                       dataset_properties: Dict) -> Tuple[nn.Module, int]:
         layers = []
         in_features = input_shape[-1]
         if self.config["num_layers"] > 0:
