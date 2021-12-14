@@ -24,7 +24,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     NoResamplingStrategyTypes
 )
-from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
+from autoPyTorch.ensemble.ensemble_builder_manager import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.optimizer.utils import read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
