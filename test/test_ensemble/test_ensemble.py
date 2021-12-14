@@ -18,7 +18,7 @@ import pytest
 from smac.runhistory.runhistory import RunHistory, RunKey, RunValue
 
 from autoPyTorch.constants import BINARY, MULTICLASS, TABULAR_CLASSIFICATION
-from autoPyTorch.ensemble.ensemble_builder import (
+from autoPyTorch.ensemble.ensemble_builder_manager import (
     EnsembleBuilder,
     EnsembleBuilderManager,
     Y_ENSEMBLE,

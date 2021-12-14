@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from autoPyTorch.ensemble.ensemble_builder import (
+from autoPyTorch.ensemble.ensemble_builder_manager import (
     AbstractEnsemble,
     EnsembleBuilder,
 )
