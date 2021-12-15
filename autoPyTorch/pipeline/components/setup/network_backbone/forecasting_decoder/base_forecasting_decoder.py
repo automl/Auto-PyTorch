@@ -67,11 +67,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
         X.update({"auto_regressive": auto_regressive})
 
-        # for information about encoder_properties, please check
-        # autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_backbone
-        # TODO create a separate module so that users could know what is contained in encoder_properties
-
-        # TODO consider Auto-regressive model on vanilla network head
 
         if auto_regressive:
             self.n_prediction_heads = 1

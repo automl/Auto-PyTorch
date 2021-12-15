@@ -116,21 +116,22 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
     def rescale_output(self,
                        outputs: Union[torch.distributions.Distribution, torch.Tensor],
                        loc: Optional[torch.Tensor],
-                       scale: Optional[torch.Tensor]):
+                       scale: Optional[torch.Tensor],
+                       device: torch.device = torch.device('cpu')):
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
         if loc is not None or scale is not None:
             if isinstance(outputs, torch.distributions.Distribution):
-                transform = AffineTransform(loc=0.0 if loc is None else loc.to(self.device),
-                                            scale=1.0 if scale is None else scale.to(self.device),
+                transform = AffineTransform(loc=0.0 if loc is None else loc.to(device),
+                                            scale=1.0 if scale is None else scale.to(device),
                                             )
                 outputs = TransformedDistribution(outputs, [transform])
             else:
                 if loc is None:
-                    outputs = outputs * scale.to(self.device)
+                    outputs = outputs * scale.to(device)
                 elif scale is None:
-                    outputs = outputs + loc.to(self.device)
+                    outputs = outputs + loc.to(device)
                 else:
-                    outputs = outputs * scale.to(self.device) + loc.to(self.device)
+                    outputs = outputs * scale.to(device) + loc.to(device)
         return outputs
 
     def train_step(self, data: Dict[str, torch.Tensor], future_targets: torch.Tensor) \
@@ -168,7 +169,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         else:
             outputs = self.model(past_target)
 
-        outputs = self.rescale_output(outputs, loc=loc, scale=scale)
+        outputs = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
 
         loss_func = self.criterion_preparation(**criterion_kwargs)
         loss = loss_func(self.criterion, outputs)
@@ -223,9 +224,17 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 outputs = self.model(past_target)
 
-                outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale)
+                if isinstance(outputs, list):
+                    outputs_rescaled = [self.rescale_output(output,
+                                                            loc=loc,
+                                                            scale=scale,
+                                                            device=self.device) for output in outputs]
 
-                loss = self.criterion(outputs_rescaled, future_targets)
+                    loss = [self.criterion(output_rescaled, future_targets) for output_rescaled in outputs_rescaled]
+                    loss = torch.mean(torch.Tensor(loss))
+                else:
+                    outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
+                    loss = self.criterion(outputs_rescaled, future_targets)
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size

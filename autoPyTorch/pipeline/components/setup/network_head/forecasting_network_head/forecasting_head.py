@@ -147,7 +147,10 @@ class ForecastingHead(NetworkHeadComponent):
                                                      auto_regressive=auto_regressive)
             return proj_layer
         elif net_out_put_type == 'regression':
-            proj_layer = nn.Sequential(nn.Unflatten(-1, (n_prediction_heads, input_shape)),
+            if auto_regressive:
+                proj_layer = nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
+            else:
+                proj_layer = nn.Sequential(nn.Unflatten(-1, (n_prediction_heads, input_shape)),
                                        nn.Linear(input_shape, np.product(output_shape[1:])),
                                        # nn.Unflatten(-1, tuple(output_shape)),
                                        )

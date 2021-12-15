@@ -140,5 +140,5 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
         add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
 
         # TODO let dataset_properties decide if auto_regressive models is applicable
-        add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
+        # add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
         return cs

@@ -102,9 +102,15 @@ class ForecastingNet(nn.Module):
             return net_output
         elif self.output_type == 'distribution':
             if self.forecast_strategy == 'mean':
-                return net_output.mean
+                if isinstance(net_output, list):
+                    return torch.cat([dist.mean for dist in net_output], dim=-2)
+                else:
+                    return net_output.mean
             elif self.forecast_strategy == 'sample':
-                samples = net_output.sample((self.num_samples,))
+                if isinstance(net_output, list):
+                    samples = torch.cat([dist.sample((self.num_samples,)) for dist in net_output], dim=-2)
+                else:
+                    samples = net_output.sample((self.num_samples,))
                 if self.aggregation == 'mean':
                     return torch.mean(samples, dim=0)
                 elif self.aggregation == 'median':
@@ -158,12 +164,11 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             x_future, _ = self.decoder(x_future, hidden_states)
             net_output = self.head(x_future)
 
+
             return net_output
         else:
             all_predictions = []
             predicted_target = targets_past[:, [-1]]
-
-            dist_keys = None
 
             _, hidden_states = self.encoder(x_past)
             for idx_pred in range(self.n_prediction_steps):
@@ -173,9 +178,12 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                 x_future, hidden_states = self.decoder(x_future, hidden_states)
                 net_output = self.head(x_future[:, -1:, ])
-                predicted_target = self.pred_from_net_output(net_output)
+                predicted_target = self.pred_from_net_output(net_output).to(targets_past.device)
 
                 all_predictions.append(net_output)
+
+            if self.output_type != 'distribution':
+                all_predictions = torch.cat(all_predictions, dim=1)
 
             return all_predictions
 
