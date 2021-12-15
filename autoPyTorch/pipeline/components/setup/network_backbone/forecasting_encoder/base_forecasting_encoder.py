@@ -48,7 +48,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
     def __init__(self,
                  **kwargs: Any):
-        super().__init__()
+        autoPyTorchComponent.__init__(self)
         self.add_fit_requirements(
             self._required_fit_arguments
         )

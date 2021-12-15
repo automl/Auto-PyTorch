@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from ConfigSpace import ConfigurationSpace
-
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
@@ -12,17 +12,17 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
 class _TimeSeriesMLP(EncoderNetwork):
     def __init__(self,
                  window_size: int,
-                 module_layers: nn.Module,
+                 mlp_layers: nn.Module,
                  ):
         super().__init__()
         self.window_size = window_size
-        self.module_layers = module_layers
+        self.mlp_layers = mlp_layers
 
     def forward(self, x: torch.Tensor, output_seq: bool = False):
         """
@@ -47,7 +47,7 @@ class _TimeSeriesMLP(EncoderNetwork):
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
         x = x.flatten(-2)
-        return self.module_layers(x)
+        return self.mlp_layers(x)
 
 
 class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
@@ -76,6 +76,26 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1] * self.window_size
         return _TimeSeriesMLP(self.window_size, self._build_backbone(in_features))
+
+    def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
+                   layer_id: int) -> None:
+        """
+        Dynamically add a layer given the in->out specification
+
+        Args:
+            layers (List[nn.Module]): The list where all modules are added
+            in_features (int): input dimensionality of the new layer
+            out_features (int): output dimensionality of the new layer
+
+        """
+        layers.append(nn.Linear(in_features, out_features))
+        if self.config['normalization'] == 'BN':
+            layers.append(nn.BatchNorm1d(out_features))
+        elif self.config['normalization'] == 'LN':
+            layers.append(nn.LayerNorm(out_features))
+        layers.append(_activations[self.config["activation"]]())
+        if self.config['use_dropout']:
+            layers.append(nn.Dropout(self.config["dropout_%d" % layer_id]))
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
@@ -109,14 +129,19 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
                                                                              default_value=256,
                                                                              log=True
                                                                              ),
+            normalization: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='normalization',
+                                                                                 value_range=('BN', 'LN'),
+                                                                                 default_value='BN'),
             dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
                                                                            value_range=(0, 0.8),
                                                                            default_value=0.5,
                                                                            ),
     ) -> ConfigurationSpace:
-        return MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
+        cs = MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
                                                            num_groups=num_groups,
                                                            activation=activation,
                                                            use_dropout=use_dropout,
                                                            num_units=num_units,
                                                            dropout=dropout)
+        add_hyperparameter(cs, normalization, CategoricalHyperparameter)
+        return cs

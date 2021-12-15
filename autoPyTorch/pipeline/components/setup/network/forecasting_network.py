@@ -81,6 +81,7 @@ class ForecastingNet(nn.Module):
         else:
             x_past = targets_past
         x_past = self.embedding(x_past)
+        x_past = self.encoder(x_past)
         x_past = self.decoder(x_past)
         output = self.head(x_past)
         return output
@@ -274,7 +275,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                 loc = 0.
                 scale = 1.
             else:
-                X, loc, scale = target_scaler(X)
+                X, _, loc, scale = target_scaler(X)
 
             X = X.to(self.device)
 
