@@ -1,23 +1,44 @@
 name: pre-commit
 
-on: [push, pull_request]
+on:
+  # Allow to manually trigger through github API
+  workflow_dispatch:
+
+  # Triggers with push to these branches
+  push:
+    branches:
+      - master
+      - development
+
+  # Triggers with push to a pr aimed at these branches
+  pull_request:
+    branches:
+      - master
+      - development
 
 jobs:
+
   run-all-files:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Setup Python 3.7
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
+
     - name: Init Submodules
       run: |
         git submodule update --init --recursive
+
     - name: Install pre-commit
       run: |
         pip install pre-commit
         pre-commit install
+
     - name: Run pre-commit
       run: |
         pre-commit run --all-files

@@ -1,28 +1,51 @@
 name: Docs
-on: [pull_request, push]
+
+on:
+  # Allow to manually trigger through github API
+  # Wont trigger the push to github pages where the documentation is located
+  workflow_dispatch:
+
+  # Triggers with push to these branches
+  push:
+    branches:
+      - master
+      - development
+
+  # Triggers with push to a pr aimed at these branches
+  pull_request:
+    branches:
+      - master
+      - development
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
+
     - name: Install dependencies
       run: |
         git submodule update --init --recursive
         pip install -e .[docs,examples]
+
     - name: Make docs
       run: |
         cd docs
         make html
+
     - name: Pull latest gh-pages
       if: (contains(github.ref, 'develop') || contains(github.ref, 'master')) && github.event_name == 'push'
       run: |
         cd ..
         git clone https://github.com/automl/Auto-PyTorch.git --branch gh-pages --single-branch gh-pages
+
     - name: Copy new doc into gh-pages
       if: (contains(github.ref, 'develop') || contains(github.ref, 'master')) && github.event_name == 'push'
       run: |
@@ -30,6 +53,7 @@ jobs:
         cd ../gh-pages
         rm -rf $branch_name
         cp -r ../Auto-PyTorch/docs/build/html $branch_name
+
     - name: Push to gh-pages
       if: (contains(github.ref, 'develop') || contains(github.ref, 'master')) && github.event_name == 'push'
       run: |

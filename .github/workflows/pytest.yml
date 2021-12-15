@@ -1,41 +1,114 @@
 name: Tests
 
-on: [push, pull_request]
+on:
+  # Allow to manually trigger through github API
+  workflow_dispatch:
+
+  # Triggers with push to these branches
+  push:
+    branches:
+      - master
+      - development
+
+  # Triggers with push to pr targeting these branches
+  pull_request:
+    branches:
+      - master
+      - development
+
+  schedule:
+  # Every day at 7AM UTC
+  - cron: '0 07 * * *'
+
+env:
+
+  # Arguments used for pytest
+  pytest-args: >-
+    --forked
+    --durations=20
+    --timeout=600
+    --timeout-method=signal
+    -v
+
+  # Arguments used for code-cov which is later used to annotate PR's on github
+  code-cov-args: >-
+    --cov=autoPyTorch
+    --cov-report=xml
+    --cov-config=.coveragerc
 
 jobs:
-  ubuntu:
+  tests:
 
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.kind }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
-      matrix:
-        python-version: [3.7, 3.8, 3.9]
-        include:
-          - python-version: 3.8
-            code-cov: true
       fail-fast: false
-      max-parallel: 2
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+        kind: ['source', 'dist']
+
+        exclude:
+          # Exclude all configurations *-*-dist, include one later
+          - kind: 'dist'
+
+          # Exclude windows as bash commands wont work in windows runner
+          - os: windows-latest
+
+          # Exclude macos as there are permission errors using conda as we do
+          - os: macos-latest
+
+        include:
+          # Add the tag code-cov to ubuntu-3.7-source
+          - os: ubuntu-latest
+            python-version: 3.7
+            kind: 'source'
+            code-cov: true
+
+          # Include one config with dist, ubuntu-3.7-dist
+          - os: ubuntu-latest
+            python-version: 3.7
+            kind: 'dist'
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install test dependencies
+
+    - name: Source install
+      if: matrix.kind == "source"
       run: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install -e .[test]
+
+    - name: Dist install
+      if: matrix.kind == "dist"
+      run: |
+        git submodule update --init --recursive
+
+        python setup.py sdist
+        last_dist=$(ls -t dist/autoPyTorch-*.tar.gz | head -n 1)
+        pip install $last_dist[test]
+
     - name: Store repository status
       id: status-before
       run: |
         echo "::set-output name=BEFORE::$(git status --porcelain -b)"
+
     - name: Run tests
       run: |
         if [ ${{ matrix.code-cov }} ]; then
-          codecov='--cov=autoPyTorch --cov-report=xml --cov-config=.coveragerc';
+          python -m pytest ${{ env.pytest-args }} ${{ env.code-cov-args }} test
+        else
+          python -m pytest ${{ env.pytest-args }} test
         fi
-        python -m pytest --forked --durations=20 --timeout=600 --timeout-method=signal -v $codecov test
+
     - name: Check for files left behind by test
       if: ${{ always() }}
       run: |
@@ -47,6 +120,7 @@ jobs:
             echo "Not all generated files have been deleted!"
             exit 1
         fi
+
     - name: Upload coverage
       if: matrix.code-cov && always()
       uses: codecov/codecov-action@v1
