@@ -154,7 +154,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             past_target, scaled_future_targets, loc, scale = self.target_scaler(past_target, future_targets)
         else:
             past_target, _, loc, scale = self.target_scaler(past_target)
-            scaled_future_targets = future_targets
 
         past_target = past_target.to(self.device)
 
@@ -164,8 +163,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         # training
         self.optimizer.zero_grad()
-
-        outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
+        if self.model.future_target_required:
+            outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
+        else:
+            outputs = self.model(past_target)
 
         outputs = self.rescale_output(outputs, loc=loc, scale=scale)
 

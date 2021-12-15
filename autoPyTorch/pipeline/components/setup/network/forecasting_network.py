@@ -30,6 +30,8 @@ class ForecastingNet(nn.Module):
                  network_decoder: nn.Module,
                  network_head: nn.Module,
                  n_prediction_steps: int,
+                 encoder_properties: Dict,
+                 decoder_properties: Dict,
                  output_type: str = 'regression',
                  forecast_strategy: Optional[str] = 'mean',
                  num_samples: Optional[int] = 100,
@@ -69,6 +71,12 @@ class ForecastingNet(nn.Module):
         self.num_samples = num_samples
         self.aggregation = aggregation
 
+        if decoder_properties['has_hidden_states']:
+            if not encoder_properties['has_hidden_states']:
+                raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
+                                 'for decoder!')
+        self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
+
     def forward(self,
                 targets_past: torch.Tensor,
                 targets_future: Optional[torch.Tensor] = None,
@@ -81,7 +89,10 @@ class ForecastingNet(nn.Module):
         else:
             x_past = targets_past
         x_past = self.embedding(x_past)
-        x_past = self.encoder(x_past)
+        if self.encoder_has_hidden_states:
+            x_past, _ = self.encoder(x_past)
+        else:
+            x_past = self.encoder(x_past)
         x_past = self.decoder(x_past)
         output = self.head(x_past)
         return output
@@ -217,16 +228,13 @@ class ForecastingNetworkComponent(NetworkComponent):
                              f"loss function. However, net_out_type is {self.net_out_type} and "
                              f"required_net_out_put_type is {X['required_net_out_put_type']}")
 
-        if X['decoder_properties']['has_hidden_states']:
-            if not X['encoder_properties']['has_hidden_states']:
-                raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
-                                 'for decoder!')
-
         network_init_kwargs = dict(network_embedding=X['network_embedding'],
                                    network_encoder=X['network_encoder'],
                                    network_decoder=X['network_decoder'],
                                    network_head=X['network_head'],
                                    n_prediction_steps=X['dataset_properties']['n_prediction_steps'],
+                                   encoder_properties=X['encoder_properties'],
+                                   decoder_properties=X['decoder_properties'],
                                    output_type=self.net_out_type,
                                    forecast_strategy=self.forecast_strategy,
                                    num_samples=self.num_samples,

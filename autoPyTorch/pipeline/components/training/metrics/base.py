@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Callable, List, Optional, Dict
+from typing import Any, Callable, List, Optional, Dict, Union
 
 import numpy as np
 
@@ -7,12 +7,11 @@ import sklearn.metrics
 from sklearn.utils.multiclass import type_of_target
 
 
-
 class autoPyTorchMetric(object, metaclass=ABCMeta):
 
     def __init__(self,
                  name: str,
-                 score_func: Callable[..., float],
+                 score_func: Callable[..., Union[float, np.ndarray]],
                  optimum: float,
                  worst_possible_result: float,
                  sign: float,
@@ -199,6 +198,7 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             sp: int,
             n_prediction_steps: int,
             horizon_weight: Optional[List[float]] = None,
+            sample_weight: Optional[List[float]] = None,
             **kwarg: Dict,
     ) -> float:
         """Evaluate time series forecastin losses given input data
@@ -231,13 +231,41 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             raise ValueError(f"The length of y_true, y_pred and y_train must equal, however, they are "
                              f"{len(y_pred)} and {len(y_true)} respectively")
 
-        losses_all = np.ones([len(y_true)])
-        for seq_idx in range(len(y_true)):
-            losses_all[seq_idx] = self._sign * self._metric_func(y_true=y_true[seq_idx],
-                                                                 y_pred=y_pred[seq_idx],
-                                                                 sp=sp,
-                                                                 horizon_weight=horizon_weight,
-                                                                 **self._kwargs)
+        # we want to compute loss w.r.t. each sequence, so the first dimension needs to be n_prediction_steps
+
+        n_outputs = y_true.shape[-1]
+
+        if sample_weight is not None:
+            if n_outputs != len(sample_weight):
+                raise ValueError(("There must be equally many custom weights "
+                                  "(%d) as outputs (%d).") %
+                                 (len(sample_weight), n_outputs))
+
+        # shape is [n_prediction_steps, n_sequence, n_outputs]
+        y_true = np.transpose(y_true.reshape((-1, n_prediction_steps, n_outputs)),
+                              (1, 0, 2))
+        y_pred = np.transpose(y_pred.reshape((-1, n_prediction_steps, n_outputs)),
+                              (1, 0, 2))
+
+        # shape is [n_prediction_steps, n_sequence * n_outputs]
+        y_true = y_true.reshape((n_prediction_steps, -1))
+        y_pred = y_pred.reshape((n_prediction_steps, -1))
+
+        losses_all = self._metric_func(y_true=y_true,
+                                       y_pred=y_pred,
+                                       sp=sp,
+                                       horizon_weight=horizon_weight,
+                                       multioutput='raw_values',
+                                       **self._kwargs)
+
+        losses_all = losses_all.reshape([-1, n_outputs])
+
+        # multi output aggregation
+        if sample_weight is not None:
+            losses_all = np.sum(losses_all * sample_weight, axis=-1)
+        else:
+            losses_all = np.mean(losses_all, -1)
+
         if agg == 'mean':
             return self._sign * np.mean(losses_all)
         elif agg == 'median':

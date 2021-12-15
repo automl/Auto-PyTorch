@@ -125,9 +125,9 @@ def calculate_score(
             if metric_ in MASE_LOSSES and 'mase_cofficient' in score_kwargs:
                 target_scaled = target * score_kwargs['mase_cofficient']
                 cprediction_scaled = cprediction * score_kwargs['mase_cofficient']
-                score_dict[metric_.name] = metric_(target_scaled, cprediction_scaled, **score_kwargs)
+                score_dict[metric_.name] = metric_._sign * metric_(target_scaled, cprediction_scaled, **score_kwargs)
             else:
-                score_dict[metric_.name] = metric_(target, cprediction, **score_kwargs)
+                score_dict[metric_.name] = metric_._sign * metric_(target, cprediction, **score_kwargs)
     elif task_type in REGRESSION_TASKS:
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
