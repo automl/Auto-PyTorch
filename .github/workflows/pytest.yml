@@ -59,6 +59,9 @@ jobs:
           # Exclude macos as there are permission errors using conda as we do
           - os: macos-latest
 
+          # Exclude python 3.10 as torch is not support python 3.10 yet
+          - python-version: '3.10'
+
         include:
           # Add the tag code-cov to ubuntu-3.7-source
           - os: ubuntu-latest
