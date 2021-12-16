@@ -53,5 +53,9 @@ jobs:
     - name: PEP 561 Compliance
       run: |
         pip install mypy
+
         cd ..  # required to use the installed version of autosklearn
+
+        # Note this doesn't perform mypy checks, those are handled in pre-commit.yaml
+        # This only checks if autoPyTorch exports type information
         if ! mypy -c "import autoPyTorch"; then exit 1; fi
