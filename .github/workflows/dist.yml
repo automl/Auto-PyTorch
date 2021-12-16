@@ -54,4 +54,4 @@ jobs:
       run: |
         pip install mypy
         cd ..  # required to use the installed version of autosklearn
-        if ! python -c "import autoPyTorch"; then exit 1; fi
+        if ! mypy -c "import autoPyTorch"; then exit 1; fi
