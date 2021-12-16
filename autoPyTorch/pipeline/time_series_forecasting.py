@@ -244,19 +244,19 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             cs.add_forbidden_clauses(forbidden_losses_all)
 
         # rnn head only allow rnn backbone
-        if 'network_backbone' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
-            hp_backbone_choice = cs.get_hyperparameter('network_backbone:__choice__')
-            hp_head_choice = cs.get_hyperparameter('network_head:__choice__')
+        if 'network_encoder' in self.named_steps.keys() and 'network_decoder' in self.named_steps.keys():
+            hp_encoder_choice = cs.get_hyperparameter('network_encoder:__choice__')
+            hp_decoder_choice = cs.get_hyperparameter('network_decoder:__choice__')
 
-            if 'ForecastingRNNHeader' in hp_head_choice.choices:
-                if len(hp_head_choice.choices) == 1 and 'RNNBackbone' not in hp_backbone_choice.choices:
+            if 'RNNEncoder' in hp_encoder_choice.choices:
+                if len(hp_decoder_choice.choices) == 1 and 'RNNDecoder' not in hp_decoder_choice.choices:
                     raise ValueError("RNN Header is only compatible with RNNBackbone, RNNHead is not allowed to be "
                                      "the only network head choice if the backbone choices do not contain RNN!")
-                backbone_choices = [choice for choice in hp_backbone_choice.choices if choice != 'RNNBackbone']
-                forbidden_clause_backbone = ForbiddenInClause(hp_backbone_choice, backbone_choices)
-                forbidden_clause_head = ForbiddenEqualsClause(hp_head_choice, 'ForecastingRNNHeader')
+                encoder_choices = [choice for choice in hp_encoder_choice.choices if choice != 'RNNEncoder']
+                forbidden_clause_encoder = ForbiddenInClause(hp_encoder_choice, encoder_choices)
+                forbidden_clause_decoder = ForbiddenEqualsClause(hp_decoder_choice, 'RNNDecoder')
 
-                cs.add_forbidden_clause(ForbiddenAndConjunction(forbidden_clause_backbone, forbidden_clause_head))
+                cs.add_forbidden_clause(ForbiddenAndConjunction(forbidden_clause_encoder, forbidden_clause_decoder))
             cs.get_hyperparameter_names()
 
         self.configuration_space = cs
