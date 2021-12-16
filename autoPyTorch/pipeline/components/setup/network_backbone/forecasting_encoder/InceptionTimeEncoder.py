@@ -110,7 +110,7 @@ class _InceptionTime(nn.Module):
                 n_res_inputs = n_res_outputs
             n_inputs = block.get_n_outputs()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         res = x
@@ -120,7 +120,10 @@ class _InceptionTime(nn.Module):
                 x = self.__getattr__(f"residual_block_{i}")(x, res)
                 res = x
         x = x.transpose(1, 2).contiguous()
-        return x
+        if output_seq:
+            return x
+        else:
+            return x[:, -1, :]
 
 
 class InceptionTimeEncoder(BaseForecastingEncoder):
