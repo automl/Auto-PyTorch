@@ -90,8 +90,6 @@ class _TemporalConvNet(EncoderNetwork):
         self.network = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
-        import pdb
-        pdb.set_trace()
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         x = self.network(x)
