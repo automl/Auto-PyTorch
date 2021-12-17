@@ -939,6 +939,8 @@ class BaseTask:
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
+        if time_series_forecasting and budget_type is not 'epochs':
+            self.pipeline_options['epochs'] = 100
 
         # Here the budget is set to max because the SMAC intensifier can be:
         # Hyperband: in this case the budget is determined on the fly and overwritten
