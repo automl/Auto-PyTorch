@@ -1,11 +1,11 @@
 from abc import ABC
-from typing import Dict, Optional, Tuple, Union, List
+from typing import Dict, Optional, Tuple, Union, Any
 
 from torch import nn
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition
+from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
@@ -74,7 +74,7 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                                                                                      log=True),
             auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
                                                                                    value_range=(True, False),
-                                                                                   default_value=False)
+                                                                                   default_value=True),
     ) -> ConfigurationSpace:
         """
         Builds the mlp head layer. The decoder implementation follows the idea from:
@@ -99,6 +99,9 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
             units_final_layer (HyperparameterSearchSpace): number of units of final layer. The size of this layer is
             smaller as it needs to be expanded to adapt to the number of predictions
             auto_regressive (HyperparameterSearchSpace): if the model acts as a DeepAR model
+            deepar_n_samples (HyperparameterSearchSpace) activate when auto_regressive is True, how many points to
+            sample when doing deepAR prediction (we note that this hyperparameters are only applied to generate new
+            future distribution in the future, but it does not influence the way that network makes prediction)
         Returns:
             cs (ConfigurationSpace): ConfigurationSpace
         """
@@ -140,5 +143,5 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
         add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
 
         # TODO let dataset_properties decide if auto_regressive models is applicable
-        # add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
+        add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
         return cs

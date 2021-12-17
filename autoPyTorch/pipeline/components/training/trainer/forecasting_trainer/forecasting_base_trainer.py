@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 import torch
+import torch.nn.functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -21,7 +22,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
-from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet
 
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
@@ -159,8 +160,11 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         past_target = past_target.to(self.device)
 
         future_targets = self.cast_targets(future_targets)
-
-        past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+        if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
+            future_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+            past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+        else:
+            past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
         # training
         self.optimizer.zero_grad()
@@ -224,22 +228,28 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 outputs = self.model(past_target)
 
-                if isinstance(outputs, list):
-                    outputs_rescaled = [self.rescale_output(output,
-                                                            loc=loc,
-                                                            scale=scale,
-                                                            device=self.device) for output in outputs]
-
-                    loss = [self.criterion(output_rescaled, future_targets) for output_rescaled in outputs_rescaled]
-                    loss = torch.mean(torch.Tensor(loss))
-                else:
+                if isinstance(self.model, ForecastingDeepARNet):
+                    # DeepAR only generate sampled points, we replace log_prob loss with MSELoss
+                    outputs = self.model.pred_from_net_output(outputs)
                     outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
-                    loss = self.criterion(outputs_rescaled, future_targets)
+                    loss = F.mse_loss(outputs_rescaled, future_targets)
+                    outputs = outputs.detach().cpu()
+                else:
+                    if isinstance(outputs, list):
+                        outputs_rescaled = [self.rescale_output(output,
+                                                                loc=loc,
+                                                                scale=scale,
+                                                                device=self.device) for output in outputs]
+
+                        loss = [self.criterion(output_rescaled, future_targets) for output_rescaled in outputs_rescaled]
+                        loss = torch.mean(torch.Tensor(loss))
+                    else:
+                        outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
+                        loss = self.criterion(outputs_rescaled, future_targets)
+                    outputs = self.model.pred_from_net_output(outputs).detach().cpu()
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size
-
-                outputs = self.model.pred_from_net_output(outputs).detach().cpu()
 
                 if loc is None and scale is None:
                     outputs_data.append(outputs)

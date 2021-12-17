@@ -40,7 +40,7 @@ class _TimeSeriesMLP(EncoderNetwork):
 
         """
         if output_seq:
-            x = x.unfold((1, self.window_size, 1)).transpose(-1, -2)
+            x = x.unfold(1, self.window_size, 1).transpose(-1, -2)
             # x.shape = [B, L_in - self.window + 1, self.window, N]
         else:
             if x.shape[1] > self.window_size:

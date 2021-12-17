@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Union, Tuple, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
@@ -76,6 +76,7 @@ class ForecastingNet(nn.Module):
                 raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
                                  'for decoder!')
         self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
+        self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
 
     def forward(self,
                 targets_past: torch.Tensor,
@@ -164,7 +165,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             x_future, _ = self.decoder(x_future, hidden_states)
             net_output = self.head(x_future)
 
-
             return net_output
         else:
             all_predictions = []
@@ -176,7 +176,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     [predicted_target, features_future[:, [idx_pred], :]],
                     dim=-1)
 
-                x_future, hidden_states = self.decoder(x_future, hidden_states)
+                x_future, hidden_states = self.decoder(x_future, hx=hidden_states)
                 net_output = self.head(x_future[:, -1:, ])
                 predicted_target = self.pred_from_net_output(net_output).to(targets_past.device)
 
@@ -195,6 +195,117 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 ):
         net_output = self(targets_past, features_past, features_future)
         return self.pred_from_net_output(net_output)
+
+
+class ForecastingDeepARNet(ForecastingNet):
+    future_target_required = True
+
+    def __init__(self,
+                 **kwargs):
+        """
+        Forecasting network with DeepAR structure.
+
+        This structure is activate when the decoder is not recurrent (MLP) and its hyperparameter "auto_regressive" is
+        set  as True. We train the network to let it do a one-step prediction. This structure is compatible with any
+         sorts of encoder (except MLP).
+        """
+        super(ForecastingDeepARNet, self).__init__(**kwargs)
+        # this determines the training targets
+        self.encoder_bijective_seq_output = kwargs['encoder_properties']['bijective_seq_output']
+
+    def forward(self,
+                targets_past: torch.Tensor,
+                targets_future: Optional[torch.Tensor] = None,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None,
+                hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        x_past = targets_past if features_past is None else torch.cat([targets_past, features_past], dim=-1)
+
+        # TODO consider static features
+        x_past = self.embedding(x_past)
+
+        if self.training:
+            x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
+                                                                                dim=-1)
+            x_future = self.embedding(x_future)
+
+            x_input = torch.cat([x_past, x_future[:, :-1]], dim=1)
+
+            if self.encoder_has_hidden_states:
+                x_input, _ = self.encoder(x_input, output_seq=True)
+            else:
+                x_input = self.encoder(x_input, output_seq=True)
+
+            net_output = self.head(self.decoder(x_input))
+            return net_output
+        else:
+            all_predictions = []
+            batch_size = targets_past.shape[0]
+
+            if self.encoder_has_hidden_states:
+                # For RNN, we only feed the hidden state and generated future input to the netwrok
+                encoder_output, hidden_states = self.encoder(x_past)
+                repeated_state = [
+                    s.repeat_interleave(repeats=self.num_samples, dim=1)
+                    for s in hidden_states
+                ]
+
+            else:
+                # For other models, the full past targets are passed to the network.
+                encoder_output = self.encoder(x_past)
+                repeated_past_target = targets_past.repeat_interleave(repeats=self.num_samples, dim=0).squeeze(1)
+
+            repeated_static_feat = features_static.repeat_interleave(
+                repeats=self.num_samples, dim=0
+            ).unsqueeze(dim=1) if features_static is not None else None
+
+            repeated_time_feat = features_future.repeat_interleave(
+                repeats=self.num_samples, dim=0
+            ) if features_future is not None else None
+
+            net_output = self.head(self.decoder(encoder_output))
+
+            next_sample = net_output.sample(sample_shape=(self.num_samples,))
+
+            next_sample = next_sample.transpose(0, 1).reshape(
+                (next_sample.shape[0] * next_sample.shape[1], 1, -1)
+            )
+
+            all_predictions.append(next_sample)
+
+            for k in range(1, self.n_prediction_steps):
+                x_next = next_sample if repeated_time_feat is None else torch.cat([next_sample,
+                                                                                   repeated_time_feat[:, k:k + 1]],
+                                                                                  dim=-1)
+                if self.encoder_has_hidden_states:
+                    encoder_output, repeated_state = self.encoder(x_next, hx=repeated_state)
+                else:
+                    x_next = torch.cat([repeated_past_target, x_next], dim=1)
+                    encoder_output = self.encoder(x_next)
+                # for training, the encoder output a sequence. Thus for prediction, the network should have the same
+                # format output
+                encoder_output = torch.unsqueeze(encoder_output, 1)
+
+                net_output = self.head(self.decoder(encoder_output))
+
+                next_sample = net_output.sample()
+                all_predictions.append(next_sample)
+
+            all_predictions = torch.cat(all_predictions, dim=1).unflatten(0, (batch_size, self.num_samples))
+
+            return all_predictions
+
+    def pred_from_net_output(self, net_output: torch.Tensor):
+        if not self.output_type == 'distribution' and self.forecast_strategy == 'sample':
+            raise ValueError(f"A DeepAR network must have output type as Distribution and forecast_strategy as sample,"
+                             f"but this network has {self.output_type} and {self.forecast_strategy}")
+        if self.aggregation == 'mean':
+            return torch.mean(net_output, dim=1)
+        elif self.aggregation == 'median':
+            return torch.median(net_output, dim=1)[0]
+        else:
+            raise ValueError(f'Unknown aggregation: {self.aggregation}')
 
 
 class ForecastingNetworkComponent(NetworkComponent):
@@ -253,7 +364,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             self.network = ForecastingSeq2SeqNet(**network_init_kwargs)
         elif X['auto_regressive']:
             # decoder is MLP and auto_regressive, we have deep AR model
-            raise NotImplementedError
+            self.network = ForecastingDeepARNet(**network_init_kwargs)
         else:
             self.network = ForecastingNet(**network_init_kwargs)
 
@@ -317,7 +428,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                                                                                 ),
             forecast_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='forecast_strategy',
                                                                                      value_range=('sample', 'mean'),
-                                                                                     default_value='mean'),
+                                                                                     default_value='sample'),
             num_samples: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_samples',
                                                                                value_range=(50, 200),
                                                                                default_value=100),

@@ -241,15 +241,33 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
                     forbidden_losses_all.append(forbidden_hp_dist)
 
+            network_encoder_hp = cs.get_hyperparameter('network_encoder:__choice__')
+            if 'MLPEncoder' in network_encoder_hp.choices:
+                for hp_ar in hp_auto_regressive:
+                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
+                    forbidden_hp_mlpencoder = ForbiddenEqualsClause(network_encoder_hp, 'MLPEncoder')
+                    forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
+                    forbidden_losses_all.append(forbidden_hp_ar_mlp)
+
+            forecast_strategy = cs.get_hyperparameter('network:forecast_strategy')
+            if 'mean' in forecast_strategy.choices:
+                for hp_ar in hp_auto_regressive:
+                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
+                    forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
+                    forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
+                                                                                forbidden_hp_forecast_strategy)
+                    forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
+
             cs.add_forbidden_clauses(forbidden_losses_all)
+
 
         # rnn head only allow rnn backbone
         if 'network_encoder' in self.named_steps.keys() and 'network_decoder' in self.named_steps.keys():
             hp_encoder_choice = cs.get_hyperparameter('network_encoder:__choice__')
             hp_decoder_choice = cs.get_hyperparameter('network_decoder:__choice__')
 
-            if 'RNNEncoder' in hp_encoder_choice.choices:
-                if len(hp_decoder_choice.choices) == 1 and 'RNNDecoder' not in hp_decoder_choice.choices:
+            if 'RNNDecoder' in hp_decoder_choice.choices:
+                if len(hp_decoder_choice.choices) == 1 and 'RNNEncoder' not in hp_encoder_choice.choices:
                     raise ValueError("RNN Header is only compatible with RNNBackbone, RNNHead is not allowed to be "
                                      "the only network head choice if the backbone choices do not contain RNN!")
                 encoder_choices = [choice for choice in hp_encoder_choice.choices if choice != 'RNNEncoder']
