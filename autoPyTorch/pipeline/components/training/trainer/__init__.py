@@ -245,6 +245,13 @@ class TrainerChoice(autoPyTorchChoice):
             step_interval=X['step_interval'],
         )
 
+    def get_budget_tracker(self, X):
+        return BudgetTracker(
+            budget_type=X['budget_type'],
+            max_runtime=X['runtime'] if 'runtime' in X else None,
+            max_epochs=X['epochs'] if 'epochs' in X else None,
+        )
+
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
         """
         Fits a component by using an input dictionary with pre-requisites
@@ -272,11 +279,7 @@ class TrainerChoice(autoPyTorchChoice):
         if X["torch_num_threads"] > 0:
             torch.set_num_threads(X["torch_num_threads"])
 
-        self.budget_tracker = BudgetTracker(
-            budget_type=X['budget_type'],
-            max_runtime=X['runtime'] if 'runtime' in X else None,
-            max_epochs=X['epochs'] if 'epochs' in X else None,
-        )
+        self.budget_tracker = self.get_budget_tracker(X)
 
         self.prepare_trainer(X)
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])

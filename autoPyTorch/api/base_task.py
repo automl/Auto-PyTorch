@@ -62,6 +62,7 @@ from autoPyTorch.utils.parallel import preload_modules
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
 from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def _pipeline_predict(pipeline: BasePipeline,
@@ -935,7 +936,8 @@ class BaseTask:
 
 
         # Incorporate budget to pipeline config
-        if budget_type not in ('epochs', 'runtime') and (budget_type == 'resolution' and not time_series_forecasting):
+        if budget_type not in ('epochs', 'runtime') and (budget_type in FORECASTING_BUDGET_TYPE
+                                                         and not time_series_forecasting):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type

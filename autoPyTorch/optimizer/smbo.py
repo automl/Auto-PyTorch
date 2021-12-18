@@ -34,6 +34,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 from autoPyTorch.utils.logging_ import get_named_client_logger
 from autoPyTorch.utils.stopwatch import StopWatch
 
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+
 
 def get_smac_object(
     scenario_dict: Dict[str, Any],
@@ -356,7 +358,7 @@ class AutoMLSMBO(object):
             scenario_dict.update(self.smac_scenario_args)
 
         budget_type = self.pipeline_config['budget_type']
-        if budget_type == 'resolution':
+        if budget_type in FORECASTING_BUDGET_TYPE:
             if self.min_budget > 1. or self.max_budget > 1.:
                 self.min_budget = self.min_budget / self.max_budget
                 self.max_budget = 1.0

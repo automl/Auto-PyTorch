@@ -30,6 +30,7 @@ from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.parallel import preload_modules
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def fit_predict_try_except_decorator(
@@ -220,7 +221,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 elif run_info.budget <= 0 or run_info.budget > 100:
                     raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
                                      run_info.budget)
-            elif self.budget_type == 'resolution':
+            elif self.budget_type in FORECASTING_BUDGET_TYPE:
                 if run_info.budget == 0:
                     run_info = run_info._replace(budget=1.0)
                 elif run_info.budget <= 0 or run_info.budget > 1.:
@@ -228,8 +229,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                                      run_info.budget)
             else:
                 raise ValueError("Illegal value for budget type, must be one of "
-                                 "('epochs', 'runtime', 'resolution'), but is : %s" %
-                                 self.budget_type)
+                                 f"('epochs', 'runtime', or {FORECASTING_BUDGET_TYPE} (for forecasting tasks)), "
+                                 f"but is : {self.budget_type}")
 
         remaining_time = self.stats.get_remaing_time_budget()
 

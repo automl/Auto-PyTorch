@@ -52,6 +52,7 @@ from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 __all__ = [
     'AbstractEvaluator',
@@ -636,9 +637,17 @@ class AbstractEvaluator(object):
             self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / self.budget))
             self.fit_dictionary.pop('epochs', None)
             self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'num_seq':
+            self.fit_dictionary['sample_interval'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'num_sample_per_seq':
+            self.fit_dictionary['fraction_samples_per_seq'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
         else:
-            raise ValueError(f"budget type must be `epochs` or `runtime` or 'resolution' (Only used in forecasting "
-                             f"taskss), but got {self.budget_type}")
+            raise ValueError(f"budget type must be `epochs` or `runtime` or {FORECASTING_BUDGET_TYPE} "
+                             f"(Only used in forecasting taskss), but got {self.budget_type}")
 
 
     def _get_pipeline(self) -> BaseEstimator:

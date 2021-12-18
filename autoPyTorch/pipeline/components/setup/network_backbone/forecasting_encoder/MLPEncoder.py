@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Union, Tuple
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
@@ -19,10 +20,14 @@ class _TimeSeriesMLP(EncoderNetwork):
     def __init__(self,
                  window_size: int,
                  mlp_layers: nn.Module,
+                 fill_lower_resolution_seq: bool = False,
+                 fill_kwargs: Dict = {},
                  ):
         super().__init__()
         self.window_size = window_size
         self.mlp_layers = mlp_layers
+        self.fill_lower_resolution_seq = fill_lower_resolution_seq
+        self.fill_interval = fill_kwargs.get('loader_sample_interval', 1)
 
     def forward(self, x: torch.Tensor, output_seq: bool = False):
         """
@@ -46,6 +51,14 @@ class _TimeSeriesMLP(EncoderNetwork):
             if x.shape[1] > self.window_size:
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
+        if self.fill_lower_resolution_seq and x.shape[1] < self.window_size:
+
+            x = F.conv_transpose1d(x.transpose(1, 2),
+                                   F.pad(torch.ones((1, 1, 1)), (1, 1)),
+                                   stride=self.fill_interval,
+                                   padding=1).transpose(1, 2)
+            if x.shape[1] < self.window_size:
+                x = torch.cat([torch.zeros(x.shape[0], self.window_size - x.shape[1], x.shape[2]), x], dim=1)
         x = x.flatten(-2)
         return self.mlp_layers(x)
 
@@ -53,6 +66,8 @@ class _TimeSeriesMLP(EncoderNetwork):
 class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
+    fill_lower_resolution_seq = False
+    fill_kwargs = {}
 
     @property
     def encoder_properties(self):
@@ -71,11 +86,19 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.window_size = X["window_size"]
+        # when resolution is smaller
+        if 'sample_interval' in X and X['sample_interval'] > 1.:
+            self.fill_lower_resolution_seq = True
+            self.fill_kwargs = {'loader_sample_interval': X['sample_interval']}
+
         return super().fit(X, y)
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1] * self.window_size
-        return _TimeSeriesMLP(self.window_size, self._build_backbone(in_features))
+        return _TimeSeriesMLP(window_size=self.window_size,
+                              mlp_layers=self._build_backbone(in_features),
+                              fill_lower_resolution_seq=self.fill_lower_resolution_seq,
+                              fill_kwargs=self.fill_kwargs)
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:
@@ -138,10 +161,10 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
                                                                            ),
     ) -> ConfigurationSpace:
         cs = MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
-                                                           num_groups=num_groups,
-                                                           activation=activation,
-                                                           use_dropout=use_dropout,
-                                                           num_units=num_units,
-                                                           dropout=dropout)
+                                                         num_groups=num_groups,
+                                                         activation=activation,
+                                                         use_dropout=use_dropout,
+                                                         num_units=num_units,
+                                                         dropout=dropout)
         add_hyperparameter(cs, normalization, CategoricalHyperparameter)
         return cs

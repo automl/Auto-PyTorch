@@ -24,8 +24,6 @@ from autoPyTorch.utils.common import (
 )
 
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
-    TimeSeriesTransformer
 
 
 class TimeSeriesSampler(SubsetRandomSampler):
@@ -83,6 +81,9 @@ class TimeSeriesSampler(SubsetRandomSampler):
         idx_samples_start = 0
         idx_seq_tracker = 0
         for idx_seq, (interval, seq_length) in enumerate(zip(self.seq_intervals, self.seq_lengths)):
+            if len(interval) == 1:
+                continue
+
             num_samples = len(interval) - 1
             idx_samples_end = idx_samples_start + num_samples
 
@@ -207,7 +208,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             A instance of self
         """
         X["window_size"] = self.window_size
+        # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
+        # this value corresponds to budget type num_sequence
+        fraction_seq = X.get('fraction_seq', 1.0)
+        # this value corresponds to budget type num_sample_per_seq
+        fraction_samples_per_seq = X.get('fraction_samples_per_seq', 1.0)
         self.sample_interval = sample_interval
 
         self.padding_value = X.get('required_padding_value', 0.0)
@@ -251,18 +257,23 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         num_instances_dataset = np.size(train_split)
         num_instances_train = self.num_batches_per_epoch * self.batch_size
 
-        if num_instances_train > np.sum(train_split):
-            num_instances_per_seqs = None
-        else:
-            # get the length of each sequence of training data (after split)
-            # as we already know that the elements in 'train_split' increases consecutively with a certain number of
-            # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
-            #  A new sequence must start from the index 7. We could then split each unique values to represent the length
-            # of each split
-            _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
-            num_instances_per_seqs = np.ceil(num_instances_train / num_instances_dataset * seq_train_length)
-            num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
-            # at least one element of each sequence should be selected
+        if num_instances_train > num_instances_dataset:
+            num_instances_train = num_instances_dataset
+
+        # get the length of each sequence of training data (after split)
+        # as we already know that the elements in 'train_split' increases consecutively with a certain number of
+        # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
+        #  A new sequence must start from the index 7. We could then split each unique values to represent the length
+        # of each split
+        _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
+        # create masks for masking
+        seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
+        seq_train_length[seq_idx_inactivate] = 0
+        # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
+        num_instances_per_seqs = np.round(np.ceil(num_instances_train / num_instances_dataset * seq_train_length) *
+                                          fraction_samples_per_seq)
+        num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
+        # at least one element of each sequence should be selected
 
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
         # In which case we simply iterate through all the datasets

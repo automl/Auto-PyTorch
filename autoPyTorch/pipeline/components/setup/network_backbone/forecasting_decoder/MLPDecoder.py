@@ -74,7 +74,7 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                                                                                      log=True),
             auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
                                                                                    value_range=(True, False),
-                                                                                   default_value=True),
+                                                                                   default_value=False),
     ) -> ConfigurationSpace:
         """
         Builds the mlp head layer. The decoder implementation follows the idea from:

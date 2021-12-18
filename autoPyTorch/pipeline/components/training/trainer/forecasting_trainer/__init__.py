@@ -14,6 +14,8 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
     find_components,
 )
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
+
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.training.losses import get_loss
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
@@ -21,6 +23,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
     base_target_scaler import BaseTargetScaler
 
 from autoPyTorch.utils.common import get_device_from_fit_dictionary
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 trainer_directory = os.path.split(__file__)[0]
 _trainers = find_components(__package__,
@@ -43,6 +46,19 @@ class ForecastingTrainerChoice(TrainerChoice):
         fit_requirements.append(FitRequirement("target_scaler", (BaseTargetScaler,),
                                                user_defined=False, dataset_property=False))
         return fit_requirements
+
+    def get_budget_tracker(self, X):
+        if 'epochs' in X:
+            max_epochs = X['max_epochs']
+        elif X['budget_type'] in FORECASTING_BUDGET_TYPE:
+            max_epochs = 100
+        else:
+            max_epochs = None
+        return BudgetTracker(
+            budget_type=X['budget_type'],
+            max_runtime=X['runtime'] if 'runtime' in X else None,
+            max_epochs=max_epochs,
+        )
 
     def prepare_trainer(self, X):
         # Support additional user metrics
