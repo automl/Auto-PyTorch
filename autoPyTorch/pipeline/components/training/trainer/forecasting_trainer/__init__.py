@@ -49,7 +49,7 @@ class ForecastingTrainerChoice(TrainerChoice):
 
     def get_budget_tracker(self, X):
         if 'epochs' in X:
-            max_epochs = X['max_epochs']
+            max_epochs = X['epochs']
         elif X['budget_type'] in FORECASTING_BUDGET_TYPE:
             max_epochs = 100
         else:
