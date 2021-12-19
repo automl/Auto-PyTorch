@@ -858,7 +858,7 @@ class AbstractEvaluator(object):
                 self.backend.save_targets_ensemble(self.Y_optimization)
 
         if getattr(self, 'pipelines', None) is not None:
-            if self.pipelines[0] is not None and len(self.pipelines) > 0:
+            if self.pipelines[0] is not None and len(self.pipelines) > 0:  # type: ignore[index, arg-type]
                 if 'pipelines' not in self.disable_file_output:
                     if self.task_type in CLASSIFICATION_TASKS:
                         pipelines = VotingClassifier(estimators=None, voting='soft', )

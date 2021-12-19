@@ -1491,6 +1491,10 @@ class BaseTask(ABC):
                                        dataset_name=dataset_name
                                        )
 
+        # dataset_name is created inside the constructor of BaseDataset
+        # we expect it to be not None. This is for mypy
+        assert dataset.dataset_name is not None
+
         # TAE expects each configuration to have a config_id.
         # For fitting a pipeline as it is not part of the
         # search process, it makes sense to set it to 0
@@ -1506,9 +1510,6 @@ class BaseTask(ABC):
         self._backend.save_datamanager(dataset)
 
         if self._logger is None:
-            # dataset_name is created inside the constructor of BaseDataset
-            # we expect it to be not None. This is for mypy
-            assert dataset.dataset_name is not None
             self._logger = self._get_logger(dataset.dataset_name)
 
         include_components = self.include_components if include_components is None else include_components
@@ -1576,6 +1577,7 @@ class BaseTask(ABC):
         )
 
         fitted_pipeline = self._get_fitted_pipeline(
+            dataset_name=dataset.dataset_name,
             pipeline_idx=run_info.config.config_id + tae.initial_num_run,
             run_info=run_info,
             run_value=run_value,
@@ -1588,11 +1590,16 @@ class BaseTask(ABC):
 
     def _get_fitted_pipeline(
         self,
+        dataset_name: str,
         pipeline_idx: int,
         run_info: RunInfo,
         run_value: RunValue,
         disable_file_output: List[Union[str, DisableFileOutputParameters]]
     ) -> Optional[BasePipeline]:
+
+        if self._logger is None:
+            self._logger = self._get_logger(str(dataset_name))
+
         if run_value.status != StatusType.SUCCESS:
             warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
                           f", additional_info: {run_value.additional_info}")
@@ -1606,7 +1613,7 @@ class BaseTask(ABC):
         else:
             load_function = self._backend.load_model_by_seed_and_id_and_budget
 
-        return load_function(
+        return load_function(  # type: ignore[no-any-return]
             seed=self.seed,
             idx=pipeline_idx,
             budget=float(run_info.budget),

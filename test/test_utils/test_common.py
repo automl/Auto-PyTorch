@@ -1,6 +1,8 @@
 """
 This tests the functionality in autoPyTorch/utils/common.
 """
+from enum import Enum
+
 import pytest
 
 from autoPyTorch.utils.common import autoPyTorchEnum
@@ -9,6 +11,10 @@ from autoPyTorch.utils.common import autoPyTorchEnum
 class SubEnum(autoPyTorchEnum):
     x = "x"
     y = "y"
+
+
+class DummyEnum(Enum):  # You need to move it on top
+    x = "x"
 
 
 @pytest.mark.parametrize('iter',
@@ -31,9 +37,6 @@ def test_autopytorch_enum(iter):
     e = SubEnum.x
 
     assert e in iter
-
-class DummyEnum(Enum):  # You need to move it on top
-    x = "x"
 
 
 @pytest.mark.parametrize('iter',
@@ -67,5 +70,3 @@ def test_raise_errors_autopytorch_enum(others):
 
     with pytest.raises(RuntimeError):
         SubEnum.x == others
-
-
