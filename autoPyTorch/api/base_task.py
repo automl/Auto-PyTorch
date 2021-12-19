@@ -314,8 +314,7 @@ class BaseTask(ABC):
             BaseInputValidator:
                 fitted input validator
         """
-        raise NotImplementedError("Function called on BaseTask, this can only be called by "
-                                  "specific task which is a child of the BaseTask")
+        raise NotImplementedError
 
     def get_dataset(
         self,
@@ -1495,8 +1494,7 @@ class BaseTask(ABC):
         # TAE expects each configuration to have a config_id.
         # For fitting a pipeline as it is not part of the
         # search process, it makes sense to set it to 0
-        if hasattr(configuration, 'config_id') or configuration.config_id is None:
-            configuration.__setattr__('config_id', 0)
+        configuration.__setattr__('config_id', 0)
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
@@ -1582,27 +1580,42 @@ class BaseTask(ABC):
                     instance=None)
         )
 
-        fitted_pipeline: Optional[BasePipeline] = None
+        fitted_pipeline = self._get_fitted_pipeline(
+            pipeline_idx=run_info.config.config_id + tae.initial_num_run,
+            run_info=run_info,
+            run_value=run_value,
+            disable_file_output=disable_file_output
+        )
 
-        if run_value.status == StatusType.SUCCESS:
-            if 'all' in disable_file_output or 'pipeline' in disable_file_output:
-                self._logger.warning("File output is disabled. No pipeline can returned")
-            else:
-                if self.resampling_strategy in CrossValTypes:
-                    load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
-                else:
-                    load_function = self._backend.load_model_by_seed_and_id_and_budget
-                fitted_pipeline = load_function(
-                    seed=self.seed,
-                    idx=run_info.config.config_id + tae.initial_num_run,
-                    budget=float(run_info.budget),
-                )
-        else:
-            warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
-                          f", additional_info: {run_value.additional_info}")
         self._clean_logger()
 
         return fitted_pipeline, run_info, run_value, dataset
+
+    def _get_fitted_pipeline(
+        self,
+        pipeline_idx: int,
+        run_info: RunInfo,
+        run_value: RunValue,
+        disable_file_output: List[Union[str, DisableFileOutputParameters]]
+    ) -> Optional[BasePipeline]:
+        if run_value.status != StatusType.SUCCESS:
+            warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
+                          f", additional_info: {run_value.additional_info}")
+            return None
+        elif any(disable_file_output for c in ['all', 'pipeline']):
+            self._logger.warning("File output is disabled. No pipeline can returned")
+            return None
+
+        if self.resampling_strategy in CrossValTypes:
+            load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
+        else:
+            load_function = self._backend.load_model_by_seed_and_id_and_budget
+
+        return load_function(
+            seed=self.seed,
+            idx=pipeline_idx,
+            budget=float(run_info.budget),
+        )
 
     def predict(
         self,

@@ -88,8 +88,10 @@ class autoPyTorchEnum(str, Enum):
         elif isinstance(other, str):
             return bool(self.value == other)
         else:
-            raise RuntimeError(f"Unsupported type {type(other)}."
-                               f"{self} only supports `str` and `{self}`")
+            enum_name = self.__class__.__name__
+            raise RuntimeError(f"Unsupported type {type(other)}. "
+                               f"{enum_name} only supports `str` and"
+                               f"`{enum_name}`")
 
     def __hash__(self) -> int:
         return hash(self.value)
