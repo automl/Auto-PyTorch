@@ -857,7 +857,7 @@ class AbstractEvaluator(object):
             if self.output_y_hat_optimization:
                 self.backend.save_targets_ensemble(self.Y_optimization)
 
-        if hasattr(self, 'pipelines') and self.pipelines is not None:
+        if getattr(self, 'pipelines', None) is not None:
             if self.pipelines[0] is not None and len(self.pipelines) > 0:
                 if 'pipelines' not in self.disable_file_output:
                     if self.task_type in CLASSIFICATION_TASKS:
@@ -872,7 +872,7 @@ class AbstractEvaluator(object):
         else:
             pipelines = None
 
-        if hasattr(self, 'pipeline') and self.pipeline is not None:
+        if getattr(self, 'pipeline', None) is not None:
             if 'pipeline' not in self.disable_file_output:
                 pipeline = self.pipeline
             else:

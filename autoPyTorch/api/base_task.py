@@ -1511,12 +1511,9 @@ class BaseTask(ABC):
             assert dataset.dataset_name is not None
             self._logger = self._get_logger(dataset.dataset_name)
 
-        if include_components is None:
-            include_components = self.include_components
-        if exclude_components is None:
-            exclude_components = self.exclude_components
-        if search_space_updates is None:
-            search_space_updates = self.search_space_updates
+        include_components = self.include_components if include_components is None else include_components
+        exclude_components = self.exclude_components if exclude_components is None else exclude_components
+        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
 
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = run_time_limit_secs
@@ -1524,9 +1521,8 @@ class BaseTask(ABC):
         # already be generated here!
         stats = Stats(scenario_mock)
 
-        if memory_limit is None:
-            if hasattr(self, '_memory_limit') and self._memory_limit is not None:
-                memory_limit = self._memory_limit
+        if memory_limit is None and getattr(self, '_memory_limit', None) is not None:
+            memory_limit = self._memory_limit
 
         metric = get_metrics(dataset_properties=dataset_properties,
                              names=[eval_metric] if eval_metric is not None else None,
@@ -1545,8 +1541,7 @@ class BaseTask(ABC):
         budget = budget if budget is not None else pipeline_options[budget_type]
 
         if disable_file_output is None:
-            disable_file_output = self._disable_file_output if hasattr(self, '_disable_file_output') \
-                and self._disable_file_output is not None else []
+            disable_file_output = getattr(self, '_disable_file_output', [])
 
         stats.start_timing()
 
