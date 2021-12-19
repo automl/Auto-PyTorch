@@ -290,12 +290,12 @@ class TimeSeriesForecastingTask(BaseTask):
             if self.search_space_updates is None:
                 self.search_space_updates = HyperparameterSearchSpaceUpdates()
 
-            window_size_scales = [1, 2]
+            window_size_scales = [1, 3]
 
             self.search_space_updates.append(node_name="data_loader",
                                              hyperparameter="window_size",
-                                             value_range=[window_size_scales[0] * base_window_size,
-                                                          window_size_scales[1] * base_window_size],
+                                             value_range=[int(window_size_scales[0] * base_window_size),
+                                                          int(window_size_scales[1] * base_window_size)],
                                              default_value=int(np.ceil(1.25 * base_window_size)),
                                              )
 

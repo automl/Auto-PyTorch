@@ -638,7 +638,7 @@ class AbstractEvaluator(object):
             self.fit_dictionary.pop('epochs', None)
             self.fit_dictionary.pop('runtime', None)
         elif self.budget_type == 'num_seq':
-            self.fit_dictionary['sample_interval'] = self.budget
+            self.fit_dictionary['fraction_seq'] = self.budget
             self.fit_dictionary.pop('epochs', None)
             self.fit_dictionary.pop('runtime', None)
         elif self.budget_type == 'num_sample_per_seq':

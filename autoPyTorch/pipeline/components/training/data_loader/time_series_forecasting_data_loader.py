@@ -3,9 +3,8 @@ from typing import Any, Dict, Optional, Tuple, Union, Sequence, List
 from torch.utils.data.sampler import SubsetRandomSampler
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (
-    UniformIntegerHyperparameter, Constant
-)
+from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
+from ConfigSpace.conditions import EqualsCondition
 
 import numpy as np
 
@@ -20,7 +19,8 @@ from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDatase
 from autoPyTorch.utils.common import (
     HyperparameterSearchSpace,
     custom_collate_fn,
-    add_hyperparameter
+    add_hyperparameter,
+    get_hyperparameter
 )
 
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
@@ -60,9 +60,6 @@ class TimeSeriesSampler(SubsetRandomSampler):
             if len(seq_lengths) != len(num_instances_per_seqs):
                 raise ValueError(f'the lengths of seq_lengths must equal the lengths of num_instances_per_seqs.'
                                  f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
-            if np.sum(seq_lengths) != len(indices):
-                raise ValueError(f'the sum of sequence length must correspond to the number of indices. '
-                                 f'However, they are {np.sum(seq_lengths)} versus {len(indices)}')
             seq_intervals = []
             idx_tracker = 0
             for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
@@ -146,6 +143,7 @@ class SequenceBuilder(object):
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
         sample_indices = np.arange(self.first_indices, 0, step=self.sample_interval)
+
         if sample_indices[0] < -1 * len(data):
             # we need to pad with 0
             valid_indices = sample_indices[np.where(sample_indices >= -len(data))[0]]
@@ -171,6 +169,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
     def __init__(self,
                  batch_size: int = 64,
+                 backcast: bool = False,
+                 backcast_period: int = 2,
                  window_size: int = 1,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
@@ -186,7 +186,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             n_prediction_steps: how many steps to predict in advance
         """
         super().__init__(batch_size=batch_size, random_state=random_state)
-        self.window_size: int = window_size
+        self.backcast = backcast
+        self.backcast_period = backcast_period
+        if not backcast:
+            self.window_size: int = window_size
+        else:
+            self.window_size: int = backcast_period * n_prediction_steps
         self.n_prediction_steps = n_prediction_steps
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
@@ -435,12 +440,53 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                         num_batch_per_epoch: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter="num_batches_per_epoch",
                                                                   value_range=(30, 200),
-                                                                  default_value=100)
+                                                                  default_value=100),
+                                        backcast: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter='backcast',
+                                                                  value_range=(True, False),
+                                                                  default_value=False),
+                                        backcast_period: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter='backcast_period',
+                                                                  value_range=(2, 7),
+                                                                  default_value=2)
                                         ) -> ConfigurationSpace:
+        """
+        hyperparameter search space for forecasting dataloader. Forecasting dataloader construct the window size in two
+        ways: either window_size is directly assigned or it is computed by backcast_period * n_prediction_steps
+        (introduced by nbeats:
+        Oreshkin et al., N-BEATS: Neural basis expansion analysis for interpretable time series forecasting, ICLR 2020
+        https://arxiv.org/abs/1905.10437)
+        Currently back_cast_period is only activate when back_cast is activate
+        TODO ablation study on whether this technique can be applied to other models
+        Args:
+            dataset_properties (Optional[Dict]): dataset properties
+            batch_size (int): batch size
+            window_size (int): window size, (if activate) this value directly determines the window_size of the
+                               data loader
+            num_batch_per_epoch (int): how many batches are trained at each iteration
+            backcast (bool): if back_cast module is activate (in which case window size is a
+            multiple of n_prediction_steps)
+            backcast_period (int): activate if backcast is activate, the window size is then computed with
+                                   backcast_period * n_prediction_steps
+
+        Returns:
+            cs: Configuration Space
+
+        """
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, window_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
+
+        window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
+        backcast = get_hyperparameter(backcast, CategoricalHyperparameter)
+        backcast_period = get_hyperparameter(backcast_period, UniformIntegerHyperparameter)
+
+        cs.add_hyperparameters([window_size, backcast, backcast_period])
+
+        window_size_cond = EqualsCondition(window_size, backcast, False)
+        backcast_period_cond = EqualsCondition(backcast_period, backcast, True)
+        cs.add_conditions([window_size_cond, backcast_period_cond])
+
         return cs
 
     def __str__(self) -> str:
