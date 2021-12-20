@@ -54,7 +54,7 @@ jobs:
       run: |
         pip install mypy
 
-        cd ..  # required to use the installed version of autosklearn
+        cd ..  # required to use the installed version of autoPyTorch
 
         # Note this doesn't perform mypy checks, those are handled in pre-commit.yaml
         # This only checks if autoPyTorch exports type information
