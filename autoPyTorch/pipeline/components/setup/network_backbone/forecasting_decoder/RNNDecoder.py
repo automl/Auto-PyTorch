@@ -83,11 +83,11 @@ class ForecastingRNNHeader(BaseForecastingDecoder):
                              )
         return decoder, hidden_size
 
-    @property
     def decoder_properties(self):
-        decoder_properties = {'has_hidden_states': True,
-                              'recurrent': True,
-                              }
+        decoder_properties = super().decoder_properties()
+        decoder_properties.update({'has_hidden_states': True,
+                                   'recurrent': True,
+                                   })
         return decoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:

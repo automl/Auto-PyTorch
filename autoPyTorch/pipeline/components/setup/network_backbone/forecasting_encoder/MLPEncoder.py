@@ -16,16 +16,22 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activa
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
-class _TimeSeriesMLP(EncoderNetwork):
+class TimeSeriesMLPrecpocessor(EncoderNetwork):
     def __init__(self,
                  window_size: int,
-                 mlp_layers: nn.Module,
                  fill_lower_resolution_seq: bool = False,
                  fill_kwargs: Dict = {},
                  ):
+        """
+        Transform the input features (B, T, N) to fit the requirement of MLP
+        Args:
+            window_size (int): T
+            fill_lower_resolution_seq: if sequence with lower resolution needs to be filled with 0
+        (for multi-fidelity problems with resolution as fidelity)
+            fill_kwargs: filling information
+        """
         super().__init__()
         self.window_size = window_size
-        self.mlp_layers = mlp_layers
         self.fill_lower_resolution_seq = fill_lower_resolution_seq
         self.fill_interval = fill_kwargs.get('loader_sample_interval', 1)
 
@@ -52,7 +58,6 @@ class _TimeSeriesMLP(EncoderNetwork):
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
         if self.fill_lower_resolution_seq and x.shape[1] < self.window_size:
-
             x = F.conv_transpose1d(x.transpose(1, 2),
                                    F.pad(torch.ones((1, 1, 1)), (1, 1)),
                                    stride=self.fill_interval,
@@ -60,7 +65,7 @@ class _TimeSeriesMLP(EncoderNetwork):
             if x.shape[1] < self.window_size:
                 x = torch.cat([torch.zeros(x.shape[0], self.window_size - x.shape[1], x.shape[2]), x], dim=1)
         x = x.flatten(-2)
-        return self.mlp_layers(x)
+        return x
 
 
 class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
@@ -69,13 +74,12 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     fill_lower_resolution_seq = False
     fill_kwargs = {}
 
-    @property
     def encoder_properties(self):
-        encoder_properties = {
-            'has_hidden_states': False,
+        encoder_properties = super().encoder_properties()
+        encoder_properties.update({
             'bijective_seq_output': False,
             'fixed_input_seq_length': True,
-        }
+        })
         return encoder_properties
 
     @property
@@ -95,10 +99,10 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1] * self.window_size
-        return _TimeSeriesMLP(window_size=self.window_size,
-                              mlp_layers=self._build_backbone(in_features),
-                              fill_lower_resolution_seq=self.fill_lower_resolution_seq,
-                              fill_kwargs=self.fill_kwargs)
+        feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size,
+                                                        fill_lower_resolution_seq=self.fill_lower_resolution_seq,
+                                                        fill_kwargs=self.fill_kwargs)
+        return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features))
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:

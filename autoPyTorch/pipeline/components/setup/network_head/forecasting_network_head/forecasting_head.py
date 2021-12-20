@@ -11,6 +11,7 @@ from autoPyTorch.pipeline.components.setup.network_head.base_network_head import
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
     ALL_DISTRIBUTIONS
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.NBEATS_head import build_NBEATS_network
 
 
 class ForecastingHead(NetworkHeadComponent):
@@ -27,7 +28,7 @@ class ForecastingHead(NetworkHeadComponent):
         self.add_fit_requirements(self._required_fit_requirements)
         self.head: Optional[nn.Module] = None
         self.required_net_out_put_type: Optional[str] = None
-
+        self.output_shape = None
 
     @property
     def _required_fit_requirements(self) -> List[FitRequirement]:
@@ -35,19 +36,11 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
             FitRequirement('auto_regressive', (bool,), user_defined=False, dataset_property=False),
+            FitRequirement('decoder_properties', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_decoder_output_features', (int, ), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
             FitRequirement('output_shape', (Iterable, int), user_defined=True, dataset_property=True),
         ]
-
-    @property
-    def decoder_properties(self):
-        decoder_property = {'additional_output': False,
-                            'additional_input': False,
-                            'fixed_input_seq_length': False,
-                            'recurrent': False,
-                            }
-        return decoder_property
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
@@ -63,6 +56,15 @@ class ForecastingHead(NetworkHeadComponent):
         output_shape = X['dataset_properties']['output_shape']
 
         self.required_net_out_put_type = X['required_net_out_put_type']
+
+        if X['decoder_properties']['multi_blocks']:
+            # if the decoder is a stacked block, we directly build head inside the decoder
+            if X.get('network_decoder', None) is None:
+                raise ValueError("when decoder has multi_blocks, it must be specified!")
+            if self.required_net_out_put_type != 'regression':
+                raise ValueError("decoder with multi block structure only allow regression loss!")
+            self.output_shape = output_shape
+            return self
 
         if self.required_net_out_put_type == 'distribution':
             if 'dist_cls' not in X:
@@ -83,6 +85,24 @@ class ForecastingHead(NetworkHeadComponent):
             n_prediction_heads=n_prediction_heads,
         )
         return self
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adds the network head into the fit dictionary 'X' and returns it.
+
+        Args:
+            X (Dict[str, Any]): 'X' dictionary
+        Returns:
+            (Dict[str, Any]): the updated 'X' dictionary
+        """
+        if self.head is not None:
+            X.update({'network_head': self.head})
+        else:
+            decoder = X['network_decoder']
+            decoder = build_NBEATS_network(decoder, self.output_shape[1:])
+
+        return X
+
 
     def build_head(self,
                    input_shape: Tuple[int, ...],

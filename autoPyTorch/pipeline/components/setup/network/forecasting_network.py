@@ -28,7 +28,7 @@ class ForecastingNet(nn.Module):
                  network_embedding: nn.Module,  # TODO consider  embedding for past, future and static features
                  network_encoder: EncoderNetwork,
                  network_decoder: nn.Module,
-                 network_head: nn.Module,
+                 network_head: Optional[nn.Module],
                  n_prediction_steps: int,
                  encoder_properties: Dict,
                  decoder_properties: Dict,
@@ -308,6 +308,31 @@ class ForecastingDeepARNet(ForecastingNet):
             raise ValueError(f'Unknown aggregation: {self.aggregation}')
 
 
+class NBEATSNet(ForecastingNet):
+    future_target_required = False
+    def forward(self,
+                targets_past: torch.Tensor,
+                targets_future: Optional[torch.Tensor] = None,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None,
+                hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        forecast = torch.zeros_like(targets_future).view(targets_future.shape[0], -1)
+        backcast = self.encoder(targets_past)
+        for block in self.decoder:
+            backcast_block, forecast_block = block(backcast)
+
+            backcast = backcast - backcast_block
+            forecast = forecast + forecast_block
+        if self.training:
+            return backcast, forecast
+        else:
+            return forecast
+
+    def pred_from_net_output(self, net_output: torch.Tensor):
+        return net_output
+
+
 class ForecastingNetworkComponent(NetworkComponent):
     def __init__(
             self,
@@ -331,7 +356,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_encoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_decoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
             FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
             FitRequirement("encoder_properties", (Dict,), user_defined=False, dataset_property=False),
             FitRequirement("decoder_properties", (Dict,), user_defined=False, dataset_property=False),
@@ -362,6 +387,8 @@ class ForecastingNetworkComponent(NetworkComponent):
         if X['decoder_properties']['has_hidden_states']:
             # decoder is RNN
             self.network = ForecastingSeq2SeqNet(**network_init_kwargs)
+        elif X['decoder_properties']['multi_blocks']:
+            self.network = NBEATSNet(**network_init_kwargs)
         elif X['auto_regressive']:
             # decoder is MLP and auto_regressive, we have deep AR model
             self.network = ForecastingDeepARNet(**network_init_kwargs)

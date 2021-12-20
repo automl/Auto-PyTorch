@@ -76,12 +76,10 @@ class RNNEncoder(BaseForecastingEncoder):
                        config=self.config)
         return encoder
 
-    @property
     def encoder_properties(self):
-        encoder_properties = {'has_hidden_states': True,
-                              'bijective_seq_output': True,
-                              'fixed_input_seq_length': False
-                              }
+        encoder_properties = super().encoder_properties()
+        encoder_properties.update({'has_hidden_states': True,
+                                   })
         return encoder_properties
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

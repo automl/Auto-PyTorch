@@ -5,17 +5,9 @@ from typing import Dict, List, Optional
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
-import numpy as np
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
-)
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head import (
-    NetworkHeadComponent,
 )
 
 from autoPyTorch.pipeline.components.setup.network_head import NetworkHeadChoice

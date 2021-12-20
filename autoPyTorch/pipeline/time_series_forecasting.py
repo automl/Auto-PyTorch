@@ -260,6 +260,37 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             cs.add_forbidden_clauses(forbidden_losses_all)
 
+            # NBEATS
+            forbidden_NBEATS = []
+            network_decoder_hp = cs.get_hyperparameter('network_decoder:__choice__')
+            encoder_non_BEATS = [choice for choice in network_encoder_hp.choices if choice != 'NBEATSEncoder']
+            decoders_non_NBEATS = [choice for choice in network_decoder_hp.choices if choice != 'NBEATSDecoder']
+            loss_non_regression = [choice for choice in hp_loss.choices if choice != 'RegressionLoss']
+
+            forbidden_encoder_NBEATS = ForbiddenInClause(network_encoder_hp, encoder_non_BEATS)
+            forbidden_decoder_NBEATS = ForbiddenInClause(network_decoder_hp, decoders_non_NBEATS)
+            forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
+
+            # Ensure that NBEATS encoder only works with NBEATS decoder
+            if 'NBEATSEncoder' in network_encoder_hp.choices:
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
+                    forbidden_encoder_NBEATS)
+                )
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
+                    forbidden_loss_non_regression)
+                )
+            if 'NBEASTDecoder' in network_decoder_hp.choices:
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
+                    forbidden_decoder_NBEATS)
+                )
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
+                    forbidden_loss_non_regression)
+                )
+            cs.add_forbidden_clauses(forbidden_NBEATS)
 
         # rnn head only allow rnn backbone
         if 'network_encoder' in self.named_steps.keys() and 'network_decoder' in self.named_steps.keys():

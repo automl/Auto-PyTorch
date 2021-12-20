@@ -16,13 +16,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.
 
 
 class ForecastingMLPHeader(BaseForecastingDecoder):
-    @property
-    def decoder_properties(self):
-        decoder_properties = {'has_hidden_states': False,
-                              'recurrent': False,
-                              }
-        return decoder_properties
-
     def _build_decoder(self,
                        input_shape: Tuple[int, ...],
                        n_prediction_heads: int,

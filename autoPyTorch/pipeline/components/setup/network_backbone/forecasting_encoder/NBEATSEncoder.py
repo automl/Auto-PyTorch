@@ -1,0 +1,74 @@
+from typing import Any, Dict, List, Optional, Union, Tuple
+
+from torch import nn
+
+from ConfigSpace import ConfigurationSpace
+from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter, \
+    UniformFloatHyperparameter
+from ConfigSpace.conditions import GreaterThanCondition, InCondition, EqualsCondition, AndConjunction
+
+from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
+    import BaseForecastingEncoder, EncoderNetwork
+from autoPyTorch.pipeline.components.base_component import BaseEstimator
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.MLPEncoder import \
+    TimeSeriesMLPrecpocessor
+
+
+class NBEATSEncoder(BaseForecastingEncoder):
+    """
+    Encoder for NBEATS-like network. It flatten the input sequence to fit the requirement of MLP, the main part is
+    implemented under decoder
+    """
+    _fixed_seq_length = True
+    window_size = 1
+    fill_lower_resolution_seq = False
+    fill_kwargs = {}
+
+    def encoder_properties(self):
+        encoder_properties = super().encoder_properties()
+        encoder_properties.update({
+            'fixed_input_seq_length': True,
+        })
+        return encoder_properties
+
+    @property
+    def _required_fit_arguments(self) -> List[FitRequirement]:
+        requirements_list = super()._required_fit_arguments
+        requirements_list.append(FitRequirement('window_size', (int,), user_defined=False, dataset_property=False))
+        return requirements_list
+
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        self.window_size = X["window_size"]
+        # when resolution is smaller
+        if 'sample_interval' in X and X['sample_interval'] > 1.:
+            self.fill_lower_resolution_seq = True
+            self.fill_kwargs = {'loader_sample_interval': X['sample_interval']}
+        return super().fit(X, y)
+
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size,
+                                                 fill_lower_resolution_seq=self.fill_lower_resolution_seq,
+                                                 fill_kwargs=self.fill_kwargs
+                                                 )
+        return preprocessor
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+        return {
+            'shortname': 'NBEATSEncoder',
+            'name': 'NBEATSEncoder',
+            'handles_tabular': False,
+            'handles_image': False,
+            'handles_time_series': True,
+        }
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+        return cs

@@ -14,14 +14,14 @@ from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_foreca
 from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss
 
 
-class RegressionLosses(ForecastingLossComponents):
+class RegressionLoss(ForecastingLossComponents):
     required_net_out_put_type = 'regression'
 
     def __init__(self,
                  loss_name: str,
                  random_state: Optional[np.random.RandomState] = None,
                  ):
-        super(RegressionLosses, self).__init__()
+        super(RegressionLoss, self).__init__()
         if loss_name == "l1":
             self.loss = L1Loss
         elif loss_name == 'mse':

@@ -104,15 +104,6 @@ class TCNEncoder(BaseForecastingEncoder):
     """
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
-
-    @property
-    def encoder_properties(self):
-        encoder_properties = {'has_hidden_states': False,
-                              'bijective_seq_output': True,
-                              'fixed_input_seq_length': False
-                              }
-        return encoder_properties
-
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_0"]]
         for i in range(1, self.config["num_blocks"]):

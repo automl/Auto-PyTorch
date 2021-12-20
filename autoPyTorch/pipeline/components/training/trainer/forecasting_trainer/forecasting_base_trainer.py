@@ -22,7 +22,8 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
-from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
+    NBEATSNet
 
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
@@ -45,6 +46,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
             dataset_properties: Optional[Dict] = None,
             target_scaler: BaseTargetScaler = TargetNoScaler(),
+            backcast_loss_ratio: Optional[float] = None,
     ) -> None:
         # metrics_during_training is not appliable when computing scaled values
         metrics_during_training = False
@@ -64,6 +66,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                          "n_prediction_steps": dataset_properties.get("n_prediction_steps", 1)}
         self.metrics_kwargs = metric_kwargs
         self.target_scaler = target_scaler  # typing: BaseTargetScaler
+        self.backcast_loss_ratio = backcast_loss_ratio
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -152,7 +155,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         # prepare
         past_target = past_target.float()
-        if self.model.future_target_required:
+        if self.model.future_target_required or isinstance(self.model, NBEATSNet):
             past_target, scaled_future_targets, loc, scale = self.target_scaler(past_target, future_targets)
         else:
             past_target, _, loc, scale = self.target_scaler(past_target)
@@ -160,23 +163,37 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         past_target = past_target.to(self.device)
 
         future_targets = self.cast_targets(future_targets)
-        if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
-            future_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
-            past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
-        else:
-            past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
         # training
         self.optimizer.zero_grad()
-        if self.model.future_target_required:
-            outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
+
+        if isinstance(self.model, NBEATSNet):
+            past_target, criterion_kwargs_past = self.data_preparation(past_target,
+                                                                       scaled_future_targets.to(self.device))
+            past_target, criterion_kwargs_future = self.data_preparation(past_target, past_target)
+            backcast, forecast = self.model(past_target)
+
+            loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
+            loss_backcast = loss_func_backcast(self.criterion, backcast)
+            loss_forecast = loss_func_backcast(self.criterion, forecast)
+            loss = loss_forecast + loss_backcast * self.backcast_loss_ratio
         else:
-            outputs = self.model(past_target)
 
-        outputs = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
+            if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
+                future_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+            else:
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
-        loss_func = self.criterion_preparation(**criterion_kwargs)
-        loss = loss_func(self.criterion, outputs)
+            if self.model.future_target_required:
+                outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
+            else:
+                outputs = self.model(past_target)
+
+            outputs = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
+
+            loss_func = self.criterion_preparation(**criterion_kwargs)
+            loss = loss_func(self.criterion, outputs)
 
         loss.backward()
         self.optimizer.step()

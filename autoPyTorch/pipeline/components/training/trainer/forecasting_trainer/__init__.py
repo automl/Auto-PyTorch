@@ -84,6 +84,7 @@ class ForecastingTrainerChoice(TrainerChoice):
             step_interval=X['step_interval'],
             dataset_properties=X['dataset_properties'],
             target_scaler=X['target_scaler'],
+            backcast_loss_ratio=X.get('backcast_loss_ratio', 0.0)
         )
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:

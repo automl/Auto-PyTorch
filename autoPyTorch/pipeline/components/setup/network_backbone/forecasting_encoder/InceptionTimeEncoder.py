@@ -130,12 +130,6 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     """
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
-    @property
-    def encoder_properties(self):
-        encoder_properties = {'has_hidden_states': False,
-                              'bijective_seq_output': True,
-                              'fixed_input_seq_length': False}
-        return encoder_properties
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         encoder = _InceptionTime(in_features=input_shape[-1],

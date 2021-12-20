@@ -1,14 +1,10 @@
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Iterable, Tuple, List, Optional
 
-import numpy as np
-import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
-    ALL_DISTRIBUTIONS, ProjectionLayer
 from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
 
 
@@ -40,14 +36,12 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
         ]
 
-    @property
     def decoder_properties(self):
-        decoder_property = {'additional_output': False,
-                            'additional_input': False,
-                            'fixed_input_seq_length': False,
-                            'recurrent': False,
-                            }
-        return decoder_property
+        decoder_properties = {'has_hidden_states': False,
+                              'recurrent': False,
+                              'multi_blocks': False,
+                              }
+        return decoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
@@ -99,7 +93,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
-        X.update({'decoder_properties': self.decoder_properties,
+        X.update({'decoder_properties': self.decoder_properties(),
                   'network_decoder': self.decoder,
                   'n_prediction_heads': self.n_prediction_heads,
                   'n_decoder_output_features': self.n_decoder_output_features})

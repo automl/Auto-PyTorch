@@ -48,4 +48,4 @@ class ForecastingEncoderChoice(NetworkBackboneChoice):
 
     @property
     def _defaults_network(self):
-        return ['RNNBackbone', 'TSMLPBackbone']
+        return ['RNNBackbone', 'RNNPBackbone']

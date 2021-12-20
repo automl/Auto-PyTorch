@@ -232,8 +232,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         # Incorporate the transform to the dataset
         datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
-        assert self.subseq_length < datamanager.seq_length_min, "dataloader's window size must be smaller than the" \
-                                                                "minimal sequence length of the dataset!!"
+
         # TODO, consider bucket setting
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')

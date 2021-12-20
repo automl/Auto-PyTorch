@@ -91,7 +91,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X['dataset_properties'].update({'input_shape': self.input_shape})
         X.update({'network_encoder': self.encoder})
-        X.update({'encoder_properties': self.encoder_properties})
+        X.update({'encoder_properties': self.encoder_properties()})
         return X
 
     @abstractmethod
@@ -107,7 +107,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         """
         raise NotImplementedError()
 
-    @property
     def encoder_properties(self):
         """
         Encoder properties, this determines how the data flows over the forecasting networks
@@ -118,10 +117,9 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         sequence when output_seq is set True
         fix_input_shape if the input shape is fixed, this is useful for building network head
         """
-        # TODO make use of bijective_seq_output in trainer!!!
         encoder_properties = {'has_hidden_states': False,
-                              'bijective_seq_output': False,
-                              'fixed_input_seq_length': False
+                              'bijective_seq_output': True,
+                              'fixed_input_seq_length': False,
                               }
         return encoder_properties
 
