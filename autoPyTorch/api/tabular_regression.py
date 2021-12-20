@@ -1,6 +1,4 @@
-import os
-import uuid
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -13,11 +11,13 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -54,13 +54,16 @@ class TabularRegressionTask(BaseTask):
         delete_tmp_folder_after_terminate (bool):
             Determines whether to delete the temporary directory,
             when finished
-        include_components (Optional[Dict]):
-            If None, all possible components are used.
-            Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]):
-            If None, all possible components are used.
-            Otherwise specifies set of components not to use.
-            Incompatible with include components.
+        include_components (Optional[Dict[str, Any]]):
+            Dictionary containing components to include. Key is the node
+            name and Value is an Iterable of the names of the components
+            to include. Only these components will be present in the
+            search space.
+        exclude_components (Optional[Dict[str, Any]]):
+            Dictionary containing components to exclude. Key is the node
+            name and Value is an Iterable of the names of the components
+            to exclude. All except these components will be present in
+            the search space.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
@@ -79,8 +82,8 @@ class TabularRegressionTask(BaseTask):
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
         delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
         resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
@@ -107,18 +110,109 @@ class TabularRegressionTask(BaseTask):
             task_type=TASK_TYPES_TO_STRING[TABULAR_REGRESSION],
         )
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TabularRegressionPipeline:
+    def build_pipeline(
+        self,
+        dataset_properties: Dict[str, BaseDatasetPropertiesType],
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ) -> TabularRegressionPipeline:
         """
-        Build pipeline according to current task and for the passed dataset properties
+        Build pipeline according to current task
+        and for the passed dataset properties
 
         Args:
-            dataset_properties (Dict[str,Any])
+            dataset_properties (Dict[str, Any]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
+            include_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to include. Key is the node
+                name and Value is an Iterable of the names of the components
+                to include. Only these components will be present in the
+                search space.
+            exclude_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to exclude. Key is the node
+                name and Value is an Iterable of the names of the components
+                to exclude. All except these components will be present in
+                the search space.
+            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+                Search space updates that can be used to modify the search
+                space of particular components or choice modules of the pipeline
 
         Returns:
             TabularRegressionPipeline:
-                Pipeline compatible with the given dataset properties.
+
         """
-        return TabularRegressionPipeline(dataset_properties=dataset_properties)
+        return TabularRegressionPipeline(dataset_properties=dataset_properties,
+                                         include=include_components,
+                                         exclude=exclude_components,
+                                         search_space_updates=search_space_updates)
+
+    def _get_dataset_input_validator(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+    ) -> Tuple[TabularDataset, TabularInputValidator]:
+        """
+        Returns an object of `TabularDataset` and an object of
+        `TabularInputValidator` according to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                Strategy to split the training data. if None, uses
+                HoldoutValTypes.holdout_validation.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+        Returns:
+            TabularDataset:
+                the dataset object.
+            TabularInputValidator:
+                the input validator fitted on the data.
+        """
+
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+            self.resampling_strategy_args
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        InputValidator = TabularInputValidator(
+            is_classification=False,
+            logger_port=self._logger_port,
+        )
+
+        # Fit a input validator to check the provided data
+        # Also, an encoder is fit to both train and test data,
+        # to prevent unseen categories during inference
+        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+
+        dataset = TabularDataset(
+            X=X_train, Y=y_train,
+            X_test=X_test, Y_test=y_test,
+            validator=InputValidator,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            dataset_name=dataset_name
+        )
+
+        return dataset, InputValidator
 
     def search(
         self,
@@ -139,7 +233,7 @@ class TabularRegressionTask(BaseTask):
         get_smac_object_callback: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: List = [],
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
     ) -> 'BaseTask':
@@ -155,8 +249,8 @@ class TabularRegressionTask(BaseTask):
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
-            optimize_metric (str): name of the metric that is used to
-                evaluate a pipeline.
+            optimize_metric (str):
+                Name of the metric that is used to evaluate a pipeline.
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
@@ -238,10 +332,10 @@ class TabularRegressionTask(BaseTask):
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (Union[bool, List]):
-                If True, disable model and prediction output.
-                Can also be used as a list to pass more fine-grained
-                information on what to save. Allowed elements in the list are:
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
 
                 + `y_optimization`:
                     do not save the predictions for the optimization set,
@@ -254,6 +348,9 @@ class TabularRegressionTask(BaseTask):
                     pipelines fit on each fold.
                 + `y_test`:
                     do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
@@ -270,32 +367,14 @@ class TabularRegressionTask(BaseTask):
             self
 
         """
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
-
-        # we have to create a logger for at this point for the validator
-        self._logger = self._get_logger(dataset_name)
-
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(
-            is_classification=False,
-            logger_port=self._logger_port,
-        )
-
-        # Fit a input validator to check the provided data
-        # Also, an encoder is fit to both train and test data,
-        # to prevent unseen categories during inference
-        self.InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
-
-        self.dataset = TabularDataset(
-            X=X_train, Y=y_train,
-            X_test=X_test, Y_test=y_test,
-            validator=self.InputValidator,
-            dataset_name=dataset_name,
+        self.dataset, self.InputValidator = self._get_dataset_input_validator(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-        )
+            dataset_name=dataset_name)
 
         return self._search(
             dataset=self.dataset,
@@ -324,7 +403,7 @@ class TabularRegressionTask(BaseTask):
     ) -> np.ndarray:
         if self.InputValidator is None or not self.InputValidator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
-                             "the estimator fit() method.")
+                             "the estimator search() method.")
 
         X_test = self.InputValidator.feature_validator.transform(X_test)
         predicted_values = super().predict(X_test, batch_size=batch_size,

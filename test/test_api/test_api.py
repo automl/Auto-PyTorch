@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import pickle
+import tempfile
 import unittest
 from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_function
 
@@ -17,14 +18,14 @@ import pytest
 
 import sklearn
 import sklearn.datasets
-from sklearn.base import BaseEstimator
-from sklearn.base import clone
+from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
-from smac.runhistory.runhistory import RunHistory
+from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
+from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -215,9 +216,6 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
 
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
-
-    # test fit on dummy data
-    assert isinstance(estimator.fit(dataset=backend.load_datamanager()), BasePipeline)
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
@@ -645,3 +643,150 @@ def test_build_pipeline(api_type, fit_dictionary_tabular):
     pipeline = api.build_pipeline(fit_dictionary_tabular['dataset_properties'])
     assert isinstance(pipeline, BaseEstimator)
     assert len(pipeline.steps) > 0
+
+
+@pytest.mark.parametrize("disable_file_output", [['all'], None])
+@pytest.mark.parametrize('openml_id', (40984,))
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': 2})
+                          )
+                         )
+@pytest.mark.parametrize("budget", [15, 20])
+def test_pipeline_fit(openml_id,
+                      resampling_strategy,
+                      resampling_strategy_args,
+                      backend,
+                      disable_file_output,
+                      budget,
+                      n_samples):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        data_id=int(openml_id),
+        return_X_y=True, as_frame=True
+    )
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X[:n_samples], y[:n_samples], random_state=1)
+
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+    )
+
+    dataset = estimator.get_dataset(X_train=X_train,
+                                    y_train=y_train,
+                                    X_test=X_test,
+                                    y_test=y_test,
+                                    resampling_strategy=resampling_strategy,
+                                    resampling_strategy_args=resampling_strategy_args)
+
+    configuration = estimator.get_search_space(dataset).get_default_configuration()
+    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
+                                                                    configuration=configuration,
+                                                                    run_time_limit_secs=50,
+                                                                    disable_file_output=disable_file_output,
+                                                                    budget_type='epochs',
+                                                                    budget=budget
+                                                                    )
+    assert isinstance(dataset, BaseDataset)
+    assert isinstance(run_info, RunInfo)
+    assert isinstance(run_info.config, Configuration)
+
+    assert isinstance(run_value, RunValue)
+    assert 'SUCCESS' in str(run_value.status)
+
+    if disable_file_output is None:
+        if resampling_strategy in CrossValTypes:
+            assert isinstance(pipeline, BaseEstimator)
+            X_test = dataset.test_tensors[0]
+            preds = pipeline.predict_proba(X_test)
+            assert isinstance(preds, np.ndarray)
+
+            score = accuracy(dataset.test_tensors[1], preds)
+            assert isinstance(score, float)
+            assert score > 0.7
+        else:
+            assert isinstance(pipeline, BasePipeline)
+            # To make sure we fitted the model, there should be a
+            # run summary object with accuracy
+            run_summary = pipeline.named_steps['trainer'].run_summary
+            assert run_summary is not None
+            X_test = dataset.test_tensors[0]
+            preds = pipeline.predict(X_test)
+            assert isinstance(preds, np.ndarray)
+
+            score = accuracy(dataset.test_tensors[1], preds)
+            assert isinstance(score, float)
+            assert score > 0.7
+    else:
+        assert pipeline is None
+        assert run_value.cost < 0.3
+
+    # Make sure that the pipeline can be pickled
+    dump_file = os.path.join(tempfile.gettempdir(), 'automl.dump.pkl')
+    with open(dump_file, 'wb') as f:
+        pickle.dump(pipeline, f)
+
+    num_run_dir = estimator._backend.get_numrun_directory(
+        run_info.seed, run_value.additional_info['num_run'], budget=float(budget))
+
+    cv_model_path = os.path.join(num_run_dir, estimator._backend.get_cv_model_filename(
+        run_info.seed, run_value.additional_info['num_run'], budget=float(budget)))
+    model_path = os.path.join(num_run_dir, estimator._backend.get_model_filename(
+        run_info.seed, run_value.additional_info['num_run'], budget=float(budget)))
+
+    if disable_file_output:
+        # No file output is expected
+        assert not os.path.exists(num_run_dir)
+    else:
+        # We expect the model path always
+        # And the cv model only on 'cv'
+        assert os.path.exists(model_path)
+        if resampling_strategy in CrossValTypes:
+            assert os.path.exists(cv_model_path)
+        elif resampling_strategy in HoldoutValTypes:
+            assert not os.path.exists(cv_model_path)
+
+
+@pytest.mark.parametrize('openml_id', (40984,))
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
+                          )
+                         )
+def test_pipeline_fit_error(
+    openml_id,
+    resampling_strategy,
+    resampling_strategy_args,
+    backend,
+    n_samples
+):
+    # Get the data and check that contents of data-manager make sense
+    X, y = sklearn.datasets.fetch_openml(
+        data_id=int(openml_id),
+        return_X_y=True, as_frame=True
+    )
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        X[:n_samples], y[:n_samples], random_state=1)
+
+    # Search for a good configuration
+    estimator = TabularClassificationTask(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+    )
+
+    dataset = estimator.get_dataset(X_train=X_train,
+                                    y_train=y_train,
+                                    X_test=X_test,
+                                    y_test=y_test,
+                                    resampling_strategy=resampling_strategy,
+                                    resampling_strategy_args=resampling_strategy_args)
+
+    configuration = estimator.get_search_space(dataset).get_default_configuration()
+    pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
+                                                                    configuration=configuration,
+                                                                    run_time_limit_secs=7,
+                                                                    )
+
+    assert 'TIMEOUT' in str(run_value.status)
+    assert pipeline is None

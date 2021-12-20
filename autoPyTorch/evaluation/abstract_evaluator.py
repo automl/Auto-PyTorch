@@ -33,8 +33,9 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters,
     VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel
+    convert_multioutput_multiclass_to_multilabel,
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
@@ -375,10 +376,25 @@ class AbstractEvaluator(object):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Union[bool, List[str]]):
-            By default, the model, it's predictions and other metadata is stored on disk
-            for each finished configuration. This argument allows the user to skip
-            saving certain file type, for example the model, from being written to disk.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
+
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -404,7 +420,7 @@ class AbstractEvaluator(object):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Union[bool, List[str]] = False,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
@@ -448,12 +464,11 @@ class AbstractEvaluator(object):
         # Flag to save target for ensemble
         self.output_y_hat_optimization = output_y_hat_optimization
 
-        if isinstance(disable_file_output, bool):
-            self.disable_file_output: bool = disable_file_output
-        elif isinstance(disable_file_output, List):
-            self.disabled_file_outputs: List[str] = disable_file_output
-        else:
-            raise ValueError('disable_file_output should be either a bool or a list')
+        disable_file_output = disable_file_output if disable_file_output is not None else []
+        # check compatibility of disable file output
+        DisableFileOutputParameters.check_compatibility(disable_file_output)
+
+        self.disable_file_output = disable_file_output
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
         if self.task_type in REGRESSION_TASKS:
@@ -834,20 +849,17 @@ class AbstractEvaluator(object):
                 )
 
         # Abort if we don't want to output anything.
-        if hasattr(self, 'disable_file_output'):
-            if self.disable_file_output:
-                return None, {}
-            else:
-                self.disabled_file_outputs = []
+        if 'all' in self.disable_file_output:
+            return None, {}
 
         # This file can be written independently of the others down bellow
-        if 'y_optimization' not in self.disabled_file_outputs:
+        if 'y_optimization' not in self.disable_file_output:
             if self.output_y_hat_optimization:
                 self.backend.save_targets_ensemble(self.Y_optimization)
 
-        if hasattr(self, 'pipelines') and self.pipelines is not None:
-            if self.pipelines[0] is not None and len(self.pipelines) > 0:
-                if 'pipelines' not in self.disabled_file_outputs:
+        if getattr(self, 'pipelines', None) is not None:
+            if self.pipelines[0] is not None and len(self.pipelines) > 0:  # type: ignore[index, arg-type]
+                if 'pipelines' not in self.disable_file_output:
                     if self.task_type in CLASSIFICATION_TASKS:
                         pipelines = VotingClassifier(estimators=None, voting='soft', )
                     else:
@@ -860,8 +872,8 @@ class AbstractEvaluator(object):
         else:
             pipelines = None
 
-        if hasattr(self, 'pipeline') and self.pipeline is not None:
-            if 'pipeline' not in self.disabled_file_outputs:
+        if getattr(self, 'pipeline', None) is not None:
+            if 'pipeline' not in self.disable_file_output:
                 pipeline = self.pipeline
             else:
                 pipeline = None
@@ -877,15 +889,15 @@ class AbstractEvaluator(object):
             cv_model=pipelines,
             ensemble_predictions=(
                 Y_optimization_pred if 'y_optimization' not in
-                                       self.disabled_file_outputs else None
+                                       self.disable_file_output else None
             ),
             valid_predictions=(
                 Y_valid_pred if 'y_valid' not in
-                                self.disabled_file_outputs else None
+                                self.disable_file_output else None
             ),
             test_predictions=(
                 Y_test_pred if 'y_test' not in
-                               self.disabled_file_outputs else None
+                               self.disable_file_output else None
             ),
         )
 
