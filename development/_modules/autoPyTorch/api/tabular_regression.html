@@ -111,9 +111,7 @@
     <div class="body col-md-9 content" role="main">
       
   <h1>Source code for autoPyTorch.api.tabular_regression</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -126,11 +124,13 @@
     <span class="n">TASK_TYPES_TO_STRING</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_validator</span> <span class="kn">import</span> <span class="n">TabularInputValidator</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">CrossValTypes</span><span class="p">,</span>
     <span class="n">HoldoutValTypes</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.tabular_dataset</span> <span class="kn">import</span> <span class="n">TabularDataset</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.evaluation.utils</span> <span class="kn">import</span> <span class="n">DisableFileOutputParameters</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.tabular_regression</span> <span class="kn">import</span> <span class="n">TabularRegressionPipeline</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
 
@@ -167,13 +167,16 @@
 <span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
 <span class="sd">            Determines whether to delete the temporary directory,</span>
 <span class="sd">            when finished</span>
-<span class="sd">        include_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components to use.</span>
-<span class="sd">        exclude_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components not to use.</span>
-<span class="sd">            Incompatible with include components.</span>
+<span class="sd">        include_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Dictionary containing components to include. Key is the node</span>
+<span class="sd">            name and Value is an Iterable of the names of the components</span>
+<span class="sd">            to include. Only these components will be present in the</span>
+<span class="sd">            search space.</span>
+<span class="sd">        exclude_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Dictionary containing components to exclude. Key is the node</span>
+<span class="sd">            name and Value is an Iterable of the names of the components</span>
+<span class="sd">            to exclude. All except these components will be present in</span>
+<span class="sd">            the search space.</span>
 <span class="sd">        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
 <span class="sd">            search space updates that can be used to modify the search</span>
 <span class="sd">            space of particular components or choice modules of the pipeline</span>
@@ -192,8 +195,8 @@
         <span class="n">output_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">delete_tmp_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">delete_output_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">holdout_validation</span><span class="p">,</span>
         <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Backend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -220,18 +223,109 @@
             <span class="n">task_type</span><span class="o">=</span><span class="n">TASK_TYPES_TO_STRING</span><span class="p">[</span><span class="n">TABULAR_REGRESSION</span><span class="p">],</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="TabularRegressionTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_regression.TabularRegressionTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TabularRegressionPipeline</span><span class="p">:</span>
+<div class="viewcode-block" id="TabularRegressionTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_regression.TabularRegressionTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">],</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularRegressionPipeline</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Build pipeline according to current task and for the passed dataset properties</span>
+<span class="sd">        Build pipeline according to current task</span>
+<span class="sd">        and for the passed dataset properties</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            dataset_properties (Dict[str,Any])</span>
+<span class="sd">            dataset_properties (Dict[str, Any]):</span>
+<span class="sd">                Characteristics of the dataset to guide the pipeline</span>
+<span class="sd">                choices of components</span>
+<span class="sd">            include_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to include. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to include. Only these components will be present in the</span>
+<span class="sd">                search space.</span>
+<span class="sd">            exclude_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to exclude. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to exclude. All except these components will be present in</span>
+<span class="sd">                the search space.</span>
+<span class="sd">            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
+<span class="sd">                Search space updates that can be used to modify the search</span>
+<span class="sd">                space of particular components or choice modules of the pipeline</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            TabularRegressionPipeline:</span>
-<span class="sd">                Pipeline compatible with the given dataset properties.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">TabularRegressionPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">TabularRegressionPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">,</span>
+                                         <span class="n">include</span><span class="o">=</span><span class="n">include_components</span><span class="p">,</span>
+                                         <span class="n">exclude</span><span class="o">=</span><span class="n">exclude_components</span><span class="p">,</span>
+                                         <span class="n">search_space_updates</span><span class="o">=</span><span class="n">search_space_updates</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_dataset_input_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TabularDataset</span><span class="p">,</span> <span class="n">TabularInputValidator</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an object of `TabularDataset` and an object of</span>
+<span class="sd">        `TabularInputValidator` according to the current task.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training feature set.</span>
+<span class="sd">            y_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training target set.</span>
+<span class="sd">            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing feature set</span>
+<span class="sd">            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing target set</span>
+<span class="sd">            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):</span>
+<span class="sd">                Strategy to split the training data. if None, uses</span>
+<span class="sd">                HoldoutValTypes.holdout_validation.</span>
+<span class="sd">            resampling_strategy_args (Optional[Dict[str, Any]]):</span>
+<span class="sd">                arguments required for the chosen resampling strategy. If None, uses</span>
+<span class="sd">                the default values provided in DEFAULT_RESAMPLING_PARAMETERS</span>
+<span class="sd">                in ```datasets/resampling_strategy.py```.</span>
+<span class="sd">            dataset_name (Optional[str]):</span>
+<span class="sd">                name of the dataset, used as experiment name.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            TabularDataset:</span>
+<span class="sd">                the dataset object.</span>
+<span class="sd">            TabularInputValidator:</span>
+<span class="sd">                the input validator fitted on the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">resampling_strategy</span> <span class="o">=</span> <span class="n">resampling_strategy</span> <span class="k">if</span> <span class="n">resampling_strategy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span>
+        <span class="n">resampling_strategy_args</span> <span class="o">=</span> <span class="n">resampling_strategy_args</span> <span class="k">if</span> <span class="n">resampling_strategy_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span>
+
+        <span class="c1"># Create a validator object to make sure that the data provided by</span>
+        <span class="c1"># the user matches the autopytorch requirements</span>
+        <span class="n">InputValidator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
+            <span class="n">is_classification</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Fit a input validator to check the provided data</span>
+        <span class="c1"># Also, an encoder is fit to both train and test data,</span>
+        <span class="c1"># to prevent unseen categories during inference</span>
+        <span class="n">InputValidator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
+            <span class="n">validator</span><span class="o">=</span><span class="n">InputValidator</span><span class="p">,</span>
+            <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
+            <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">InputValidator</span>
 
 <div class="viewcode-block" id="TabularRegressionTask.search"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_regression.TabularRegressionTask.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -252,7 +346,7 @@
         <span class="n">get_smac_object_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">all_supported_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
-        <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DisableFileOutputParameters</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">load_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">portfolio_selection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BaseTask&#39;</span><span class="p">:</span>
@@ -268,8 +362,8 @@
 <span class="sd">                A pair of features (X_train) and targets (y_train) used to fit a</span>
 <span class="sd">                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can</span>
 <span class="sd">                be provided to track the generalization performance of each stage.</span>
-<span class="sd">            optimize_metric (str): name of the metric that is used to</span>
-<span class="sd">                evaluate a pipeline.</span>
+<span class="sd">            optimize_metric (str):</span>
+<span class="sd">                Name of the metric that is used to evaluate a pipeline.</span>
 <span class="sd">            budget_type (str):</span>
 <span class="sd">                Type of budget to be used when fitting the pipeline.</span>
 <span class="sd">                It can be one of:</span>
@@ -351,10 +445,10 @@
 <span class="sd">            precision (int: default=32):</span>
 <span class="sd">                Numeric precision used when loading ensemble data.</span>
 <span class="sd">                Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
-<span class="sd">            disable_file_output (Union[bool, List]):</span>
-<span class="sd">                If True, disable model and prediction output.</span>
-<span class="sd">                Can also be used as a list to pass more fine-grained</span>
-<span class="sd">                information on what to save. Allowed elements in the list are:</span>
+<span class="sd">            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):</span>
+<span class="sd">                Used as a list to pass more fine-grained</span>
+<span class="sd">                information on what to save. Must be a member of `DisableFileOutputParameters`.</span>
+<span class="sd">                Allowed elements in the list are:</span>
 
 <span class="sd">                + `y_optimization`:</span>
 <span class="sd">                    do not save the predictions for the optimization set,</span>
@@ -367,6 +461,9 @@
 <span class="sd">                    pipelines fit on each fold.</span>
 <span class="sd">                + `y_test`:</span>
 <span class="sd">                    do not save the predictions for the test set.</span>
+<span class="sd">                + `all`:</span>
+<span class="sd">                    do not save any of the above.</span>
+<span class="sd">                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.</span>
 <span class="sd">            load_models (bool: default=True):</span>
 <span class="sd">                Whether to load the models after fitting AutoPyTorch.</span>
 <span class="sd">            portfolio_selection (Optional[str]):</span>
@@ -383,32 +480,14 @@
 <span class="sd">            self</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dataset_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">(</span><span class="n">clock_seq</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()))</span>
-
-        <span class="c1"># we have to create a logger for at this point for the validator</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_logger</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
-
-        <span class="c1"># Create a validator object to make sure that the data provided by</span>
-        <span class="c1"># the user matches the autopytorch requirements</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
-            <span class="n">is_classification</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Fit a input validator to check the provided data</span>
-        <span class="c1"># Also, an encoder is fit to both train and test data,</span>
-        <span class="c1"># to prevent unseen categories during inference</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
-            <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
-            <span class="n">validator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="p">,</span>
-            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataset_input_validator</span><span class="p">(</span>
+            <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+            <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+            <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
             <span class="n">resampling_strategy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span>
             <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
-        <span class="p">)</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
@@ -437,7 +516,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
-                             <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>
+                             <span class="s2">&quot;the estimator search() method.&quot;</span><span class="p">)</span>
 
         <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="n">predicted_values</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>

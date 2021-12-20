@@ -178,6 +178,27 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Fit a single configuration">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_single_configuration_thumb.png
+     :alt: Fit a single configuration
+
+     :ref:`sphx_glr_examples_40_advanced_example_single_configuration.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_single_configuration
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how adjust the configuration space of the search. Currently, there ...">
 
 .. only:: html

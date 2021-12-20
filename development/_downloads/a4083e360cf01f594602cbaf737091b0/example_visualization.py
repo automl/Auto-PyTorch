@@ -149,18 +149,3 @@ pd.merge(
     grid=True,
 )
 plt.show()
-
-# We then can understand the importance of each input feature using
-# a permutation importance analysis. This is done as a proof of concept, to
-# showcase that we can leverage of scikit-learn API.
-result = permutation_importance(estimator, X_train, y_train, n_repeats=5,
-                                scoring='accuracy',
-                                random_state=seed)
-sorted_idx = result.importances_mean.argsort()
-
-fig, ax = plt.subplots()
-ax.boxplot(result.importances[sorted_idx].T,
-           vert=False, labels=X_test.columns[sorted_idx])
-ax.set_title("Permutation Importances (Train set)")
-fig.tight_layout()
-plt.show()

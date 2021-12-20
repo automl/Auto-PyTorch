@@ -125,7 +125,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7fa5a314cdc0>
+    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f1499c19dc0>
 
 
 
@@ -159,7 +159,7 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'r2': 0.9445248186059718}
+    {'r2': 0.944631023189658}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
     |  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.44 |
@@ -167,12 +167,12 @@ Print the final ensemble performance
     |  2 | None                                                              | LGBMLearner                                                     |     0.08 |
     |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     autoPyTorch results:
-            Dataset name: af8b1267-6185-11ec-8760-a1d916d89faa
+            Dataset name: e5ceea59-61b0-11ec-86af-87c16fe94cf8
             Optimisation Metric: r2
-            Best validation score: 0.8645385039886702
-            Number of target algorithm runs: 34
-            Number of successful target algorithm runs: 30
-            Number of crashed target algorithm runs: 3
+            Best validation score: 0.8644967965917701
+            Number of target algorithm runs: 22
+            Number of successful target algorithm runs: 20
+            Number of crashed target algorithm runs: 1
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -183,7 +183,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  33.495 seconds)
+   **Total running time of the script:** ( 5 minutes  33.565 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_regression.py:
