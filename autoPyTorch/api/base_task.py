@@ -1452,7 +1452,7 @@ class BaseTask(ABC):
                 keyword arguments specifying the dataset like X_train, y_train,
                 X_test, y_test (Optional[Union[List, pd.DataFrame, np.ndarray]] = None)
                 and other parameters like dataset_name (str),
-                resampling_strategy (Union[HoldoutValTypes, CrossValTypes]), 
+                resampling_strategy (Union[HoldoutValTypes, CrossValTypes]),
                 resampling_strategy_args (Dict[str, Any]).
 
         Returns:
@@ -1464,7 +1464,7 @@ class BaseTask(ABC):
                 Result of fitting the pipeline
             (BaseDataset):
                 Dataset created from the given tensors
-        """        
+        """
 
         if 'dataset' not in dataset_kwargs:
             if (
