@@ -30331,18 +30331,13 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration:
-  image_augmenter:GaussianBlur:sigma_min, Value: 1.2393224595131462
-  image_augmenter:GaussianBlur:sigma_offset, Value: 2.748337224875126
-  image_augmenter:GaussianBlur:use_augmenter, Value: True
-  image_augmenter:GaussianNoise:use_augmenter, Value: False
-  image_augmenter:RandomAffine:rotate, Value: 3
-  image_augmenter:RandomAffine:scale_offset, Value: 0.061512456684185195
-  image_augmenter:RandomAffine:shear, Value: 7
-  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.006995393031539399
-  image_augmenter:RandomAffine:use_augmenter, Value: True
+  image_augmenter:GaussianBlur:use_augmenter, Value: False
+  image_augmenter:GaussianNoise:sigma_offset, Value: 2.4639811066158748
+  image_augmenter:GaussianNoise:use_augmenter, Value: True
+  image_augmenter:RandomAffine:use_augmenter, Value: False
   image_augmenter:RandomCutout:use_augmenter, Value: False
-  image_augmenter:Resize:use_augmenter, Value: True
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.18262170816649298
+  image_augmenter:Resize:use_augmenter, Value: False
+  image_augmenter:ZeroPadAndCrop:percent, Value: 0.26355260384803597
   normalizer:__choice__, Value: &#39;NoNormalizer&#39;
 
 Fitting the pipeline...
@@ -30415,7 +30410,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.453 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.321 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -30450,7 +30445,7 @@ ________________________________________
     </p>
     <p>
         &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.2.<br/>
     </p>
   </div>
 </footer>
