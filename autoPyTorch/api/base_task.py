@@ -1353,14 +1353,6 @@ class BaseTask(ABC):
     def fit_pipeline(
         self,
         configuration: Configuration,
-        dataset: Optional[BaseDataset] = None,
-        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        dataset_name: Optional[str] = None,
-        resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes]] = None,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
         run_time_limit_secs: int = 60,
         memory_limit: Optional[int] = None,
         eval_metric: Optional[str] = None,
@@ -1372,6 +1364,7 @@ class BaseTask(ABC):
         budget: Optional[float] = None,
         pipeline_options: Optional[Dict] = None,
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+        **dataset_kwargs: Any
     ) -> Tuple[Optional[BasePipeline], RunInfo, RunValue, BaseDataset]:
         """
         Fit a pipeline on the given task for the budget.
@@ -1383,19 +1376,6 @@ class BaseTask(ABC):
         methods.
 
         Args:
-            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
-                A pair of features (X_train) and targets (y_train) used to fit a
-                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
-                be provided to track the generalization performance of each stage.
-            dataset_name (Optional[str]):
-                Name of the dataset, if None, random value is used.
-            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
-                Strategy to split the training data. if None, uses
-                HoldoutValTypes.holdout_validation.
-            resampling_strategy_args (Optional[Dict[str, Any]]):
-                Arguments required for the chosen resampling strategy. If None, uses
-                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-                in ```datasets/resampling_strategy.py```.
             run_time_limit_secs (int: default=60):
                 Time limit for a single call to the machine learning model.
                 Model fitting will be terminated if the machine learning algorithm
@@ -1465,8 +1445,15 @@ class BaseTask(ABC):
                 + `all`:
                     do not save any of the above.
                 For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
-            configuration: (Configuration)
+            configuration (Configuration):
                 configuration to fit the pipeline with.
+            **dataset_kwargs (Any):
+                Can contain either `dataset (BaseDataset)` object or
+                keyword arguments specifying the dataset like X_train, y_train,
+                X_test, y_test (Optional[Union[List, pd.DataFrame, np.ndarray]] = None)
+                and other parameters like dataset_name (str),
+                resampling_strategy (Union[HoldoutValTypes, CrossValTypes]), 
+                resampling_strategy_args (Dict[str, Any]).
 
         Returns:
             (BasePipeline):
@@ -1477,19 +1464,18 @@ class BaseTask(ABC):
                 Result of fitting the pipeline
             (BaseDataset):
                 Dataset created from the given tensors
-        """
+        """        
 
-        if dataset is None:
-            assert X_train is not None and \
-                   y_train is not None, "No dataset provided, must provide X_train, y_train tensors"
-            dataset = self.get_dataset(X_train=X_train,
-                                       y_train=y_train,
-                                       X_test=X_test,
-                                       y_test=y_test,
-                                       resampling_strategy=resampling_strategy,
-                                       resampling_strategy_args=resampling_strategy_args,
-                                       dataset_name=dataset_name
-                                       )
+        if 'dataset' not in dataset_kwargs:
+            if (
+                dataset_kwargs.get('X_train', None) is not None
+                and dataset_kwargs.get('y_train', None) is not None
+            ):
+                raise ValueError("No dataset provided, must provide X_train, y_train tensors")
+
+            dataset = self.get_dataset(**dataset_kwargs)
+        else:
+            dataset = dataset_kwargs['dataset']
 
         # dataset_name is created inside the constructor of BaseDataset
         # we expect it to be not None. This is for mypy
