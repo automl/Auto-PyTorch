@@ -266,30 +266,50 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             encoder_non_BEATS = [choice for choice in network_encoder_hp.choices if choice != 'NBEATSEncoder']
             decoders_non_NBEATS = [choice for choice in network_decoder_hp.choices if choice != 'NBEATSDecoder']
             loss_non_regression = [choice for choice in hp_loss.choices if choice != 'RegressionLoss']
+            data_loader_backcast = cs.get_hyperparameter('data_loader:backcast')
 
             forbidden_encoder_NBEATS = ForbiddenInClause(network_encoder_hp, encoder_non_BEATS)
             forbidden_decoder_NBEATS = ForbiddenInClause(network_decoder_hp, decoders_non_NBEATS)
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
+            forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
+            forbidden_backcast_false = ForbiddenEqualsClause(data_loader_backcast, False)
 
             # Ensure that NBEATS encoder only works with NBEATS decoder
             if 'NBEATSEncoder' in network_encoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
-                    forbidden_encoder_NBEATS)
+                    forbidden_decoder_NBEATS)
                 )
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_loss_non_regression)
                 )
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
+                    forbidden_backcast_false)
+                )
             if 'NBEASTDecoder' in network_decoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
-                    forbidden_decoder_NBEATS)
+                    forbidden_encoder_NBEATS)
                 )
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
                     forbidden_loss_non_regression)
                 )
+                forbidden_NBEATS.append(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
+                    forbidden_backcast_false)
+                )
+            forbidden_NBEATS.append(ForbiddenAndConjunction(
+                forbidden_backcast,
+                forbidden_encoder_NBEATS
+            ))
+            forbidden_NBEATS.append(ForbiddenAndConjunction(
+                forbidden_backcast,
+                forbidden_decoder_NBEATS
+            ))
+
             cs.add_forbidden_clauses(forbidden_NBEATS)
 
         # rnn head only allow rnn backbone

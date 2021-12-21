@@ -438,8 +438,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                                                   default_value=30),
                                         num_batch_per_epoch: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter="num_batches_per_epoch",
-                                                                  value_range=(30, 200),
-                                                                  default_value=100),
+                                                                  value_range=(30, 100),
+                                                                  default_value=50),
                                         backcast: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='backcast',
                                                                   value_range=(True, False),

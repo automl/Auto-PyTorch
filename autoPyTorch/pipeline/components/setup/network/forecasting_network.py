@@ -78,7 +78,6 @@ class ForecastingNet(nn.Module):
         self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
         self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
 
-
     def forward(self,
                 targets_past: torch.Tensor,
                 targets_future: Optional[torch.Tensor] = None,
