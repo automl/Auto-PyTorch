@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Installation &#8212; AutoPyTorch 0.1.0 documentation</title>
+    <title>Installation &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css" />
@@ -55,7 +55,7 @@
         </button>
         <a class="navbar-brand" href="index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.0</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -109,7 +109,11 @@
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#system-requirements">System requirements</a></li>
-<li><a class="reference internal" href="#installing-auto-pytorch">Installing Auto-Pytorch</a></li>
+<li><a class="reference internal" href="#installing-auto-pytorch">Installing Auto-Pytorch</a><ul>
+<li><a class="reference internal" href="#pypi-installation">PyPI Installation</a></li>
+<li><a class="reference internal" href="#manual-installation">Manual Installation</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#docker-image">Docker Image</a></li>
 </ul>
 </li>
@@ -125,7 +129,7 @@
 <h2>System requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h2>
 <p>Auto-PyTorch has the following system requirements:</p>
 <ul class="simple">
-<li><p>Linux operating system (for example Ubuntu), Mac OS X <a class="reference external" href="https://www.wikihow.com/Install-Linux">(get Linux here)</a>,</p></li>
+<li><p>Linux operating system (for example Ubuntu) <a class="reference external" href="https://www.wikihow.com/Install-Linux">(get Linux here)</a>,</p></li>
 <li><p>Python (&gt;=3.6) <a class="reference external" href="https://www.python.org/downloads/">(get Python here)</a>.</p></li>
 <li><p>C++ compiler (with C++11 supports) <a class="reference external" href="https://www.tutorialspoint.com/How-to-Install-Cplusplus-Compiler-on-Linux">(get GCC here)</a> and</p></li>
 <li><p>SWIG (version 3.0.* is required; &gt;=4.0.0 is not supported) <a class="reference external" href="http://www.swig.org/survey.html">(get SWIG here)</a>.</p></li>
@@ -133,6 +137,11 @@
 </section>
 <section id="installing-auto-pytorch">
 <h2>Installing Auto-Pytorch<a class="headerlink" href="#installing-auto-pytorch" title="Permalink to this headline">¶</a></h2>
+<section id="pypi-installation">
+<h3>PyPI Installation<a class="headerlink" href="#pypi-installation" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="manual-installation">
+<h3>Manual Installation<a class="headerlink" href="#manual-installation" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Following commands assume the user is in a cloned directory of Auto-Pytorch</span>
 
 <span class="c1"># We also need to initialize the automl_common repository as follows</span>
@@ -148,6 +157,7 @@ cat requirements.txt <span class="p">|</span> xargs -n <span class="m">1</span> 
 python setup.py install
 </pre></div>
 </div>
+</section>
 </section>
 <section id="docker-image">
 <h2>Docker Image<a class="headerlink" href="#docker-image" title="Permalink to this headline">¶</a></h2>

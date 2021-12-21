@@ -38,7 +38,7 @@ with AutoPyTorch
 
     {'accuracy': 0.8670520231213873}
     autoPyTorch results:
-            Dataset name: c5b1923f-6245-11ec-86ff-d727e2798537
+            Dataset name: 144117b2-6275-11ec-87bb-4db28b908590
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
             Number of target algorithm runs: 42
@@ -121,7 +121,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  45.264 seconds)
+   **Total running time of the script:** ( 5 minutes  40.810 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:

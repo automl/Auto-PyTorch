@@ -89,9 +89,9 @@ Task Definition
 
  .. code-block:: none
 
-    [0 0 1 1 0 0 0 1 0 1 1 1 0 0 0 1 1 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0
-     0 1 0 1 0 0 0 1 1 0 0 1 0 1 1 0 0 0 1 1 0 1 0 1 0 1 1 0 0 0 0 1 0 0 1 1 1
-     0 0 1 1 1 1 1 0 1 1 1 1 1 0 1 1 1 0 0 0 0 1 0 0 0 1]
+    [0 1 0 1 1 0 0 1 0 1 1 0 0 0 1 0 0 1 1 1 1 1 0 0 0 1 1 0 0 1 0 1 1 1 0 0 1
+     1 0 0 0 1 0 1 1 1 0 0 0 0 0 1 0 0 0 1 1 1 0 0 1 1 0 0 0 1 0 0 0 1 1 1 0 1
+     0 1 1 0 0 1 1 0 0 1 0 0 0 0 0 0 0 1 1 0 0 0 1 1 1 0]
 
 
 
@@ -121,7 +121,7 @@ API Instantiation and Searching
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f730122b6d0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2de57f3880>
 
 
 
@@ -186,7 +186,7 @@ _, ax = plt.subplots()  <=== You can feed it to post-process the figure.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 2 minutes  20.524 seconds)
+   **Total running time of the script:** ( 2 minutes  23.522 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_plot_over_time.py:

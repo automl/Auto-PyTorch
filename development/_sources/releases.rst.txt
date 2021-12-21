@@ -12,11 +12,11 @@
 Releases
 ========
 
-Version 0.1.0
+Version 0.1.1
 ==============
 [refactor] Completely refactored version with a new scikit-learn compatible API.
 
-Contributors v0.1.0
+Contributors v0.1.1
 ********************
 
 * Ravin Kohli
