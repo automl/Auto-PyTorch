@@ -78,6 +78,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -86,6 +87,7 @@ jobs:
     - name: Source install
       if: matrix.kind == 'source'
       run: |
+        git submodule update --init --recursive
         python -m pip install --upgrade pip
         pip install -e .[test]
 
