@@ -1914,8 +1914,9 @@ class BaseTask(ABC):
             dataset_name=str(self.dataset.dataset_name),
             output_type=STRING_TO_OUTPUT_TYPES[self.dataset.output_type],
             task_type=STRING_TO_TASK_TYPES[self.task_type],
-            metrics=[self._metric] if self._metric is not None else get_metrics(
-                dataset_properties=required_dataset_properties, names=[optimize_metric]),
+            metrics=get_metrics(
+                dataset_properties=required_dataset_properties,
+                names=[optimize_metric]),
             opt_metric=optimize_metric,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,

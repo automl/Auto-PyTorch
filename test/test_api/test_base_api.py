@@ -12,8 +12,11 @@ from smac.tae.serial_runner import SerialRunner
 
 from autoPyTorch.api.base_task import BaseTask, _pipeline_predict
 from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
+from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
+from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 
 # ====
@@ -201,3 +204,35 @@ def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget,
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
         assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget
+
+
+def test_init_ensemble_builder(backend):
+    BaseTask.__abstractmethods__ = set()
+    estimator = BaseTask(
+        backend=backend,
+        ensemble_size=0,
+    )
+
+    # Setup pre-requisites normally set by search()
+    estimator._logger = estimator._get_logger('test')
+    estimator.task_type = "tabular_classification"
+    estimator._memory_limit = 60
+    estimator.dataset = MagicMock(spec=BaseDataset)
+    estimator.dataset.output_type = 'binary'
+    estimator.dataset.dataset_name = 'dummy'
+
+    proc_ensemble = estimator._init_ensemble_builder(
+        time_left_for_ensembles=60,
+        optimize_metric='accuracy',
+        ensemble_nbest=10,
+        ensemble_size=5
+        )
+
+    assert isinstance(proc_ensemble, EnsembleBuilderManager)
+    assert proc_ensemble.opt_metric == 'accuracy'
+    assert proc_ensemble.metrics[0] == accuracy
+
+    estimator._close_dask_client()
+    estimator._clean_logger()
+
+    del estimator
