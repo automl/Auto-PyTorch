@@ -134,7 +134,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2de5f23d60>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f19236b9430>
 
 
 
@@ -165,23 +165,20 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.8554913294797688}
+    {'accuracy': 0.838150289017341}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA                  | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.18 |
+    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA                  | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.2  |
     |  1 | None                                                              | KNNLearner                                                      |     0.16 |
-    |  2 | None                                                              | SVMLearner                                                      |     0.12 |
-    |  3 | None                                                              | CBLearner                                                       |     0.1  |
-    |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-    |  5 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
-    |  6 | None                                                              | RFLearner                                                       |     0.06 |
-    |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  8 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-    |  9 | SimpleImputer,NoEncoder,Normalizer,Nystroem                       | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    | 10 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    | 11 | SimpleImputer,OneHotEncoder,Normalizer,TruncSVD                   | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
-    | 12 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    | 13 | None                                                              | ETLearner                                                       |     0.02 |
+    |  2 | None                                                              | CBLearner                                                       |     0.14 |
+    |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
+    |  4 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.08 |
+    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+    |  6 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+    |  7 | SimpleImputer,NoEncoder,Normalizer,Nystroem                       | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  8 | None                                                              | SVMLearner                                                      |     0.04 |
+    |  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    | 10 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
             Dataset name: Australian
             Optimisation Metric: accuracy
@@ -199,7 +196,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  35.550 seconds)
+   **Total running time of the script:** ( 5 minutes  37.241 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
