@@ -9,6 +9,7 @@ from ConfigSpace.conditions import EqualsCondition
 import numpy as np
 
 import torch
+from torch._six import container_abcs, string_classes, int_classes
 
 import torchvision
 
@@ -26,11 +27,48 @@ from autoPyTorch.utils.common import (
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 
 
+class PaddingCollecter:
+    """
+    A collector that transform the sequences from dataset. Since the sequences might contain different
+    length, they need to be padded with constant value. Given that target value might require special value to
+    fit the requirement of distribution, past_target will be padded with special values
+    #TODO implement padding collect!!
+
+    """
+
+    def __init__(self, target_padding_value: float = 0.0):
+        self.target_padding_value = target_padding_value
+
+    def __call__(self, batch, padding_value=0.0):
+
+        elem = batch[0]
+        elem_type = type(elem)
+        if isinstance(elem, torch.Tensor):
+            out = None
+            if torch.utils.data.get_worker_info() is not None:
+                # If we're in a background process, concatenate directly into a
+                # shared memory tensor to avoid an extra copy
+                numel = sum([x.numel() for x in batch])
+                storage = elem.storage()._new_shared(numel)
+                out = elem.new(storage)
+            return torch.stack(batch, 0, out=out)
+        elif isinstance(elem, float):
+            return torch.tensor(batch, dtype=torch.float64)
+        elif isinstance(elem, int_classes):
+            return torch.tensor(batch)
+        elif isinstance(elem, string_classes):
+            return batch
+        elif isinstance(elem, container_abcs.Mapping):
+            return {key: self([d[key] for d in batch]) if key != "past_target"
+                    else self([d[key] for d in batch], self.target_padding_value) for key in elem}
+        raise TypeError(f"Unsupported data type {elem_type}")
+
+
 class TimeSeriesSampler(SubsetRandomSampler):
     def __init__(self,
                  indices: Sequence[int],
                  seq_lengths: Sequence[int],
-                 num_instances_per_seqs: Optional[List[int]]=None,
+                 num_instances_per_seqs: Optional[List[int]] = None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
         """
@@ -127,7 +165,7 @@ class SequenceBuilder(object):
         sliding window size
     """
 
-    def __init__(self, sample_interval: int = 1, window_size: int = 1, subseq_length=1, padding_value=0.):
+    def __init__(self, sample_interval: int = 1, ):
         """
         initialization
         Args:
@@ -135,27 +173,18 @@ class SequenceBuilder(object):
             window_size: int: the size of the sliding window
         """
         self.sample_interval = sample_interval
-        self.window_size = window_size
         # assuming that subseq_length is 10, e.g., we can only start from -10. sample_interval = -4
         # we will sample the following indices: [-9,-5,-1]
-        self.first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
-        self.padding_value = padding_value
+        # self.first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
-        sample_indices = np.arange(self.first_indices, 0, step=self.sample_interval)
-
-        if sample_indices[0] < -1 * len(data):
-            # we need to pad with 0
-            valid_indices = sample_indices[np.where(sample_indices >= -len(data))[0]]
-
-            data_values = data[valid_indices]
-            if data.ndim == 1:
-                padding_vector = np.full([len(sample_indices) - len(valid_indices)], self.padding_value)
-                return np.hstack([padding_vector, data_values])
-            else:
-                padding_vector = np.full([len(sample_indices) - len(valid_indices), data.shape[-1]], self.padding_value)
-                return np.vstack([padding_vector, data_values])
+        if self.sample_interval == 1:
+            return data
         else:
+            subseq_length = len(data)
+            first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
+            sample_indices = np.arange(first_indices, 0, step=self.sample_interval)
+
             return data[sample_indices]
 
 
@@ -212,9 +241,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Returns:
             A instance of self
         """
-        X["window_size"] = self.window_size
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
+        if sample_interval > 1:
+            # for lower resolution, window_size should be smaller
+            self.window_size = self.sample_interval * ((self.window_size - 1) // self.sample_interval) + 1
         # this value corresponds to budget type num_sequence
         fraction_seq = X.get('fraction_seq', 1.0)
         # this value corresponds to budget type num_sample_per_seq
@@ -222,10 +253,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.sample_interval = sample_interval
 
         self.padding_value = X.get('required_padding_value', 0.0)
-
-        # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
-        # we want models with different sample_interval to have similar length scale
-        self.subseq_length = self.window_size
 
         # Make sure there is an optimizer
         self.check_requirements(X, y)
@@ -327,6 +354,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         )
         return self
 
+    def transform(self, X: Dict) -> Dict:
+        X.update({"window_size": self.window_size})
+        return super().transform(X)
+
     def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
         """
         Method to build a transformation that can pre-process input data
@@ -346,12 +377,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         # if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
         #    candidate_transformations.extend(X['preprocess_transforms'])
-
-        candidate_transformations.append((SequenceBuilder(sample_interval=self.sample_interval,
-                                                          window_size=self.window_size,
-                                                          subseq_length=self.subseq_length,
-                                                          padding_value=self.padding_value)))
-        candidate_transformations.append((ExpandTransformTimeSeries()))
+        if self.sample_interval > 1:
+            candidate_transformations.append(SequenceBuilder(sample_interval=self.sample_interval))
+        candidate_transformations.append(ExpandTransformTimeSeries())
         if "test" in mode or not X['dataset_properties']['is_small_preprocess']:
             candidate_transformations.extend(X['preprocess_transforms'])
 

@@ -59,7 +59,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
             FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Dict) -> Dict:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
