@@ -64,12 +64,12 @@ jobs:
             GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Pull Docker image
-        run: docker pull ghcr.io/$GITHUB_REPOSITORY/autoPyTorch:$BRANCH
+        run: docker pull ghcr.io/$GITHUB_REPOSITORY/autopytorch:$BRANCH
         env:
             BRANCH: ${{ steps.extract_branch.outputs.branch }}
 
       - name: Run image
-        run: docker run -i -d --name unittester -v $GITHUB_WORKSPACE:/workspace -w /workspace ghcr.io/$GITHUB_REPOSITORY/autoPyTorch:$BRANCH
+        run: docker run -i -d --name unittester -v $GITHUB_WORKSPACE:/workspace -w /workspace ghcr.io/$GITHUB_REPOSITORY/autopytorch:$BRANCH
         env:
             BRANCH: ${{ steps.extract_branch.outputs.branch }}
 
