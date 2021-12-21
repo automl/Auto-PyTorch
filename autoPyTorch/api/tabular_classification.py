@@ -374,19 +374,6 @@ class TabularClassificationTask(BaseTask):
             self
 
         """
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
-
-        # we have to create a logger for at this point for the validator
-        self._logger = self._get_logger(dataset_name)
-
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TabularInputValidator(
-            is_classification=True,
-            logger_port=self._logger_port,
-        )
-
         self.dataset, self.InputValidator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
@@ -403,9 +390,6 @@ class TabularClassificationTask(BaseTask):
                 'Expected `self.resampling_strategy` to be either '
                 '(CrossValTypes, HoldoutValTypes), but got {}'.format(self.resampling_strategy)
             )
-
-        if self.dataset is None:
-            raise ValueError("`dataset` in {} must be initialized, but got None".format(self.__class__.__name__))
 
         return self._search(
             dataset=self.dataset,
