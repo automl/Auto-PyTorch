@@ -151,9 +151,25 @@ python setup.py install
 </section>
 <section id="docker-image">
 <h2>Docker Image<a class="headerlink" href="#docker-image" title="Permalink to this headline">¶</a></h2>
-<blockquote>
-<div><p>TODO</p>
-</div></blockquote>
+<p>A Docker image is also provided on dockerhub. To download from dockerhub,
+use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker pull automlorg/autopytorch:master
+</pre></div>
+</div>
+<p>You can also verify that the image was downloaded via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker images  <span class="c1"># Verify that the image was downloaded</span>
+</pre></div>
+</div>
+<p>This image can be used to start an interactive session as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run -it automlorg/autopytorch:master
+</pre></div>
+</div>
+<p>To start a Jupyter notebook, you could instead run e.g.:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run -it -v <span class="si">${</span><span class="nv">PWD</span><span class="si">}</span>:/opt/nb -p <span class="m">8888</span>:8888 automlorg/autopytorch:master /bin/bash -c <span class="s2">&quot;mkdir -p /opt/nb &amp;&amp; jupyter notebook --notebook-dir=/opt/nb --ip=&#39;0.0.0.0&#39; --port=8888 --no-browser --allow-root&quot;</span>
+</pre></div>
+</div>
+<p>Alternatively, it is possible to use the development version of autoPyTorch by replacing all
+occurences of <code class="docutils literal notranslate"><span class="pre">master</span></code> by <code class="docutils literal notranslate"><span class="pre">development</span></code>.</p>
 </section>
 </section>
 
