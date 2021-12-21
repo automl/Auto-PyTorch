@@ -42,7 +42,7 @@ class _RNN(EncoderNetwork):
                 hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
         B, T, _ = x.shape
 
-        outputs, hidden_state, = self.lstm(x, hx)
+        outputs, hidden_state = self.lstm(x, hx)
 
         if output_seq:
             return outputs, hidden_state

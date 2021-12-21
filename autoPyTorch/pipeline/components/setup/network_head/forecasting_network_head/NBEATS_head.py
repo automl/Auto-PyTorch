@@ -11,6 +11,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.
 
 class TransposeLinear(nn.Module):
     def __init__(self, weights: torch.Tensor):
+        super().__init__()
         self.register_buffer('weights', weights)
 
     def forward(self, x: torch.Tensor):
@@ -88,7 +89,8 @@ def get_seasonality_heads(block_width: int, thetas_dim: int, forecast_length: in
     return backcast_head, forecast_head
 
 
-def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBLock]], output_shape: Tuple[int]) -> List[NBEATSBLock]:
+def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBLock]],
+                         output_shape: Tuple[int]) -> nn.ModuleList:
     nbeats_blocks = []
     for stack_idx, stack in enumerate(nbeats_decoder):
         for block_idx, block in enumerate(nbeats_decoder[stack_idx]):
@@ -96,18 +98,18 @@ def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBLock]], output_shape: 
             if stack_type == 'generic':
                 backcast_head, forecast_head = get_generic_heads(block_width=block.width,
                                                                  thetas_dim=block.expansion_coefficient_length,
-                                                                 forecast_length=np.product(output_shape[1:]).item(),
+                                                                 forecast_length=np.product(output_shape).item(),
                                                                  backcast_length=block.n_in_features)
             elif stack_type == 'trend':
                 backcast_head, forecast_head = get_trend_heads(block_width=block.width,
                                                                thetas_dim=block.expansion_coefficient_length,
-                                                               forecast_length=np.product(output_shape[1:]).item(),
+                                                               forecast_length=np.product(output_shape).item(),
                                                                backcast_length=block.n_in_features)
             elif stack_type == 'seasonality':
                 backcast_head, forecast_head = get_seasonality_heads(block_width=block.width,
                                                                      thetas_dim=block.expansion_coefficient_length,
                                                                      forecast_length=np.product(
-                                                                         output_shape[1:]).item(),
+                                                                         output_shape).item(),
                                                                      backcast_length=block.n_in_features)
             else:
                 raise ValueError(f"Unsupported stack_type {stack_type}")
@@ -119,4 +121,4 @@ def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBLock]], output_shape: 
             block = nbeats_blocks[-1]
             for _ in range(block.num_blocks - 1):
                 nbeats_blocks.append(nbeats_blocks[-1])
-    return nbeats_blocks
+    return nn.ModuleList(nbeats_blocks)

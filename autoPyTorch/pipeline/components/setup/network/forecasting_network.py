@@ -78,6 +78,7 @@ class ForecastingNet(nn.Module):
         self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
         self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
 
+
     def forward(self,
                 targets_past: torch.Tensor,
                 targets_future: Optional[torch.Tensor] = None,
@@ -246,10 +247,13 @@ class ForecastingDeepARNet(ForecastingNet):
             if self.encoder_has_hidden_states:
                 # For RNN, we only feed the hidden state and generated future input to the netwrok
                 encoder_output, hidden_states = self.encoder(x_past)
-                repeated_state = [
-                    s.repeat_interleave(repeats=self.num_samples, dim=1)
-                    for s in hidden_states
-                ]
+                if isinstance(hidden_states, tuple):
+                    repeated_state = [
+                        s.repeat_interleave(repeats=self.num_samples, dim=1)
+                        for s in hidden_states
+                    ]
+                else:
+                    repeated_state = hidden_states.repeat_interleave(repeats=self.num_samples, dim=1)
 
             else:
                 # For other models, the full past targets are passed to the network.
@@ -317,7 +321,7 @@ class NBEATSNet(ForecastingNet):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
-        forecast = torch.zeros_like(targets_future).view(targets_future.shape[0], -1)
+        forecast = torch.zeros([self.n_prediction_steps, *targets_past[1:]])
         backcast = self.encoder(targets_past)
         for block in self.decoder:
             backcast_block, forecast_block = block(backcast)

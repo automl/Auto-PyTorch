@@ -99,8 +99,9 @@ class ForecastingHead(NetworkHeadComponent):
             X.update({'network_head': self.head})
         else:
             decoder = X['network_decoder']
-            decoder = build_NBEATS_network(decoder, self.output_shape[1:])
-
+            decoder = build_NBEATS_network(decoder, self.output_shape)
+            X.update({'network_head': self.head,
+                      'network_decoder': decoder})
         return X
 
 
