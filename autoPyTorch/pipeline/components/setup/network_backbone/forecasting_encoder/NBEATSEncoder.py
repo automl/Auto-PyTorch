@@ -25,8 +25,6 @@ class NBEATSEncoder(BaseForecastingEncoder):
     """
     _fixed_seq_length = True
     window_size = 1
-    fill_lower_resolution_seq = False
-    fill_kwargs = {}
 
     def encoder_properties(self):
         encoder_properties = super().encoder_properties()
@@ -43,17 +41,10 @@ class NBEATSEncoder(BaseForecastingEncoder):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.window_size = X["window_size"]
-        # when resolution is smaller
-        if 'sample_interval' in X and X['sample_interval'] > 1.:
-            self.fill_lower_resolution_seq = True
-            self.fill_kwargs = {'loader_sample_interval': X['sample_interval']}
         return super().fit(X, y)
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size,
-                                                 fill_lower_resolution_seq=self.fill_lower_resolution_seq,
-                                                 fill_kwargs=self.fill_kwargs
-                                                 )
+        preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
         return preprocessor
 
     @staticmethod

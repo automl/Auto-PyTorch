@@ -19,8 +19,6 @@ from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, 
 class TimeSeriesMLPrecpocessor(EncoderNetwork):
     def __init__(self,
                  window_size: int,
-                 fill_lower_resolution_seq: bool = False,
-                 fill_kwargs: Dict = {},
                  ):
         """
         Transform the input features (B, T, N) to fit the requirement of MLP
@@ -32,8 +30,6 @@ class TimeSeriesMLPrecpocessor(EncoderNetwork):
         """
         super().__init__()
         self.window_size = window_size
-        self.fill_lower_resolution_seq = fill_lower_resolution_seq
-        self.fill_interval = fill_kwargs.get('loader_sample_interval', 1)
 
     def forward(self, x: torch.Tensor, output_seq: bool = False):
         """
@@ -57,13 +53,6 @@ class TimeSeriesMLPrecpocessor(EncoderNetwork):
             if x.shape[1] > self.window_size:
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
-        if self.fill_lower_resolution_seq and x.shape[1] < self.window_size:
-            x = F.conv_transpose1d(x.transpose(1, 2),
-                                   F.pad(torch.ones((1, 1, 1)), (1, 1)),
-                                   stride=self.fill_interval,
-                                   padding=1).transpose(1, 2)
-            if x.shape[1] < self.window_size:
-                x = torch.cat([torch.zeros(x.shape[0], self.window_size - x.shape[1], x.shape[2]), x], dim=1)
         x = x.flatten(-2)
         return x
 
@@ -71,8 +60,6 @@ class TimeSeriesMLPrecpocessor(EncoderNetwork):
 class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
-    fill_lower_resolution_seq = False
-    fill_kwargs = {}
 
     def encoder_properties(self):
         encoder_properties = super().encoder_properties()
@@ -91,17 +78,11 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.window_size = X["window_size"]
         # when resolution is smaller
-        if 'sample_interval' in X and X['sample_interval'] > 1.:
-            self.fill_lower_resolution_seq = True
-            self.fill_kwargs = {'loader_sample_interval': X['sample_interval']}
-
         return super().fit(X, y)
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1] * self.window_size
-        feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size,
-                                                        fill_lower_resolution_seq=self.fill_lower_resolution_seq,
-                                                        fill_kwargs=self.fill_kwargs)
+        feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
         return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features))
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,

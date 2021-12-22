@@ -116,10 +116,14 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         bijective_seq_output, determines if the network returns a sequence with the same sequence length as the input
         sequence when output_seq is set True
         fix_input_shape if the input shape is fixed, this is useful for building network head
+        lagged_input, if lagged input values are applied, this technique is implemented in DeepAR and Transformer
+        implemented in gluonTS:
+        https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/model/deepar/module.py
         """
         encoder_properties = {'has_hidden_states': False,
                               'bijective_seq_output': True,
                               'fixed_input_seq_length': False,
+                              'lagged_input': False,
                               }
         return encoder_properties
 

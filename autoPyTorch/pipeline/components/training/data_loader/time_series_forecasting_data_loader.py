@@ -66,8 +66,9 @@ class PadSequenceCollector:
 
     """
 
-    def __init__(self, window_size: int, target_padding_value: float = 0.0):
+    def __init__(self, window_size: int, sample_interval:int= 1, target_padding_value: float = 0.0):
         self.window_size = window_size
+        self.sample_interval = sample_interval
         self.target_padding_value = target_padding_value
 
     def __call__(self, batch, padding_value=0.0):
@@ -77,7 +78,14 @@ class PadSequenceCollector:
             seq = pad_sequence_from_start(batch,
                                           seq_minimal_length=self.window_size,
                                           batch_first=True, padding_value=padding_value) # type: torch.Tensor
-            return seq
+            if self.sample_interval > 1:
+                subseq_length = seq.shape[1]
+                first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
+                sample_indices = torch.arange(first_indices, 0, step=self.sample_interval)
+                return seq[:, sample_indices]
+            else:
+                return seq
+
         elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
                 and elem_type.__name__ != 'string_':
             if elem_type.__name__ == 'ndarray' or elem_type.__name__ == 'memmap':
@@ -183,47 +191,6 @@ class ExpandTransformTimeSeries(object):
         return data
 
 
-class SequenceBuilder(object):
-    """build a time sequence token from the given time sequence
-    it requires two hyperparameters: sample_interval and window size
-    let's assume we have a time sequence
-    x = [0 1 2 3 4 5 6 7 8 9 10].with window_size=3 and sample resolution=2
-    then the extracted time series is [6, 8, 10] (or x[-5,-3,-1])
-    if window_size=3 and sample_resolution=3
-    then the extracted token is [4, 7, 10] (or x[-7,-4,-1])
-
-    Parameters
-    ----------
-    sample_interval : int, default=1
-        sample resolution
-
-    window_size : int, default=1
-        sliding window size
-    """
-
-    def __init__(self, sample_interval: int = 1, ):
-        """
-        initialization
-        Args:
-            sample_interval: int: sample resolution
-            window_size: int: the size of the sliding window
-        """
-        self.sample_interval = sample_interval
-        # assuming that subseq_length is 10, e.g., we can only start from -10. sample_interval = -4
-        # we will sample the following indices: [-9,-5,-1]
-        # self.first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
-
-    def __call__(self, data: np.ndarray) -> np.ndarray:
-        if self.sample_interval == 1:
-            return data
-        else:
-            subseq_length = len(data)
-            first_indices = -(self.sample_interval * ((subseq_length - 1) // self.sample_interval) + 1)
-            sample_indices = np.arange(first_indices, 0, step=self.sample_interval)
-
-            return data[sample_indices]
-
-
 class TimeSeriesForecastingDataLoader(FeatureDataLoader):
     """This class is an interface to read time sequence data
 
@@ -264,7 +231,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
-        self.padding_collector = PadSequenceCollector(self.window_size, 0.0)
+        self.padding_collector = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -277,22 +244,21 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Returns:
             A instance of self
         """
+        self.check_requirements(X, y)
+
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
+        padding_value = X.get('required_padding_value', 0.0)
+        self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value)
+
         if sample_interval > 1:
             # for lower resolution, window_size should be smaller
-            self.window_size = (self.window_size - 1) // self.sample_interval + 1
+            self.window_size = (self.window_size - 1) // sample_interval + 1
         # this value corresponds to budget type num_sequence
         fraction_seq = X.get('fraction_seq', 1.0)
         # this value corresponds to budget type num_sample_per_seq
         fraction_samples_per_seq = X.get('fraction_samples_per_seq', 1.0)
         self.sample_interval = sample_interval
-
-        padding_value = X.get('required_padding_value', 0.0)
-
-        self.padding_collector.target_padding_value = padding_value
-        # Make sure there is an optimizer
-        self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
         datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
@@ -346,24 +312,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
         # In which case we simply iterate through all the datasets
 
-        """
-        # to allow a time sequence data with resolution self.sample_interval and windows size with self.window_size
-        # we need to drop the first part of each sequence
-        for seq_idx, seq_length in enumerate(datamanager.sequence_lengths_train):
-            idx_end = idx_start + seq_length
-            #full_sequence = np.random.choice(np.arange(idx_start, idx_end)[self.subseq_length:], 5)
-            #full_sequence = np.arange(idx_start, idx_end)[self.subseq_length:]
-            #full_sequence = np.random.choice(np.arange(idx_start, idx_end)[self.subseq_length:], 5)
-            full_sequence = np.arange(idx_start, idx_end)
-            valid_indices.append(full_sequence)
-            idx_start = idx_end
-
-        valid_indices = np.hstack([valid_idx for valid_idx in valid_indices])
-        _, sampler_indices_train, _ = np.intersect1d(train_split, valid_indices, return_indices=True)
-        """
-        # test_indices not required as testsets usually lies on the trail of hte sequence
-        # _, sampler_indices_test, _ = np.intersect1d(test_split, valid_indices)
-
         sampler_indices_train = np.arange(num_instances_dataset)
 
         self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
@@ -414,8 +362,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         # if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
         #    candidate_transformations.extend(X['preprocess_transforms'])
-        if self.sample_interval > 1:
-            candidate_transformations.append(SequenceBuilder(sample_interval=self.sample_interval))
+
         candidate_transformations.append(ExpandTransformTimeSeries())
         if "test" in mode or not X['dataset_properties']['is_small_preprocess']:
             candidate_transformations.extend(X['preprocess_transforms'])
