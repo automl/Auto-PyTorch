@@ -48,8 +48,9 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
-from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.abstract_evaluator import fit_pipeline
+from autoPyTorch.evaluation.pipeline_class_collection import get_default_pipeline_config
+from autoPyTorch.evaluation.tae import TargetAlgorithmQuery
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -685,23 +686,24 @@ class BaseTask(ABC):
         # already be generated here!
         stats = Stats(scenario_mock)
         stats.start_timing()
-        ta = ExecuteTaFuncWithQueue(
+        taq = TargetAlgorithmQuery(
             pynisher_context=self._multiprocessing_context,
             backend=self._backend,
             seed=self.seed,
             metric=self._metric,
             multi_objectives=["cost"],
             logger_port=self._logger_port,
-            cost_for_crash=get_cost_of_crash(self._metric),
+            cost_for_crash=self._metric._cost_of_crash,
             abort_on_first_run_crash=False,
             initial_num_run=num_run,
+            pipeline_config=get_default_pipeline_config(choice='dummy'),
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=self._disable_file_output,
             all_supported_metrics=self._all_supported_metrics
         )
 
-        status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
+        status, _, _, additional_info = taq.run(num_run, cutoff=self._time_for_task)
         if status == StatusType.SUCCESS:
             self._logger.info("Finished creating dummy predictions.")
         else:
@@ -770,14 +772,14 @@ class BaseTask(ABC):
                 # already be generated here!
                 stats = Stats(scenario_mock)
                 stats.start_timing()
-                ta = ExecuteTaFuncWithQueue(
+                taq = TargetAlgorithmQuery(
                     pynisher_context=self._multiprocessing_context,
                     backend=self._backend,
                     seed=self.seed,
                     multi_objectives=["cost"],
                     metric=self._metric,
                     logger_port=self._logger_port,
-                    cost_for_crash=get_cost_of_crash(self._metric),
+                    cost_for_crash=self._metric._cost_of_crash,
                     abort_on_first_run_crash=False,
                     initial_num_run=self._backend.get_next_num_run(),
                     stats=stats,
@@ -788,7 +790,7 @@ class BaseTask(ABC):
                 dask_futures.append([
                     classifier,
                     self._dask_client.submit(
-                        ta.run, config=classifier,
+                        taq.run, config=classifier,
                         cutoff=func_eval_time_limit_secs,
                     )
                 ])
@@ -1078,7 +1080,7 @@ class BaseTask(ABC):
 
         # Here the budget is set to max because the SMAC intensifier can be:
         # Hyperband: in this case the budget is determined on the fly and overwritten
-        #            by the ExecuteTaFuncWithQueue
+        #            by the TargetAlgorithmQuery
         # SimpleIntensifier (and others): in this case, we use max_budget as a target
         #                                 budget, and hece the below line is honored
         self.pipeline_options[budget_type] = max_budget
@@ -1362,7 +1364,7 @@ class BaseTask(ABC):
                 dataset_properties=dataset_properties,
                 dataset=dataset,
                 split_id=split_id)
-            fit_and_suppress_warnings(self._logger, model, X, y=None)
+            fit_pipeline(self._logger, model, X, y=None)
 
         self._clean_logger()
 
@@ -1573,20 +1575,19 @@ class BaseTask(ABC):
 
         stats.start_timing()
 
-        tae = ExecuteTaFuncWithQueue(
+        taq = TargetAlgorithmQuery(
             backend=self._backend,
             seed=self.seed,
             metric=metric,
             multi_objectives=["cost"],
             logger_port=self._logger_port,
-            cost_for_crash=get_cost_of_crash(metric),
+            cost_for_crash=metric._cost_of_crash,
             abort_on_first_run_crash=False,
             initial_num_run=self._backend.get_next_num_run(),
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=disable_file_output,
             all_supported_metrics=all_supported_metrics,
-            budget_type=budget_type,
             include=include_components,
             exclude=exclude_components,
             search_space_updates=search_space_updates,
@@ -1594,7 +1595,7 @@ class BaseTask(ABC):
             pynisher_context=self._multiprocessing_context
         )
 
-        run_info, run_value = tae.run_wrapper(
+        run_info, run_value = taq.run_wrapper(
             RunInfo(config=configuration,
                     budget=budget,
                     seed=self.seed,
@@ -1606,7 +1607,7 @@ class BaseTask(ABC):
 
         fitted_pipeline = self._get_fitted_pipeline(
             dataset_name=dataset.dataset_name,
-            pipeline_idx=run_info.config.config_id + tae.initial_num_run,
+            pipeline_idx=run_info.config.config_id + taq.initial_num_run,
             run_info=run_info,
             run_value=run_value,
             disable_file_output=disable_file_output

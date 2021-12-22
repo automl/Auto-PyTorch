@@ -1,8 +1,6 @@
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from ConfigSpace.configuration_space import Configuration
-
 import numpy as np
 
 from sklearn.base import BaseEstimator
@@ -17,22 +15,72 @@ from autoPyTorch.constants import (
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
-    fit_and_suppress_warnings
+    EvaluationResults,
+    fit_pipeline
 )
-from autoPyTorch.evaluation.utils import DisableFileOutputParameters
-from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.evaluation.abstract_evaluator import EvaluatorParams, FixedPipelineParams
 from autoPyTorch.utils.common import dict_repr, subsampler
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 __all__ = ['TrainEvaluator', 'eval_train_function']
 
+class _CrossValidationResultsManager:
+    def __init__(self, num_folds: int):
+        self.additional_run_info: Dict = {}
+        self.opt_preds: List[Optional[np.ndarray]] = [None] * num_folds
+        self.valid_preds: List[Optional[np.ndarray]] = [None] * num_folds
+        self.test_preds: List[Optional[np.ndarray]] = [None] * num_folds
+        self.train_loss: Dict[str, float] = {}
+        self.opt_loss: Dict[str, float] = {}
+        self.n_train, self.n_opt = 0, 0
 
-def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
-    if task_type in CLASSIFICATION_TASKS and task_type != \
-            MULTICLASSMULTIOUTPUT:
-        return y.ravel()
-    else:
-        return y
+    @staticmethod
+    def _update_loss_dict(loss_sum_dict: Dict[str, float], loss_dict: Dict[str, float], n_datapoints: int) -> None:
+        loss_sum_dict.update({
+            metric_name: loss_sum_dict.get(metric_name, 0) + loss_dict[metric_name] * n_datapoints
+            for metric_name in loss_dict.keys()
+        })
+
+    def update(self, split_id: int, results: EvaluationResults, n_train: int, n_opt: int) -> None:
+        self.n_train += n_train
+        self.n_opt += n_opt
+        self.opt_preds[split_id] = results.opt_pred
+        self.valid_preds[split_id] = results.valid_pred
+        self.test_preds[split_id] = results.test_pred
+
+        if results.additional_run_info is not None:
+            self.additional_run_info.update(results.additional_run_info)
+
+        self._update_loss_dict(self.train_loss, loss_dict=results.train_loss, n_datapoints=n_train)
+        self._update_loss_dict(self.opt_loss, loss_dict=results.opt_loss, n_datapoints=n_opt)
+
+    def get_average_loss(self) -> Tuple[Dict[str, float], Dict[str, float]]:
+        train_avg_loss = {metric_name: val / float(self.n_train) for metric_name, val in self.train_loss.items()}
+        opt_avg_loss = {metric_name: val / float(self.n_opt) for metric_name, val in self.opt_loss.items()}
+        return train_avg_loss, opt_avg_loss
+
+    def _merge_predictions(self, preds: List[Optional[np.ndarray]]) -> Optional[np.ndarray]:
+        merged_pred = np.array([pred for pred in preds if pred is not None])
+        if merged_pred.size == 0:
+            return None
+
+        if len(merged_pred.shape) != 3:
+            # merged_pred.shape := (n_splits, n_datapoints, n_class or 1)
+            raise ValueError(
+                f'each pred must have the shape (n_datapoints, n_class or 1), but got {merged_pred.shape[1:]}'
+            )
+
+        return np.nanmean(merged_pred, axis=0)
+
+    def get_result_dict(self) -> Dict[str, Any]:
+        train_loss, opt_loss = self.get_average_loss()
+        return dict(
+            opt_loss=opt_loss,
+            train_loss=train_loss,
+            opt_pred=np.concatenate([pred for pred in self.opt_preds if pred is not None]),
+            valid_pred=self._merge_predictions(self.valid_preds),
+            test_pred=self._merge_predictions(self.test_preds),
+            additional_run_info=self.additional_run_info
+        )
 
 
 class TrainEvaluator(AbstractEvaluator):
@@ -45,75 +93,14 @@ class TrainEvaluator(AbstractEvaluator):
     with `CrossValTypes`, `HoldoutValTypes`, i.e, when the training data
     is split and the validation set is used for SMBO optimisation.
 
-    Attributes:
-        backend (Backend):
-            An object to interface with the disk storage. In particular, allows to
-            access the train and test datasets
+    Args:
         queue (Queue):
             Each worker available will instantiate an evaluator, and after completion,
-            it will return the evaluation result via a multiprocessing queue
-        metric (autoPyTorchMetric):
-            A scorer object that is able to evaluate how good a pipeline was fit. It
-            is a wrapper on top of the actual score method (a wrapper on top of scikit
-            lean accuracy for example) that formats the predictions accordingly.
-        budget: (float):
-            The amount of epochs/time a configuration is allowed to run.
-        budget_type  (str):
-            The budget type, which can be epochs or time
-        pipeline_config (Optional[Dict[str, Any]]):
-            Defines the content of the pipeline being evaluated. For example, it
-            contains pipeline specific settings like logging name, or whether or not
-            to use tensorboard.
-        configuration (Union[int, str, Configuration]):
-            Determines the pipeline to be constructed. A dummy estimator is created for
-            integer configurations, a traditional machine learning pipeline is created
-            for string based configuration, and NAS is performed when a configuration
-            object is passed.
-        seed (int):
-            A integer that allows for reproducibility of results
-        output_y_hat_optimization (bool):
-            Whether this worker should output the target predictions, so that they are
-            stored on disk. Fundamentally, the resampling strategy might shuffle the
-            Y_train targets, so we store the split in order to re-use them for ensemble
-            selection.
-        num_run (Optional[int]):
-            An identifier of the current configuration being fit. This number is unique per
-            configuration.
-        include (Optional[Dict[str, Any]]):
-            An optional dictionary to include components of the pipeline steps.
-        exclude (Optional[Dict[str, Any]]):
-            An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
-            Used as a list to pass more fine-grained
-            information on what to save. Must be a member of `DisableFileOutputParameters`.
-            Allowed elements in the list are:
-
-            + `y_optimization`:
-                do not save the predictions for the optimization set,
-                which would later on be used to build an ensemble. Note that SMAC
-                optimizes a metric evaluated on the optimization set.
-            + `pipeline`:
-                do not save any individual pipeline files
-            + `pipelines`:
-                In case of cross validation, disables saving the joint model of the
-                pipelines fit on each fold.
-            + `y_test`:
-                do not save the predictions for the test set.
-            + `all`:
-                do not save any of the above.
-            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
-        init_params (Optional[Dict[str, Any]]):
-            Optional argument that is passed to each pipeline step. It is the equivalent of
-            kwargs for the pipeline steps.
-        logger_port (Optional[int]):
-            Logging is performed using a socket-server scheme to be robust against many
-            parallel entities that want to write to the same file. This integer states the
-            socket port for the communication channel. If None is provided, a traditional
-            logger is used.
-        all_supported_metrics  (bool):
-            Whether all supported metric should be calculated for every configuration.
-        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            An object used to fine tune the hyperparameter search space of the pipeline
+            it will append the result to a multiprocessing queue
+        fixed_pipeline_params (FixedPipelineParams):
+            Fixed parameters for a pipeline
+        evaluator_params (EvaluatorParams):
+            The parameters for an evaluator.
     """
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
@@ -159,251 +146,105 @@ class TrainEvaluator(AbstractEvaluator):
             )
 
         self.num_folds: int = len(self.splits)
-        self.Y_targets: List[Optional[np.ndarray]] = [None] * self.num_folds
-        self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN
-        self.pipelines: List[Optional[BaseEstimator]] = [None] * self.num_folds
-        self.indices: List[Optional[Tuple[Union[np.ndarray, List], Union[np.ndarray, List]]]] = [None] * self.num_folds
-
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
-        self.keep_models = keep_models
 
-    def fit_predict_and_loss(self) -> None:
-        """Fit, predict and compute the loss for cross-validation and
-        holdout"""
-        assert self.splits is not None, "Can't fit pipeline in {} is datamanager.splits is None" \
-            .format(self.__class__.__name__)
-        additional_run_info: Optional[Dict] = None
-        if self.num_folds == 1:
-            split_id = 0
-            self.logger.info("Starting fit {}".format(split_id))
+    def _evaluate_on_split(self, split_id: int) -> EvaluationResults:
+        """
+        Fit on the training split in the i-th split and evaluate on
+        the holdout split (i.e. opt_split) in the i-th split.
 
-            pipeline = self._get_pipeline()
+        Args:
+            split_id (int):
+                Which split to take.
 
-            train_split, test_split = self.splits[split_id]
-            self.Y_optimization = self.y_train[test_split]
-            self.Y_actual_train = self.y_train[train_split]
-            y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
-                                                                                        train_indices=train_split,
-                                                                                        test_indices=test_split,
-                                                                                        add_pipeline_to_self=True)
-            train_loss = self._loss(self.y_train[train_split], y_train_pred)
-            loss = self._loss(self.y_train[test_split], y_opt_pred)
+        Returns:
+            results (EvaluationResults):
+                The results from the training and validation.
+        """
+        self.logger.info("Starting fit {}".format(split_id))
+        # We create pipeline everytime to avoid non-fitted pipelines to be in self.pipelines
+        pipeline = self._get_pipeline()
 
-            additional_run_info = pipeline.get_additional_run_info() if hasattr(
-                pipeline, 'get_additional_run_info') else {}
-
-            status = StatusType.SUCCESS
-
-            self.logger.debug("In train evaluator.fit_predict_and_loss, num_run: {} loss:{},"
-                              " status: {},\nadditional run info:\n{}".format(self.num_run,
-                                                                              loss,
-                                                                              dict_repr(additional_run_info),
-                                                                              status))
-            self.finish_up(
-                loss=loss,
-                train_loss=train_loss,
-                opt_pred=y_opt_pred,
-                valid_pred=y_valid_pred,
-                test_pred=y_test_pred,
-                additional_run_info=additional_run_info,
-                file_output=True,
-                status=status,
-            )
-
-        else:
-            Y_train_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
-            Y_optimization_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
-            Y_valid_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
-            Y_test_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
-            train_splits: List[Optional[Union[np.ndarray, List]]] = [None] * self.num_folds
-
-            self.pipelines = [self._get_pipeline() for _ in range(self.num_folds)]
-
-            # stores train loss of each fold.
-            train_losses = [np.NaN] * self.num_folds
-            # used as weights when averaging train losses.
-            train_fold_weights = [np.NaN] * self.num_folds
-            # stores opt (validation) loss of each fold.
-            opt_losses = [np.NaN] * self.num_folds
-            # weights for opt_losses.
-            opt_fold_weights = [np.NaN] * self.num_folds
-
-            additional_run_info = {}
-
-            for i, (train_split, test_split) in enumerate(self.splits):
-
-                pipeline = self.pipelines[i]
-                train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
-                                                                                    train_indices=train_split,
-                                                                                    test_indices=test_split,
-                                                                                    add_pipeline_to_self=False)
-                Y_train_pred[i] = train_pred
-                Y_optimization_pred[i] = opt_pred
-                Y_valid_pred[i] = valid_pred
-                Y_test_pred[i] = test_pred
-                train_splits[i] = train_split
-
-                self.Y_train_targets[train_split] = self.y_train[train_split]
-                self.Y_targets[i] = self.y_train[test_split]
-                # Compute train loss of this fold and store it. train_loss could
-                # either be a scalar or a dict of scalars with metrics as keys.
-                train_loss = self._loss(
-                    self.Y_train_targets[train_split],
-                    train_pred,
-                )
-                train_losses[i] = train_loss
-                # number of training data points for this fold. Used for weighting
-                # the average.
-                train_fold_weights[i] = len(train_split)
-
-                # Compute validation loss of this fold and store it.
-                optimization_loss = self._loss(
-                    self.Y_targets[i],
-                    opt_pred,
-                )
-                opt_losses[i] = optimization_loss
-                # number of optimization data points for this fold.
-                # Used for weighting the average.
-                opt_fold_weights[i] = len(train_split)
-                additional_run_info.update(pipeline.get_additional_run_info() if hasattr(
-                    pipeline, 'get_additional_run_info') and pipeline.get_additional_run_info() is not None else {})
-            # Compute weights of each fold based on the number of samples in each
-            # fold.
-            train_fold_weights = [w / sum(train_fold_weights)
-                                  for w in train_fold_weights]
-            opt_fold_weights = [w / sum(opt_fold_weights)
-                                for w in opt_fold_weights]
-
-            # train_losses is a list of dicts. It is
-            # computed using the target metric (self.metric).
-            train_loss = {}
-            for metric in train_losses[0].keys():
-                train_loss[metric] = np.average(
-                    [
-                        train_losses[i][metric]
-                        for i in range(self.num_folds)
-                    ],
-                    weights=train_fold_weights
-                )
-
-            opt_loss = {}
-            # self.logger.debug("OPT LOSSES: {}".format(opt_losses if opt_losses is not None else None))
-            for metric in opt_losses[0].keys():
-                opt_loss[metric] = np.average(
-                    [
-                        opt_losses[i][metric]
-                        for i in range(self.num_folds)
-                    ],
-                    weights=opt_fold_weights,
-                )
-            Y_targets = self.Y_targets
-            Y_train_targets = self.Y_train_targets
-
-            Y_optimization_preds = np.concatenate(
-                [Y_optimization_pred[i] for i in range(self.num_folds)
-                 if Y_optimization_pred[i] is not None])
-            Y_targets = np.concatenate([
-                Y_targets[i] for i in range(self.num_folds)
-                if Y_targets[i] is not None
-            ])
-
-            if self.X_valid is not None:
-                Y_valid_preds = np.array([Y_valid_pred[i]
-                                          for i in range(self.num_folds)
-                                          if Y_valid_pred[i] is not None])
-                # Average the predictions of several pipelines
-                if len(Y_valid_preds.shape) == 3:
-                    Y_valid_preds = np.nanmean(Y_valid_preds, axis=0)
-            else:
-                Y_valid_preds = None
-
-            if self.X_test is not None:
-                Y_test_preds = np.array([Y_test_pred[i]
-                                         for i in range(self.num_folds)
-                                         if Y_test_pred[i] is not None])
-                # Average the predictions of several pipelines
-                if len(Y_test_preds.shape) == 3:
-                    Y_test_preds = np.nanmean(Y_test_preds, axis=0)
-            else:
-                Y_test_preds = None
-
-            self.Y_optimization = Y_targets
-            self.Y_actual_train = Y_train_targets
-
-            self.pipeline = self._get_pipeline()
-
-            status = StatusType.SUCCESS
-            self.logger.debug("In train evaluator fit_predict_and_loss, num_run: {} loss:{}".format(
-                self.num_run,
-                opt_loss
-            ))
-            self.finish_up(
-                loss=opt_loss,
-                train_loss=train_loss,
-                opt_pred=Y_optimization_preds,
-                valid_pred=Y_valid_preds,
-                test_pred=Y_test_preds,
-                additional_run_info=additional_run_info,
-                file_output=True,
-                status=status,
-            )
-
-    def _fit_and_predict(self, pipeline: BaseEstimator, fold: int, train_indices: Union[np.ndarray, List],
-                         test_indices: Union[np.ndarray, List],
-                         add_pipeline_to_self: bool
-                         ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-
-        self.indices[fold] = ((train_indices, test_indices))
-
-        X = {'train_indices': train_indices,
-             'val_indices': test_indices,
-             'split_id': fold,
-             'num_run': self.num_run,
-             **self.fit_dictionary}  # fit dictionary
-        y = None
-        fit_and_suppress_warnings(self.logger, pipeline, X, y)
-        self.logger.info("Model fitted, now predicting")
-        (
-            Y_train_pred,
-            Y_opt_pred,
-            Y_valid_pred,
-            Y_test_pred
-        ) = self._predict(
+        train_split, opt_split = self.splits[split_id]
+        train_pred, opt_pred, valid_pred, test_pred = self._fit_and_evaluate_loss(
             pipeline,
-            train_indices=train_indices,
-            test_indices=test_indices,
+            split_id,
+            train_indices=train_split,
+            opt_indices=opt_split
         )
 
-        if add_pipeline_to_self:
-            self.pipeline = pipeline
+        return EvaluationResults(
+            pipeline=pipeline,
+            opt_loss=self._loss(labels=self.y_train[opt_split], preds=opt_pred),
+            train_loss=self._loss(labels=self.y_train[train_split], preds=train_pred),
+            opt_pred=opt_pred,
+            valid_pred=valid_pred,
+            test_pred=test_pred,
+            status=StatusType.SUCCESS,
+            additional_run_info=getattr(pipeline, 'get_additional_run_info', lambda: {})()
+        )
+
+    def _cross_validation(self) -> EvaluationResults:
+        """
+        Perform cross validation and return the merged results.
+
+        Returns:
+            results (EvaluationResults):
+                The results that merge every split.
+        """
+        cv_results = _CrossValidationResultsManager(self.num_folds)
+        Y_opt: List[Optional[np.ndarray]] = [None] * self.num_folds
+
+        for split_id in range(len(self.splits)):
+            train_split, opt_split = self.splits[split_id]
+            Y_opt[split_id] = self.y_train[opt_split]
+            results = self._evaluate_on_split(split_id)
+
+            self.pipelines[split_id] = results.pipeline
+            cv_results.update(split_id, results, len(train_split), len(opt_split))
+
+        self.y_opt = np.concatenate([y_opt for y_opt in Y_opt if y_opt is not None])
+
+        return EvaluationResults(status=StatusType.SUCCESS, **cv_results.get_result_dict())
+
+    def evaluate_loss(self) -> None:
+        """Fit, predict and compute the loss for cross-validation and holdout"""
+        if self.splits is None:
+            raise ValueError(f"cannot fit pipeline {self.__class__.__name__} with datamanager.splits None")
+
+        if self.num_folds == 1:
+            _, opt_split = self.splits[0]
+            results = self._evaluate_on_split(split_id=0)
+            self.y_opt, self.pipelines[0] = self.y_train[opt_split], results.pipeline
         else:
-            self.pipelines[fold] = pipeline
+            results = self._cross_validation()
 
-        return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
+        self.logger.debug(
+            f"In train evaluator.evaluate_loss, num_run: {self.num_run}, loss:{results.opt_loss},"
+            f" status: {results.status},\nadditional run info:\n{dict_repr(results.additional_run_info)}"
+        )
+        self.record_evaluation(results=results)
 
-    def _predict(self, pipeline: BaseEstimator,
-                 test_indices: Union[np.ndarray, List],
-                 train_indices: Union[np.ndarray, List]
-                 ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    def _fit_and_evaluate_loss(
+        self,
+        pipeline: BaseEstimator,
+        split_id: int,
+        train_indices: Union[np.ndarray, List],
+        opt_indices: Union[np.ndarray, List]
+    ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
 
-        train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
-                                           self.y_train[train_indices])
+        X = dict(train_indices=train_indices, val_indices=opt_indices, split_id=split_id, num_run=self.num_run)
+        X.update(self.fit_dictionary)
+        fit_pipeline(self.logger, pipeline, X, y=None)
+        self.logger.info("Model fitted, now predicting")
 
-        opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
-                                         self.y_train[train_indices])
+        kwargs = {'pipeline': pipeline, 'label_examples': self.y_train[train_indices]}
+        train_pred = self.predict(subsampler(self.X_train, train_indices), **kwargs)
+        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs)
+        valid_pred = self.predict(self.X_valid, **kwargs)
+        test_pred = self.predict(self.X_test, **kwargs)
 
-        if self.X_valid is not None:
-            valid_pred = self.predict_function(self.X_valid, pipeline,
-                                               self.y_valid)
-        else:
-            valid_pred = None
-
-        if self.X_test is not None:
-            test_pred = self.predict_function(self.X_test, pipeline,
-                                              self.y_train[train_indices])
-        else:
-            test_pred = None
-
+        assert train_pred is not None and opt_pred is not None  # mypy check
         return train_pred, opt_pred, valid_pred, test_pred
 
 
@@ -429,84 +270,25 @@ def eval_train_function(
     instance: str = None,
 ) -> None:
     """
-    This closure allows the communication between the ExecuteTaFuncWithQueue and the
+    This closure allows the communication between the TargetAlgorithmQuery and the
     pipeline trainer (TrainEvaluator).
 
-    Fundamentally, smac calls the ExecuteTaFuncWithQueue.run() method, which internally
+    Fundamentally, smac calls the TargetAlgorithmQuery.run() method, which internally
     builds a TrainEvaluator. The TrainEvaluator builds a pipeline, stores the output files
     to disc via the backend, and puts the performance result of the run in the queue.
 
-
-    Attributes:
-        backend (Backend):
-            An object to interface with the disk storage. In particular, allows to
-            access the train and test datasets
+    Args:
         queue (Queue):
             Each worker available will instantiate an evaluator, and after completion,
-            it will return the evaluation result via a multiprocessing queue
-        metric (autoPyTorchMetric):
-            A scorer object that is able to evaluate how good a pipeline was fit. It
-            is a wrapper on top of the actual score method (a wrapper on top of scikit
-            lean accuracy for example) that formats the predictions accordingly.
-        budget: (float):
-            The amount of epochs/time a configuration is allowed to run.
-        budget_type  (str):
-            The budget type, which can be epochs or time
-        pipeline_config (Optional[Dict[str, Any]]):
-            Defines the content of the pipeline being evaluated. For example, it
-            contains pipeline specific settings like logging name, or whether or not
-            to use tensorboard.
-        config (Union[int, str, Configuration]):
-            Determines the pipeline to be constructed.
-        seed (int):
-            A integer that allows for reproducibility of results
-        output_y_hat_optimization (bool):
-            Whether this worker should output the target predictions, so that they are
-            stored on disk. Fundamentally, the resampling strategy might shuffle the
-            Y_train targets, so we store the split in order to re-use them for ensemble
-            selection.
-        num_run (Optional[int]):
-            An identifier of the current configuration being fit. This number is unique per
-            configuration.
-        include (Optional[Dict[str, Any]]):
-            An optional dictionary to include components of the pipeline steps.
-        exclude (Optional[Dict[str, Any]]):
-            An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Union[bool, List[str]]):
-            By default, the model, it's predictions and other metadata is stored on disk
-            for each finished configuration. This argument allows the user to skip
-            saving certain file type, for example the model, from being written to disk.
-        init_params (Optional[Dict[str, Any]]):
-            Optional argument that is passed to each pipeline step. It is the equivalent of
-            kwargs for the pipeline steps.
-        logger_port (Optional[int]):
-            Logging is performed using a socket-server scheme to be robust against many
-            parallel entities that want to write to the same file. This integer states the
-            socket port for the communication channel. If None is provided, a traditional
-            logger is used.
-        instance (str):
-            An instance on which to evaluate the current pipeline. By default we work
-            with a single instance, being the provided X_train, y_train of a single dataset.
-            This instance is a compatibility argument for SMAC, that is capable of working
-            with multiple datasets at the same time.
+            it will append the result to a multiprocessing queue
+        fixed_pipeline_params (FixedPipelineParams):
+            Fixed parameters for a pipeline
+        evaluator_params (EvaluatorParams):
+            The parameters for an evaluator.
     """
     evaluator = TrainEvaluator(
-        backend=backend,
         queue=queue,
-        metric=metric,
-        configuration=config,
-        seed=seed,
-        num_run=num_run,
-        output_y_hat_optimization=output_y_hat_optimization,
-        include=include,
-        exclude=exclude,
-        disable_file_output=disable_file_output,
-        init_params=init_params,
-        budget=budget,
-        budget_type=budget_type,
-        logger_port=logger_port,
-        all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        evaluator_params=evaluator_params,
+        fixed_pipeline_params=fixed_pipeline_params
     )
-    evaluator.fit_predict_and_loss()
+    evaluator.evaluate_loss()

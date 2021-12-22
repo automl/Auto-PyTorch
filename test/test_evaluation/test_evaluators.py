@@ -79,6 +79,17 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         backend_mock.temporary_directory = self.ev_path
         self.backend_mock = backend_mock
 
+        self.fixed_params = FixedPipelineParams.with_default_pipeline_config(
+            backend=self.backend_mock,
+            metric=accuracy,
+            seed=0,
+            pipeline_config={'budget_type': 'epochs', 'epochs': 50},
+            all_supported_metrics=True
+        )
+        self.eval_params = EvaluatorParams(
+            budget=0, configuration=unittest.mock.Mock(spec=Configuration)
+        )
+
         self.tmp_dir = os.path.join(self.ev_path, 'tmp_dir')
         self.output_dir = os.path.join(self.ev_path, 'out_dir')
 
@@ -96,17 +107,21 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
         pipeline_mock.get_additional_run_info.return_value = None
 
-        configuration = unittest.mock.Mock(spec=Configuration)
+        _queue = multiprocessing.Queue()
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
-        queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
-        evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
-        evaluator.file_output.return_value = (None, {})
+        fixed_params_dict = self.fixed_params._asdict()
+        fixed_params_dict.update(backend=backend_api)
+        evaluator = TrainEvaluator(
+            queue=_queue,
+            fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+            evaluator_params=self.eval_params
+        )
+        evaluator._save_to_backend = unittest.mock.Mock(spec=evaluator._save_to_backend)
+        evaluator._save_to_backend.return_value = True
 
-        evaluator.fit_predict_and_loss()
+        evaluator.evaluate_loss()
 
         rval = read_queue(evaluator.queue)
         self.assertEqual(len(rval), 1)
@@ -114,17 +129,16 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertEqual(len(rval[0]), 3)
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
-        self.assertEqual(evaluator.file_output.call_count, 1)
+        self.assertEqual(evaluator._save_to_backend.call_count, 1)
         self.assertEqual(result, 0.5652173913043479)
         self.assertEqual(pipeline_mock.fit.call_count, 1)
         # 3 calls because of train, holdout and test set
         self.assertEqual(pipeline_mock.predict_proba.call_count, 3)
-        self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(evaluator.file_output.call_args[0][0].shape[0], len(D.splits[0][1]))
-        self.assertIsNone(evaluator.file_output.call_args[0][1])
-        self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
-                         D.test_tensors[1].shape[0])
-        self.assertEqual(evaluator.pipeline.fit.call_count, 1)
+        call_args = evaluator._save_to_backend.call_args
+        self.assertEqual(call_args[0][0].shape[0], len(D.splits[0][1]))
+        self.assertIsNone(call_args[0][1])
+        self.assertEqual(call_args[0][2].shape[0], D.test_tensors[1].shape[0])
+        self.assertEqual(evaluator.pipelines[0].fit.call_count, 1)
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_cv(self, pipeline_mock):
@@ -135,17 +149,21 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
         pipeline_mock.get_additional_run_info.return_value = None
 
-        configuration = unittest.mock.Mock(spec=Configuration)
+        _queue = multiprocessing.Queue()
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
-        queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
-        evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
-        evaluator.file_output.return_value = (None, {})
+        fixed_params_dict = self.fixed_params._asdict()
+        fixed_params_dict.update(backend=backend_api)
+        evaluator = TrainEvaluator(
+            queue=_queue,
+            fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+            evaluator_params=self.eval_params
+        )
+        evaluator._save_to_backend = unittest.mock.Mock(spec=evaluator._save_to_backend)
+        evaluator._save_to_backend.return_value = True
 
-        evaluator.fit_predict_and_loss()
+        evaluator.evaluate_loss()
 
         rval = read_queue(evaluator.queue)
         self.assertEqual(len(rval), 1)
@@ -153,85 +171,59 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         self.assertEqual(len(rval[0]), 3)
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
-        self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 0.46235467431119603)
+        self.assertEqual(evaluator._save_to_backend.call_count, 1)
+        self.assertEqual(result, 0.463768115942029)
         self.assertEqual(pipeline_mock.fit.call_count, 5)
         # 9 calls because of the training, holdout and
         # test set (3 sets x 5 folds = 15)
         self.assertEqual(pipeline_mock.predict_proba.call_count, 15)
+        call_args = evaluator._save_to_backend.call_args
         # as the optimisation preds in cv is concatenation of the 5 folds,
         # so it is 5*splits
-        self.assertEqual(evaluator.file_output.call_args[0][0].shape[0],
+        self.assertEqual(call_args[0][0].shape[0],
                          # Notice this - 1: It is because the dataset D
                          # has shape ((69, )) which is not divisible by 5
-                         5 * len(D.splits[0][1]) - 1, evaluator.file_output.call_args)
-        self.assertIsNone(evaluator.file_output.call_args[0][1])
-        self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
+                         5 * len(D.splits[0][1]) - 1, call_args)
+        self.assertIsNone(call_args[0][1])
+        self.assertEqual(call_args[0][2].shape[0],
                          D.test_tensors[1].shape[0])
 
     @unittest.mock.patch.object(TrainEvaluator, '_loss')
-    def test_file_output(self, loss_mock):
-
+    def test_save_to_backend(self, loss_mock):
         D = get_regression_datamanager()
         D.name = 'test'
         self.backend_mock.load_datamanager.return_value = D
-        configuration = unittest.mock.Mock(spec=Configuration)
-        queue_ = multiprocessing.Queue()
+        _queue = multiprocessing.Queue()
         loss_mock.return_value = None
 
-        evaluator = TrainEvaluator(self.backend_mock, queue_, configuration=configuration, metric=accuracy, budget=0)
-
-        self.backend_mock.get_model_dir.return_value = True
-        evaluator.pipeline = 'model'
-        evaluator.Y_optimization = D.train_tensors[1]
-        rval = evaluator.file_output(
-            D.train_tensors[1],
-            None,
-            D.test_tensors[1],
+        evaluator = TrainEvaluator(
+            queue=_queue,
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
         )
+        evaluator.y_opt = D.train_tensors[1]
+        key_ans = {'seed', 'idx', 'budget', 'model', 'cv_model',
+                   'ensemble_predictions', 'valid_predictions', 'test_predictions'}
 
-        self.assertEqual(rval, (None, {}))
-        self.assertEqual(self.backend_mock.save_targets_ensemble.call_count, 1)
-        self.assertEqual(self.backend_mock.save_numrun_to_dir.call_count, 1)
-        self.assertEqual(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1].keys(),
-                         {'seed', 'idx', 'budget', 'model', 'cv_model',
-                          'ensemble_predictions', 'valid_predictions', 'test_predictions'})
-        self.assertIsNotNone(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['model'])
-        self.assertIsNone(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['cv_model'])
+        for cnt, pl in enumerate([['model'], ['model2', 'model2']], start=1):
+            self.backend_mock.get_model_dir.return_value = True
+            evaluator.pipelines = pl
+            self.assertTrue(evaluator._save_to_backend(D.train_tensors[1], None, D.test_tensors[1]))
+            call_list = self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]
 
-        evaluator.pipelines = ['model2', 'model2']
-        rval = evaluator.file_output(
-            D.train_tensors[1],
-            None,
-            D.test_tensors[1],
-        )
-        self.assertEqual(rval, (None, {}))
-        self.assertEqual(self.backend_mock.save_targets_ensemble.call_count, 2)
-        self.assertEqual(self.backend_mock.save_numrun_to_dir.call_count, 2)
-        self.assertEqual(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1].keys(),
-                         {'seed', 'idx', 'budget', 'model', 'cv_model',
-                          'ensemble_predictions', 'valid_predictions', 'test_predictions'})
-        self.assertIsNotNone(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['model'])
-        self.assertIsNotNone(self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['cv_model'])
+            self.assertEqual(self.backend_mock.save_targets_ensemble.call_count, cnt)
+            self.assertEqual(self.backend_mock.save_numrun_to_dir.call_count, cnt)
+            self.assertEqual(call_list.keys(), key_ans)
+            self.assertIsNotNone(call_list['model'])
+            if isinstance(pl, list):  # pipeline is list ==> cross validation
+                self.assertIsNotNone(call_list['cv_model'])
+            else:  # holdout ==> single model and thus no cv_model
+                self.assertIsNone(call_list['cv_model'])
 
         # Check for not containing NaNs - that the models don't predict nonsense
         # for unseen data
         D.train_tensors[1][0] = np.NaN
-        rval = evaluator.file_output(
-            D.train_tensors[1],
-            None,
-            D.test_tensors[1],
-        )
-        self.assertEqual(
-            rval,
-            (
-                1.0,
-                {
-                    'error':
-                    'Model predictions for optimization set contains NaNs.'
-                },
-            )
-        )
+        self.assertFalse(evaluator._save_to_backend(D.train_tensors[1], None, D.test_tensors[1]))
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_predict_proba_binary_classification(self, mock):
@@ -242,13 +234,15 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         )
         mock.side_effect = lambda **kwargs: mock
 
-        configuration = unittest.mock.Mock(spec=Configuration)
-        queue_ = multiprocessing.Queue()
+        _queue = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(self.backend_mock, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
+        evaluator = TrainEvaluator(
+            queue=_queue,
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
+        )
 
-        evaluator.fit_predict_and_loss()
+        evaluator.evaluate_loss()
         Y_optimization_pred = self.backend_mock.save_numrun_to_dir.call_args_list[0][1][
             'ensemble_predictions']
 
@@ -256,17 +250,17 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
             self.assertEqual(0.9, Y_optimization_pred[i][1])
 
     def test_get_results(self):
-        queue_ = multiprocessing.Queue()
+        _queue = multiprocessing.Queue()
         for i in range(5):
-            queue_.put((i * 1, 1 - (i * 0.2), 0, "", StatusType.SUCCESS))
-        result = read_queue(queue_)
+            _queue.put((i * 1, 1 - (i * 0.2), 0, "", StatusType.SUCCESS))
+        result = read_queue(_queue)
         self.assertEqual(len(result), 5)
         self.assertEqual(result[0][0], 0)
         self.assertAlmostEqual(result[0][1], 1.0)
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_additional_metrics_during_training(self, pipeline_mock):
-        pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 50}
+        pipeline_mock.fit_dictionary = self.fixed_params.pipeline_config
         # Binary iris, contains 69 train samples, 31 test samples
         D = get_binary_classification_datamanager()
         pipeline_mock.predict_proba.side_effect = \
@@ -274,20 +268,21 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
         pipeline_mock.get_additional_run_info.return_value = None
 
-        # Binary iris, contains 69 train samples, 31 test samples
-        D = get_binary_classification_datamanager()
-
-        configuration = unittest.mock.Mock(spec=Configuration)
+        _queue = multiprocessing.Queue()
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
-        queue_ = multiprocessing.Queue()
 
-        evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50}, all_supported_metrics=True)
-        evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
-        evaluator.file_output.return_value = (None, {})
+        fixed_params_dict = self.fixed_params._asdict()
+        fixed_params_dict.update(backend=backend_api)
+        evaluator = TrainEvaluator(
+            queue=_queue,
+            fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+            evaluator_params=self.eval_params
+        )
+        evaluator._save_to_backend = unittest.mock.Mock(spec=evaluator._save_to_backend)
+        evaluator._save_to_backend.return_value = True
 
-        evaluator.fit_predict_and_loss()
+        evaluator.evaluate_loss()
 
         rval = read_queue(evaluator.queue)
         self.assertEqual(len(rval), 1)

@@ -3,13 +3,14 @@ import os
 from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue, StatusType
 
 from autoPyTorch.constants import REGRESSION_TASKS
-from autoPyTorch.evaluation.abstract_evaluator import (
+from autoPyTorch.evaluation.abstract_evaluator import fit_pipeline
+from autoPyTorch.evaluation.pipeline_class_collection import (
     DummyClassificationPipeline,
-    DummyRegressionPipeline,
-    fit_and_suppress_warnings
+    DummyRegressionPipeline
 )
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
+from autoPyTorch.utils.common import subsampler
 
 
 def dummy_traditional_classification(self, time_left: int, func_eval_time_limit_secs: int) -> None:
@@ -28,44 +29,28 @@ def dummy_traditional_classification(self, time_left: int, func_eval_time_limit_
 # Fixtures
 # ========
 class DummyTrainEvaluator(TrainEvaluator):
-
-    def _fit_and_predict(self, pipeline, fold: int, train_indices,
-                         test_indices,
-                         add_pipeline_to_self
-                         ):
-
+    def _get_pipeline(self):
         if self.task_type in REGRESSION_TASKS:
             pipeline = DummyRegressionPipeline(config=1)
         else:
             pipeline = DummyClassificationPipeline(config=1)
 
-        self.indices[fold] = ((train_indices, test_indices))
+        return pipeline
 
-        X = {'train_indices': train_indices,
-             'val_indices': test_indices,
-             'split_id': fold,
-             'num_run': self.num_run,
-             **self.fit_dictionary}  # fit dictionary
-        y = None
-        fit_and_suppress_warnings(self.logger, pipeline, X, y)
+    def _fit_and_evaluate_loss(self, pipeline, split_id, train_indices, opt_indices):
+        X = dict(train_indices=train_indices, val_indices=opt_indices, split_id=split_id, num_run=self.num_run)
+        X.update(self.fit_dictionary)
+        fit_pipeline(self.logger, pipeline, X, y=None)
         self.logger.info("Model fitted, now predicting")
-        (
-            Y_train_pred,
-            Y_opt_pred,
-            Y_valid_pred,
-            Y_test_pred
-        ) = self._predict(
-            pipeline,
-            train_indices=train_indices,
-            test_indices=test_indices,
-        )
 
-        if add_pipeline_to_self:
-            self.pipeline = pipeline
-        else:
-            self.pipelines[fold] = pipeline
+        kwargs = {'pipeline': pipeline, 'label_examples': self.y_train[train_indices]}
+        train_pred = self.predict(subsampler(self.X_train, train_indices), **kwargs)
+        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs)
+        valid_pred = self.predict(self.X_valid, **kwargs)
+        test_pred = self.predict(self.X_test, **kwargs)
 
-        return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
+        assert train_pred is not None and opt_pred is not None  # mypy check
+        return train_pred, opt_pred, valid_pred, test_pred
 
 
 # create closure for evaluating an algorithm
@@ -90,25 +75,11 @@ def dummy_eval_train_function(
         instance: str = None,
 ) -> None:
     evaluator = DummyTrainEvaluator(
-        backend=backend,
         queue=queue,
-        metric=metric,
-        configuration=config,
-        seed=seed,
-        num_run=num_run,
-        output_y_hat_optimization=output_y_hat_optimization,
-        include=include,
-        exclude=exclude,
-        disable_file_output=disable_file_output,
-        init_params=init_params,
-        budget=budget,
-        budget_type=budget_type,
-        logger_port=logger_port,
-        all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        fixed_pipeline_params=fixed_pipeline_params,
+        evaluator_params=evaluator_params
     )
-    evaluator.fit_predict_and_loss()
+    evaluator.evaluate_loss()
 
 
 def dummy_do_dummy_prediction():

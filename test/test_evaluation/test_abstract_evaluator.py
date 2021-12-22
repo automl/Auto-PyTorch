@@ -12,8 +12,12 @@ import sklearn.dummy
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend, BackendContext
-from autoPyTorch.evaluation.abstract_evaluator import AbstractEvaluator
-from autoPyTorch.evaluation.utils import DisableFileOutputParameters
+from autoPyTorch.evaluation.abstract_evaluator import (
+    AbstractEvaluator,
+    EvaluationResults,
+    EvaluatorParams,
+    FixedPipelineParams
+)
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 this_directory = os.path.dirname(__file__)
@@ -43,6 +47,13 @@ class AbstractEvaluatorTest(unittest.TestCase):
         D = get_multiclass_classification_datamanager()
         backend_mock.load_datamanager.return_value = D
         self.backend_mock = backend_mock
+        self.eval_params = EvaluatorParams.with_default_budget(budget=0, configuration=1)
+        self.fixed_params = FixedPipelineParams.with_default_pipeline_config(
+            backend=self.backend_mock,
+            save_y_opt=False,
+            metric=accuracy,
+            seed=1
+        )
 
         self.working_directory = os.path.join(this_directory, '.tmp_%s' % self.id())
 
@@ -53,72 +64,33 @@ class AbstractEvaluatorTest(unittest.TestCase):
             except:  # noqa E722
                 pass
 
-    def test_finish_up_model_predicts_NaN(self):
+    def test_record_evaluation_model_predicts_NaN(self):
         '''Tests by handing in predictions which contain NaNs'''
         rs = np.random.RandomState(1)
-
         queue_mock = unittest.mock.Mock()
-        ae = AbstractEvaluator(backend=self.backend_mock,
-                               output_y_hat_optimization=False,
-                               queue=queue_mock, metric=accuracy, budget=0,
-                               configuration=1)
-        ae.Y_optimization = rs.rand(33, 3)
-        predictions_ensemble = rs.rand(33, 3)
-        predictions_test = rs.rand(25, 3)
-        predictions_valid = rs.rand(25, 3)
-
-        # NaNs in prediction ensemble
-        predictions_ensemble[5, 2] = np.NaN
-        _, loss, _, additional_run_info = ae.finish_up(
-            loss={'accuracy': 0.1},
-            train_loss={'accuracy': 0.1},
-            opt_pred=predictions_ensemble,
-            valid_pred=predictions_valid,
-            test_pred=predictions_test,
-            additional_run_info=None,
-            file_output=True,
-            status=StatusType.SUCCESS,
+        opt_pred, test_pred, valid_pred = rs.rand(33, 3), rs.rand(25, 3), rs.rand(25, 3)
+        ae = AbstractEvaluator(
+            queue=queue_mock,
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
         )
-        self.assertEqual(loss, 1.0)
-        self.assertEqual(additional_run_info,
-                         {'error': 'Model predictions for optimization set '
-                                   'contains NaNs.'})
+        ae.y_opt = rs.rand(33, 3)
 
-        # NaNs in prediction validation
-        predictions_ensemble[5, 2] = 0.5
-        predictions_valid[5, 2] = np.NaN
-        _, loss, _, additional_run_info = ae.finish_up(
-            loss={'accuracy': 0.1},
-            train_loss={'accuracy': 0.1},
-            opt_pred=predictions_ensemble,
-            valid_pred=predictions_valid,
-            test_pred=predictions_test,
-            additional_run_info=None,
-            file_output=True,
-            status=StatusType.SUCCESS,
-        )
-        self.assertEqual(loss, 1.0)
-        self.assertEqual(additional_run_info,
-                         {'error': 'Model predictions for validation set '
-                                   'contains NaNs.'})
-
-        # NaNs in prediction test
-        predictions_valid[5, 2] = 0.5
-        predictions_test[5, 2] = np.NaN
-        _, loss, _, additional_run_info = ae.finish_up(
-            loss={'accuracy': 0.1},
-            train_loss={'accuracy': 0.1},
-            opt_pred=predictions_ensemble,
-            valid_pred=predictions_valid,
-            test_pred=predictions_test,
-            additional_run_info=None,
-            file_output=True,
-            status=StatusType.SUCCESS,
-        )
-        self.assertEqual(loss, 1.0)
-        self.assertEqual(additional_run_info,
-                         {'error': 'Model predictions for test set contains '
-                                   'NaNs.'})
+        for inference_name, pred in [('optimization', opt_pred), ('validation', valid_pred), ('test', test_pred)]:
+            pred[5, 2] = np.nan
+            results = EvaluationResults(
+                opt_loss={'accuracy': 0.1},
+                train_loss={'accuracy': 0.1},
+                opt_pred=opt_pred,
+                valid_pred=valid_pred,
+                test_pred=test_pred,
+                additional_run_info=None,
+                status=StatusType.SUCCESS,
+            )
+            ae.fixed_pipeline_params.backend.save_numrun_to_dir = unittest.mock.Mock()
+            ae.record_evaluation(results=results)
+            self.assertEqual(ae.fixed_pipeline_params.backend.save_numrun_to_dir.call_count, 0)
+            pred[5, 2] = 0.5
 
         self.assertEqual(self.backend_mock.save_predictions_as_npy.call_count, 0)
 
@@ -126,124 +98,50 @@ class AbstractEvaluatorTest(unittest.TestCase):
         queue_mock = unittest.mock.Mock()
 
         rs = np.random.RandomState(1)
+        opt_pred, test_pred, valid_pred = rs.rand(33, 3), rs.rand(25, 3), rs.rand(25, 3)
 
-        ae = AbstractEvaluator(
-            backend=self.backend_mock,
-            queue=queue_mock,
-            disable_file_output=[DisableFileOutputParameters.all],
-            metric=accuracy,
-            logger_port=unittest.mock.Mock(),
-            budget=0,
-            configuration=1
-        )
-        ae.pipeline = unittest.mock.Mock()
-        predictions_ensemble = rs.rand(33, 3)
-        predictions_test = rs.rand(25, 3)
-        predictions_valid = rs.rand(25, 3)
+        fixed_params_dict = self.fixed_params._asdict()
 
-        loss_, additional_run_info_ = (
-            ae.file_output(
-                predictions_ensemble,
-                predictions_valid,
-                predictions_test,
-            )
-        )
-
-        self.assertIsNone(loss_)
-        self.assertEqual(additional_run_info_, {})
-        # This function is never called as there is a return before
-        self.assertEqual(self.backend_mock.save_numrun_to_dir.call_count, 0)
-
-        for call_count, disable in enumerate(['pipeline', 'pipelines'], start=1):
+        for call_count, disable in enumerate(['all', 'pipeline', 'pipelines', 'y_optimization']):
+            fixed_params_dict.update(disable_file_output=[disable])
             ae = AbstractEvaluator(
-                backend=self.backend_mock,
-                output_y_hat_optimization=False,
                 queue=queue_mock,
-                disable_file_output=[disable],
-                metric=accuracy,
-                budget=0,
-                configuration=1
+                fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+                evaluator_params=self.eval_params
             )
-            ae.Y_optimization = predictions_ensemble
-            ae.pipeline = unittest.mock.Mock()
+            ae.y_opt = opt_pred
             ae.pipelines = [unittest.mock.Mock()]
 
-            loss_, additional_run_info_ = (
-                ae.file_output(
-                    predictions_ensemble,
-                    predictions_valid,
-                    predictions_test,
-                )
-            )
+            if ae._is_output_possible(opt_pred, valid_pred, test_pred):
+                ae._save_to_backend(opt_pred, valid_pred, test_pred)
 
-            self.assertIsNone(loss_)
-            self.assertEqual(additional_run_info_, {})
             self.assertEqual(self.backend_mock.save_numrun_to_dir.call_count, call_count)
+            if disable == 'all':
+                continue
+
+            call_list = self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]
             if disable == 'pipeline':
-                self.assertIsNone(
-                    self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['model'])
-                self.assertIsNotNone(
-                    self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['cv_model'])
+                self.assertIsNone(call_list['model'])
+                self.assertIsNotNone(call_list['cv_model'])
+            elif disable == 'pipelines':
+                self.assertIsNotNone(call_list['model'])
+                self.assertIsNone(call_list['cv_model'])
+
+            if disable in ('y_optimization', 'all'):
+                self.assertIsNone(call_list['ensemble_predictions'])
             else:
-                self.assertIsNotNone(
-                    self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['model'])
-                self.assertIsNone(
-                    self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]['cv_model'])
-            self.assertIsNotNone(
-                self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                    'ensemble_predictions']
-            )
-            self.assertIsNotNone(
-                self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                    'valid_predictions']
-            )
-            self.assertIsNotNone(
-                self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                    'test_predictions']
-            )
+                self.assertIsNotNone(call_list['ensemble_predictions'])
 
-        ae = AbstractEvaluator(
-            backend=self.backend_mock,
-            output_y_hat_optimization=False,
-            queue=queue_mock,
-            metric=accuracy,
-            disable_file_output=['y_optimization'],
-            budget=0,
-            configuration=1
-        )
-        ae.Y_optimization = predictions_ensemble
-        ae.pipeline = 'pipeline'
-        ae.pipelines = [unittest.mock.Mock()]
+            self.assertIsNotNone(call_list['valid_predictions'])
+            self.assertIsNotNone(call_list['test_predictions'])
 
-        loss_, additional_run_info_ = (
-            ae.file_output(
-                predictions_ensemble,
-                predictions_valid,
-                predictions_test,
-            )
-        )
-
-        self.assertIsNone(loss_)
-        self.assertEqual(additional_run_info_, {})
-
-        self.assertIsNone(
-            self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                'ensemble_predictions']
-        )
-        self.assertIsNotNone(
-            self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                'valid_predictions']
-        )
-        self.assertIsNotNone(
-            self.backend_mock.save_numrun_to_dir.call_args_list[-1][1][
-                'test_predictions']
-        )
-
-    def test_file_output(self):
+    def test_save_to_backend(self):
         shutil.rmtree(self.working_directory, ignore_errors=True)
         os.mkdir(self.working_directory)
 
         queue_mock = unittest.mock.Mock()
+        rs = np.random.RandomState(1)
+        opt_pred, test_pred, valid_pred = rs.rand(33, 3), rs.rand(25, 3), rs.rand(25, 3)
 
         context = BackendContext(
             prefix='autoPyTorch',
@@ -255,29 +153,17 @@ class AbstractEvaluatorTest(unittest.TestCase):
         with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
             load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
 
-            backend = Backend(context, prefix='autoPyTorch')
+            fixed_params_dict = self.fixed_params._asdict()
+            fixed_params_dict.update(backend=Backend(context, prefix='autoPyTorch'))
 
             ae = AbstractEvaluator(
-                backend=backend,
-                output_y_hat_optimization=False,
                 queue=queue_mock,
-                metric=accuracy,
-                budget=0,
-                configuration=1
+                fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+                evaluator_params=EvaluatorParams.with_default_budget(choice='dummy', configuration=1)
             )
             ae.model = sklearn.dummy.DummyClassifier()
-
-            rs = np.random.RandomState()
-            ae.Y_optimization = rs.rand(33, 3)
-            predictions_ensemble = rs.rand(33, 3)
-            predictions_test = rs.rand(25, 3)
-            predictions_valid = rs.rand(25, 3)
-
-            ae.file_output(
-                Y_optimization_pred=predictions_ensemble,
-                Y_valid_pred=predictions_valid,
-                Y_test_pred=predictions_test,
-            )
+            ae.y_opt = rs.rand(33, 3)
+            ae._save_to_backend(opt_pred=opt_pred, valid_pred=valid_pred, test_pred=test_pred)
 
             self.assertTrue(os.path.exists(os.path.join(self.working_directory, 'tmp',
                                                         '.autoPyTorch', 'runs', '1_0_1.0')))
@@ -300,17 +186,17 @@ class AbstractEvaluatorTest(unittest.TestCase):
         with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
             load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
 
-            backend = Backend(context, prefix='autoPyTorch')
-
             try:
+                fixed_params_dict = self.fixed_params._asdict()
+                fixed_params_dict.update(
+                    backend=Backend(context, prefix='autoPyTorch'),
+                    pipeline_config={'budget_type': "error", 'error': 0}
+                )
                 AbstractEvaluator(
-                    backend=backend,
-                    output_y_hat_optimization=False,
                     queue=queue_mock,
-                    pipeline_config={'budget_type': "error", 'error': 0},
-                    metric=accuracy,
-                    budget=0,
-                    configuration=1)
+                    fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+                    evaluator_params=self.eval_params
+                )
             except Exception as e:
                 self.assertIsInstance(e, ValueError)
 
@@ -332,17 +218,18 @@ class AbstractEvaluatorTest(unittest.TestCase):
         with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
             load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
 
-            backend = Backend(context, prefix='autoPyTorch')
+            fixed_params_dict = self.fixed_params._asdict()
+            fixed_params_dict.update(
+                backend=Backend(context, prefix='autoPyTorch'),
+                disable_file_output=['model']
+            )
 
             try:
                 AbstractEvaluator(
-                    backend=backend,
-                    output_y_hat_optimization=False,
                     queue=queue_mock,
-                    metric=accuracy,
-                    budget=0,
-                    configuration=1,
-                    disable_file_output=['model'])
+                    evaluator_params=self.eval_params,
+                    fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict)
+                )
             except Exception as e:
                 self.assertIsInstance(e, ValueError)
 

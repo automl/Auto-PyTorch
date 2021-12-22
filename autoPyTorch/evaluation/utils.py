@@ -8,12 +8,17 @@ from sklearn.ensemble import VotingRegressor
 
 from smac.runhistory.runhistory import RunValue
 
+from autoPyTorch.constants import (
+    MULTICLASS,
+    STRING_TO_OUTPUT_TYPES
+)
 from autoPyTorch.utils.common import autoPyTorchEnum
 
 
 __all__ = [
     'read_queue',
     'convert_multioutput_multiclass_to_multilabel',
+    'ensure_prediction_array_sizes',
     'extract_learning_curve',
     'empty_queue',
     'VotingRegressorWrapper'
@@ -56,13 +61,58 @@ def empty_queue(queue_: Queue) -> None:
     queue_.close()
 
 
-def extract_learning_curve(stack: List[RunValue], key: Optional[str] = None) -> List[List]:
+def ensure_prediction_array_sizes(
+    prediction: np.ndarray,
+    output_type: str,
+    num_classes: Optional[int],
+    label_examples: Optional[np.ndarray]
+) -> np.ndarray:
+    """
+    This function formats a prediction to match the dimensionality of the provided
+    labels label_examples. This should be used exclusively for classification tasks
+
+    Args:
+        prediction (np.ndarray):
+            The un-formatted predictions of a pipeline
+        output_type (str):
+            Output type specified in constants. (TODO: Fix it to enum)
+        label_examples (Optional[np.ndarray]):
+            The labels from the dataset to give an intuition of the expected
+            predictions dimensionality
+
+    Returns:
+        (np.ndarray):
+            The formatted prediction
+    """
+    if num_classes is None:
+        raise RuntimeError("_ensure_prediction_array_sizes is only for classification tasks")
+    if label_examples is None:
+        raise ValueError('label_examples must be provided, but got None')
+
+    if STRING_TO_OUTPUT_TYPES[output_type] != MULTICLASS or prediction.shape[1] == num_classes:
+        return prediction
+
+    classes = list(np.unique(label_examples))
+    mapping = {classes.index(class_idx): class_idx for class_idx in range(num_classes)}
+    modified_pred = np.zeros((prediction.shape[0], num_classes), dtype=np.float32)
+
+    for index, class_index in mapping.items():
+        modified_pred[:, class_index] = prediction[:, index]
+
+    return modified_pred
+
+
+def extract_learning_curve(stack: List[RunValue], key: Optional[str] = None) -> List[float]:
     learning_curve = []
     for entry in stack:
-        if key is not None:
-            learning_curve.append(entry['additional_run_info'][key])
-        else:
-            learning_curve.append(entry['loss'])
+        try:
+            val = entry['loss'] if key is None else entry['additional_run_info'][key]
+            learning_curve.append(val)
+        except TypeError:  # additional info is not dict
+            pass
+        except KeyError:  # Key does not exist
+            pass
+
     return list(learning_curve)
 
 

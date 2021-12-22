@@ -25,7 +25,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.tae import TargetAlgorithmQuery
 from autoPyTorch.optimizer.utils import read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -213,7 +213,7 @@ class AutoMLSMBO(object):
         self.resampling_strategy_args = resampling_strategy_args
 
         # and a bunch of useful limits
-        self.worst_possible_result = get_cost_of_crash(self.metric)
+        self.worst_possible_result = self.metric._cost_of_crash
         self.total_walltime_limit = int(total_walltime_limit)
         self.func_eval_time_limit_secs = int(func_eval_time_limit_secs)
         self.memory_limit = memory_limit
@@ -293,7 +293,7 @@ class AutoMLSMBO(object):
             search_space_updates=self.search_space_updates,
             pynisher_context=self.pynisher_context,
         )
-        ta = ExecuteTaFuncWithQueue
+        ta = TargetAlgorithmQuery
         self.logger.info("Finish creating Target Algorithm (TA) function")
 
         startup_time = self.watcher.wall_elapsed(self.dataset_name)
