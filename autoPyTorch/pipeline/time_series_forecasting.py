@@ -288,7 +288,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_backcast_false)
                 )
-            if 'NBEASTDecoder' in network_decoder_hp.choices:
+            if 'NBEATSDecoder' in network_decoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
                     forbidden_encoder_NBEATS)
@@ -355,6 +355,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             # ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
             ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            ("target_scaler", TargetScalerChoice(default_dataset_properties,
+                                                 random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
@@ -370,8 +372,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                           random_state=self.random_state)),
             ("lr_scheduler", SchedulerChoice(default_dataset_properties,
                                              random_state=self.random_state)),
-            ("target_scaler", TargetScalerChoice(default_dataset_properties,
-                                                 random_state=self.random_state)),
             ("trainer", ForecastingTrainerChoice(default_dataset_properties, random_state=self.random_state)),
         ])
         return steps

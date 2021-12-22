@@ -53,8 +53,10 @@ class NBEATSBLock(nn.Module):
 
     def build_backbone(self):
         layers: List[nn.Module] = list()
+        n_in_features = self.n_in_features
         for _ in range(self.num_layers):
-            self._add_layer(layers, self.n_in_features)
+            self._add_layer(layers, n_in_features)
+            n_in_features = self.width
         return layers
 
     def _add_layer(self, layers: List[nn.Module], in_features: int) -> None:

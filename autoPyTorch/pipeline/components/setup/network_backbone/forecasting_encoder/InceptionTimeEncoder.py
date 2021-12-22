@@ -95,11 +95,14 @@ class _InceptionTime(nn.Module):
         bottleneck_size = self.config["bottleneck_size"]
         kernel_size = self.config["kernel_size"]
         n_res_inputs = in_features
+
+        receptive_field = 1
         for i in range(self.config["num_blocks"]):
             block = _InceptionBlock(n_inputs=n_inputs,
                                     n_filters=n_filters,
                                     bottleneck=bottleneck_size,
                                     kernel_size=kernel_size)
+            receptive_field += max(kernel_size, 3) - 1
             self.__setattr__(f"inception_block_{i}", block)
 
             # add a residual block after every 3 inception blocks
@@ -109,6 +112,7 @@ class _InceptionTime(nn.Module):
                                                                        n_outputs=n_res_outputs))
                 n_res_inputs = n_res_outputs
             n_inputs = block.get_n_outputs()
+        self.receptive_field = receptive_field
 
     def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
@@ -127,6 +131,7 @@ class _InceptionTime(nn.Module):
 
 
 class InceptionTimeEncoder(BaseForecastingEncoder):
+    _receptive_field = 1
     """
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
@@ -134,6 +139,7 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         encoder = _InceptionTime(in_features=input_shape[-1],
                                   config=self.config)
+        self._receptive_field = encoder.receptive_field
         return encoder
 
     @staticmethod
@@ -145,6 +151,10 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
             'handles_image': False,
             'handles_time_series': True,
         }
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        X.update({'window_size': self._receptive_field})
+        return super().transform(X)
 
     @staticmethod
     def get_hyperparameter_search_space(

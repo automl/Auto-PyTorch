@@ -8,6 +8,8 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
+import numpy as np
+
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
@@ -76,17 +78,28 @@ class _TemporalConvNet(EncoderNetwork):
         super(_TemporalConvNet, self).__init__()
         layers: List[Any] = []
         num_levels = len(num_channels)
+        receptive_field = 1
+
+        # stride_values = []
+
         for i in range(num_levels):
             dilation_size = 2 ** i
             in_channels = num_inputs if i == 0 else num_channels[i - 1]
             out_channels = num_channels[i]
+            stride = 1
+            # stride_values.extend([stride, stride])
             layers += [_TemporalBlock(in_channels,
                                       out_channels,
                                       kernel_size,
-                                      stride=1,
+                                      stride=stride,
                                       dilation=dilation_size,
                                       padding=(kernel_size - 1) * dilation_size,
                                       dropout=dropout)]
+            # receptive_field_block = 1 + (kernel_size - 1) * dilation_size * \
+            #                        (int(np.prod(stride_values[:-2])) * (1 + stride_values[-2]))
+            receptive_field_block = 1 + 2 * (kernel_size - 1) * dilation_size  # stride = 1, we ignore stide computation
+            receptive_field += receptive_field_block
+        self.receptive_field = receptive_field
         self.network = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
@@ -101,6 +114,7 @@ class _TemporalConvNet(EncoderNetwork):
 
 
 class TCNEncoder(BaseForecastingEncoder):
+    _receptive_field = 1
     """
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
@@ -113,6 +127,7 @@ class TCNEncoder(BaseForecastingEncoder):
                                    kernel_size=self.config["kernel_size"],
                                    dropout=self.config["dropout"] if self.config["use_dropout"] else 0.0
                                    )
+        self._receptive_field = encoder.receptive_field
         return encoder
 
     @staticmethod
@@ -125,6 +140,10 @@ class TCNEncoder(BaseForecastingEncoder):
             'handles_image': False,
             'handles_time_series': True,
         }
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        X.update({'window_size': self._receptive_field})
+        return super().transform(X)
 
     @staticmethod
     def get_hyperparameter_search_space(

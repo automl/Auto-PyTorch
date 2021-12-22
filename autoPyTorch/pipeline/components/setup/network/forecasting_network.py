@@ -9,6 +9,12 @@ import numpy as np
 import torch
 from torch import nn
 
+from torch.distributions import (
+    AffineTransform,
+    TransformedDistribution,
+)
+
+
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
@@ -21,6 +27,14 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 
 
+class TransformedDistribution_(TransformedDistribution):
+    def mean(self):
+        mean = self.base_dist.mean
+        for transform in self.transforms:
+            mean = transform(mean)
+        return mean
+
+
 class ForecastingNet(nn.Module):
     future_target_required = False
 
@@ -29,7 +43,9 @@ class ForecastingNet(nn.Module):
                  network_encoder: EncoderNetwork,
                  network_decoder: nn.Module,
                  network_head: Optional[nn.Module],
+                 window_size: int,
                  n_prediction_steps: int,
+                 target_scaler: BaseTargetScaler,
                  encoder_properties: Dict,
                  decoder_properties: Dict,
                  output_type: str = 'regression',
@@ -65,7 +81,11 @@ class ForecastingNet(nn.Module):
         self.decoder = network_decoder
         self.head = network_head
 
+        self.target_scaler = target_scaler
+
         self.n_prediction_steps = n_prediction_steps
+        self.window_size = window_size
+
         self.output_type = output_type
         self.forecast_strategy = forecast_strategy
         self.num_samples = num_samples
@@ -77,6 +97,36 @@ class ForecastingNet(nn.Module):
                                  'for decoder!')
         self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
         self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
+        self._device = torch.device('cpu')
+
+    @property
+    def device(self):
+        return self._device
+
+    @device.setter
+    def device(self, device: torch.device):
+        self.to(device)
+        self._device = device
+
+    def rescale_output(self,
+                       outputs: Union[torch.distributions.Distribution, torch.Tensor],
+                       loc: Optional[torch.Tensor],
+                       scale: Optional[torch.Tensor],
+                       device: torch.device = torch.device('cpu')):
+        if loc is not None or scale is not None:
+            if isinstance(outputs, torch.distributions.Distribution):
+                transform = AffineTransform(loc=0.0 if loc is None else loc.to(device),
+                                            scale=1.0 if scale is None else scale.to(device),
+                                            )
+                outputs = TransformedDistribution_(outputs, [transform])
+            else:
+                if loc is None:
+                    outputs = outputs * scale.to(device)
+                elif scale is None:
+                    outputs = outputs + loc.to(device)
+                else:
+                    outputs = outputs * scale.to(device) + loc.to(device)
+        return outputs
 
     def forward(self,
                 targets_past: torch.Tensor,
@@ -85,10 +135,12 @@ class ForecastingNet(nn.Module):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        targets_past, _, loc, scale = self.target_scaler(targets_past)
         if features_past is not None:
             x_past = torch.cat([targets_past, features_past], dim=1)
         else:
             x_past = targets_past
+        x_past = x_past.to(device=self.device)
         x_past = self.embedding(x_past)
         if self.encoder_has_hidden_states:
             x_past, _ = self.encoder(x_past)
@@ -96,7 +148,7 @@ class ForecastingNet(nn.Module):
             x_past = self.encoder(x_past)
         x_past = self.decoder(x_past)
         output = self.head(x_past)
-        return output
+        return self.rescale_output(output, loc, scale, self.device)
 
     def pred_from_net_output(self, net_output):
         if self.output_type == 'regression':
@@ -150,8 +202,10 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        past_target, targets_future, loc, scale = self.target_scaler(targets_past, targets_future)
         x_past = targets_past if features_past is None else torch.cat([targets_past, features_past], dim=-1)
 
+        x_past = x_past.to(self.device)
         x_past = self.embedding(x_past)
 
         if self.training:
@@ -160,32 +214,37 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
             x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
                                                                                 dim=-1)
+            x_future = x_future.to(self.device)
 
             _, hidden_states = self.encoder(x_past)
             x_future, _ = self.decoder(x_future, hidden_states)
             net_output = self.head(x_future)
 
-            return net_output
+            return self.rescale_output(net_output, loc, scale, self.device)
         else:
             all_predictions = []
-            predicted_target = targets_past[:, [-1]]
+            predicted_target = targets_past[:, [-1]].to(self.device)
 
             _, hidden_states = self.encoder(x_past)
+            if features_future is not None:
+                features_future = features_future.to(self.devicee)
+
             for idx_pred in range(self.n_prediction_steps):
                 x_future = predicted_target if features_future is None else torch.cat(
                     [predicted_target, features_future[:, [idx_pred], :]],
                     dim=-1)
+                x_future = x_future.to(self.device)
 
                 x_future, hidden_states = self.decoder(x_future, hx=hidden_states)
                 net_output = self.head(x_future[:, -1:, ])
-                predicted_target = self.pred_from_net_output(net_output).to(targets_past.device)
+                predicted_target = self.pred_from_net_output(net_output)
 
                 all_predictions.append(net_output)
 
             if self.output_type != 'distribution':
                 all_predictions = torch.cat(all_predictions, dim=1)
 
-            return all_predictions
+            return self.rescale_output(all_predictions, loc, scale, self.device)
 
     def predict(self,
                 targets_past: torch.Tensor,
@@ -220,14 +279,17 @@ class ForecastingDeepARNet(ForecastingNet):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
+        past_target, targets_future, loc, scale = self.target_scaler(targets_past, targets_future)
         x_past = targets_past if features_past is None else torch.cat([targets_past, features_past], dim=-1)
 
+        x_past = x_past.to(self.device)
         # TODO consider static features
         x_past = self.embedding(x_past)
 
         if self.training:
             x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
                                                                                 dim=-1)
+            x_future = x_future.to(self.device)
             x_future = self.embedding(x_future)
 
             x_input = torch.cat([x_past, x_future[:, :-1]], dim=1)
@@ -238,7 +300,7 @@ class ForecastingDeepARNet(ForecastingNet):
                 x_input = self.encoder(x_input, output_seq=True)
 
             net_output = self.head(self.decoder(x_input))
-            return net_output
+            return self.rescale_output(net_output, loc, scale, self.device)
         else:
             all_predictions = []
             batch_size = targets_past.shape[0]
@@ -257,7 +319,8 @@ class ForecastingDeepARNet(ForecastingNet):
             else:
                 # For other models, the full past targets are passed to the network.
                 encoder_output = self.encoder(x_past)
-                repeated_past_target = targets_past.repeat_interleave(repeats=self.num_samples, dim=0).squeeze(1)
+                repeated_past_target = targets_past.repeat_interleave(repeats=self.num_samples,
+                                                                      dim=0).squeeze(1).to(self.device)
 
             repeated_static_feat = features_static.repeat_interleave(
                 repeats=self.num_samples, dim=0
@@ -282,6 +345,7 @@ class ForecastingDeepARNet(ForecastingNet):
                                                                                    repeated_time_feat[:, k:k + 1]],
                                                                                   dim=-1)
                 if self.encoder_has_hidden_states:
+                    x_next = x_next.to(self.device)
                     encoder_output, repeated_state = self.encoder(x_next, hx=repeated_state)
                 else:
                     x_next = torch.cat([repeated_past_target, x_next], dim=1)
@@ -297,22 +361,24 @@ class ForecastingDeepARNet(ForecastingNet):
 
             all_predictions = torch.cat(all_predictions, dim=1).unflatten(0, (batch_size, self.num_samples))
 
-            return all_predictions
+            if not self.output_type == 'distribution' and self.forecast_strategy == 'sample':
+                raise ValueError(
+                    f"A DeepAR network must have output type as Distribution and forecast_strategy as sample,"
+                    f"but this network has {self.output_type} and {self.forecast_strategy}")
+            if self.aggregation == 'mean':
+                return self.rescale_output(torch.mean(all_predictions, dim=1), loc, scale, self.device)
+            elif self.aggregation == 'median':
+                return self.rescale_output(torch.median(all_predictions, dim=1)[0], loc, scale, self.device)
+            else:
+                raise ValueError(f'Unknown aggregation: {self.aggregation}')
 
     def pred_from_net_output(self, net_output: torch.Tensor):
-        if not self.output_type == 'distribution' and self.forecast_strategy == 'sample':
-            raise ValueError(f"A DeepAR network must have output type as Distribution and forecast_strategy as sample,"
-                             f"but this network has {self.output_type} and {self.forecast_strategy}")
-        if self.aggregation == 'mean':
-            return torch.mean(net_output, dim=1)
-        elif self.aggregation == 'median':
-            return torch.median(net_output, dim=1)[0]
-        else:
-            raise ValueError(f'Unknown aggregation: {self.aggregation}')
+        return net_output
 
 
 class NBEATSNet(ForecastingNet):
     future_target_required = False
+
     def forward(self,
                 targets_past: torch.Tensor,
                 targets_future: Optional[torch.Tensor] = None,
@@ -320,13 +386,25 @@ class NBEATSNet(ForecastingNet):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
-        forecast = torch.zeros([self.n_prediction_steps, *targets_past[1:]])
+        targets_past, _, loc, scale = self.target_scaler(targets_past)
+        targets_past = targets_past.to(self.device)
+
+        batch_size = targets_past.shape[0]
+        output_shape = targets_past.shape[2:]
+        forcast_shape = [batch_size, self.n_prediction_steps, *output_shape]
+
+        forecast = torch.zeros(forcast_shape).to(self.device).flatten(1)
         backcast = self.encoder(targets_past)
         for block in self.decoder:
             backcast_block, forecast_block = block(backcast)
 
             backcast = backcast - backcast_block
             forecast = forecast + forecast_block
+        backcast = backcast.reshape(targets_past.shape)
+        forecast = forecast.reshape(forcast_shape)
+
+        backcast = self.rescale_output(backcast, loc, scale, self.device)
+        forecast = self.rescale_output(forecast, loc, scale, self.device)
         if self.training:
             return backcast, forecast
         else:
@@ -352,7 +430,6 @@ class ForecastingNetworkComponent(NetworkComponent):
         self.forecast_strategy = forecast_strategy
         self.num_samples = num_samples
         self.aggregation = aggregation
-        self.window_size = None
 
     @property
     def _required_fit_requirements(self):
@@ -362,6 +439,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("network_encoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_decoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
+            FitRequirement("target_scaler", (BaseTargetScaler, ), user_defined=False, dataset_property=False),
             FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
             FitRequirement("encoder_properties", (Dict,), user_defined=False, dataset_property=False),
             FitRequirement("decoder_properties", (Dict,), user_defined=False, dataset_property=False),
@@ -381,15 +459,16 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    network_encoder=X['network_encoder'],
                                    network_decoder=X['network_decoder'],
                                    network_head=X['network_head'],
+                                   window_size=X['window:size'],
                                    n_prediction_steps=X['dataset_properties']['n_prediction_steps'],
                                    encoder_properties=X['encoder_properties'],
                                    decoder_properties=X['decoder_properties'],
+                                   target_scaler=X['target_scaler'],
                                    output_type=self.net_out_type,
                                    forecast_strategy=self.forecast_strategy,
                                    num_samples=self.num_samples,
                                    aggregation=self.aggregation, )
 
-        self.window_size = X['window_size']
 
         if X['decoder_properties']['has_hidden_states']:
             # decoder is RNN
@@ -428,25 +507,12 @@ class ForecastingNetworkComponent(NetworkComponent):
 
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
-            X = X_batch['past_target'][:, -self.window_size:]
+            X = X_batch['past_target']
 
             X = X.float()
 
-            if target_scaler is None:
-                loc = 0.
-                scale = 1.
-            else:
-                X, _, loc, scale = target_scaler(X)
-
-            X = X.to(self.device)
-
             with torch.no_grad():
                 Y_batch_pred = self.network.predict(X)
-                if loc is None:
-                    loc = 0.
-                if scale is None:
-                    scale = 1.
-                Y_batch_pred = Y_batch_pred.cpu() * scale + loc
 
             Y_batch_preds.append(Y_batch_pred.cpu())
 

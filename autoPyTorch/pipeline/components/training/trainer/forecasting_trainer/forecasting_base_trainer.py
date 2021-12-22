@@ -12,11 +12,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from torch.distributions import (
-    AffineTransform,
-    TransformedDistribution,
-)
-
+from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
@@ -69,6 +65,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.target_scaler = target_scaler  # typing: BaseTargetScaler
         self.backcast_loss_ratio = backcast_loss_ratio
         self.window_size = window_size
+        self.model.device = self.device
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -119,26 +116,15 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         else:
             return loss_sum / N, {}
 
-    def rescale_output(self,
-                       outputs: Union[torch.distributions.Distribution, torch.Tensor],
-                       loc: Optional[torch.Tensor],
-                       scale: Optional[torch.Tensor],
-                       device: torch.device = torch.device('cpu')):
-        # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
-        if loc is not None or scale is not None:
-            if isinstance(outputs, torch.distributions.Distribution):
-                transform = AffineTransform(loc=0.0 if loc is None else loc.to(device),
-                                            scale=1.0 if scale is None else scale.to(device),
-                                            )
-                outputs = TransformedDistribution(outputs, [transform])
-            else:
-                if loc is None:
-                    outputs = outputs * scale.to(device)
-                elif scale is None:
-                    outputs = outputs + loc.to(device)
-                else:
-                    outputs = outputs * scale.to(device) + loc.to(device)
-        return outputs
+    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+        if self.task_type in REGRESSION_TASKS or FORECASTING_TASKS:
+            targets = targets.float()
+            # make sure that targets will have same shape as outputs (really important for mse loss for example)
+            if targets.ndim == 1:
+                targets = targets.unsqueeze(1)
+        else:
+            targets = targets.long()
+        return targets
 
     def train_step(self, data: Dict[str, torch.Tensor], future_targets: torch.Tensor) \
             -> Tuple[float, torch.Tensor]:
@@ -153,16 +139,17 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        past_target = data['past_target'][:, -self.window_size:]
+        past_target = data['past_target'][:, -self.window_size:].float()
 
+
+        """
         # prepare
         past_target = past_target.float()
         if self.model.future_target_required or isinstance(self.model, NBEATSNet):
             past_target, scaled_future_targets, loc, scale = self.target_scaler(past_target, future_targets)
         else:
             past_target, _, loc, scale = self.target_scaler(past_target)
-
-        past_target = past_target.to(self.device)
+        """
 
         future_targets = self.cast_targets(future_targets)
 
@@ -171,28 +158,26 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         if isinstance(self.model, NBEATSNet):
             past_target, criterion_kwargs_past = self.data_preparation(past_target,
-                                                                       scaled_future_targets.to(self.device))
-            past_target, criterion_kwargs_future = self.data_preparation(past_target, past_target)
+                                                                       past_target.to(self.device))
+            past_target, criterion_kwargs_future = self.data_preparation(past_target, future_targets.to(self.device))
             backcast, forecast = self.model(past_target)
 
             loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
+            loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
+
             loss_backcast = loss_func_backcast(self.criterion, backcast)
-            loss_forecast = loss_func_backcast(self.criterion, forecast)
+            loss_forecast = loss_func_forecast(self.criterion, forecast)
             loss = loss_forecast + loss_backcast * self.backcast_loss_ratio
+
+            outputs = forecast
         else:
-
             if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
-                future_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
-                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+                all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+                past_target, criterion_kwargs = self.data_preparation(past_target, all_targets.to(self.device))
             else:
-                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets.to(self.device))
 
-            if self.model.future_target_required:
-                outputs = self.model(past_target, scaled_future_targets.float().to(self.device))
-            else:
-                outputs = self.model(past_target)
-
-            outputs = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
+            outputs = self.model(past_target, future_targets)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
             loss = loss_func(self.criterion, outputs)
@@ -237,11 +222,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 # prepare
                 past_target = past_target.float()
 
-                past_target, _, loc, scale = self.target_scaler(past_target)
-
-                past_target = past_target.to(self.device)
-
-                future_targets = self.cast_targets(future_targets)
+                future_targets = self.cast_targets(future_targets).to(self.device)
 
                 past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
@@ -250,34 +231,20 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 if isinstance(self.model, ForecastingDeepARNet):
                     # DeepAR only generate sampled points, we replace log_prob loss with MSELoss
                     outputs = self.model.pred_from_net_output(outputs)
-                    outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
-                    loss = F.mse_loss(outputs_rescaled, future_targets)
+                    loss = F.mse_loss(outputs, future_targets)
                     outputs = outputs.detach().cpu()
                 else:
                     if isinstance(outputs, list):
-                        outputs_rescaled = [self.rescale_output(output,
-                                                                loc=loc,
-                                                                scale=scale,
-                                                                device=self.device) for output in outputs]
-
-                        loss = [self.criterion(output_rescaled, future_targets) for output_rescaled in outputs_rescaled]
+                        loss = [self.criterion(output, future_targets) for output in outputs]
                         loss = torch.mean(torch.Tensor(loss))
                     else:
-                        outputs_rescaled = self.rescale_output(outputs, loc=loc, scale=scale, device=self.device)
-                        loss = self.criterion(outputs_rescaled, future_targets)
+                        loss = self.criterion(outputs, future_targets)
                     outputs = self.model.pred_from_net_output(outputs).detach().cpu()
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size
 
-                if loc is None and scale is None:
-                    outputs_data.append(outputs)
-                else:
-                    if loc is None:
-                        loc = 0.
-                    if scale is None:
-                        scale = 1.
-                    outputs_data.append(outputs * scale + loc)
+                outputs_data.append(outputs)
                 targets_data.append(future_targets.detach().cpu())
 
                 if writer:

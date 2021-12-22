@@ -55,11 +55,12 @@ def get_trend_heads(block_width: int, thetas_dim: int, forecast_length: int, bac
                                   TransposeLinear(coefficients_backcast * norm))
     forecast_head = nn.Sequential(base_layer,
                                   TransposeLinear(coefficients_forecast * norm))
+
     return backcast_head, forecast_head
 
 
 def get_seasonality_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
-    base_layer = nn.Linear(block_width, thetas_dim, bias=False)
+    base_layer = nn.Linear(block_width, forecast_length, bias=False)
 
     backcast_linspace, forecast_linspace = linspace(backcast_length, forecast_length, centered=False)
 
@@ -85,7 +86,6 @@ def get_seasonality_heads(block_width: int, thetas_dim: int, forecast_length: in
                                   TransposeLinear(torch.cat([s1_b, s2_b])))
     forecast_head = nn.Sequential(base_layer,
                                   TransposeLinear(torch.cat([s1_f, s2_f])))
-
     return backcast_head, forecast_head
 
 
