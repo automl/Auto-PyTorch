@@ -157,7 +157,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
                                                                              log=True
                                                                              ),
             normalization: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='normalization',
-                                                                                 value_range=('BN', 'LN'),
+                                                                                 value_range=('BN', 'LN', 'NoNorm'),
                                                                                  default_value='BN'),
             dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
                                                                            value_range=(0, 0.8),

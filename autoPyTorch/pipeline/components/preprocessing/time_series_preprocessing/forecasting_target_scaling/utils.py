@@ -47,6 +47,15 @@ class TargetScaler(BaseEstimator):
                 future_targets = future_targets / scale
             return past_targets / scale, future_targets, None, scale
 
+        elif self.mode == 'mean_abs':
+            mean_abs = torch.mean(torch.abs(past_targets), dim=1,  keepdim=True)
+            mean_abs[mean_abs == 0.0] = 1.0
+            scale = mean_abs
+            if future_targets is not None:
+                future_targets = future_targets / scale
+            return past_targets / scale, future_targets, None, scale
+
+
         elif self.mode == "none":
             return past_targets, future_targets, None, None
 
