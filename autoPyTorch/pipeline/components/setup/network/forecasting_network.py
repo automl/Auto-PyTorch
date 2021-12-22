@@ -352,10 +352,12 @@ class ForecastingNetworkComponent(NetworkComponent):
         self.forecast_strategy = forecast_strategy
         self.num_samples = num_samples
         self.aggregation = aggregation
+        self.window_size = None
 
     @property
     def _required_fit_requirements(self):
         return [
+            FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_encoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_decoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
@@ -386,6 +388,8 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    forecast_strategy=self.forecast_strategy,
                                    num_samples=self.num_samples,
                                    aggregation=self.aggregation, )
+
+        self.window_size = X['window_size']
 
         if X['decoder_properties']['has_hidden_states']:
             # decoder is RNN
@@ -424,7 +428,7 @@ class ForecastingNetworkComponent(NetworkComponent):
 
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
-            X = X_batch['past_target']
+            X = X_batch['past_target'][:, -self.window_size:]
 
             X = X.float()
 

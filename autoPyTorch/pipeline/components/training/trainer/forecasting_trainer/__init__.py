@@ -43,8 +43,10 @@ class ForecastingTrainerChoice(TrainerChoice):
     @property
     def _fit_requirements(self) -> Optional[List[FitRequirement]]:
         fit_requirements = super()._fit_requirements
-        fit_requirements.append(FitRequirement("target_scaler", (BaseTargetScaler,),
-                                               user_defined=False, dataset_property=False))
+        fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
+                                               user_defined=False, dataset_property=False),
+                                FitRequirement("window_size", (int,), user_defined=False, dataset_property=False)]
+                                )
         return fit_requirements
 
     def get_budget_tracker(self, X):
@@ -82,6 +84,7 @@ class ForecastingTrainerChoice(TrainerChoice):
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
             step_interval=X['step_interval'],
+            window_size=X['window_size'],
             dataset_properties=X['dataset_properties'],
             target_scaler=X['target_scaler'],
             backcast_loss_ratio=X.get('backcast_loss_ratio', 0.0)

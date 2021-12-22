@@ -75,7 +75,7 @@ class HyperparameterSearchSpace(NamedTuple):
             self.hyperparameter, self.value_range, self.default_value, self.log)
 
 
-def custom_collate_fn(batch: List, collate: Callable = default_collate) -> List[Optional[torch.Tensor]]:
+def custom_collate_fn(batch: List, x_collector: Callable = default_collate) -> List[Optional[torch.Tensor]]:
     """
     In the case of not providing a y tensor, in a
     dataset of form {X, y}, y would be None.
@@ -86,7 +86,7 @@ def custom_collate_fn(batch: List, collate: Callable = default_collate) -> List[
 
     Args:
         batch (List): a batch from a dataset
-        collate (callable): how the data is collected, e.g., when one want to pad sequences with different lengths.
+        x_collector (callable): how the data is collected, e.g., when one want to pad sequences with different lengths.
             collate is only applied to X, for y, the normal default_collate is applied.
 
     Returns:
@@ -96,7 +96,7 @@ def custom_collate_fn(batch: List, collate: Callable = default_collate) -> List[
     items = list(zip(*batch))
 
     # The feature will always be available
-    items[0] = collate(items[0])
+    items[0] = x_collector(items[0])
     if None in items[1]:
         items[1] = list(items[1])
     else:

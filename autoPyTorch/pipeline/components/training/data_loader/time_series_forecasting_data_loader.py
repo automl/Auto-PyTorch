@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Tuple, Union, Sequence, List
-
-from torch.utils.data.sampler import SubsetRandomSampler
+from functools import partial
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
@@ -9,11 +8,11 @@ from ConfigSpace.conditions import EqualsCondition
 import numpy as np
 
 import torch
+from torch.utils.data.sampler import SubsetRandomSampler
 from torch._six import container_abcs, string_classes, int_classes
+from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format, default_collate
 
 import torchvision
-
-import warnings
 
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
@@ -27,31 +26,68 @@ from autoPyTorch.utils.common import (
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 
 
-class PaddingCollecter:
+def pad_sequence_from_start(sequences: List[torch.Tensor],
+                            seq_minimal_length: int,
+                            batch_first=False,
+                            padding_value=0.0) -> torch.Tensor:
+    r"""
+    This function is quite similar to  torch.nn.utils.rnn.pad_sequence except that we pad new values from the start of
+    the sequence. i.e., instead of extending [1,2,3] to [1,2,3,0,0], we extend it as [0,0,1,2,3]. Additionally, the
+    generated sequnece needs to have a length of at least seq_minimal_length
+    """
+
+    # assuming trailing dimensions and type of all the Tensors
+    # in sequences are same and fetching those from sequences[0]
+    max_size = sequences[0].size()
+    trailing_dims = max_size[1:]
+    max_len = max(max([s.size(0) for s in sequences]), seq_minimal_length)
+    if batch_first:
+        out_dims = (len(sequences), max_len) + trailing_dims
+    else:
+        out_dims = (max_len, len(sequences)) + trailing_dims
+
+    out_tensor = sequences[0].new_full(out_dims, padding_value)
+    for i, tensor in enumerate(sequences):
+        length = tensor.size(0)
+        # use index notation to prevent duplicate references to the tensor
+        if batch_first:
+            out_tensor[i, -length:, ...] = tensor
+        else:
+            out_tensor[-length:, i, ...] = tensor
+
+    return out_tensor
+
+
+class PadSequenceCollector:
     """
     A collector that transform the sequences from dataset. Since the sequences might contain different
     length, they need to be padded with constant value. Given that target value might require special value to
     fit the requirement of distribution, past_target will be padded with special values
-    #TODO implement padding collect!!
 
     """
 
-    def __init__(self, target_padding_value: float = 0.0):
+    def __init__(self, window_size: int, target_padding_value: float = 0.0):
+        self.window_size = window_size
         self.target_padding_value = target_padding_value
 
     def __call__(self, batch, padding_value=0.0):
-
         elem = batch[0]
         elem_type = type(elem)
         if isinstance(elem, torch.Tensor):
-            out = None
-            if torch.utils.data.get_worker_info() is not None:
-                # If we're in a background process, concatenate directly into a
-                # shared memory tensor to avoid an extra copy
-                numel = sum([x.numel() for x in batch])
-                storage = elem.storage()._new_shared(numel)
-                out = elem.new(storage)
-            return torch.stack(batch, 0, out=out)
+            seq = pad_sequence_from_start(batch,
+                                          seq_minimal_length=self.window_size,
+                                          batch_first=True, padding_value=padding_value) # type: torch.Tensor
+            return seq
+        elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
+                and elem_type.__name__ != 'string_':
+            if elem_type.__name__ == 'ndarray' or elem_type.__name__ == 'memmap':
+                # array of string classes and object
+                if np_str_obj_array_pattern.search(elem.dtype.str) is not None:
+                    raise TypeError(default_collate_err_msg_format.format(elem.dtype))
+
+                return default_collate([torch.as_tensor(b) for b in batch])
+            elif elem.shape == ():  # scalars
+                return torch.as_tensor(batch)
         elif isinstance(elem, float):
             return torch.tensor(batch, dtype=torch.float64)
         elif isinstance(elem, int_classes):
@@ -228,7 +264,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
-        self.padding_value = 0.0
+        self.padding_collector = PadSequenceCollector(self.window_size, 0.0)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -245,15 +281,16 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         sample_interval = X.get('sample_interval', 1)
         if sample_interval > 1:
             # for lower resolution, window_size should be smaller
-            self.window_size = self.sample_interval * ((self.window_size - 1) // self.sample_interval) + 1
+            self.window_size = (self.window_size - 1) // self.sample_interval + 1
         # this value corresponds to budget type num_sequence
         fraction_seq = X.get('fraction_seq', 1.0)
         # this value corresponds to budget type num_sample_per_seq
         fraction_samples_per_seq = X.get('fraction_samples_per_seq', 1.0)
         self.sample_interval = sample_interval
 
-        self.padding_value = X.get('required_padding_value', 0.0)
+        padding_value = X.get('required_padding_value', 0.0)
 
+        self.padding_collector.target_padding_value = padding_value
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
@@ -339,7 +376,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', True),
-            collate_fn=custom_collate_fn,
+            collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
             sampler=self.sampler_train,
         )
 
@@ -350,7 +387,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', False),
-            collate_fn=custom_collate_fn,
+            collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
         )
         return self
 
@@ -396,12 +433,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         # TODO more supported inputs
         if isinstance(X, (np.ndarray, torch.Tensor)):
-            X = X[-self.subseq_length - self.n_prediction_steps + 1:]
-
-            if y is not None:
-                # we want to make sure that X, and y can be mapped one to one (as sampling y requires a shifted value)
-                y = y[-self.subseq_length - self.n_prediction_steps + 1:]
-
             dataset = TimeSeriesSequence(
                 X=X, Y=y,
                 # This dataset is used for loading test data in a batched format
@@ -425,7 +456,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             dataset_test,
             batch_size=min(batch_size, len(dataset)),
             shuffle=False,
-            collate_fn=custom_collate_fn,
+            collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
         )
 
     def get_train_data_loader(self) -> torch.utils.data.DataLoader:

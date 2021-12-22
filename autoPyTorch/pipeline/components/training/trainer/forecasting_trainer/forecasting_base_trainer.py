@@ -44,6 +44,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             task_type: int,
             labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
             step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+            window_size: int = 20,
             dataset_properties: Optional[Dict] = None,
             target_scaler: BaseTargetScaler = TargetNoScaler(),
             backcast_loss_ratio: Optional[float] = None,
@@ -67,6 +68,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.metrics_kwargs = metric_kwargs
         self.target_scaler = target_scaler  # typing: BaseTargetScaler
         self.backcast_loss_ratio = backcast_loss_ratio
+        self.window_size = window_size
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
@@ -151,7 +153,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        past_target = data['past_target']
+        past_target = data['past_target'][:, -self.window_size:]
 
         # prepare
         past_target = past_target.float()
@@ -226,7 +228,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         with torch.no_grad():
             for step, (data, future_targets) in enumerate(test_loader):
-                past_target = data['past_target']
+                past_target = data['past_target'][:, -self.window_size:]
 
                 mase_coefficients.append(data['mase_coefficient'])
 
