@@ -28,7 +28,7 @@ from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader im
 
 def pad_sequence_from_start(sequences: List[torch.Tensor],
                             seq_minimal_length: int,
-                            batch_first=False,
+                            batch_first=True,
                             padding_value=0.0) -> torch.Tensor:
     r"""
     This function is quite similar to  torch.nn.utils.rnn.pad_sequence except that we pad new values from the start of

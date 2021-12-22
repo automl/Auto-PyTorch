@@ -564,7 +564,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
                                    'upper_window_size': self.upper_window_size,
-                                   'sp': self.seasonality,  # For metric computation
+                                   'sp': self.seasonality,  # For metric computation,
+                                   'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train})
         return dataset_properties
 

@@ -1,4 +1,6 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List, Union
+import warnings
+import numpy as np
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,25 +12,29 @@ from ConfigSpace.hyperparameters import (
 
 import torch
 from torch import nn
+from gluonts.time_feature.lag import get_lags_for_frequency
+
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
     import BaseForecastingEncoder, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-
+from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 class _RNN(EncoderNetwork):
     # we only consder GRU and LSTM here
     def __init__(self,
                  in_features: int,
-                 config: Dict[str, Any]):
+                 config: Dict[str, Any],
+                 lagged_value: Optional[Union[List, np.ndarray]]=None):
         super().__init__()
         self.config = config
         if config['cell_type'] == 'lstm':
             cell_type = nn.LSTM
         else:
             cell_type = nn.GRU
-
+        self.lagged_value = lagged_value
+        in_features = in_features if self.lagged_value is None else len(self.lagged_value) * in_features
         self.lstm = cell_type(input_size=in_features,
                               hidden_size=config["hidden_size"],
                               num_layers=config["num_layers"],
@@ -70,17 +76,34 @@ class RNNEncoder(BaseForecastingEncoder):
 
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
+        self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         encoder = _RNN(in_features=input_shape[-1],
-                       config=self.config)
+                       config=self.config,
+                       lagged_value=self.lagged_value)
         return encoder
 
     def encoder_properties(self):
         encoder_properties = super().encoder_properties()
         encoder_properties.update({'has_hidden_states': True,
+                                   'lagged_input': True,
                                    })
         return encoder_properties
+
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        freq = X['dataset_properties'].get('freq', None)
+        if 'lagged_value' in X['dataset_properties']:
+            self.lagged_value = X['dataset_properties']['lagged_value']
+        if freq is not None:
+            try:
+                freq = FREQUENCY_MAP[freq]
+                self.lagged_value = [0] + get_lags_for_frequency(freq)
+            except Exception:
+                warnings.warn(f'cannot find the proper lagged value for {freq}, we use the default lagged value')
+                # If
+                pass
+        return super().fit(X, y)
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         rnn_kwargs = {'hidden_size': self.config['hidden_size'],

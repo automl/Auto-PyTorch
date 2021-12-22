@@ -242,10 +242,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_losses_all.append(forbidden_hp_dist)
 
             network_encoder_hp = cs.get_hyperparameter('network_encoder:__choice__')
-            if 'MLPEncoder' in network_encoder_hp.choices:
+            if 'MLPEncoder' or 'TCNEncoder' or 'InceptionTimeEncoder' in network_encoder_hp.choices:
+                forbidden = ['MLPEncoder', 'TCNEncoder', 'InceptionTimeEncoder']
+                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
                 for hp_ar in hp_auto_regressive:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
-                    forbidden_hp_mlpencoder = ForbiddenEqualsClause(network_encoder_hp, 'MLPEncoder')
+                    forbidden_hp_mlpencoder = ForbiddenInClause(network_encoder_hp, forbidden_deepAREncoder)
                     forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
                     forbidden_losses_all.append(forbidden_hp_ar_mlp)
 

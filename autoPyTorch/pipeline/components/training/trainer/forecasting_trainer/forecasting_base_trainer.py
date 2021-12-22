@@ -139,17 +139,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        past_target = data['past_target'][:, -self.window_size:].float()
-
-
-        """
-        # prepare
-        past_target = past_target.float()
-        if self.model.future_target_required or isinstance(self.model, NBEATSNet):
-            past_target, scaled_future_targets, loc, scale = self.target_scaler(past_target, future_targets)
-        else:
-            past_target, _, loc, scale = self.target_scaler(past_target)
-        """
+        past_target = data['past_target'].float()
 
         future_targets = self.cast_targets(future_targets)
 
@@ -157,6 +147,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.optimizer.zero_grad()
 
         if isinstance(self.model, NBEATSNet):
+            past_target = past_target[:, -self.window_size:]
             past_target, criterion_kwargs_past = self.data_preparation(past_target,
                                                                        past_target.to(self.device))
             past_target, criterion_kwargs_future = self.data_preparation(past_target, future_targets.to(self.device))
@@ -172,7 +163,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             outputs = forecast
         else:
             if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
-                all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+                if self.window_size> past_target.shape[1]:
+                    all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+                else:
+                    all_targets = torch.cat([past_target[:, 1 - self.window_size:, ], future_targets], dim=1)
                 past_target, criterion_kwargs = self.data_preparation(past_target, all_targets.to(self.device))
             else:
                 past_target, criterion_kwargs = self.data_preparation(past_target, future_targets.to(self.device))
@@ -213,27 +207,29 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         with torch.no_grad():
             for step, (data, future_targets) in enumerate(test_loader):
-                past_target = data['past_target'][:, -self.window_size:]
+                past_target = data['past_target'].float()
 
                 mase_coefficients.append(data['mase_coefficient'])
 
                 batch_size = past_target.shape[0]
 
-                # prepare
-                past_target = past_target.float()
-
-                future_targets = self.cast_targets(future_targets).to(self.device)
-
-                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
-
-                outputs = self.model(past_target)
-
                 if isinstance(self.model, ForecastingDeepARNet):
+                    future_targets = self.cast_targets(future_targets)
+
+                    past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+
+                    outputs = self.model(past_target)
                     # DeepAR only generate sampled points, we replace log_prob loss with MSELoss
                     outputs = self.model.pred_from_net_output(outputs)
                     loss = F.mse_loss(outputs, future_targets)
                     outputs = outputs.detach().cpu()
                 else:
+                    # prepare
+                    future_targets = self.cast_targets(future_targets).to(self.device)
+
+                    past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+
+                    outputs = self.model(past_target)
                     if isinstance(outputs, list):
                         loss = [self.criterion(output, future_targets) for output in outputs]
                         loss = torch.mean(torch.Tensor(loss))
