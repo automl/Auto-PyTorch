@@ -232,7 +232,6 @@ def test_init_ensemble_builder(backend):
     assert proc_ensemble.opt_metric == 'accuracy'
     assert proc_ensemble.metrics[0] == accuracy
 
-    estimator._close_dask_client()
-    estimator._clean_logger()
+    estimator._cleanup()
 
     del estimator

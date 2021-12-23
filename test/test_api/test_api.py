@@ -759,7 +759,6 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        ensemble_size=0,
     )
 
     # Setup pre-requisites normally set by search()

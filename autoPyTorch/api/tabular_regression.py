@@ -39,18 +39,6 @@ class TabularRegressionTask(BaseTask):
             number of threads to use for each process.
         logging_config (Optional[Dict]):
             Specifies configuration for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int: default=50):
-            Number of models added to the ensemble built by
-            Ensemble selection from libraries of models.
-            Models are drawn with replacement.
-        ensemble_nbest (int: default=50):
-            Only consider the ensemble_nbest
-            models to build the ensemble
-        max_models_on_disc (int: default=50):
-            Maximum number of models saved to disc.
-            Also, controls the size of the ensemble
-            as any additional models will be deleted.
-            Must be greater than or equal to 1.
         temporary_directory (str):
             Folder to store configuration output and log file
         output_directory (str):
@@ -86,9 +74,6 @@ class TabularRegressionTask(BaseTask):
         n_jobs: int = 1,
         n_threads: int = 1,
         logging_config: Optional[Dict] = None,
-        ensemble_size: int = 50,
-        ensemble_nbest: int = 50,
-        max_models_on_disc: int = 50,
         temporary_directory: Optional[str] = None,
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
@@ -105,9 +90,6 @@ class TabularRegressionTask(BaseTask):
             n_jobs=n_jobs,
             n_threads=n_threads,
             logging_config=logging_config,
-            ensemble_size=ensemble_size,
-            ensemble_nbest=ensemble_nbest,
-            max_models_on_disc=max_models_on_disc,
             temporary_directory=temporary_directory,
             output_directory=output_directory,
             delete_tmp_folder_after_terminate=delete_tmp_folder_after_terminate,
@@ -259,7 +241,13 @@ class TabularRegressionTask(BaseTask):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
+<<<<<<< HEAD
         dataset_compression: Union[Mapping[str, Any], bool] = False,
+=======
+        ensemble_size: int = 50,
+        ensemble_nbest: int = 50,
+        max_models_on_disc: int = 50,
+>>>>>>> move ensemble arguments to search function
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -390,6 +378,7 @@ class TabularRegressionTask(BaseTask):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_.
+<<<<<<< HEAD
             dataset_compression: Union[bool, Mapping[str, Any]] = True
                 We compress datasets so that they fit into some predefined amount of memory.
                 **NOTE**
@@ -429,6 +418,20 @@ class TabularRegressionTask(BaseTask):
                         Subsampling takes into account classification labels and stratifies
                         accordingly. We guarantee that at least one occurrence of each
                         label is included in the sampled set.
+=======
+            ensemble_size (int: default=50):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            ensemble_nbest (int: default=50):
+                Only consider the ensemble_nbest
+                models to build the ensemble
+            max_models_on_disc (int: default=50):
+                Maximum number of models saved to disc.
+                Also, controls the size of the ensemble
+                as any additional models will be deleted.
+                Must be greater than or equal to 1.
+>>>>>>> move ensemble arguments to search function
 
         Returns:
             self
@@ -465,6 +468,9 @@ class TabularRegressionTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
+            ensemble_size=ensemble_size,
+            ensemble_nbest=ensemble_nbest,
+            max_models_on_disc=max_models_on_disc,
         )
 
     def predict(

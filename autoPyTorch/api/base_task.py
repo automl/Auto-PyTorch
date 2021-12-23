@@ -128,16 +128,6 @@ class BaseTask(ABC):
             Number of threads to use for each process.
         logging_config (Optional[Dict]):
             Specifies configuration for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int: default=50):
-            Number of models added to the ensemble built by
-            Ensemble selection from libraries of models.
-            Models are drawn with replacement.
-        ensemble_nbest (int: default=50):
-            Only consider the ensemble_nbest models to build the ensemble
-        max_models_on_disc (int: default=50):
-            Maximum number of models saved to disc. It also controls the size of
-            the ensemble as any additional models will be deleted.
-            Must be greater than or equal to 1.
         temporary_directory (str):
             Folder to store configuration output and log file
         output_directory (str):
@@ -173,9 +163,6 @@ class BaseTask(ABC):
         n_jobs: int = 1,
         n_threads: int = 1,
         logging_config: Optional[Dict] = None,
-        ensemble_size: int = 50,
-        ensemble_nbest: int = 50,
-        max_models_on_disc: int = 50,
         temporary_directory: Optional[str] = None,
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
@@ -195,9 +182,6 @@ class BaseTask(ABC):
         self.seed = seed
         self.n_jobs = n_jobs
         self.n_threads = n_threads
-        self.ensemble_size = ensemble_size
-        self.ensemble_nbest = ensemble_nbest
-        self.max_models_on_disc = max_models_on_disc
         self.logging_config: Optional[Dict] = logging_config
         self.include_components: Optional[Dict] = include_components
         self.exclude_components: Optional[Dict] = exclude_components
@@ -980,6 +964,9 @@ class BaseTask(ABC):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None,
+        ensemble_size: int = 50,
+        ensemble_nbest: int = 50,
+        max_models_on_disc: int = 50,        
         **kwargs: Any
     ) -> 'BaseTask':
         """
@@ -1108,6 +1095,16 @@ class BaseTask(ABC):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
+            ensemble_size (int: default=50):
+                Number of models added to the ensemble built by
+                Ensemble selection from libraries of models.
+                Models are drawn with replacement.
+            ensemble_nbest (int: default=50):
+                Only consider the ensemble_nbest models to build the ensemble
+            max_models_on_disc (int: default=50):
+                Maximum number of models saved to disc. It also controls the size of
+                the ensemble as any additional models will be deleted.
+                Must be greater than or equal to 1.
             kwargs: Any
                 additional arguments that are customed by some specific task.
                 For instance, forecasting tasks require:
@@ -1116,6 +1113,7 @@ class BaseTask(ABC):
                         hyperparameters are determined by the default configurations
                     custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
                     the users
+
         Returns:
             self
 
@@ -1148,13 +1146,14 @@ class BaseTask(ABC):
         self._disable_file_output = disable_file_output if disable_file_output is not None else []
         if (
             DisableFileOutputParameters.y_optimization in self._disable_file_output
-            and self.ensemble_size > 1
+            and ensemble_size > 1
         ):
             self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
                                  f" is in disable_file_output")
 
         self._memory_limit = memory_limit
         self._time_for_task = total_walltime_limit
+
         # Save start time to backend
         self._backend.save_start_time(str(self.seed))
 
@@ -1218,7 +1217,7 @@ class BaseTask(ABC):
 
         # Make sure that at least 2 models are created for the ensemble process
         num_models = time_left_for_modelfit // func_eval_time_limit_secs
-        if num_models < 2 and self.ensemble_size > 0:
+        if num_models < 2 and ensemble_size > 0:
             func_eval_time_limit_secs = time_left_for_modelfit // 2
             self._logger.warning(
                 "Capping the func_eval_time_limit_secs to {} to have "
@@ -1229,7 +1228,7 @@ class BaseTask(ABC):
 
         # ============> Run dummy predictions
         # We only want to run dummy predictions in case we want to build an ensemble
-        if self.ensemble_size > 0:
+        if ensemble_size > 0:
             dummy_task_name = 'runDummy'
             self._stopwatch.start_task(dummy_task_name)
             self._do_dummy_prediction()
@@ -1238,7 +1237,7 @@ class BaseTask(ABC):
         # ============> Run traditional ml
         # We only want to run traditional predictions in case we want to build an ensemble
         # We want time for at least 1 Neural network in SMAC
-        if enable_traditional_pipeline and self.ensemble_size > 0:
+        if enable_traditional_pipeline and ensemble_size > 0:
             traditional_runtime_limit = int(self._time_for_task - func_eval_time_limit_secs)
             self.run_traditional_ml(current_task_name=self.dataset_name,
                                     runtime_limit=traditional_runtime_limit,
@@ -1253,21 +1252,22 @@ class BaseTask(ABC):
         if time_left_for_ensembles <= 0:
             # Fit only raises error when ensemble_size is not zero but
             # time_left_for_ensembles is zero.
-            if self.ensemble_size > 0:
+            if ensemble_size > 0:
                 raise ValueError("Not starting ensemble builder because there "
                                  "is no time left. Try increasing the value "
                                  "of time_left_for_this_task.")
-        elif self.ensemble_size <= 0:
+        elif ensemble_size <= 0:
             self._logger.info("Not starting ensemble builder as ensemble size is 0")
         else:
             self._logger.info("Starting ensemble")
             ensemble_task_name = 'ensemble'
             self._stopwatch.start_task(ensemble_task_name)
             proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
-                                                        ensemble_size=self.ensemble_size,
-                                                        ensemble_nbest=self.ensemble_nbest,
+                                                        ensemble_size=ensemble_size,
+                                                        ensemble_nbest=ensemble_nbest,
                                                         precision=precision,
-                                                        optimize_metric=self.opt_metric
+                                                        optimize_metric=self.opt_metric,
+                                                        max_models_on_disc=max_models_on_disc
                                                         )
             self._stopwatch.stop_task(ensemble_task_name)
 
@@ -1740,6 +1740,7 @@ class BaseTask(ABC):
         precision: Optional[int] = None,
         ensemble_nbest: int = 50,
         ensemble_size: int = 50,
+        max_models_on_disc: int = 50,
         load_models: bool = True,
         time_for_task: int = 100,
         func_eval_time_limit_secs: int = 50,
@@ -1755,13 +1756,16 @@ class BaseTask(ABC):
                 evaluate a pipeline. if not specified, value passed to search will be used
             precision (Optional[int]): Numeric precision used when loading
                 ensemble data. Can be either 16, 32 or 64.
-            ensemble_nbest (Optional[int]):
-                only consider the ensemble_nbest models to build the ensemble.
-                If None, uses the value stored in class attribute `ensemble_nbest`.
-            ensemble_size (int) (default=50):
+            ensemble_size (int: default=50):
                 Number of models added to the ensemble built by
                 Ensemble selection from libraries of models.
                 Models are drawn with replacement.
+            ensemble_nbest (int: default=50):
+                Only consider the ensemble_nbest models to build the ensemble
+            max_models_on_disc (int: default=50):
+                Maximum number of models saved to disc. It also controls the size of
+                the ensemble as any additional models will be deleted.
+                Must be greater than or equal to 1.
             enable_traditional_pipeline (bool), (default=True):
                 We fit traditional machine learning algorithms
                 (LightGBM, CatBoost, RandomForest, ExtraTrees, KNN, SVM)
@@ -1850,6 +1854,7 @@ class BaseTask(ABC):
             precision=precision,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
+            max_models_on_disc=max_models_on_disc
         )
 
         manager.build_ensemble(self._dask_client)
@@ -1871,6 +1876,7 @@ class BaseTask(ABC):
         optimize_metric: str,
         ensemble_nbest: int,
         ensemble_size: int,
+        max_models_on_disc: int = 50,
         precision: int = 32,
     ) -> EnsembleBuilderManager:
         """
@@ -1880,13 +1886,17 @@ class BaseTask(ABC):
                 Time (in seconds) allocated to building the ensemble
             optimize_metric (str):
                 Name of the metric to optimize the ensemble.
-            ensemble_nbest (int):
-                only consider the ensemble_nbest models to build the ensemble.
             ensemble_size (int):
                 Number of models added to the ensemble built by
                 Ensemble selection from libraries of models.
                 Models are drawn with replacement.
-            precision (int), (default=32): Numeric precision used when loading
+            ensemble_nbest (int):
+                Only consider the ensemble_nbest models to build the ensemble
+            max_models_on_disc (int: default=50):
+                Maximum number of models saved to disc. It also controls the size of
+                the ensemble as any additional models will be deleted.
+                Must be greater than or equal to 1.
+            precision (int: default=32): Numeric precision used when loading
                 ensemble data. Can be either 16, 32 or 64.
 
         Returns:
@@ -1920,7 +1930,7 @@ class BaseTask(ABC):
             opt_metric=optimize_metric,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
-            max_models_on_disc=self.max_models_on_disc,
+            max_models_on_disc=max_models_on_disc,
             seed=self.seed,
             max_iterations=None,
             read_at_most=sys.maxsize,
