@@ -293,9 +293,9 @@ class TrainerChoice(autoPyTorchChoice):
                 writer=writer,
             )
 
+            # its fine if train_loss is None due to `is_max_time_reached()`
             if train_loss is None:
                 if self.budget_tracker.is_max_time_reached():
-                    # train_loss is None, if epoch could not be started, usually due to `is_max_time_reached()``
                     break
                 else:
                     raise RuntimeError("`train_loss` computed to None.")
