@@ -211,6 +211,7 @@ class BaseTask(ABC):
         self._scoring_functions: Optional[List[autoPyTorchMetric]] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.dataset_name: Optional[str] = None
+        self.dataset = Optional[BaseDataset]
         self.cv_models_: Dict = {}
 
         self._results_manager = ResultsManager()
@@ -684,20 +685,7 @@ class BaseTask(ABC):
             run_history=self.run_history,
             backend=self._backend,
         )
-        if self._logger is None:
-            warnings.warn(
-                "No valid ensemble was created. Please check the log"
-                "file for errors. Default to the best individual estimator:{}".format(
-                    ensemble.identifiers_
-                )
-            )
-        else:
-            self._logger.exception(
-                "No valid ensemble was created. Please check the log"
-                "file for errors. Default to the best individual estimator:{}".format(
-                    ensemble.identifiers_
-                )
-            )
+
 
         return ensemble
 
@@ -1340,7 +1328,6 @@ class BaseTask(ABC):
         if proc_ensemble is not None:
             self._collect_results_ensemble(proc_ensemble)
 
-
         self._logger.info("Closing the dask infrastructure")
         self._close_dask_client()
         self._logger.info("Finished closing the dask infrastructure")
@@ -1350,6 +1337,14 @@ class BaseTask(ABC):
             self._load_models()
             self._logger.info("Finished loading models...")
 
+            if isinstance(self.ensemble_, SingleBest) and ensemble_size > 0:
+                self._logger.exception(
+                    "No valid ensemble was created. Please check the log"
+                    "file for errors. Default to the best individual estimator:{}".format(
+                        self.ensemble_.identifiers_
+                    )
+                )
+    
         self._cleanup()
 
         return self

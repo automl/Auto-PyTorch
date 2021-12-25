@@ -15,8 +15,8 @@ from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
-from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
 # ====
@@ -225,8 +225,7 @@ def test_init_ensemble_builder(backend):
         time_left_for_ensembles=60,
         optimize_metric='accuracy',
         ensemble_nbest=10,
-        ensemble_size=5
-        )
+        ensemble_size=5)
 
     assert isinstance(proc_ensemble, EnsembleBuilderManager)
     assert proc_ensemble.opt_metric == 'accuracy'
