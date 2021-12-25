@@ -686,7 +686,6 @@ class BaseTask(ABC):
             backend=self._backend,
         )
 
-
         return ensemble
 
     def _cleanup(self) -> None:
@@ -1344,7 +1343,7 @@ class BaseTask(ABC):
                         self.ensemble_.identifiers_
                     )
                 )
-    
+
         self._cleanup()
 
         return self
