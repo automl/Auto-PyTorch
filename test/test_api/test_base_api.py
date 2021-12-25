@@ -118,7 +118,7 @@ def test_set_pipeline_config():
     ])
 def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, budget_type, expected):
     BaseTask.__abstractmethods__ = set()
-    estimator = BaseTask(task_type='tabular_classification', ensemble_size=0)
+    estimator = BaseTask(task_type='tabular_classification')
 
     # Fixture pipeline config
     default_pipeline_config = {
@@ -141,7 +141,7 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
         smac_mock.return_value = smac
         estimator._search(optimize_metric='accuracy', dataset=dataset, tae_func=pipeline_fit,
                           min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
-                          enable_traditional_pipeline=False,
+                          ensemble_size=0, enable_traditional_pipeline=False,
                           total_walltime_limit=20, func_eval_time_limit_secs=10,
                           load_models=False)
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
@@ -210,7 +210,6 @@ def test_init_ensemble_builder(backend):
     BaseTask.__abstractmethods__ = set()
     estimator = BaseTask(
         backend=backend,
-        ensemble_size=0,
     )
 
     # Setup pre-requisites normally set by search()
