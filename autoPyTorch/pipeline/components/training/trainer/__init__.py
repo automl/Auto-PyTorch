@@ -293,6 +293,13 @@ class TrainerChoice(autoPyTorchChoice):
                 writer=writer,
             )
 
+            if train_loss is None:
+                if self.budget_tracker.is_max_time_reached():
+                    # train_loss is None, if epoch could not be started, usually due to `is_max_time_reached()``
+                    break
+                else:
+                    raise RuntimeError("`train_loss` computed to None.")
+
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
