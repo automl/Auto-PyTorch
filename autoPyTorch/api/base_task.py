@@ -986,13 +986,13 @@ class BaseTask(ABC):
                 information on what to save. Must be a member of `DisableFileOutputParameters`.
                 Allowed elements in the list are:
 
-                + `y_optimization`:
+                + `y_opt`:
                     do not save the predictions for the optimization set,
                     which would later on be used to build an ensemble. Note that SMAC
                     optimizes a metric evaluated on the optimization set.
-                + `pipeline`:
+                + `model`:
                     do not save any individual pipeline files
-                + `pipelines`:
+                + `cv_model`:
                     In case of cross validation, disables saving the joint model of the
                     pipelines fit on each fold.
                 + `y_test`:
@@ -1043,7 +1043,7 @@ class BaseTask(ABC):
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output if disable_file_output is not None else []
         if (
-            DisableFileOutputParameters.y_optimization in self._disable_file_output
+            DisableFileOutputParameters.y_opt in self._disable_file_output
             and self.ensemble_size > 1
         ):
             self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
@@ -1479,13 +1479,13 @@ class BaseTask(ABC):
                 information on what to save. Must be a member of `DisableFileOutputParameters`.
                 Allowed elements in the list are:
 
-                + `y_optimization`:
+                + `y_opt`:
                     do not save the predictions for the optimization set,
                     which would later on be used to build an ensemble. Note that SMAC
                     optimizes a metric evaluated on the optimization set.
-                + `pipeline`:
+                + `model`:
                     do not save any individual pipeline files
-                + `pipelines`:
+                + `cv_model`:
                     In case of cross validation, disables saving the joint model of the
                     pipelines fit on each fold.
                 + `y_test`:
@@ -1633,7 +1633,7 @@ class BaseTask(ABC):
             warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
                           f", additional_info: {run_value.additional_info}")
             return None
-        elif any(disable_file_output for c in ['all', 'pipeline']):
+        elif any(disable_file_output for c in ['all', 'model']):
             self._logger.warning("File output is disabled. No pipeline can returned")
             return None
 

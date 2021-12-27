@@ -162,13 +162,13 @@ class DisableFileOutputParameters(autoPyTorchEnum):
     Contains literals that can be passed in to `disable_file_output` list.
     These include:
 
-    + `y_optimization`:
+    + `y_opt`:
         do not save the predictions for the optimization set,
         which would later on be used to build an ensemble. Note that SMAC
         optimizes a metric evaluated on the optimization set.
-    + `pipeline`:
+    + `model`:
         do not save any individual pipeline files
-    + `pipelines`:
+    + `cv_model`:
         In case of cross validation, disables saving the joint model of the
         pipelines fit on each fold.
     + `y_test`:
@@ -176,9 +176,9 @@ class DisableFileOutputParameters(autoPyTorchEnum):
     + `all`:
         do not save any of the above.
     """
-    pipeline = 'pipeline'
-    pipelines = 'pipelines'
-    y_optimization = 'y_optimization'
+    model = 'pipeline'
+    cv_model = 'cv_model'
+    y_opt = 'y_opt'
     y_test = 'y_test'
     all = 'all'
 

@@ -143,13 +143,13 @@ class FixedPipelineParams(NamedTuple):
             information on what to save. Must be a member of `DisableFileOutputParameters`.
             Allowed elements in the list are:
 
-            + `y_optimization`:
+            + `y_opt`:
                 do not save the predictions for the optimization set,
                 which would later on be used to build an ensemble. Note that SMAC
                 optimizes a metric evaluated on the optimization set.
-            + `pipeline`:
+            + `model`:
                 do not save any individual pipeline files
-            + `pipelines`:
+            + `cv_model`:
                 In case of cross validation, disables saving the joint model of the
                 pipelines fit on each fold.
             + `y_test`:
@@ -577,7 +577,7 @@ class FixedPipelineParams(NamedTuple):
 
         backend = self.fixed_pipeline_params.backend
         # This file can be written independently of the others down bellow
-        if 'y_optimization' not in self.disable_file_output and self.fixed_pipeline_params.save_y_opt:
+        if 'y_opt' not in self.disable_file_output and self.fixed_pipeline_params.save_y_opt:
             backend.save_targets_ensemble(self.y_opt)
 
         seed, budget = self.fixed_pipeline_params.seed, self.evaluator_params.budget
@@ -586,9 +586,9 @@ class FixedPipelineParams(NamedTuple):
             seed=int(seed),
             idx=int(self.num_run),
             budget=float(budget),
-            model=self.pipelines[0] if 'pipeline' not in self.disable_file_output else None,
-            cv_model=self._fetch_voting_pipeline() if 'pipelines' not in self.disable_file_output else None,
-            ensemble_predictions=self._get_prediction(opt_pred, 'y_optimization'),
+            model=self.pipelines[0] if 'model' not in self.disable_file_output else None,
+            cv_model=self._fetch_voting_pipeline() if 'cv_model' not in self.disable_file_output else None,
+            ensemble_predictions=self._get_prediction(opt_pred, 'y_opt'),
             valid_predictions=self._get_prediction(valid_pred, 'y_valid'),
             test_predictions=self._get_prediction(test_pred, 'y_test')
         )
@@ -608,7 +608,7 @@ class FixedPipelineParams(NamedTuple):
             return False
 
         y_dict = {'optimization': opt_pred, 'validation': valid_pred, 'test': test_pred}
-        for inference_name, y in y_dict.items():
+        for y in y_dict.values():
             if y is not None and not np.all(np.isfinite(y)):
                 return False  # Model predictions contains NaNs
 

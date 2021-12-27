@@ -102,7 +102,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
 
         fixed_params_dict = self.fixed_params._asdict()
 
-        for call_count, disable in enumerate(['all', 'pipeline', 'pipelines', 'y_optimization']):
+        for call_count, disable in enumerate(['all', 'model', 'cv_model', 'y_opt']):
             fixed_params_dict.update(disable_file_output=[disable])
             ae = AbstractEvaluator(
                 queue=queue_mock,
@@ -120,14 +120,14 @@ class AbstractEvaluatorTest(unittest.TestCase):
                 continue
 
             call_list = self.backend_mock.save_numrun_to_dir.call_args_list[-1][1]
-            if disable == 'pipeline':
+            if disable == 'model':  # TODO: Check the response from Ravin (add CV version?)
                 self.assertIsNone(call_list['model'])
-                self.assertIsNotNone(call_list['cv_model'])
-            elif disable == 'pipelines':
-                self.assertIsNotNone(call_list['model'])
+                # self.assertIsNotNone(call_list['cv_model'])
+            elif disable == 'cv_model':
+                # self.assertIsNotNone(call_list['model'])
                 self.assertIsNone(call_list['cv_model'])
 
-            if disable in ('y_optimization', 'all'):
+            if disable in ('y_opt', 'all'):
                 self.assertIsNone(call_list['ensemble_predictions'])
             else:
                 self.assertIsNotNone(call_list['ensemble_predictions'])
