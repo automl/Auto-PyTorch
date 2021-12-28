@@ -478,6 +478,7 @@ class TargetAlgorithmQuery(AbstractTAFunc):
         return self._process_results(obj, config, queue, num_run, budget)
 
     def _add_learning_curve_info(self, additional_run_info: Dict[str, Any], info: List[RunValue]) -> None:
+        """ This method is experimental (The source of information in RunValue might require modifications.) """
         lc_runtime = extract_learning_curve(info, 'duration')
         stored = False
         targets = {'learning_curve': (True, None),
@@ -488,7 +489,7 @@ class TargetAlgorithmQuery(AbstractTAFunc):
         for key, (collect, metric_name) in targets.items():
             if collect:
                 lc = extract_learning_curve(info, metric_name)
-                if len(lc) > 1:
+                if len(lc) >= 1:
                     stored = True
                     additional_run_info[key] = lc
 

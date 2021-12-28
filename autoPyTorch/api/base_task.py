@@ -1046,7 +1046,7 @@ class BaseTask(ABC):
             DisableFileOutputParameters.y_opt in self._disable_file_output
             and self.ensemble_size > 1
         ):
-            self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
+            self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_opt}"
                                  f" is in disable_file_output")
 
         self._memory_limit = memory_limit

@@ -65,18 +65,20 @@ def ensure_prediction_array_sizes(
     prediction: np.ndarray,
     output_type: str,
     num_classes: Optional[int],
-    label_examples: Optional[np.ndarray]
+    unique_train_labels: Optional[List[int]]
 ) -> np.ndarray:
     """
     This function formats a prediction to match the dimensionality of the provided
-    labels label_examples. This should be used exclusively for classification tasks
+    labels `unique_train_labels`. This should be used exclusively for classification tasks.
+    This function is typically important when using cross validation, which might cause
+    some splits not having some class in the training split.
 
     Args:
         prediction (np.ndarray):
             The un-formatted predictions of a pipeline
         output_type (str):
             Output type specified in constants. (TODO: Fix it to enum)
-        label_examples (Optional[np.ndarray]):
+        unique_train_labels (Optional[List[int]]):
             The labels from the dataset to give an intuition of the expected
             predictions dimensionality
 
@@ -85,15 +87,18 @@ def ensure_prediction_array_sizes(
             The formatted prediction
     """
     if num_classes is None:
-        raise RuntimeError("_ensure_prediction_array_sizes is only for classification tasks")
-    if label_examples is None:
-        raise ValueError('label_examples must be provided, but got None')
+        raise RuntimeError("ensure_prediction_array_sizes is only for classification tasks")
+    if unique_train_labels is None:
+        raise ValueError('unique_train_labels must be provided, but got None')
 
     if STRING_TO_OUTPUT_TYPES[output_type] != MULTICLASS or prediction.shape[1] == num_classes:
         return prediction
 
-    classes = list(np.unique(label_examples))
-    mapping = {classes.index(class_idx): class_idx for class_idx in range(num_classes)}
+    mapping = {
+        unique_train_labels.index(class_idx): class_idx
+        for class_idx in range(num_classes) if class_idx in unique_train_labels
+    }
+    # augment the array size when the output shape is different
     modified_pred = np.zeros((prediction.shape[0], num_classes), dtype=np.float32)
 
     for index, class_index in mapping.items():
@@ -103,12 +108,31 @@ def ensure_prediction_array_sizes(
 
 
 def extract_learning_curve(stack: List[RunValue], key: Optional[str] = None) -> List[float]:
+    """
+    Extract learning curve from the additional info.
+
+    Args:
+        stack (List[RunValue]):
+            The stack of the additional information.
+        key (Optional[str]):
+            The key to extract.
+
+    Returns:
+        learning_curve (List[float]):
+            The list of the extracted information
+
+    Note:
+        This function is experimental.
+        The source of information in RunValue might require modifications.
+    """
     learning_curve = []
+    key = 'loss' if key is None else key
+
     for entry in stack:
         try:
-            val = entry['loss'] if key is None else entry['additional_run_info'][key]
-            learning_curve.append(val)
-        except TypeError:  # additional info is not dict
+            info = entry.additional_info
+            learning_curve.append(getattr(entry, key, info[key]))
+        except AttributeError:  # additional info is not RunValue
             pass
         except KeyError:  # Key does not exist
             pass
@@ -176,7 +200,7 @@ class DisableFileOutputParameters(autoPyTorchEnum):
     + `all`:
         do not save any of the above.
     """
-    model = 'pipeline'
+    model = 'model'
     cv_model = 'cv_model'
     y_opt = 'y_opt'
     y_test = 'y_test'

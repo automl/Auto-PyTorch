@@ -43,7 +43,7 @@ class DummyTrainEvaluator(TrainEvaluator):
         fit_pipeline(self.logger, pipeline, X, y=None)
         self.logger.info("Model fitted, now predicting")
 
-        kwargs = {'pipeline': pipeline, 'label_examples': self.y_train[train_indices]}
+        kwargs = {'pipeline': pipeline, 'unique_train_labels': self.unique_train_labels[split_id]}
         train_pred = self.predict(subsampler(self.X_train, train_indices), **kwargs)
         opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs)
         valid_pred = self.predict(self.X_valid, **kwargs)

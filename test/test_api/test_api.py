@@ -275,8 +275,8 @@ def _get_estimator(
     resampling_strategy,
     resampling_strategy_args,
     metric,
-    total_walltime_limit=40,
-    func_eval_time_limit_secs=10,
+    total_walltime_limit=18,
+    func_eval_time_limit_secs=6,
     **kwargs
 ):
 
@@ -321,6 +321,10 @@ def _check_tabular_task(estimator, X_test, y_test, task_type, resampling_strateg
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
     _check_picklable(estimator, X_test)
+
+    representation = estimator.show_models()
+    assert isinstance(representation, str)
+    assert all(word in representation for word in ['Weight', 'Preprocessing', 'Estimator'])
 
 
 # Test
@@ -383,10 +387,6 @@ def test_tabular_regression(openml_id, resampling_strategy, backend, resampling_
         n_successful_runs=1
     )
 
-    representation = estimator.show_models()
-    assert isinstance(representation, str)
-    assert all(word in representation for word in ['Weight', 'Preprocessing', 'Estimator'])
-
 
 @pytest.mark.parametrize('openml_id', (
     1590,  # Adult to test NaN in categorical columns
@@ -423,8 +423,8 @@ def test_tabular_input_support(openml_id, backend):
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='accuracy',
-            total_walltime_limit=150,
-            func_eval_time_limit_secs=50,
+            total_walltime_limit=30,
+            func_eval_time_limit_secs=6,
             enable_traditional_pipeline=False,
             load_models=False,
         )

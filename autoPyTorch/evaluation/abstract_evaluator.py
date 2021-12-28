@@ -261,6 +261,9 @@ class FixedPipelineParams(NamedTuple):
             self.predict_function = self._predict_proba
 
         self.X_train, self.y_train = datamanager.train_tensors
+        self.unique_train_labels = [
+            list(np.unique(self.y_train[train_indices])) for train_indices, _ in self.splits
+        ]
         self.X_valid, self.y_valid, self.X_test, self.y_test = None, None, None, None
         if datamanager.val_tensors is not None:
             self.X_valid, self.y_valid = datamanager.val_tensors
@@ -383,7 +386,7 @@ class FixedPipelineParams(NamedTuple):
         self,
         X: Optional[np.ndarray],
         pipeline: BaseEstimator,
-        label_examples: Optional[np.ndarray] = None
+        unique_train_labels: Optional[List[int]] = None
     ) -> Optional[np.ndarray]:
         """
         A wrapper function to handle the prediction of regression or classification tasks.
@@ -393,7 +396,8 @@ class FixedPipelineParams(NamedTuple):
                 A set of features to feed to the pipeline
             pipeline (BaseEstimator):
                 A model that will take the features X return a prediction y
-            label_examples (Optional[np.ndarray]):
+            unique_train_labels (Optional[List[int]]):
+                The unique labels included in the train split.
 
         Returns:
             (np.ndarray):
@@ -417,7 +421,7 @@ class FixedPipelineParams(NamedTuple):
                     prediction=pred,
                     num_classes=self.num_classes,
                     output_type=self.output_type,
-                    label_examples=label_examples
+                    unique_train_labels=unique_train_labels
                 )
 
         return pred
@@ -441,6 +445,10 @@ class FixedPipelineParams(NamedTuple):
                 A scikit-learn compliant pipeline which is not yet fit to the data.
         """
         config = self.evaluator_params.configuration
+        if not isinstance(config, (int, str, Configuration)):
+            raise TypeError("The type of configuration must be either (int, str, Configuration), "
+                            f"but got type {type(config)}")
+
         kwargs = dict(
             config=config,
             random_state=np.random.RandomState(self.fixed_pipeline_params.seed),
@@ -458,9 +466,6 @@ class FixedPipelineParams(NamedTuple):
                                   exclude=self.fixed_pipeline_params.exclude,
                                   search_space_updates=self.fixed_pipeline_params.search_space_updates,
                                   **kwargs)
-        else:
-            raise ValueError("The type of configuration must be either (int, str, Configuration), "
-                             f"but got type {type(config)}")
 
     def _loss(self, labels: np.ndarray, preds: np.ndarray) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer

@@ -317,3 +317,16 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
     # we should be able to get a decent score on this dummy data
     assert r2_score >= 0.8, f"Pipeline:{pipeline} Config:{config} FitDict: {fit_dictionary_tabular_dummy}, " \
                             f"{pipeline.named_steps['trainer'].run_summary.performance_tracker['train_metrics']}"
+
+
+def test_get_pipeline_representation():
+    pipeline = TabularRegressionPipeline(
+        dataset_properties={
+            'numerical_columns': None,
+            'categorical_columns': None,
+            'task_type': 'tabular_classification'
+        }
+    )
+    repr = pipeline.get_pipeline_representation()
+    assert isinstance(repr, dict)
+    assert all(word in repr for word in ['Preprocessing', 'Estimator'])

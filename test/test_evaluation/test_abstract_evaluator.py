@@ -7,6 +7,8 @@ import unittest.mock
 
 import numpy as np
 
+import pytest
+
 import sklearn.dummy
 
 from smac.tae import StatusType
@@ -16,13 +18,49 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     EvaluationResults,
     EvaluatorParams,
-    FixedPipelineParams
+    FixedPipelineParams,
+    get_default_pipeline_config
 )
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
 from evaluation_util import get_multiclass_classification_datamanager  # noqa E402
+
+
+def setup_backend_mock(ev_path, dataset=get_multiclass_classification_datamanager()):
+    dummy_model_files = [os.path.join(ev_path, str(n)) for n in range(100)]
+    dummy_pred_files = [os.path.join(ev_path, str(n)) for n in range(100, 200)]
+
+    backend_mock = unittest.mock.Mock()
+    backend_mock.get_model_dir.return_value = ev_path
+    backend_mock.get_model_path.side_effect = dummy_model_files
+    backend_mock.get_prediction_output_path.side_effect = dummy_pred_files
+    backend_mock.temporary_directory = ev_path
+
+    backend_mock.load_datamanager.return_value = dataset
+    return backend_mock
+
+
+def test_fixed_pipeline_params_with_default_pipeline_config():
+    pipeline_config = get_default_pipeline_config()
+    dummy_config = {'budget_type': 'epochs'}
+    with pytest.raises(TypeError):
+        FixedPipelineParams.with_default_pipeline_config(budget_type='epochs')
+    with pytest.raises(ValueError):
+        FixedPipelineParams.with_default_pipeline_config(pipeline_config={'dummy': 'dummy'})
+    with pytest.raises(ValueError):
+        FixedPipelineParams.with_default_pipeline_config(pipeline_config={'budget_type': 'dummy'})
+
+    for cfg, ans in [(None, pipeline_config), (dummy_config, dummy_config)]:
+        params = FixedPipelineParams.with_default_pipeline_config(
+            metric=accuracy,
+            pipeline_config=cfg,
+            backend=unittest.mock.Mock(),
+            seed=0
+        )
+
+        assert params.pipeline_config == ans
 
 
 class AbstractEvaluatorTest(unittest.TestCase):
@@ -35,18 +73,8 @@ class AbstractEvaluatorTest(unittest.TestCase):
         self.ev_path = os.path.join(this_directory, '.tmp_evaluation')
         if not os.path.exists(self.ev_path):
             os.mkdir(self.ev_path)
-        dummy_model_files = [os.path.join(self.ev_path, str(n)) for n in range(100)]
-        dummy_pred_files = [os.path.join(self.ev_path, str(n)) for n in range(100, 200)]
 
-        backend_mock = unittest.mock.Mock()
-        backend_mock.get_model_dir.return_value = self.ev_path
-        backend_mock.get_model_path.side_effect = dummy_model_files
-        backend_mock.get_prediction_output_path.side_effect = dummy_pred_files
-        backend_mock.temporary_directory = self.ev_path
-
-        D = get_multiclass_classification_datamanager()
-        backend_mock.load_datamanager.return_value = D
-        self.backend_mock = backend_mock
+        self.backend_mock = setup_backend_mock(self.ev_path)
         self.eval_params = EvaluatorParams.with_default_budget(budget=0, configuration=1)
         self.fixed_params = FixedPipelineParams.with_default_pipeline_config(
             backend=self.backend_mock,
@@ -64,8 +92,106 @@ class AbstractEvaluatorTest(unittest.TestCase):
             except:  # noqa E722
                 pass
 
+    def test_instantiation_errors(self):
+        for task_type, splits in [('tabular_classification', None), (None, [])]:
+            with pytest.raises(ValueError):
+                fixed_params = self.fixed_params._asdict()
+                backend = unittest.mock.Mock()
+                dataset_mock = unittest.mock.Mock()
+                dataset_mock.task_type = task_type
+                dataset_mock.splits = splits
+                backend.load_datamanager.return_value = dataset_mock
+                fixed_params.update(backend=backend)
+
+                AbstractEvaluator(
+                    queue=unittest.mock.Mock(),
+                    fixed_pipeline_params=FixedPipelineParams(**fixed_params),
+                    evaluator_params=self.eval_params
+                )
+
+    def test_tensors_in_instantiation(self):
+        fixed_params = self.fixed_params._asdict()
+        dataset = get_multiclass_classification_datamanager()
+
+        dataset.val_tensors = ('X_val', 'y_val')
+        dataset.test_tensors = ('X_test', 'y_test')
+        fixed_params.update(backend=setup_backend_mock(self.ev_path, dataset=dataset))
+
+        ae = AbstractEvaluator(
+            queue=unittest.mock.Mock(),
+            fixed_pipeline_params=FixedPipelineParams(**fixed_params),
+            evaluator_params=self.eval_params
+        )
+
+        assert (ae.X_valid, ae.y_valid) == dataset.val_tensors
+        assert (ae.X_test, ae.y_test) == dataset.test_tensors
+
+    def test_init_fit_dictionary(self):
+        for budget_type, exc in [('runtime', None), ('epochs', None), ('dummy', ValueError)]:
+            fixed_params = self.fixed_params._asdict()
+            fixed_params.update(budget_type=budget_type)
+            kwargs = dict(
+                queue=unittest.mock.Mock(),
+                fixed_pipeline_params=FixedPipelineParams(**fixed_params),
+                evaluator_params=self.eval_params
+            )
+            if exc is None:
+                AbstractEvaluator(**kwargs)
+            else:
+                with pytest.raises(exc):
+                    AbstractEvaluator(**kwargs)
+
+    def test_get_pipeline(self):
+        ae = AbstractEvaluator(
+            queue=unittest.mock.Mock(),
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
+        )
+        eval_params = ae.evaluator_params._asdict()
+        eval_params.update(configuration=1.5)
+        ae.evaluator_params = EvaluatorParams(**eval_params)
+        with pytest.raises(TypeError):
+            ae._get_pipeline()
+
+    def test_get_transformed_metrics_error(self):
+        ae = AbstractEvaluator(
+            queue=unittest.mock.Mock(),
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
+        )
+        with pytest.raises(ValueError):
+            ae._get_transformed_metrics(pred=[], inference_name='dummy')
+
+    def test_fetch_voting_pipeline_without_pipeline(self):
+        ae = AbstractEvaluator(
+            queue=unittest.mock.Mock(),
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
+        )
+        ae.pipelines = [None] * 4
+        assert ae._fetch_voting_pipeline() is None
+
+    def test_is_output_possible(self):
+        ae = AbstractEvaluator(
+            queue=unittest.mock.Mock(),
+            fixed_pipeline_params=self.fixed_params,
+            evaluator_params=self.eval_params
+        )
+
+        dummy = np.random.random((33, 3))
+        dummy_with_nan = dummy.copy()
+        dummy_with_nan[0][0] = np.nan
+        for y_opt, opt_pred, ans in [
+            (None, dummy, True),
+            (dummy, np.random.random((100, 3)), False),
+            (dummy, dummy, True),
+            (dummy, dummy_with_nan, False)
+        ]:
+            ae.y_opt = y_opt
+            assert ae._is_output_possible(opt_pred, None, None) == ans
+
     def test_record_evaluation_model_predicts_NaN(self):
-        '''Tests by handing in predictions which contain NaNs'''
+        """ Tests by handing in predictions which contain NaNs """
         rs = np.random.RandomState(1)
         queue_mock = unittest.mock.Mock()
         opt_pred, test_pred, valid_pred = rs.rand(33, 3), rs.rand(25, 3), rs.rand(25, 3)

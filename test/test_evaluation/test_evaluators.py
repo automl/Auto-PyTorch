@@ -10,6 +10,8 @@ from ConfigSpace import Configuration
 
 import numpy as np
 
+import pytest
+
 from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
@@ -55,6 +57,47 @@ class DummyPipeline(BasePipeline):
         return {}
 
 
+class TestCrossValidationResultsManager(unittest.TestCase):
+    def test_update_loss_dict(self):
+        cv_results = _CrossValidationResultsManager(3)
+        loss_sum_dict = {}
+        loss_dict = {'f1': 1.0, 'f2': 2.0}
+        cv_results._update_loss_dict(loss_sum_dict, loss_dict, 3)
+        assert loss_sum_dict == {'f1': 1.0 * 3, 'f2': 2.0 * 3}
+        loss_sum_dict = {'f1': 2.0, 'f2': 1.0}
+        cv_results._update_loss_dict(loss_sum_dict, loss_dict, 3)
+        assert loss_sum_dict == {'f1': 2.0 + 1.0 * 3, 'f2': 1.0 + 2.0 * 3}
+
+    def test_merge_predictions(self):
+        cv_results = _CrossValidationResultsManager(3)
+        preds = np.array([])
+        assert cv_results._merge_predictions(preds) is None
+
+        for preds_shape in [(10, ), (10, 10, )]:
+            preds = np.random.random(preds_shape)
+            with pytest.raises(ValueError):
+                cv_results._merge_predictions(preds)
+
+        preds = np.array([
+            [
+                [1.0, 2.0],
+                [3.0, 4.0],
+                [5.0, 6.0],
+            ],
+            [
+                [7.0, 8.0],
+                [9.0, 10.0],
+                [11.0, 12.0],
+            ]
+        ])
+        ans = np.array([
+            [4.0, 5.0],
+            [6.0, 7.0],
+            [8.0, 9.0],
+        ])
+        assert np.allclose(ans, cv_results._merge_predictions(preds))
+
+
 class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -96,6 +139,21 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.ev_path):
             shutil.rmtree(self.ev_path)
+
+    def test_evaluate_loss(self):
+        D = get_binary_classification_datamanager()
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
+        backend_api.load_datamanager = lambda: D
+        fixed_params_dict = self.fixed_params._asdict()
+        fixed_params_dict.update(backend=backend_api)
+        evaluator = TrainEvaluator(
+            queue=multiprocessing.Queue(),
+            fixed_pipeline_params=FixedPipelineParams(**fixed_params_dict),
+            evaluator_params=self.eval_params
+        )
+        evaluator.splits = None
+        with pytest.raises(ValueError):
+            evaluator.evaluate_loss()
 
     @unittest.mock.patch('autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline')
     def test_holdout(self, pipeline_mock):
