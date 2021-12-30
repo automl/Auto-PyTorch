@@ -19,11 +19,10 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                  **kwargs: Any):
         super().__init__()
         self.add_fit_requirements(self._required_fit_requirements)
-        self.head: Optional[nn.Module] = None
         self.auto_regressive = kwargs.get('auto_regressive', False)
 
         self.config = kwargs
-        self.decoder = None
+        self.decoder: Optional[nn.Module] = None
         self.n_decoder_output_features = None
         self.n_prediction_heads = 1
 
@@ -36,6 +35,10 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
         ]
 
+    @property
+    def fitted_encoder(self):
+        return []
+
     def decoder_properties(self):
         decoder_properties = {'has_hidden_states': False,
                               'recurrent': False,
@@ -46,7 +49,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
-        Builds the head component and assigns it to self.head
+        Builds the head component and assigns it to self.decoder
 
         Args:
             X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
@@ -61,7 +64,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         auto_regressive = self.auto_regressive
 
         X.update({"auto_regressive": auto_regressive})
-
 
         if auto_regressive:
             self.n_prediction_heads = 1

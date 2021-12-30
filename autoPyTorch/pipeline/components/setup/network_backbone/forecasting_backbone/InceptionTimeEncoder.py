@@ -9,8 +9,9 @@ import torch
 from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder\
-    import BaseForecastingEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+    BaseForecastingEncoder, EncoderNetwork
+)
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
@@ -143,13 +144,21 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         return encoder
 
     @staticmethod
+    def allowed_decoders():
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['MLPDecoder']
+
+    @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
             'shortname': 'InceptionTimeBackbone',
             'name': 'InceptionTimeBackbone',
             'handles_tabular': False,
             'handles_image': False,
-            'handles_time_series': True,
+            # TODO consider InceptionTime for forecasting
+            'handles_time_series': False,
         }
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -166,11 +175,12 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                            value_range=(4, 64),
                                                                            default_value=32,
-                                                                           log=True
+                                                                           log=True,
                                                                            ),
         kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
                                                                            value_range=(4, 64),
                                                                            default_value=32,
+                                                                           log=True,
                                                                            ),
         bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
                                                                                value_range=(16, 64),

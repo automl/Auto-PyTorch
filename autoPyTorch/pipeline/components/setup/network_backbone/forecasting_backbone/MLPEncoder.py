@@ -2,14 +2,14 @@ from typing import Any, Dict, List, Optional, Union, Tuple
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
-    import BaseForecastingEncoder, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+    BaseForecastingEncoder, EncoderNetwork
+)
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
@@ -68,6 +68,13 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
             'fixed_input_seq_length': True,
         })
         return encoder_properties
+
+    @staticmethod
+    def allowed_decoders():
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['MLPDecoder']
 
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:

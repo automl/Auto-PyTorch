@@ -1,10 +1,9 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import List
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter, \
     UniformFloatHyperparameter
 from ConfigSpace.conditions import GreaterThanCondition, InCondition, EqualsCondition, AndConjunction
-from ConfigSpace.forbidden import ForbiddenEqualsClause, ForbiddenAndConjunction
 
 from typing import Dict, Optional, Tuple, Union, Any
 
@@ -15,7 +14,7 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
     BaseForecastingDecoder
 
 # TODO we need to rewrite NBEATS part to make it neater!!!
@@ -115,6 +114,10 @@ class NBEATSDecoder(BaseForecastingDecoder):
             'handles_image': False,
             'handles_time_series': True,
         }
+
+    @property
+    def fitted_encoder(self):
+        return ['NBEATSEncoder']
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({'backcast_loss_ratio': self.config['backcast_loss_ratio']})
@@ -316,6 +319,5 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 cs.add_condition(AndConjunction(dropout_condition_1, dropout_condition_2))
             else:
                 cs.add_condition(dropout_condition_1)
-
 
         return cs

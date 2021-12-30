@@ -1,17 +1,16 @@
-from abc import ABC
-from typing import Dict, Optional, Tuple, Union, Any
+from typing import Dict, Optional, Tuple, Union
 
 from torch import nn
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition
+from ConfigSpace.conditions import GreaterThanCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
     BaseForecastingDecoder
 
 
@@ -46,6 +45,10 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
             'handles_image': False,
             'handles_time_series': True,
         }
+
+    @property
+    def fitted_encoder(self):
+        return ['RNNEncoder', 'TCNEncoder', 'MLEncoder', 'NBEATSEncoder']
 
     @staticmethod
     def get_hyperparameter_search_space(

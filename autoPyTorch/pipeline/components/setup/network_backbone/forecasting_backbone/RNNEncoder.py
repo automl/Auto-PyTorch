@@ -14,19 +14,20 @@ import torch
 from torch import nn
 from gluonts.time_feature.lag import get_lags_for_frequency
 
-
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
-    import BaseForecastingEncoder, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+    BaseForecastingEncoder, EncoderNetwork
+)
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
+
 
 class _RNN(EncoderNetwork):
     # we only consder GRU and LSTM here
     def __init__(self,
                  in_features: int,
                  config: Dict[str, Any],
-                 lagged_value: Optional[Union[List, np.ndarray]]=None):
+                 lagged_value: Optional[Union[List, np.ndarray]] = None):
         super().__init__()
         self.config = config
         if config['cell_type'] == 'lstm':
@@ -83,6 +84,13 @@ class RNNEncoder(BaseForecastingEncoder):
                        config=self.config,
                        lagged_value=self.lagged_value)
         return encoder
+
+    @staticmethod
+    def allowed_decoders():
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['MLPDecoder', 'RNNDecoder']
 
     def encoder_properties(self):
         encoder_properties = super().encoder_properties()
@@ -144,8 +152,16 @@ class RNNEncoder(BaseForecastingEncoder):
                                                                            default_value=0.2),
             bidirectional: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='bidirectional',
                                                                                  value_range=(True, False),
-                                                                                 default_value=True)
+                                                                                 default_value=True),
+            decoder_type: HyperparameterSearchSpace =
+            HyperparameterSearchSpace(hyperparameter='decoder_type',
+                                      value_range=('MLPDecoder', 'RNNDecoder'),
+                                      default_value='MLPDecoder')
     ) -> ConfigurationSpace:
+        """
+        get hyperparameter search space
+
+        """
         cs = CS.ConfigurationSpace()
 
         # TODO consider lstm layers with different hidden size
@@ -159,6 +175,7 @@ class RNNEncoder(BaseForecastingEncoder):
         add_hyperparameter(cs, cell_type, CategoricalHyperparameter)
         add_hyperparameter(cs, hidden_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, bidirectional, CategoricalHyperparameter)
+        add_hyperparameter(cs, decoder_type, CategoricalHyperparameter)
 
         cs.add_condition(CS.AndConjunction(CS.EqualsCondition(dropout, use_dropout, True),
                                            CS.GreaterThanCondition(dropout, num_layers, 1)))

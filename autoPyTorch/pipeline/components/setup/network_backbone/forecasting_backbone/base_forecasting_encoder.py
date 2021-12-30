@@ -88,6 +88,10 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         return self
 
+    @staticmethod
+    def allowed_decoders():
+        raise NotImplementedError
+
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X['dataset_properties'].update({'input_shape': self.input_shape})
         X.update({'network_encoder': self.encoder})

@@ -5,21 +5,13 @@ from typing import Dict, List, Optional
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
-import numpy as np
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
-)
-from autoPyTorch.pipeline.components.setup.network_head.base_network_head import (
-    NetworkHeadComponent,
 )
 
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
     BaseForecastingDecoder,
 )
 
@@ -29,11 +21,15 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 
 directory = os.path.split(__file__)[0]
-_decoders = find_components(__package__,
+decoders = find_components(__package__,
                          directory,
                          BaseForecastingDecoder)
 
-_addons = ThirdPartyComponents(BaseForecastingDecoder)
+decoder_addons = ThirdPartyComponents(BaseForecastingDecoder)
+
+
+def add_decoder(encoder: BaseForecastingDecoder) -> None:
+    decoder_addons.add_component(encoder)
 
 
 class ForecastingDecoderChoice(NetworkBackboneChoice):
@@ -49,8 +45,8 @@ class ForecastingDecoderChoice(NetworkBackboneChoice):
         """
         components = OrderedDict()
 
-        components.update(_decoders)
-        components.update(_addons.components)
+        components.update(decoders)
+        components.update(decoder_addons.components)
 
         return components
 
@@ -173,20 +169,20 @@ class ForecastingDecoderChoice(NetworkBackboneChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_heads,
                                                                choice_hyperparameter.value_range))
-            head = CSH.CategoricalHyperparameter('__choice__',
+            decoder = CSH.CategoricalHyperparameter('__choice__',
                                                  choice_hyperparameter.value_range,
                                                  default_value=choice_hyperparameter.default_value)
         else:
-            head = CSH.CategoricalHyperparameter(
+            decoder = CSH.CategoricalHyperparameter(
                 '__choice__',
                 list(available_heads.keys()),
                 default_value=default)
-        cs.add_hyperparameter(head)
-        for name in head.choices:
+        cs.add_hyperparameter(decoder)
+        for name in decoder.choices:
             updates = self._get_search_space_updates(prefix=name)
             config_space = available_heads[name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
                                                                                  **updates)
-            parent_hyperparameter = {'parent': head, 'value': name}
+            parent_hyperparameter = {'parent': decoder, 'value': name}
             cs.add_configuration_space(
                 name,
                 config_space,
@@ -195,4 +191,6 @@ class ForecastingDecoderChoice(NetworkBackboneChoice):
 
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
+        import pdb
+        pdb.set_trace()
         return cs

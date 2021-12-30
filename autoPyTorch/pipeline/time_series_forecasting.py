@@ -1,12 +1,9 @@
 import copy
 import warnings
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-from ConfigSpace.hyperparameters import Constant
 from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenInClause
-from ConfigSpace.conditions import EqualsCondition, NotEqualsCondition
 
 import numpy as np
 
@@ -28,9 +25,9 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder import \
-    ForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder import ForecastingDecoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingBackboneChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
+    ForecastingDecoderChoice
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
@@ -201,12 +198,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                             """
 
         # dist_cls and auto_regressive are only activate if the network outputs distribution
-        if 'loss' in self.named_steps.keys() and 'network_head' in self.named_steps.keys():
+        if 'loss' in self.named_steps.keys() and 'network_backbone' in self.named_steps.keys():
             hp_loss = cs.get_hyperparameter('loss:__choice__')
 
             hp_auto_regressive = []
             for hp_name in cs.get_hyperparameter_names():
-                if hp_name.startswith('network_decoder:'):
+                if hp_name.startswith('network_backbone:'):
                     if hp_name.endswith(':auto_regressive'):
                         hp_auto_regressive.append(cs.get_hyperparameter(hp_name))
 
@@ -241,9 +238,19 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
                     forbidden_losses_all.append(forbidden_hp_dist)
 
-            network_encoder_hp = cs.get_hyperparameter('network_encoder:__choice__')
+            network_encoder_hp = cs.get_hyperparameter('network_backbone:__choice__')
+
             if 'MLPEncoder' or 'TCNEncoder' or 'InceptionTimeEncoder' in network_encoder_hp.choices:
                 forbidden = ['MLPEncoder', 'TCNEncoder', 'InceptionTimeEncoder']
+                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
+                for hp_ar in hp_auto_regressive:
+                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
+                    forbidden_hp_mlpencoder = ForbiddenInClause(network_encoder_hp, forbidden_deepAREncoder)
+                    forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
+                    forbidden_losses_all.append(forbidden_hp_ar_mlp)
+
+            if 'MLPEncoder' in network_encoder_hp.choices:
+                forbidden = ['MLPEncoder']
                 forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
                 for hp_ar in hp_auto_regressive:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
@@ -264,24 +271,18 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             # NBEATS
             forbidden_NBEATS = []
-            network_decoder_hp = cs.get_hyperparameter('network_decoder:__choice__')
             encoder_non_BEATS = [choice for choice in network_encoder_hp.choices if choice != 'NBEATSEncoder']
-            decoders_non_NBEATS = [choice for choice in network_decoder_hp.choices if choice != 'NBEATSDecoder']
             loss_non_regression = [choice for choice in hp_loss.choices if choice != 'RegressionLoss']
             data_loader_backcast = cs.get_hyperparameter('data_loader:backcast')
 
             forbidden_encoder_NBEATS = ForbiddenInClause(network_encoder_hp, encoder_non_BEATS)
-            forbidden_decoder_NBEATS = ForbiddenInClause(network_decoder_hp, decoders_non_NBEATS)
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
             forbidden_backcast_false = ForbiddenEqualsClause(data_loader_backcast, False)
 
+
             # Ensure that NBEATS encoder only works with NBEATS decoder
             if 'NBEATSEncoder' in network_encoder_hp.choices:
-                forbidden_NBEATS.append(ForbiddenAndConjunction(
-                    ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
-                    forbidden_decoder_NBEATS)
-                )
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_loss_non_regression)
@@ -290,6 +291,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_backcast_false)
                 )
+            """
             if 'NBEATSDecoder' in network_decoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_decoder_hp, 'NBEATSDecoder'),
@@ -305,15 +307,17 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                 )
             forbidden_NBEATS.append(ForbiddenAndConjunction(
                 forbidden_backcast,
-                forbidden_encoder_NBEATS
+                forbidden_decoder_NBEATS
             ))
+            """
             forbidden_NBEATS.append(ForbiddenAndConjunction(
                 forbidden_backcast,
-                forbidden_decoder_NBEATS
+                forbidden_encoder_NBEATS
             ))
 
             cs.add_forbidden_clauses(forbidden_NBEATS)
 
+        """
         # rnn head only allow rnn backbone
         if 'network_encoder' in self.named_steps.keys() and 'network_decoder' in self.named_steps.keys():
             hp_encoder_choice = cs.get_hyperparameter('network_encoder:__choice__')
@@ -329,6 +333,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
                 cs.add_forbidden_clause(ForbiddenAndConjunction(forbidden_clause_encoder, forbidden_clause_decoder))
             cs.get_hyperparameter_names()
+        """
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
@@ -362,10 +367,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
-            ("network_encoder", ForecastingEncoderChoice(default_dataset_properties,
-                                                         random_state=self.random_state)),
-            ("network_decoder", ForecastingDecoderChoice(default_dataset_properties,
-                                                         random_state=self.random_state)),
+            ("network_backbone", ForecastingBackboneChoice(dataset_properties=default_dataset_properties,
+                                                           random_state=self.random_state)),
             ("network_head", ForecastingHead(random_state=self.random_state)),
             ("network", ForecastingNetworkComponent(random_state=self.random_state)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties,

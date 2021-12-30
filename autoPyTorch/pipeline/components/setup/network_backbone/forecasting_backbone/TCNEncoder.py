@@ -8,15 +8,13 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import numpy as np
-
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
-
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+    BaseForecastingEncoder, EncoderNetwork
+)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
-    import BaseForecastingEncoder, EncoderNetwork
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
@@ -131,6 +129,13 @@ class TCNEncoder(BaseForecastingEncoder):
         return encoder
 
     @staticmethod
+    def allowed_decoders():
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['MLPDecoder']
+
+    @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Any]:
         return {
@@ -157,7 +162,8 @@ class TCNEncoder(BaseForecastingEncoder):
                                                                                log=True),
             kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
                                                                                value_range=(4, 64),
-                                                                               default_value=32),
+                                                                               default_value=32,
+                                                                               log=True),
             use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="use_dropout",
                                                                                value_range=(True, False),
                                                                                default_value=False),

@@ -52,6 +52,8 @@ class ForecastingHead(NetworkHeadComponent):
         Returns:
             Self
         """
+
+
         self.check_requirements(X, y)
         output_shape = X['dataset_properties']['output_shape']
 

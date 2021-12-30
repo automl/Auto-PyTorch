@@ -14,22 +14,23 @@ from torch.distributions import (
     TransformedDistribution,
 )
 
-from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder \
     import EncoderNetwork
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
-    pad_sequence_from_start
 
 
 class TransformedDistribution_(TransformedDistribution):
+    """
+    We implement the mean function such that we do not need to enquire base mean every time
+    """
+    @property
     def mean(self):
         mean = self.base_dist.mean
         for transform in self.transforms:
@@ -203,14 +204,14 @@ class ForecastingNet(nn.Module):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
+
         if self.encoder_lagged_input:
             targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(targets_past[:, -self.window_size:])
             targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
             x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
         else:
             if self.window_size < targets_past.shape[1]:
-                targets_past = targets_past[:, -self.window_size]
-            targets_past = targets_past[:, -self.window_size:]
+                targets_past = targets_past[:, -self.window_size:]
             targets_past, _, loc, scale = self.target_scaler(targets_past)
             x_past = targets_past
 
@@ -219,6 +220,7 @@ class ForecastingNet(nn.Module):
 
         x_past = x_past.to(device=self.device)
         x_past = self.embedding(x_past)
+
         if self.encoder_has_hidden_states:
             x_past, _ = self.encoder(x_past)
         else:
@@ -285,8 +287,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
         else:
             if self.window_size < targets_past.shape[1]:
-                targets_past = targets_past[:, -self.window_size]
-            targets_past = targets_past[:, -self.window_size]
+                targets_past = targets_past[:, -self.window_size:]
             targets_past, _, loc, scale = self.target_scaler(targets_past)
             x_past = targets_past
 
@@ -340,6 +341,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
             if self.output_type != 'distribution':
                 all_predictions = torch.cat(all_predictions, dim=1)
+            else:
+                all_predictions = self.pred_from_net_output(all_predictions)
 
             return self.rescale_output(all_predictions, loc, scale, self.device)
 
@@ -350,7 +353,10 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 features_static: Optional[torch.Tensor] = None
                 ):
         net_output = self(targets_past, features_past, features_future)
-        return self.pred_from_net_output(net_output)
+        if self.output_type != 'distribution':
+            return self.pred_from_net_output(net_output)
+        else:
+            return net_output
 
 
 class ForecastingDeepARNet(ForecastingNet):
@@ -382,7 +388,7 @@ class ForecastingDeepARNet(ForecastingNet):
             x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
         else:
             if self.window_size < targets_past.shape[1]:
-                targets_past = targets_past[:, -self.window_size]
+                targets_past = targets_past[:, -self.window_size:]
 
             targets_past, _, loc, scale = self.target_scaler(targets_past)
             x_past = targets_past
@@ -505,8 +511,7 @@ class NBEATSNet(ForecastingNet):
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
         if self.window_size < targets_past.shape[1]:
-            targets_past = targets_past[:, -self.window_size]
-        targets_past = targets_past[:, -self.window_size:]
+            targets_past = targets_past[:, -self.window_size:]
         targets_past, _, loc, scale = self.target_scaler(targets_past)
         targets_past = targets_past.to(self.device)
 

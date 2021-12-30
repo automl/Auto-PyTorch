@@ -19,7 +19,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
     TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
-    NBEATSNet
+    NBEATSNet, ForecastingSeq2SeqNet
 
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
@@ -213,16 +213,16 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 batch_size = past_target.shape[0]
 
-                if isinstance(self.model, ForecastingDeepARNet):
+                if isinstance(self.model, ForecastingDeepARNet) or isinstance(self.model, ForecastingSeq2SeqNet):
                     future_targets = self.cast_targets(future_targets)
 
                     past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
                     outputs = self.model(past_target)
                     # DeepAR only generate sampled points, we replace log_prob loss with MSELoss
-                    outputs = self.model.pred_from_net_output(outputs)
-                    loss = F.mse_loss(outputs, future_targets)
+                    # outputs = self.model.pred_from_net_output(outputs)
                     outputs = outputs.detach().cpu()
+                    loss = F.mse_loss(outputs, future_targets)
                 else:
                     # prepare
                     future_targets = self.cast_targets(future_targets).to(self.device)
@@ -235,7 +235,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                         loss = torch.mean(torch.Tensor(loss))
                     else:
                         loss = self.criterion(outputs, future_targets)
-                    outputs = self.model.pred_from_net_output(outputs).detach().cpu()
+                    outputs = self.model.pred_from_net_output(outputs)
+                    outputs = outputs.detach().cpu()
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size

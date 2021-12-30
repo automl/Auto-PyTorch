@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Any, Dict, Optional, Tuple, List, Union
 import warnings
 
@@ -6,8 +5,7 @@ import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
-    UniformFloatHyperparameter,
-    Constant
+    UniformFloatHyperparameter
 )
 
 import torch
@@ -18,11 +16,10 @@ from gluonts.time_feature.lag import get_lags_for_frequency
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_decoder.base_forecasting_decoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
     BaseForecastingDecoder
 
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
 from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 
@@ -93,6 +90,10 @@ class ForecastingRNNHeader(BaseForecastingDecoder):
                              )
         return decoder, hidden_size
 
+    @property
+    def fitted_encoder(self):
+        return ['RNNEncoder']
+
     def decoder_properties(self):
         decoder_properties = super().decoder_properties()
         decoder_properties.update({'has_hidden_states': True,
@@ -113,7 +114,6 @@ class ForecastingRNNHeader(BaseForecastingDecoder):
                 self.lagged_value = [0] + get_lags_for_frequency(freq)
             except Exception:
                 warnings.warn(f'cannot find the proper lagged value for {freq}, we use the default lagged value')
-                # If
                 pass
         return super().fit(X, y)
 

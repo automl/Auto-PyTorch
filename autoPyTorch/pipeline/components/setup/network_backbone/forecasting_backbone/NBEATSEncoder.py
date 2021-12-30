@@ -3,18 +3,14 @@ from typing import Any, Dict, List, Optional, Union, Tuple
 from torch import nn
 
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter, \
-    UniformFloatHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition, InCondition, EqualsCondition, AndConjunction
 
-from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.base_forecasting_encoder \
-    import BaseForecastingEncoder, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+    BaseForecastingEncoder, EncoderNetwork
+)
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_encoder.MLPEncoder import \
+from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.MLPEncoder import \
     TimeSeriesMLPrecpocessor
 
 
@@ -32,6 +28,13 @@ class NBEATSEncoder(BaseForecastingEncoder):
             'fixed_input_seq_length': True,
         })
         return encoder_properties
+
+    @staticmethod
+    def allowed_decoders():
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['NBEATSDecoder']
 
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:
