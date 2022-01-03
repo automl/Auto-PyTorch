@@ -77,7 +77,7 @@ class RNNEncoder(BaseForecastingEncoder):
 
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
-        self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.lagged_value = [0, 1, 2, 3, 4, 5, 6]
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         encoder = _RNN(in_features=input_shape[-1],
@@ -106,7 +106,8 @@ class RNNEncoder(BaseForecastingEncoder):
         if freq is not None:
             try:
                 freq = FREQUENCY_MAP[freq]
-                self.lagged_value = [0] + get_lags_for_frequency(freq)
+                lagged_values = get_lags_for_frequency(freq)
+                self.lagged_value = [lag - 1 for lag in lagged_values]
             except Exception:
                 warnings.warn(f'cannot find the proper lagged value for {freq}, we use the default lagged value')
                 # If

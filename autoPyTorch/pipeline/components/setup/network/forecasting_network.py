@@ -8,6 +8,7 @@ import numpy as np
 
 import torch
 from torch import nn
+import warnings
 
 from torch.distributions import (
     AffineTransform,
@@ -30,6 +31,7 @@ class TransformedDistribution_(TransformedDistribution):
     """
     We implement the mean function such that we do not need to enquire base mean every time
     """
+
     @property
     def mean(self):
         mean = self.base_dist.mean
@@ -41,11 +43,13 @@ class TransformedDistribution_(TransformedDistribution):
 def get_lagged_subsequences(
         sequence: torch.Tensor,
         subsequences_length: int,
-        lags_seq: List[int]
-) -> torch.Tensor:
+        lags_seq: Optional[List[int]] = None,
+        mask: Optional[torch.Tensor] = None
+) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
     """
-    Returns lagged subsequences of a given sequence. This is similar to gluonTS's implementation the only difference
-    is that we pad the sequence that is not long enough
+    Returns lagged subsequences of a given sequence, this allows the model to receive the input from the past targets
+    outside the sliding windows. This implementation is similar to gluonTS's implementation
+     the only difference is that we pad the sequence that is not long enough
 
     Parameters
     ----------
@@ -54,37 +58,55 @@ def get_lagged_subsequences(
         Shape: (N, T, C).
     subsequences_length : int
         length of the subsequences to be extracted.
+    lags_seq: Optional[List[int]]
+        lags of the sequence, indicating the sequence that needs to be extracted
+    lag_mask: Optional[torch.Tensor]
+        a mask tensor indicating
 
     Returns
     --------
     lagged : Tensor
-        a tensor of shape (N, S, C, I), where S = subsequences_length and
-        I = len(indices), containing lagged subsequences. Specifically,
-        lagged[i, j, :, k] = sequence[i, -indices[k]-S+j, :].
+        a tensor of shape (N, S, I * C), where S = subsequences_length and
+        I = len(indices), containing lagged subsequences.
     """
     batch_size = sequence.shape[0]
-    sequence_length = sequence.shape[1]
+    num_features = sequence.shape[2]
+    if mask is None:
+        if lags_seq is None:
+            warnings.warn('Neither lag_mask or lags_seq is given, we simply return the input value')
+            return sequence, None
+        # generate mask
+        num_lags = len(lags_seq)
 
-    lagged_values = []
-    for lag_index in lags_seq:
-        begin_index = -lag_index - subsequences_length
-        end_index = -lag_index if lag_index > 0 else None
+        # build a mask
+        mask_length = max(lags_seq) + subsequences_length
+        mask = torch.zeros((num_lags, mask_length), dtype=torch.bool)
+        for i, lag_index in enumerate(lags_seq):
+            begin_index = -lag_index - subsequences_length
+            end_index = -lag_index if lag_index > 0 else None
+            mask[i, begin_index: end_index] = True
+    else:
+        num_lags = mask.shape[0]
+        mask_length = mask.shape[1]
 
-        if end_index is not None and end_index < -sequence_length:
-            lagged_values.append(torch.zeros([batch_size, subsequences_length, *sequence.shape[2:]]))
-            continue
-        if begin_index < -sequence_length:
-            if end_index is not None:
-                pad_shape = [batch_size, subsequences_length - sequence_length - end_index, *sequence.shape[2:]]
-                lagged_values.append(torch.cat([torch.zeros(pad_shape), sequence[:, :end_index, ...]], dim=1))
-            else:
-                pad_shape = [batch_size, subsequences_length - sequence_length, *sequence.shape[2:]]
-                lagged_values.append(torch.cat([torch.zeros(pad_shape), sequence], dim=1))
-            continue
-        else:
-            lagged_values.append(sequence[:, begin_index:end_index, ...])
-    lagged_seq = torch.stack(lagged_values, -1).reshape(batch_size, subsequences_length, -1)
-    return lagged_seq
+    mask_extend = mask.clone()
+
+    if mask_length > sequence.shape[1]:
+        sequence = torch.cat([sequence.new_zeros([batch_size, mask_length - sequence.shape[1], num_features]),
+                              sequence], dim=1)
+    elif mask_length < sequence.shape[1]:
+        mask_extend = torch.cat([mask.new_zeros([num_lags, sequence.shape[1] - mask_length]), mask_extend], dim=1)
+    #  (N, 1, T, C)
+    sequence = sequence.unsqueeze(1)
+
+    # (I, T, 1)
+    mask_extend = mask_extend.unsqueeze(-1)
+
+    # (N, I, S, C)
+    lagged_seq = torch.masked_select(sequence, mask_extend).reshape(batch_size, num_lags, subsequences_length, -1)
+    lagged_seq = torch.transpose(lagged_seq, 1, 2).reshape(batch_size, subsequences_length, -1)
+
+    return lagged_seq, mask
 
 
 class ForecastingNet(nn.Module):
@@ -135,7 +157,7 @@ class ForecastingNet(nn.Module):
 
         self.target_scaler = target_scaler
 
-        self.n_prediction_steps = dataset_properties['n_prediction_steps']
+        self.n_prediction_steps = dataset_properties['n_prediction_steps']  # type: int
         self.window_size = window_size
 
         self.output_type = output_type
@@ -153,6 +175,11 @@ class ForecastingNet(nn.Module):
 
         self.encoder_lagged_input = encoder_properties['lagged_input']
         self.decoder_lagged_input = decoder_properties['lagged_input']
+
+        if self.encoder_lagged_input:
+            self.cached_lag_mask_encoder = None
+        if self.decoder_lagged_input:
+            self.cached_lag_mask_decoder = None
 
     @property
     def device(self):
@@ -208,7 +235,10 @@ class ForecastingNet(nn.Module):
         if self.encoder_lagged_input:
             targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(targets_past[:, -self.window_size:])
             targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
-            x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
+            x_past, self.cached_lag_mask_encoder = get_lagged_subsequences(targets_past,
+                                                                           self.window_size,
+                                                                           self.encoder.lagged_value,
+                                                                           self.cached_lag_mask_encoder)
         else:
             if self.window_size < targets_past.shape[1]:
                 targets_past = targets_past[:, -self.window_size:]
@@ -216,7 +246,7 @@ class ForecastingNet(nn.Module):
             x_past = targets_past
 
         if features_past is not None:
-            x_past = torch.cat([x_past, features_past], dim=1)
+            x_past = torch.cat([features_past, x_past], dim=1)
 
         x_past = x_past.to(device=self.device)
         x_past = self.embedding(x_past)
@@ -284,14 +314,17 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         if self.encoder_lagged_input:
             targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(targets_past[:, -self.window_size:])
             targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
-            x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
+            x_past, self.cached_lag_mask_encoder = get_lagged_subsequences(targets_past,
+                                                                           self.window_size,
+                                                                           self.encoder.lagged_value,
+                                                                           self.cached_lag_mask_encoder)
         else:
             if self.window_size < targets_past.shape[1]:
                 targets_past = targets_past[:, -self.window_size:]
             targets_past, _, loc, scale = self.target_scaler(targets_past)
             x_past = targets_past
 
-        x_past = x_past if features_past is None else torch.cat([x_past, features_past], dim=-1)
+        x_past = x_past if features_past is None else torch.cat([features_past, x_past], dim=-1)
 
         x_past = x_past.to(self.device)
         x_past = self.embedding(x_past)
@@ -300,12 +333,14 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             # we do one step ahead forecasting
             if self.decoder_lagged_input:
                 targets_future = torch.cat([targets_past, targets_future[:, :-1, :]], dim=1)
-                targets_future = get_lagged_subsequences(targets_future, self.n_prediction_steps,
-                                                         self.decoder.lagged_value)
+                targets_future, self.cached_lag_mask_decoder = get_lagged_subsequences(targets_future,
+                                                                                       self.n_prediction_steps,
+                                                                                       self.decoder.lagged_value,
+                                                                                       self.cached_lag_mask_decoder)
             else:
                 targets_future = torch.cat([targets_past[:, [-1], :], targets_future[:, :-1, :]], dim=1)
 
-            x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
+            x_future = targets_future if features_future is None else torch.cat([features_future, targets_future],
                                                                                 dim=-1)
             x_future = x_future.to(self.device)
 
@@ -325,12 +360,11 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             for idx_pred in range(self.n_prediction_steps):
                 if self.decoder_lagged_input:
                     x_future = torch.cat([targets_past, predicted_target.cpu()], dim=1)
-                    x_future = get_lagged_subsequences(x_future, 1, self.decoder.lagged_value)
+                    x_future, _ = get_lagged_subsequences(x_future, 1, self.decoder.lagged_value)
                 else:
                     x_future = predicted_target[:, [-1]]
                 x_future = x_future if features_future is None else torch.cat(
-                    [x_future, features_future[:, [idx_pred], :]],
-                    dim=-1)
+                    [features_future[:, [idx_pred], :], x_future], dim=-1)
                 x_future = x_future.to(self.device)
 
                 x_future, hidden_states = self.decoder(x_future, hx=hidden_states)
@@ -375,6 +409,8 @@ class ForecastingDeepARNet(ForecastingNet):
         # this determines the training targets
         self.encoder_bijective_seq_output = kwargs['encoder_properties']['bijective_seq_output']
 
+        self.cached_lag_mask_encoder_test = None
+
     def forward(self,
                 targets_past: torch.Tensor,
                 targets_future: Optional[torch.Tensor] = None,
@@ -382,35 +418,33 @@ class ForecastingDeepARNet(ForecastingNet):
                 features_future: Optional[torch.Tensor] = None,
                 features_static: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
-        if self.encoder_lagged_input:
-            targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(targets_past[:, -self.window_size:])
-            targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
-            x_past = get_lagged_subsequences(targets_past, self.window_size, self.encoder.lagged_value)
-        else:
-            if self.window_size < targets_past.shape[1]:
-                targets_past = targets_past[:, -self.window_size:]
-
-            targets_past, _, loc, scale = self.target_scaler(targets_past)
-            x_past = targets_past
-
-        x_past = x_past if features_past is None else torch.cat([x_past, features_past], dim=-1)
-
-        x_past = x_past.to(self.device)
-        # TODO consider static features
-        x_past = self.embedding(x_past)
-
         if self.training:
             if self.encoder_lagged_input:
-                targets_future = torch.cat([targets_past, targets_future], dim=1)
-                targets_future = get_lagged_subsequences(targets_future, self.n_prediction_steps,
-                                                         self.encoder.lagged_value)
+                targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(
+                    targets_past[:, -self.window_size:])
+                targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
+                targets_future = self.scale_value(targets_future, loc, scale)
 
-            x_future = targets_future if features_future is None else torch.cat([targets_future, features_future],
-                                                                                dim=-1)
-            x_future = x_future.to(self.device)
-            x_future = self.embedding(x_future)
+                targets_all = torch.cat([targets_past, targets_future[:, :-1]], dim=1)
+                seq_length = self.window_size + self.n_prediction_steps
+                targets_all, self.cached_lag_mask_encoder = get_lagged_subsequences(targets_all,
+                                                                                    seq_length - 1,
+                                                                                    self.encoder.lagged_value,
+                                                                                    self.cached_lag_mask_encoder)
+            else:
+                if self.window_size < targets_past.shape[1]:
+                    targets_past = targets_past[:, -self.window_size:]
+                targets_past, _, loc, scale = self.target_scaler(targets_past)
+                targets_future = self.scale_value(targets_future, loc, scale)
+                targets_all = torch.cat([targets_past, targets_future[:, :-1]], dim=1)
 
-            x_input = torch.cat([x_past, x_future[:, :-1]], dim=1)
+            x_input = targets_all
+            if features_past is not None:
+                features_all = torch.cat([features_past, features_future], dim=1)
+                x_input = torch.cat([features_all, x_input], dim=-1)
+            x_input = x_input.to(self.device)
+
+            x_input = self.embedding(x_input)
 
             if self.encoder_has_hidden_states:
                 x_input, _ = self.encoder(x_input, output_seq=True)
@@ -420,6 +454,27 @@ class ForecastingDeepARNet(ForecastingNet):
             net_output = self.head(self.decoder(x_input))
             return self.rescale_output(net_output, loc, scale, self.device)
         else:
+            if self.encoder_lagged_input:
+                targets_past[:, -self.window_size:], _, loc, scale = self.target_scaler(
+                    targets_past[:, -self.window_size:])
+                targets_past[:, :-self.window_size] = self.scale_value(targets_past[:, :-self.window_size], loc, scale)
+                x_past, self.cached_lag_mask_encoder_test = get_lagged_subsequences(targets_past,
+                                                                                    self.window_size,
+                                                                                    self.encoder.lagged_value,
+                                                                                    self.cached_lag_mask_encoder_test)
+            else:
+                if self.window_size < targets_past.shape[1]:
+                    targets_past = targets_past[:, -self.window_size:]
+
+                targets_past, _, loc, scale = self.target_scaler(targets_past)
+                x_past = targets_past
+
+            x_past = x_past if features_past is None else torch.cat([features_past, x_past], dim=-1)
+
+            x_past = x_past.to(self.device)
+            # TODO consider static features
+            x_past = self.embedding(x_past)
+
             all_samples = []
             batch_size = targets_past.shape[0]
 
@@ -461,13 +516,12 @@ class ForecastingDeepARNet(ForecastingNet):
             for k in range(1, self.n_prediction_steps):
                 if self.encoder_lagged_input:
                     x_next = torch.cat([repeated_past_target, *all_samples], dim=1)
-                    x_next = get_lagged_subsequences(x_next, 1, self.encoder.lagged_value)
+                    x_next, _ = get_lagged_subsequences(x_next, 1, self.encoder.lagged_value)
                 else:
                     x_next = next_sample
 
-                x_next = x_next if repeated_time_feat is None else torch.cat([x_next,
-                                                                              repeated_time_feat[:, k:k + 1]],
-                                                                             dim=-1)
+                x_next = x_next if repeated_time_feat is None else torch.cat([repeated_time_feat[:, k:k + 1],
+                                                                              x_next], dim=-1)
                 if self.encoder_has_hidden_states:
                     x_next = x_next.to(self.device)
                     encoder_output, repeated_state = self.encoder(x_next, hx=repeated_state)

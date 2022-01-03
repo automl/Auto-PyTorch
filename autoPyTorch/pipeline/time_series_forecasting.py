@@ -335,6 +335,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             cs.get_hyperparameter_names()
         """
 
+
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs

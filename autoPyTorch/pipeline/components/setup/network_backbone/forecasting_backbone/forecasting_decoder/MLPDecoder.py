@@ -4,7 +4,7 @@ from torch import nn
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition
+from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
@@ -21,17 +21,20 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         layers = []
         in_features = input_shape[-1]
+        num_decoder_output_features = in_features
         if self.config["num_layers"] > 0:
             for i in range(1, self.config["num_layers"]):
                 layers.append(nn.Linear(in_features=in_features,
                                         out_features=self.config[f"units_layer_{i}"]))
                 layers.append(_activations[self.config["activation"]]())
                 in_features = self.config[f"units_layer_{i}"]
-        layers.append(nn.Linear(in_features=in_features,
-                                out_features=self.config['units_final_layer'] * n_prediction_heads))
-        if 'activation' in self.config:
-            layers.append(_activations[self.config["activation"]]())
-        num_decoder_output_features = self.config['units_final_layer']
+                num_decoder_output_features = in_features
+        if 'units_final_layer' in self.config:
+            layers.append(nn.Linear(in_features=in_features,
+                                    out_features=self.config['units_final_layer'] * n_prediction_heads))
+            if 'activation' in self.config:
+                layers.append(_activations[self.config["activation"]]())
+            num_decoder_output_features = self.config['units_final_layer']
 
         return nn.Sequential(*layers), num_decoder_output_features
 
@@ -64,13 +67,13 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                                                                               value_range=tuple(_activations.keys()),
                                                                               default_value=list(_activations.keys())[
                                                                                   0]),
+            auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
+                                                                                   value_range=(True, False),
+                                                                                   default_value=False),
             units_final_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="units_final_layer",
                                                                                      value_range=(16, 128),
                                                                                      default_value=32,
                                                                                      log=True),
-            auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
-                                                                                   value_range=(True, False),
-                                                                                   default_value=False),
     ) -> ConfigurationSpace:
         """
         Builds the mlp head layer. The decoder implementation follows the idea from:
@@ -136,8 +139,14 @@ class ForecastingMLPHeader(BaseForecastingDecoder):
                 # hyperparameter.
                 cs.add_condition(GreaterThanCondition(num_units_hp, num_layers_hp, i))
 
-        add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
+        # add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
 
         # TODO let dataset_properties decide if auto_regressive models is applicable
-        add_hyperparameter(cs, auto_regressive, CategoricalHyperparameter)
+        auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
+        units_final_layer = get_hyperparameter(units_final_layer, UniformIntegerHyperparameter)
+
+        cond_units_final_layer = EqualsCondition(units_final_layer, auto_regressive, False)
+        cs.add_hyperparameters([auto_regressive, units_final_layer])
+        cs.add_condition(cond_units_final_layer)
+
         return cs

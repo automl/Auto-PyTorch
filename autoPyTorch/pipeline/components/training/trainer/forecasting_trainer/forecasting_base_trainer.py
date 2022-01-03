@@ -163,7 +163,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             outputs = forecast
         else:
             if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
-                if self.window_size> past_target.shape[1]:
+                if self.window_size > past_target.shape[1]:
                     all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
                 else:
                     all_targets = torch.cat([past_target[:, 1 - self.window_size:, ], future_targets], dim=1)
@@ -174,6 +174,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             outputs = self.model(past_target, future_targets)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
+
             loss = loss_func(self.criterion, outputs)
 
         loss.backward()
