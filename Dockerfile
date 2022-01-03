@@ -33,6 +33,7 @@ ADD . /auto-pytorch/
 # Upgrade pip then install dependencies
 RUN pip3 install --upgrade pip
 RUN pip3 install pytest==4.6.* pep8 codecov pytest-cov flake8 flaky openml
+RUN apt install -y libgl1-mesa-glx
 RUN cat /auto-pytorch/requirements.txt | xargs -n 1 -L 1 pip3 install
 RUN pip3 install jupyter
 
