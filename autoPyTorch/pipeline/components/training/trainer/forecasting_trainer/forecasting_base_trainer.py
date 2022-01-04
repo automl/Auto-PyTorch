@@ -166,7 +166,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 if self.window_size > past_target.shape[1]:
                     all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
                 else:
-                    all_targets = torch.cat([past_target[:, 1 - self.window_size:, ], future_targets], dim=1)
+                    if self.window_size == 1:
+                        all_targets = future_targets
+                    else:
+                        all_targets = torch.cat([past_target[:, 1 - self.window_size:, ], future_targets], dim=1)
                 past_target, criterion_kwargs = self.data_preparation(past_target, all_targets.to(self.device))
             else:
                 past_target, criterion_kwargs = self.data_preparation(past_target, future_targets.to(self.device))

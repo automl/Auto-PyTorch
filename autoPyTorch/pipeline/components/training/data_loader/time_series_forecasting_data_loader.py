@@ -336,8 +336,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
         seq_train_length[seq_idx_inactivate] = 0
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
-        num_instances_per_seqs = np.round(np.ceil(num_instances_train / num_instances_dataset * seq_train_length) *
-                                          fraction_samples_per_seq)
+        num_instances_per_seqs = np.ceil(np.ceil(num_instances_train / num_instances_dataset * seq_train_length) *
+                                         fraction_samples_per_seq)
         num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
         # at least one element of each sequence should be selected
 
