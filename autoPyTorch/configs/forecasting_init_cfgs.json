@@ -1,0 +1,59 @@
+{
+    "trainer": {
+        "data_loader:batch_size": 32,
+        "data_loader:backcast": false,
+        "data_loader:num_batches_per_epoch": 50,
+        "imputer:numerical_strategy": "median",
+        "lr_scheduler:__choice__": "ReduceLROnPlateau",
+        "lr_scheduler:ReduceLROnPlateau:mode": "min",
+        "lr_scheduler:ReduceLROnPlateau:factor": 0.5,
+        "lr_scheduler:ReduceLROnPlateau:patience": 10,
+        "optimizer:__choice__": "AdamOptimizer",
+        "optimizer:AdamOptimizer:lr": 0.001,
+        "optimizer:AdamOptimizer:weight_decay": 1e-08,
+        "optimizer:AdamOptimizer:beta1": 0.9,
+        "optimizer:AdamOptimizer:beta2": 0.999,
+        "network_init:__choice__": "XavierInit",
+        "network_init:XavierInit:bias_strategy": "Zero",
+        "target_scaler:__choice__": "TargetMeanAbsScaler",
+        "trainer:__choice__": "ForecastingStandardTrainer",
+        "network_embedding:__choice__": "NoEmbedding"
+    },
+    "models": {
+        "MLP": {
+            "loss:__choice__": "DistributionLoss",
+            "network_backbone:__choice__": "MLPEncoder",
+            "network_backbone:MLPEncoder:num_groups": 1,
+            "network_backbone:MLPEncoder:num_units_1": 40,
+            "network_backbone:MLPEncoder:activation": "relu",
+            "network_backbone:MLPEncoder:use_dropout": false,
+            "network_backbone:MLPEncoder:normalization": "NoNorm",
+            "network_backbone:MLPDecoder:num_layers": 0,
+            "network_backbone:MLPDecoder:units_final_layer": 40,
+            "network_backbone:MLPDecoder:auto_regressive": false,
+            "network:forecast_strategy": "sample",
+            "network:net_out_type": "distribution",
+            "loss:DistributionLoss:dist_cls": "studentT",
+            "network:aggregation": "median",
+            "network:num_samples": 100
+        },
+        "DeepAR": {
+            "loss:__choice__": "DistributionLoss",
+            "network_backbone:__choice__": "RNNEncoder",
+            "network_backbone:RNNEncoder:num_layers": 2,
+            "network_backbone:RNNEncoder:hidden_size": 40,
+            "network_backbone:RNNEncoder:bidirectional": false,
+            "network_backbone:RNNEncoder:use_dropout": true,
+            "network_backbone:RNNEncoder:dropout": 0.1,
+            "network_backbone:RNNEncoder:cell_type": "lstm",
+            "network_backbone:RNNEncoder:decoder_type": "MLPDecoder",
+            "network_backbone:MLPDecoder:num_layers": 0,
+            "network_backbone:MLPDecoder:auto_regressive": true,
+            "network:forecast_strategy": "sample",
+            "network:net_out_type": "distribution",
+            "loss:DistributionLoss:dist_cls": "studentT",
+            "network:aggregation": "median",
+            "network:num_samples": 100
+        }
+    }
+}

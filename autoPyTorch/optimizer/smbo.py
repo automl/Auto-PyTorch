@@ -27,7 +27,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
-from autoPyTorch.optimizer.utils import read_return_initial_configurations
+from autoPyTorch.optimizer.utils import read_return_initial_configurations, read_forecasting_init_configurations
 
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -116,7 +116,8 @@ class AutoMLSMBO(object):
                  pynisher_context: str = 'spawn',
                  min_budget: int = 5,
                  max_budget: int = 50,
-                 time_series_forecasting: bool = False
+                 time_series_forecasting: bool = False,
+                 **kwargs: Dict[str, Any]
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -194,6 +195,8 @@ class AutoMLSMBO(object):
             time_series_forecasting (bool):
                 If we want to apply this optimizer to optimize time series prediction tasks (which has a different
                 tae)
+            kwargs (Dict):
+                Additional Arguments for forecasting intialization tasks
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -254,6 +257,13 @@ class AutoMLSMBO(object):
         if portfolio_selection is not None:
             self.initial_configurations = read_return_initial_configurations(config_space=config_space,
                                                                              portfolio_selection=portfolio_selection)
+        suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
+        custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
+        if suggested_init_models is not None or custom_init_setting_path is not None:
+            self.initial_configurations = read_forecasting_init_configurations(
+                config_space=config_space,
+                suggested_init_models=suggested_init_models,
+                custom_init_setting_path=custom_init_setting_path)
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:

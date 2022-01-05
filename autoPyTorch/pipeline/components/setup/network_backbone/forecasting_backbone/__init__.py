@@ -274,7 +274,6 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
                     else:
                         conditions_to_add.append(or_cond[0])
             cs.add_conditions(conditions_to_add)
-
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
         return cs

@@ -410,6 +410,11 @@ class ForecastingDeepARNet(ForecastingNet):
         self.encoder_bijective_seq_output = kwargs['encoder_properties']['bijective_seq_output']
 
         self.cached_lag_mask_encoder_test = None
+        self.only_generate_future_dist = False
+
+    def train(self, mode: bool = True) -> nn.Module:
+        self.only_generate_future_dist = False
+        return super().train(mode=mode)
 
     def forward(self,
                 targets_past: torch.Tensor,
@@ -450,7 +455,8 @@ class ForecastingDeepARNet(ForecastingNet):
                 x_input, _ = self.encoder(x_input, output_seq=True)
             else:
                 x_input = self.encoder(x_input, output_seq=True)
-
+            if self.only_generate_future_dist:
+                x_input = x_input[:, -self.n_prediction_steps:]
             net_output = self.head(self.decoder(x_input))
             return self.rescale_output(net_output, loc, scale, self.device)
         else:
@@ -550,7 +556,13 @@ class ForecastingDeepARNet(ForecastingNet):
             else:
                 raise ValueError(f'Unknown aggregation: {self.aggregation}')
 
-    def pred_from_net_output(self, net_output: torch.Tensor):
+    def predict(self,
+                targets_past: torch.Tensor,
+                features_past: Optional[torch.Tensor] = None,
+                features_future: Optional[torch.Tensor] = None,
+                features_static: Optional[torch.Tensor] = None
+                ):
+        net_output = self(targets_past, features_past, features_future)
         return net_output
 
 

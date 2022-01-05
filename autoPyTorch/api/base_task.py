@@ -753,7 +753,8 @@ class BaseTask:
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None,
-        time_series_forecasting: bool = False
+        time_series_forecasting: bool = False,
+        **kwargs: Dict[str, Any]
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -880,6 +881,8 @@ class BaseTask:
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
             time_series_forecasting: bool
                 if time series forecasting task is implemented.
+            kwargs: Dict
+                additional arguments
 
         Returns:
             self
@@ -1091,6 +1094,7 @@ class BaseTask:
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
                 time_series_forecasting=time_series_forecasting,
+                **kwargs,
             )
             try:
                 run_history, self._results_manager.trajectory, budget_type = \

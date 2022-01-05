@@ -118,7 +118,8 @@ class RNNEncoder(BaseForecastingEncoder):
         rnn_kwargs = {'hidden_size': self.config['hidden_size'],
                       'num_layers': self.config['num_layers'],
                       'bidirectional': self.config['bidirectional'],
-                      'cell_type': self.config['cell_type']}  # used for initialize
+                      'cell_type': self.config['cell_type'],
+                      'dropout': self.config.get('dropout', 0.0)}  # used for initialize
         X.update({'rnn_kwargs': rnn_kwargs})
         return super().transform(X)
 

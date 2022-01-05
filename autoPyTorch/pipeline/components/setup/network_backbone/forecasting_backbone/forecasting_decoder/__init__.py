@@ -191,6 +191,4 @@ class ForecastingDecoderChoice(NetworkBackboneChoice):
 
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
-        import pdb
-        pdb.set_trace()
         return cs

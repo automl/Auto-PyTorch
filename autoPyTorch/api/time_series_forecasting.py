@@ -140,6 +140,8 @@ class TimeSeriesForecastingTask(BaseTask):
             portfolio_selection: Optional[str] = None,
             shift_input_data: bool = True,
             normalize_y: bool = True,
+            suggested_init_models: Optional[List[str]] = ['MLP', 'DeepAR'],
+            custom_init_setting_path: Optional[str] = None,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -243,6 +245,10 @@ class TimeSeriesForecastingTask(BaseTask):
             train_with_log_prob: bool
                 if the network is trained with log_prob losses, this will create a network header that is different
                 from the current version.
+            suggested_init_models: Optional[List[str]]
+                suggested initial models with their default configurations setting
+            custom_init_setting_path: Optional[str]
+                path to a json file that contains the initial configuration suggested by the users
         Returns:
             self
 
@@ -322,7 +328,9 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
-            time_series_forecasting=self.time_series_forecasting
+            time_series_forecasting=self.time_series_forecasting,
+            suggested_init_models=suggested_init_models,
+            custom_init_setting_path=custom_init_setting_path,
         )
 
     def predict(

@@ -14,7 +14,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     BaseForecastingDecoder
 
 
-class ForecastingMLPHeader(BaseForecastingDecoder):
+class ForecastingMLPDecoder(BaseForecastingDecoder):
     def _build_decoder(self,
                        input_shape: Tuple[int, ...],
                        n_prediction_heads: int,

@@ -81,6 +81,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
+        import time
+        time_start = time.time()
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -111,6 +113,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
+        print(f'time used for trainging epoch: {time.time() - time_start}')
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:
@@ -200,7 +203,13 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: test loss
             Dict[str, float]: scores for each desired metric
         """
-        self.model.eval()
+        import time
+        time_start = time.time()
+        if not isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
+            # To save time, we simply make one step prediction for DeepAR and Seq2Seq
+            self.model.eval()
+        if isinstance(self.model, ForecastingDeepARNet):
+            self.model.only_generate_future_dist = True
 
         loss_sum = 0.0
         N = 0
@@ -217,30 +226,25 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 batch_size = past_target.shape[0]
 
-                if isinstance(self.model, ForecastingDeepARNet) or isinstance(self.model, ForecastingSeq2SeqNet):
-                    future_targets = self.cast_targets(future_targets)
+                future_targets = self.cast_targets(future_targets)
 
-                    past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
-                    outputs = self.model(past_target)
-                    # DeepAR only generate sampled points, we replace log_prob loss with MSELoss
-                    # outputs = self.model.pred_from_net_output(outputs)
-                    outputs = outputs.detach().cpu()
-                    loss = F.mse_loss(outputs, future_targets)
+                if isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
+                    outputs = self.model(past_target, future_targets)
                 else:
-                    # prepare
-                    future_targets = self.cast_targets(future_targets).to(self.device)
-
-                    past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
-
                     outputs = self.model(past_target)
-                    if isinstance(outputs, list):
-                        loss = [self.criterion(output, future_targets) for output in outputs]
-                        loss = torch.mean(torch.Tensor(loss))
-                    else:
-                        loss = self.criterion(outputs, future_targets)
-                    outputs = self.model.pred_from_net_output(outputs)
-                    outputs = outputs.detach().cpu()
+
+                # prepare
+                future_targets = future_targets.to(self.device)
+
+                if isinstance(outputs, list):
+                    loss = [self.criterion(output, future_targets) for output in outputs]
+                    loss = torch.mean(torch.Tensor(loss))
+                else:
+                    loss = self.criterion(outputs, future_targets)
+                outputs = self.model.pred_from_net_output(outputs)
+                outputs = outputs.detach().cpu()
 
                 loss_sum += loss.item() * batch_size
                 N += batch_size
@@ -263,6 +267,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
 
         self.model.train()
+        print(f'time for evaluation: {time.time() - time_start}')
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
 
     def compute_metrics(self, outputs_data: List[torch.Tensor], targets_data: List[torch.Tensor]
