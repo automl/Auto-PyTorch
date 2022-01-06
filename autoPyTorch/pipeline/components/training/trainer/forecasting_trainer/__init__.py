@@ -57,7 +57,7 @@ class ForecastingTrainerChoice(TrainerChoice):
         else:
             max_epochs = None
         return BudgetTracker(
-            budget_type=X['budget_type'],
+            budget_type='epochs' if X['budget_type'] in FORECASTING_BUDGET_TYPE else X['budget_type'],
             max_runtime=X['runtime'] if 'runtime' in X else None,
             max_epochs=max_epochs,
         )

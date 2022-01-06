@@ -11,7 +11,7 @@ from autoPyTorch.utils.common import (
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
-from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss
+from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss, MAPELoss, MASELoss
 
 
 class RegressionLoss(ForecastingLossComponents):
@@ -26,6 +26,10 @@ class RegressionLoss(ForecastingLossComponents):
             self.loss = L1Loss
         elif loss_name == 'mse':
             self.loss = MSELoss
+        elif loss_name == 'mase':
+            self.loss = MASELoss
+        elif loss_name == 'mape':
+            self.loss = MAPELoss
         else:
             raise ValueError(f"Unsupported loss type {loss_name}!")
         self.random_state = random_state
@@ -47,7 +51,7 @@ class RegressionLoss(ForecastingLossComponents):
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             loss_name: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="loss_name",
-                                                                             value_range=('l1', 'mse'),
+                                                                             value_range=('l1', 'mse', 'mase', 'mape'),
                                                                              default_value='mse'),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()

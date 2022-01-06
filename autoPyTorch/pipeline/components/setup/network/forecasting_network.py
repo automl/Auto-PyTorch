@@ -595,9 +595,9 @@ class NBEATSNet(ForecastingNet):
         backcast = backcast.reshape(targets_past.shape)
         forecast = forecast.reshape(forcast_shape)
 
-        backcast = self.rescale_output(backcast, loc, scale, self.device)
         forecast = self.rescale_output(forecast, loc, scale, self.device)
         if self.training:
+            backcast = self.rescale_output(backcast, loc, scale, self.device)
             return backcast, forecast
         else:
             return forecast

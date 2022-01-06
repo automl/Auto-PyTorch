@@ -12,6 +12,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
+
 from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
@@ -20,6 +21,8 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.for
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
     NBEATSNet, ForecastingSeq2SeqNet
+from autoPyTorch.pipeline.components.training.losses import MASELoss
+
 
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
@@ -81,8 +84,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
-        import time
-        time_start = time.time()
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -113,7 +114,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
-        print(f'time used for trainging epoch: {time.time() - time_start}')
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:
@@ -146,6 +146,9 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         future_targets = self.cast_targets(future_targets)
 
+        if isinstance(self.criterion, MASELoss):
+            self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
+
         # training
         self.optimizer.zero_grad()
 
@@ -161,6 +164,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
             loss_backcast = loss_func_backcast(self.criterion, backcast)
             loss_forecast = loss_func_forecast(self.criterion, forecast)
+
             loss = loss_forecast + loss_backcast * self.backcast_loss_ratio
 
             outputs = forecast
@@ -223,6 +227,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 past_target = data['past_target'].float()
 
                 mase_coefficients.append(data['mase_coefficient'])
+                if isinstance(self.criterion, MASELoss):
+                    self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
 
                 batch_size = past_target.shape[0]
 

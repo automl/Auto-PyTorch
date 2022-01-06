@@ -9,13 +9,13 @@ from typing import Dict, Optional, Tuple, Union, Any
 
 from torch import nn
 
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
     BaseForecastingDecoder
+
 
 # TODO we need to rewrite NBEATS part to make it neater!!!
 
@@ -93,7 +93,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
         return decoder_properties
 
     def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int,
-                       dataset_properties:Dict) -> Tuple[nn.Module, int]:
+                       dataset_properties: Dict) -> Tuple[nn.Module, int]:
         in_features = input_shape[-1]
         stacks = [[] for _ in range(self.config['num_stacks'])]
         for stack_idx in range(1, self.config['num_stacks'] + 1):
@@ -143,7 +143,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             ),
             width: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 'width',
-                value_range=(256, 2048),
+                value_range=(32, 1024),
                 default_value=512,
                 log=True
             ),
@@ -158,14 +158,14 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 default_value='generic'),
             expansion_coefficient_length_generic: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 'expansion_coefficient_length_generic',
-                value_range=(1, 4),
-                default_value=3,
-            ),
-            expansion_coefficient_length_interpretable: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'expansion_coefficient_length_interpretable',
                 value_range=(16, 64),
                 default_value=32,
                 log=True
+            ),
+            expansion_coefficient_length_interpretable: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'expansion_coefficient_length_interpretable',
+                value_range=(1, 4),
+                default_value=3,
             ),
             activation: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="activation",
@@ -289,20 +289,26 @@ class NBEATSDecoder(BaseForecastingDecoder):
             cs.add_hyperparameters([*hps, expansion_coefficient_length_generic_hp,
                                     expansion_coefficient_length_interpretable_hp])
 
+            cond_ecl_generic_cond_1 = EqualsCondition(expansion_coefficient_length_generic_hp, stack_type_hp, 'generic')
+            cond_ecl_interpretable_cond_1 = InCondition(expansion_coefficient_length_interpretable_hp,
+                                                        stack_type_hp, ('seasonality', 'trend'))
+
             if stack_idx > int(min_num_stacks):
                 # The units of layer i should only exist
                 # if there are at least i layers
                 for hp in hps:
                     cs.add_condition(GreaterThanCondition(hp, num_stacks, stack_idx - 1))
                 cond_ecl_generic = AndConjunction(
-                    GreaterThanCondition(expansion_coefficient_length_generic_hp, num_stacks, stack_idx -1),
-                    EqualsCondition(expansion_coefficient_length_generic_hp, stack_type_hp, 'generic')
+                    GreaterThanCondition(expansion_coefficient_length_generic_hp, num_stacks, stack_idx - 1),
+                    cond_ecl_generic_cond_1
                 )
                 cond_ecl_interpretable = AndConjunction(
                     GreaterThanCondition(expansion_coefficient_length_interpretable_hp, num_stacks, stack_idx - 1),
-                    InCondition(expansion_coefficient_length_interpretable_hp, stack_type_hp, ('seasonality', 'trend'))
+                    cond_ecl_interpretable_cond_1
                 )
                 cs.add_conditions([cond_ecl_generic, cond_ecl_interpretable])
+            else:
+                cs.add_conditions([cond_ecl_generic_cond_1, cond_ecl_interpretable_cond_1])
 
             dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % stack_idx,
                                                              value_range=dropout.value_range,

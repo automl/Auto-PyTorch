@@ -41,6 +41,47 @@ class LogProbLoss(Loss):
             return -scores
 
 
+class MAPELoss(Loss):
+    __constants__ = ['reduction']
+
+    def __init__(self, reduction: str = 'mean') -> None:
+        super(MAPELoss, self).__init__(reduction)
+
+    def forward(self, input: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
+        loss = torch.abs(input - target_tensor) / (torch.abs(target_tensor) + 1e-8)
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:
+            return loss
+
+
+class MASELoss(Loss):
+    __constants__ = ['reduction']
+
+    def __init__(self, reduction: str = 'mean') -> None:
+        super(MASELoss, self).__init__(reduction)
+        self._mase_coefficient = 1.0
+
+    def set_mase_coefficient(self, mase_coefficient: torch.Tensor) -> 'MASELoss':
+        if len(mase_coefficient.shape) == 2:
+            mase_coefficient = mase_coefficient.unsqueeze(1)
+        self._mase_coefficient = mase_coefficient
+        return self
+
+    def forward(self,
+                input: torch.distributions.Distribution,
+                target_tensor: torch.Tensor) -> torch.Tensor:
+        loss = torch.abs(input - target_tensor) * self._mase_coefficient
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:
+            return loss
+
+
 losses = dict(
     classification=dict(
         CrossEntropyLoss=dict(
@@ -59,13 +100,19 @@ losses = dict(
             module=MSELoss, supported_output_types=[CONTINUOUS]),
         L1Loss=dict(
             module=L1Loss, supported_output_types=[CONTINUOUS]),
-    ))
+        MAPELoss=dict(
+            module=MAPELoss, supported_output_types=[CONTINUOUS]),
+        MASELoss=dict(
+            module=MASELoss, supported_output_types=[CONTINUOUS]),
+    )
+)
 
 default_losses: Dict[str, Type[Loss]] = dict(classification=CrossEntropyLoss,
                                              regression=MSELoss,
                                              forecasting=LogProbLoss)
 
 LOSS_TYPES = ['regression', 'distribution']
+
 
 def get_default(task: int) -> Type[Loss]:
     """

@@ -40,13 +40,16 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
     initial_configurations_dict: List[Dict] = list()
     initial_configurations = []
 
-    if suggested_init_models:
+    if suggested_init_models or suggested_init_models is None:
         with open(forecasting_init_path, 'r') as f:
             forecasting_init_dict: [Dict[str, Any]] = json.load(f)
         cfg_trainer: Dict = forecasting_init_dict['trainer']
         models_name_to_cfgs: Dict = forecasting_init_dict['models']
 
         window_size = config_space.get_default_configuration()["data_loader:window_size"]
+        if suggested_init_models is None:
+            suggested_init_models = list(models_name_to_cfgs.keys())
+
         for model_name in suggested_init_models:
             cfg_tmp = cfg_trainer.copy()
             if model_name != 'NBEATS':

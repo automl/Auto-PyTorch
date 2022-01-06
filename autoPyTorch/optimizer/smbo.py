@@ -259,7 +259,10 @@ class AutoMLSMBO(object):
                                                                              portfolio_selection=portfolio_selection)
         suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
         custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
-        if suggested_init_models is not None or custom_init_setting_path is not None:
+
+        # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
+        # do not provide any initial configurations
+        if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
             self.initial_configurations = read_forecasting_init_configurations(
                 config_space=config_space,
                 suggested_init_models=suggested_init_models,

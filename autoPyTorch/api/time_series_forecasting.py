@@ -26,7 +26,7 @@ from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE, SEASONALITY_
 
 class TimeSeriesForecastingTask(BaseTask):
     """
-    Time Series Forcasting API to the pipelines.
+    Time Series Forecasting API to the pipelines.
     Args:
         seed (int): seed to be used for reproducibility.
         n_jobs (int), (default=1): number of consecutive processes to spawn.
@@ -140,7 +140,7 @@ class TimeSeriesForecastingTask(BaseTask):
             portfolio_selection: Optional[str] = None,
             shift_input_data: bool = True,
             normalize_y: bool = True,
-            suggested_init_models: Optional[List[str]] = ['MLP', 'DeepAR'],
+            suggested_init_models: Optional[List[str]] = None,
             custom_init_setting_path: Optional[str] = None,
     ) -> 'BaseTask':
         """

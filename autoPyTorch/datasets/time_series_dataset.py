@@ -116,12 +116,9 @@ class TimeSeriesSequence(Dataset):
             # Y_Past does not need to be fed to the network, we keep it as np array
         else:
             Y_future = None
-        if train:
-            # TODO consider static information and missing information
-            return {"past_target": torch.from_numpy(X)},  Y_future
-        else:
-            return {"past_target": torch.from_numpy(X),
-                    "mase_coefficient": self.mase_coefficient},  Y_future
+
+        return {"past_target": torch.from_numpy(X),
+                "mase_coefficient": self.mase_coefficient}, Y_future
 
     def __len__(self) -> int:
         return self.X.shape[0]
@@ -330,7 +327,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
-
 
     def __getitem__(self, idx, train=True):
         if idx < 0:

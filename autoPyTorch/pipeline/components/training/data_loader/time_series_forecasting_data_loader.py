@@ -276,6 +276,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         self.check_requirements(X, y)
 
+        # Incorporate the transform to the dataset
+        datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
+
+        self.n_prediction_steps = datamanager.n_prediction_steps
+        if self.backcast:
+            self.window_size = self.backcast_period * self.n_prediction_steps
+
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
         padding_value = X.get('required_padding_value', 0.0)
@@ -292,8 +299,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         fraction_samples_per_seq = X.get('fraction_samples_per_seq', 1.0)
         self.sample_interval = sample_interval
 
-        # Incorporate the transform to the dataset
-        datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
+
 
         # TODO, consider bucket setting
         self.train_transform = self.build_transform(X, mode='train')
@@ -315,7 +321,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         else:
             self.dataset_small_preprocess = False
 
-        self.n_prediction_steps = datamanager.n_prediction_steps
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
         train_split, test_split = datamanager.splits[X['split_id']]
@@ -486,7 +491,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                                                   default_value=False),
                                         backcast_period: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='backcast_period',
-                                                                  value_range=(2, 7),
+                                                                  value_range=(1, 7),
                                                                   default_value=2)
                                         ) -> ConfigurationSpace:
         """

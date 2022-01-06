@@ -131,5 +131,5 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
             dataset_properties: Optional[Dict] = None,
     ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
-        cs.add_hyperparameter(Constant('decoder_type', 'RNN'))  # this helps the encoder to recognize the decoder.
+        cs.add_hyperparameter(Constant('decoder_type', 'RNNDecoder'))  # this helps the encoder to recognize the decoder.
         return cs
