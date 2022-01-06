@@ -299,8 +299,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         fraction_samples_per_seq = X.get('fraction_samples_per_seq', 1.0)
         self.sample_interval = sample_interval
 
-
-
         # TODO, consider bucket setting
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')

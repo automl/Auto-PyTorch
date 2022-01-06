@@ -55,7 +55,7 @@
             "network:aggregation": "median",
             "network:num_samples": 100
         },
-        "Seq2SeqRNN2MLP": {
+        "Seq2Seq-RNN2MLP": {
             "loss:__choice__": "DistributionLoss",
             "network:net_out_type": "distribution",
             "loss:DistributionLoss:dist_cls": "studentT",
@@ -73,7 +73,7 @@
             "network:aggregation": "median",
             "network:num_samples": 100
         },
-        "Seq2SeqTCN2MLP": {
+        "Seq2Seq-TCN2MLP": {
             "loss:__choice__": "DistributionLoss",
             "network:net_out_type": "distribution",
             "loss:DistributionLoss:dist_cls": "studentT",
@@ -93,7 +93,7 @@
             "network:aggregation": "median",
             "network:num_samples": 100
         },
-        "Seq2SeqRNN2RNN": {
+        "Seq2Seq-RNN2RNN": {
             "loss:__choice__": "DistributionLoss",
             "network:net_out_type": "distribution",
             "loss:DistributionLoss:dist_cls": "studentT",
@@ -109,32 +109,52 @@
             "network:aggregation": "median",
             "network:num_samples": 100
         },
-        "NBEATS": {
+        "NBEATS-I": {
             "data_loader:backcast": true,
             "data_loader:backcast_period": 2,
             "loss:__choice__": "RegressionLoss",
             "loss:RegressionLoss:loss_name": "mase",
             "network:net_out_type": "regression",
             "network_backbone:__choice__": "NBEATSEncoder",
-            "network_backbone:NBEATSDecoder:use_dropout": true,
             "network_backbone:NBEATSDecoder:backcast_loss_ratio": 0.0,
             "network_backbone:NBEATSDecoder:normalization": "NoNorm",
             "network_backbone:NBEATSDecoder:activation": "relu",
-            "network_backbone:NBEATSDecoder:num_stacks": 2,
-            "network_backbone:NBEATSDecoder:num_blocks_1": 3,
-            "network_backbone:NBEATSDecoder:num_layers_1": 2,
-            "network_backbone:NBEATSDecoder:width_1": 256,
-            "network_backbone:NBEATSDecoder:weight_sharing_1": true,
-            "network_backbone:NBEATSDecoder:stack_type_1": "trend",
-            "network_backbone:NBEATSDecoder:expansion_coefficient_length_interpretable_1": 3,
-            "network_backbone:NBEATSDecoder:dropout_1": 0.1,
-            "network_backbone:NBEATSDecoder:num_blocks_2": 3,
-            "network_backbone:NBEATSDecoder:num_layers_2": 2,
-            "network_backbone:NBEATSDecoder:width_2": 512,
-            "network_backbone:NBEATSDecoder:weight_sharing_2": true,
-            "network_backbone:NBEATSDecoder:stack_type_2": "seasonality",
-            "network_backbone:NBEATSDecoder:expansion_coefficient_length_interpretable_2": 3,
-            "network_backbone:NBEATSDecoder:dropout_2": 0.1
+            "network_backbone:NBEATSDecoder:n_beats_type": "I",
+            "network_backbone:NBEATSDecoder:use_dropout_I": true,
+            "network_backbone:NBEATSDecoder:num_stacks_I": 2,
+            "network_backbone:NBEATSDecoder:num_blocks_I_1": 3,
+            "network_backbone:NBEATSDecoder:num_layers_I_1": 2,
+            "network_backbone:NBEATSDecoder:width_I_1": 256,
+            "network_backbone:NBEATSDecoder:weight_sharing_I_1": true,
+            "network_backbone:NBEATSDecoder:stack_type_I_1": "trend",
+            "network_backbone:NBEATSDecoder:expansion_coefficient_length_I_trend_1": 3,
+            "network_backbone:NBEATSDecoder:dropout_I_1": 0.1,
+            "network_backbone:NBEATSDecoder:num_blocks_I_2": 3,
+            "network_backbone:NBEATSDecoder:num_layers_I_2": 2,
+            "network_backbone:NBEATSDecoder:width_I_2": 512,
+            "network_backbone:NBEATSDecoder:weight_sharing_I_2": true,
+            "network_backbone:NBEATSDecoder:stack_type_I_2": "trend",
+            "network_backbone:NBEATSDecoder:expansion_coefficient_length_I_seasonality_2": 3,
+            "network_backbone:NBEATSDecoder:dropout_I_2": 0.1
+        },
+        "NBEATS-G": {
+            "data_loader:backcast": true,
+            "data_loader:backcast_period": 2,
+            "loss:__choice__": "RegressionLoss",
+            "loss:RegressionLoss:loss_name": "mape",
+            "network:net_out_type": "regression",
+            "network_backbone:__choice__": "NBEATSEncoder",
+            "network_backbone:NBEATSDecoder:backcast_loss_ratio": 0.0,
+            "network_backbone:NBEATSDecoder:normalization": "NoNorm",
+            "network_backbone:NBEATSDecoder:activation": "relu",
+            "network_backbone:NBEATSDecoder:n_beats_type": "G",
+            "network_backbone:NBEATSDecoder:use_dropout_G": false,
+            "network_backbone:NBEATSDecoder:num_stacks_G": 30,
+            "network_backbone:NBEATSDecoder:num_blocks_G": 1,
+            "network_backbone:NBEATSDecoder:num_layers_G": 4,
+            "network_backbone:NBEATSDecoder:width_G": 512,
+            "network_backbone:NBEATSDecoder:weight_sharing_G": false,
+            "network_backbone:NBEATSDecoder:expansion_coefficient_length_G": 32
         }
     }
 }

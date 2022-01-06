@@ -48,7 +48,9 @@ class MAPELoss(Loss):
         super(MAPELoss, self).__init__(reduction)
 
     def forward(self, input: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
-        loss = torch.abs(input - target_tensor) / (torch.abs(target_tensor) + 1e-8)
+        target = torch.abs(target_tensor)
+        target[target == 0] = 1
+        loss = torch.abs(input - target_tensor) / target
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':

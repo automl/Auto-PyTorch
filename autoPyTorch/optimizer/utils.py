@@ -52,7 +52,7 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
 
         for model_name in suggested_init_models:
             cfg_tmp = cfg_trainer.copy()
-            if model_name != 'NBEATS':
+            if 'NBEATS' in model_name:
                 cfg_tmp['data_loader:window_size'] = window_size
             model_cfg = models_name_to_cfgs.get(model_name, None)
             if model_cfg is None:

@@ -24,26 +24,33 @@ class NBEATSBLock(nn.Module):
     def __init__(self,
                  n_in_features: int,
                  stack_idx: int,
-                 config: Dict,
+                 stack_type: str,
+                 num_blocks: int,
+                 num_layers: int,
+                 width: int,
+                 normalization: str,
+                 activation: str,
+                 weight_sharing: bool,
+                 expansion_coefficient_length: int,
+                 use_dropout: bool,
+                 dropout_rate: Optional[float] = None,
                  ):
         super().__init__()
         self.n_in_features = n_in_features
         self.stack_idx = stack_idx
+        self.stack_type = stack_type
 
-        self.weight_sharing = config['weight_sharing_%d' % self.stack_idx]
-        self.num_blocks = config['num_blocks_%d' % self.stack_idx]
-        self.stack_type = config['stack_type_%d' % self.stack_idx]
-        if self.stack_type == 'generic':
-            self.expansion_coefficient_length = config['expansion_coefficient_length_generic_%d' % self.stack_idx]
-        else:
-            self.expansion_coefficient_length = config['expansion_coefficient_length_interpretable_%d' % self.stack_idx]
+        self.num_blocks = num_blocks
+        self.num_layers = num_layers
+        self.width = width
+        self.normalization = normalization
+        self.activation = activation
+        self.use_dropout = use_dropout
+        self.dropout_rate = dropout_rate
 
-        self.num_layers = config['num_layers_%d' % self.stack_idx]
-        self.width = config['width_%d' % self.stack_idx]
-        self.normalization = config['normalization']
-        self.activation = config['activation']
-        self.use_dropout = config['use_dropout']
-        self.dropout_rate = config.get('dropout_%d' % self.stack_idx, None)
+        self.expansion_coefficient_length = expansion_coefficient_length
+
+        self.weight_sharing = weight_sharing
 
         self.backbone = nn.Sequential(*self.build_backbone())
 
@@ -59,7 +66,7 @@ class NBEATSBLock(nn.Module):
         return layers
 
     def _add_layer(self, layers: List[nn.Module], in_features: int) -> None:
-        layers.append(nn.Linear(in_features, self.width))
+        layers.append(nn.Linear(in_features, self.width, bias=False))
         if self.normalization == 'BN':
             layers.append(nn.BatchNorm1d(self.width))
         elif self.normalization == 'LN':
@@ -95,13 +102,63 @@ class NBEATSDecoder(BaseForecastingDecoder):
     def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int,
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         in_features = input_shape[-1]
-        stacks = [[] for _ in range(self.config['num_stacks'])]
-        for stack_idx in range(1, self.config['num_stacks'] + 1):
-            for block_idx in range(self.config['num_blocks_%d' % stack_idx]):
-                if self.config['weight_sharing_%d' % stack_idx] and block_idx > 0:
-                    # for weight sharing, we only create one instance
-                    break
-                stacks[stack_idx - 1].append(NBEATSBLock(in_features, stack_idx=stack_idx, config=self.config))
+        n_beats_type = self.config['n_beats_type']
+        if n_beats_type == 'G':
+            stacks = [[] for _ in range(self.config['num_stacks_G'])]
+            for stack_idx in range(1, self.config['num_stacks_G'] + 1):
+                for block_idx in range(self.config['num_blocks_G']):
+                    if self.config['weight_sharing_G'] and block_idx > 0:
+                        # for weight sharing, we only create one instance
+                        break
+                    ecl = self.config['expansion_coefficient_length_G']
+                    stacks[stack_idx - 1].append(NBEATSBLock(in_features,
+                                                             stack_idx=stack_idx,
+                                                             stack_type='generic',
+                                                             num_blocks=self.config['num_blocks_G'],
+                                                             num_layers=self.config['num_layers_G'],
+                                                             width=self.config['width_G'],
+                                                             normalization=self.config['normalization'],
+                                                             activation=self.config['activation'],
+                                                             weight_sharing=self.config['weight_sharing_G'],
+                                                             expansion_coefficient_length=ecl,
+                                                             use_dropout=self.config['use_dropout_G'],
+                                                             dropout_rate=self.config.get('dropout_G', None),
+                                                             ))
+
+        elif n_beats_type == 'I':
+            stacks = [[] for _ in range(self.config['num_stacks_I'])]
+            for stack_idx in range(1, self.config['num_stacks_I'] + 1):
+                for block_idx in range(self.config['num_blocks_I_%d' % stack_idx]):
+                    if self.config['weight_sharing_I_%d' % stack_idx] and block_idx > 0:
+                        # for weight sharing, we only create one instance
+                        break
+                    stack_type = self.config['stack_type_I_%d' % stack_idx]
+                    if stack_type == 'generic':
+                        ecl = self.config['expansion_coefficient_length_I_generic_%d' % stack_idx]
+                    elif stack_type == 'trend':
+                        ecl = self.config['expansion_coefficient_length_I_trend_%d' % stack_idx]
+                    elif stack_type == 'seasonality':
+                        ecl = self.config['expansion_coefficient_length_I_seasonality_%d' % stack_idx]
+                    else:
+                        raise ValueError(f"Unsupported stack_type {stack_type}")
+
+                    stacks[stack_idx - 1].append(NBEATSBLock(in_features,
+                                                             stack_idx=stack_idx,
+                                                             stack_type=stack_type,
+                                                             num_blocks=self.config['num_blocks_I_%d' % stack_idx],
+                                                             num_layers=self.config['num_layers_I_%d' % stack_idx],
+                                                             width=self.config['width_I_%d' % stack_idx],
+                                                             normalization=self.config['normalization'],
+                                                             activation=self.config['activation'],
+                                                             weight_sharing=self.config[f'weight_sharing_I_%d' %
+                                                                                        stack_idx],
+                                                             expansion_coefficient_length=ecl,
+                                                             use_dropout=self.config['use_dropout_I'],
+                                                             dropout_rate=self.config.get('dropout_I_%d' %
+                                                                                          stack_idx, None),
+                                                             ))
+        else:
+            raise ValueError(f"Unsupported n_beats_type: {n_beats_type}")
         return stacks, stacks[-1][-1].width
 
     @staticmethod
@@ -126,24 +183,50 @@ class NBEATSDecoder(BaseForecastingDecoder):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            num_stacks: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="num_stacks",
+            n_beats_type: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="n_beats_type",
+                value_range=('I', 'G'),
+                default_value='I'
+            ),
+            num_stacks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="num_stacks_G",
+                value_range=(4, 32),
+                default_value=30
+            ),
+            num_blocks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'num_blocks_G',
+                value_range=(1, 3),
+                default_value=1
+            ),
+            num_layers_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'num_layers_G',
+                value_range=(1, 5),
+                default_value=4
+            ),
+            width_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'width_G',
+                value_range=(32, 512),
+                default_value=256,
+                log=True
+            ),
+            num_stacks_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="num_stacks_I",
                 value_range=(1, 4),
                 default_value=2
             ),
-            num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_blocks',
+            num_blocks_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'num_blocks_I',
                 value_range=(1, 5),
                 default_value=3
             ),
-            num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_layers',
+            num_layers_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'num_layers_I',
                 value_range=(1, 5),
                 default_value=3
             ),
-            width: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'width',
-                value_range=(32, 1024),
+            width_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'width_I',
+                value_range=(32, 2048),
                 default_value=512,
                 log=True
             ),
@@ -162,8 +245,13 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 default_value=32,
                 log=True
             ),
-            expansion_coefficient_length_interpretable: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'expansion_coefficient_length_interpretable',
+            expansion_coefficient_length_seasonality: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'expansion_coefficient_length_seasonality',
+                value_range=(1, 8),
+                default_value=3,
+            ),
+            expansion_coefficient_length_trend: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                'expansion_coefficient_length_trend',
                 value_range=(1, 4),
                 default_value=3,
             ),
@@ -199,18 +287,30 @@ class NBEATSDecoder(BaseForecastingDecoder):
         width
         The design of the configuration space follows pytorch-forecasting:
         https://github.com/jdb78/pytorch-forecasting/tree/master/pytorch_forecasting/models/nbeats
+        Give that N-BEATS-I and N-BEATS-G's default hyperparameter configuration that totally different, we consider
+        them as two seperate configuration space: N-BEATS-G that only contains generic blocks and thus could be scaled
+        up to 32 stacks, while each stacks share the same number of blocks/ width/ dropout rate. While N-BEATS-I is
+        is restricted to be a network with a much smaller number of stacks. However, the block type of N-BEATS-G at each
+        stack can be freely selected
+        freely selected
         Args:
             dataset_properties:
-            num_stacks: number of stacks
-            num_blocks: number of blocks per stack
-            num_layers: number of fc layers per block, this value is the same across all the blocks within one stack
-            width: fc layer width, this value is the same across all the blocks within one stack
+            n_beats_type: type of nbeats network, could be I (N-BEATS-I) or G (N-BEATS-G)
+            num_stacks_g: number of stacks
+            num_blocks_g: number of blocks per stack
+            num_layers_g: number of fc layers per block, this value is the same across all the blocks within one stack
+            width_g: fc layer width, this value is the same across all the blocks within one stack
+            num_stacks_i: number of stacks
+            num_blocks_i: number of blocks per stack
+            num_layers_i: number of fc layers per block, this value is the same across all the blocks within one stack
+            width_i: fc layer width, this value is the same across all the blocks within one stack
             weight_sharing: if weights are shared inside one block
             stack_type: stack type, used to define the final output
             expansion_coefficient_length_generic: expansion_coefficient_length, activate if stack_type is 'generic'
-            expansion_coefficient_length_interpretable: expansion_coefficient_length, activate if stack_type is 'trend'
-            or 'seasonality' (in this case n_dim is expansion_coefficient_length_interpretable * n_prediciton_steps)
-             the expansion coefficient) or trend (in this case, it corresponds to the degree of the polynomial)
+            expansion_coefficient_length_seasonality: expansion_coefficient_length, activate if stack_type is
+                'seasonality' (n_dim = expansion_coefficient_length_interpretable * n_prediciton_steps)
+            expansion_coefficient_length_trend: expansion_coefficient_length, activate if stack_type is 'trend' (it
+                corresponds to the degree of the polynomial)
             activation: activation function across fc layers
             use_dropout: if dropout is applied
             normalization: if normalization is applied
@@ -223,94 +323,163 @@ class NBEATSDecoder(BaseForecastingDecoder):
         """
 
         cs = ConfigurationSpace()
-        min_num_stacks, max_num_stacks = num_stacks.value_range
 
-        num_stacks = get_hyperparameter(num_stacks, UniformIntegerHyperparameter)
+        n_beats_type = get_hyperparameter(n_beats_type, CategoricalHyperparameter)
 
+        # General Hyperparameters
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
         add_hyperparameter(cs, normalization, CategoricalHyperparameter)
         add_hyperparameter(cs, backcast_loss_ratio, UniformFloatHyperparameter)
 
-        # We can have dropout in the network for
-        # better generalization
-        use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
-        cs.add_hyperparameters([num_stacks, use_dropout])
+        cs.add_hyperparameter(n_beats_type)
+        # N-BEATS-G
 
-        for stack_idx in range(1, int(max_num_stacks) + 1):
-            num_blocks_search_space = HyperparameterSearchSpace(hyperparameter='num_blocks_%d' % stack_idx,
-                                                                value_range=num_blocks.value_range,
-                                                                default_value=num_blocks.default_value,
-                                                                log=num_blocks.log)
-            num_layers_search_space = HyperparameterSearchSpace(hyperparameter='num_layers_%d' % stack_idx,
-                                                                value_range=num_layers.value_range,
-                                                                default_value=num_layers.default_value,
-                                                                log=num_layers.log)
-            width_search_space = HyperparameterSearchSpace(hyperparameter='width_%d' % stack_idx,
-                                                           value_range=width.value_range,
-                                                           default_value=width.default_value,
-                                                           log=width.log)
-            weight_sharing_search_sapce = HyperparameterSearchSpace(hyperparameter='weight_sharing_%d' % stack_idx,
-                                                                    value_range=weight_sharing.value_range,
-                                                                    default_value=weight_sharing.default_value,
-                                                                    log=weight_sharing.log)
-            stack_type_search_space = HyperparameterSearchSpace(hyperparameter='stack_type_%d' % stack_idx,
-                                                                value_range=stack_type.value_range,
-                                                                default_value=stack_type.default_value,
-                                                                log=stack_type.log)
+        weight_sharing_g = HyperparameterSearchSpace(hyperparameter='weight_sharing_G',
+                                                     value_range=weight_sharing.value_range,
+                                                     default_value=weight_sharing.default_value,
+                                                     log=weight_sharing.log)
+        use_dropout_g = HyperparameterSearchSpace(hyperparameter='use_dropout_G',
+                                                  value_range=use_dropout.value_range,
+                                                  default_value=use_dropout.default_value,
+                                                  log=use_dropout.log)
+        dropout_g = HyperparameterSearchSpace(hyperparameter='dropout_G',
+                                              value_range=dropout.value_range,
+                                              default_value=dropout.default_value,
+                                              log=dropout.log)
+        ecl_g_search_space = HyperparameterSearchSpace(
+            hyperparameter='expansion_coefficient_length_G',
+            value_range=expansion_coefficient_length_generic.value_range,
+            default_value=expansion_coefficient_length_generic.default_value,
+            log=expansion_coefficient_length_generic.log
+        )
+
+        num_stacks_g = get_hyperparameter(num_stacks_g, UniformIntegerHyperparameter)
+        num_blocks_g = get_hyperparameter(num_blocks_g, UniformIntegerHyperparameter)
+        num_layers_g = get_hyperparameter(num_layers_g, UniformIntegerHyperparameter)
+        width_g = get_hyperparameter(width_g, UniformIntegerHyperparameter)
+        weight_sharing_g = get_hyperparameter(weight_sharing_g, CategoricalHyperparameter)
+        ecl_g = get_hyperparameter(ecl_g_search_space, UniformIntegerHyperparameter)
+        use_dropout_g = get_hyperparameter(use_dropout_g, CategoricalHyperparameter)
+
+        dropout_g = get_hyperparameter(dropout_g, UniformFloatHyperparameter)
+
+        n_beats_g_hps = [num_stacks_g, num_blocks_g, num_layers_g, width_g, weight_sharing_g, ecl_g, use_dropout_g]
+        n_beats_g_conds = [EqualsCondition(hp_nbeats_g, n_beats_type, 'G') for hp_nbeats_g in n_beats_g_hps]
+        cs.add_hyperparameters(n_beats_g_hps)
+        cs.add_hyperparameter(dropout_g)
+        cs.add_conditions(n_beats_g_conds)
+        cs.add_condition(AndConjunction(EqualsCondition(dropout_g, n_beats_type, 'G'),
+                                        EqualsCondition(dropout_g, use_dropout_g, True)))
+
+        min_num_stacks_i, max_num_stacks_i = num_stacks_i.value_range
+
+        use_dropout_i = HyperparameterSearchSpace(hyperparameter='use_dropout_I',
+                                                  value_range=use_dropout.value_range,
+                                                  default_value=use_dropout.default_value,
+                                                  log=use_dropout.log)
+
+        num_stacks_i = get_hyperparameter(num_stacks_i, UniformIntegerHyperparameter)
+        use_dropout_i = get_hyperparameter(use_dropout_i, CategoricalHyperparameter)
+
+        cs.add_hyperparameters([num_stacks_i, use_dropout_i])
+        cs.add_conditions([EqualsCondition(num_stacks_i, n_beats_type, 'I'),
+                           EqualsCondition(use_dropout_i, n_beats_type, 'I')
+                           ])
+
+        for stack_idx in range(1, int(max_num_stacks_i) + 1):
+            num_blocks_i_search_space = HyperparameterSearchSpace(hyperparameter='num_blocks_I_%d' % stack_idx,
+                                                                  value_range=num_blocks_i.value_range,
+                                                                  default_value=num_blocks_i.default_value,
+                                                                  log=num_blocks_i.log)
+            num_layers_i_search_space = HyperparameterSearchSpace(hyperparameter='num_layers_I_%d' % stack_idx,
+                                                                  value_range=num_layers_i.value_range,
+                                                                  default_value=num_layers_i.default_value,
+                                                                  log=num_layers_i.log)
+            width_i_search_space = HyperparameterSearchSpace(hyperparameter='width_I_%d' % stack_idx,
+                                                             value_range=width_i.value_range,
+                                                             default_value=width_i.default_value,
+                                                             log=width_i.log)
+            weight_sharing_i_search_space = HyperparameterSearchSpace(hyperparameter='weight_sharing_I_%d' % stack_idx,
+                                                                      value_range=weight_sharing.value_range,
+                                                                      default_value=weight_sharing.default_value,
+                                                                      log=weight_sharing.log)
+            stack_type_i_search_space = HyperparameterSearchSpace(hyperparameter='stack_type_I_%d' % stack_idx,
+                                                                  value_range=stack_type.value_range,
+                                                                  default_value=stack_type.default_value,
+                                                                  log=stack_type.log)
             expansion_coefficient_length_generic_search_space = HyperparameterSearchSpace(
-                hyperparameter='expansion_coefficient_length_generic_%d' % stack_idx,
+                hyperparameter='expansion_coefficient_length_I_generic_%d' % stack_idx,
                 value_range=expansion_coefficient_length_generic.value_range,
                 default_value=expansion_coefficient_length_generic.default_value,
                 log=expansion_coefficient_length_generic.log
             )
-            expansion_coefficient_length_interpretable_search_space = HyperparameterSearchSpace(
-                hyperparameter='expansion_coefficient_length_interpretable_%d' % stack_idx,
-                value_range=expansion_coefficient_length_interpretable.value_range,
-                default_value=expansion_coefficient_length_interpretable.default_value,
-                log=expansion_coefficient_length_interpretable.log
+            expansion_coefficient_length_seasonality_search_space = HyperparameterSearchSpace(
+                hyperparameter='expansion_coefficient_length_I_seasonality_%d' % stack_idx,
+                value_range=expansion_coefficient_length_seasonality.value_range,
+                default_value=expansion_coefficient_length_seasonality.default_value,
+                log=expansion_coefficient_length_seasonality.log
+            )
+            expansion_coefficient_length_trend_search_space = HyperparameterSearchSpace(
+                hyperparameter='expansion_coefficient_length_I_trend_%d' % stack_idx,
+                value_range=expansion_coefficient_length_trend.value_range,
+                default_value=expansion_coefficient_length_trend.default_value,
+                log=expansion_coefficient_length_trend.log
             )
 
-            num_blocks_hp = get_hyperparameter(num_blocks_search_space, UniformIntegerHyperparameter)
-            num_layers_hp = get_hyperparameter(num_layers_search_space, UniformIntegerHyperparameter)
-            width_hp = get_hyperparameter(width_search_space, UniformIntegerHyperparameter)
-            weight_sharing_hp = get_hyperparameter(weight_sharing_search_sapce, CategoricalHyperparameter)
-            stack_type_hp = get_hyperparameter(stack_type_search_space, CategoricalHyperparameter)
+            num_blocks_i_hp = get_hyperparameter(num_blocks_i_search_space, UniformIntegerHyperparameter)
+            num_layers_i_hp = get_hyperparameter(num_layers_i_search_space, UniformIntegerHyperparameter)
+            width_i_hp = get_hyperparameter(width_i_search_space, UniformIntegerHyperparameter)
+            weight_sharing_i_hp = get_hyperparameter(weight_sharing_i_search_space, CategoricalHyperparameter)
+            stack_type_i_hp = get_hyperparameter(stack_type_i_search_space, CategoricalHyperparameter)
 
             expansion_coefficient_length_generic_hp = get_hyperparameter(
                 expansion_coefficient_length_generic_search_space,
                 UniformIntegerHyperparameter
             )
-            expansion_coefficient_length_interpretable_hp = get_hyperparameter(
-                expansion_coefficient_length_interpretable_search_space,
+            expansion_coefficient_length_seasonality_hp = get_hyperparameter(
+                expansion_coefficient_length_seasonality_search_space,
+                UniformIntegerHyperparameter
+            )
+            expansion_coefficient_length_trend_hp = get_hyperparameter(
+                expansion_coefficient_length_trend_search_space,
                 UniformIntegerHyperparameter
             )
 
-            hps = [num_blocks_hp, num_layers_hp, width_hp, stack_type_hp, weight_sharing_hp]
-            cs.add_hyperparameters([*hps, expansion_coefficient_length_generic_hp,
-                                    expansion_coefficient_length_interpretable_hp])
+            hps = [num_blocks_i_hp, num_layers_i_hp, width_i_hp, stack_type_i_hp, weight_sharing_i_hp]
+            cs.add_hyperparameters([*hps,
+                                    expansion_coefficient_length_generic_hp,
+                                    expansion_coefficient_length_seasonality_hp,
+                                    expansion_coefficient_length_trend_hp])
 
-            cond_ecl_generic_cond_1 = EqualsCondition(expansion_coefficient_length_generic_hp, stack_type_hp, 'generic')
-            cond_ecl_interpretable_cond_1 = InCondition(expansion_coefficient_length_interpretable_hp,
-                                                        stack_type_hp, ('seasonality', 'trend'))
+            cond_ecls = [
+                EqualsCondition(expansion_coefficient_length_generic_hp, stack_type_i_hp, 'generic'),
+                EqualsCondition(expansion_coefficient_length_seasonality_hp, stack_type_i_hp, 'seasonality'),
+                EqualsCondition(expansion_coefficient_length_trend_hp, stack_type_i_hp, 'trend'),
+            ]
 
-            if stack_idx > int(min_num_stacks):
+            if stack_idx > int(min_num_stacks_i):
                 # The units of layer i should only exist
                 # if there are at least i layers
                 for hp in hps:
-                    cs.add_condition(GreaterThanCondition(hp, num_stacks, stack_idx - 1))
-                cond_ecl_generic = AndConjunction(
-                    GreaterThanCondition(expansion_coefficient_length_generic_hp, num_stacks, stack_idx - 1),
-                    cond_ecl_generic_cond_1
-                )
-                cond_ecl_interpretable = AndConjunction(
-                    GreaterThanCondition(expansion_coefficient_length_interpretable_hp, num_stacks, stack_idx - 1),
-                    cond_ecl_interpretable_cond_1
-                )
-                cs.add_conditions([cond_ecl_generic, cond_ecl_interpretable])
+                    cs.add_condition(
+                        AndConjunction(GreaterThanCondition(hp, num_stacks_i, stack_idx - 1),
+                                       EqualsCondition(hp, n_beats_type, 'I'))
+                    )
+                for cond_ecl in cond_ecls:
+                    cs.add_condition(
+                        AndConjunction(cond_ecl,
+                                       GreaterThanCondition(cond_ecl.child, num_stacks_i, stack_idx - 1),
+                                       EqualsCondition(cond_ecl.child, n_beats_type, 'I'))
+                    )
             else:
-                cs.add_conditions([cond_ecl_generic_cond_1, cond_ecl_interpretable_cond_1])
+                cs.add_conditions([EqualsCondition(hp, n_beats_type, 'I') for hp in hps])
+                cs.add_conditions([
+                    AndConjunction(cond_ecl,
+                                   EqualsCondition(cond_ecl.child, n_beats_type, 'I')) for cond_ecl in cond_ecls
+                ]
+                )
 
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % stack_idx,
+            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_I_%d' % stack_idx,
                                                              value_range=dropout.value_range,
                                                              default_value=dropout.default_value,
                                                              log=dropout.log)
@@ -318,12 +487,13 @@ class NBEATSDecoder(BaseForecastingDecoder):
             dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
             cs.add_hyperparameter(dropout_hp)
 
-            dropout_condition_1 = EqualsCondition(dropout_hp, use_dropout, True)
+            dropout_condition_1 = EqualsCondition(dropout_hp, use_dropout_i, True)
+            dropout_condition_2 = EqualsCondition(dropout_hp, n_beats_type, 'I')
 
-            if stack_idx > int(min_num_stacks):
-                dropout_condition_2 = GreaterThanCondition(dropout_hp, num_stacks, stack_idx - 1)
-                cs.add_condition(AndConjunction(dropout_condition_1, dropout_condition_2))
+            if stack_idx > int(min_num_stacks_i):
+                dropout_condition_3 = GreaterThanCondition(dropout_hp, num_stacks_i, stack_idx - 1)
+                cs.add_condition(AndConjunction(dropout_condition_1, dropout_condition_2, dropout_condition_3))
             else:
-                cs.add_condition(dropout_condition_1)
+                cs.add_condition(AndConjunction(dropout_condition_1, dropout_condition_2))
 
         return cs
