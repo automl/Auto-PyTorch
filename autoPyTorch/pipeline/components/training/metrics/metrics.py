@@ -46,7 +46,11 @@ balanced_accuracy = make_metric('balanced_accuracy',
                                 sklearn.metrics.balanced_accuracy_score)
 f1 = make_metric('f1',
                  sklearn.metrics.f1_score)
-
+zero_one_loss = make_metric('zero_one_loss',
+                            sklearn.metrics.zero_one_loss,
+                            optimum=0,
+                            greater_is_better=False,
+                            worst_possible_result=MAXINT)
 # Score functions that need decision values
 roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True)
 average_precision = make_metric('average_precision',
@@ -73,7 +77,7 @@ for scorer in [mean_absolute_error, mean_squared_error, root_mean_squared_error,
 CLASSIFICATION_METRICS = dict()
 
 for scorer in [accuracy, balanced_accuracy, roc_auc, average_precision,
-               log_loss]:
+               log_loss, zero_one_loss]:
     CLASSIFICATION_METRICS[scorer.name] = scorer
 
 for name, metric in [('precision', sklearn.metrics.precision_score),

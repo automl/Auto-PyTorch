@@ -2,6 +2,7 @@ from collections import Counter
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
+from sklearn.base import BaseEstimator
 
 from autoPyTorch.ensemble.abstract_ensemble import AbstractEnsemble
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -21,6 +22,11 @@ class StackingEnsemble(AbstractEnsemble):
         metric: autoPyTorchMetric,
         task_type: int,
         random_state: np.random.RandomState,
+        # should be with something like numrun_seed_budget.
+        ensemble_identifiers = None,
+        best_model_identifier = None,
+        ensemble_slot_j: int = None,
+        read_preds = None,
     ) -> None:
         self.ensemble_size = ensemble_size
         self.metric = metric
@@ -40,9 +46,11 @@ class StackingEnsemble(AbstractEnsemble):
 
     def fit(
         self,
-        predictions: List[np.ndarray],
+        predictions_ensemble: List[np.ndarray],
+        best_model_predictions: np.ndarray,
         labels: np.ndarray,
-        identifiers: List[Tuple[int, int, float]],
+        ensemble_identifiers: List[Tuple[int, int, float]],
+        best_model_identifier: Tuple[int, int, float]
     ) -> AbstractEnsemble:
         """
         Builds a ensemble given the individual models out of fold predictions.
@@ -62,13 +70,7 @@ class StackingEnsemble(AbstractEnsemble):
         Returns:
             A copy of self
         """
-        self.ensemble_size = int(self.ensemble_size)
-        if self.ensemble_size < 1:
-            raise ValueError('Ensemble size cannot be less than one!')
 
-        self._fit(predictions, labels)
-        self._calculate_weights()
-        self.identifiers_ = identifiers
         return self
 
     # TODO: fit a stacked ensemble.
@@ -78,10 +80,10 @@ class StackingEnsemble(AbstractEnsemble):
         labels: np.ndarray,
     ) -> None:
         """
-        Fast version of Rich Caruana's ensemble selection method.
+        Implemenation of Lévesque et al.
 
         For more details, please check the paper
-        "Ensemble Selection from Library of Models" by R Caruana  (2004)
+        "Bayesian hyperparameter optimization for ensemble learning" by Lévesque (2004)
 
         Args:
             predictions (List[np.ndarray]):
@@ -103,57 +105,21 @@ class StackingEnsemble(AbstractEnsemble):
             predictions[0].shape,
             dtype=np.float64,
         )
-        fant_ensemble_prediction = np.zeros(
-            weighted_ensemble_prediction.shape,
-            dtype=np.float64,
-        )
-        for i in range(ensemble_size):
-            losses = np.zeros(
-                (len(predictions)),
-                dtype=np.float64,
-            )
-            s = len(ensemble)
-            if s > 0:
-                np.add(
-                    weighted_ensemble_prediction,
-                    ensemble[-1],
-                    out=weighted_ensemble_prediction,
-                )
 
-            # Memory-efficient averaging!
-            for j, pred in enumerate(predictions):
-                # fant_ensemble_prediction is the prediction of the current ensemble
-                # and should be ([predictions[selected_prev_iterations] + predictions[j])/(s+1)
-                # We overwrite the contents of fant_ensemble_prediction
-                # directly with weighted_ensemble_prediction + new_prediction and then scale for avg
-                np.add(
-                    weighted_ensemble_prediction,
-                    pred,
-                    out=fant_ensemble_prediction
-                )
-                np.multiply(
-                    fant_ensemble_prediction,
-                    (1. / float(s + 1)),
-                    out=fant_ensemble_prediction
-                )
+        # Calculate loss is versatile and can return a dict of slosses
+        # losses[j] = calculate_loss(
+        #     metrics=[self.metric],
+        #     target=labels,
+        #     prediction=fant_ensemble_prediction,
+        #     task_type=self.task_type,
+        # )[self.metric.name]
 
-                # Calculate loss is versatile and can return a dict of slosses
-                losses[j] = calculate_loss(
-                    metrics=[self.metric],
-                    target=labels,
-                    prediction=fant_ensemble_prediction,
-                    task_type=self.task_type,
-                )[self.metric.name]
+        # all_best = np.argwhere(losses == np.nanmin(losses)).flatten()
+        # best = self.random_state.choice(all_best)
+        # ensemble.append(predictions[best])
+        # trajectory.append(losses[best])
+        # order.append(best)
 
-            all_best = np.argwhere(losses == np.nanmin(losses)).flatten()
-            best = self.random_state.choice(all_best)
-            ensemble.append(predictions[best])
-            trajectory.append(losses[best])
-            order.append(best)
-
-            # Handle special case
-            if len(predictions) == 1:
-                break
 
         self.indices_: List[int] = order
         self.trajectory_: List[float] = trajectory
@@ -174,11 +140,8 @@ class StackingEnsemble(AbstractEnsemble):
             dtype=np.float64,
         )
         for ensemble_member in ensemble_members:
-            weight = float(ensemble_member[1]) / self.ensemble_size
+            weight = 1
             weights[ensemble_member[0]] = weight
-
-        if np.sum(weights) < 1:
-            weights = weights / np.sum(weights)
 
         self.weights_ = weights
 
@@ -201,16 +164,9 @@ class StackingEnsemble(AbstractEnsemble):
         average = np.zeros_like(predictions[0], dtype=np.float64)
         tmp_predictions = np.empty_like(predictions[0], dtype=np.float64)
 
-        # if predictions.shape[0] == len(self.weights_),
-        # predictions include those of zero-weight models.
-        if len(predictions) == len(self.weights_):
-            for pred, weight in zip(predictions, self.weights_):
-                np.multiply(pred, weight, out=tmp_predictions)
-                np.add(average, tmp_predictions, out=average)
-
         # if prediction model.shape[0] == len(non_null_weights),
         # predictions do not include those of zero-weight models.
-        elif len(predictions) == np.count_nonzero(self.weights_):
+        if len(predictions) == np.count_nonzero(self.weights_):
             non_null_weights = [w for w in self.weights_ if w > 0]
             for pred, weight in zip(predictions, non_null_weights):
                 np.multiply(pred, weight, out=tmp_predictions)
@@ -232,35 +188,6 @@ class StackingEnsemble(AbstractEnsemble):
                 ' '.join([str(identifier) for idx, identifier in
                           enumerate(self.identifiers_)
                           if self.weights_[idx] > 0]))
-
-
-    def get_models_with_weights(
-        self,
-        models: Dict[Any, BasePipeline]
-    ) -> List[Tuple[float, BasePipeline]]:
-        """
-        Handy function to tag the provided input models with a given weight.
-
-        Args:
-            models (List[Tuple[float, BasePipeline]]):
-                A dictionary that maps a model's name to it's actual python object.
-
-        Returns:
-            output (List[Tuple[float, BasePipeline]]):
-                each model with the related weight, sorted by ascending
-                performance. Notice that ensemble selection solves a minimization
-                problem.
-        """
-        output = []
-        for i, weight in enumerate(self.weights_):
-            if weight > 0.0:
-                identifier = self.identifiers_[i]
-                model = models[identifier]
-                output.append((weight, model))
-
-        output.sort(reverse=True, key=lambda t: t[0])
-
-        return output
 
     def get_selected_model_identifiers(self) -> List[Tuple[int, int, float]]:
         """
@@ -290,3 +217,12 @@ class StackingEnsemble(AbstractEnsemble):
                 best ensemble training performance
         """
         return self.trajectory_[-1]
+
+    def predict_with_current_pipeline(
+        self,
+        pipeline_predictions: np.ndarray,
+    ) -> None:
+        # TODO: predict with ensemble by replacing model at j = self.iteration mod m,
+        # where m is ensemble_size.
+        # returns None
+        pass

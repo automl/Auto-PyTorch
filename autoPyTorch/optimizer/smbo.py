@@ -10,6 +10,8 @@ import dask.distributed
 
 from smac.facade.smac_ac_facade import SMAC4AC
 from smac.intensification.hyperband import Hyperband
+# from smac.intensification.hyperband import Hyperband
+from smac.intensification.simple_intensifier import SimpleIntensifier
 from smac.runhistory.runhistory import RunHistory
 from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost
 from smac.scenario.scenario import Scenario
@@ -47,40 +49,89 @@ def get_smac_object(
 ) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
-    optimizer of pipelines
-
+    optimizer of pipelines.
     Args:
-        scenario_dict (Dict[str, Any]): constrain on how to run
-            the jobs
-        seed (int): to make the job deterministic
-        ta (Callable): the function to be intensifier by smac
-        ta_kwargs (Dict[str, Any]): Arguments to the above ta
-        n_jobs (int): Amount of cores to use for this task
-        dask_client (dask.distributed.Client): User provided scheduler
-        initial_configurations (List[Configuration]): List of initial
-            configurations which smac will run before starting the search process
-
+        scenario_dict (typing.Dict[str, typing.Any]): constrain on how to run
+            the jobs.
+        seed (int): to make the job deterministic.
+        ta (typing.Callable): the function to be intensified by smac.
+        ta_kwargs (typing.Dict[str, typing.Any]): Arguments to the above ta.
+        n_jobs (int): Amount of cores to use for this task.
+        initial_budget (int):
+            The initial budget for a configuration.
+        max_budget (int):
+            The maximal budget for a configuration.
+        dask_client (dask.distributed.Client): User provided scheduler.
     Returns:
         (SMAC4AC): sequential model algorithm configuration object
-
     """
-    intensifier = Hyperband
-
+    # multi-fidelity is disabled, that is why initial_budget and max_budget
+    # are not used.
     rh2EPM = RunHistory2EPM4LogCost
+
     return SMAC4AC(
         scenario=Scenario(scenario_dict),
         rng=seed,
         runhistory2epm=rh2EPM,
         tae_runner=ta,
         tae_runner_kwargs=ta_kwargs,
-        initial_configurations=initial_configurations,
+        initial_configurations=None,
         run_id=seed,
-        intensifier=intensifier,
+        intensifier=Hyperband,
         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
                             'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
         dask_client=dask_client,
         n_jobs=n_jobs,
     )
+
+
+# def get_smac_object(
+#     scenario_dict: Dict[str, Any],
+#     seed: int,
+#     ta: Callable,
+#     ta_kwargs: Dict[str, Any],
+#     n_jobs: int,
+#     initial_budget: int,
+#     max_budget: int,
+#     dask_client: Optional[dask.distributed.Client],
+#     initial_configurations: Optional[List[Configuration]] = None,
+# ) -> SMAC4AC:
+#     """
+#     This function returns an SMAC object that is gonna be used as
+#     optimizer of pipelines
+
+#     Args:
+#         scenario_dict (Dict[str, Any]): constrain on how to run
+#             the jobs
+#         seed (int): to make the job deterministic
+#         ta (Callable): the function to be intensifier by smac
+#         ta_kwargs (Dict[str, Any]): Arguments to the above ta
+#         n_jobs (int): Amount of cores to use for this task
+#         dask_client (dask.distributed.Client): User provided scheduler
+#         initial_configurations (List[Configuration]): List of initial
+#             configurations which smac will run before starting the search process
+
+#     Returns:
+#         (SMAC4AC): sequential model algorithm configuration object
+
+#     """
+#     intensifier = Hyperband
+
+#     rh2EPM = RunHistory2EPM4LogCost
+#     return SMAC4AC(
+#         scenario=Scenario(scenario_dict),
+#         rng=seed,
+#         runhistory2epm=rh2EPM,
+#         tae_runner=ta,
+#         tae_runner_kwargs=ta_kwargs,
+#         initial_configurations=initial_configurations,
+#         run_id=seed,
+#         intensifier=intensifier,
+#         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
+#                             'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+#         dask_client=dask_client,
+#         n_jobs=n_jobs,
+#     )
 
 
 class AutoMLSMBO(object):

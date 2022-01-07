@@ -38,6 +38,7 @@ Y_TEST = 1
 MODEL_FN_RE = r'_([0-9]*)_([0-9]*)_([0-9]+\.*[0-9]*)\.npy'
 
 
+# TODO: store
 class EnsembleBuilder(object):
     def __init__(
         self,
@@ -200,6 +201,8 @@ class EnsembleBuilder(object):
         # from dask, it builds this object from scratch)
         # we save the state of this dictionary to memory
         # and read it if available
+        # TODO: ensemble_read_preds comes from self.predict,
+        # see line #513
         self.ensemble_memory_file = os.path.join(
             self.backend.internals_directory,
             'ensemble_read_preds.pkl'
@@ -646,6 +649,7 @@ class EnsembleBuilder(object):
                         os.path.getmtime(y_ens_fn),
                     )
 
+                self.logger.debug(f"keys in losses {losses.keys()}")
                 self.read_losses[y_ens_fn]["ens_loss"] = losses[self.opt_metric]
 
                 # It is not needed to create the object here
@@ -674,167 +678,7 @@ class EnsembleBuilder(object):
         )
         return True
 
-    def get_n_best_preds(self) -> List[str]:
-        """
-            get best n predictions (i.e., keys of self.read_losses)
-            according to the loss on the "ensemble set"
-            n: self.ensemble_nbest
-
-            Side effects:
-                ->Define the n-best models to use in ensemble
-                ->Only the best models are loaded
-                ->Any model that is not best is candidate to deletion
-                  if max models in disc is exceeded.
-        """
-
-        sorted_keys = self._get_list_of_sorted_preds()
-
-        # number of models available
-        num_keys = len(sorted_keys)
-        # remove all that are at most as good as random
-        # note: dummy model must have run_id=1 (there is no run_id=0)
-        dummy_losses = list(filter(lambda x: x[2] == 1, sorted_keys))
-        # Leave this here for when we enable dummy classifier/scorer
-        if len(dummy_losses) > 0:
-            # number of dummy models
-            num_dummy = len(dummy_losses)
-            dummy_loss = dummy_losses[0]
-            self.logger.debug("Use %f as dummy loss" % dummy_loss[1])
-            sorted_keys = list(filter(lambda x: x[1] < dummy_loss[1], sorted_keys))
-
-            # remove Dummy Classifier
-            sorted_keys = list(filter(lambda x: x[2] > 1, sorted_keys))
-            if len(sorted_keys) == 0:
-                # no model left; try to use dummy loss (num_run==0)
-                # log warning when there are other models but not better than dummy model
-                if num_keys > num_dummy:
-                    self.logger.warning("No models better than random - using Dummy Score!"
-                                        "Number of models besides current dummy model: %d. "
-                                        "Number of dummy models: %d",
-                                        num_keys - 1,
-                                        num_dummy)
-                sorted_keys = [
-                    (k, v["ens_loss"], v["num_run"]) for k, v in self.read_losses.items()
-                    if v["seed"] == self.seed and v["num_run"] == 1
-                ]
-        # reload predictions if losses changed over time and a model is
-        # considered to be in the top models again!
-        if not isinstance(self.ensemble_nbest, numbers.Integral):
-            # Transform to number of models to keep. Keep at least one
-            keep_nbest = max(1, min(len(sorted_keys),
-                                    int(len(sorted_keys) * self.ensemble_nbest)))
-            self.logger.debug(
-                "Library pruning: using only top %f percent of the models for ensemble "
-                "(%d out of %d)",
-                self.ensemble_nbest * 100, keep_nbest, len(sorted_keys)
-            )
-        else:
-            # Keep only at most ensemble_nbest
-            keep_nbest = min(self.ensemble_nbest, len(sorted_keys))
-            self.logger.debug("Library Pruning: using for ensemble only "
-                              " %d (out of %d) models" % (keep_nbest, len(sorted_keys)))
-
-        # If max_models_on_disc is None, do nothing
-        # One can only read at most max_models_on_disc models
-        if self.max_models_on_disc is not None:
-            if not isinstance(self.max_models_on_disc, numbers.Integral):
-                consumption = [
-                    [
-                        v["ens_loss"],
-                        v["disc_space_cost_mb"],
-                    ] for v in self.read_losses.values() if v["disc_space_cost_mb"] is not None
-                ]
-                max_consumption = max(c[1] for c in consumption)
-
-                # We are pessimistic with the consumption limit indicated by
-                # max_models_on_disc by 1 model. Such model is assumed to spend
-                # max_consumption megabytes
-                if (sum(c[1] for c in consumption) + max_consumption) > self.max_models_on_disc:
-
-                    # just leave the best -- smaller is better!
-                    # This list is in descending order, to preserve the best models
-                    sorted_cum_consumption = np.cumsum([
-                        c[1] for c in list(sorted(consumption))
-                    ]) + max_consumption
-                    max_models = np.argmax(sorted_cum_consumption > self.max_models_on_disc)
-
-                    # Make sure that at least 1 model survives
-                    self.max_resident_models = max(1, max_models)
-                    self.logger.warning(
-                        "Limiting num of models via float max_models_on_disc={}"
-                        " as accumulated={} worst={} num_models={}".format(
-                            self.max_models_on_disc,
-                            (sum(c[1] for c in consumption) + max_consumption),
-                            max_consumption,
-                            self.max_resident_models
-                        )
-                    )
-                else:
-                    self.max_resident_models = None
-            else:
-                self.max_resident_models = self.max_models_on_disc
-
-        if self.max_resident_models is not None and keep_nbest > self.max_resident_models:
-            self.logger.debug(
-                "Restricting the number of models to %d instead of %d due to argument "
-                "max_models_on_disc",
-                self.max_resident_models, keep_nbest,
-            )
-            keep_nbest = self.max_resident_models
-
-        # consider performance_range_threshold
-        if self.performance_range_threshold > 0:
-            best_loss = sorted_keys[0][1]
-            worst_loss = dummy_loss[1]
-            worst_loss -= (worst_loss - best_loss) * self.performance_range_threshold
-            if sorted_keys[keep_nbest - 1][1] > worst_loss:
-                # We can further reduce number of models
-                # since worst model is worse than thresh
-                for i in range(0, keep_nbest):
-                    # Look at most at keep_nbest models,
-                    # but always keep at least one model
-                    current_loss = sorted_keys[i][1]
-                    if current_loss >= worst_loss:
-                        self.logger.debug("Dynamic Performance range: "
-                                          "Further reduce from %d to %d models",
-                                          keep_nbest, max(1, i))
-                        keep_nbest = max(1, i)
-                        break
-        ensemble_n_best = keep_nbest
-
-        # reduce to keys
-        reduced_sorted_keys = list(map(lambda x: x[0], sorted_keys))
-
-        # remove loaded predictions for non-winning models
-        for k in reduced_sorted_keys[ensemble_n_best:]:
-            if k in self.read_preds:
-                self.read_preds[k][Y_ENSEMBLE] = None
-                self.read_preds[k][Y_TEST] = None
-            if self.read_losses[k]['loaded'] == 1:
-                self.logger.debug(
-                    'Dropping model %s (%d,%d) with loss %f.',
-                    k,
-                    self.read_losses[k]['seed'],
-                    self.read_losses[k]['num_run'],
-                    self.read_losses[k]['ens_loss'],
-                )
-                self.read_losses[k]['loaded'] = 2
-
-        # Load the predictions for the winning
-        for k in reduced_sorted_keys[:ensemble_n_best]:
-            if (
-                (
-                    k not in self.read_preds or self.read_preds[k][Y_ENSEMBLE] is None
-                )
-                and self.read_losses[k]['loaded'] != 3
-            ):
-                self.read_preds[k][Y_ENSEMBLE] = self._read_np_fn(k)
-                # No need to load test here because they are loaded
-                #  only if the model ends up in the ensemble
-                self.read_losses[k]['loaded'] = 1
-
-        # return best scored keys of self.read_losses
-        return reduced_sorted_keys[:ensemble_n_best]
+    
 
     def get_test_preds(self, selected_keys: List[str]) -> List[str]:
         """
@@ -1104,6 +948,7 @@ class EnsembleBuilder(object):
             # We want small num_run first
             key=lambda x: (x[1], x[2]),
         ))
+        self.logger.debug(f"Selected keys: {sorted_keys}")
         return sorted_keys
 
     def _delete_excess_models(self, selected_keys: List[str]) -> None:

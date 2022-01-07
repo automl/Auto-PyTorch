@@ -1,4 +1,6 @@
 from multiprocessing.queues import Queue
+import os
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
@@ -19,6 +21,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
 )
+from autoPyTorch.ensemble.stacking_ensemble import StackingEnsemble
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -150,6 +153,116 @@ class StackingEvaluator(AbstractEvaluator):
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
         self.keep_models = keep_models
 
+    def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
+                  valid_pred: Optional[np.ndarray],
+                  test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
+                  file_output: bool, status: StatusType,
+                  ensemble_pred: Optional[np.ndarray],
+                  
+                  ) -> Optional[Tuple[float, float, int, Dict]]:
+        """This function does everything necessary after the fitting is done:
+
+        * predicting
+        * saving the necessary files
+        We use it as the signal handler so we can recycle the code for the
+        normal usecase and when the runsolver kills us here :)"""
+
+        self.duration = time.time() - self.starttime
+
+        if file_output:
+            loss_, additional_run_info_ = self.file_output(
+                None, valid_pred, test_pred,
+            )
+        else:
+            loss_ = None
+            additional_run_info_ = {}
+
+        validation_loss, test_loss = self.calculate_auxiliary_losses(
+            valid_pred, test_pred
+        )
+
+        if loss_ is not None:
+            return self.duration, loss_, self.seed, additional_run_info_
+
+        cost = loss[self.metric.name]
+
+        additional_run_info = (
+            {} if additional_run_info is None else additional_run_info
+        )
+        for metric_name, value in loss.items():
+            additional_run_info[metric_name] = value
+        additional_run_info['duration'] = self.duration
+        additional_run_info['num_run'] = self.num_run
+        if train_loss is not None:
+            additional_run_info['train_loss'] = train_loss
+        if validation_loss is not None:
+            additional_run_info['validation_loss'] = validation_loss
+        if test_loss is not None:
+            additional_run_info['test_loss'] = test_loss
+
+        rval_dict = {'loss': cost,
+                     'additional_run_info': additional_run_info,
+                     'status': status}
+
+        self.queue.put(rval_dict)
+        return None
+
+    def file_output(
+        self,
+        Y_optimization_pred: np.ndarray,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray,
+    ) -> Tuple[Optional[float], Dict]:
+
+        # Abort if predictions contain NaNs
+        for y, s in [
+            [Y_valid_pred, 'validation'],
+            [Y_test_pred, 'test']
+        ]:
+            if y is not None and not np.all(np.isfinite(y)):
+                return (
+                    1.0,
+                    {
+                        'error':
+                            'Model predictions for %s set contains NaNs.' % s
+                    },
+                )
+
+        # Abort if we don't want to output anything.
+        if hasattr(self, 'disable_file_output'):
+            if self.disable_file_output:
+                return None, {}
+            else:
+                self.disabled_file_outputs = []
+
+        if hasattr(self, 'pipeline') and self.pipeline is not None:
+            if 'pipeline' not in self.disabled_file_outputs:
+                pipeline = self.pipeline
+            else:
+                pipeline = None
+        else:
+            pipeline = None
+
+        self.logger.debug("Saving model {}_{}_{} to disk".format(self.seed, self.num_run, self.budget))
+        self.backend.save_numrun_to_dir(
+            seed=int(self.seed),
+            idx=int(self.num_run),
+            budget=float(self.budget),
+            model=pipeline,
+            cv_model=None,
+            ensemble_predictions=None,
+            valid_predictions=(
+                Y_valid_pred if 'y_valid' not in
+                                self.disabled_file_outputs else None
+            ),
+            test_predictions=(
+                Y_test_pred if 'y_test' not in
+                               self.disabled_file_outputs else None
+            ),
+        )
+
+        return None, {}
+
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
         holdout"""
@@ -232,19 +345,23 @@ class StackingEvaluator(AbstractEvaluator):
                  train_indices: Union[np.ndarray, List]
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         # TODO: load ensemble members and predict using the whole ensemble.
-
+        # TODO: we need some function to pass this pipeline to the last stored ensemble replace 
+        # TODO: model j, where j = ensemble.iteration mod m. then we need to predict
+        # TODO: Also, we will pass the predictions from this pipeline as that is what is needed
+        # TODO: to create the ensemble. 
         train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
                                            self.y_train[train_indices])
 
-        opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
+        pipeline_opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
                                          self.y_train[train_indices])
 
-        if self.X_valid is not None:
-            valid_pred = self.predict_function(self.X_valid, pipeline,
-                                               self.y_valid)
+        ensemble_dir = self.backend.get_ensemble_dir()
+        if len(os.listdir(ensemble_dir)) >= 1:
+            old_ensemble = self.backend.load_ensemble(self.seed)
+            assert isinstance(old_ensemble, StackingEnsemble)
+            ensemble_opt_pred = old_ensemble.predict_with_current_model()
         else:
-            valid_pred = None
-
+            ensemble_opt_pred = None    
         if self.X_test is not None:
             test_pred = self.predict_function(self.X_test, pipeline,
                                               self.y_train[train_indices])

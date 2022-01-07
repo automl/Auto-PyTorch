@@ -1830,6 +1830,9 @@ class BaseTask(ABC):
         # builder in the provide dask client
         required_dataset_properties = {'task_type': self.task_type,
                                        'output_type': self.dataset.output_type}
+        metrics = get_metrics(
+                dataset_properties=required_dataset_properties, names=[optimize_metric])
+        self._logger.info(f"metrics are {metrics}")
         proc_ensemble = EnsembleBuilderManager(
             start_time=time.time(),
             time_left_for_ensembles=time_left_for_ensembles,
@@ -1837,7 +1840,7 @@ class BaseTask(ABC):
             dataset_name=str(self.dataset.dataset_name),
             output_type=STRING_TO_OUTPUT_TYPES[self.dataset.output_type],
             task_type=STRING_TO_TASK_TYPES[self.task_type],
-            metrics=[self._metric] if self._metric is not None else get_metrics(
+            metrics=get_metrics(
                 dataset_properties=required_dataset_properties, names=[optimize_metric]),
             opt_metric=optimize_metric,
             ensemble_size=ensemble_size,
