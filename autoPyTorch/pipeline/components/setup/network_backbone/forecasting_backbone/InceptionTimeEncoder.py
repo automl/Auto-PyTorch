@@ -153,8 +153,8 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
-            'shortname': 'InceptionTimeBackbone',
-            'name': 'InceptionTimeBackbone',
+            'shortname': 'InceptionTimeEncoder',
+            'name': 'InceptionTimeEncoder',
             'handles_tabular': False,
             'handles_image': False,
             # TODO consider InceptionTime for forecasting

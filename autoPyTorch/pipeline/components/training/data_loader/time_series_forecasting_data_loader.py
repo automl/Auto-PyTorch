@@ -8,8 +8,9 @@ from ConfigSpace.conditions import EqualsCondition
 import numpy as np
 
 import torch
+import collections
 from torch.utils.data.sampler import SubsetRandomSampler
-from torch._six import container_abcs, string_classes, int_classes
+from torch._six import string_classes
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format, default_collate
 
 import torchvision
@@ -91,11 +92,11 @@ class PadSequenceCollector:
                 return torch.as_tensor(batch)
         elif isinstance(elem, float):
             return torch.tensor(batch, dtype=torch.float64)
-        elif isinstance(elem, int_classes):
+        elif isinstance(elem, int):
             return torch.tensor(batch)
         elif isinstance(elem, string_classes):
             return batch
-        elif isinstance(elem, container_abcs.Mapping):
+        elif isinstance(elem, collections.abc.Mapping):
             return {key: self([d[key] for d in batch]) if key != "past_target"
                     else self([d[key] for d in batch], self.target_padding_value) for key in elem}
         raise TypeError(f"Unsupported data type {elem_type}")
@@ -334,7 +335,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
         #  A new sequence must start from the index 7. We could then split each unique values to represent the length
         # of each split
-        _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
+        dataset_seq_length_train_all = X['dataset_properties']['sequence_lengths_train']
+        if np.sum(dataset_seq_length_train_all) == len(train_split):
+            # this works if we want to fit the entire datasets
+            seq_train_length = np.array(dataset_seq_length_train_all)
+        else:
+            _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
         # create masks for masking
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
         seq_train_length[seq_idx_inactivate] = 0

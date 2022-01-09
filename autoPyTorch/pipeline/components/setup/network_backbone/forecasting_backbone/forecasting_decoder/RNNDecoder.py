@@ -15,13 +15,13 @@ from gluonts.time_feature.lag import get_lags_for_frequency
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
-    BaseForecastingDecoder
+    BaseForecastingDecoder, RecurrentDecoderNetwork
 
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
 from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 
-class RNN_Module(nn.Module):
+class RNN_Module(RecurrentDecoderNetwork):
     def __init__(self,
                  in_features: int,
                  hidden_size: int,
@@ -43,11 +43,11 @@ class RNN_Module(nn.Module):
                          bidirectional=False,
                          batch_first=True)
 
-    def forward(self, x: torch.Tensor,
-                hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
-        if x.ndim == 2:
-            x = x.unsqueeze(1)
-        outputs, hidden_state, = self.lstm(x, hx)
+    def forward(self, x_future: torch.Tensor,
+                features_latent: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
+        if x_future.ndim == 2:
+            x_future = x_future.unsqueeze(1)
+        outputs, hidden_state, = self.lstm(x_future, features_latent)
         return outputs, hidden_state
 
 
@@ -131,5 +131,5 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
             dataset_properties: Optional[Dict] = None,
     ) -> ConfigurationSpace:
         cs = CS.ConfigurationSpace()
-        cs.add_hyperparameter(Constant('decoder_type', 'RNNDecoder'))  # this helps the encoder to recognize the decoder.
+        cs.add_hyperparameter(Constant('decoder_type', 'RNNDecoder'))  # this helps the encoder to recognize the decoder
         return cs

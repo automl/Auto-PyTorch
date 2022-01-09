@@ -415,6 +415,8 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
+        if not os.path.exists(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir, exist_ok=True)
         epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
 
         # Save the checkpoint if there is a new best epoch

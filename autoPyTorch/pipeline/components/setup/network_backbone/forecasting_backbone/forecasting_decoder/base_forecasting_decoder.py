@@ -1,11 +1,28 @@
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Iterable, Tuple, List, Optional
 
+import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
+
+
+class RecurrentDecoderNetwork(nn.Module):
+    def forward(self, x_future: torch.Tensor, features_latent: torch.Tensor):
+        """
+        Base forecasting Decoder Network, its output needs to be a 3-d Tensor:
+
+
+        Args:
+            x_future torch.Tensor(B, L_future, N_out), the future features
+            features_latent: torch.Tensor(B, L_encoder, N), output of the encoder network, or the hidden states
+        Returns:
+            net_output: torch.Tensor with shape either (B, L_future, N)
+
+        """
+        raise NotImplementedError
 
 
 class BaseForecastingDecoder(autoPyTorchComponent):
@@ -44,6 +61,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                               'recurrent': False,
                               'lagged_input': False,
                               'multi_blocks': False,
+                              'mask_on_future_target': False,
                               }
         return decoder_properties
 

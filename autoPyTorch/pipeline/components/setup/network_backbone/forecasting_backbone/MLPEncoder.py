@@ -116,8 +116,8 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
         return {
-            'shortname': 'TSMLPBackbone',
-            'name': 'TimeSeriesMLPBackbone',
+            'shortname': 'TSMLPEncoder',
+            'name': 'TimeSeriesMLPEncoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,

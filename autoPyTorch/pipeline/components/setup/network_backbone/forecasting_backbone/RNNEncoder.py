@@ -126,8 +126,8 @@ class RNNEncoder(BaseForecastingEncoder):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         return {
-            'shortname': 'RNNBackbone',
-            'name': 'RNNBackbone',
+            'shortname': 'RNNEncoder',
+            'name': 'RNNEncoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,

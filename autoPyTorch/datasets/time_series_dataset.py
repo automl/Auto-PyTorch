@@ -159,8 +159,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  target_variables: Optional[Union[Tuple[int], int]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
-                 resampling_strategy: Union[
-                     CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
+                 resampling_strategy: Optional[Union[
+                     CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
@@ -534,6 +534,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 num_splits=cast(int, num_splits),
             ))
             upper_window_size = (np.min(self.sequence_lengths_train) // num_splits) - self.n_prediction_steps
+        elif self.resampling_strategy is None:
+            splits.append(self.create_refit_split())
+            upper_window_size = np.inf
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
 
@@ -663,6 +666,40 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                                        indices=np.arange(
                                                                            len(dataset) - self.n_prediction_steps),
                                                                        **kwargs)
+
+            for idx_split in range(2):
+                splits[idx_split][idx_seq] = idx_start + split[idx_split]
+            idx_start += self.sequence_lengths_train[idx_seq]
+
+        train_indices = np.hstack([sp for sp in splits[0]])
+        test_indices = np.hstack([sp for sp in splits[1]])
+
+        return train_indices, test_indices
+
+    def create_refit_split(
+            self,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        This function creates the refit split for the given task. All the data in the dataset will be considered as
+        training sets
+        Args:
+            holdout_val_type (HoldoutValTypes):
+            val_share (float): share of the validation data
+
+        Returns:
+            (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
+        """
+        kwargs = {"n_prediction_steps": self.n_prediction_steps}
+
+        splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
+        idx_start = 0
+        for idx_seq, dataset in enumerate(self.datasets):
+            if self.shift_input_data:
+                split = [np.arange(len(dataset)), np.array([len(dataset) - 1])]
+            else:
+                last_idx = len(dataset) - self.n_prediction_steps -1
+                split = [np.arange(len(dataset) - self.n_prediction_steps), np.array([last_idx])]
+
             for idx_split in range(2):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
