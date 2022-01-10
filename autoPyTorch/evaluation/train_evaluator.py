@@ -23,7 +23,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
-__all__ = ['TrainEvaluator', 'eval_function']
+__all__ = ['TrainEvaluator', 'eval_train_function']
 
 
 def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
@@ -402,7 +402,7 @@ class TrainEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
-def eval_function(
+def eval_train_function(
         backend: Backend,
         queue: Queue,
         metric: autoPyTorchMetric,

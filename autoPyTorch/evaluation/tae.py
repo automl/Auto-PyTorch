@@ -123,7 +123,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
-        eval_function = autoPyTorch.evaluation.train_evaluator.eval_function
+        eval_function = autoPyTorch.evaluation.train_evaluator.eval_train_function
 
         self.worst_possible_result = cost_for_crash
 
