@@ -295,7 +295,8 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+                if 'val_data_loader' in X and X['val_data_loader']:
+                    val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
 

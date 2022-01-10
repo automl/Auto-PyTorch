@@ -14,6 +14,7 @@ from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT,
 )
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -148,6 +149,12 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+
+        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            raise ValueError(
+                'TrainEvaluator expect to have (CrossValTypes, HoldoutValTypes) as '
+                'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
+            )
 
         self.splits = self.datamanager.splits
         if self.splits is None:
@@ -403,24 +410,24 @@ class TrainEvaluator(AbstractEvaluator):
 
 # create closure for evaluating an algorithm
 def eval_train_function(
-        backend: Backend,
-        queue: Queue,
-        metric: autoPyTorchMetric,
-        budget: float,
-        config: Optional[Configuration],
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        budget_type: str = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        logger_port: Optional[int] = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        instance: str = None,
+    backend: Backend,
+    queue: Queue,
+    metric: autoPyTorchMetric,
+    budget: float,
+    config: Optional[Configuration],
+    seed: int,
+    output_y_hat_optimization: bool,
+    num_run: int,
+    include: Optional[Dict[str, Any]],
+    exclude: Optional[Dict[str, Any]],
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_config: Optional[Dict[str, Any]] = None,
+    budget_type: str = None,
+    init_params: Optional[Dict[str, Any]] = None,
+    logger_port: Optional[int] = None,
+    all_supported_metrics: bool = True,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    instance: str = None,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the

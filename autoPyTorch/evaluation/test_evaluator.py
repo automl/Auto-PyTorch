@@ -108,7 +108,6 @@ class TestEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
-# Has a stupid name so pytest doesn't regard it as a test
 def eval_test_function(
     backend: Backend,
     queue: Queue,

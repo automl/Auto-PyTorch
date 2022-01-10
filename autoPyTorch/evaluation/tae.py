@@ -22,8 +22,14 @@ from smac.stats.stats import Stats
 from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
-import autoPyTorch.evaluation.train_evaluator
+from autoPyTorch.evaluation.train_evaluator import eval_train_function
+from autoPyTorch.evaluation.test_evaluator import eval_test_function
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes,
+    NoResamplingStrategyTypes
+)
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     empty_queue,
@@ -123,25 +129,6 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
 
-        eval_function = autoPyTorch.evaluation.train_evaluator.eval_train_function
-
-        self.worst_possible_result = cost_for_crash
-
-        eval_function = functools.partial(
-            fit_predict_try_except_decorator,
-            ta=eval_function,
-            cost_for_crash=self.worst_possible_result,
-        )
-
-        super().__init__(
-            ta=ta if ta is not None else eval_function,
-            stats=stats,
-            run_obj=run_obj,
-            par_factor=par_factor,
-            cost_for_crash=self.worst_possible_result,
-            abort_on_first_run_crash=abort_on_first_run_crash,
-        )
-
         self.backend = backend
         self.pynisher_context = pynisher_context
         self.seed = seed
@@ -189,6 +176,29 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy_args = dm.resampling_strategy_args
 
         self.search_space_updates = search_space_updates
+
+        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+            eval_function = eval_train_function
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            eval_function = eval_test_function
+            self.output_y_hat_optimization = False
+
+        self.worst_possible_result = cost_for_crash
+
+        eval_function = functools.partial(
+            fit_predict_try_except_decorator,
+            ta=eval_function,
+            cost_for_crash=self.worst_possible_result,
+        )
+
+        super().__init__(
+            ta=ta if ta is not None else eval_function,
+            stats=stats,
+            run_obj=run_obj,
+            par_factor=par_factor,
+            cost_for_crash=self.worst_possible_result,
+            abort_on_first_run_crash=abort_on_first_run_crash,
+        )
 
     def run_wrapper(
         self,
