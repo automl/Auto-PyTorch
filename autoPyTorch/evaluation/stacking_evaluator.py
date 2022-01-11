@@ -155,10 +155,11 @@ class StackingEvaluator(AbstractEvaluator):
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   valid_pred: Optional[np.ndarray],
-                  test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
-                  file_output: bool, status: StatusType,
-                  ensemble_pred: Optional[np.ndarray],
-                  
+                  test_pred: Optional[np.ndarray],
+                  pipeline_opt_pred: np.ndarray,
+                  ensemble_opt_pred: np.ndarray,
+                  additional_run_info: Optional[Dict],
+                  file_output: bool, status: StatusType,                  
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -171,7 +172,7 @@ class StackingEvaluator(AbstractEvaluator):
 
         if file_output:
             loss_, additional_run_info_ = self.file_output(
-                None, valid_pred, test_pred,
+                ensemble_opt_pred, valid_pred, test_pred
             )
         else:
             loss_ = None
@@ -181,6 +182,9 @@ class StackingEvaluator(AbstractEvaluator):
             valid_pred, test_pred
         )
 
+        pipeline_loss, _ = self.calculate_auxiliary_losses(
+            pipeline_opt_pred, None
+        )
         if loss_ is not None:
             return self.duration, loss_, self.seed, additional_run_info_
 
@@ -199,7 +203,8 @@ class StackingEvaluator(AbstractEvaluator):
             additional_run_info['validation_loss'] = validation_loss
         if test_loss is not None:
             additional_run_info['test_loss'] = test_loss
-
+        if pipeline_loss is not None:
+            additional_run_info['pipeline_loss'] = pipeline_loss
         rval_dict = {'loss': cost,
                      'additional_run_info': additional_run_info,
                      'status': status}
@@ -214,10 +219,24 @@ class StackingEvaluator(AbstractEvaluator):
         Y_test_pred: np.ndarray,
     ) -> Tuple[Optional[float], Dict]:
 
+        # Abort in case of shape misalignment
+        if self.Y_optimization.shape[0] != Y_optimization_pred.shape[0]:
+            return (
+                1.0,
+                {
+                    'error':
+                        "Targets %s and prediction %s don't have "
+                        "the same length. Probably training didn't "
+                        "finish" % (self.Y_optimization.shape, Y_optimization_pred.shape)
+                },
+            )
+
         # Abort if predictions contain NaNs
         for y, s in [
+            # Y_train_pred deleted here. Fix unittest accordingly.
+            [Y_optimization_pred, 'optimization'],
             [Y_valid_pred, 'validation'],
-            [Y_test_pred, 'test']
+            [Y_test_pred, 'test'],
         ]:
             if y is not None and not np.all(np.isfinite(y)):
                 return (
@@ -235,6 +254,11 @@ class StackingEvaluator(AbstractEvaluator):
             else:
                 self.disabled_file_outputs = []
 
+        # This file can be written independently of the others down bellow
+        if 'y_optimization' not in self.disabled_file_outputs:
+            if self.output_y_hat_optimization:
+                self.backend.save_targets_ensemble(self.Y_optimization)
+
         if hasattr(self, 'pipeline') and self.pipeline is not None:
             if 'pipeline' not in self.disabled_file_outputs:
                 pipeline = self.pipeline
@@ -250,7 +274,10 @@ class StackingEvaluator(AbstractEvaluator):
             budget=float(self.budget),
             model=pipeline,
             cv_model=None,
-            ensemble_predictions=None,
+            ensemble_predictions=(
+                Y_optimization_pred if 'y_optimization' not in
+                                       self.disabled_file_outputs else None
+            ),
             valid_predictions=(
                 Y_valid_pred if 'y_valid' not in
                                 self.disabled_file_outputs else None
@@ -277,12 +304,18 @@ class StackingEvaluator(AbstractEvaluator):
         train_split, test_split = self.splits[split_id]
         self.Y_optimization = self.y_train[test_split]
         self.Y_actual_train = self.y_train[train_split]
-        y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
-                                                                                    train_indices=train_split,
-                                                                                    test_indices=test_split,
-                                                                                    add_pipeline_to_self=True)
+        (
+            y_train_pred,
+            y_pipeline_opt_pred,
+            y_ensemble_opt_pred,
+            y_valid_pred,
+            y_test_pred
+        ) = self._fit_and_predict(pipeline, split_id,
+                                  train_indices=train_split,
+                                  test_indices=test_split,
+                                  add_pipeline_to_self=True)
         train_loss = self._loss(self.y_train[train_split], y_train_pred)
-        loss = self._loss(self.y_train[test_split], y_opt_pred)
+        loss = self._loss(self.y_train[test_split], y_ensemble_opt_pred)
 
         additional_run_info = pipeline.get_additional_run_info() if hasattr(
             pipeline, 'get_additional_run_info') else {}
@@ -297,12 +330,13 @@ class StackingEvaluator(AbstractEvaluator):
         self.finish_up(
             loss=loss,
             train_loss=train_loss,
-            opt_pred=y_opt_pred,
+            ensemble_opt_pred=y_ensemble_opt_pred,
             valid_pred=y_valid_pred,
             test_pred=y_test_pred,
             additional_run_info=additional_run_info,
             file_output=True,
             status=status,
+            pipeline_opt_pred=y_pipeline_opt_pred
         )
 
 
@@ -323,10 +357,7 @@ class StackingEvaluator(AbstractEvaluator):
         fit_and_suppress_warnings(self.logger, pipeline, X, y)
         self.logger.info("Model fitted, now predicting")
         (
-            Y_train_pred,
-            Y_opt_pred,
-            Y_valid_pred,
-            Y_test_pred
+            Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred
         ) = self._predict(
             pipeline,
             train_indices=train_indices,
@@ -338,12 +369,14 @@ class StackingEvaluator(AbstractEvaluator):
         else:
             self.pipelines[fold] = pipeline
 
-        return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
+        return Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred
 
-    def _predict(self, pipeline: BaseEstimator,
-                 test_indices: Union[np.ndarray, List],
-                 train_indices: Union[np.ndarray, List]
-                 ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    def _predict(
+        self,
+        pipeline: BaseEstimator,
+        test_indices: Union[np.ndarray, List],
+        train_indices: Union[np.ndarray, List]
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         # TODO: load ensemble members and predict using the whole ensemble.
         # TODO: we need some function to pass this pipeline to the last stored ensemble replace 
         # TODO: model j, where j = ensemble.iteration mod m. then we need to predict
@@ -359,16 +392,23 @@ class StackingEvaluator(AbstractEvaluator):
         if len(os.listdir(ensemble_dir)) >= 1:
             old_ensemble = self.backend.load_ensemble(self.seed)
             assert isinstance(old_ensemble, StackingEnsemble)
-            ensemble_opt_pred = old_ensemble.predict_with_current_model()
+            ensemble_opt_pred = old_ensemble.predict_with_current_model(pipeline_opt_pred)
         else:
-            ensemble_opt_pred = None    
+            ensemble_opt_pred = pipeline_opt_pred.copy()
+
+        if self.X_valid is not None:
+            valid_pred = self.predict_function(self.X_valid, pipeline,
+                                               self.y_valid)
+        else:
+            valid_pred = None
+
         if self.X_test is not None:
             test_pred = self.predict_function(self.X_test, pipeline,
                                               self.y_train[train_indices])
         else:
             test_pred = None
 
-        return train_pred, opt_pred, valid_pred, test_pred
+        return train_pred, pipeline_opt_pred, ensemble_opt_pred, valid_pred, test_pred
 
 
 # create closure for evaluating an algorithm

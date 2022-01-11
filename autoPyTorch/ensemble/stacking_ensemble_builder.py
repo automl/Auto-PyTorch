@@ -12,7 +12,6 @@ import zlib
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from numpy.random.mtrand import f, seed
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import BINARY
