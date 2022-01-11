@@ -2,6 +2,7 @@ from collections import Counter
 import enum
 from re import L
 from typing import Any, Dict, List, Tuple, Union
+import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator
@@ -178,16 +179,17 @@ class StackingEnsemble(AbstractEnsemble):
 
         # if prediction model.shape[0] == len(non_null_weights),
         # predictions do not include those of zero-weight models.
-        if len(predictions) == np.count_nonzero(weights):
-            non_null_weights = [w for w in weights if w > 0]
-            for pred, weight in zip(predictions, non_null_weights):
-                np.multiply(pred, weight, out=tmp_predictions)
-                np.add(average, tmp_predictions, out=average)
+        if len([pred for pred in predictions if pred is not None]) == np.count_nonzero(weights):
+            for pred, weight in zip(predictions, weights):
+                if pred is not None:
+                    np.multiply(pred, weight, out=tmp_predictions)
+                    np.add(average, tmp_predictions, out=average)
 
         # If none of the above applies, then something must have gone wrong.
         else:
-            raise ValueError("The dimensions of ensemble predictions"
-                             " and ensemble weights do not match!")
+            raise ValueError(f"{len(predictions)}, {self.weights_}\n"
+                             f"The dimensions of non null ensemble predictions"
+                             f" and ensemble weights do not match!")
         del tmp_predictions
         return average
 
@@ -242,3 +244,31 @@ class StackingEnsemble(AbstractEnsemble):
 
         predictions[self.ensemble_slot_j] = pipeline_predictions
         return self._predict(predictions, weights)
+
+    def get_models_with_weights(
+        self,
+        models: Dict[Any, BasePipeline]
+    ) -> List[Tuple[float, BasePipeline]]:
+        """
+        Handy function to tag the provided input models with a given weight.
+
+        Args:
+            models (List[Tuple[float, BasePipeline]]):
+                A dictionary that maps a model's name to it's actual python object.
+
+        Returns:
+            output (List[Tuple[float, BasePipeline]]):
+                each model with the related weight, sorted by ascending
+                performance. Notice that ensemble selection solves a minimization
+                problem.
+        """
+        output = []
+        for i, weight in enumerate(self.weights_):
+            if weight > 0.0:
+                identifier = self.identifiers_[i]
+                model = models[identifier]
+                output.append((weight, model))
+
+        output.sort(reverse=True, key=lambda t: t[0])
+
+        return output
