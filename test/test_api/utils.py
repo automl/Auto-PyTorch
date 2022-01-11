@@ -9,7 +9,6 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     fit_and_suppress_warnings
 )
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
-from autoPyTorch.evaluation.test_evaluator import TestEvaluator
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
 
 

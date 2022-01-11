@@ -82,6 +82,7 @@ class HoldoutValTypes(IntEnum):
         stratified = [self.stratified_holdout_validation]
         return getattr(self, self.name) in stratified
 
+
 class NoResamplingStrategyTypes(IntEnum):
     no_resampling = 8
 
@@ -92,7 +93,10 @@ class NoResamplingStrategyTypes(IntEnum):
 # TODO: replace it with another way
 RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
-DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes], Dict[str, Any]] = {
+DEFAULT_RESAMPLING_PARAMETERS: Dict[
+    Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes],
+    Dict[str, Any]
+] = {
     HoldoutValTypes.holdout_validation: {
         'val_share': 0.33,
     },

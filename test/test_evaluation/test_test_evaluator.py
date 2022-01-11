@@ -7,7 +7,6 @@ import unittest
 import unittest.mock
 
 from ConfigSpace import Configuration
-import ConfigSpace
 
 import numpy as np
 
@@ -133,7 +132,6 @@ class TestTestEvaluator(BaseEvaluatorTest, unittest.TestCase):
         D.name = 'test'
         self.backend_mock.load_datamanager.return_value = D
         configuration = unittest.mock.Mock(spec=Configuration)
-        configuration.configuration_space = unittest.mock.Mock(spec=ConfigSpace)
         queue_ = multiprocessing.Queue()
         loss_mock.return_value = None
 

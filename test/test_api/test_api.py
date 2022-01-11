@@ -872,10 +872,8 @@ def test_tabular_classification_test_evaluator(openml_id, backend, n_samples):
     assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
     model_file = os.path.join(run_key_model_run_dir,
-                                f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
+                              f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
     assert os.path.exists(model_file), model_file
-    model = estimator._backend.load_model_by_seed_and_id_and_budget(
-        estimator.seed, successful_num_run, run_key.budget)
 
     # Make sure that predictions on the test data are printed and make sense
     test_prediction = os.path.join(run_key_model_run_dir,

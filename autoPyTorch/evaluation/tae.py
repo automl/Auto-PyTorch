@@ -22,14 +22,14 @@ from smac.stats.stats import Stats
 from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
-from autoPyTorch.evaluation.train_evaluator import eval_train_function
-from autoPyTorch.evaluation.test_evaluator import eval_test_function
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
     NoResamplingStrategyTypes
 )
+from autoPyTorch.evaluation.test_evaluator import eval_test_function
+from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     empty_queue,

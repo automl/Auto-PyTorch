@@ -138,7 +138,8 @@ def eval_test_function(
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
     instance: str = None,
 ) -> None:
-    evaluator = TestEvaluator(backend=backend,
+    evaluator = TestEvaluator(
+        backend=backend,
         queue=queue,
         metric=metric,
         configuration=config,
