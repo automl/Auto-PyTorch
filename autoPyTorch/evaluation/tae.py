@@ -21,7 +21,10 @@ from smac.runhistory.runhistory import RunInfo, RunValue
 from smac.stats.stats import Stats
 from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
+from autoPyTorch.ensemble import ensemble_selection
+from autoPyTorch.ensemble.utils import EnsembleSelectionTypes
 
+import autoPyTorch.evaluation.stacking_evaluator
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
@@ -126,7 +129,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         ta: Optional[Callable] = None,
         logger_port: int = None,
         all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+        ensemble_method = None
     ):
 
         self.backend = backend
@@ -145,7 +149,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy_args = dm.resampling_strategy_args
 
         if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
-            eval_function = eval_train_function
+            if ensemble_method is None or ensemble_method == EnsembleSelectionTypes.ensemble_selection:
+                eval_function = eval_train_function
+            elif ensemble_method == EnsembleSelectionTypes.stacking_ensemble:
+                eval_function = autoPyTorch.evaluation.stacking_evaluator.eval_function
             self.output_y_hat_optimization = output_y_hat_optimization
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
             eval_function = eval_test_function

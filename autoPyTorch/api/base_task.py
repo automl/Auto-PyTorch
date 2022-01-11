@@ -721,7 +721,8 @@ class BaseTask(ABC):
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=self._disable_file_output,
-            all_supported_metrics=self._all_supported_metrics
+            all_supported_metrics=self._all_supported_metrics,
+            ensemble_method=self.ensemble_method
         )
 
         status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -1249,6 +1250,7 @@ class BaseTask(ABC):
                 min_budget=min_budget,
                 max_budget=max_budget,
                 ensemble_callback=proc_ensemble,
+                ensemble_method=self.ensemble_method,
                 logger_port=self._logger_port,
                 # We do not increase the num_run here, this is something
                 # smac does internally
@@ -1779,7 +1781,6 @@ class BaseTask(ABC):
             precision=precision,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
-            ensemble_method=ensemble_method
         )
 
         manager.build_ensemble(self._dask_client)
@@ -1949,7 +1950,8 @@ class BaseTask(ABC):
     def score(
         self,
         y_pred: np.ndarray,
-        y_test: Union[np.ndarray, pd.DataFrame]
+        y_test: Union[np.ndarray, pd.DataFrame],
+        metric: Optional[str] = None
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
@@ -1964,15 +1966,24 @@ class BaseTask(ABC):
             Dict[str, float]:
                 Value of the evaluation metric calculated on the test set.
         """
-        if self._metric is None:
-            raise ValueError("No metric found. Either fit/search has not been called yet "
-                             "or AutoPyTorch failed to infer a metric from the dataset ")
+        # if self._metric is None:
+        #     raise ValueError("No metric found. Either fit/search has not been called yet "
+        #                      "or AutoPyTorch failed to infer a metric from the dataset ")
+        if metric is not None:
+            required_dataset_properties = {'task_type': self.task_type,
+                                       'output_type': self.dataset.output_type}
+            metric = get_metrics(
+                dataset_properties=required_dataset_properties,
+                names=[metric]
+                )[0]
+        else:
+            metric = self._metric
         if self.task_type is None:
             raise ValueError("AutoPytorch failed to infer a task type from the dataset "
                              "Please check the log file for related errors. ")
         return calculate_score(target=y_test, prediction=y_pred,
                                task_type=STRING_TO_TASK_TYPES[self.task_type],
-                               metrics=[self._metric])
+                               metrics=[metric])
 
     def __getstate__(self) -> Dict[str, Any]:
         # Cannot serialize a client!

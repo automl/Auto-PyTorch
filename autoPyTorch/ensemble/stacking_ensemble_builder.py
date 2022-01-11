@@ -8,6 +8,7 @@ import pickle
 import re
 import time
 import traceback
+import warnings
 import zlib
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -188,6 +189,7 @@ class StackingEnsembleBuilder(EnsembleBuilder):
         )
 
         self.ensemble_slot_j = np.mod(iteration, self.ensemble_size)
+        self.logger.debug(f"Iteration for ensemble building:{iteration}")
         self.ensemble_identifiers = self._load_ensemble_identifiers()
         # populates self.read_preds and self.read_losses with individual model predictions and ensemble loss.
         if not self.compute_ensemble_loss_per_model():
@@ -235,7 +237,11 @@ class StackingEnsembleBuilder(EnsembleBuilder):
         # Save the ensemble for later use in the main module!
         if ensemble is not None and self.SAVE2DISC:
             self.backend.save_ensemble(ensemble, iteration, self.seed)
-            self._save_ensemble_identifiers(ensemble_identifiers=ensemble.identifiers_)
+            ensemble_identifiers=self._get_identifiers_from_num_runs(ensemble.identifiers_)
+            self.logger.debug(f"ensemble_identifiers being saved are {ensemble_identifiers}")
+            self._save_ensemble_identifiers(
+                ensemble_identifiers=ensemble_identifiers
+                )
         # Delete files of non-candidate models - can only be done after fitting the ensemble and
         # saving it to disc so we do not accidentally delete models in the previous ensemble
         if self.max_resident_models is not None:
@@ -248,15 +254,15 @@ class StackingEnsembleBuilder(EnsembleBuilder):
         if ensemble is not None:
             train_pred = self.predict(set_="train",
                                       ensemble=ensemble,
-                                      selected_keys=ensemble.identifiers_,
-                                      n_preds=len(ensemble.identifiers_),
+                                      selected_keys=ensemble_identifiers,
+                                      n_preds=len(ensemble_identifiers),
                                       index_run=iteration)
             # TODO if predictions fails, build the model again during the
             #  next iteration!
             test_pred = self.predict(set_="test",
                                      ensemble=ensemble,
-                                     selected_keys=ensemble.identifiers_,
-                                      n_preds=len(ensemble.identifiers_),
+                                     selected_keys=ensemble_identifiers,
+                                     n_preds=len(ensemble_identifiers),
                                      index_run=iteration)
 
             # Add a score to run history to see ensemble progress
@@ -452,20 +458,20 @@ class StackingEnsembleBuilder(EnsembleBuilder):
             self.read_losses[best_model_identifier]["budget"],
         )
 
-        # check hash if ensemble training data changed
-        current_hash = "".join([
-            str(zlib.adler32(predictions_train[i].data.tobytes()))
-            for i in range(len(predictions_train))
-        ])
-        if self.last_hash == current_hash:
-            self.logger.debug(
-                "No new model predictions selected -- skip ensemble building "
-                "-- current performance: %f",
-                self.validation_performance_,
-            )
+        # # check hash if ensemble training data changed
+        # current_hash = "".join([
+        #     str(zlib.adler32(predictions_train[i].data.tobytes()))
+        #     for i in range(len(predictions_train))
+        # ])
+        # if self.last_hash == current_hash:
+        #     self.logger.debug(
+        #         "No new model predictions selected -- skip ensemble building "
+        #         "-- current performance: %f",
+        #         self.validation_performance_,
+        #     )
 
-            return None
-        self.last_hash = current_hash
+        #     return None
+        # self.last_hash = current_hash
 
         opt_metric = [m for m in self.metrics if m.name == self.opt_metric][0]
         if not opt_metric:
@@ -485,6 +491,7 @@ class StackingEnsembleBuilder(EnsembleBuilder):
                 "Fitting the ensemble on %d models.",
                 len(predictions_train),
             )
+            self.logger.debug(f"predictions sent to ensemble: {predictions_train}")
             start_time = time.time()
             ensemble.fit(
                 predictions_train, 
@@ -499,6 +506,7 @@ class StackingEnsembleBuilder(EnsembleBuilder):
                 "Fitting the ensemble took %.2f seconds.",
                 end_time - start_time,
             )
+            self.logger.debug(f"weights = {ensemble.weights_}")
             self.logger.info(str(ensemble))
             self.validation_performance_ = min(
                 self.validation_performance_,
@@ -548,7 +556,9 @@ class StackingEnsembleBuilder(EnsembleBuilder):
         else:
             pred_set = Y_ENSEMBLE
 
-        predictions = [self.read_preds[k][pred_set] for k in selected_keys if k is not None]
+        self.logger.debug(f"selected_keys with {set_} for predict are {selected_keys}")
+        predictions = [self.read_preds[k][pred_set] if k is not None else None for k in selected_keys]
+        self.logger.debug(f"predictions with {set_} for predict are {len(predictions)}")
 
         if n_preds == len(predictions):
             y = ensemble.predict(predictions)
@@ -564,6 +574,7 @@ class StackingEnsembleBuilder(EnsembleBuilder):
                 )
             return y
         else:
+            warnings.warn("this is not true so this is the problem")
             self.logger.info(
                 "Found inconsistent number of predictions and models (%d vs "
                 "%d) for subset %s",
@@ -659,9 +670,9 @@ class StackingEnsembleBuilder(EnsembleBuilder):
                 else:
                     continue
             else:
-                if self.read_preds[identifier][Y_ENSEMBLE] == None:
+                if self.read_preds[identifier][Y_ENSEMBLE] is None:
                     # y ensemble read_preds is loaded in get_n_best_preds. If there is no value for this that means its a new model at this iteration.
-                    raise ValueError("check here to resolve starting condition")
+                    raise ValueError(f"check here to resolve starting condition, {self.read_preds[identifier]}")
                 predictions = self.read_preds[identifier][Y_ENSEMBLE] if i != self.ensemble_slot_j else model_predictions
 
                 np.add(
@@ -675,7 +686,7 @@ class StackingEnsembleBuilder(EnsembleBuilder):
                     out=fant_ensemble_prediction
                 )
         loss = calculate_loss(
-                metrics=[self.metric],
+                metrics=self.metrics,
                 target=self.y_true_ensemble,
                 prediction=fant_ensemble_prediction,
                 task_type=self.task_type,
@@ -703,8 +714,10 @@ class StackingEnsembleBuilder(EnsembleBuilder):
             identifier = None
             if num_run is not None:
                 seed, idx, budget = num_run
-                identifier = self.backend.get_prediction_filename(subset, seed, idx, budget)
-
+                identifier = os.path.join(
+                    self.backend.get_numrun_directory(seed, idx, budget),
+                    self.backend.get_prediction_filename(subset, seed, idx, budget)
+                )
             identifiers.append(identifier)
         return identifiers
 
