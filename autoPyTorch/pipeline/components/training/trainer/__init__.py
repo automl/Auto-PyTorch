@@ -390,6 +390,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         # Clean the temp dir
         shutil.rmtree(self.checkpoint_dir)
+        self.checkpoint_dir = None
 
     def early_stop_handler(self, X: Dict[str, Any]) -> bool:
         """

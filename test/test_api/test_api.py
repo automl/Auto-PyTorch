@@ -466,7 +466,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._all_supported_metrics = False
 
     with pytest.raises(ValueError, match=r".*Dummy prediction failed with run state.*"):
-        with unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function') as dummy:
+        with unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function') as dummy:
             dummy.side_effect = MemoryError
             estimator._do_dummy_prediction()
 
@@ -674,6 +674,7 @@ def test_pipeline_fit(openml_id,
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
+        ensemble_size=0
     )
 
     dataset = estimator.get_dataset(X_train=X_train,
