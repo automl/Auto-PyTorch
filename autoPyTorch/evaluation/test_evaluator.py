@@ -8,6 +8,7 @@ import numpy as np
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -24,7 +25,87 @@ __all__ = [
 
 
 class TestEvaluator(AbstractEvaluator):
+    """
+    This class builds a pipeline using the provided configuration.
+    A pipeline implementing the provided configuration is fitted
+    using the datamanager object retrieved from disc, via the backend.
+    After the pipeline is fitted, it is save to disc and the performance estimate
+    is communicated to the main process via a Queue. It is only compatible
+    with `NoResamplingStrategyTypes`, i.e, when the training data
+    is not split and the test set is used for SMBO optimisation. It can not
+    be used for building ensembles which is ensured by having
+    `output_y_hat_optimisation`=False
 
+    Attributes:
+        backend (Backend):
+            An object to interface with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will return the evaluation result via a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of scikit
+            lean accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type, which can be epochs or time
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        configuration (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed. A dummy estimator is created for
+            integer configurations, a traditional machine learning pipeline is created
+            for string based configuration, and NAS is performed when a configuration
+            object is passed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
+
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel. If None is provided, a traditional
+            logger is used.
+        all_supported_metrics  (bool):
+            Whether all supported metric should be calculated for every configuration.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            An object used to fine tune the hyperparameter search space of the pipeline
+    """
     def __init__(
         self,
         backend: Backend, queue: Queue,
@@ -63,6 +144,12 @@ class TestEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+
+        if not isinstance(self.datamanager.resampling_strategy, (NoResamplingStrategyTypes)):
+            raise ValueError(
+                f"TestEvaluator expect to have NoResamplingStrategyTypes as "
+                f"resampling_strategy, but got {self.datamanager.resampling_strategy}"
+            )
 
         self.splits = self.datamanager.splits
         if self.splits is None:

@@ -41,7 +41,9 @@ class TrainEvaluator(AbstractEvaluator):
     A pipeline implementing the provided configuration is fitted
     using the datamanager object retrieved from disc, via the backend.
     After the pipeline is fitted, it is save to disc and the performance estimate
-    is communicated to the main process via a Queue.
+    is communicated to the main process via a Queue. It is only compatible
+    with `CrossValTypes`, `HoldoutValTypes`, i.e, when the training data
+    is split and the validation set is used for SMBO optimisation.
 
     Attributes:
         backend (Backend):
