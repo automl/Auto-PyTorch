@@ -20,6 +20,7 @@ from smac.runhistory.runhistory import RunInfo, RunValue
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import BINARY
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilder
+from autoPyTorch.ensemble.utils import get_ensemble_builder_class
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
@@ -37,6 +38,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         opt_metric: str,
         ensemble_size: int,
         ensemble_nbest: int,
+        ensemble_method: int,
         max_models_on_disc: Union[float, int],
         seed: int,
         precision: int,
@@ -111,6 +113,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         self.opt_metric = opt_metric
         self.ensemble_size = ensemble_size
         self.ensemble_nbest = ensemble_nbest
+        self.ensemble_method = ensemble_method
         self.max_models_on_disc: Union[float, int] = max_models_on_disc
         self.seed = seed
         self.precision = precision
@@ -210,6 +213,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                     opt_metric=self.opt_metric,
                     ensemble_size=self.ensemble_size,
                     ensemble_nbest=self.ensemble_nbest,
+                    ensemble_method=self.ensemble_method,
                     max_models_on_disc=self.max_models_on_disc,
                     seed=self.seed,
                     precision=self.precision,
@@ -252,6 +256,7 @@ def fit_and_return_ensemble(
     opt_metric: str,
     ensemble_size: int,
     ensemble_nbest: int,
+    ensemble_method: int,
     max_models_on_disc: Union[float, int],
     seed: int,
     precision: int,
@@ -330,7 +335,8 @@ def fit_and_return_ensemble(
             A list with the performance history of this ensemble, of the form
             [[pandas_timestamp, train_performance, val_performance, test_performance], ...]
     """
-    result = EnsembleBuilder(
+    ensemble_builder = get_ensemble_builder_class(ensemble_method)
+    result = ensemble_builder(
         backend=backend,
         dataset_name=dataset_name,
         task_type=task_type,

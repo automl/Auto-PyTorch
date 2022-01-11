@@ -21,6 +21,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
+from autoPyTorch.ensemble.utils import EnsembleSelectionTypes
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -86,6 +87,7 @@ class TabularRegressionTask(BaseTask):
         logging_config: Optional[Dict] = None,
         ensemble_size: int = 50,
         ensemble_nbest: int = 50,
+        ensemble_method: int = EnsembleSelectionTypes.ensemble_selection, 
         max_models_on_disc: int = 50,
         temporary_directory: Optional[str] = None,
         output_directory: Optional[str] = None,
@@ -105,6 +107,7 @@ class TabularRegressionTask(BaseTask):
             logging_config=logging_config,
             ensemble_size=ensemble_size,
             ensemble_nbest=ensemble_nbest,
+            ensemble_method=ensemble_method,
             max_models_on_disc=max_models_on_disc,
             temporary_directory=temporary_directory,
             output_directory=output_directory,
