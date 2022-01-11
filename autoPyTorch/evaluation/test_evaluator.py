@@ -1,12 +1,9 @@
-# -*- encoding: utf-8 -*-
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
-
-from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
@@ -16,11 +13,8 @@ from autoPyTorch.evaluation.abstract_evaluator import (
     fit_and_suppress_warnings
 )
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
-from autoPyTorch.pipeline.components.base_component import find_components
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from test.test_evaluation import test_abstract_evaluator
 
 
 __all__ = [
@@ -32,22 +26,24 @@ __all__ = [
 class TestEvaluator(AbstractEvaluator):
 
     def __init__(
-        self, backend: Backend, queue: Queue,
-                 metric: autoPyTorchMetric,
-                 budget: float,
-                 configuration: Union[int, str, Configuration],
-                 budget_type: str = None,
-                 pipeline_config: Optional[Dict[str, Any]] = None,
-                 seed: int = 1,
-                 output_y_hat_optimization: bool = True,
-                 num_run: Optional[int] = None,
-                 include: Optional[Dict[str, Any]] = None,
-                 exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-                 init_params: Optional[Dict[str, Any]] = None,
-                 logger_port: Optional[int] = None,
-                 all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
+        self,
+        backend: Backend, queue: Queue,
+        metric: autoPyTorchMetric,
+        budget: float,
+        configuration: Union[int, str, Configuration],
+        budget_type: str = None,
+        pipeline_config: Optional[Dict[str, Any]] = None,
+        seed: int = 1,
+        output_y_hat_optimization: bool = False,
+        num_run: Optional[int] = None,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        logger_port: Optional[int] = None,
+        all_supported_metrics: bool = True,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ) -> None:
         super().__init__(
             backend=backend,
             queue=queue,
@@ -68,19 +64,33 @@ class TestEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        self.pipeline = self._get_pipeline()
+        self.splits = self.datamanager.splits
+        if self.splits is None:
+            raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
 
     def fit_predict_and_loss(self) -> None:
-        fit_and_suppress_warnings(self.logger, self.pipeline, self.X_train, self.y_train)
+
+        split_id = 0
+        train_indices, test_indices = self.splits[split_id]
+
+        self.pipeline = self._get_pipeline()
+        X = {'train_indices': train_indices,
+             'val_indices': test_indices,
+             'split_id': split_id,
+             'num_run': self.num_run,
+             **self.fit_dictionary}  # fit dictionary
+        y = None
+        fit_and_suppress_warnings(self.logger, self.pipeline, X, y)
         train_loss, _ = self.predict_and_loss(train=True)
         test_loss, test_pred = self.predict_and_loss()
+        self.Y_optimization = self.y_test
         self.finish_up(
             loss=test_loss,
             train_loss=train_loss,
             opt_pred=test_pred,
             valid_pred=None,
-            test_pred=None,
-            file_output=False,
+            test_pred=test_pred,
+            file_output=True,
             additional_run_info=None,
             status=StatusType.SUCCESS,
         )
@@ -94,14 +104,14 @@ class TestEvaluator(AbstractEvaluator):
                 self.X_train,
                 self.pipeline,
                 self.y_train
-                )
+            )
             err = self._loss(self.y_train, y_pred)
         else:
             y_pred = self.predict_function(
                 self.X_test,
                 self.pipeline,
                 self.y_train
-                )
+            )
             err = self._loss(self.y_test, y_pred)
 
         return err, y_pred

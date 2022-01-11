@@ -66,6 +66,7 @@ class TrainerChoice(autoPyTorchChoice):
                          random_state=random_state)
         self.run_summary: Optional[RunSummary] = None
         self.writer: Optional[SummaryWriter] = None
+        self.early_stopping_dataset: Optional[str] = None
         self._fit_requirements: Optional[List[FitRequirement]] = [
             FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
             FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
@@ -277,6 +278,11 @@ class TrainerChoice(autoPyTorchChoice):
             optimize_metric=None if not X['metrics_during_training'] else X.get('optimize_metric'),
         )
 
+        if X['val_data_loader'] is not None:
+            self.early_stopping_dataset = 'val'
+        else:
+            self.early_stopping_dataset = 'train'
+
         epoch = 1
 
         while True:
@@ -295,7 +301,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-                if 'val_data_loader' in X and X['val_data_loader']:
+                if X['val_data_loader']:
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -337,7 +343,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
-            if 'val_data_loader' in X and X['val_data_loader']:
+            if X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['val_data_loader']:
                 test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -374,9 +380,11 @@ class TrainerChoice(autoPyTorchChoice):
         """
         assert self.checkpoint_dir is not None  # mypy
         assert self.run_summary is not None  # mypy
+        assert self.early_stopping_dataset is not None  # mypy
 
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
-        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+        self.logger.debug(f" Early stopped model {X['num_run']} on epoch "
+                          f"{self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)}")
         # We will stop the training. Load the last best performing weights
         X['network'].load_state_dict(torch.load(best_path))
 
@@ -396,6 +404,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: If true, training should be stopped
         """
         assert self.run_summary is not None
+        assert self.early_stopping_dataset is not None  # mypy
 
         # Allow to disable early stopping
         if X['early_stopping'] is None or X['early_stopping'] < 0:
@@ -405,7 +414,8 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
-        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
+        epochs_since_best = self.run_summary.get_last_epoch() -\
+            self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
