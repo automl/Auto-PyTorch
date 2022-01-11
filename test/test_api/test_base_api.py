@@ -12,6 +12,7 @@ from smac.tae.serial_runner import SerialRunner
 
 from autoPyTorch.api.base_task import BaseTask, _pipeline_predict
 from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
+from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -143,3 +144,19 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
         assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget
+
+
+def test_no_resampling_error(backend):
+    """
+    Checks if an error is raised when trying to construct ensemble
+    using `NoResamplingStrategy`.
+    """
+    BaseTask.__abstractmethods__ = set()
+
+    with pytest.raises(ValueError, match=r"`NoResamplingStrategy` cant by used for ensemble construction"):
+        BaseTask(
+            backend=backend,
+            resampling_strategy=NoResamplingStrategyTypes.no_resampling,
+            seed=42,
+            ensemble_size=1
+        )

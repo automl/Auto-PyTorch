@@ -180,6 +180,11 @@ class BaseTask(ABC):
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None
     ) -> None:
+
+        if isinstance(resampling_strategy, NoResamplingStrategyTypes):
+            if ensemble_size != 0:
+                raise ValueError("`NoResamplingStrategy` cant by used for ensemble construction")
+
         self.seed = seed
         self.n_jobs = n_jobs
         self.n_threads = n_threads
