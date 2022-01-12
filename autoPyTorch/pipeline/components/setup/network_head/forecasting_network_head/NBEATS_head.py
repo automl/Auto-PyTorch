@@ -34,15 +34,15 @@ def linspace(backcast_length: int, forecast_length: int, centered: bool = False)
 
 
 def get_generic_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
-    backcast_head = nn.Sequential(nn.Linear(block_width, thetas_dim, bias=False),
+    backcast_head = nn.Sequential(nn.Linear(block_width, thetas_dim),
                                   nn.Linear(thetas_dim, backcast_length))
-    forecast_head = nn.Sequential(nn.Linear(block_width, thetas_dim, bias=False),
+    forecast_head = nn.Sequential(nn.Linear(block_width, thetas_dim),
                                   nn.Linear(thetas_dim, forecast_length))
     return backcast_head, forecast_head
 
 
 def get_trend_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
-    base_layer = nn.Linear(block_width, thetas_dim, bias=False)
+    base_layer = nn.Linear(block_width, thetas_dim)
 
     backcast_linspace, forecast_linspace = linspace(backcast_length, forecast_length, centered=True)
     norm = np.sqrt(forecast_length / thetas_dim)  # ensure range of predictions is comparable to input
@@ -60,7 +60,7 @@ def get_trend_heads(block_width: int, thetas_dim: int, forecast_length: int, bac
 
 
 def get_seasonality_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
-    base_layer = nn.Linear(block_width, forecast_length, bias=False)
+    base_layer = nn.Linear(block_width, forecast_length)
 
     backcast_linspace, forecast_linspace = linspace(backcast_length, forecast_length, centered=False)
 

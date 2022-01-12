@@ -106,14 +106,18 @@ class TimeSeriesSampler(SubsetRandomSampler):
     def __init__(self,
                  indices: Sequence[int],
                  seq_lengths: Sequence[int],
-                 num_instances_per_seqs: Optional[List[int]] = None,
+                 num_instances_per_seqs: Optional[List[float]] = None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
         """
         A sampler designed for time series sequence. For the sake of efficiency, it will not sample each possible
         sequences from indices. Instead, it samples 'num_instances_per_seqs' for each sequence. This sampler samples
         the instances in a Latin-Hypercube likewise way: we divide each sequence in to num_instances_per_seqs interval
-        and  randomly sample one instance from each interval.
+        and  randomly sample one instance from each interval. If num_instances_per_seqs is not an integral, then the
+        first interval is selected with a certain probability:
+        for instance, if we want to sample 1.3 instance from a sequence [0,1,2,3,4,5], then we first divide the seuqence
+        into two parts: [0, 3] and [3, 6], one sample is sampled from the second part, while an expected value of 0.3 is
+        sampled from the first part (This part will be sampled in the very end with torch.multinomial)
 
         Parameters
         ----------
@@ -121,8 +125,9 @@ class TimeSeriesSampler(SubsetRandomSampler):
             The set of all the possible indices that can be sampled from
         seq_lengths: Sequence[int]
             lengths of each sequence, applied to unsqueeze indices
-        num_instances_per_seqs: OPtional[List[int]]=None
-            how many instances are sampled in each sequence, if it is None, all the sequences are sampled
+        num_instances_per_seqs: Optional[List[int]]=None
+            expected number of instances to be sampled in each sequence, if it is None, all the sequences will be
+            sampled
         min_start: int
             the how many first instances we want to skip (the first few sequences need to be padded with 0)
         generator: Optional[torch.Generator]
@@ -136,24 +141,43 @@ class TimeSeriesSampler(SubsetRandomSampler):
             if len(seq_lengths) != len(num_instances_per_seqs):
                 raise ValueError(f'the lengths of seq_lengths must equal the lengths of num_instances_per_seqs.'
                                  f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
-            seq_intervals = []
+            seq_intervals_int = []
+            seq_intervals_decimal = []
+            # seq_intervals_decimal_length = []
+            num_expected_ins_decimal = []
             idx_tracker = 0
             for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
                 idx_end = idx_tracker + seq_length
                 idx_start = idx_tracker + min_start
-                interval = np.linspace(idx_start, idx_end, num_instances + 1, endpoint=True, dtype=np.int)
-                seq_intervals.append(interval)
+                if idx_start > idx_end:
+                    idx_start = idx_tracker
+
+                num_interval = int(np.ceil(num_instances))
+                interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
+
+                num_expected_ins_decimal.append(np.modf(num_instances)[0])
+                seq_intervals_decimal.append(interval[:2])
+
+                seq_intervals_int.append(interval[1:])
+                idx_tracker += seq_length
+
+            num_expected_ins_decimal = np.stack(num_expected_ins_decimal)
+            # seq_intervals_decimal_length = np.stack(seq_intervals_decimal_length)
             self.seq_lengths = seq_lengths
-            self.num_instances = np.sum(num_instances_per_seqs)
-            self.seq_intervals = seq_intervals
+            self.num_instances = int(np.round(np.sum(num_instances_per_seqs)))
+
+            self.seq_intervals_decimal = torch.from_numpy(np.stack(seq_intervals_decimal))
+            self.seq_intervals_int = seq_intervals_int
+
+            self.num_expected_ins_decimal = torch.from_numpy(num_expected_ins_decimal)
 
     def __iter__(self):
         if self.iter_all_seqs:
             return super().__iter__()
         samples = torch.ones(self.num_instances, dtype=torch.int)
         idx_samples_start = 0
-        idx_seq_tracker = 0
-        for idx_seq, (interval, seq_length) in enumerate(zip(self.seq_intervals, self.seq_lengths)):
+        idx_samples_end = 0
+        for idx_seq, (interval, seq_length) in enumerate(zip(self.seq_intervals_int, self.seq_lengths)):
             if len(interval) == 1:
                 continue
 
@@ -161,11 +185,19 @@ class TimeSeriesSampler(SubsetRandomSampler):
             idx_samples_end = idx_samples_start + num_samples
 
             samples_shift = torch.rand(num_samples, generator=self.generator) * (interval[1:] - interval[:-1])
-            samples_seq = torch.floor(samples_shift + interval[:-1]).int() + idx_seq_tracker
+            samples_seq = torch.floor(samples_shift + interval[:-1]).int()
             samples[idx_samples_start: idx_samples_end] = samples_seq
 
             idx_samples_start = idx_samples_end
-            idx_seq_tracker += seq_length
+        num_samples_remain = self.num_instances - idx_samples_end
+        if num_samples_remain > 0:
+            samples_idx = torch.multinomial(self.num_expected_ins_decimal, num_samples_remain)
+            seq_interval = self.seq_intervals_decimal[samples_idx]
+
+            samples_shift = torch.rand(num_samples_remain, generator=self.generator)
+            samples_shift *= (seq_interval[:, 1] - seq_interval[:, 0])
+            samples_seq_remain = torch.floor(samples_shift + seq_interval[:, 0]).int()
+            samples[-num_samples_remain:] = samples_seq_remain
 
         return (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
 
@@ -237,6 +269,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  window_size: int = 1,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
+                 sample_strategy= 'seq_uniform',
                  random_state: Optional[np.random.RandomState] = None) -> None:
         """
         initialize a dataloader
@@ -260,6 +293,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
+        self.sample_strategy = sample_strategy
         self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector = None
@@ -283,6 +317,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.n_prediction_steps = datamanager.n_prediction_steps
         if self.backcast:
             self.window_size = self.backcast_period * self.n_prediction_steps
+
 
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
@@ -335,6 +370,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # discontinuity where a new sequence is sampled: [0, 1, 2 ,3, 7 ,8 ].
         #  A new sequence must start from the index 7. We could then split each unique values to represent the length
         # of each split
+
+        # TODO consider min_starrt as a hp (multiple of self.n_prediction_steps?)
+        min_start = self.n_prediction_steps
+
         dataset_seq_length_train_all = X['dataset_properties']['sequence_lengths_train']
         if np.sum(dataset_seq_length_train_all) == len(train_split):
             # this works if we want to fit the entire datasets
@@ -345,9 +384,24 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
         seq_train_length[seq_idx_inactivate] = 0
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
-        num_instances_per_seqs = np.ceil(np.ceil(num_instances_train / num_instances_dataset * seq_train_length) *
-                                         fraction_samples_per_seq)
-        num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
+        """
+        num_instances_per_seqs = np.ceil(
+            np.ceil(num_instances_train / (num_instances_dataset - min_start) * seq_train_length) *
+            fraction_samples_per_seq
+        )
+        """
+        if self.sample_strategy == 'length_uniform':
+            available_seq_length = seq_train_length - min_start
+            available_seq_length = np.where(available_seq_length <= 1, 1, available_seq_length)
+            num_instances_per_seqs = num_instances_train / num_instances_dataset * available_seq_length
+        elif self.sample_strategy == 'seq_uniform':
+            num_seq_train = len(seq_train_length)
+            num_instances_per_seqs = np.repeat(num_instances_train / num_seq_train, num_seq_train)
+        else:
+            raise NotImplementedError(f'Unsupported sample strategy: {self.sample_strategy}')
+        num_instances_per_seqs *= fraction_samples_per_seq
+
+        #num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
         # at least one element of each sequence should be selected
 
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
@@ -356,7 +410,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         sampler_indices_train = np.arange(num_instances_dataset)
 
         self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
-                                               num_instances_per_seqs=num_instances_per_seqs)
+                                               num_instances_per_seqs=num_instances_per_seqs,
+                                               min_start=min_start)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -489,6 +544,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                         HyperparameterSearchSpace(hyperparameter="num_batches_per_epoch",
                                                                   value_range=(30, 100),
                                                                   default_value=50),
+                                        sample_strategy: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter="sample_strategy",
+                                                                  value_range=('length_uniform', 'seq_uniform'),
+                                                                  default_value='seq_uniform'),
                                         backcast: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='backcast',
                                                                   value_range=(True, False),
@@ -512,6 +571,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             window_size (int): window size, (if activate) this value directly determines the window_size of the
                                data loader
             num_batch_per_epoch (int): how many batches are trained at each iteration
+            sample_strategy(str): how samples are distributed. if it is length_uniform, then every single data point
+                                  has the same probability to be sampled, in which case longer sequence will occupy more
+                                  samples. If it is seq_uniform, then every sequence has the same probability to be
+                                  sampled regardless of their length
             backcast (bool): if back_cast module is activate (in which case window size is a
             multiple of n_prediction_steps)
             backcast_period (int): activate if backcast is activate, the window size is then computed with
@@ -524,6 +587,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, sample_strategy, CategoricalHyperparameter)
 
         window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
         backcast = get_hyperparameter(backcast, CategoricalHyperparameter)

@@ -126,7 +126,7 @@ class TCNEncoder(BaseForecastingEncoder):
         encoder = _TemporalConvNet(input_shape[-1],
                                    num_channels,
                                    kernel_size=kernel_size,
-                                   dropout=self.config["dropout"] if self.config["use_dropout"] else 0.0
+                                   dropout=self.config[f"dropout_{i}"] if self.config["use_dropout"] else 0.0
                                    )
         self._receptive_field = encoder.receptive_field
         return encoder

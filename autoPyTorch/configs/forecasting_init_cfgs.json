@@ -2,10 +2,11 @@
     "trainer": {
         "data_loader:batch_size": 32,
         "data_loader:backcast": false,
+        "data_loader:sample_strategy": "seq_uniform",
         "data_loader:num_batches_per_epoch": 50,
         "imputer:numerical_strategy": "median",
         "lr_scheduler:__choice__": "ReduceLROnPlateau",
-        "lr_scheduler:ReduceLROnPlateau:mode": "min",
+        "lr_scheduler:ReduceLROnPlateau:mode": "max",
         "lr_scheduler:ReduceLROnPlateau:factor": 0.5,
         "lr_scheduler:ReduceLROnPlateau:patience": 10,
         "optimizer:__choice__": "AdamOptimizer",
@@ -166,6 +167,7 @@
             "network:num_samples": 100
         },
         "NBEATS-I": {
+            "target_scaler:__choice__": "TargetNoScaler",
             "data_loader:backcast": true,
             "data_loader:backcast_period": 2,
             "loss:__choice__": "RegressionLoss",
@@ -194,8 +196,7 @@
             "network_backbone:NBEATSDecoder:dropout_I_2": 0.1
         },
         "NBEATS-G": {
-            "data_loader:backcast": true,
-            "data_loader:backcast_period": 2,
+            "target_scaler:__choice__": "TargetNoScaler",
             "loss:__choice__": "RegressionLoss",
             "loss:RegressionLoss:loss_name": "mape",
             "network:net_out_type": "regression",

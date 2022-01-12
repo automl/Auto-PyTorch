@@ -240,8 +240,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             network_encoder_hp = cs.get_hyperparameter('network_backbone:__choice__')
 
-            if 'MLPEncoder' or 'TCNEncoder' or 'InceptionTimeEncoder' in network_encoder_hp.choices:
-                forbidden = ['MLPEncoder', 'TCNEncoder', 'InceptionTimeEncoder']
+            if 'MLPEncoder' in network_encoder_hp.choices:
+                forbidden = ['MLPEncoder']
                 forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
                 for hp_ar in hp_auto_regressive:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, True)
@@ -287,10 +287,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_loss_non_regression)
                 )
+                """
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(network_encoder_hp, 'NBEATSEncoder'),
                     forbidden_backcast_false)
                 )
+                """
             """
             if 'NBEATSDecoder' in network_decoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(

@@ -52,13 +52,15 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
 
         for model_name in suggested_init_models:
             cfg_tmp = cfg_trainer.copy()
-            if 'NBEATS' not in model_name:
-                cfg_tmp['data_loader:window_size'] = window_size
+
             model_cfg = models_name_to_cfgs.get(model_name, None)
             if model_cfg is None:
                 warnings.warn(f'Cannot to find the corresponding information of model {model_name} from,'
                               f' forecasting_init_cfgs, currently only {list(models_name_to_cfgs.keys())} are '
                               f'supported')
+                continue
+            if not model_cfg.get('data_loader:backcast', False):
+                cfg_tmp['data_loader:window_size'] = window_size
 
             cfg_tmp.update(model_cfg)
             initial_configurations_dict.append(cfg_tmp)

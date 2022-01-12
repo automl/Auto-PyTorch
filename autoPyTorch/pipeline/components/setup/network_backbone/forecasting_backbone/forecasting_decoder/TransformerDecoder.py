@@ -153,8 +153,8 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
             dataset_properties: Optional[Dict] = None,
             num_layers: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='num_layers',
-                                      value_range=(1, 8),
-                                      default_value=4),
+                                      value_range=(1, 4),
+                                      default_value=1),
             n_head_log: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='n_head_log',
                                       value_range=(1, 4),

@@ -66,7 +66,7 @@ class NBEATSBLock(nn.Module):
         return layers
 
     def _add_layer(self, layers: List[nn.Module], in_features: int) -> None:
-        layers.append(nn.Linear(in_features, self.width, bias=False))
+        layers.append(nn.Linear(in_features, self.width))
         if self.normalization == 'BN':
             layers.append(nn.BatchNorm1d(self.width))
         elif self.normalization == 'LN':

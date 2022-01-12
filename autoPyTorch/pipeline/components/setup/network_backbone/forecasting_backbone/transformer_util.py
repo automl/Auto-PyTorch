@@ -7,7 +7,7 @@ import math
 def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_id: int, layer_type='encoder'):
     nhead = 2 ** config['num_head_log_%d' % layer_id]
     dim_feedforward = 2 ** config['d_feed_forward_log_%d' % layer_id]
-    dropout = config['dropout_%d' % layer_id]
+    dropout = config.get('dropout_%d' % layer_id, 0.0)
     activation = config['activation']
     layer_norm_eps = config['layer_norm_eps_%d' % layer_id]
     if layer_type == 'encoder':
