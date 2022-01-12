@@ -84,8 +84,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
-        import time
-        time_start = time.time()
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -116,8 +114,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
-        print(f'time used for trainging epoch {epoch}: {time.time() - time_start}')
-        print(f'Loss for epoch {epoch}: {loss_sum/N}')
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:

@@ -150,7 +150,7 @@ class TransformerEncoder(BaseForecastingEncoder):
                                       default_value=3),
             d_model_log: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='d_model_log',
-                                      value_range=(4, 10),
+                                      value_range=(4, 9),
                                       default_value=5),
             d_feed_forward_log: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='d_feed_forward_log',
