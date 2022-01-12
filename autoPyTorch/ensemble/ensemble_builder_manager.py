@@ -19,7 +19,6 @@ from smac.runhistory.runhistory import RunInfo, RunValue
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import BINARY
-from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilder
 from autoPyTorch.ensemble.utils import get_ensemble_builder_class
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.logging_ import get_named_client_logger
