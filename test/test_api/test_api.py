@@ -708,7 +708,7 @@ def test_pipeline_fit(openml_id,
 
             score = accuracy(dataset.test_tensors[1], preds)
             assert isinstance(score, float)
-            assert score > 0.7
+            assert score > 0.65
         else:
             assert isinstance(pipeline, BasePipeline)
             # To make sure we fitted the model, there should be a
@@ -721,10 +721,10 @@ def test_pipeline_fit(openml_id,
 
             score = accuracy(dataset.test_tensors[1], preds)
             assert isinstance(score, float)
-            assert score > 0.7
+            assert score > 0.65
     else:
         assert pipeline is None
-        assert run_value.cost < 0.3
+        assert run_value.cost < 0.35
 
     # Make sure that the pipeline can be pickled
     dump_file = os.path.join(tempfile.gettempdir(), 'automl.dump.pkl')
