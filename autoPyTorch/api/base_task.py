@@ -26,12 +26,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pandas as pd
+from smac.optimizer.smbo import SMBO
 
 from smac.runhistory.runhistory import DataOrigin, RunHistory, RunInfo, RunValue
 from smac.stats.stats import Stats
-from smac.tae import StatusType
+from smac.tae import StatusType, base
 
-from autoPyTorch import metrics
+from autoPyTorch import ensemble, metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
     REGRESSION_TASKS,
@@ -52,6 +53,7 @@ from autoPyTorch.ensemble.utils import EnsembleSelectionTypes
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
+from autoPyTorch.optimizer.run_history_callback import RunHistoryUpdaterManager
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
@@ -933,7 +935,8 @@ class BaseTask(ABC):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.distributed.Client] = None
+        dask_client: Optional[dask.distributed.Client] = None,
+        smbo_class: Optional[SMBO] = None
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1174,7 +1177,7 @@ class BaseTask(ABC):
 
         # ============> Run dummy predictions
         # We only want to run dummy predictions in case we want to build an ensemble
-        if self.ensemble_size > 0:
+        if self.ensemble_size > 0 and self.ensemble_method != EnsembleSelectionTypes.stacking_ensemble:
             dummy_task_name = 'runDummy'
             self._stopwatch.start_task(dummy_task_name)
             self._do_dummy_prediction()
@@ -1207,7 +1210,6 @@ class BaseTask(ABC):
         else:
             self._logger.info("Starting ensemble")
             ensemble_task_name = 'ensemble'
-            self._stopwatch.start_task(ensemble_task_name)
             proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
                                                         ensemble_size=self.ensemble_size,
                                                         ensemble_nbest=self.ensemble_nbest,
@@ -1215,7 +1217,13 @@ class BaseTask(ABC):
                                                         optimize_metric=self.opt_metric,
                                                         ensemble_method=self.ensemble_method
                                                         )
-            self._stopwatch.stop_task(ensemble_task_name)
+
+        proc_runhistory_updater = None
+        if (
+            self.ensemble_method == EnsembleSelectionTypes.stacking_ensemble
+            and smbo_class is not None
+        ):
+            proc_runhistory_updater = self._init_result_history_updater()
 
         # ==> Run SMAC
         smac_task_name: str = 'runSMAC'
@@ -1258,6 +1266,8 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
+                smbo_class = smbo_class,
+                other_callbacks=[proc_runhistory_updater] if proc_runhistory_updater is not None else None
             )
             try:
                 run_history, self._results_manager.trajectory, budget_type = \
@@ -1893,6 +1903,27 @@ class BaseTask(ABC):
             pd.DataFrame(self.ensemble_performance_history).to_json(
                 os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
+    def _init_result_history_updater(self):
+        if self.dataset is None:
+            raise ValueError("runhistory updater can only be initialised after or during `search()`. "
+                             "Please call the `search()` method of {}.".format(self.__class__.__name__))
+
+        self._logger.info("Starting Runhistory updater")
+        runhistory_task_name = 'runhistory_updater'
+        self._stopwatch.start_task(runhistory_task_name)
+
+        proc_runhistory_updater = RunHistoryUpdaterManager(
+            backend=self._backend,
+            dataset_name=self.dataset_name,
+            resampling_strategy=self.resampling_strategy,
+            resampling_strategy_args=self.resampling_strategy_args,
+            logger_port=self._logger_port
+        )
+
+        self._stopwatch.stop_task(runhistory_task_name)
+
+        return proc_runhistory_updater
+        
     def predict(
         self,
         X_test: np.ndarray,
