@@ -10,6 +10,8 @@ import os
 import tempfile as tmp
 import warnings
 
+from autoPyTorch.optimizer.utils import autoPyTorchSMBO
+
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -29,8 +31,8 @@ from autoPyTorch.ensemble.utils import EnsembleSelectionTypes
 # ============
 X, y = sklearn.datasets.fetch_openml(data_id=40981, return_X_y=True, as_frame=True)
 X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-    X[:200],
-    y[:200],
+    X,
+    y,
     random_state=1,
 )
 
@@ -40,8 +42,8 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 api = TabularClassificationTask(
     # To maintain logs of the run, you can uncomment the
     # Following lines
-    temporary_directory='./tmp/autoPyTorch_example_tmp_02',
-    output_directory='./tmp/autoPyTorch_example_out_02',
+    temporary_directory='./tmp/autoPyTorch_example_tmp_04',
+    output_directory='./tmp/autoPyTorch_example_out_04',
     delete_tmp_folder_after_terminate=False,
     delete_output_folder_after_terminate=False,
     seed=42,
@@ -58,10 +60,12 @@ api.search(
     X_test=X_test.copy(),
     y_test=y_test.copy(),
     dataset_name='Australian',
-    optimize_metric='zero_one_loss',
-    total_walltime_limit=300,
+    optimize_metric='accuracy',
+    total_walltime_limit=1000,
     func_eval_time_limit_secs=50,
-    enable_traditional_pipeline=False
+    enable_traditional_pipeline=False,
+    smbo_class=autoPyTorchSMBO,
+    all_supported_metrics=False
 )
 
 ############################################################################

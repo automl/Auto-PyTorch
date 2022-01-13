@@ -28,7 +28,6 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
     def __init__(
         self,
         backend: Backend,
-        random_state: int,
         dataset_name: str,
         resampling_strategy: Union[
             HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes
@@ -52,7 +51,6 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
 
         self.backend = backend
         
-        self.random_state = random_state
         self.logger_port = logger_port
 
         # We only submit new ensembles when there is not an active ensemble job
@@ -91,11 +89,11 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
             if self.futures[0].done():
                 result = self.futures.pop().result()
                 if result:
-                    ensemble_history, self.ensemble_nbest, _, _ = result
-                    logger.debug("iteration={} @ elapsed_time={} has history={}".format(
+                    response = result
+                    logger.debug("iteration={} @ elapsed_time={} has response={}".format(
                         self.iteration,
                         elapsed_time,
-                        ensemble_history,
+                        response,
                     ))
 
         # Only submit new jobs if the previous ensemble job finished
@@ -267,6 +265,7 @@ class RunHistoryUpdater:
             self.instances = [[json.dumps({'task_id': dataset_name})]]
 
     def run(self, iteration: int) -> Optional[List[Tuple[RunKey, float]]]:
+        self.logger.info(f"Starting iteration {iteration} of run history updater")
         results: List[Tuple[RunInfo, float]] = []
         if os.path.exists(self.ensemble_loss_file):
             try:

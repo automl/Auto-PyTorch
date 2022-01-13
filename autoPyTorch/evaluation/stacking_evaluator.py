@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
+from autoPyTorch import ensemble
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
@@ -165,7 +166,7 @@ class StackingEvaluator(AbstractEvaluator):
 
         if file_output:
             loss_, additional_run_info_ = self.file_output(
-                ensemble_opt_pred, valid_pred, test_pred
+                pipeline_opt_pred, valid_pred, test_pred
             )
         else:
             loss_ = None
@@ -389,6 +390,7 @@ class StackingEvaluator(AbstractEvaluator):
         else:
             ensemble_opt_pred = pipeline_opt_pred.copy()
 
+        self.logger.debug(f"for model {self.seed}_{self.num_run}_{self.budget} ensemble_predictions are {ensemble_opt_pred}")
         if self.X_valid is not None:
             valid_pred = self.predict_function(self.X_valid, pipeline,
                                                self.y_valid)
