@@ -169,7 +169,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
             self.seq_intervals_decimal = torch.from_numpy(np.stack(seq_intervals_decimal))
             self.seq_intervals_int = seq_intervals_int
 
-            self.num_expected_ins_decimal = torch.from_numpy(num_expected_ins_decimal)
+            self.num_expected_ins_decimal = torch.from_numpy(num_expected_ins_decimal) + 1e-8
 
     def __iter__(self):
         if self.iter_all_seqs:

@@ -95,7 +95,8 @@ class _TemporalConvNet(EncoderNetwork):
                                       dropout=dropout[i])]
             # receptive_field_block = 1 + (kernel_size - 1) * dilation_size * \
             #                        (int(np.prod(stride_values[:-2])) * (1 + stride_values[-2]))
-            receptive_field_block = 1 + 2 * (kernel_size[i] - 1) * dilation_size  # stride = 1, we ignore stide computation
+            # stride = 1, we ignore stride computation
+            receptive_field_block = 1 + 2 * (kernel_size[i] - 1) * dilation_size
             receptive_field += receptive_field_block
         self.receptive_field = receptive_field
         self.network = nn.Sequential(*layers)
@@ -159,8 +160,8 @@ class TCNEncoder(BaseForecastingEncoder):
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                              value_range=(1, 10),
-                                                                              default_value=5),
+                                                                              value_range=(1, 6),
+                                                                              default_value=3),
             num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                                value_range=(4, 64),
                                                                                default_value=32,
