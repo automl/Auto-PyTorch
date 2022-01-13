@@ -92,7 +92,7 @@ class _TemporalConvNet(EncoderNetwork):
                                       stride=stride,
                                       dilation=dilation_size,
                                       padding=(kernel_size[i] - 1) * dilation_size,
-                                      dropout=dropout)]
+                                      dropout=dropout[i])]
             # receptive_field_block = 1 + (kernel_size - 1) * dilation_size * \
             #                        (int(np.prod(stride_values[:-2])) * (1 + stride_values[-2]))
             receptive_field_block = 1 + 2 * (kernel_size[i] - 1) * dilation_size  # stride = 1, we ignore stide computation
@@ -120,13 +120,15 @@ class TCNEncoder(BaseForecastingEncoder):
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_1"]]
         kernel_size = [self.config["kernel_size_1"]]
+        dropout = [self.config[f"dropout_1"] if self.config["use_dropout"] else 0.0]
         for i in range(2, self.config["num_blocks"] + 1):
             num_channels.append(self.config[f"num_filters_{i}"])
             kernel_size.append(self.config[f"kernel_size_{i}"])
+            dropout.append(self.config[f"dropout_{i}"] if self.config["use_dropout"] else 0.0)
         encoder = _TemporalConvNet(input_shape[-1],
                                    num_channels,
                                    kernel_size=kernel_size,
-                                   dropout=self.config[f"dropout_{i}"] if self.config["use_dropout"] else 0.0
+                                   dropout=dropout
                                    )
         self._receptive_field = encoder.receptive_field
         return encoder
