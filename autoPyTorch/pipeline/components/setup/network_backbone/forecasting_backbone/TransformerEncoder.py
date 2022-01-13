@@ -28,6 +28,7 @@ class _TransformerEncoder(EncoderNetwork):
     def __init__(self,
                  in_features: int,
                  d_model: int,
+                 num_layers: int,
                  transformer_encoder_layers: [nn.Module],
                  use_positional_encoder: bool,
                  use_layer_norm_output: bool,
@@ -43,11 +44,14 @@ class _TransformerEncoder(EncoderNetwork):
             self.input_layer.append(PositionalEncoding(d_model, dropout_pe))
         self.input_layer = nn.Sequential(*self.input_layer)
 
-        self.transformer_encoder_layers = nn.ModuleList(transformer_encoder_layers)
-
         self.use_layer_norm_output = use_layer_norm_output
         if use_layer_norm_output:
-            self.norm_output = nn.LayerNorm(d_model, eps=layer_norm_eps_output)
+            norm = nn.LayerNorm(d_model, eps=layer_norm_eps_output)
+        else:
+            norm = None
+        self.transformer_encoder_layers = nn.TransformerEncoder(encoder_layer=transformer_encoder_layers,
+                                                                num_layers=num_layers,
+                                                                norm=norm)
 
     def forward(self,
                 x: torch.Tensor,
@@ -55,11 +59,7 @@ class _TransformerEncoder(EncoderNetwork):
                 mask: Optional[torch.Tensor] = None,
                 src_key_padding_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         x = self.input_layer(x)
-
-        for encoder_layer in self.transformer_encoder_layers:
-            x = encoder_layer(x, mask, src_key_padding_mask)
-        if self.use_layer_norm_output:
-            x = self.norm_output(x)
+        x = self.transformer_encoder_layers(x)
         if output_seq:
             return x
         else:
@@ -78,14 +78,11 @@ class TransformerEncoder(BaseForecastingEncoder):
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         d_model = 2 ** self.config['d_model_log']
-        transformer_encoder_layers = []
-        for layer_id in range(1, self.config['num_layers'] + 1):
-            new_layer = build_transformer_layers(d_model=d_model, config=self.config,
-                                                 layer_id=layer_id, layer_type='encoder')
-            transformer_encoder_layers.append(new_layer)
+        transformer_encoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='encoder')
 
         encoder = _TransformerEncoder(in_features=input_shape[-1],
                                       d_model=d_model,
+                                      num_layers=self.config['num_layers'],
                                       transformer_encoder_layers=transformer_encoder_layers,
                                       use_positional_encoder=self.config['use_positional_encoder'],
                                       use_layer_norm_output=self.config['use_layer_norm_output'],
@@ -220,48 +217,13 @@ class TransformerEncoder(BaseForecastingEncoder):
             CS.EqualsCondition(dropout_pe, use_positional_encoder, True)
         ))
 
-        for i in range(1, int(max_transformer_layers) + 1):
-            n_head_log_search_space = HyperparameterSearchSpace(hyperparameter='num_head_log_%d' % i,
-                                                                value_range=n_head_log.value_range,
-                                                                default_value=n_head_log.default_value,
-                                                                log=n_head_log.log)
-            d_feed_forward_log_search_space = HyperparameterSearchSpace(hyperparameter='d_feed_forward_log_%d' % i,
-                                                                        value_range=d_feed_forward_log.value_range,
-                                                                        default_value=d_feed_forward_log.default_value)
+        add_hyperparameter(cs, n_head_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, d_feed_forward_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, layer_norm_eps, UniformFloatHyperparameter)
 
-            layer_norm_eps_search_space = HyperparameterSearchSpace(hyperparameter='layer_norm_eps_%d' % i,
-                                                                    value_range=layer_norm_eps.value_range,
-                                                                    default_value=layer_norm_eps.default_value,
-                                                                    log=layer_norm_eps.log)
-
-            n_head_log_hp = get_hyperparameter(n_head_log_search_space, UniformIntegerHyperparameter)
-            d_feed_forward_log_hp = get_hyperparameter(d_feed_forward_log_search_space, UniformIntegerHyperparameter)
-            layer_norm_eps_hp = get_hyperparameter(layer_norm_eps_search_space, UniformFloatHyperparameter)
-
-            layers_dims = [n_head_log_hp, d_feed_forward_log_hp, layer_norm_eps_hp]
-
-            cs.add_hyperparameters(layers_dims)
-
-            if i > int(min_transformer_layers):
-                # The units of layer i should only exist
-                # if there are at least i layers
-                cs.add_conditions([
-                    CS.GreaterThanCondition(hp_layer, num_layers, i - 1) for hp_layer in layers_dims
-                ])
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
-                                                             value_range=dropout.value_range,
-                                                             default_value=dropout.default_value,
-                                                             log=dropout.log)
-            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
-            cs.add_hyperparameter(dropout_hp)
-
-            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
-
-            if i > int(min_transformer_layers):
-                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_layers, i - 1)
-                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
+        dropout = get_hyperparameter(dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameter(dropout)
+        cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
         use_layer_norm_output = get_hyperparameter(use_layer_norm_output, CategoricalHyperparameter)
         layer_norm_eps_output = HyperparameterSearchSpace(hyperparameter='layer_norm_eps_output',

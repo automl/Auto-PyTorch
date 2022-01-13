@@ -32,7 +32,8 @@ class _TransformerDecoder(RecurrentDecoderNetwork):
     def __init__(self,
                  in_features: int,
                  d_model: int,
-                 transformer_decoder_layers: [nn.Module],
+                 num_layers: int,
+                 transformer_decoder_layers: nn.Module,
                  use_positional_decoder: bool,
                  use_layer_norm_output: bool,
                  dropout_pd: float = 0.0,
@@ -47,13 +48,15 @@ class _TransformerDecoder(RecurrentDecoderNetwork):
             self.input_layer.append(PositionalEncoding(d_model, dropout_pd))
         self.input_layer = nn.Sequential(*self.input_layer)
 
-        self.transformer_decoder_layers = nn.ModuleList(transformer_decoder_layers)
-
-        nn.TransformerDecoder
-
         self.use_layer_norm_output = use_layer_norm_output
+
         if use_layer_norm_output:
-            self.norm_output = nn.LayerNorm(d_model, eps=layer_norm_eps_output)
+            norm = nn.LayerNorm(d_model, eps=layer_norm_eps_output)
+        else:
+            norm = None
+        self.transformer_decoder_layers = nn.TransformerDecoder(decoder_layer=transformer_decoder_layers,
+                                                                num_layers=num_layers,
+                                                                norm=norm)
 
     def forward(self, x_future: torch.Tensor, features_latent: torch.Tensor,
                 tgt_mask: Optional[torch.Tensor] = None,
@@ -61,15 +64,10 @@ class _TransformerDecoder(RecurrentDecoderNetwork):
                 tgt_key_padding_mask: Optional[torch.Tensor] = None,
                 memory_key_padding_mask: Optional[torch.Tensor] = None):
         output = self.input_layer(x_future)
-        for decoder_layer in self.transformer_decoder_layers:
-            output = decoder_layer(output, features_latent, tgt_mask=tgt_mask,
-                                   memory_mask=memory_mask,
-                                   tgt_key_padding_mask=tgt_key_padding_mask,
-                                   memory_key_padding_mask=memory_key_padding_mask)
-
-        if self.use_layer_norm_output:
-            output = self.norm_output(output)
-
+        output = self.transformer_decoder_layers(output, features_latent, tgt_mask=tgt_mask,
+                                                 memory_mask=memory_mask,
+                                                 tgt_key_padding_mask=tgt_key_padding_mask,
+                                                 memory_key_padding_mask=memory_key_padding_mask)
         return output
 
 
@@ -86,20 +84,18 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                        n_prediction_heads: int,
                        dataset_properties: Dict) -> nn.Module:
         d_model = 2 ** self.transformer_encoder_kwargs['d_model_log']
-        transformer_decoder_layers = []
-        for layer_id in range(1, self.config['num_layers'] + 1):
-            new_layer = build_transformer_layers(d_model=d_model, config=self.config,
-                                                 layer_id=layer_id, layer_type='decoder')
-            transformer_decoder_layers.append(new_layer)
+        transformer_decoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='decoder')
 
         decoder = _TransformerDecoder(in_features=dataset_properties['output_shape'][-1],
                                       d_model=d_model,
+                                      num_layers=self.config['num_layers'],
                                       transformer_decoder_layers=transformer_decoder_layers,
                                       use_positional_decoder=self.config['use_positional_decoder'],
                                       use_layer_norm_output=self.config['use_layer_norm_output'],
                                       dropout_pd=self.config.get('dropout_positional_decoder', 0.0),
                                       layer_norm_eps_output=self.config.get('layer_norm_eps_output', None),
                                       lagged_value=self.lagged_value)
+
         return decoder, d_model
 
     @property
@@ -222,48 +218,13 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
             CS.EqualsCondition(dropout_pd, use_positional_decoder, True)
         ))
 
-        for i in range(1, int(max_transformer_layers) + 1):
-            n_head_log_search_space = HyperparameterSearchSpace(hyperparameter='num_head_log_%d' % i,
-                                                                value_range=n_head_log.value_range,
-                                                                default_value=n_head_log.default_value,
-                                                                log=n_head_log.log)
-            d_feed_forward_log_search_space = HyperparameterSearchSpace(hyperparameter='d_feed_forward_log_%d' % i,
-                                                                        value_range=d_feed_forward_log.value_range,
-                                                                        default_value=d_feed_forward_log.default_value)
+        add_hyperparameter(cs, n_head_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, d_feed_forward_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, layer_norm_eps, UniformFloatHyperparameter)
 
-            layer_norm_eps_search_space = HyperparameterSearchSpace(hyperparameter='layer_norm_eps_%d' % i,
-                                                                    value_range=layer_norm_eps.value_range,
-                                                                    default_value=layer_norm_eps.default_value,
-                                                                    log=layer_norm_eps.log)
-
-            n_head_log_hp = get_hyperparameter(n_head_log_search_space, UniformIntegerHyperparameter)
-            d_feed_forward_log_hp = get_hyperparameter(d_feed_forward_log_search_space, UniformIntegerHyperparameter)
-            layer_norm_eps_search_hp = get_hyperparameter(layer_norm_eps_search_space, UniformFloatHyperparameter)
-
-            layers_dims = [n_head_log_hp, d_feed_forward_log_hp, layer_norm_eps_search_hp]
-
-            cs.add_hyperparameters(layers_dims)
-
-            if i > int(min_transformer_layers):
-                # The units of layer i should only exist
-                # if there are at least i layers
-                cs.add_conditions([
-                    CS.GreaterThanCondition(hp_layer, num_layers, i - 1) for hp_layer in layers_dims
-                ])
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
-                                                             value_range=dropout.value_range,
-                                                             default_value=dropout.default_value,
-                                                             log=dropout.log)
-            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
-            cs.add_hyperparameter(dropout_hp)
-
-            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
-
-            if i > int(min_transformer_layers):
-                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_layers, i - 1)
-                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
+        dropout = get_hyperparameter(dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameter(dropout)
+        cs.add_condition(CS.EqualsCondition(dropout, use_dropout, True))
 
         use_layer_norm_output = get_hyperparameter(use_layer_norm_output, CategoricalHyperparameter)
         layer_norm_eps_output = HyperparameterSearchSpace(hyperparameter='layer_norm_eps_output',
