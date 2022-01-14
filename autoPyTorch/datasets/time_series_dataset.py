@@ -202,6 +202,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if isinstance(freq, list):
             tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
             freq_value = tmp_freq
+        if isinstance(freq_value, list):
+            tmp_freq = min([freq_value_item for freq_value_item in freq_value if freq_value_item > n_prediction_steps])
+            freq_value = tmp_freq
 
         seasonality = SEASONALITY_MAP.get(freq, 1)
         if isinstance(seasonality, list):
