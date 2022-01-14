@@ -154,7 +154,6 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
                 num_interval = int(np.ceil(num_instances))
                 if num_interval > idx_end - idx_start:
-                    num_expected_ins_decimal.append(np.modf(num_instances)[0])
                     interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
                     # we consider
                     num_expected_ins_decimal.append(num_instances)
@@ -199,7 +198,11 @@ class TimeSeriesSampler(SubsetRandomSampler):
             idx_samples_start = idx_samples_end
         num_samples_remain = self.num_instances - idx_samples_end
         if num_samples_remain > 0:
-            samples_idx = torch.multinomial(self.num_expected_ins_decimal, num_samples_remain)
+            if num_samples_remain > self.num_expected_ins_decimal[-1]:
+                replacement = True
+            else:
+                replacement = False
+            samples_idx = torch.multinomial(self.num_expected_ins_decimal, num_samples_remain, replacement)
             seq_interval = self.seq_intervals_decimal[samples_idx]
 
             samples_shift = torch.rand(num_samples_remain, generator=self.generator)
