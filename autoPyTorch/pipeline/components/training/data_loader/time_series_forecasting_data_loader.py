@@ -153,12 +153,20 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     idx_start = idx_tracker
 
                 num_interval = int(np.ceil(num_instances))
-                interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
+                if num_interval > idx_end - idx_start:
+                    num_expected_ins_decimal.append(np.modf(num_instances)[0])
+                    interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
+                    # we consider
+                    num_expected_ins_decimal.append(num_instances)
+                    seq_intervals_decimal.append(interval[:2])
+                    seq_intervals_int.append(interval[1:])
+                else:
+                    interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
 
-                num_expected_ins_decimal.append(np.modf(num_instances)[0])
-                seq_intervals_decimal.append(interval[:2])
+                    num_expected_ins_decimal.append(np.modf(num_instances)[0])
+                    seq_intervals_decimal.append(interval[:2])
 
-                seq_intervals_int.append(interval[1:])
+                    seq_intervals_int.append(interval[1:])
                 idx_tracker += seq_length
 
             num_expected_ins_decimal = np.stack(num_expected_ins_decimal)
@@ -199,11 +207,10 @@ class TimeSeriesSampler(SubsetRandomSampler):
             samples_seq_remain = torch.floor(samples_shift + seq_interval[:, 0]).int()
             samples[-num_samples_remain:] = samples_seq_remain
 
-        return (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
+        yield from (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
 
     def __len__(self):
         return self.num_instances
-
 
 class ExpandTransformTimeSeries(object):
     """Expand Dimensionality so tabular transformations see
@@ -362,8 +369,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         num_instances_dataset = np.size(train_split)
         num_instances_train = self.num_batches_per_epoch * self.batch_size
 
-        if num_instances_train > num_instances_dataset:
-            num_instances_train = num_instances_dataset
 
         # get the length of each sequence of training data (after split)
         # as we already know that the elements in 'train_split' increases consecutively with a certain number of

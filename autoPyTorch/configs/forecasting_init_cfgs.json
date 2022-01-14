@@ -180,14 +180,13 @@
             "network_backbone:NBEATSDecoder:normalization": "NoNorm",
             "network_backbone:NBEATSDecoder:activation": "relu",
             "network_backbone:NBEATSDecoder:n_beats_type": "G",
-            "network_backbone:NBEATSDecoder:use_dropout_G": true,
+            "network_backbone:NBEATSDecoder:use_dropout_G": false,
             "network_backbone:NBEATSDecoder:num_stacks_G": 30,
             "network_backbone:NBEATSDecoder:num_blocks_G": 1,
             "network_backbone:NBEATSDecoder:num_layers_G": 4,
             "network_backbone:NBEATSDecoder:width_G": 512,
             "network_backbone:NBEATSDecoder:weight_sharing_G": false,
-            "network_backbone:NBEATSDecoder:expansion_coefficient_length_G": 32,
-            "network_backbone:NBEATSDecoder:dropout_G": 0.1
+            "network_backbone:NBEATSDecoder:expansion_coefficient_length_G": 32
         }
     }
 }

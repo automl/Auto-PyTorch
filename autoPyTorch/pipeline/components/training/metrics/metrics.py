@@ -69,16 +69,18 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> f
     Returns:
         mase_coefficient: inverse of mase_denominator
     """
-    if sp > len(past_target):
+    if sp >= len(past_target):
         # in this case, we simply consider the mean value of the entire sequence
         # TODO condsider if there is a better way of handling this
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target,
                                                                    np.zeros_like(past_target),
                                                                    multioutput="raw_values")
     else:
+
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
-                                                                   past_target[:-sp],
-                                                                   multioutput="raw_values")
+                                                               past_target[:-sp],
+                                                               multioutput="raw_values")
+
     return 1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
 
 
