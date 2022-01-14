@@ -42,8 +42,8 @@ X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
 api = TabularClassificationTask(
     # To maintain logs of the run, you can uncomment the
     # Following lines
-    temporary_directory='./tmp/autoPyTorch_example_tmp_04',
-    output_directory='./tmp/autoPyTorch_example_out_04',
+    temporary_directory='./tmp/autoPyTorch_example_tmp_05',
+    output_directory='./tmp/autoPyTorch_example_out_05',
     delete_tmp_folder_after_terminate=False,
     delete_output_folder_after_terminate=False,
     seed=42,
@@ -61,7 +61,7 @@ api.search(
     y_test=y_test.copy(),
     dataset_name='Australian',
     optimize_metric='accuracy',
-    total_walltime_limit=1000,
+    total_walltime_limit=300,
     func_eval_time_limit_secs=50,
     enable_traditional_pipeline=False,
     smbo_class=autoPyTorchSMBO,

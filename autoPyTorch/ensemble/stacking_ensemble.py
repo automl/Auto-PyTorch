@@ -13,10 +13,6 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss
 
 
-# TODO: for now we can use this and pass this to stacking evaluator.
-# TODO: This can be achieved by using `backend.load_ensemble`
-# TODO: it loads the last stored ensemble. So we have access to it.
-# TODO: the ensemble is a pickled file containing the fitted ensemble of this class.
 # TODO: Think of functionality of the functions in this class adjusted for stacking.
 class StackingEnsemble(AbstractEnsemble):
     def __init__(
@@ -155,7 +151,6 @@ class StackingEnsemble(AbstractEnsemble):
 
         self.weights_ = weights
 
-    # TODO: Adjust this to use weights and make 
     def predict(self, predictions: List[np.ndarray]) -> np.ndarray:
         return self._predict(predictions, self.weights_)
 
@@ -193,15 +188,9 @@ class StackingEnsemble(AbstractEnsemble):
         del tmp_predictions
         return average
 
-    # def __str__(self) -> str:
-    #     return 'Ensemble Selection:\n\tTrajectory: %s\n\tMembers: %s' \
-    #            '\n\tWeights: %s\n\tIdentifiers: %s' % \
-    #            (' '.join(['%d: %5f' % (idx, performance)
-    #                      for idx, performance in enumerate(self.trajectory_)]),
-    #             self.indices_, self.weights_,
-    #             ' '.join([str(identifier) for idx, identifier in
-    #                       enumerate(self.identifiers_)
-    #                       if self.weights_[idx] > 0]))
+    def __str__(self) -> str:
+        return f"Ensemble Selection:\n\tWeights: {self.weights_}\
+            \n\tIdentifiers: {' '.join([str(identifier) for idx, identifier in enumerate(self.identifiers_) if self.weights_[idx] > 0])}"
 
     def get_selected_model_identifiers(self) -> List[Tuple[int, int, float]]:
         """

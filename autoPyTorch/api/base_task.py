@@ -1211,7 +1211,6 @@ class BaseTask(ABC):
             self._logger.info("Not starting ensemble builder as ensemble size is 0")
         else:
             self._logger.info("Starting ensemble")
-            ensemble_task_name = 'ensemble'
             proc_ensemble = self._init_ensemble_builder(time_left_for_ensembles=time_left_for_ensembles,
                                                         ensemble_size=self.ensemble_size,
                                                         ensemble_nbest=self.ensemble_nbest,
@@ -1220,12 +1219,13 @@ class BaseTask(ABC):
                                                         ensemble_method=self.ensemble_method
                                                         )
 
+        smac_initial_num_run = self._backend.get_next_num_run(peek=True)
         proc_runhistory_updater = None
         if (
             self.ensemble_method == EnsembleSelectionTypes.stacking_ensemble
             and smbo_class is not None
         ):
-            proc_runhistory_updater = self._init_result_history_updater()
+            proc_runhistory_updater = self._init_result_history_updater(initial_num_run=smac_initial_num_run)
 
         # ==> Run SMAC
         smac_task_name: str = 'runSMAC'
@@ -1237,7 +1237,6 @@ class BaseTask(ABC):
         if time_left_for_smac <= 0:
             self._logger.warning(" Not starting SMAC because there is no time left")
         else:
-
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
                 dataset_name=str(dataset.dataset_name),
@@ -1264,7 +1263,7 @@ class BaseTask(ABC):
                 logger_port=self._logger_port,
                 # We do not increase the num_run here, this is something
                 # smac does internally
-                start_num_run=self._backend.get_next_num_run(peek=True),
+                start_num_run=smac_initial_num_run,
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
@@ -1906,7 +1905,7 @@ class BaseTask(ABC):
             pd.DataFrame(self.ensemble_performance_history).to_json(
                 os.path.join(self._backend.internals_directory, 'ensemble_history.json'))
 
-    def _init_result_history_updater(self):
+    def _init_result_history_updater(self, initial_num_run: int) -> RunHistoryUpdaterManager:
         if self.dataset is None:
             raise ValueError("runhistory updater can only be initialised after or during `search()`. "
                              "Please call the `search()` method of {}.".format(self.__class__.__name__))
@@ -1920,7 +1919,8 @@ class BaseTask(ABC):
             dataset_name=self.dataset_name,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-            logger_port=self._logger_port
+            logger_port=self._logger_port,
+            initial_num_run=initial_num_run
         )
 
         self._stopwatch.stop_task(runhistory_task_name)

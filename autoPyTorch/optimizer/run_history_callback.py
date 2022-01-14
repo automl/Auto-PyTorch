@@ -10,6 +10,7 @@ from typing import List, Union, Dict, Tuple, Optional
 
 import dask.distributed
 from distributed.utils import Any
+import numpy as np
 from numpy.random.mtrand import seed
 
 from smac.optimizer.smbo import SMBO
@@ -28,6 +29,7 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
     def __init__(
         self,
         backend: Backend,
+        initial_num_run: int,
         dataset_name: str,
         resampling_strategy: Union[
             HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes
@@ -59,6 +61,7 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
         # The last criteria is the number of iterations
         self.iteration = 0
 
+        self.initial_num_run = initial_num_run
         # Keep track of when we started to know when we need to finish!
         self.start_time = time.time()
         self.dataset_name = dataset_name
@@ -67,15 +70,12 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
 
     def __call__(
         self,
-        smbo: 'SMBO',
-    ) -> None:
-        self.adjust_run_history(smbo.tae_runner.client)
+    ) -> Optional[List[Tuple[RunKey, float]]]:
+        return self.adjust_run_history()
 
     def adjust_run_history(
         self,
-        dask_client: dask.distributed.Client,
-        unit_test: bool = False
-    ) -> None:
+    ) -> Optional[List[Tuple[RunKey, float]]]:
 
         # The second criteria is elapsed time
         elapsed_time = time.time() - self.start_time
@@ -85,65 +85,37 @@ class RunHistoryUpdaterManager(AdjustRunHistoryCallback):
             port=self.logger_port,
         )
 
-        if len(self.futures) != 0:
-            if self.futures[0].done():
-                result = self.futures.pop().result()
-                if result:
-                    response = result
-                    logger.debug("iteration={} @ elapsed_time={} has response={}".format(
+        logger.info(
+                    "Started Ensemble builder job at {} for iteration {}.".format(
+                        # Log the client to make sure we
+                        # remain connected to the scheduler
+                        time.strftime("%Y.%m.%d-%H.%M.%S"),
                         self.iteration,
-                        elapsed_time,
-                        response,
-                    ))
+                    ),
+                )
 
-        # Only submit new jobs if the previous ensemble job finished
-        if len(self.futures) == 0:
-
-            # Add the result of the run
-            # On the next while iteration, no references to
-            # ensemble builder object, so it should be garbage collected to
-            # save memory while waiting for resources
-            # Also, notice how ensemble nbest is returned, so we don't waste
-            # iterations testing if the deterministic predictions size can
-            # be fitted in memory
-            try:
-                # Submit a Dask job from this job, to properly
-                # see it in the dask diagnostic dashboard
-                # Notice that the forked ensemble_builder_process will
-                # wait for the below function to be done
-                self.futures.append(
-                    dask_client.submit(
-                        return_run_info_cost,
+        response = return_run_info_cost(
                         backend=self.backend,
                         dataset_name=self.dataset_name,
                         iteration=self.iteration,
                         resampling_strategy=self.resampling_strategy,
                         resampling_strategy_args=self.resampling_strategy_args,
                         logger_port=self.logger_port,
-                        priority=100
+                        initial_num_run=self.initial_num_run
                         )
-                )
 
-                logger.info(
-                    "{}/{} Started Ensemble builder job at {} for iteration {}.".format(
-                        # Log the client to make sure we
-                        # remain connected to the scheduler
-                        self.futures[0],
-                        dask_client,
-                        time.strftime("%Y.%m.%d-%H.%M.%S"),
-                        self.iteration,
-                    ),
-                )
-                self.iteration += 1
-            except Exception as e:
-                exception_traceback = traceback.format_exc()
-                error_message = repr(e)
-                logger.critical(exception_traceback)
-                logger.critical(error_message)
+        logger.debug("iteration={} @ elapsed_time={} has response={}".format(
+            self.iteration,
+            elapsed_time,
+            response,
+        ))
+        self.iteration += 1
+        return response
 
 
 def return_run_info_cost(
     backend: Backend,
+    initial_num_run: int,
     dataset_name: str,
     resampling_strategy: Union[
         HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes
@@ -218,6 +190,7 @@ def return_run_info_cost(
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
         logger_port=logger_port,
+        initial_num_run=initial_num_run
     ).run(
         iteration=iteration,
     )
@@ -228,6 +201,7 @@ class RunHistoryUpdater:
     def __init__(
         self,
         backend: Backend,
+        initial_num_run: int,
         dataset_name: str,
         resampling_strategy: Union[
             HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes
@@ -251,6 +225,7 @@ class RunHistoryUpdater:
 
         self.model_fn_re = re.compile(MODEL_FN_RE)
         self.logger_port = logger_port
+        self.initial_num_run = initial_num_run
         self.logger = get_named_client_logger(
             name='RunHistoryUpdater',
             port=self.logger_port,
@@ -266,27 +241,27 @@ class RunHistoryUpdater:
 
     def run(self, iteration: int) -> Optional[List[Tuple[RunKey, float]]]:
         self.logger.info(f"Starting iteration {iteration} of run history updater")
-        results: List[Tuple[RunInfo, float]] = []
+        results: List[Tuple[RunKey, float]] = []
         if os.path.exists(self.ensemble_loss_file):
             try:
                 with (open(self.ensemble_loss_file, "rb")) as memory:
                     read_losses = pickle.load(memory)
             except Exception as e:
                 self.logger.debug(f"Could not read losses at iteration: {iteration} with exception {e}")
-                return
+                return None
             else:
                 for k in read_losses.keys():
                     match = self.model_fn_re.search(k)
-                    if match is None or read_losses[k]["loaded"] != 1:
+                    if match is None or not np.isfinite(read_losses[k]["ens_loss"]):
                         continue
                     else:
                         _num_run = int(match.group(2))
                         _budget = float(match.group(3))
                         run_key = RunKey(
                             seed=0,  # 0 is hardcoded for the runhistory coming from smac
-                            config_id=_num_run,
+                            config_id=_num_run - self.initial_num_run,
                             budget=_budget,
-                            instance_id=self.instances[-1]
+                            instance_id=self.instances[-1][-1]
                         )
                         results.append((run_key, read_losses[k]["ens_loss"]))
         return results

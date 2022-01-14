@@ -137,10 +137,6 @@ class StackingEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        # TODO: we cant store the ensemble pipelines with this class as it is initialised for every TAE (target algorithm evaluation).
-        # TODO: Therefore we will have to store pipelines using datamanager and load them, see if we only need predictions.
-        # TODO: but we will need the whole pipeline as we would like to predict with different dataset, like val or something
-
         self.splits = self.datamanager.splits
         if self.splits is None:
             raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
@@ -371,11 +367,6 @@ class StackingEvaluator(AbstractEvaluator):
         test_indices: Union[np.ndarray, List],
         train_indices: Union[np.ndarray, List]
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-        # TODO: load ensemble members and predict using the whole ensemble.
-        # TODO: we need some function to pass this pipeline to the last stored ensemble replace 
-        # TODO: model j, where j = ensemble.iteration mod m. then we need to predict
-        # TODO: Also, we will pass the predictions from this pipeline as that is what is needed
-        # TODO: to create the ensemble. 
         train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
                                            self.y_train[train_indices])
 
@@ -390,7 +381,7 @@ class StackingEvaluator(AbstractEvaluator):
         else:
             ensemble_opt_pred = pipeline_opt_pred.copy()
 
-        self.logger.debug(f"for model {self.seed}_{self.num_run}_{self.budget} ensemble_predictions are {ensemble_opt_pred}")
+        # self.logger.debug(f"for model {self.seed}_{self.num_run}_{self.budget} ensemble_predictions are {ensemble_opt_pred}")
         if self.X_valid is not None:
             valid_pred = self.predict_function(self.X_valid, pipeline,
                                                self.y_valid)
