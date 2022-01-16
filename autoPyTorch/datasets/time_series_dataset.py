@@ -2,6 +2,7 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import uuid
 import bisect
+import copy
 
 import numpy as np
 
@@ -93,7 +94,7 @@ class TimeSeriesSequence(Dataset):
             features from past, targets from past and future
         """
         if index < 0:
-            index = self.__len__() + 1 - index
+            index = self.__len__() + index
 
         if hasattr(self.X, 'loc'):
             X = self.X.iloc[:index + 1]
@@ -146,6 +147,21 @@ class TimeSeriesSequence(Dataset):
         else:
             self.val_transform = transform
         return self
+
+    def get_val_seq_set(self, index: int) -> "TimeSeriesSequence":
+        if index < 0:
+            index = self.__len__() + index
+        if index == self.__len__() - 1:
+            return copy.copy(self)
+        else:
+            return TimeSeriesSequence(self.X[:index + 1],
+                                      self.Y[:index + 1 + self.n_prediction_steps],
+                                      train_transforms=self.train_transform,
+                                      val_transforms=self.val_transform,
+                                      n_prediction_steps=self.n_prediction_steps,
+                                      sp=self.sp)
+
+
 
 
 class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
@@ -342,6 +358,18 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         else:
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         return self.datasets[dataset_idx].__getitem__(sample_idx, train)
+
+    def get_validation_set(self, idx):
+        if idx < 0:
+            if -idx > len(self):
+                raise ValueError("absolute value of index should not exceed dataset length")
+            idx = len(self) + idx
+        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        if dataset_idx == 0:
+            sample_idx = idx
+        else:
+            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+        return self.datasets[dataset_idx].get_val_seq_set(sample_idx)
 
     def make_sequences_datasets(self,
                                 X: np.ndarray,

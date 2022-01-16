@@ -27,6 +27,17 @@ from autoPyTorch.utils.common import (
 from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 
 
+class TestSequenceDataset(TransformSubset):
+    def __init__(self, dataset: List[TimeSeriesSequence], train: bool = False) -> None:
+        self.dataset = dataset
+        self.indices = torch.arange(len(dataset))
+        self.train = train
+
+    def __getitem__(self, idx: int) -> np.ndarray:
+        # we only consider the entire sequence
+        seq = self.dataset[idx]
+        return seq.__getitem__(len(seq) - 1, self.train)
+
 def pad_sequence_from_start(sequences: List[torch.Tensor],
                             seq_minimal_length: int,
                             batch_first=True,
@@ -486,28 +497,48 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         # TODO more supported inputs
         if isinstance(X, (np.ndarray, torch.Tensor)):
-            dataset = TimeSeriesSequence(
-                X=X, Y=y,
-                # This dataset is used for loading test data in a batched format
-                train_transforms=self.test_transform,
-                val_transforms=self.test_transform,
-                n_prediction_steps=0,
-            )
-
-        elif isinstance(X, TimeSeriesSequence):
-            dataset = X
-            dataset.update_transform(self.test_transform, train=False)
+            if isinstance(X, torch.Tensor):
+                X = X.numpy()
+            if X.ndim == 1:
+                X = [X]
+        if isinstance(X, TimeSeriesSequence):
+            X.update_transform(self.test_transform, train=False)
+            dataset = [X]
+        elif isinstance(X, Sequence):
+            dataset = []
+            if isinstance(X[0], TimeSeriesSequence):
+                for X_seq in X:
+                    X_seq.update_transform(self.test_transform, train=False)
+                    dataset.append(X_seq)
+            else:
+                if y is None:
+                    for X_seq in X:
+                        seq = TimeSeriesSequence(
+                            X=X_seq, Y=y,
+                            # This dataset is used for loading test data in a batched format
+                            train_transforms=self.test_transform,
+                            val_transforms=self.test_transform,
+                            n_prediction_steps=0,
+                        )
+                        dataset.append(seq)
+                else:
+                    for X_seq, y_seq in zip(X, y):
+                        seq = TimeSeriesSequence(
+                            X=X_seq, Y=y_seq,
+                            # This dataset is used for loading test data in a batched format
+                            train_transforms=self.test_transform,
+                            val_transforms=self.test_transform,
+                            n_prediction_steps=0,
+                        )
+                        dataset.append(seq)
         else:
-            raise ValueError(f"Unsupported type of input X: {type(X)}")
+            raise NotImplementedError(f"Unsupported type of input X: {type(X)}")
 
-        # we only consider the last sequence as validation set
-        test_seq_indices = [len(dataset) - 1]
-
-        dataset_test = TransformSubset(dataset, indices=test_seq_indices, train=False)
+        dataset_test = TestSequenceDataset(dataset, train=False)
 
         return torch.utils.data.DataLoader(
             dataset_test,
-            batch_size=min(batch_size, len(dataset)),
+            batch_size=min(batch_size, len(dataset), self.batch_size),
             shuffle=False,
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
         )

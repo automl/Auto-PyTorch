@@ -306,28 +306,30 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  test_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         # TODO consider multile outputs
-        opt_pred = np.ones([len(test_indices), self.n_prediction_steps, self.num_targets])
-        for seq_idx, test_idx in enumerate(test_indices):
-            opt_pred[seq_idx] = self.predict_function(self.datamanager[test_idx][0]['past_target'], pipeline)
+        val_sets = []
+        for test_idx in test_indices:
+            val_sets.append(self.datamanager.get_validation_set(test_idx))
+        opt_pred = self.predict_function(val_sets, pipeline)
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
         #TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:
-            valid_pred = np.ones([len(test_indices), self.n_prediction_steps])
-            for seq_idx, val_seq in enumerate(self.datamanager.datasets):
-                valid_pred[seq_idx] = self.predict_function(val_seq.X, pipeline).flatten()
+            valid_sets = []
+            for val_seq in enumerate(self.datamanager.datasets):
+                valid_sets.append(val_seq.X_val)
+            valid_pred = self.predict_function(valid_sets, pipeline).flatten()
 
-            valid_pred = valid_pred.flatten()
+            valid_pred = valid_pred.squeeze(-1)
 
         else:
             valid_pred = None
 
         if self.X_test is not None:
-            test_pred = np.ones([len(test_indices), self.n_prediction_steps])
-            for seq_idx, test_seq in enumerate(self.datamanager.datasets):
-                test_pred[seq_idx] = self.predict_function(test_seq.X, pipeline)
-
-            test_pred = test_pred.flatten()
+            test_sets = []
+            for test_seq in enumerate(self.datamanager.datasets):
+                test_sets.append(test_seq.X_test)
+            test_pred = self.predict_function(valid_sets, pipeline).flatten()
+            test_pred = test_pred.squeeze(-1)
         else:
             test_pred = None
 

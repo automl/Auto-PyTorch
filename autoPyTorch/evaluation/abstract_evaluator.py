@@ -329,13 +329,13 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int = 1000) -> np.array:
-        new_X = X[-self.n_prediction_steps:]
-        return super(DummyTimeSeriesForecastingPipeline, self).predict_proba(new_X)
+        new_X = [x.X[-1] for x in X]
+        return np.tile(new_X, (1, self.n_prediction_steps)).astype(np.float32)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.array:
-        new_X = X[-self.n_prediction_steps:]
-        return super(DummyTimeSeriesForecastingPipeline, self).predict(new_X).astype(np.float32)
+        new_X = [x.X[-1]for x in X]
+        return np.tile(new_X, (1, self.n_prediction_steps)).astype(np.float32)
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
