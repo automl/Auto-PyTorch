@@ -10,6 +10,7 @@ import dask.distributed
 
 from smac.facade.smac_ac_facade import SMAC4AC
 from smac.intensification.hyperband import Hyperband
+from smac.intensification.intensification import Intensifier
 from smac.runhistory.runhistory import RunHistory
 from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost
 from smac.scenario.scenario import Scenario
@@ -38,15 +39,15 @@ from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def get_smac_object(
-    scenario_dict: Dict[str, Any],
-    seed: int,
-    ta: Callable,
-    ta_kwargs: Dict[str, Any],
-    n_jobs: int,
-    initial_budget: int,
-    max_budget: Union[int, float],
-    dask_client: Optional[dask.distributed.Client],
-    initial_configurations: Optional[List[Configuration]] = None,
+        scenario_dict: Dict[str, Any],
+        seed: int,
+        ta: Callable,
+        ta_kwargs: Dict[str, Any],
+        n_jobs: int,
+        initial_budget: int,
+        max_budget: Union[int, float],
+        dask_client: Optional[dask.distributed.Client],
+        initial_configurations: Optional[List[Configuration]] = None,
 ) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
@@ -67,7 +68,13 @@ def get_smac_object(
         (SMAC4AC): sequential model algorithm configuration object
 
     """
-    intensifier = Hyperband
+    if initial_budget == max_budget:
+        intensifier = Intensifier
+        intensifier_kwargs = {'deterministic': True, }
+    else:
+        intensifier = Hyperband
+        intensifier_kwargs = {'initial_budget': initial_budget, 'max_budget': max_budget,
+                              'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'}
 
     rh2EPM = RunHistory2EPM4LogCost
     return SMAC4AC(
@@ -79,8 +86,7 @@ def get_smac_object(
         initial_configurations=initial_configurations,
         run_id=seed,
         intensifier=intensifier,
-        intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
-                            'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+        intensifier_kwargs=intensifier_kwargs,
         dask_client=dask_client,
         n_jobs=n_jobs,
     )
