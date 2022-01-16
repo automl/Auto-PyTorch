@@ -10,8 +10,6 @@ from smac.utils.constants import MAXINT
 
 from autoPyTorch.pipeline.components.training.metrics.base import make_metric
 
-
-
 # Standard regression scores
 mean_absolute_error = make_metric('mean_absolute_error',
                                   sklearn.metrics.mean_absolute_error,
@@ -52,13 +50,14 @@ balanced_accuracy = make_metric('balanced_accuracy',
 f1 = make_metric('f1',
                  sklearn.metrics.f1_score)
 
+
 # Standard Forecasting Scores
 
 
 # To avoid storing unnecessary scale values here, we scale all the values under
 # AutoPytorch.evaluation.time_series_forecasting_train_evaluator
 
-def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> float:
+def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int, n_prediction_steps: int) -> float:
     """
     compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
     this function aims at reducing the memroy requirement
@@ -76,10 +75,12 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> f
                                                                    np.zeros_like(past_target),
                                                                    multioutput="raw_values")
     else:
-
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
-                                                               past_target[:-sp],
-                                                               multioutput="raw_values")
+                                                                   past_target[:-sp],
+                                                                   multioutput="raw_values")
+    if mase_denominator == 0.0:
+        # they will not be counter when computing MASE
+        return np.zeros_like(mase_denominator)
 
     return 1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
 
@@ -103,7 +104,6 @@ median_MASE_forecasting = make_metric('median_MASE_forecasting',
                                       )
 
 MASE_LOSSES = [mean_MASE_forecasting, median_MASE_forecasting]
-
 
 mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
                                    forecasting_metrics.mean_absolute_error,

@@ -78,7 +78,7 @@ class TimeSeriesSequence(Dataset):
         self.val_transform = val_transforms
         self.sp = sp
 
-        self.mase_coefficient = compute_mase_coefficient(self.X, sp=self.sp)
+        self.mase_coefficient = compute_mase_coefficient(self.X, sp=self.sp, n_prediction_steps=n_prediction_steps)
 
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
@@ -370,6 +370,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         else:
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         return self.datasets[dataset_idx].get_val_seq_set(sample_idx)
+
+    def get_time_series_seq(self, idx) -> TimeSeriesSequence:
+        if idx < 0:
+            if -idx > len(self):
+                raise ValueError("absolute value of index should not exceed dataset length")
+            idx = len(self) + idx
+        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        return self.datasets[dataset_idx]
 
     def make_sequences_datasets(self,
                                 X: np.ndarray,

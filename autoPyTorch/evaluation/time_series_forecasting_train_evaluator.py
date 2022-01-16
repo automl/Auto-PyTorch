@@ -16,7 +16,7 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES, compute_mase_coefficient
+from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -291,12 +291,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         mase_coefficient = np.ones([len(test_split), self.num_targets])
         if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
             for seq_idx, test_idx in enumerate(test_split):
-                seq = self.datamanager[test_idx][0]['past_target']
-                if seq.shape[-1] > 1:
-                    seq = seq[self.datamanager.target_variables].squeeze()
-                else:
-                    seq = seq.squeeze()
-                mase_coefficient[seq_idx] = compute_mase_coefficient(seq, self.seasonality)
+                mase_coefficient[seq_idx] = self.datamanager.get_time_series_seq(test_idx).mase_coefficient
 
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
@@ -305,7 +300,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  train_indices: Union[np.ndarray, List],
                  test_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-        # TODO consider multile outputs
         val_sets = []
         for test_idx in test_indices:
             val_sets.append(self.datamanager.get_validation_set(test_idx))
@@ -319,7 +313,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 valid_sets.append(val_seq.X_val)
             valid_pred = self.predict_function(valid_sets, pipeline).flatten()
 
-            valid_pred = valid_pred.squeeze(-1)
+            valid_pred = valid_pred.reshape(-1, self.num_targets)
 
         else:
             valid_pred = None
@@ -329,7 +323,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             for test_seq in enumerate(self.datamanager.datasets):
                 test_sets.append(test_seq.X_test)
             test_pred = self.predict_function(valid_sets, pipeline).flatten()
-            test_pred = test_pred.squeeze(-1)
+            test_pred = test_pred.reshape(-1, self.num_targets)
         else:
             test_pred = None
 
