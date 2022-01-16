@@ -1,7 +1,7 @@
 from collections import Counter
 import enum
 from re import L
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 import warnings
 
 import numpy as np
@@ -76,7 +76,7 @@ class StackingEnsemble(AbstractEnsemble):
     # TODO: fit a stacked ensemble.
     def _fit(
         self,
-        predictions: List[np.ndarray],
+        predictions: List[Optional[np.ndarray]],
         labels: np.ndarray,
     ) -> None:
         """
@@ -127,7 +127,7 @@ class StackingEnsemble(AbstractEnsemble):
         )[self.metric.name]
 
         # store list of preds for later use
-        self.ensemble_predictions = predictions
+        self.ensemble_predictions_ = predictions
 
         self.train_loss_: float = loss
 
@@ -223,16 +223,25 @@ class StackingEnsemble(AbstractEnsemble):
         where m is ensemble_size.
         returns ensemble predictions
         """
-        predictions = self.ensemble_predictions.copy()
+
+        predictions = self.ensemble_predictions_.copy()
         if predictions[self.ensemble_slot_j] is None:
             total_predictions = len([pred for pred in predictions if pred is not None])
             total_predictions += 1
-            weights = [1/total_predictions for pred in predictions if pred is not None]
+            weights: np.ndarray = np.ndarray([1/total_predictions if pred is not None else 0 for pred in predictions])
         else:
             weights = self.weights_
 
         predictions[self.ensemble_slot_j] = pipeline_predictions
         return self._predict(predictions, weights)
+
+    def get_ensemble_predictions_with_current_pipeline(
+        self,
+        pipeline_predictions: np.ndarray
+    ) -> List[Optional[np.ndarray]]:
+        predictions = self.ensemble_predictions_.copy()
+        predictions[self.ensemble_slot_j] = pipeline_predictions
+        return predictions
 
     def get_models_with_weights(
         self,

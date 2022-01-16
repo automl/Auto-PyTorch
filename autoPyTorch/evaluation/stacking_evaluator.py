@@ -10,14 +10,13 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
-from autoPyTorch import ensemble
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT,
 )
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.ensemble.stacking_ensemble_builder import calculate_nomalised_margin_loss
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -179,6 +178,7 @@ class StackingEvaluator(AbstractEvaluator):
             return self.duration, loss_, self.seed, additional_run_info_
 
         cost = loss[self.metric.name]
+        # cost = loss["ensemble_opt_loss"]
 
         additional_run_info = (
             {} if additional_run_info is None else additional_run_info
@@ -300,14 +300,15 @@ class StackingEvaluator(AbstractEvaluator):
             y_pipeline_opt_pred,
             y_ensemble_opt_pred,
             y_valid_pred,
-            y_test_pred
+            y_test_pred,
+            y_ensemble_preds
         ) = self._fit_and_predict(pipeline, split_id,
                                   train_indices=train_split,
                                   test_indices=test_split
                                   )
         train_loss = self._loss(self.y_train[train_split], y_train_pred)
         loss = self._loss(self.y_train[test_split], y_ensemble_opt_pred)
-
+        # loss['ensemble_opt_loss'] = calculate_nomalised_margin_loss(y_ensemble_preds, self.y_train[test_split])
         additional_run_info = pipeline.get_additional_run_info() if hasattr(
             pipeline, 'get_additional_run_info') else {}
 
@@ -337,7 +338,7 @@ class StackingEvaluator(AbstractEvaluator):
         fold: int,
         train_indices: Union[np.ndarray, List],
         test_indices: Union[np.ndarray, List],
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray], np.ndarray]:
 
         # See autoPyTorch/pipeline/components/base_component.py::autoPyTorchComponent for more details
         # about fit_dictionary
@@ -350,7 +351,7 @@ class StackingEvaluator(AbstractEvaluator):
         fit_and_suppress_warnings(self.logger, pipeline, X, y)
         self.logger.info("Model fitted, now predicting")
         (
-            Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred
+            Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred, Y_ensemble_preds
         ) = self._predict(
             pipeline,
             train_indices=train_indices,
@@ -359,14 +360,14 @@ class StackingEvaluator(AbstractEvaluator):
 
         self.pipeline = pipeline
 
-        return Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred
+        return Y_train_pred, Y_pipeline_opt_pred, Y_ensemble_opt_pred, Y_valid_pred, Y_test_pred, Y_ensemble_preds
 
     def _predict(
         self,
         pipeline: BaseEstimator,
         test_indices: Union[np.ndarray, List],
         train_indices: Union[np.ndarray, List]
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray], np.ndarray]:
         train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
                                            self.y_train[train_indices])
 
@@ -378,8 +379,10 @@ class StackingEvaluator(AbstractEvaluator):
             old_ensemble = self.backend.load_ensemble(self.seed)
             assert isinstance(old_ensemble, StackingEnsemble)
             ensemble_opt_pred = old_ensemble.predict_with_current_pipeline(pipeline_opt_pred)
+            ensemble_preds = old_ensemble.get_ensemble_predictions_with_current_pipeline(pipeline_opt_pred)
         else:
             ensemble_opt_pred = pipeline_opt_pred.copy()
+            ensemble_preds = [pipeline_opt_pred]
 
         # self.logger.debug(f"for model {self.seed}_{self.num_run}_{self.budget} ensemble_predictions are {ensemble_opt_pred}")
         if self.X_valid is not None:
@@ -394,7 +397,7 @@ class StackingEvaluator(AbstractEvaluator):
         else:
             test_pred = None
 
-        return train_pred, pipeline_opt_pred, ensemble_opt_pred, valid_pred, test_pred
+        return train_pred, pipeline_opt_pred, ensemble_opt_pred, valid_pred, test_pred, ensemble_preds
 
 
 # create closure for evaluating an algorithm
