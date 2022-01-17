@@ -231,12 +231,16 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
             encoder2decoder[encoder_name] = allowed_decoders
 
         for decoder_name in available_decoders.keys():
+            if not decoder2encoder[decoder_name]:
+                continue
             updates = self._get_search_space_updates(prefix=decoder_name)
             config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
                                                                                             **updates)
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
             encoder_with_uni_decoder = []
+            # this could happen if its parent encoder is not part of
+            inactive_decoder = []
             for encoder in compatible_encoders:
                 if len(encoder2decoder[encoder]) > 1:
                     encoders_with_multi_decoder.append(encoder)
@@ -269,7 +273,9 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
                         or_cond.append(EqualsCondition(hp,
                                                        hp_decoder_type,
                                                        decoder_name))
-                    if len(or_cond) > 1:
+                    if len(or_cond) == 0:
+                        continue
+                    elif len(or_cond) > 1:
                         conditions_to_add.append(OrConjunction(*or_cond))
                     else:
                         conditions_to_add.append(or_cond[0])
