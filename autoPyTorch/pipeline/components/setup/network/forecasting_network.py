@@ -436,8 +436,9 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     # Transformer's hidden states is of shape
                     repeated_state = features_latent.repeat_interleave(repeats=self.num_samples, dim=0)
 
-                repeated_past_target = targets_past.repeat_interleave(repeats=self.num_samples,
-                                                                      dim=0).squeeze(1)
+                max_lag_seq_length = max(self.decoder.lagged_value) + 1
+                repeated_past_target = targets_past[:, -max_lag_seq_length:].repeat_interleave(repeats=self.num_samples,
+                                                                                               dim=0).squeeze(1)
                 repeated_predicted_target = repeated_past_target[:, [-1]]
                 repeated_past_target = repeated_past_target[:, :-1, ]
 
@@ -607,8 +608,10 @@ class ForecastingDeepARNet(ForecastingNet):
             else:
                 # For other models, the full past targets are passed to the network.
                 encoder_output = self.encoder(x_past)
-            repeated_past_target = targets_past.repeat_interleave(repeats=self.num_samples,
-                                                                  dim=0).squeeze(1)
+            max_lag_seq_length = max(max(self.encoder.lagged_value), self.window_size) + 1
+            repeated_past_target = targets_past[:, -max_lag_seq_length - 1:, ].repeat_interleave(
+                repeats=self.num_samples,
+                dim=0).squeeze(1)
 
             repeated_static_feat = features_static.repeat_interleave(
                 repeats=self.num_samples, dim=0

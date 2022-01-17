@@ -409,11 +409,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             fraction_samples_per_seq
         )
         """
-        if self.sample_strategy == 'length_uniform':
+        if self.sample_strategy == 'LengthUniform':
             available_seq_length = seq_train_length - min_start
             available_seq_length = np.where(available_seq_length <= 1, 1, available_seq_length)
             num_instances_per_seqs = num_instances_train / num_instances_dataset * available_seq_length
-        elif self.sample_strategy == 'seq_uniform':
+        elif self.sample_strategy == 'SeqUniform':
             num_seq_train = len(seq_train_length)
             num_instances_per_seqs = np.repeat(num_instances_train / num_seq_train, num_seq_train)
         else:
@@ -585,8 +585,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                                                   default_value=50),
                                         sample_strategy: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter="sample_strategy",
-                                                                  value_range=('length_uniform', 'seq_uniform'),
-                                                                  default_value='seq_uniform'),
+                                                                  value_range=('LengthUniform', 'SeqUniform'),
+                                                                  default_value='SeqUniform'),
                                         backcast: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='backcast',
                                                                   value_range=(True, False),
@@ -610,9 +610,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             window_size (int): window size, (if activate) this value directly determines the window_size of the
                                data loader
             num_batch_per_epoch (int): how many batches are trained at each iteration
-            sample_strategy(str): how samples are distributed. if it is length_uniform, then every single data point
+            sample_strategy(str): how samples are distributed. if it is LengthUnifrom, then every single data point
                                   has the same probability to be sampled, in which case longer sequence will occupy more
-                                  samples. If it is seq_uniform, then every sequence has the same probability to be
+                                  samples. If it is SeqUniform, then every sequence has the same probability to be
                                   sampled regardless of their length
             backcast (bool): if back_cast module is activate (in which case window size is a
             multiple of n_prediction_steps)

@@ -2,7 +2,7 @@
     "trainer": {
         "data_loader:batch_size": 32,
         "data_loader:backcast": false,
-        "data_loader:sample_strategy": "seq_uniform",
+        "data_loader:sample_strategy": "SeqUniform",
         "data_loader:num_batches_per_epoch": 50,
         "imputer:numerical_strategy": "median",
         "lr_scheduler:__choice__": "ReduceLROnPlateau",
