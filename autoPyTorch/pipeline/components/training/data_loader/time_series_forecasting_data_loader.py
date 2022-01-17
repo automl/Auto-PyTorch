@@ -164,7 +164,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     idx_start = idx_tracker
 
                 num_interval = int(np.ceil(num_instances))
-                if num_interval > idx_end - idx_start:
+                if num_interval > idx_end - idx_start or num_interval == 0:
                     interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
                     # we consider
                     num_expected_ins_decimal.append(num_instances)
@@ -401,7 +401,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
         # create masks for masking
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
-        seq_train_length[seq_idx_inactivate] = 0
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
         """
         num_instances_per_seqs = np.ceil(
@@ -418,6 +417,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             num_instances_per_seqs = np.repeat(num_instances_train / num_seq_train, num_seq_train)
         else:
             raise NotImplementedError(f'Unsupported sample strategy: {self.sample_strategy}')
+
+        num_instances_per_seqs[seq_idx_inactivate] = 0
         num_instances_per_seqs *= fraction_samples_per_seq
 
         #num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
