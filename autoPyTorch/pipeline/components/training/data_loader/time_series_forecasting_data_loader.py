@@ -188,6 +188,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
             num_expected_ins_decimal = np.stack(num_expected_ins_decimal)
             # seq_intervals_decimal_length = np.stack(seq_intervals_decimal_length)
             self.seq_lengths = seq_lengths
+            self.seq_lengths_sum = np.sum(seq_lengths)
             self.num_instances = int(np.round(np.sum(num_instances_per_seqs)))
 
             self.seq_intervals_decimal = torch.from_numpy(np.stack(seq_intervals_decimal))
@@ -204,7 +205,6 @@ class TimeSeriesSampler(SubsetRandomSampler):
         for idx_seq, (interval, seq_length) in enumerate(zip(self.seq_intervals_int, self.seq_lengths)):
             if len(interval) == 1:
                 continue
-
             num_samples = len(interval) - 1
             idx_samples_end = idx_samples_start + num_samples
 
@@ -224,8 +224,11 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
             samples_shift = torch.rand(num_samples_remain, generator=self.generator)
             samples_shift *= (seq_interval[:, 1] - seq_interval[:, 0])
-            samples_seq_remain = torch.floor(samples_shift + seq_interval[:, 0]).int()
+            samples_seq_remain = torch.floor(samples_shift).int() + seq_interval[:, 0]
             samples[-num_samples_remain:] = samples_seq_remain
+
+        # sometimes if self.seq_lengths_sum is too large, float might not be accurate enough
+        samples = torch.where(samples == self.seq_lengths_sum, samples - 1, samples)
 
         yield from (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
 
