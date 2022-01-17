@@ -7,10 +7,7 @@ import numpy as np
 import pandas as pd
 
 from autoPyTorch.api.base_task import BaseTask
-from autoPyTorch.constants import (
-    TASK_TYPES_TO_STRING,
-    TIMESERIES_FORECASTING,
-)
+from autoPyTorch.constants import TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
@@ -21,7 +18,7 @@ from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDatase
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE, SEASONALITY_MAP
+from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE
 
 
 class TimeSeriesForecastingTask(BaseTask):
@@ -288,11 +285,13 @@ class TimeSeriesForecastingTask(BaseTask):
             base_window_size = int(np.ceil(self.dataset.freq_value))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
-            if base_window_size > self.dataset.upper_window_size or base_window_size > MAX_WINDOW_SIZE_BASE:
-                # TODO considering padding to allow larger upper_window_size !!!
-                base_window_size = int(np.ceil(min(n_prediction_steps, self.dataset.upper_window_size)))
             if base_window_size > MAX_WINDOW_SIZE_BASE:
-                base_window_size = 50  # TODO this value comes from setting of solar dataset, do we have a better choice?
+                # TODO considering padding to allow larger upper_window_size !!!
+                if n_prediction_steps > MAX_WINDOW_SIZE_BASE:
+                    base_window_size = 50
+                else:
+                    base_window_size = n_prediction_steps
+
             if self.search_space_updates is None:
                 self.search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -305,9 +304,6 @@ class TimeSeriesForecastingTask(BaseTask):
                                              default_value=int(np.ceil(1.25 * base_window_size)),
                                              )
 
-        seasonality = SEASONALITY_MAP.get(self.dataset.freq, 1)
-        if isinstance(seasonality, list):
-            seasonality = min(seasonality)  # Use to calculate MASE
         self._metrics_kwargs = {'sp': self.dataset.seasonality,
                                 'n_prediction_steps': n_prediction_steps}
 

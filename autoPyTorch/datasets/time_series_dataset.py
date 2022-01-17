@@ -29,6 +29,10 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes
 )
 
+from gluonts.time_feature.lag import get_lags_for_frequency
+from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
+
+
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
@@ -183,6 +187,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  validator: Optional[TimeSeriesForecastingInputValidator] = None,
+                 lagged_value: Optional[List[int]] = None,
                  n_prediction_steps: int = 1,
                  dataset_name: Optional[str] = None,
                  shift_input_data: bool = True,
@@ -194,6 +199,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         TODO add supports on X for pandas and target variables can be str or Tuple[str]
         :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
         period
+        :param lagged_value: lagged values applied to RNN and Transformer that allows them to use previous data
         :param n_prediction_steps: The number of steps you want to forecast into the future
         :param shift_input_data: bool
         if the input X and targets needs to be shifted to be aligned:
@@ -216,10 +222,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                         "you could pass freq with a numerical value")
             freq_value = SEASONALITY_MAP.get(freq, None)
         if isinstance(freq, list):
-            tmp_freq = min([freq_value for freq_value in freq if freq_value > n_prediction_steps])
+            tmp_freq = min([freq_value for freq_value in freq if freq_value >= n_prediction_steps])
             freq_value = tmp_freq
         if isinstance(freq_value, list):
-            tmp_freq = min([freq_value_item for freq_value_item in freq_value if freq_value_item > n_prediction_steps])
+            tmp_freq = min([freq_value_item for freq_value_item in freq_value if freq_value_item >= n_prediction_steps])
             freq_value = tmp_freq
 
         seasonality = SEASONALITY_MAP.get(freq, 1)
@@ -346,6 +352,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
+
+        # TODO doing experiments to give the most proper way of defining these two values
+        if lagged_value is None:
+            freq = FREQUENCY_MAP[self.freq]
+            lagged_value = [0] + get_lags_for_frequency(freq)
+
+        self.lagged_value = lagged_value
 
     def __getitem__(self, idx, train=True):
         if idx < 0:
@@ -560,7 +573,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if self.val_tensors is not None:
                 upper_window_size = np.min(self.sequence_lengths_train) - self.n_prediction_steps
             else:
-                upper_window_size = int(np.min(self.sequence_lengths_train) * 1 - val_share) - self.n_prediction_steps
+                upper_window_size = int(np.min(self.sequence_lengths_train) * 1 - val_share)
 
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
@@ -572,13 +585,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 cross_val_type=self.resampling_strategy,
                 num_splits=cast(int, num_splits),
             ))
-            upper_window_size = (np.min(self.sequence_lengths_train) // num_splits) - self.n_prediction_steps
+            upper_window_size = (np.min(self.sequence_lengths_train)) - self.n_prediction_steps * (num_splits - 1)
         elif self.resampling_strategy is None:
             splits.append(self.create_refit_split())
             upper_window_size = np.inf
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
-
         self.upper_window_size = upper_window_size
         return splits
 
@@ -604,7 +616,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'upper_window_size': self.upper_window_size,
                                    'sp': self.seasonality,  # For metric computation,
                                    'freq': self.freq,
-                                   'sequence_lengths_train': self.sequence_lengths_train})
+                                   'sequence_lengths_train': self.sequence_lengths_train,
+                                   'lagged_value': self.lagged_value})
         return dataset_properties
 
     def create_cross_val_splits(

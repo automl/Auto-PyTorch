@@ -104,9 +104,44 @@ def get_lagged_subsequences(
 
     # (N, I, S, C)
     lagged_seq = torch.masked_select(sequence, mask_extend).reshape(batch_size, num_lags, subsequences_length, -1)
+
     lagged_seq = torch.transpose(lagged_seq, 1, 2).reshape(batch_size, subsequences_length, -1)
 
     return lagged_seq, mask
+
+
+def get_lagged_subsequences_inference(
+        sequence: torch.Tensor,
+        subsequences_length: int,
+        lags_seq: Optional[List[int]] = None, ):
+    """
+    this function works exactly the same as get_lagged_subsequences. However, this implementation is faster when no
+    cached value is available, thus it more suitable during inference times.
+
+    designed for doing inference for DeepAR, the core idea is to use
+    """
+    sequence_length = sequence.shape[1]
+    batch_size = sequence.shape[0]
+    lagged_values = []
+    for lag_index in lags_seq:
+        begin_index = -lag_index - subsequences_length
+        end_index = -lag_index if lag_index > 0 else None
+        if end_index is not None and end_index < -sequence_length:
+            lagged_values.append(torch.zeros([batch_size, subsequences_length, *sequence.shape[2:]]))
+            continue
+        if begin_index < -sequence_length:
+            if end_index is not None:
+                pad_shape = [batch_size, subsequences_length - sequence_length - end_index, *sequence.shape[2:]]
+                lagged_values.append(torch.cat([torch.zeros(pad_shape), sequence[:, :end_index, ...]], dim=1))
+            else:
+                pad_shape = [batch_size, subsequences_length - sequence_length, *sequence.shape[2:]]
+                lagged_values.append(torch.cat([torch.zeros(pad_shape), sequence], dim=1))
+            continue
+        else:
+            lagged_values.append(sequence[:, begin_index:end_index, ...])
+
+    lagged_seq = torch.stack(lagged_values, -1).transpose(-1, -2).reshape(batch_size, subsequences_length, -1)
+    return lagged_seq
 
 
 class ForecastingNet(nn.Module):
@@ -383,9 +418,10 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     if self.decoder_lagged_input:
                         x_future = torch.cat([targets_past, predicted_target.cpu()], dim=1)
                         if self.decoder_has_hidden_states:
-                            x_future, _ = get_lagged_subsequences(x_future, 1, self.decoder.lagged_value)
+                            x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder.lagged_value)
                         else:
-                            x_future, _ = get_lagged_subsequences(x_future, idx_pred + 1, self.decoder.lagged_value)
+                            x_future = get_lagged_subsequences_inference(x_future, idx_pred + 1,
+                                                                         self.decoder.lagged_value)
                     else:
                         if self.decoder_has_hidden_states:
                             x_future = predicted_target[:, [-1]]
@@ -454,9 +490,10 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     if self.decoder_lagged_input:
                         x_future = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
                         if self.decoder_has_hidden_states:
-                            x_future, _ = get_lagged_subsequences(x_future, 1, self.decoder.lagged_value)
+                            x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder.lagged_value)
                         else:
-                            x_future, _ = get_lagged_subsequences(x_future, idx_pred + 1, self.decoder.lagged_value)
+                            x_future = get_lagged_subsequences_inference(x_future, idx_pred + 1,
+                                                                         self.decoder.lagged_value)
                     else:
                         if self.decoder_has_hidden_states:
                             x_future = repeated_predicted_target[:, [-1]]
@@ -634,7 +671,7 @@ class ForecastingDeepARNet(ForecastingNet):
             for k in range(1, self.n_prediction_steps):
                 if self.encoder_lagged_input:
                     x_next = torch.cat([repeated_past_target, *all_samples], dim=1)
-                    x_next, _ = get_lagged_subsequences(x_next, 1, self.encoder.lagged_value)
+                    x_next = get_lagged_subsequences_inference(x_next, 1, self.encoder.lagged_value)
                 else:
                     x_next = next_sample
 

@@ -4,7 +4,6 @@ import warnings
 import torch
 from torch import nn
 import numpy as np
-from gluonts.time_feature.lag import get_lags_for_frequency
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -25,7 +24,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     PositionalEncoding, build_transformer_layers
 
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
-from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 
 class _TransformerDecoder(RecurrentDecoderNetwork):
@@ -115,18 +113,8 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.transformer_encoder_kwargs = X['transformer_encoder_kwargs']
-
-        freq = X['dataset_properties'].get('freq', None)
         if 'lagged_value' in X['dataset_properties']:
             self.lagged_value = X['dataset_properties']['lagged_value']
-        if freq is not None:
-            try:
-                freq = FREQUENCY_MAP[freq]
-                lagged_values = get_lags_for_frequency(freq)
-                self.lagged_value = [0] + lagged_values
-            except Exception:
-                warnings.warn(f'cannot find the proper lagged value for {freq}, we use the default lagged value')
-                pass
         return super().fit(X, y)
 
     @staticmethod

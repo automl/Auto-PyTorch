@@ -12,14 +12,12 @@ from ConfigSpace.hyperparameters import (
 
 import torch
 from torch import nn
-from gluonts.time_feature.lag import get_lags_for_frequency
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
     BaseForecastingEncoder, EncoderNetwork
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 
 class _RNN(EncoderNetwork):
@@ -100,18 +98,8 @@ class RNNEncoder(BaseForecastingEncoder):
         return encoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        freq = X['dataset_properties'].get('freq', None)
         if 'lagged_value' in X['dataset_properties']:
             self.lagged_value = X['dataset_properties']['lagged_value']
-        if freq is not None:
-            try:
-                freq = FREQUENCY_MAP[freq]
-                lagged_values = get_lags_for_frequency(freq)
-                self.lagged_value = [0] + lagged_values
-            except Exception:
-                warnings.warn(f'cannot find the proper lagged value for {freq}, we use the default lagged value')
-                # If
-                pass
         return super().fit(X, y)
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

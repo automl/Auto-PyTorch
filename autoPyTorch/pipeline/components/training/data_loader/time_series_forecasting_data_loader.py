@@ -38,8 +38,10 @@ class TestSequenceDataset(TransformSubset):
         seq = self.dataset[idx]
         return seq.__getitem__(len(seq) - 1, self.train)
 
+
 def pad_sequence_from_start(sequences: List[torch.Tensor],
                             seq_minimal_length: int,
+                            seq_max_length: int = np.inf,
                             batch_first=True,
                             padding_value=0.0) -> torch.Tensor:
     r"""
@@ -52,7 +54,9 @@ def pad_sequence_from_start(sequences: List[torch.Tensor],
     # in sequences are same and fetching those from sequences[0]
     max_size = sequences[0].size()
     trailing_dims = max_size[1:]
-    max_len = max(max([s.size(0) for s in sequences]), seq_minimal_length)
+    max_len = min(max(max([s.size(0) for s in sequences]), seq_minimal_length), seq_max_length)
+    if seq_max_length > max_len:
+        seq_max_length = max_len
     if batch_first:
         out_dims = (len(sequences), max_len) + trailing_dims
     else:
@@ -60,12 +64,12 @@ def pad_sequence_from_start(sequences: List[torch.Tensor],
 
     out_tensor = sequences[0].new_full(out_dims, padding_value)
     for i, tensor in enumerate(sequences):
-        length = tensor.size(0)
+        length = min(tensor.size(0), seq_max_length)
         # use index notation to prevent duplicate references to the tensor
         if batch_first:
-            out_tensor[i, -length:, ...] = tensor
+            out_tensor[i, -length:, ...] = tensor[-length:]
         else:
-            out_tensor[-length:, i, ...] = tensor
+            out_tensor[-length:, i, ...] = tensor[-length:]
 
     return out_tensor
 
@@ -78,9 +82,10 @@ class PadSequenceCollector:
 
     """
 
-    def __init__(self, window_size: int, target_padding_value: float = 0.0):
+    def __init__(self, window_size: int, target_padding_value: float = 0.0, seq_max_length: int = np.inf):
         self.window_size = window_size
         self.target_padding_value = target_padding_value
+        self.seq_max_length = seq_max_length
 
     def __call__(self, batch, padding_value=0.0):
         elem = batch[0]
@@ -88,7 +93,8 @@ class PadSequenceCollector:
         if isinstance(elem, torch.Tensor):
             seq = pad_sequence_from_start(batch,
                                           seq_minimal_length=self.window_size,
-                                          batch_first=True, padding_value=padding_value) # type: torch.Tensor
+                                          seq_max_length=self.seq_max_length,
+                                          batch_first=True, padding_value=padding_value)  # type: torch.Tensor
             return seq
 
         elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
@@ -109,7 +115,7 @@ class PadSequenceCollector:
             return batch
         elif isinstance(elem, collections.abc.Mapping):
             return {key: self([d[key] for d in batch]) if key != "past_target"
-                    else self([d[key] for d in batch], self.target_padding_value) for key in elem}
+            else self([d[key] for d in batch], self.target_padding_value) for key in elem}
         raise TypeError(f"Unsupported data type {elem_type}")
 
 
@@ -226,6 +232,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
     def __len__(self):
         return self.num_instances
 
+
 class ExpandTransformTimeSeries(object):
     """Expand Dimensionality so tabular transformations see
        a 2d Array, unlike the ExpandTransform defined under tabular dataset, the dimension is expanded
@@ -236,6 +243,7 @@ class ExpandTransformTimeSeries(object):
         if len(data.shape) <= 1:
             data = np.expand_dims(data, axis=-1)
         return data
+
 
 class SequenceBuilder(object):
     """build a time sequence token from the given time sequence
@@ -275,6 +283,7 @@ class SequenceBuilder(object):
 
             return data[sample_indices]
 
+
 class TimeSeriesForecastingDataLoader(FeatureDataLoader):
     """This class is an interface to read time sequence data
 
@@ -290,7 +299,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  window_size: int = 1,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
-                 sample_strategy= 'seq_uniform',
+                 sample_strategy='seq_uniform',
                  random_state: Optional[np.random.RandomState] = None) -> None:
         """
         initialize a dataloader
@@ -339,7 +348,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if self.backcast:
             self.window_size = self.backcast_period * self.n_prediction_steps
 
-
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
         padding_value = X.get('required_padding_value', 0.0)
@@ -348,7 +356,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             # for lower resolution, window_size should be smaller
             self.window_size = (self.window_size - 1) // sample_interval + 1
 
-        self.padding_collector = PadSequenceCollector(self.window_size, padding_value)
+        max_lagged_value = max(X['dataset_properties'].get('lagged_value', [np.inf]))
+        max_lagged_value += self.window_size + self.n_prediction_steps
+
+        self.padding_collector = PadSequenceCollector(self.window_size, padding_value, max_lagged_value)
 
         # this value corresponds to budget type num_sequence
         fraction_seq = X.get('fraction_seq', 1.0)
@@ -382,7 +393,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         num_instances_dataset = np.size(train_split)
         num_instances_train = self.num_batches_per_epoch * self.batch_size
-
 
         # get the length of each sequence of training data (after split)
         # as we already know that the elements in 'train_split' increases consecutively with a certain number of
@@ -421,7 +431,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         num_instances_per_seqs[seq_idx_inactivate] = 0
         num_instances_per_seqs *= fraction_samples_per_seq
 
-        #num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
+        # num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
         # at least one element of each sequence should be selected
 
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
@@ -446,7 +456,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         self.val_data_loader = torch.utils.data.DataLoader(
             val_dataset,
-            batch_size=min(self.batch_size, len(val_dataset)),
+            batch_size=min(1000, len(val_dataset)),
             shuffle=False,
             num_workers=X.get('num_workers', 0),
             pin_memory=X.get('pin_memory', True),
@@ -539,7 +549,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         return torch.utils.data.DataLoader(
             dataset_test,
-            batch_size=min(batch_size, len(dataset), self.batch_size),
+            batch_size=min(batch_size, len(dataset)),
             shuffle=False,
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
         )
