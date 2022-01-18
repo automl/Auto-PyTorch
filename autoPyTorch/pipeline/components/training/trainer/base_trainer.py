@@ -179,6 +179,16 @@ class RunSummary(object):
         string += '=' * 40
         return string
 
+    def is_empty(self) -> bool:
+        """
+        Checks if the object is empty or not
+
+        Returns:
+            bool
+        """
+        # if train_loss is empty, we can be sure that RunSummary is empty.
+        return not bool(self.performance_tracker['train_loss'])
+
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 

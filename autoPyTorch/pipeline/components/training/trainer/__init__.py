@@ -298,7 +298,7 @@ class TrainerChoice(autoPyTorchChoice):
                 if self.budget_tracker.is_max_time_reached():
                     break
                 else:
-                    raise RuntimeError("`train_loss` computed to None.")
+                    raise RuntimeError("Got an unexpected None in `train_loss`.")
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
@@ -340,6 +340,9 @@ class TrainerChoice(autoPyTorchChoice):
 
             if 'cuda' in X['device']:
                 torch.cuda.empty_cache()
+
+        if self.run_summary.is_empty():
+            raise RuntimeError("Budget exhausted without finishing an epoch.")
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
