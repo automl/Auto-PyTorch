@@ -671,15 +671,15 @@ class ForecastingDeepARNet(ForecastingNet):
                 repeats=self.num_samples, dim=0
             ).unsqueeze(dim=1) if features_static is not None else None
 
-            if not self.encoder_has_hidden_states:
-                if features_all is not None:
-                    # both feature_past and feature_future must exist or not, otherwise deepAR is disabled due to
-                    # data properties!!!
-                    time_feature = features_all
+            if features_all is not None:
+                if not self.encoder_has_hidden_states:
+                        # both feature_past and feature_future must exist or not, otherwise deepAR is disabled due to
+                        # data properties!!!
+                        time_feature = features_all
                 else:
-                    time_feature = None
+                    time_feature = features_future[:, 1:] if self.n_prediction_steps > 1 else None
             else:
-                time_feature = features_future[:, 1:] if self.n_prediction_steps > 1 else None
+                time_feature = None
 
             repeated_time_feat = time_feature.repeat_interleave(
                 repeats=self.num_samples, dim=0
