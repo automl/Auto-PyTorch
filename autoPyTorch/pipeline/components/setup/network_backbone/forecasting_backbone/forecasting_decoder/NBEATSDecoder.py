@@ -273,7 +273,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="dropout",
                 value_range=(0, 0.8),
-                default_value=0.5,
+                default_value=0.1,
             ),
             backcast_loss_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="backcast_loss_ratio",

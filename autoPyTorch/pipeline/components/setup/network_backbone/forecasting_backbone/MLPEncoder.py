@@ -141,7 +141,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
                                                                                ),
             num_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_units",
                                                                              value_range=(16, 1024),
-                                                                             default_value=256,
+                                                                             default_value=64,
                                                                              log=True
                                                                              ),
             normalization: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='normalization',
@@ -149,7 +149,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
                                                                                  default_value='BN'),
             dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dropout",
                                                                            value_range=(0, 0.8),
-                                                                           default_value=0.5,
+                                                                           default_value=0.1,
                                                                            ),
     ) -> ConfigurationSpace:
         cs = MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,

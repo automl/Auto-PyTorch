@@ -167,7 +167,7 @@ class TransformerEncoder(BaseForecastingEncoder):
             dropout: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter="dropout",
                                       value_range=(0, 0.8),
-                                      default_value=0.5,
+                                      default_value=0.1,
                                       ),
             decoder_type: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='decoder_type',

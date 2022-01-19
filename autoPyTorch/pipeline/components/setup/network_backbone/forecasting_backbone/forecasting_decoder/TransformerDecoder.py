@@ -172,8 +172,8 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                                       ),
             dropout: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter="dropout",
-                                      value_range=(0, 0.8),
-                                      default_value=0.5,
+                                      value_range=(0, 0.1),
+                                      default_value=0.1,
                                       ),
     ) -> ConfigurationSpace:
         """

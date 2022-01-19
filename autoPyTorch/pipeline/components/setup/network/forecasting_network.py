@@ -719,15 +719,9 @@ class ForecastingDeepARNet(ForecastingNet):
                     else:
                         x_next = torch.cat([repeated_time_feat[:, :self.window_size + k],
                                             x_next], dim=-1)
-
-                    encoder_output = self.encoder(x_next)
-
-                if self.encoder_has_hidden_states:
                     x_next = x_next.to(self.device)
-                    encoder_output, repeated_state = self.encoder(x_next, hx=repeated_state)
-                else:
-                    x_next = torch.cat([repeated_past_target, *all_samples], dim=1).to(self.device)
                     encoder_output = self.encoder(x_next)
+
                 # During training, the encoder output a sequence. Thus for prediction, the network should have the same
                 # output format
                 encoder_output = torch.unsqueeze(encoder_output, 1)
