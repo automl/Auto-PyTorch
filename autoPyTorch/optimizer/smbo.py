@@ -9,10 +9,11 @@ from ConfigSpace.configuration_space import Configuration
 import dask.distributed
 
 from smac.facade.smac_ac_facade import SMAC4AC
+from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.intensification.hyperband import Hyperband
 from smac.intensification.intensification import Intensifier
 from smac.runhistory.runhistory import RunHistory
-from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost
+from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost, RunHistory2EPM4LogScaledCost
 from smac.scenario.scenario import Scenario
 from smac.tae.dask_runner import DaskParallelRunner
 from smac.tae.serial_runner import SerialRunner
@@ -71,19 +72,22 @@ def get_smac_object(
     if initial_budget == max_budget:
         intensifier = Intensifier
         intensifier_kwargs = {'deterministic': True, }
+        rh2EPM = RunHistory2EPM4LogScaledCost
+
     else:
         intensifier = Hyperband
         intensifier_kwargs = {'initial_budget': initial_budget, 'max_budget': max_budget,
                               'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'}
+        rh2EPM = RunHistory2EPM4LogCost
 
-    rh2EPM = RunHistory2EPM4LogCost
-    return SMAC4AC(
+    return SMAC4HPO(
         scenario=Scenario(scenario_dict),
         rng=seed,
         runhistory2epm=rh2EPM,
         tae_runner=ta,
         tae_runner_kwargs=ta_kwargs,
         initial_configurations=initial_configurations,
+        initial_design=None,
         run_id=seed,
         intensifier=intensifier,
         intensifier_kwargs=intensifier_kwargs,
