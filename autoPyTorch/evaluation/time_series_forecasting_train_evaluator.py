@@ -179,8 +179,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 # Compute train loss of this fold and store it. train_loss could
                 # either be a scalar or a dict of scalars with metrics as keys.
 
-                train_loss = 0.
-                train_losses[i] = train_loss
                 # number of training data points for this fold. Used for weighting
                 # the average.
                 train_fold_weights[i] = len(train_split)
@@ -203,17 +201,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             # Compute weights of each fold based on the number of samples in each
             # fold.
-            train_fold_weights = [w / sum(train_fold_weights)
-                                  for w in train_fold_weights]
+
             opt_fold_weights = [w / sum(opt_fold_weights)
                                 for w in opt_fold_weights]
 
-            # train_losses is a list of dicts. It is
-            # computed using the target metric (self.metric).
-            train_loss = np.average([train_losses[i][str(self.metric)]
-                                     for i in range(self.num_folds)],
-                                    weights=train_fold_weights,
-                                    )
+            train_loss = None
 
             opt_loss = {}
             # self.logger.debug("OPT LOSSES: {}".format(opt_losses if opt_losses is not None else None))

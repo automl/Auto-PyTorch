@@ -100,7 +100,7 @@ DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[
         'num_splits': 5,
     },
     CrossValTypes.time_series_cross_validation: {
-        'num_splits': 5,
+        'num_splits': 3,
     },
 }
 
@@ -129,8 +129,6 @@ class HoldOutFuncs():
                                       random_state=random_state)
         return train, val
 
-    # TODO DO we move these under autoPyTorch/datasets/time_series_dataset.py?
-    # TODO rewrite this part, as we only need holdout sets
     @staticmethod
     def time_series_hold_out_validation(random_state: np.random.RandomState,
                                         val_share: float, indices: np.ndarray, **kwargs: Any) \
@@ -146,9 +144,8 @@ class HoldOutFuncs():
         """
         # TODO consider how we handle test size properly
         # Time Series prediction only requires on set of prediction for each
-        # This implement needs to be combined with time series forecasting dataloader, where each time an entire time series
-        # is used for prediction
-        test_size = kwargs['n_prediction_steps']
+        # This implement needs to be combined with time series forecasting dataloader, where each time an entire
+        # time series is used for prediction
         cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
         train, val = list(cv.split(indices))[-1]
         return train, val
@@ -242,12 +239,9 @@ class CrossValFuncs():
                  ([0, 1, 2], [3])]
 
         """
-        # TODO: we use gap=n_prediction_step here, we need to consider if we want to implement n_prediction_step here or
-        # under DATALOADER!!!
-        # TODO do we need cross valriadtion for time series datasets?
         test_size = kwargs['n_prediction_steps']
-        cv = TimeSeriesSplit(n_splits=num_splits, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
-        splits = list(cv.split(indices))
+        cv = TimeSeriesSplit(n_splits=num_splits, test_size=test_size, gap=0)
+        splits = [(indices[split[0]], indices[split[1][-1:]]) for split in cv.split(indices)]
         return splits
 
     @classmethod

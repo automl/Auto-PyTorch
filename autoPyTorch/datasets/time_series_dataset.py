@@ -646,25 +646,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if not isinstance(cross_val_type, CrossValTypes):
             raise NotImplementedError(f'The selected `cross_val_type` "{cross_val_type}" is not implemented.')
         idx_start = 0
-        splits = [[[] for _ in range(len(self.datasets))] for _ in range(num_splits)]
 
         kwargs = {"n_prediction_steps": self.n_prediction_steps}
-        splits = [[() for _ in range(self.num_sequences)] for _ in range(num_splits)]
+        splits = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
         idx_all = self._get_indices()
 
         for idx_seq, dataset in enumerate(self.datasets):
             if self.shift_input_data:
-                split = self.cross_validators[cross_val_type.name](num_splits,
-                                                                   indices=np.arange(len(dataset)), **kwargs)
+                split = self.cross_validators[cross_val_type.name](self.random_state,
+                                                                   num_splits,
+                                                                   indices=idx_start + np.arange(len(dataset)), **kwargs)
             else:
                 # If the data is not shifted, we need to discard the last n_prediction_steps such that we have enough
                 # y values
-                split = self.cross_validators[cross_val_type.name](num_splits,
-                                                                   indices=np.arange(
+                split = self.cross_validators[cross_val_type.name](self.random_state,
+                                                                   num_splits,
+                                                                   indices=idx_start + np.arange(
                                                                        len(dataset) - self.n_prediction_steps),
                                                                    **kwargs)
             for idx_split in range(num_splits):
-                splits[idx_split][idx_seq] = idx_start + split[idx_split]
+                splits[idx_split][idx_seq] = split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
         # in this case, splits is stored as :
         #  [ first split, second_split ...]
