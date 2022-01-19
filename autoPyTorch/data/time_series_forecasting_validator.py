@@ -117,18 +117,18 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 y_transformed = np.expand_dims(y_transformed, -1)
             return X_transformed, sequence_lengths, y_transformed
 
-            num_train_data = np.sum(sequence_lengths)
+        num_train_data = np.sum(sequence_lengths)
 
-            # a matrix that is concatenated by all the time series sequences
-            X_flat = np.empty([num_train_data, num_features])
+        # a matrix that is concatenated by all the time series sequences
+        X_flat = np.empty([num_train_data, num_features])
 
-            start_idx = 0
-            # TODO make it parallel with large number of sequences
-            for seq_idx, seq_length in enumerate(sequence_lengths):
-                end_idx = start_idx + seq_length
-                X_flat[start_idx: end_idx] = np.array(X[seq_idx]).reshape([-1, num_features])
-                start_idx = end_idx
+        start_idx = 0
+        # TODO make it parallel with large number of sequences
+        for seq_idx, seq_length in enumerate(sequence_lengths):
+            end_idx = start_idx + seq_length
+            X_flat[start_idx: end_idx] = np.array(X[seq_idx]).reshape([-1, num_features])
+            start_idx = end_idx
 
-            X_transformed = self.feature_validator.transform(X_flat)
+        X_transformed = self.feature_validator.transform(X_flat)
 
-            return X_transformed, sequence_lengths
+        return X_transformed, sequence_lengths

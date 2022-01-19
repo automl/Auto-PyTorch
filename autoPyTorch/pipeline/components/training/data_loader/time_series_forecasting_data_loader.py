@@ -415,6 +415,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # create masks for masking
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
+
         """
         num_instances_per_seqs = np.ceil(
             np.ceil(num_instances_train / (num_instances_dataset - min_start) * seq_train_length) *

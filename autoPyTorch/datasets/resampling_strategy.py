@@ -146,8 +146,12 @@ class HoldOutFuncs():
         # Time Series prediction only requires on set of prediction for each
         # This implement needs to be combined with time series forecasting dataloader, where each time an entire
         # time series is used for prediction
-        cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
-        train, val = list(cv.split(indices))[-1]
+        try:
+            cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
+            train, val = list(cv.split(indices))[-1]
+        except ValueError:
+            train = np.array([], dtype=indices.dtype)
+            val = indices[-1:]
         return train, val
 
     @classmethod

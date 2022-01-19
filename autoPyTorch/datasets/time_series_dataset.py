@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import uuid
 import bisect
 import copy
+import warnings
 
 import numpy as np
 
@@ -285,6 +286,27 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
+
+        minimal_seq_length = np.min(sequence_lengths)
+        if isinstance(resampling_strategy, CrossValTypes):
+            num_splits = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy].get(
+                'num_splits', None)
+            if resampling_strategy_args is not None:
+                num_splits = resampling_strategy_args.get('num_split', num_splits)
+            while minimal_seq_length - n_prediction_steps * num_splits <= 0:
+                num_splits -= 1
+
+            if num_splits >= 2:
+                resampling_strategy = CrossValTypes.time_series_cross_validation
+                if resampling_strategy_args is None:
+                    resampling_strategy_args = {'num_splits': num_splits}
+                else:
+                    resampling_strategy_args.update({'num_splits': num_splits})
+            else:
+                warnings.warn('The dataset is not suitable for cross validation, we will apply holdout instead')
+
+                resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
+                resampling_strategy_args = None
 
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
