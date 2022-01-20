@@ -181,9 +181,8 @@ class BaseTask(ABC):
         task_type: Optional[str] = None
     ) -> None:
 
-        if isinstance(resampling_strategy, NoResamplingStrategyTypes):
-            if ensemble_size != 0:
-                raise ValueError("`NoResamplingStrategy` cant by used for ensemble construction")
+        if isinstance(resampling_strategy, NoResamplingStrategyTypes) and ensemble_size != 0:
+                raise ValueError("`NoResamplingStrategy` cannot be used for ensemble construction")
 
         self.seed = seed
         self.n_jobs = n_jobs

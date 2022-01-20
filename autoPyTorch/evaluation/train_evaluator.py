@@ -153,9 +153,9 @@ class TrainEvaluator(AbstractEvaluator):
         )
 
         if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            resampling_strategy = self.datamanager.resampling_strategy
             raise ValueError(
-                'TrainEvaluator expect to have (CrossValTypes, HoldoutValTypes) as '
-                'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
+                'resampling_strategy for TrainEvaluator must be in (CrossValTypes, HoldoutValTypes), but got {resampling_strategy}'
             )
 
         self.splits = self.datamanager.splits

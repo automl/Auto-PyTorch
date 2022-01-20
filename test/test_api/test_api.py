@@ -829,6 +829,8 @@ def test_tabular_classification_test_evaluator(openml_id, backend, n_samples):
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'tabular_classification'
 
+    assert estimator.resampling_strategy == NoResamplingStrategyTypes.no_resampling
+    assert estimator.dataset.resampling_strategy == NoResamplingStrategyTypes.no_resampling
     # Check for the created files
     tmp_dir = estimator._backend.temporary_directory
     loaded_datamanager = estimator._backend.load_datamanager()

@@ -324,7 +324,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.random_state, val_share, self._get_indices(), **kwargs)
         return train, val
 
-    def get_dataset_for_training(self, split_id: int, train: bool) -> Dataset:
+    def get_dataset(self, split_id: int, train: bool) -> Dataset:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
 
@@ -340,10 +340,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
         if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
-            raise IndexError("split_id out of range, got split_id={}"
-                             " (>= num_splits={})".format(split_id, len(self.splits)))
-        subset = int(not train)
-        indices = self.splits[split_id][subset]
+            raise IndexError(f"self.splits index out of range, got split_id={split_id} (>= num_splits={len(self.splits)})")
+        indices = self.splits[split_id][int(not train)]  # 0: for training, 1: for evaluation
         if indices is None:
             raise ValueError("Specified fold (or subset) does not exist")
 

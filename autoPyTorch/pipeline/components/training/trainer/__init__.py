@@ -383,8 +383,8 @@ class TrainerChoice(autoPyTorchChoice):
         assert self.early_stopping_dataset is not None  # mypy
 
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
-        self.logger.debug(f" Early stopped model {X['num_run']} on epoch "
-                          f"{self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)}")
+        best_epoch = self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)}
+        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {best_epoch}")
         # We will stop the training. Load the last best performing weights
         X['network'].load_state_dict(torch.load(best_path))
 
@@ -415,8 +415,9 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
-        epochs_since_best = self.run_summary.get_last_epoch() -\
-            self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)
+        last_epoch = self.run_summary.get_last_epoch()
+        best_epoch = self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)
+        epochs_since_best =  last_epoch - best_epoch            
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')

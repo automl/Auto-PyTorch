@@ -146,14 +146,14 @@ class TestEvaluator(AbstractEvaluator):
         )
 
         if not isinstance(self.datamanager.resampling_strategy, (NoResamplingStrategyTypes)):
+            resampling_strategy = self.datamanager.resampling_strategy
             raise ValueError(
-                f"TestEvaluator expect to have NoResamplingStrategyTypes as "
-                f"resampling_strategy, but got {self.datamanager.resampling_strategy}"
+                'resampling_strategy for TestEvaluator must be in NoResamplingStrategyTypes, but got {resampling_strategy}'
             )
 
         self.splits = self.datamanager.splits
         if self.splits is None:
-            raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
+            raise AttributeError("create_splits must be called  in {}".format(self.datamanager.__class__.__name__))
 
     def fit_predict_and_loss(self) -> None:
 
@@ -185,23 +185,16 @@ class TestEvaluator(AbstractEvaluator):
     def predict_and_loss(
         self, train: bool = False
     ) -> Tuple[Dict[str, float], np.ndarray]:
-
-        if train:
-            y_pred = self.predict_function(
-                self.X_train,
-                self.pipeline,
-                self.y_train
-            )
-            err = self._loss(self.y_train, y_pred)
-        else:
-            y_pred = self.predict_function(
-                self.X_test,
-                self.pipeline,
-                self.y_train
-            )
-            err = self._loss(self.y_test, y_pred)
-
-        return err, y_pred
+        labels = self.y_train if train else self.y_test
+        feats = self.X_train if train else self.X_test 
+        preds = self.predict_function(
+            X=feats,
+            pipeline=self.pipeline,
+            Y_train=self.y_train  # Need this as we need to know all the classes in train splits
+        )
+        loss_dict = self._loss(labels, preds)
+        
+        return loss_dict, preds
 
 
 # create closure for evaluating an algorithm
