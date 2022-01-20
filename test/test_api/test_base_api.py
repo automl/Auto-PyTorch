@@ -153,7 +153,7 @@ def test_no_resampling_error(backend):
     """
     BaseTask.__abstractmethods__ = set()
 
-    with pytest.raises(ValueError, match=r"`NoResamplingStrategy` cant by used for ensemble construction"):
+    with pytest.raises(ValueError, match=r"`NoResamplingStrategy` cannot be used for ensemble construction"):
         BaseTask(
             backend=backend,
             resampling_strategy=NoResamplingStrategyTypes.no_resampling,

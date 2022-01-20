@@ -148,7 +148,8 @@ class TestEvaluator(AbstractEvaluator):
         if not isinstance(self.datamanager.resampling_strategy, (NoResamplingStrategyTypes)):
             resampling_strategy = self.datamanager.resampling_strategy
             raise ValueError(
-                'resampling_strategy for TestEvaluator must be in NoResamplingStrategyTypes, but got {resampling_strategy}'
+                f'resampling_strategy for TestEvaluator must be in '
+                f'NoResamplingStrategyTypes, but got {resampling_strategy}'
             )
 
         self.splits = self.datamanager.splits
@@ -186,14 +187,14 @@ class TestEvaluator(AbstractEvaluator):
         self, train: bool = False
     ) -> Tuple[Dict[str, float], np.ndarray]:
         labels = self.y_train if train else self.y_test
-        feats = self.X_train if train else self.X_test 
+        feats = self.X_train if train else self.X_test
         preds = self.predict_function(
             X=feats,
             pipeline=self.pipeline,
             Y_train=self.y_train  # Need this as we need to know all the classes in train splits
         )
         loss_dict = self._loss(labels, preds)
-        
+
         return loss_dict, preds
 
 

@@ -24,7 +24,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     NoResamplingFunc,
     NoResamplingFuncs,
-    NoResamplingStrategyTypes
+    NoResamplingStrategyTypes,
+    RESAMPLING_STRATEGIES
 )
 from autoPyTorch.utils.common import FitRequirement
 
@@ -81,9 +82,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
-        resampling_strategy: Union[CrossValTypes,
-                                   HoldoutValTypes,
-                                   NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: RESAMPLING_STRATEGIES = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
@@ -100,8 +99,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data
             test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
                 test data
-            resampling_strategy resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
-                (default=HoldoutValTypes.holdout_validation):
+            resampling_strategy (RESAMPLING_STRATEGIES: default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
@@ -340,7 +338,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
         if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
-            raise IndexError(f"self.splits index out of range, got split_id={split_id} (>= num_splits={len(self.splits)})")
+            raise IndexError(f"self.splits index out of range, got split_id={split_id}"
+                             f" (>= num_splits={len(self.splits)})")
         indices = self.splits[split_id][int(not train)]  # 0: for training, 1: for evaluation
         if indices is None:
             raise ValueError("Specified fold (or subset) does not exist")

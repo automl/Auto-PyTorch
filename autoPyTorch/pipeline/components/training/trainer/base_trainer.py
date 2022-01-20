@@ -123,7 +123,7 @@ class RunSummary(object):
         # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
-            metrics_type = f"{dataset}_metrics"
+            metrics_type = f"{split_type}_metrics"
             scorer = CLASSIFICATION_METRICS[
                 self.optimize_metric
             ] if self.optimize_metric in CLASSIFICATION_METRICS else REGRESSION_METRICS[
@@ -135,7 +135,7 @@ class RunSummary(object):
                 [metrics[self.optimize_metric] for metrics in self.performance_tracker[metrics_type]]
             )) + 1  # Epochs start at 1
         else:
-            loss_type = f"{dataset}_loss"
+            loss_type = f"{split_type}_loss"
             return int(np.argmin(
                 self.performance_tracker[loss_type]
             )) + 1  # Epochs start at 1

@@ -66,7 +66,7 @@ class TrainerChoice(autoPyTorchChoice):
                          random_state=random_state)
         self.run_summary: Optional[RunSummary] = None
         self.writer: Optional[SummaryWriter] = None
-        self.early_stopping_dataset: Optional[str] = None
+        self.early_stopping_split_type: Optional[str] = None
         self._fit_requirements: Optional[List[FitRequirement]] = [
             FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
             FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
@@ -279,9 +279,9 @@ class TrainerChoice(autoPyTorchChoice):
         )
 
         if X['val_data_loader'] is not None:
-            self.early_stopping_dataset = 'val'
+            self.early_stopping_split_type = 'val'
         else:
-            self.early_stopping_dataset = 'train'
+            self.early_stopping_split_type = 'train'
 
         epoch = 1
 
@@ -380,10 +380,10 @@ class TrainerChoice(autoPyTorchChoice):
         """
         assert self.checkpoint_dir is not None  # mypy
         assert self.run_summary is not None  # mypy
-        assert self.early_stopping_dataset is not None  # mypy
+        assert self.early_stopping_split_type is not None  # mypy
 
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
-        best_epoch = self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)}
+        best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)
         self.logger.debug(f" Early stopped model {X['num_run']} on epoch {best_epoch}")
         # We will stop the training. Load the last best performing weights
         X['network'].load_state_dict(torch.load(best_path))
@@ -405,7 +405,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: If true, training should be stopped
         """
         assert self.run_summary is not None
-        assert self.early_stopping_dataset is not None  # mypy
+        assert self.early_stopping_split_type is not None  # mypy
 
         # Allow to disable early stopping
         if X['early_stopping'] is None or X['early_stopping'] < 0:
@@ -416,8 +416,8 @@ class TrainerChoice(autoPyTorchChoice):
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
         last_epoch = self.run_summary.get_last_epoch()
-        best_epoch = self.run_summary.get_best_epoch(dataset=self.early_stopping_dataset)
-        epochs_since_best =  last_epoch - best_epoch            
+        best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)
+        epochs_since_best = last_epoch - best_epoch
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')

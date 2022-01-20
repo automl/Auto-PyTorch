@@ -40,7 +40,12 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes,
+    NoResamplingStrategyTypes,
+    RESAMPLING_STRATEGIES,
+)
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
@@ -145,7 +150,7 @@ class BaseTask(ABC):
             name and Value is an Iterable of the names of the components
             to exclude. All except these components will be present in
             the search space.
-        resampling_strategy resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
+        resampling_strategy resampling_strategy (RESAMPLING_STRATEGIES),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
         resampling_strategy_args (Optional[Dict[str, Any]]): arguments
@@ -173,16 +178,14 @@ class BaseTask(ABC):
         include_components: Optional[Dict[str, Any]] = None,
         exclude_components: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
-        resampling_strategy: Union[CrossValTypes,
-                                   HoldoutValTypes,
-                                   NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: RESAMPLING_STRATEGIES = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None
     ) -> None:
 
         if isinstance(resampling_strategy, NoResamplingStrategyTypes) and ensemble_size != 0:
-                raise ValueError("`NoResamplingStrategy` cannot be used for ensemble construction")
+            raise ValueError("`NoResamplingStrategy` cannot be used for ensemble construction")
 
         self.seed = seed
         self.n_jobs = n_jobs
@@ -293,7 +296,7 @@ class BaseTask(ABC):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]] = None,
+        resampling_strategy: Optional[RESAMPLING_STRATEGIES] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
     ) -> Tuple[BaseDataset, BaseInputValidator]:
@@ -311,7 +314,7 @@ class BaseTask(ABC):
                 Testing feature set
             y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
                 Testing target set
-            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]]):
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):
@@ -335,7 +338,7 @@ class BaseTask(ABC):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]] = None,
+        resampling_strategy: Optional[RESAMPLING_STRATEGIES] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
     ) -> BaseDataset:
@@ -351,7 +354,7 @@ class BaseTask(ABC):
                 Testing feature set
             y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
                 Testing target set
-            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]]):
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):
@@ -1408,7 +1411,7 @@ class BaseTask(ABC):
                 be provided to track the generalization performance of each stage.
             dataset_name (Optional[str]):
                 Name of the dataset, if None, random value is used.
-            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]]):
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):

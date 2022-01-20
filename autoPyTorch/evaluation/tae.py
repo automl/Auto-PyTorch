@@ -130,11 +130,48 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     ):
 
         self.backend = backend
+
+        dm = self.backend.load_datamanager()
+        if dm.val_tensors is not None:
+            self._get_validation_loss = True
+        else:
+            self._get_validation_loss = False
+        if dm.test_tensors is not None:
+            self._get_test_loss = True
+        else:
+            self._get_test_loss = False
+
+        self.resampling_strategy = dm.resampling_strategy
+        self.resampling_strategy_args = dm.resampling_strategy_args
+
+        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+            eval_function = eval_train_function
+            self.output_y_hat_optimization = output_y_hat_optimization
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            eval_function = eval_test_function
+            self.output_y_hat_optimization = False
+
+        self.worst_possible_result = cost_for_crash
+
+        eval_function = functools.partial(
+            fit_predict_try_except_decorator,
+            ta=eval_function,
+            cost_for_crash=self.worst_possible_result,
+        )
+
+        super().__init__(
+            ta=ta if ta is not None else eval_function,
+            stats=stats,
+            run_obj=run_obj,
+            par_factor=par_factor,
+            cost_for_crash=self.worst_possible_result,
+            abort_on_first_run_crash=abort_on_first_run_crash,
+        )
+
         self.pynisher_context = pynisher_context
         self.seed = seed
         self.initial_num_run = initial_num_run
         self.metric = metric
-        self.output_y_hat_optimization = output_y_hat_optimization
         self.include = include
         self.exclude = exclude
         self.disable_file_output = disable_file_output
@@ -162,43 +199,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             memory_limit = int(math.ceil(memory_limit))
         self.memory_limit = memory_limit
 
-        dm = self.backend.load_datamanager()
-        if dm.val_tensors is not None:
-            self._get_validation_loss = True
-        else:
-            self._get_validation_loss = False
-        if dm.test_tensors is not None:
-            self._get_test_loss = True
-        else:
-            self._get_test_loss = False
-
-        self.resampling_strategy = dm.resampling_strategy
-        self.resampling_strategy_args = dm.resampling_strategy_args
-
         self.search_space_updates = search_space_updates
-
-        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
-            eval_function = eval_train_function
-        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            eval_function = eval_test_function
-            self.output_y_hat_optimization = False
-
-        self.worst_possible_result = cost_for_crash
-
-        eval_function = functools.partial(
-            fit_predict_try_except_decorator,
-            ta=eval_function,
-            cost_for_crash=self.worst_possible_result,
-        )
-
-        super().__init__(
-            ta=ta if ta is not None else eval_function,
-            stats=stats,
-            run_obj=run_obj,
-            par_factor=par_factor,
-            cost_for_crash=self.worst_possible_result,
-            abort_on_first_run_crash=abort_on_first_run_crash,
-        )
 
     def run_wrapper(
         self,
