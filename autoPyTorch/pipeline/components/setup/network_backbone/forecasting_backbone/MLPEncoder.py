@@ -127,7 +127,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
-                                                                              value_range=(1, 5),
+                                                                              value_range=(1, 10),
                                                                               default_value=3,
                                                                               ),
             activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",

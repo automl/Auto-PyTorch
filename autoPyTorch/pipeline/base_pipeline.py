@@ -440,10 +440,17 @@ class BasePipeline(Pipeline):
                 # needs to be updated is in components of the
                 # choice module
                 elif split_hyperparameter[0] not in components.keys():
-                    raise ValueError("Unknown hyperparameter for choice {}. "
-                                     "Expected update hyperparameter "
-                                     "to be in {} got {}".format(node.__class__.__name__,
-                                                                 components.keys(), split_hyperparameter[0]))
+                    hp_in_component = False
+                    if hasattr(node, 'additional_components') and node.additional_components:
+                        for component_func in node.additional_components:
+                            if split_hyperparameter[0] in component_func().keys():
+                                hp_in_component = True
+                                break
+                    if not hp_in_component:
+                        raise ValueError("Unknown hyperparameter for choice {}. "
+                                         "Expected update hyperparameter "
+                                         "to be in {} got {}".format(node.__class__.__name__,
+                                                                     components.keys(), split_hyperparameter[0]))
                 else:
                     # check if hyperparameter is in the search space of the component
                     component = components[split_hyperparameter[0]]

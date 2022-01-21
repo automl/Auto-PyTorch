@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from typing import Dict, Optional, List, Any
+from sklearn.pipeline import Pipeline
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
@@ -64,6 +65,11 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
         components.update(decoders)
         components.update(decoder_addons.components)
         return components
+
+    @property
+    def additional_components(self):
+        # This function is deigned to add additional components rather than the components in __choice__
+        return [self.get_decoder_components]
 
     def get_available_components(
         self,
@@ -346,7 +352,6 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
         self.new_params = new_params
         self.choice = self.get_components()[choice](**new_params)
         self.decoder_choice = decoder_components[decoder_type](**decoder_params)
-        from sklearn.pipeline import Pipeline
         self.pipe = Pipeline([('encoder', self.choice), ('decoder', self.decoder_choice)])
         return self
 

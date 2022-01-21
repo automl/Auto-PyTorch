@@ -190,7 +190,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             ),
             num_stacks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="num_stacks_G",
-                value_range=(4, 32),
+                value_range=(2, 32),
                 default_value=30
             ),
             num_blocks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
@@ -205,7 +205,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             ),
             width_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 'width_G',
-                value_range=(32, 512),
+                value_range=(16, 512),
                 default_value=256,
                 log=True
             ),
@@ -226,7 +226,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             ),
             width_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 'width_I',
-                value_range=(32, 2048),
+                value_range=(16, 2048),
                 default_value=512,
                 log=True
             ),
