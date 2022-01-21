@@ -426,6 +426,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         return "time_series_forecasting"
 
+
     def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
@@ -442,8 +443,18 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # Pre-process X
         if batch_size is None:
             warnings.warn("Batch size not provided. "
-                          "Will predict on the whole data in a single iteration")
-            batch_size = X.shape[0]
+                          "Will use 1000 instead")
+            batch_size = 1000
 
         loader = self.named_steps['data_loader'].get_loader(X=X, batch_size=batch_size)
-        return self.named_steps['network'].predict(loader, self.target_scaler)
+        try:
+            return self.named_steps['network'].predict(loader, self.target_scaler).flatten()
+        except Exception as e:
+            # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L283
+            if 'out of memory' in str(e):
+                if batch_size == 1:
+                    raise e
+                warnings.warn('| WARNING: ran out of memory, retrying batch')
+                torch.cuda.empty_cache()
+                batch_size = batch_size // 2
+                return self.predict(X, batch_size=batch_size // 2)

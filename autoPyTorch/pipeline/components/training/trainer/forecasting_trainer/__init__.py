@@ -53,7 +53,7 @@ class ForecastingTrainerChoice(TrainerChoice):
         if 'epochs' in X:
             max_epochs = X['epochs']
         elif X['budget_type'] in FORECASTING_BUDGET_TYPE:
-            max_epochs = 100
+            max_epochs = 50
         else:
             max_epochs = None
         return BudgetTracker(

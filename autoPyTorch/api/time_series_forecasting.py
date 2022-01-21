@@ -340,31 +340,7 @@ class TimeSeriesForecastingTask(BaseTask):
                     target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
                 (used for multi-variable prediction), indicates which value needs to be predicted
         """
-        y_pred = np.ones([len(X_test), self.dataset.n_prediction_steps])
-        for seq_idx, seq in enumerate(X_test):
-            if self.dataset.normalize_y:
-                if pd.DataFrame(seq).shape[-1] > 1:
-                    if self.target_variables is None and y_train is None:
-                        raise ValueError(
-                            'For multi-variant prediction task, either target_variables or y_train needs to '
-                            'be provided!')
-                    if y_train is None:
-                        y_train = seq[self.target_variables]
-                else:
-                    y_train = seq
-                if self.dataset.shift_input_data:
-                    # if input data is shifted, we must compute the mean and standard deviation with the shifted data.
-                    # This is helpful when the
-                    mean_seq = np.mean(y_train[self.dataset.n_prediction_steps:])
-                    std_seq = np.std(y_train[self.dataset.n_prediction_steps:])
-                else:
-                    mean_seq = np.mean(y_train)
-                    std_seq = np.std(y_train)
-
-                seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
-
-                seq_pred = seq_pred * std_seq + mean_seq
-            else:
-                seq_pred = super(TimeSeriesForecastingTask, self).predict(seq, batch_size, n_jobs).flatten()
-            y_pred[seq_idx] = seq_pred
-        return y_pred
+        flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
+        if self.dataset.num_target == 1:
+            return flattened_res.reshape([len(X_test), self.dataset.n_prediction_steps])
+        return flattened_res.reshape([len(X_test), self.dataset.n_prediction_steps, self.dataset.num_target])

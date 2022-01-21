@@ -69,7 +69,8 @@ def _pipeline_predict(pipeline: BasePipeline,
                       X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int,
                       logger: PicklableClientLogger,
-                      task: int) -> np.ndarray:
+                      task: int,
+                      forecasting_task: bool=False) -> np.ndarray:
     @typing.no_type_check
     def send_warnings_to_log(
             message, category, filename, lineno, file=None, line=None):
@@ -93,13 +94,13 @@ def _pipeline_predict(pipeline: BasePipeline,
                     prediction,
                     np.sum(prediction, axis=1)
                 ))
-
-    if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
-            X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
-        logger.warning(
-            "Prediction shape for model %s is %s while X_.shape is %s",
-            pipeline, str(prediction.shape), str(X_.shape)
-        )
+    if not forecasting_task:
+        if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
+                X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
+            logger.warning(
+                "Prediction shape for model %s is %s while X_.shape is %s",
+                pipeline, str(prediction.shape), str(X_.shape)
+            )
     return prediction
 
 
@@ -944,8 +945,6 @@ class BaseTask:
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
-        if time_series_forecasting and budget_type is not 'epochs':
-            self.pipeline_options['epochs'] = 100
 
         # Here the budget is set to max because the SMAC intensifier can be:
         # Hyperband: in this case the budget is determined on the fly and overwritten
@@ -1341,7 +1340,8 @@ class BaseTask:
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(_pipeline_predict)(
-                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type]
+                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type],
+                self.time_series_forecasting
             )
             for identifier in self.ensemble_.get_selected_model_identifiers()
         )
