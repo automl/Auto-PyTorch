@@ -36,7 +36,7 @@ from autoPyTorch.constants import (
     FORECASTING_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
 
 from autoPyTorch.evaluation.utils import (
     VotingRegressorWrapper,
@@ -327,15 +327,23 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
         self.n_prediction_steps = X['dataset_properties']['n_prediction_steps']
         return super(DummyTimeSeriesForecastingPipeline, self).fit(X, y)
 
+    def _genreate_dummy_forecasting(self, X):
+        if isinstance(X[0], TimeSeriesSequence):
+            X_tail = [x.X[-1] for x in X]
+        else:
+            # test
+            X_tail = [x[-1] for x in X]
+        return X_tail
+
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int = 1000) -> np.array:
-        new_X = [x.X[-1] for x in X]
-        return np.tile(new_X, (1, self.n_prediction_steps)).astype(np.float32)
+        X_tail = self._genreate_dummy_forecasting(X)
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.array:
-        new_X = [x.X[-1]for x in X]
-        return np.tile(new_X, (1, self.n_prediction_steps)).astype(np.float32)
+        X_tail = self._genreate_dummy_forecasting(X)
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
