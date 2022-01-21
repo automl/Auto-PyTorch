@@ -107,7 +107,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
-        train_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'], train=True)
+        train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
