@@ -132,12 +132,12 @@ class RunSummary(object):
             # Some metrics maximize, other minimize!
             opt_func = np.argmax if scorer._sign > 0 else np.argmin
             return int(opt_func(
-                [metrics[self.optimize_metric] for metrics in self.performance_tracker[metrics_type]]
+                [metrics[self.optimize_metric] for metrics in self.performance_tracker[metrics_type].values()]
             )) + 1  # Epochs start at 1
         else:
             loss_type = f"{split_type}_loss"
             return int(np.argmin(
-                self.performance_tracker[loss_type]
+                [self.performance_tracker[loss_type][e] for e in range(1, len(self.performance_tracker[loss_type]) + 1)],
             )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
