@@ -108,7 +108,7 @@ class TestBaseDataLoader(unittest.TestCase):
         dataset = unittest.mock.MagicMock()
         dataset.__len__.return_value = 1
         datamanager = unittest.mock.MagicMock()
-        datamanager.get_dataset_for_training.return_value = (dataset, dataset)
+        datamanager.get_dataset.return_value = (dataset, dataset)
         fit_dictionary['backend'].load_datamanager.return_value = datamanager
 
         # Mock child classes requirements
