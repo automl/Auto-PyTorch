@@ -12,7 +12,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputat
 
 
 # TODO: fix in preprocessing PR
-@unittest.skip("Skipping tests as preprocessing is not finalised")
+# @unittest.skip("Skipping tests as preprocessing is not finalised")
 class TestSimpleImputer(unittest.TestCase):
 
     def test_get_config_space(self):

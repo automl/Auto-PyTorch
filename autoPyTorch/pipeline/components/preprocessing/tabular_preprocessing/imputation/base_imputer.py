@@ -29,5 +29,5 @@ class BaseImputer(autoPyTorchTabularPreprocessingComponent):
         if self.preprocessor['numerical'] is None and self.preprocessor['categorical'] is None:
             raise ValueError("cant call transform on {} without fitting first."
                              .format(self.__class__.__name__))
-        # X.update({'imputer': self.preprocessor})
+        X.update({'imputer': self.preprocessor})
         return X
