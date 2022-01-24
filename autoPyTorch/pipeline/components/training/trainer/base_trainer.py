@@ -137,8 +137,7 @@ class RunSummary(object):
         else:
             loss_type = f"{split_type}_loss"
             return int(np.argmin(
-                [self.performance_tracker[loss_type][e]
-                 for e in range(1, len(self.performance_tracker[loss_type]) + 1)],
+                list(self.performance_tracker[loss_type].values()),
             )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
