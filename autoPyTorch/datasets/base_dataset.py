@@ -25,7 +25,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingFunc,
     NoResamplingFuncs,
     NoResamplingStrategyTypes,
-    RESAMPLING_STRATEGIES
+    ResamplingStrategies
 )
 from autoPyTorch.utils.common import FitRequirement
 
@@ -82,7 +82,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
-        resampling_strategy: RESAMPLING_STRATEGIES = HoldoutValTypes.holdout_validation,
+        resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,

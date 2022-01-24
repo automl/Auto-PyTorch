@@ -91,10 +91,10 @@ class NoResamplingStrategyTypes(IntEnum):
 
 
 # TODO: replace it with another way
-RESAMPLING_STRATEGIES = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
+ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
 DEFAULT_RESAMPLING_PARAMETERS: Dict[
-    RESAMPLING_STRATEGIES,
+    ResamplingStrategies,
     Dict[str, Any]
 ] = {
     HoldoutValTypes.holdout_validation: {
