@@ -281,8 +281,8 @@ class TimeSeriesForecastingTask(BaseTask):
             normalize_y=normalize_y,
         )
 
-        if self.dataset.freq_value is not None or not self.customized_window_size:
-            base_window_size = int(np.ceil(self.dataset.freq_value))
+        if self.dataset.base_window_size is not None or not self.customized_window_size:
+            base_window_size = int(np.ceil(self.dataset.base_window_size))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
             if base_window_size > MAX_WINDOW_SIZE_BASE:

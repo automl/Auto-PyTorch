@@ -42,6 +42,7 @@ class ProjectionLayer(nn.Module):
     """
 
     value_in_support = 0.0
+
     # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
 
     def __init__(self,
@@ -49,6 +50,7 @@ class ProjectionLayer(nn.Module):
                  output_shape: Tuple[int, ...],
                  n_prediction_heads: int,
                  auto_regressive: bool,
+                 decoder_has_local_layer: bool,
                  **kwargs, ):
         super().__init__(**kwargs)
 
@@ -66,15 +68,20 @@ class ProjectionLayer(nn.Module):
             Returns:
 
             """
-            if auto_regressive:
-                unflatten_layer = []
+            if decoder_has_local_layer:
+                if auto_regressive:
+                    unflatten_layer = []
+                else:
+                    # we need to unflatten the input from 2D to 3D such that local MLP can be applied to each prediction
+                    # separately
+                    unflatten_layer = [nn.Unflatten(-1, (n_prediction_heads, num_in_features))]
+                return nn.Sequential(*unflatten_layer,
+                                     nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
+                                     nn.Unflatten(-1, (*output_shape, arg_dim)))
             else:
-                # we need to unflatten the input from 2D to 3D such that local MLP can be applied to each prediction
-                # separately
-                unflatten_layer = [nn.Unflatten(-1, (n_prediction_heads, num_in_features))]
-            return nn.Sequential(*unflatten_layer,
-                                 nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
-                                 nn.Unflatten(-1, (*output_shape, arg_dim)))
+                return nn.Sequential(
+                    nn.Linear(num_in_features, n_prediction_heads * np.prod(output_shape).item() * arg_dim),
+                    nn.Unflatten(-1, (n_prediction_heads, *output_shape, arg_dim)))
 
         self.proj = nn.ModuleList(
             [build_single_proj_layer(dim) for dim in self.arg_dims.values()]
@@ -162,6 +169,7 @@ class BetaOutput(ProjectionLayer):
 
 class GammaOutput(ProjectionLayer):
     value_in_support = 0.5
+
     @property
     def arg_dims(self) -> Dict[str, int]:
         return {"concentration": 1, "rate": 1}
@@ -195,10 +203,10 @@ class PoissonOutput(ProjectionLayer):
 
 ALL_DISTRIBUTIONS = {'studentT': StudentTOutput,
                      'normal': NormalOutput,
-                     #'beta': BetaOutput,
-                     #'gamma': GammaOutput,
-                     #'poisson': PoissonOutput
-                    }  # type: Dict[str, ProjectionLayer]
+                     # 'beta': BetaOutput,
+                     # 'gamma': GammaOutput,
+                     # 'poisson': PoissonOutput
+                     }  # type: Dict[str, ProjectionLayer]
 
 # TODO find components that are compatible with beta, gamma and poisson distrubtion!
 

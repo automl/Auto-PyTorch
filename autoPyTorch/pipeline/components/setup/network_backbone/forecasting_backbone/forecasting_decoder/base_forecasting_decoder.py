@@ -58,6 +58,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
     def decoder_properties(self):
         decoder_properties = {'has_hidden_states': False,
+                              'has_local_layer': True,
                               'recurrent': False,
                               'lagged_input': False,
                               'multi_blocks': False,

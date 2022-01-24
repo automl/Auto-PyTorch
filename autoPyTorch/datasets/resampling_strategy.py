@@ -32,6 +32,19 @@ class HoldOutFunc(Protocol):
         ...
 
 
+def holdout_split_forecasting(holdout: TimeSeriesSplit, indices: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    A function that do holdout split without raising an error: When the target sequence is too short to be split into
+    training and validation set, the training set will simply ignore that and we only consider the validation set.
+    """
+    try:
+        train, val = list(holdout.split(indices))[-1]
+    except ValueError:
+        train = np.array([], dtype=indices.dtype)
+        val = [-1]
+    return indices[train], indices[val]
+
+
 class CrossValTypes(IntEnum):
     """The type of cross validation
 
@@ -58,6 +71,7 @@ class CrossValTypes(IntEnum):
     stratified_shuffle_split_cross_validation = 3
     shuffle_split_cross_validation = 4
     time_series_cross_validation = 5
+    time_series_ts_cross_validation = 6
 
     def is_stratified(self) -> bool:
         stratified = [self.stratified_k_fold_cross_validation,
@@ -68,9 +82,9 @@ class CrossValTypes(IntEnum):
 class HoldoutValTypes(IntEnum):
     """TODO: change to enum using functools.partial"""
     """The type of hold out validation (refer to CrossValTypes' doc-string)"""
-    holdout_validation = 6
-    stratified_holdout_validation = 7
-    time_series_hold_out_validation = 8
+    holdout_validation = 11
+    stratified_holdout_validation = 12
+    time_series_hold_out_validation = 13
 
     def is_stratified(self) -> bool:
         stratified = [self.stratified_holdout_validation]
@@ -88,7 +102,7 @@ DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[
         'val_share': 0.33,
     },
     HoldoutValTypes.time_series_hold_out_validation: {
-    'val_share': 0.2
+        'val_share': 0.2
     },
     CrossValTypes.k_fold_cross_validation: {
         'num_splits': 5,
@@ -102,6 +116,9 @@ DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[
     CrossValTypes.time_series_cross_validation: {
         'num_splits': 3,
     },
+    CrossValTypes.time_series_ts_cross_validation: {
+        'num_splits': 2
+    }
 }
 
 
@@ -146,12 +163,8 @@ class HoldOutFuncs():
         # Time Series prediction only requires on set of prediction for each
         # This implement needs to be combined with time series forecasting dataloader, where each time an entire
         # time series is used for prediction
-        try:
-            cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
-            train, val = list(cv.split(indices))[-1]
-        except ValueError:
-            train = np.array([], dtype=indices.dtype)
-            val = indices[-1:]
+        cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
+        train, val = holdout_split_forecasting(holdout=cv, indices=indices)
         return train, val
 
     @classmethod
@@ -191,7 +204,6 @@ class CrossValFuncs():
                                            indices: np.ndarray,
                                            **kwargs: Any
                                            ) -> List[Tuple[np.ndarray, np.ndarray]]:
-
         shuffle = kwargs.get('shuffle', True)
         cv = StratifiedKFold(n_splits=num_splits, shuffle=shuffle,
                              random_state=random_state if not shuffle else None)
@@ -246,6 +258,44 @@ class CrossValFuncs():
         test_size = kwargs['n_prediction_steps']
         cv = TimeSeriesSplit(n_splits=num_splits, test_size=test_size, gap=0)
         splits = [(indices[split[0]], indices[split[1][-1:]]) for split in cv.split(indices)]
+        return splits
+
+    @staticmethod
+    def time_series_ts_cross_validation(random_state: np.random.RandomState,
+                                        num_splits: int,
+                                        indices: np.ndarray,
+                                        **kwargs: Any
+                                        ) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        A special sort of Time series cross validator: it could be considered as a mixture of two sorts of holdout set:
+        The first holdout setting: trend setting, simply consider the tail of the sequence as validation sets and the
+        part before as training set
+        The second holdout setting: seasonality setting, ensures that the distance between validation sets and test sets
+        is the multiple of seasonality period. Thus we could ensure that validation and test sets are at the same
+        position of the period
+
+        Args:
+            indices (np.ndarray): array of indices to be split
+            num_splits (int): number of cross validation splits
+
+        Returns:
+            splits (List[Tuple[List, List]]): list of tuples of training and validation indices
+        """
+        n_prediction_steps = kwargs['n_prediction_steps']
+        seasonality_h_value = kwargs['seasonality_h_value']
+        assert seasonality_h_value >= n_prediction_steps
+        cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=n_prediction_steps - 1)
+        train_t, val_t = holdout_split_forecasting(cv, indices)
+        splits = [(train_t, val_t)]
+
+        train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps])
+        splits.append((train_s, val_s))
+        if num_splits > 2:
+            freq_value = int(kwargs['freq_value'])
+            for i_split in range(2, num_splits):
+                n_tail = (i_split - 1) * freq_value + seasonality_h_value - n_prediction_steps
+                train_s, val_s = holdout_split_forecasting(cv, indices[:-n_tail])
+                splits.append((train_s, val_s))
         return splits
 
     @classmethod

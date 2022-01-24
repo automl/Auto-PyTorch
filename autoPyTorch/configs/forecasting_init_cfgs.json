@@ -32,8 +32,9 @@
             "network_backbone:MLPEncoder:use_dropout": false,
             "network_backbone:MLPEncoder:normalization": "NoNorm",
             "network_backbone:MLPDecoder:num_layers": 0,
-            "network_backbone:MLPDecoder:units_final_layer": 40,
+            "network_backbone:MLPDecoder:units_local_layer": 40,
             "network_backbone:MLPDecoder:auto_regressive": false,
+            "network_backbone:MLPDecoder:has_local_layer": true,
             "network:forecast_strategy": "sample",
             "network:aggregation": "median",
             "network:num_samples": 100
@@ -69,7 +70,8 @@
             "network_backbone:RNNEncoder:decoder_type": "MLPDecoder",
             "network_backbone:MLPDecoder:num_layers": 0,
             "network_backbone:MLPDecoder:auto_regressive": false,
-            "network_backbone:MLPDecoder:units_final_layer": 30,
+            "network_backbone:MLPDecoder:has_local_layer": true,
+            "network_backbone:MLPDecoder:units_local_layer": 30,
             "network:forecast_strategy": "sample",
             "network:aggregation": "median",
             "network:num_samples": 100
@@ -89,7 +91,7 @@
             "network_backbone:TCNEncoder:kernel_size_3": 3,
             "network_backbone:MLPDecoder:num_layers": 0,
             "network_backbone:MLPDecoder:auto_regressive": false,
-            "network_backbone:MLPDecoder:units_final_layer": 30,
+            "network_backbone:MLPDecoder:has_local_layer": false,
             "network:forecast_strategy": "sample",
             "network:aggregation": "median",
             "network:num_samples": 100
@@ -171,7 +173,6 @@
             "network_backbone:NBEATSDecoder:dropout_I_2": 0.1
         },
         "NBEATS-G": {
-            "target_scaler:__choice__": "TargetNoScaler",
             "loss:__choice__": "RegressionLoss",
             "loss:RegressionLoss:loss_name": "mape",
             "network:net_out_type": "regression",
@@ -180,13 +181,14 @@
             "network_backbone:NBEATSDecoder:normalization": "NoNorm",
             "network_backbone:NBEATSDecoder:activation": "relu",
             "network_backbone:NBEATSDecoder:n_beats_type": "G",
-            "network_backbone:NBEATSDecoder:use_dropout_G": false,
+            "network_backbone:NBEATSDecoder:use_dropout_G": true,
             "network_backbone:NBEATSDecoder:num_stacks_G": 30,
             "network_backbone:NBEATSDecoder:num_blocks_G": 1,
             "network_backbone:NBEATSDecoder:num_layers_G": 4,
             "network_backbone:NBEATSDecoder:width_G": 512,
             "network_backbone:NBEATSDecoder:weight_sharing_G": false,
-            "network_backbone:NBEATSDecoder:expansion_coefficient_length_G": 32
+            "network_backbone:NBEATSDecoder:expansion_coefficient_length_G": 32,
+            "network_backbone:NBEATSDecoder:dropout_G": 0.1
         }
     }
 }

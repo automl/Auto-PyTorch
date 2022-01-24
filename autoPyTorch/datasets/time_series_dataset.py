@@ -223,11 +223,19 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                         "you could pass freq with a numerical value")
             freq_value = SEASONALITY_MAP.get(freq, None)
         if isinstance(freq, list):
-            tmp_freq = min([freq_value for freq_value in freq if freq_value >= n_prediction_steps])
+            if np.max(freq) < n_prediction_steps:
+                tmp_freq = n_prediction_steps
+            else:
+                tmp_freq = min([freq_value for freq_value in freq if freq_value >= n_prediction_steps])
             freq_value = tmp_freq
         if isinstance(freq_value, list):
-            tmp_freq = min([freq_value_item for freq_value_item in freq_value if freq_value_item >= n_prediction_steps])
+            if np.max(freq_value) < n_prediction_steps:
+                tmp_freq = n_prediction_steps
+            else:
+                tmp_freq = min([freq_value_item for
+                                freq_value_item in freq_value if freq_value_item >= n_prediction_steps])
             freq_value = tmp_freq
+        self.base_window_size = max(n_prediction_steps, freq_value)
 
         seasonality = SEASONALITY_MAP.get(freq, 1)
         if isinstance(seasonality, list):
@@ -293,20 +301,22 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 'num_splits', None)
             if resampling_strategy_args is not None:
                 num_splits = resampling_strategy_args.get('num_split', num_splits)
-            while minimal_seq_length - n_prediction_steps * num_splits <= 0:
-                num_splits -= 1
 
-            if num_splits >= 2:
-                resampling_strategy = CrossValTypes.time_series_cross_validation
-                if resampling_strategy_args is None:
-                    resampling_strategy_args = {'num_splits': num_splits}
+            if resampling_strategy != CrossValTypes.time_series_ts_cross_validation:
+                while minimal_seq_length - n_prediction_steps * num_splits <= 0:
+                    num_splits -= 1
+
+                if num_splits >= 2:
+                    resampling_strategy = CrossValTypes.time_series_cross_validation
+                    if resampling_strategy_args is None:
+                        resampling_strategy_args = {'num_splits': num_splits}
+                    else:
+                        resampling_strategy_args.update({'num_splits': num_splits})
                 else:
-                    resampling_strategy_args.update({'num_splits': num_splits})
-            else:
-                warnings.warn('The dataset is not suitable for cross validation, we will apply holdout instead')
+                    warnings.warn('The dataset is not suitable for cross validation, we will apply holdout instead')
 
-                resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
-                resampling_strategy_args = None
+                    resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
+                    resampling_strategy_args = None
 
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -370,8 +380,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.numerical_features: List[int] = list(range(self.num_features))
         self.categorical_features: List[int] = []
-        self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(HoldoutValTypes.time_series_hold_out_validation)
+
+        if isinstance(resampling_strategy, CrossValTypes):
+            self.cross_validators = CrossValFuncs.get_cross_validators(resampling_strategy)
+        else:
+            self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
+        if isinstance(resampling_strategy, HoldoutValTypes):
+            self.holdout_validators = HoldOutFuncs.get_holdout_validators(resampling_strategy)
+
+        else:
+            self.holdout_validators = HoldOutFuncs.get_holdout_validators(
+                HoldoutValTypes.time_series_hold_out_validation)
 
         self.splits = self.get_splits_from_resampling_strategy()
 
@@ -592,11 +611,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             splits.append(self.create_holdout_val_split(holdout_val_type=self.resampling_strategy,
                                                         val_share=val_share))
 
-            if self.val_tensors is not None:
-                upper_window_size = np.min(self.sequence_lengths_train) - self.n_prediction_steps
-            else:
-                upper_window_size = int(np.min(self.sequence_lengths_train) * 1 - val_share)
-
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
                 'num_splits', None)
@@ -607,13 +621,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 cross_val_type=self.resampling_strategy,
                 num_splits=cast(int, num_splits),
             ))
-            upper_window_size = (np.min(self.sequence_lengths_train)) - self.n_prediction_steps * (num_splits - 1)
         elif self.resampling_strategy is None:
             splits.append(self.create_refit_split())
-            upper_window_size = np.inf
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
-        self.upper_window_size = upper_window_size
         return splits
 
     def get_required_dataset_info(self) -> Dict[str, Any]:
@@ -635,7 +646,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
-                                   'upper_window_size': self.upper_window_size,
                                    'sp': self.seasonality,  # For metric computation,
                                    'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train,
@@ -670,8 +680,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start = 0
 
         kwargs = {"n_prediction_steps": self.n_prediction_steps}
+        if cross_val_type == CrossValTypes.time_series_ts_cross_validation:
+            seasonality_h_value = int(np.round((self.n_prediction_steps // int(self.freq_value) + 1) * self.freq_value))
+            kwargs.update({'seasonality_h_value': seasonality_h_value,
+                           'freq_value': self.freq_value})
         splits = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
-        idx_all = self._get_indices()
 
         for idx_seq, dataset in enumerate(self.datasets):
             if self.shift_input_data:
@@ -733,17 +746,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if self.shift_input_data:
                 split = self.holdout_validators[holdout_val_type.name](self.random_state,
                                                                        val_share,
-                                                                       indices=np.arange(len(dataset)),
+                                                                       indices=np.arange(len(dataset)) + idx_start,
                                                                        **kwargs)
             else:
                 split = self.holdout_validators[holdout_val_type.name](self.random_state,
                                                                        val_share,
-                                                                       indices=np.arange(
+                                                                       indices=idx_start + np.arange(
                                                                            len(dataset) - self.n_prediction_steps),
                                                                        **kwargs)
 
             for idx_split in range(2):
-                splits[idx_split][idx_seq] = idx_start + split[idx_split]
+                splits[idx_split][idx_seq] = split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
 
         train_indices = np.hstack([sp for sp in splits[0]])
