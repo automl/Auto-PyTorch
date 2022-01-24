@@ -179,6 +179,16 @@ class RunSummary(object):
         string += '=' * 40
         return string
 
+    def is_empty(self) -> bool:
+        """
+        Checks if the object is empty or not
+
+        Returns:
+            bool
+        """
+        # if train_loss is empty, we can be sure that RunSummary is empty.
+        return not bool(self.performance_tracker['train_loss'])
+
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
@@ -277,7 +287,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
-                    ) -> Tuple[float, Dict[str, float]]:
+                    ) -> Tuple[Optional[float], Dict[str, float]]:
         """
         Train the model for a single epoch.
 
@@ -316,6 +326,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     loss,
                     epoch * len(train_loader) + step,
                 )
+
+        if N == 0:
+            return None, {}
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 

@@ -1,6 +1,7 @@
 import os
 import re
 import unittest
+import unittest.mock
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
@@ -491,3 +492,30 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
 
     # More than 200 epochs would have pass in 5 seconds for this dataset
     assert len(run_summary.performance_tracker['start_time']) > 100
+
+
+@pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
+def test_train_pipeline_with_runtime_max_reached(fit_dictionary_tabular_dummy):
+    """
+    This test makes sure that the pipeline raises an
+    error in case no epoch has finished successfully
+    due to max runtime reached
+    """
+
+    # Convert the training to runtime
+    fit_dictionary_tabular_dummy.pop('epochs', None)
+    fit_dictionary_tabular_dummy['budget_type'] = 'runtime'
+    fit_dictionary_tabular_dummy['runtime'] = 5
+    fit_dictionary_tabular_dummy['early_stopping'] = -1
+
+    pipeline = TabularClassificationPipeline(
+        dataset_properties=fit_dictionary_tabular_dummy['dataset_properties'])
+
+    cs = pipeline.get_hyperparameter_search_space()
+    config = cs.get_default_configuration()
+    pipeline.set_hyperparameters(config)
+
+    with unittest.mock.patch('autoPyTorch.pipeline.components.training.trainer.BudgetTracker') as patch:
+        patch.is_max_time_reached.return_value = True
+        with pytest.raises(RuntimeError):
+            pipeline.fit(fit_dictionary_tabular_dummy)

@@ -236,6 +236,43 @@ class TestBaseTrainerComponent(BaseTraining):
             lr = optimizer.param_groups[0]['lr']
             assert lr == target_lr
 
+    def test_train_epoch_no_step(self):
+        """
+        This test checks if max runtime is reached
+        for an epoch before any train_step has been
+        completed. In this case we would like to
+        return None for train_loss and an empty
+        dictionary for the metrics.
+        """
+        device = torch.device('cpu')
+        model = torch.nn.Linear(1, 1).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1)
+        data_loader = unittest.mock.MagicMock(spec=torch.utils.data.DataLoader)
+        ms = [3, 5, 6]
+        params = {
+            'metrics': [],
+            'device': device,
+            'task_type': constants.TABULAR_REGRESSION,
+            'labels': torch.Tensor([]),
+            'metrics_during_training': False,
+            'budget_tracker': BudgetTracker(budget_type='runtime', max_runtime=0),
+            'criterion': torch.nn.MSELoss,
+            'optimizer': optimizer,
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=ms, gamma=2),
+            'model': model,
+            'step_interval': StepIntervalUnit.epoch
+        }
+        trainer = StandardTrainer()
+        trainer.prepare(**params)
+
+        loss, metrics = trainer.train_epoch(
+            train_loader=data_loader,
+            epoch=0,
+            writer=None
+        )
+        assert loss is None
+        assert metrics == {}
+
 
 class TestStandardTrainer(BaseTraining):
     def test_regression_epoch_training(self, n_samples):
