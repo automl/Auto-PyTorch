@@ -465,9 +465,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         sampler_indices_train = np.arange(num_instances_dataset)
 
+        seed_train = self.random_state.randint(0, 2 ** 20)
+        generator_train = torch.Generator()
+        generator_train.manual_seed(seed_train)
+
         self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
                                                num_instances_per_seqs=num_instances_per_seqs,
-                                               min_start=min_start)
+                                               min_start=min_start,
+                                               generator=generator_train)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -480,6 +485,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             sampler=self.sampler_train,
         )
 
+        seed_val = self.random_state.randint(0, 2 ** 20)
+        generator_val = torch.Generator()
+        generator_val.manual_seed(seed_val)
+
         self.val_data_loader = torch.utils.data.DataLoader(
             val_dataset,
             batch_size=min(1000, len(val_dataset)),
@@ -488,7 +497,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', False),
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
-            sampler=SequentialSubSetSampler(val_dataset, int(np.sum(num_instances_per_seqs)) // 5)
+            sampler=SequentialSubSetSampler(data_source=val_dataset,
+                                            num_samples=int(np.sum(num_instances_per_seqs)) // 5,
+                                            generator=generator_val)
         )
         return self
 
