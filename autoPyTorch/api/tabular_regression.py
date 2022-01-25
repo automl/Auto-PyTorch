@@ -13,8 +13,8 @@ from autoPyTorch.constants import (
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
     HoldoutValTypes,
+    ResamplingStrategies,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
@@ -64,8 +64,15 @@ class TabularRegressionTask(BaseTask):
             name and Value is an Iterable of the names of the components
             to exclude. All except these components will be present in
             the search space.
+        resampling_strategy resampling_strategy (RESAMPLING_STRATEGIES),
+                (default=HoldoutValTypes.holdout_validation):
+                strategy to split the training data.
+        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+            required for the chosen resampling strategy. If None, uses
+            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            in ```datasets/resampling_strategy.py```.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
-            search space updates that can be used to modify the search
+            Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
     """
 
@@ -84,7 +91,7 @@ class TabularRegressionTask(BaseTask):
         delete_output_folder_after_terminate: bool = True,
         include_components: Optional[Dict[str, Any]] = None,
         exclude_components: Optional[Dict[str, Any]] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
@@ -154,7 +161,7 @@ class TabularRegressionTask(BaseTask):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes]] = None,
+        resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
@@ -171,7 +178,7 @@ class TabularRegressionTask(BaseTask):
                 Testing feature set
             y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
                 Testing target set
-            resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes]]):
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):

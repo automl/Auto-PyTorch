@@ -14,6 +14,7 @@ from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT,
 )
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -23,7 +24,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
-__all__ = ['TrainEvaluator', 'eval_function']
+__all__ = ['TrainEvaluator', 'eval_train_function']
 
 
 def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
@@ -40,7 +41,9 @@ class TrainEvaluator(AbstractEvaluator):
     A pipeline implementing the provided configuration is fitted
     using the datamanager object retrieved from disc, via the backend.
     After the pipeline is fitted, it is save to disc and the performance estimate
-    is communicated to the main process via a Queue.
+    is communicated to the main process via a Queue. It is only compatible
+    with `CrossValTypes`, `HoldoutValTypes`, i.e, when the training data
+    is split and the validation set is used for SMBO optimisation.
 
     Attributes:
         backend (Backend):
@@ -148,6 +151,13 @@ class TrainEvaluator(AbstractEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
+
+        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            resampling_strategy = self.datamanager.resampling_strategy
+            raise ValueError(
+                f'resampling_strategy for TrainEvaluator must be in '
+                f'(CrossValTypes, HoldoutValTypes), but got {resampling_strategy}'
+            )
 
         self.splits = self.datamanager.splits
         if self.splits is None:
@@ -402,25 +412,25 @@ class TrainEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
-def eval_function(
-        backend: Backend,
-        queue: Queue,
-        metric: autoPyTorchMetric,
-        budget: float,
-        config: Optional[Configuration],
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        budget_type: str = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        logger_port: Optional[int] = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        instance: str = None,
+def eval_train_function(
+    backend: Backend,
+    queue: Queue,
+    metric: autoPyTorchMetric,
+    budget: float,
+    config: Optional[Configuration],
+    seed: int,
+    output_y_hat_optimization: bool,
+    num_run: int,
+    include: Optional[Dict[str, Any]],
+    exclude: Optional[Dict[str, Any]],
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_config: Optional[Dict[str, Any]] = None,
+    budget_type: str = None,
+    init_params: Optional[Dict[str, Any]] = None,
+    logger_port: Optional[int] = None,
+    all_supported_metrics: bool = True,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    instance: str = None,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the

@@ -92,7 +92,7 @@ class EvaluationTest(unittest.TestCase):
 
     ############################################################################
     # Test ExecuteTaFuncWithQueue.run_wrapper()
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout(self, pynisher_mock):
         pynisher_mock.side_effect = safe_eval_success_mock
         config = unittest.mock.Mock()
@@ -106,7 +106,7 @@ class EvaluationTest(unittest.TestCase):
                                     logger_port=self.logger_port,
                                     pynisher_context='fork',
                                     )
-        info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
+        info = ta.run_wrapper(RunInfo(config=config, cutoff=2000000, instance=None,
                                       instance_specific=None, seed=1, capped=False))
         self.assertEqual(info[0].config.config_id, 198)
         self.assertEqual(info[1].status, StatusType.SUCCESS, info)
@@ -178,7 +178,7 @@ class EvaluationTest(unittest.TestCase):
                                              instance_specific=None, seed=1, capped=False))
         self.assertEqual(run_value.status, StatusType.STOP)
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_fail_silent(self, pynisher_mock):
         pynisher_mock.return_value = None
         config = unittest.mock.Mock()
@@ -220,7 +220,7 @@ class EvaluationTest(unittest.TestCase):
                                                    'subprocess_stdout': '',
                                                    'subprocess_stderr': ''})
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_fail_memory_error(self, pynisher_mock):
         pynisher_mock.side_effect = MemoryError
         config = unittest.mock.Mock()
@@ -302,7 +302,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIsInstance(info[1].time, float)
         self.assertNotIn('exitcode', info[1].additional_info)
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_2(self, eval_houldout_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
@@ -331,7 +331,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn('configuration_origin', info[1].additional_info)
         self.assertEqual(info[1].additional_info['message'], "{'subsample': 30}")
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_exception_in_target_function(self, eval_holdout_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
