@@ -234,8 +234,8 @@ Fit the configuration
       trainer:StandardTrainer:weighted_loss, Value: True
       trainer:__choice__, Value: 'StandardTrainer'
     , instance=None, instance_specific=None, seed=1, cutoff=94, capped=False, budget=10, source_id=0)
-    RunValue(cost=0.03379224030037542, time=73.8400616645813, status=<StatusType.SUCCESS: 1>, starttime=1643028129.5814853, endtime=1643028204.470694, additional_info={'opt_loss': {'accuracy': 0.03379224030037542}, 'duration': 73.76963639259338, 'num_run': 2, 'train_loss': {'accuracy': 0.003754693366708417}, 'test_loss': {'accuracy': 0.03066332916145187}, 'configuration_origin': None})
-    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7F9623B2F640), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.EncoderChoice object at 0x7f9622639ca0>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.ScalerChoice object at 0x7f9622639c10>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FeatureProprocessorChoice object at 0x7f9622c447c0>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7F9623B2F640), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7F9623B2F640), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.NetworkEmbeddingChoice object at 0x7f9622417af0>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.NetworkBackboneChoice object at 0x7f96223399d0>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.NetworkHeadChoice object at 0x7f9622775820>, 'network': NetworkComponent(network=Sequential(
+    RunValue(cost=0.021276595744680882, time=53.957823038101196, status=<StatusType.SUCCESS: 1>, starttime=1643122578.643471, endtime=1643122633.652623, additional_info={'opt_loss': {'accuracy': 0.021276595744680882}, 'duration': 53.882060050964355, 'num_run': 2, 'train_loss': {'accuracy': 0.006257822277847325}, 'test_loss': {'accuracy': 0.03191489361702127}, 'configuration_origin': None})
+    {'imputer': SimpleImputer(random_state=RandomState(MT19937) at 0x7F01B0AD7D40), 'encoder': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.EncoderChoice object at 0x7f01ac5e2ee0>, 'scaler': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.ScalerChoice object at 0x7f01ac5e2220>, 'feature_preprocessor': <autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FeatureProprocessorChoice object at 0x7f01ac5e2df0>, 'tabular_transformer': TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7F01B0AD7D40), 'preprocessing': EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7F01B0AD7D40), 'network_embedding': <autoPyTorch.pipeline.components.setup.network_embedding.NetworkEmbeddingChoice object at 0x7f01afc6b1f0>, 'network_backbone': <autoPyTorch.pipeline.components.setup.network_backbone.NetworkBackboneChoice object at 0x7f01b008cac0>, 'network_head': <autoPyTorch.pipeline.components.setup.network_head.NetworkHeadChoice object at 0x7f024237a9d0>, 'network': NetworkComponent(network=Sequential(
       (0): _NoEmbedding()
       (1): Sequential(
         (0): Linear(in_features=73, out_features=200, bias=True)
@@ -255,7 +255,7 @@ Fit the configuration
         (3): Linear(in_features=128, out_features=2, bias=True)
       )
     ),
-                     random_state=RandomState(MT19937) at 0x7F9623B2F640), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.NetworkInitializerChoice object at 0x7f9622775c10>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.OptimizerChoice object at 0x7f9622775160>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.SchedulerChoice object at 0x7f96220911f0>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7F9623B2F640), 'trainer': <autoPyTorch.pipeline.components.training.trainer.TrainerChoice object at 0x7f96222ab850>}
+                     random_state=RandomState(MT19937) at 0x7F01B0AD7D40), 'network_init': <autoPyTorch.pipeline.components.setup.network_initializer.NetworkInitializerChoice object at 0x7f01af137e80>, 'optimizer': <autoPyTorch.pipeline.components.setup.optimizer.OptimizerChoice object at 0x7f01af137400>, 'lr_scheduler': <autoPyTorch.pipeline.components.setup.lr_scheduler.SchedulerChoice object at 0x7f01af554700>, 'data_loader': FeatureDataLoader(random_state=RandomState(MT19937) at 0x7F01B0AD7D40), 'trainer': <autoPyTorch.pipeline.components.training.trainer.TrainerChoice object at 0x7f01b02adb80>}
 
 
 
@@ -263,7 +263,7 @@ Fit the configuration
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  26.346 seconds)
+   **Total running time of the script:** ( 1 minutes  3.750 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_single_configuration.py:
