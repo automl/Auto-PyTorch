@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Tuple, Union, Sequence, List
+from typing import Any, Dict, Optional, Union, Sequence, List, Iterator, Sized
+
 from functools import partial
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -9,7 +10,7 @@ import numpy as np
 
 import torch
 import collections
-from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 from torch._six import string_classes
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format, default_collate
 
@@ -234,6 +235,27 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
     def __len__(self):
         return self.num_instances
+
+
+class SequentialSubSetSampler(SequentialSampler):
+    data_source: Sized
+
+    def __init__(self, data_source: Sized, num_samples: int, generator: Optional[torch.Generator] = None) -> None:
+        super(SequentialSubSetSampler, self).__init__(data_source)
+        if num_samples > len(data_source):
+            self.num_samples = len(data_source)
+        else:
+            self.num_samples = num_samples
+        self.generator = generator
+
+    def __iter__(self) -> Iterator[int]:
+        if self.num_samples == len(self.data_source):
+            return super(SequentialSubSetSampler, self).__iter__()
+        else:
+            yield from torch.randperm(len(self.data_source), generator=self.generator)[:self.num_samples]
+
+    def __len__(self) -> int:
+        return self.num_samples
 
 
 class ExpandTransformTimeSeries(object):
@@ -466,6 +488,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', False),
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
+            sampler=SequentialSubSetSampler(val_dataset, int(np.sum(num_instances_per_seqs)) // 5)
         )
         return self
 
