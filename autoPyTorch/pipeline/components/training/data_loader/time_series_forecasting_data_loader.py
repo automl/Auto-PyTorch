@@ -473,8 +473,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
                                                num_instances_per_seqs=num_instances_per_seqs,
-                                               min_start=min_start,
-                                               generator=generator_train)
+                                               min_start=min_start)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -487,17 +486,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             sampler=self.sampler_train,
         )
 
-        seed_val = self.random_state.randint(0, 2 ** 20)
-        generator_val = torch.Generator()
-        generator_val.manual_seed(seed_val)
 
         num_samples_val = int(np.sum(num_instances_per_seqs)) // 5
         if num_samples_val > len(val_dataset):
             sampler_val = None
         else:
             sampler_val = SequentialSubSetSampler(data_source=val_dataset,
-                                                  num_samples=num_samples_val,
-                                                  generator=generator_val)
+                                                  num_samples=num_samples_val)
 
         self.val_data_loader = torch.utils.data.DataLoader(
             val_dataset,
