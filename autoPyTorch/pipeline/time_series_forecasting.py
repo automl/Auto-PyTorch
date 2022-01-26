@@ -452,7 +452,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         except Exception as e:
             # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L283
             if 'out of memory' in str(e):
-                if batch_size == 1:
+                if batch_size <= 1:
                     raise e
                 warnings.warn('| WARNING: ran out of memory, retrying batch')
                 torch.cuda.empty_cache()

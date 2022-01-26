@@ -188,7 +188,7 @@ class ForecastingHead(NetworkHeadComponent):
                 else:
                     proj_layer = nn.Sequential(
                         nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
-                        nn.Unflatten(-1, (n_prediction_heads, output_shape[1:])),
+                        nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
                     )
             return proj_layer
         else:

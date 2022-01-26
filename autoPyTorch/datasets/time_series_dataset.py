@@ -235,7 +235,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 tmp_freq = min([freq_value_item for
                                 freq_value_item in freq_value if freq_value_item >= n_prediction_steps])
             freq_value = tmp_freq
-        self.base_window_size = max(n_prediction_steps, freq_value)
 
         seasonality = SEASONALITY_MAP.get(freq, 1)
         if isinstance(seasonality, list):
@@ -317,6 +316,18 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
                     resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
                     resampling_strategy_args = None
+            else:
+                seasonality_h_value = int(
+                    np.round((self.n_prediction_steps // int(self.freq_value) + 1) * self.freq_value))
+
+                while minimal_seq_length < (num_splits - 1) * freq_value + seasonality_h_value - n_prediction_steps:
+                    if num_splits <= 2:
+                        break
+                    num_splits -= 1
+                if resampling_strategy_args is None:
+                    resampling_strategy_args = {'num_splits': num_splits}
+                else:
+                    resampling_strategy_args.update({'num_splits': num_splits})
 
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -347,7 +358,15 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
-        self.seq_length_min = np.min(self.sequence_lengths_train)
+        self.seq_length_min = int(np.min(self.sequence_lengths_train))
+        self.seq_length_median = int(np.median(self.sequence_lengths_train))
+        self.seq_length_max = int(np.max(self.sequence_lengths_train))
+
+        if max(n_prediction_steps, freq_value) > self.seq_length_median:
+            self.base_window_size = min(n_prediction_steps, freq_value, self.seq_length_median)
+        else:
+            self.base_window_size = max(n_prediction_steps, freq_value)
+
 
         self.train_tensors = train_tensors
 
@@ -649,6 +668,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'sp': self.seasonality,  # For metric computation,
                                    'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train,
+                                   'seq_length_max': self.seq_length_max,
                                    'lagged_value': self.lagged_value})
         return dataset_properties
 

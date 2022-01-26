@@ -1,9 +1,9 @@
 from typing import Any, Dict, Optional, Union, Sequence, List, Iterator, Sized
-
+import warnings
 from functools import partial
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
+from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter, Constant
 from ConfigSpace.conditions import EqualsCondition
 
 import numpy as np
@@ -243,13 +243,15 @@ class SequentialSubSetSampler(SequentialSampler):
     def __init__(self, data_source: Sized, num_samples: int, generator: Optional[torch.Generator] = None) -> None:
         super(SequentialSubSetSampler, self).__init__(data_source)
         if num_samples > len(data_source):
+            self.eval_all_sequences = True
             self.num_samples = len(data_source)
         else:
+            self.eval_all_sequences = False
             self.num_samples = num_samples
         self.generator = generator
 
     def __iter__(self) -> Iterator[int]:
-        if self.num_samples == len(self.data_source):
+        if self.eval_all_sequences:
             return super(SequentialSubSetSampler, self).__iter__()
         else:
             yield from torch.randperm(len(self.data_source), generator=self.generator)[:self.num_samples]
@@ -489,6 +491,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         generator_val = torch.Generator()
         generator_val.manual_seed(seed_val)
 
+        num_samples_val = int(np.sum(num_instances_per_seqs)) // 5
+        if num_samples_val > len(val_dataset):
+            sampler_val = None
+        else:
+            sampler_val = SequentialSubSetSampler(data_source=val_dataset,
+                                                  num_samples=num_samples_val,
+                                                  generator=generator_val)
+
         self.val_data_loader = torch.utils.data.DataLoader(
             val_dataset,
             batch_size=min(1000, len(val_dataset)),
@@ -497,9 +507,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             pin_memory=X.get('pin_memory', True),
             drop_last=X.get('drop_last', False),
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
-            sampler=SequentialSubSetSampler(data_source=val_dataset,
-                                            num_samples=int(np.sum(num_instances_per_seqs)) // 5,
-                                            generator=generator_val)
+            sampler=sampler_val
         )
         return self
 
@@ -677,7 +685,25 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
         add_hyperparameter(cs, sample_strategy, CategoricalHyperparameter)
 
-        window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
+        seq_length_max = dataset_properties.get('seq_length_max', np.inf)
+
+        if seq_length_max <= window_size.value_range[1]:
+            if seq_length_max <= window_size.value_range[0]:
+                warnings.warn('The base window_size is larger than the maximal sequence length in the dataset,'
+                              'we simply set it as a constant value with maximal sequence length')
+                window_size = HyperparameterSearchSpace(hyperparameter=window_size.hyperparameter, 
+                                                        value_range=(seq_length_max, ),
+                                                        default_value=seq_length_max)
+                window_size = get_hyperparameter(window_size, Constant)
+            else:
+                window_size_value_range = window_size.value_range
+                window_size = HyperparameterSearchSpace(hyperparameter='window_size',
+                                                        value_range=(window_size_value_range[0], seq_length_max),
+                                                        default_value=window_size_value_range[0])
+                window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
+        else:
+            window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
+
         backcast = get_hyperparameter(backcast, CategoricalHyperparameter)
         backcast_period = get_hyperparameter(backcast_period, UniformIntegerHyperparameter)
 

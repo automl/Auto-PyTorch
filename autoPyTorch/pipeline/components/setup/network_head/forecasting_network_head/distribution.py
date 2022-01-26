@@ -122,7 +122,7 @@ class NormalOutput(ProjectionLayer):
         return {"loc": 1, "scale": 1}
 
     def domain_map(self, loc: torch.Tensor, scale: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        scale = F.softplus(scale)
+        scale = F.softplus(scale) + 1e-10
         return loc.squeeze(-1), scale.squeeze(-1)
 
     @property
@@ -137,7 +137,7 @@ class StudentTOutput(ProjectionLayer):
 
     def domain_map(self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor) \
             -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        scale = F.softplus(scale)
+        scale = F.softplus(scale) + 1e-10
         df = 2.0 + F.softplus(df)
         return df.squeeze(-1), loc.squeeze(-1), scale.squeeze(-1)
 

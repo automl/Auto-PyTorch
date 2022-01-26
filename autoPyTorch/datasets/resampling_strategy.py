@@ -287,8 +287,14 @@ class CrossValFuncs():
         cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=n_prediction_steps - 1)
         train_t, val_t = holdout_split_forecasting(cv, indices)
         splits = [(train_t, val_t)]
-
-        train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps])
+        if len(indices) < seasonality_h_value - n_prediction_steps:
+            if len(indices) == 1:
+                train_s = train_t
+                val_s = val_t
+            else:
+                train_s, val_s = holdout_split_forecasting(cv, indices[:-1])
+        else:
+            train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps])
         splits.append((train_s, val_s))
         if num_splits > 2:
             freq_value = int(kwargs['freq_value'])
