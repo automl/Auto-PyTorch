@@ -66,8 +66,8 @@ print("Passed Configuration:", configuration)
 pipeline, run_info, run_value, dataset = estimator.fit_pipeline(dataset=dataset,
                                                                 configuration=configuration,
                                                                 budget_type='epochs',
-                                                                budget=10,
-                                                                run_time_limit_secs=100
+                                                                budget=5,
+                                                                run_time_limit_secs=75
                                                                 )
 
 # The fit_pipeline command also returns a named tuple with the pipeline constraints
