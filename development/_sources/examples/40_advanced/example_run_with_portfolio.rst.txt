@@ -131,7 +131,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f01af8b10d0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f451233cb80>
 
 
 
@@ -176,11 +176,11 @@ Print the final ensemble performance
     |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     |  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: 1c25b0b8-7ded-11ec-8795-c5c435ed4133
+            Dataset name: 141e549c-7f87-11ec-8771-8b89ceeb781f
             Optimisation Metric: accuracy
             Best validation score: 0.8771929824561403
-            Number of target algorithm runs: 31
-            Number of successful target algorithm runs: 28
+            Number of target algorithm runs: 32
+            Number of successful target algorithm runs: 29
             Number of crashed target algorithm runs: 3
             Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
@@ -192,7 +192,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  22.668 seconds)
+   **Total running time of the script:** ( 5 minutes  15.994 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_run_with_portfolio.py:

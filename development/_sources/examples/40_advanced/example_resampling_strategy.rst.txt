@@ -139,7 +139,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f01afed1ee0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4511c6f940>
 
 
 
@@ -174,23 +174,23 @@ Print the final ensemble performance
     {'accuracy': 0.8728323699421965}
     |    | Preprocessing                                                     | Estimator                                                       |   Weight |
     |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.18 |
-    |  1 | None                                                              | RFLearner                                                       |     0.18 |
-    |  2 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
-    |  3 | None                                                              | ETLearner                                                       |     0.1  |
-    |  4 | None                                                              | KNNLearner                                                      |     0.1  |
-    |  5 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.08 |
-    |  6 | None                                                              | SVMLearner                                                      |     0.08 |
-    |  7 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  9 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
+    |  0 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.22 |
+    |  1 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.18 |
+    |  2 | None                                                              | SVMLearner                                                      |     0.14 |
+    |  3 | None                                                              | ETLearner                                                       |     0.12 |
+    |  4 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.08 |
+    |  5 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  6 | None                                                              | LGBMLearner                                                     |     0.06 |
+    |  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    |  8 | None                                                              | RFLearner                                                       |     0.04 |
+    |  9 | None                                                              | KNNLearner                                                      |     0.04 |
     autoPyTorch results:
-            Dataset name: e1bc1a42-7def-11ec-8795-c5c435ed4133
+            Dataset name: ca1eb710-7f89-11ec-8771-8b89ceeb781f
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
-            Number of target algorithm runs: 18
+            Number of target algorithm runs: 20
             Number of successful target algorithm runs: 17
-            Number of crashed target algorithm runs: 0
+            Number of crashed target algorithm runs: 2
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -255,7 +255,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f01afa40c10>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4512503700>
 
 
 
@@ -297,12 +297,12 @@ Print the final ensemble performance
     |  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     |  5 | None                                                              | TabularTraditionalModel                                         |     0.02 |
     autoPyTorch results:
-            Dataset name: 4887afae-7df0-11ec-8795-c5c435ed4133
+            Dataset name: 31b0d904-7f8a-11ec-8771-8b89ceeb781f
             Optimisation Metric: accuracy
             Best validation score: 0.8626733083495604
-            Number of target algorithm runs: 13
+            Number of target algorithm runs: 15
             Number of successful target algorithm runs: 11
-            Number of crashed target algorithm runs: 1
+            Number of crashed target algorithm runs: 3
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -369,7 +369,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f01acc42e20>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4512eb82b0>
 
 
 
@@ -401,25 +401,23 @@ Print the final ensemble performance
  .. code-block:: none
 
     {'accuracy': 0.861271676300578}
-    |    | Preprocessing                                                     | Estimator                                                       |   Weight |
-    |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.2  |
-    |  1 | None                                                              | KNNLearner                                                      |     0.16 |
-    |  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-    |  3 | SimpleImputer,OneHotEncoder,Normalizer,PolynomialFeatures         | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
-    |  4 | None                                                              | RFLearner                                                       |     0.1  |
-    |  5 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.08 |
-    |  6 | None                                                              | ETLearner                                                       |     0.08 |
-    |  7 | None                                                              | SVMLearner                                                      |     0.08 |
-    |  8 | None                                                              | LGBMLearner                                                     |     0.02 |
-    |  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |    | Preprocessing                                                     | Estimator                                                          |   Weight |
+    |---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,NoEncoder,Normalizer,PolynomialFeatures             | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.26 |
+    |  1 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.22 |
+    |  2 | None                                                              | KNNLearner                                                         |     0.16 |
+    |  3 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink                | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.12 |
+    |  4 | None                                                              | RFLearner                                                          |     0.08 |
+    |  5 | None                                                              | ETLearner                                                          |     0.06 |
+    |  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+    |  7 | None                                                              | SVMLearner                                                         |     0.04 |
     autoPyTorch results:
-            Dataset name: b1bb5f12-7df0-11ec-8795-c5c435ed4133
+            Dataset name: 96e69707-7f8a-11ec-8771-8b89ceeb781f
             Optimisation Metric: accuracy
             Best validation score: 0.8362573099415205
-            Number of target algorithm runs: 17
+            Number of target algorithm runs: 20
             Number of successful target algorithm runs: 16
-            Number of crashed target algorithm runs: 0
+            Number of crashed target algorithm runs: 3
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -430,7 +428,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  37.272 seconds)
+   **Total running time of the script:** ( 8 minutes  30.945 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:

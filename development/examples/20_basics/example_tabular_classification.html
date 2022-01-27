@@ -187,7 +187,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f01b0687f70&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4512b33a60&gt;
 </pre></div>
 </div>
 </section>
@@ -204,31 +204,33 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                                     | Estimator                                                       |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer         | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.16 |
-|  1 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA                  | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.16 |
-|  2 | SimpleImputer,NoEncoder,Normalizer,Nystroem                       | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  3 | None                                                              | CBLearner                                                       |     0.14 |
-|  4 | SimpleImputer,OneHotEncoder,Normalizer,PowerTransformer           | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.12 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  6 | None                                                              | RFLearner                                                       |     0.06 |
-|  7 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD                 | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  8 | None                                                              | SVMLearner                                                      |     0.04 |
-|  9 | None                                                              | KNNLearner                                                      |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8554913294797688}
+|    | Preprocessing                                             | Estimator                                                          |   Weight |
+|---:|:----------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,OneHotEncoder,Normalizer,KernelPCA          | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+|  1 | SimpleImputer,NoEncoder,Normalizer,KitchenSink            | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.14 |
+|  2 | None                                                      | RFLearner                                                          |     0.14 |
+|  3 | SimpleImputer,OneHotEncoder,Normalizer,KitchenSink        | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.1  |
+|  4 | None                                                      | SVMLearner                                                         |     0.1  |
+|  5 | None                                                      | CBLearner                                                          |     0.08 |
+|  6 | None                                                      | KNNLearner                                                         |     0.08 |
+|  7 | None                                                      | ETLearner                                                          |     0.06 |
+|  8 | SimpleImputer,NoEncoder,Normalizer,Nystroem               | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+|  9 | SimpleImputer,NoEncoder,Normalizer,KernelPCA              | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+| 10 | SimpleImputer,OneHotEncoder,MinMaxScaler,PowerTransformer | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+| 11 | SimpleImputer,OneHotEncoder,MinMaxScaler,TruncSVD         | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 26
-        Number of successful target algorithm runs: 23
+        Number of target algorithm runs: 30
+        Number of successful target algorithm runs: 27
         Number of crashed target algorithm runs: 2
         Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  22.339 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  22.397 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
