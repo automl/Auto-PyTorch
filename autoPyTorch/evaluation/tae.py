@@ -210,25 +210,22 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         is_intensified = (run_info.budget != 0)  # SMAC returns non-zero budget for intensification
 
         if self.budget_type is None:
-            if run_info.budget != 0:
+            if is_intensified:
                 raise ValueError(
-                    'If budget_type is None, budget must be.0, but is %f' % run_info.budget
+                    f'budget must be 0 (no intensification) for budget_type=None, but got {run_info.budget}'
                 )
         else:
-            if run_info.budget == 0:
-                # SMAC can return budget zero for intensifiers that don't have a concept
-                # of budget, for example a simple bayesian optimization intensifier.
-                # Budget determines how our pipeline trains, which can be via runtime or epochs
+            if not is_intensified:
+                # SMAC returns budget=0 for a simple intensifier (no intensification)
                 epochs_budget = self.pipeline_config.get('epochs', np.inf)
                 runtime_budget = self.pipeline_config.get('runtime', np.inf)
                 run_info = run_info._replace(budget=min(epochs_budget, runtime_budget))
-            elif run_info.budget <= 0:
-                raise ValueError('Illegal value for budget, must be greater than zero but is %f' %
-                                 run_info.budget)
-            if self.budget_type not in ('epochs', 'runtime'):
-                raise ValueError("Illegal value for budget type, must be one of "
-                                 "('epochs', 'runtime'), but is : %s" %
-                                 self.budget_type)
+            elif run_info.budget < 0:
+                raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
+
+            budget_type_choices = ('epochs', 'runtime')
+            if self.budget_type not in budget_type_choices:
+                raise ValueError(f"budget type must be in {budget_type_choices}, but got {self.budget_type}")
 
         remaining_time = self.stats.get_remaing_time_budget()
 
@@ -419,8 +416,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
                 cost = self.worst_possible_result
 
         if (
-                (self.budget_type is None or budget == 0)
-                and status == StatusType.DONOTADVANCE
+            (self.budget_type is None or budget == 0)
+            and status == StatusType.DONOTADVANCE
         ):
             status = StatusType.SUCCESS
 

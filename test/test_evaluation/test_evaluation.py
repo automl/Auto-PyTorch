@@ -394,6 +394,32 @@ class EvaluationTest(unittest.TestCase):
         self.assertNotIn('exit_status', info[1].additional_info)
         self.assertNotIn('traceback', info[1])
 
+    def test_eval_with_simple_intensification(self):
+        config = unittest.mock.Mock(spec=int)
+        config.config_id = 198
+
+        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+                                    stats=self.stats,
+                                    memory_limit=3072,
+                                    metric=accuracy,
+                                    cost_for_crash=get_cost_of_crash(accuracy),
+                                    abort_on_first_run_crash=False,
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
+                                    budget_type='runtime'
+                                    )
+        ta.pynisher_logger = unittest.mock.Mock()
+        run_info = RunInfo(config=config, cutoff=3000, instance=None,
+                           instance_specific=None, seed=1, capped=False)
+
+        for budget in [0.0, 50.0]:
+            # Simple intensification always returns budget = 0
+            # Other intensifications return a non-zero value
+            self.stats.submitted_ta_runs += 1
+            run_info = run_info._replace(budget=budget)
+            run_info_out, _ = ta.run_wrapper(run_info)
+            self.assertEqual(run_info_out.budget, budget)
+
 
 @pytest.mark.parametrize("metric,expected", [(accuracy, 1.0), (log_loss, MAXINT)])
 def test_get_cost_of_crash(metric, expected):
