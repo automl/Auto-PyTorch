@@ -193,12 +193,13 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def _check_and_get_default_budget(self) -> float:
         budget_type_choices = ('epochs', 'runtime')
         budget_choices = {
-            budget_type: self.pipeline_config.get(budget_type, np.inf)
+            budget_type: float(self.pipeline_config.get(budget_type, np.inf))
             for budget_type in budget_type_choices
         }
-        if self.budget_type is None:  # budget is defined by epochs by default
-            budget_type = self.pipeline_config.get('budget_type', 'epochs')
-        else:
+
+        # budget is defined by epochs by default
+        budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
+        if self.budget_type is not None:
             budget_type = self.budget_type
 
         if budget_type not in budget_type_choices:
