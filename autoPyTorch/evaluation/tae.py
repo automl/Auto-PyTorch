@@ -224,19 +224,19 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             RunValue:
                 Contains information about the status/performance of config
         """
-        is_intensified = (run_info.budget != 0)  # SMAC returns non-zero budget for intensification
+        # SMAC returns non-zero budget for intensification
+        # In other words, SMAC returns budget=0 for a simple intensifier (i.e. no intensification)
+        is_intensified = (run_info.budget != 0)
         default_budget = self._check_and_get_default_budget()
 
-        if self.budget_type is None:
-            if is_intensified:
-                raise ValueError(
-                    f'budget must be 0 (no intensification) for budget_type=None, but got {run_info.budget}'
-                )
-        else:
-            if not is_intensified:  # SMAC returns budget=0 for a simple intensifier (no intensification)
-                run_info = run_info._replace(budget=default_budget)
-            elif run_info.budget < 0:
-                raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
+        if self.budget_type is None and is_intensified:
+            raise ValueError(f'budget must be 0 (=no intensification) for budget_type=None, but got {run_info.budget}')
+        if self.budget_type is not None and run_info.budget < 0:
+            raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
+
+        if self.budget_type is not None and not is_intensified:
+            # The budget will be provided in train evaluator when budget_type is None
+            run_info = run_info._replace(budget=default_budget)
 
         remaining_time = self.stats.get_remaing_time_budget()
 
