@@ -201,6 +201,23 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.search_space_updates = search_space_updates
 
+    def _check_and_get_default_budget(self) -> float:
+        budget_type_choices = ('epochs', 'runtime')
+        budget_choices = {
+            budget_type: float(self.pipeline_config.get(budget_type, np.inf))
+            for budget_type in budget_type_choices
+        }
+
+        # budget is defined by epochs by default
+        budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
+        if self.budget_type is not None:
+            budget_type = self.budget_type
+
+        if budget_type not in budget_type_choices:
+            raise ValueError(f"budget type must be in {budget_type_choices}, but got {budget_type}")
+        else:
+            return budget_choices[budget_type]
+
     def run_wrapper(
         self,
         run_info: RunInfo,
@@ -218,26 +235,19 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             RunValue:
                 Contains information about the status/performance of config
         """
-        if self.budget_type is None:
-            if run_info.budget != 0:
-                raise ValueError(
-                    'If budget_type is None, budget must be.0, but is %f' % run_info.budget
-                )
-        else:
-            if run_info.budget == 0:
-                # SMAC can return budget zero for intensifiers that don't have a concept
-                # of budget, for example a simple bayesian optimization intensifier.
-                # Budget determines how our pipeline trains, which can be via runtime or epochs
-                epochs_budget = self.pipeline_config.get('epochs', np.inf)
-                runtime_budget = self.pipeline_config.get('runtime', np.inf)
-                run_info = run_info._replace(budget=min(epochs_budget, runtime_budget))
-            elif run_info.budget <= 0:
-                raise ValueError('Illegal value for budget, must be greater than zero but is %f' %
-                                 run_info.budget)
-            if self.budget_type not in ('epochs', 'runtime'):
-                raise ValueError("Illegal value for budget type, must be one of "
-                                 "('epochs', 'runtime'), but is : %s" %
-                                 self.budget_type)
+        # SMAC returns non-zero budget for intensification
+        # In other words, SMAC returns budget=0 for a simple intensifier (i.e. no intensification)
+        is_intensified = (run_info.budget != 0)
+        default_budget = self._check_and_get_default_budget()
+
+        if self.budget_type is None and is_intensified:
+            raise ValueError(f'budget must be 0 (=no intensification) for budget_type=None, but got {run_info.budget}')
+        if self.budget_type is not None and run_info.budget < 0:
+            raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
+
+        if self.budget_type is not None and not is_intensified:
+            # The budget will be provided in train evaluator when budget_type is None
+            run_info = run_info._replace(budget=default_budget)
 
         remaining_time = self.stats.get_remaing_time_budget()
 
@@ -261,6 +271,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         run_info, run_value = super().run_wrapper(run_info=run_info)
+
+        if not is_intensified:  # It is required for the SMAC compatibility
+            run_info = run_info._replace(budget=0.0)
+
         return run_info, run_value
 
     def run(
