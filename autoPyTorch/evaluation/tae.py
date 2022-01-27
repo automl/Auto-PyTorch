@@ -207,6 +207,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             RunValue:
                 Contains information about the status/performance of config
         """
+        is_intensified = (run_info.budget != 0)  # SMAC returns non-zero budget for intensification
+
         if self.budget_type is None:
             if run_info.budget != 0:
                 raise ValueError(
@@ -250,6 +252,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         run_info, run_value = super().run_wrapper(run_info=run_info)
+
+        if not is_intensified:  # It is required for the SMAC compatibility
+            run_info = run_info._replace(budget=0.0)
+
         return run_info, run_value
 
     def run(
