@@ -300,14 +300,7 @@ class BaseTask(ABC):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-<<<<<<< HEAD
         resampling_strategy: Optional[ResamplingStrategies] = None,
-=======
-        resampling_strategy: Optional[Union[
-            CrossValTypes,
-            HoldoutValTypes,
-            NoResamplingStrategyTypes]] = None,
->>>>>>> rebase and fix flake
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
@@ -353,14 +346,7 @@ class BaseTask(ABC):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-<<<<<<< HEAD
         resampling_strategy: Optional[ResamplingStrategies] = None,
-=======
-        resampling_strategy: Optional[Union[
-            CrossValTypes,
-            HoldoutValTypes,
-            NoResamplingStrategyTypes]] = None,
->>>>>>> rebase and fix flake
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
@@ -1444,14 +1430,7 @@ class BaseTask(ABC):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
-<<<<<<< HEAD
         resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
-=======
-        resampling_strategy: Optional[Union[
-            CrossValTypes,
-            HoldoutValTypes,
-            NoResamplingStrategyTypes]] = None,
->>>>>>> rebase and fix flake
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         run_time_limit_secs: int = 60,
         memory_limit: Optional[int] = None,
