@@ -404,6 +404,7 @@ def eval_function(
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         instance: str = None,
         evaluator_class: Optional[AbstractEvaluator] = None,
+        **evaluator_kwargs,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the
@@ -488,6 +489,7 @@ def eval_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
+        **evaluator_kwargs
     )
     evaluator.fit_predict_and_loss()

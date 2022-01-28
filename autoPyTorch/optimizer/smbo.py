@@ -278,6 +278,9 @@ class AutoMLSMBO(object):
                 suggested_init_models=suggested_init_models,
                 custom_init_setting_path=custom_init_setting_path)
 
+        if self.time_series_forecasting:
+            self.min_num_test_instances = kwargs.get('min_num_test_instances', None)
+
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
             del self.datamanager
@@ -332,8 +335,6 @@ class AutoMLSMBO(object):
             pynisher_context=self.pynisher_context,
         )
 
-        if self.time_series_forecasting:
-            ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Finish creating Target Algorithm (TA) function")
 
@@ -385,6 +386,12 @@ class AutoMLSMBO(object):
             if self.min_budget > 1. or self.max_budget > 1.:
                 self.min_budget = self.min_budget / self.max_budget
                 self.max_budget = 1.0
+
+        if self.time_series_forecasting:
+            ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
+            ta_kwargs['max_budget'] = self.max_budget
+            ta_kwargs['min_num_test_instances'] = self.min_num_test_instances
+
 
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,

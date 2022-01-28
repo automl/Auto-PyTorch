@@ -33,14 +33,12 @@ from autoPyTorch.datasets.resampling_strategy import (
 from gluonts.time_feature.lag import get_lags_for_frequency
 from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
-
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
     TimeSeriesTransformer
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.constants_forecasting import SEASONALITY_MAP
 from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
-
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
 TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
@@ -166,7 +164,11 @@ class TimeSeriesSequence(Dataset):
                                       n_prediction_steps=self.n_prediction_steps,
                                       sp=self.sp)
 
-
+    def get_test_target(self, test_idx: int):
+        if test_idx < 0:
+            test_idx = self.__len__() + test_idx
+        Y_future = self.Y[test_idx + 1: test_idx + self.n_prediction_steps + 1]
+        return Y_future
 
 
 class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
@@ -274,9 +276,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if target_variables is None:
             if self.num_target != 1:
                 raise ValueError("target_variables must be specified if more the input has more than one feature value")
-            self.target_columns = (0, ) # to keep the output dimension unchanged
+            self.target_columns = (0,)  # to keep the output dimension unchanged
         elif isinstance(target_variables, int):
-            self.target_columns = (target_variables, )
+            self.target_columns = (target_variables,)
         else:
             self.target_columns = target_variables
 
@@ -367,7 +369,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         else:
             self.base_window_size = max(n_prediction_steps, freq_value)
 
-
         self.train_tensors = train_tensors
 
         self.test_tensors = test_tensors
@@ -420,37 +421,46 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.lagged_value = lagged_value
 
-    def __getitem__(self, idx, train=True):
+    def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
         if idx < 0:
             if -idx > len(self):
                 raise ValueError("absolute value of index should not exceed dataset length")
             idx = len(self) + idx
         dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        if only_dataset_idx:
+            return dataset_idx
         if dataset_idx == 0:
             sample_idx = idx
         else:
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+        return dataset_idx, sample_idx
+
+    def __getitem__(self, idx, train=True):
+        dataset_idx, sample_idx = self._get_dataset_indices(idx)
         return self.datasets[dataset_idx].__getitem__(sample_idx, train)
 
     def get_validation_set(self, idx):
-        if idx < 0:
-            if -idx > len(self):
-                raise ValueError("absolute value of index should not exceed dataset length")
-            idx = len(self) + idx
-        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
-        if dataset_idx == 0:
-            sample_idx = idx
-        else:
-            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+        dataset_idx, sample_idx = self._get_dataset_indices(idx)
         return self.datasets[dataset_idx].get_val_seq_set(sample_idx)
 
     def get_time_series_seq(self, idx) -> TimeSeriesSequence:
-        if idx < 0:
-            if -idx > len(self):
-                raise ValueError("absolute value of index should not exceed dataset length")
-            idx = len(self) + idx
-        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        dataset_idx = self._get_dataset_indices(idx, True)
         return self.datasets[dataset_idx]
+
+    def get_test_target(self, test_indices: np.ndarray) -> np.ndarray:
+        test_indices = np.where(test_indices < 0, test_indices + len(self), test_indices)
+        y_test = np.ones([len(test_indices), self.n_prediction_steps, self.num_target])
+        y_test_argsort = np.argsort(test_indices)
+        dataset_idx = self._get_dataset_indices(test_indices[y_test_argsort[0]], only_dataset_idx=True)
+
+        for y_i in y_test_argsort:
+            test_idx = test_indices[y_i]
+            while test_idx > self.cumulative_sizes[dataset_idx]:
+                dataset_idx += 1
+            if dataset_idx != 0:
+                test_idx = test_idx - self.cumulative_sizes[dataset_idx - 1]
+            y_test[y_i] = self.datasets[dataset_idx].get_test_target(test_idx)
+        return y_test.reshape([-1, self.num_target])
 
     def make_sequences_datasets(self,
                                 X: np.ndarray,
@@ -710,7 +720,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if self.shift_input_data:
                 split = self.cross_validators[cross_val_type.name](self.random_state,
                                                                    num_splits,
-                                                                   indices=idx_start + np.arange(len(dataset)), **kwargs)
+                                                                   indices=idx_start + np.arange(len(dataset)),
+                                                                   **kwargs)
             else:
                 # If the data is not shifted, we need to discard the last n_prediction_steps such that we have enough
                 # y values
@@ -805,7 +816,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if self.shift_input_data:
                 split = [np.arange(len(dataset)), np.array([len(dataset) - 1])]
             else:
-                last_idx = len(dataset) - self.n_prediction_steps -1
+                last_idx = len(dataset) - self.n_prediction_steps - 1
                 split = [np.arange(len(dataset) - self.n_prediction_steps), np.array([last_idx])]
 
             for idx_split in range(2):

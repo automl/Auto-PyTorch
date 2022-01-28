@@ -657,7 +657,6 @@ class AbstractEvaluator(object):
             raise ValueError(f"budget type must be `epochs` or `runtime` or {FORECASTING_BUDGET_TYPE} "
                              f"(Only used in forecasting taskss), but got {self.budget_type}")
 
-
     def _get_pipeline(self) -> BaseEstimator:
         """
         Implements a pipeline object based on the self.configuration attribute.

@@ -467,10 +467,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         sampler_indices_train = np.arange(num_instances_dataset)
 
-        seed_train = self.random_state.randint(0, 2 ** 20)
-        generator_train = torch.Generator()
-        generator_train.manual_seed(seed_train)
-
         self.sampler_train = TimeSeriesSampler(indices=sampler_indices_train, seq_lengths=seq_train_length,
                                                num_instances_per_seqs=num_instances_per_seqs,
                                                min_start=min_start)
@@ -485,7 +481,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             collate_fn=partial(custom_collate_fn, x_collector=self.padding_collector),
             sampler=self.sampler_train,
         )
-
 
         num_samples_val = int(np.sum(num_instances_per_seqs)) // 5
         if num_samples_val > len(val_dataset):

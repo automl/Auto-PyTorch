@@ -19,6 +19,7 @@ from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMet
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.common import subsampler
+from autoPyTorch.evaluation.abstract_evaluator import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
@@ -42,7 +43,19 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 max_budget: float = 1.0,
+                 min_num_test_instances: Optional[int] = None) -> None:
+        """
+        Attributes:
+            max_budget (Optional[float]):
+                maximal budget the optimizer could allocate
+            min_num_test_instances: Optional[int]
+                minimal number of validation instances to be evaluated, if the size of the validation set is greater
+                than this value, then less instances from validation sets will be evaluated. The other predictions
+                 will be filled with dummy predictor
+
+        """
         super(TimeSeriesForecastingTrainEvaluator, self).__init__(
             backend=backend,
             queue=queue,
@@ -73,6 +86,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             seasonality = min(seasonality)  # Use to calculate MASE
         self.seasonality = int(seasonality)
 
+        self.max_budget = max_budget
+        self.min_num_test_instances = min_num_test_instances
+
+
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
         holdout"""
@@ -88,18 +105,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             train_split, test_split = self.splits[split_id]
 
-            # TODO move these lines to TimeSeriesForecastingDatasets (Create a new object there that inherents from
-            #  np.array while return multiple values by __get_item__)!
-            # the +1 in the end indicates that X and y are not aligned (y and x with the same index corresponds to
-            # the same time step).
-            test_split_base = test_split + np.arange(len(test_split)) * self.n_prediction_steps + 1
+            self.Y_optimization = self.datamanager.get_test_target(test_split)
 
-            y_test_split = np.repeat(test_split_base, self.n_prediction_steps) + \
-                           np.tile(np.arange(self.n_prediction_steps), len(test_split_base))
 
-            self.Y_optimization = self.y_train[y_test_split]
-
-            #self.Y_actual_train = self.y_train[train_split]
+            # self.Y_actual_train = self.y_train[train_split]
             y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
                                                                                         train_indices=train_split,
                                                                                         test_indices=test_split,
@@ -113,7 +122,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                   }
 
             train_loss = None
-            loss = self._loss(self.y_train[y_test_split], y_opt_pred, **forecasting_kwargs)
+            loss = self._loss(self.Y_optimization, y_opt_pred, **forecasting_kwargs)
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
@@ -158,24 +167,18 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             for i, (train_split, test_split) in enumerate(self.splits):
                 pipeline = self.pipelines[i]
-                test_split_base = test_split + np.arange(len(test_split)) * self.n_prediction_steps + 1
 
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
                                                                                     train_indices=train_split,
                                                                                     test_indices=test_split,
                                                                                     add_pipeline_to_self=False)
-                #Y_train_pred[i] = train_pred
+                # Y_train_pred[i] = train_pred
                 Y_optimization_pred[i] = opt_pred
                 Y_valid_pred[i] = valid_pred
                 Y_test_pred[i] = test_pred
                 train_splits[i] = train_split
 
-                #self.Y_train_targets[train_split] = self.y_train[train_split]
-
-                y_test_split = np.repeat(test_split_base, self.n_prediction_steps) + \
-                               np.tile(np.arange(self.n_prediction_steps), len(test_split_base))
-
-                self.Y_targets[i] = self.y_train[y_test_split]
+                self.Y_targets[i] = self.datamanager.get_test_target(test_split)
                 # Compute train loss of this fold and store it. train_loss could
                 # either be a scalar or a dict of scalars with metrics as keys.
 
@@ -288,17 +291,53 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
 
+    def create_validation_sub_set(self, test_indices: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        num_test_instances = len(test_indices)
+
+        if num_test_instances < self.min_num_test_instances or self.budget >= self.max_budget:
+            # if the length of test indices is smaller than the
+            return test_indices, None
+        num_val_instance = min(num_test_instances,
+                               max(self.min_num_test_instances,
+                                   int(num_test_instances * self.budget / self.max_budget)
+                                   ))
+        test_subset_indices = np.linspace(0, num_test_instances, num_val_instance, endpoint=False, dtype=np.int)
+        return test_indices[test_subset_indices], test_subset_indices
+
     def _predict(self, pipeline: BaseEstimator,
                  train_indices: Union[np.ndarray, List],
                  test_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+
+        if self.min_num_test_instances is not None:
+            test_indices_subset, test_split_subset_idx = self.create_validation_sub_set(test_indices)
+        else:
+            test_indices_subset = test_indices
+            test_split_subset_idx = None
+
         val_sets = []
-        for test_idx in test_indices:
+
+        for test_idx in test_indices_subset:
             val_sets.append(self.datamanager.get_validation_set(test_idx))
         opt_pred = self.predict_function(val_sets, pipeline)
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
-        #TODO we consider X_valid and X_test as a multiple sequences???
+        if test_split_subset_idx is not None:
+            dummy_pipeline = DummyTimeSeriesForecastingPipeline(0, n_prediction_steps=self.n_prediction_steps)
+            remaining_indices = np.setdiff1d(np.arange(len(test_indices)), test_indices_subset)
+            val_set_remain = []
+            for remaining_idx in remaining_indices:
+                val_set_remain.append(self.datamanager.get_validation_set(test_indices[remaining_idx]))
+            y_opt_full = np.zeros([len(test_indices), self.n_prediction_steps, self.num_targets])
+            y_opt_full[remaining_indices] = dummy_pipeline.predict(val_set_remain).reshape([-1,
+                                                                                            self.n_prediction_steps,
+                                                                                            self.num_targets])
+            y_opt_full[test_split_subset_idx] = opt_pred.reshape([-1, self.n_prediction_steps, self.num_targets])
+            opt_pred = y_opt_full
+
+        opt_pred = opt_pred.reshape(-1, self.num_targets)
+
+        # TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:
             valid_sets = []
             for val_seq in enumerate(self.datamanager.datasets):
@@ -320,4 +359,3 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             test_pred = None
 
         return np.empty(1), opt_pred, valid_pred, test_pred
-

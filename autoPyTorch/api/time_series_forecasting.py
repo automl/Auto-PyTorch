@@ -139,6 +139,7 @@ class TimeSeriesForecastingTask(BaseTask):
             normalize_y: bool = True,
             suggested_init_models: Optional[List[str]] = None,
             custom_init_setting_path: Optional[str] = None,
+            min_num_test_instances: Optional[int] = None,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -239,13 +240,14 @@ class TimeSeriesForecastingTask(BaseTask):
                 if the input data needs to be shifted
             normalize_y: bool
                 if the input y values need to be normalized
-            train_with_log_prob: bool
-                if the network is trained with log_prob losses, this will create a network header that is different
-                from the current version.
             suggested_init_models: Optional[List[str]]
                 suggested initial models with their default configurations setting
             custom_init_setting_path: Optional[str]
                 path to a json file that contains the initial configuration suggested by the users
+            min_num_test_instances: Optional[int]
+                if it is set None, then full validation sets will be evaluated in each fidelity. Otherwise, the number
+                of instances in the test sets should be a value that is at least as great as this value, otherwise, the
+                number of test instance is proportional to its fidelity
         Returns:
             self
 
@@ -255,7 +257,7 @@ class TimeSeriesForecastingTask(BaseTask):
 
         # we have to create a logger for at this point for the validator
         self._logger = self._get_logger(dataset_name)
-        #TODO we will only consider target variables as int here
+        # TODO we will only consider target variables as int here
         self.target_variables = target_variables
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
@@ -307,6 +309,10 @@ class TimeSeriesForecastingTask(BaseTask):
         self._metrics_kwargs = {'sp': self.dataset.seasonality,
                                 'n_prediction_steps': n_prediction_steps}
 
+        forecasting_kwargs = dict(suggested_init_models=suggested_init_models,
+                                  custom_init_setting_path=custom_init_setting_path,
+                                  min_num_test_instances=min_num_test_instances)
+
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
@@ -325,8 +331,7 @@ class TimeSeriesForecastingTask(BaseTask):
             load_models=load_models,
             portfolio_selection=portfolio_selection,
             time_series_forecasting=self.time_series_forecasting,
-            suggested_init_models=suggested_init_models,
-            custom_init_setting_path=custom_init_setting_path,
+            **forecasting_kwargs,
         )
 
     def predict(
