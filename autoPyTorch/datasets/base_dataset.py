@@ -125,7 +125,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
-        self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args

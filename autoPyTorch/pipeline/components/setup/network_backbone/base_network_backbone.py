@@ -28,7 +28,6 @@ class NetworkBackboneComponent(autoPyTorchComponent):
                  **kwargs: Any):
         super().__init__()
         self.add_fit_requirements([
-            # FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),

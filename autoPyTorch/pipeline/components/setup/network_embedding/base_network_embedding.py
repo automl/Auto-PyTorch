@@ -17,7 +17,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        num_numerical_columns, num_input_features = self._get_args(X)
+        num_numerical_columns, num_input_features = self._get_required_info_from_data(X)
 
         self.embedding = self.build_embedding(
             num_input_features=num_input_features,
@@ -31,21 +31,37 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
     def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
         raise NotImplementedError
 
-    def _get_args(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
+    def _get_required_info_from_data(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
+        """
+        Returns the number of numerical columns after preprocessing and
+        an array of size equal to the number of input features
+        containing zeros for numerical data and number of categories
+        for categorical data. This is required to build the embedding.
+
+        Args:
+            X (Dict[str, Any]):
+                Fit dictionary
+
+        Returns:
+            Tuple[int, np.ndarray]:
+                number of numerical columns
+        """
         # Feature preprocessors can alter numerical columns
         if len(X['dataset_properties']['numerical_columns']) == 0:
             num_numerical_columns = 0
         else:
             X_train = copy.deepcopy(X['backend'].load_datamanager().train_tensors[0][:2])
-        
+
             numerical_column_transformer = X['tabular_transformer'].preprocessor. \
                 named_transformers_['numerical_pipeline']
             num_numerical_columns = numerical_column_transformer.transform(
                 X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
-        num_input_features = np.zeros((num_numerical_columns + len(X['dataset_properties']['categorical_columns'])),
-                                      dtype=int)
+
+        num_cols = num_numerical_columns + len(X['dataset_properties']['categorical_columns'])
+        num_input_feats = np.zeros(num_cols, dtype=np.int32)
+
         categories = X['dataset_properties']['categories']
-        
-        for i, category in enumerate(categories):
-            num_input_features[num_numerical_columns + i, ] = len(category)
-        return num_numerical_columns, num_input_features
+        for idx, cats in enumerate(categories, start=num_numerical_columns):
+            num_input_feats[idx] = len(cats)
+
+        return num_numerical_columns, num_input_feats

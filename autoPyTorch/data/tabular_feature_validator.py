@@ -27,11 +27,13 @@ def _create_column_transformer(
     Given a dictionary of preprocessors, this function
     creates a sklearn column transformer with appropriate
     columns associated with their preprocessors.
+
     Args:
         preprocessors (Dict[str, List[BaseEstimator]]):
             Dictionary containing list of numerical and categorical preprocessors.
         categorical_columns (List[str]):
             List of names of categorical columns
+
     Returns:
         ColumnTransformer
     """
@@ -55,7 +57,7 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
 
     # Categorical Preprocessors
     ordinal_encoder = OrdinalEncoder(handle_unknown='use_encoded_value',
-                                                  unknown_value=-1)
+                                     unknown_value=-1)
     categorical_imputer = SimpleImputer(strategy='constant', copy=False)
 
     preprocessors['categorical'] = [categorical_imputer, ordinal_encoder]
@@ -145,20 +147,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             X = cast(pd.DataFrame, X)
 
-            all_nan_columns = []
-            for column in X.columns:
-                if X[column].isna().all():
-                    X[column] = pd.to_numeric(X[column])
-                    # Also note this change in self.dtypes
-                    if len(self.dtypes) != 0:
-                        self.dtypes[list(X.columns).index(column)] = X[column].dtype.name
-                    all_nan_columns.append(column)
+            all_nan_columns = X.columns[X.isna().all()]
+            for col in all_nan_columns:
+                X[col] = pd.to_numeric(X[col])
+            self.dtypes = [dt.name for dt in X.dtypes]  # Also note this change in self.dtypes
             self.all_nan_columns = set(all_nan_columns)
-                    
+
             self.enc_columns, self.feat_type = self._get_columns_info(X)
 
             if len(self.enc_columns) > 0:
-    
+
                 preprocessors = get_tabular_preprocessors()
                 self.column_transformer = _create_column_transformer(
                     preprocessors=preprocessors,
@@ -169,9 +167,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 assert self.column_transformer is not None
                 self.column_transformer.fit(X)
 
-                # The column transformer reorders the feature types
-                # therefore, we need to change the order of columns as well
-                # This means categorical columns are shifted to the left
+                # The column transformer moves categorical columns before all numerical columns
+                # therefore, we need to sort categorical columns so that it complies this change
 
                 self.feat_type = sorted(
                     self.feat_type,
@@ -182,8 +179,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     named_transformers_['categorical_pipeline'].\
                     named_steps['ordinalencoder'].categories_
                 self.categories = [
-                    # We fit an ordinal encoder, where all categorical
-                    # columns are shifted to the left
                     list(range(len(cat)))
                     for cat in encoded_categories
                 ]
@@ -272,6 +267,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
                             X[column] = np.nan
                         X[column] = pd.to_numeric(X[column])
             if len(self.categorical_columns) > 0:
+                if self.column_transformer is None:
+                    raise AttributeError("Expect column transformer to be built"
+                                         "if there are categorical columns")
                 categorical_columns = self.column_transformer.transformers_[0][-1]
                 for column in categorical_columns:
                     if X[column].isna().all():

@@ -86,7 +86,7 @@ class TrainerChoice(autoPyTorchChoice):
 
     def get_available_components(
         self,
-        dataset_properties: Optional[Dict[str, str]] = None,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Dict[str, autoPyTorchComponent]:

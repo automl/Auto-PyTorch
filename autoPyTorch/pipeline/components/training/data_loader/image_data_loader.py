@@ -63,5 +63,5 @@ class ImageDataLoader(BaseDataLoaderComponent):
         if not X['image_augmenter'] and 'image_augmenter' not in X:
             raise ValueError("Cannot find the image_augmenter in the fit dictionary")
 
-        # if not X['dataset_properties']['is_small_preprocess'] and 'preprocess_transforms' not in X:
-        #     raise ValueError("Cannot find the preprocess_transforms in the fit dictionary")
+        if 'preprocess_transforms' not in X:
+            raise ValueError("Cannot find the preprocess_transforms in the fit dictionary")

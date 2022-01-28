@@ -13,8 +13,8 @@ from autoPyTorch.constants import (
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
-    HoldoutValTypes,
     CrossValTypes,
+    HoldoutValTypes,
     ResamplingStrategies,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset

@@ -93,7 +93,6 @@ class TestBaseDataLoader(unittest.TestCase):
                                     'backend is needed to load the data from'):
             loader.fit(fit_dictionary)
 
-
     def test_fit_transform(self):
         """ Makes sure that fit and transform work as intended """
         backend = unittest.mock.Mock()

@@ -39,13 +39,6 @@ class HoldOutFunc(Protocol):
         ...
 
 
-class NoResamplingFunc(Protocol):
-    def __call__(self,
-                 random_state: np.random.RandomState,
-                 indices: np.ndarray) -> np.ndarray:
-        ...
-
-
 class CrossValTypes(IntEnum):
     """The type of cross validation
 

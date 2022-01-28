@@ -93,4 +93,5 @@ class FeatureDataLoader(BaseDataLoaderComponent):
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
         """
-        pass
+        if 'preprocess_transforms' not in X:
+            raise ValueError("Cannot find the preprocess_transforms in the fit dictionary")

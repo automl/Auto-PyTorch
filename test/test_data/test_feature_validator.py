@@ -372,7 +372,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_train = np.array([[ 1, np.nan, np.nan], [ 0, np.nan, np.nan], [ 1, np.nan, np.nan]], dtype=np.float64)
+    ans_train = np.array([[1, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan, 'C': 5},
@@ -381,7 +381,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_test = np.array([[ 0, np.nan, 5], [ 0, np.nan, np.nan], [ 1, np.nan, np.nan]], dtype=np.float64)
+    ans_test = np.array([[0, np.nan, 5], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
     feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
     # Second case, there exist null columns (B and C) in the training set and
@@ -394,7 +394,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_train = np.array([[ 1, np.nan, np.nan], [ 0, np.nan, np.nan], [ 1, np.nan, np.nan]], dtype=np.float64)
+    ans_train = np.array([[1, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan, 'C': np.nan},
@@ -403,7 +403,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_test = np.array([[ 0, np.nan, np.nan], [ 0, np.nan, np.nan], [ 1, np.nan, np.nan]], dtype=np.float64)
+    ans_test = np.array([[0, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
     feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
     # Third case, there exist no null columns in the training set and
@@ -415,7 +415,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_train = np.array([[ 0, 0], [1, 1]], dtype=np.float64)
+    ans_train = np.array([[0, 0], [1, 1]], dtype=np.float64)
     df_test = pd.DataFrame(
         [
             {'A': np.nan, 'B': np.nan},
@@ -508,7 +508,6 @@ def test_column_transformer_created(input_data_featuretest):
     # At least one categorical
     assert 'categorical' in validator.feat_type
 
-    # Numerical if the original data has numerical only columns
     # Numerical if the original data has numerical only columns
     if np.any([pd.api.types.is_numeric_dtype(input_data_featuretest[col]
                                              ) for col in input_data_featuretest.columns]):
