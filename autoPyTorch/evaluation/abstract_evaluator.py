@@ -167,47 +167,87 @@ class FixedPipelineParams(NamedTuple):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
-    def __init__(self, backend: Backend,
-                 queue: Queue,
-                 metric: autoPyTorchMetric,
-                 budget: float,
-                 configuration: Union[int, str, Configuration],
-                 budget_type: str = None,
-                 pipeline_config: Optional[Dict[str, Any]] = None,
-                 seed: int = 1,
-                 output_y_hat_optimization: bool = True,
-                 num_run: Optional[int] = None,
-                 include: Optional[Dict[str, Any]] = None,
-                 exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-                 init_params: Optional[Dict[str, Any]] = None,
-                 logger_port: Optional[int] = None,
-                 all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-                 ) -> None:
+    backend: Backend
+    seed: int
+    metric: autoPyTorchMetric
+    budget_type: str  # Literal['epochs', 'runtime']
+    pipeline_config: Dict[str, Any]
+    save_y_opt: bool = True
+    include: Optional[Dict[str, Any]] = None
+    exclude: Optional[Dict[str, Any]] = None
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None
+    logger_port: Optional[int] = None
+    all_supported_metrics: bool = True
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
 
-        self.starttime = time.time()
+    @classmethod
+    def with_default_pipeline_config(
+        cls,
+        pipeline_config: Optional[Dict[str, Any]] = None,
+        choice: str = 'default',
+        **kwargs: Any
+    ) -> 'FixedPipelineParams':
 
-        self.configuration = configuration
-        self.backend: Backend = backend
-        self.queue = queue
+        if 'budget_type' in kwargs:
+            raise TypeError(
+                f'{cls.__name__}.with_default_pipeline_config() got multiple values for argument `budget_type`'
+            )
 
-        self.include = include
-        self.exclude = exclude
-        self.search_space_updates = search_space_updates
+        budget_type_choices = ('epochs', 'runtime')
+        if pipeline_config is None:
+            pipeline_config = get_default_pipeline_config(choice=choice)
+        if 'budget_type' not in pipeline_config:
+            raise ValueError('pipeline_config must have `budget_type`')
 
-        self.metric = metric
+        budget_type = pipeline_config['budget_type']
+        if pipeline_config['budget_type'] not in budget_type_choices:
+            raise ValueError(f"budget_type must be in {budget_type_choices}, but got {budget_type}")
+
+        kwargs.update(pipeline_config=pipeline_config, budget_type=budget_type)
+        return cls(**kwargs)
 
 
-        self._init_datamanager_info()
+class EvaluatorParams(NamedTuple):
+    """
+    Attributes:
+        configuration (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed. A dummy estimator is created for
+            integer configurations, a traditional machine learning pipeline is created
+            for string based configuration, and NAS is performed when a configuration
+            object is passed.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+    """
+    budget: float
+    configuration: Union[int, str, Configuration]
+    num_run: Optional[int] = None
+    init_params: Optional[Dict[str, Any]] = None
 
-        # Flag to save target for ensemble
-        self.output_y_hat_optimization = output_y_hat_optimization
+    @classmethod
+    def with_default_budget(
+        cls,
+        budget: float = 0,
+        choice: str = 'default',
+        **kwargs: Any
+    ) -> 'EvaluatorParams':
+        budget = get_default_budget(choice=choice) if budget == 0 else budget
+        kwargs.update(budget=budget)
+        return cls(**kwargs)
+
+
+class AbstractEvaluator(object):
+    """
+    This method defines the interface that pipeline evaluators should follow, when
+    interacting with SMAC through TargetAlgorithmQuery.
 
     An evaluator is an object that:
         + constructs a pipeline (i.e. a classification or regression estimator) for a given
           pipeline_config and run settings (budget, seed)
-        + Fits and trains this pipeline (TrainEvaluator) or tests a given
+        + Fits and trains this pipeline (Evaluator) or tests a given
           configuration (TestEvaluator)
 
     The provided configuration determines the type of pipeline created. For more
@@ -244,21 +284,33 @@ class FixedPipelineParams(NamedTuple):
             DisableFileOutputParameters.check_compatibility(disable_file_output)
             self.disable_file_output = disable_file_output
         else:
-            if isinstance(self.configuration, int):
-                self.pipeline_class = DummyClassificationPipeline
-            elif isinstance(self.configuration, str):
-                if self.task_type in TABULAR_TASKS:
-                    self.pipeline_class = MyTraditionalTabularClassificationPipeline
-                else:
-                    raise ValueError("Only tabular tasks are currently supported with traditional methods")
-            elif isinstance(self.configuration, Configuration):
-                if self.task_type in TABULAR_TASKS:
-                    self.pipeline_class = autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline
-                elif self.task_type in IMAGE_TASKS:
-                    self.pipeline_class = autoPyTorch.pipeline.image_classification.ImageClassificationPipeline
-                else:
-                    raise ValueError('task {} not available'.format(self.task_type))
-            self.predict_function = self._predict_proba
+            self.disable_file_output = []
+
+        if self.num_folds == 1:  # not save cv model when we perform holdout
+            self.disable_file_output.append('cv_model')
+
+    def _init_dataset_properties(self) -> None:
+        datamanager: BaseDataset = self.fixed_pipeline_params.backend.load_datamanager()
+        if datamanager.task_type is None:
+            raise ValueError(f"Expected dataset {datamanager.__class__.__name__} to have task_type got None")
+        if datamanager.splits is None:
+            raise ValueError(f"cannot fit pipeline {self.__class__.__name__} with datamanager.splits None")
+
+        self.splits = datamanager.splits
+        self.num_folds: int = len(self.splits)
+        # Since cv might not finish in time, we take self.pipelines as None by default
+        self.pipelines: List[Optional[BaseEstimator]] = [None] * self.num_folds
+        self.task_type = STRING_TO_TASK_TYPES[datamanager.task_type]
+        self.num_classes = getattr(datamanager, 'num_classes', 1)
+        self.output_type = datamanager.output_type
+
+        search_space_updates = self.fixed_pipeline_params.search_space_updates
+        self.dataset_properties = datamanager.get_dataset_properties(
+            get_dataset_requirements(info=datamanager.get_required_dataset_info(),
+                                     include=self.fixed_pipeline_params.include,
+                                     exclude=self.fixed_pipeline_params.exclude,
+                                     search_space_updates=search_space_updates
+                                     ))
 
         self.X_train, self.y_train = datamanager.train_tensors
         self.unique_train_labels = [
@@ -271,6 +323,8 @@ class FixedPipelineParams(NamedTuple):
         if datamanager.test_tensors is not None:
             self.X_test, self.y_test = datamanager.test_tensors
 
+        del datamanager  # Delete datamanager to release the memory
+
     def _init_additional_metrics(self) -> None:
         all_supported_metrics = self.fixed_pipeline_params.all_supported_metrics
         metric = self.fixed_pipeline_params.metric
@@ -282,59 +336,7 @@ class FixedPipelineParams(NamedTuple):
                                                   all_supported_metrics=all_supported_metrics)
             self.metrics_dict = {'additional_metrics': [m.name for m in [metric] + self.additional_metrics]}
 
-    def _init_datamanager_info(
-        self,
-    ) -> None:
-        """
-        Initialises instance attributes that come from the datamanager.
-        For example,
-            X_train, y_train, etc.
-        """
-
-        datamanager: BaseDataset = self.backend.load_datamanager()
-
-        assert datamanager.task_type is not None, \
-            "Expected dataset {} to have task_type got None".format(datamanager.__class__.__name__)
-        self.task_type = STRING_TO_TASK_TYPES[datamanager.task_type]
-        self.output_type = STRING_TO_OUTPUT_TYPES[datamanager.output_type]
-        self.issparse = datamanager.issparse
-
-        self.X_train, self.y_train = datamanager.train_tensors
-
-        if datamanager.val_tensors is not None:
-            self.X_valid, self.y_valid = datamanager.val_tensors
-        else:
-            self.X_valid, self.y_valid = None, None
-
-        if datamanager.test_tensors is not None:
-            self.X_test, self.y_test = datamanager.test_tensors
-        else:
-            self.X_test, self.y_test = None, None
-
-        self.resampling_strategy = datamanager.resampling_strategy
-
-        self.num_classes: Optional[int] = getattr(datamanager, "num_classes", None)
-
-        self.dataset_properties = datamanager.get_dataset_properties(
-            get_dataset_requirements(info=datamanager.get_required_dataset_info(),
-                                     include=self.include,
-                                     exclude=self.exclude,
-                                     search_space_updates=self.search_space_updates
-                                     ))
-        self.splits = datamanager.splits
-        if self.splits is None:
-            raise AttributeError(f"create_splits on {datamanager.__class__.__name__} must be called "
-                                 f"before the instantiation of {self.__class__.__name__}")
-
-        # delete datamanager from memory
-        del datamanager
-
-    def _init_fit_dictionary(
-        self,
-        logger_port: int,
-        pipeline_config: Dict[str, Any],
-        metrics_dict: Optional[Dict[str, List[str]]] = None,
-    ) -> None:
+    def _init_fit_dictionary(self) -> None:
         """
         Initialises the fit dictionary
 
@@ -617,36 +619,4 @@ class FixedPipelineParams(NamedTuple):
             if y is not None and not np.all(np.isfinite(y)):
                 return False  # Model predictions contains NaNs
 
-        Args:
-            prediction (np.ndarray):
-                The un-formatted predictions of a pipeline
-            Y_train (np.ndarray):
-                The labels from the dataset to give an intuition of the expected
-                predictions dimensionality
-        Returns:
-            (np.ndarray):
-                The formatted prediction
-        """
-        assert self.num_classes is not None, "Called function on wrong task"
-
-        if self.output_type == MULTICLASS and \
-                prediction.shape[1] < self.num_classes:
-            if Y_train is None:
-                raise ValueError('Y_train must not be None!')
-            classes = list(np.unique(Y_train))
-
-            mapping = dict()
-            for class_number in range(self.num_classes):
-                if class_number in classes:
-                    index = classes.index(class_number)
-                    mapping[index] = class_number
-            new_predictions = np.zeros((prediction.shape[0], self.num_classes),
-                                       dtype=np.float32)
-
-            for index in mapping:
-                class_index = mapping[index]
-                new_predictions[:, class_index] = prediction[:, index]
-
-            return new_predictions
-
-        return prediction
+        return True

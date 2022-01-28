@@ -90,6 +90,7 @@ def _create_taq():
         backend=unittest.mock.Mock(),
         seed=1,
         metric=accuracy,
+        multi_objectives=["cost"],
         cost_for_crash=accuracy._cost_of_crash,
         abort_on_first_run_crash=True,
         pynisher_context=unittest.mock.Mock()
@@ -102,7 +103,16 @@ class TestTargetAlgorithmQuery(unittest.TestCase):
         run_info = unittest.mock.Mock()
         run_info.budget = -1
         with pytest.raises(ValueError):
-            taq._check_run_info(run_info)
+            taq.run_wrapper(run_info)
+
+    def test_check_and_get_default_budget(self):
+        taq = _create_taq()
+        budget = taq._check_and_get_default_budget()
+        assert isinstance(budget, float)
+
+        taq.fixed_pipeline_params = taq.fixed_pipeline_params._replace(budget_type='test')
+        with pytest.raises(ValueError):
+            taq._check_and_get_default_budget()
 
     def test_cutoff_update_in_run_wrapper(self):
         taq = _create_taq()

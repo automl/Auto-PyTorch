@@ -24,13 +24,8 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
-    HoldoutValTypes,
-    NoResamplingStrategyTypes
-)
-from autoPyTorch.evaluation.test_evaluator import eval_test_function
-from autoPyTorch.evaluation.train_evaluator import eval_train_function
+from autoPyTorch.evaluation.abstract_evaluator import EvaluatorParams, FixedPipelineParams
+from autoPyTorch.evaluation.evaluator import eval_fn
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     empty_queue,
@@ -65,6 +60,7 @@ class PynisherFunctionWrapperLikeType:
         raise NotImplementedError
 
 
+# Since PynisherFunctionWrapperLikeType is not the exact type, we added Any...
 PynisherFunctionWrapperType = Union[Any, PynisherFunctionWrapperLikeType]
 
 
@@ -102,7 +98,7 @@ def _get_eval_fn(cost_for_crash: float, target_algorithm: Optional[Callable] = N
     else:
         return functools.partial(
             run_target_algorithm_with_exception_handling,
-            ta=autoPyTorch.evaluation.train_evaluator.eval_fn,
+            ta=eval_fn,
             cost_for_crash=cost_for_crash,
         )
 
@@ -272,28 +268,9 @@ class TargetAlgorithmQuery(AbstractTAFunc):
         all_supported_metrics: bool = True,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
-
-        self.backend = backend
-
-        dm = self.backend.load_datamanager()
-        if dm.val_tensors is not None:
-            self._get_validation_loss = True
-        else:
-            self._get_validation_loss = False
-        if dm.test_tensors is not None:
-            self._get_test_loss = True
-        else:
-            self._get_test_loss = False
-
-        self.resampling_strategy = dm.resampling_strategy
-        self.resampling_strategy_args = dm.resampling_strategy_args
-
-        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
-            eval_function = eval_train_function
-            self.output_y_hat_optimization = output_y_hat_optimization
-        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            eval_function = eval_test_function
-            self.output_y_hat_optimization = False
+        dm = backend.load_datamanager()
+        self._exist_val_tensor = (dm.val_tensors is not None)
+        self._exist_test_tensor = (dm.test_tensors is not None)
 
         self.worst_possible_result = cost_for_crash
 
@@ -306,43 +283,48 @@ class TargetAlgorithmQuery(AbstractTAFunc):
             abort_on_first_run_crash=abort_on_first_run_crash,
         )
 
+        # TODO: Modify so that we receive fixed_params from outside
+        self.fixed_pipeline_params = FixedPipelineParams.with_default_pipeline_config(
+            pipeline_config=pipeline_config,
+            backend=backend,
+            seed=seed,
+            metric=metric,
+            save_y_opt=save_y_opt,
+            include=include,
+            exclude=exclude,
+            disable_file_output=disable_file_output,
+            logger_port=logger_port,
+            all_supported_metrics=all_supported_metrics,
+            search_space_updates=search_space_updates,
+        )
         self.pynisher_context = pynisher_context
         self.initial_num_run = initial_num_run
-        self.metric = metric
-        self.include = include
-        self.exclude = exclude
-        self.disable_file_output = disable_file_output
         self.init_params = init_params
         self.logger = _get_logger(logger_port, 'TAE')
         self.memory_limit = int(math.ceil(memory_limit)) if memory_limit is not None else memory_limit
-
-        dm = backend.load_datamanager()
-        self._exist_val_tensor = (dm.val_tensors is not None)
-        self._exist_test_tensor = (dm.test_tensors is not None)
 
     @property
     def eval_fn(self) -> Callable:
         # this is a target algorithm defined in AbstractTAFunc during super().__init__(ta)
         return self.ta  # type: ignore
 
-        self.search_space_updates = search_space_updates
+    @property
+    def budget_type(self) -> str:
+        # budget is defined by epochs by default
+        return self.fixed_pipeline_params.budget_type
 
     def _check_and_get_default_budget(self) -> float:
         budget_type_choices = ('epochs', 'runtime')
+        pipeline_config = self.fixed_pipeline_params.pipeline_config
         budget_choices = {
-            budget_type: float(self.pipeline_config.get(budget_type, np.inf))
+            budget_type: float(pipeline_config.get(budget_type, np.inf))
             for budget_type in budget_type_choices
         }
 
-        # budget is defined by epochs by default
-        budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
-        if self.budget_type is not None:
-            budget_type = self.budget_type
-
-        if budget_type not in budget_type_choices:
-            raise ValueError(f"budget type must be in {budget_type_choices}, but got {budget_type}")
+        if self.budget_type not in budget_type_choices:
+            raise ValueError(f"budget type must be in {budget_type_choices}, but got {self.budget_type}")
         else:
-            return budget_choices[budget_type]
+            return budget_choices[self.budget_type]
 
     def run_wrapper(self, run_info: RunInfo) -> Tuple[RunInfo, RunValue]:
         """
@@ -363,12 +345,10 @@ class TargetAlgorithmQuery(AbstractTAFunc):
         is_intensified = (run_info.budget != 0)
         default_budget = self._check_and_get_default_budget()
 
-        if self.budget_type is None and is_intensified:
-            raise ValueError(f'budget must be 0 (=no intensification) for budget_type=None, but got {run_info.budget}')
-        if self.budget_type is not None and run_info.budget < 0:
+        if run_info.budget < 0:
             raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
 
-        if self.budget_type is not None and not is_intensified:
+        if not is_intensified:
             # The budget will be provided in train evaluator when budget_type is None
             run_info = run_info._replace(budget=default_budget)
 

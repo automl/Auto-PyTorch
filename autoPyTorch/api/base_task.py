@@ -315,7 +315,7 @@ class BaseTask(ABC):
                 Testing feature set
             y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
                 Testing target set
-            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+            resampling_strategy (Optional[ResamplingStrategies]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):
@@ -355,7 +355,7 @@ class BaseTask(ABC):
                 Testing feature set
             y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
                 Testing target set
-            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+            resampling_strategy (Optional[ResamplingStrategies]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):
@@ -973,7 +973,7 @@ class BaseTask(ABC):
                 `SMAC <https://automl.github.io/SMAC3/master/index.html>`_.
             tae_func (Optional[Callable]):
                 TargetAlgorithm to be optimised. If None, `eval_function`
-                available in autoPyTorch/evaluation/train_evaluator is used.
+                available in autoPyTorch/evaluation/evaluator is used.
                 Must be child class of AbstractEvaluator.
             all_supported_metrics (bool: default=True):
                 If True, all metrics supporting current task will be calculated
@@ -1380,7 +1380,7 @@ class BaseTask(ABC):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
-        resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
+        resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         run_time_limit_secs: int = 60,
         memory_limit: Optional[int] = None,
@@ -1415,7 +1415,7 @@ class BaseTask(ABC):
                 be provided to track the generalization performance of each stage.
             dataset_name (Optional[str]):
                 Name of the dataset, if None, random value is used.
-            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+            resampling_strategy (Optional[ResamplingStrategies]):
                 Strategy to split the training data. if None, uses
                 HoldoutValTypes.holdout_validation.
             resampling_strategy_args (Optional[Dict[str, Any]]):

@@ -322,8 +322,8 @@ def test_pipeline_score(fit_dictionary_tabular_dummy):
 def test_get_pipeline_representation():
     pipeline = TabularRegressionPipeline(
         dataset_properties={
-            'numerical_columns': None,
-            'categorical_columns': None,
+            'numerical_columns': [],
+            'categorical_columns': [],
             'task_type': 'tabular_classification'
         }
     )

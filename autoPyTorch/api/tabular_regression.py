@@ -337,7 +337,7 @@ class TabularRegressionTask(BaseTask):
                 `SMAC <https://automl.github.io/SMAC3/master/index.html>`_.
             tae_func (Optional[Callable]):
                 TargetAlgorithm to be optimised. If None, `eval_function`
-                available in autoPyTorch/evaluation/train_evaluator is used.
+                available in autoPyTorch/evaluation/evaluator is used.
                 Must be child class of AbstractEvaluator.
             all_supported_metrics (bool: default=True):
                 If True, all metrics supporting current task will be calculated

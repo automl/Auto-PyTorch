@@ -7,12 +7,11 @@ from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
-from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
-    MULTICLASSMULTIOUTPUT,
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    NoResamplingStrategyTypes,
+    check_resampling_strategy
 )
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     EvaluationResults,
@@ -21,7 +20,8 @@ from autoPyTorch.evaluation.abstract_evaluator import (
 from autoPyTorch.evaluation.abstract_evaluator import EvaluatorParams, FixedPipelineParams
 from autoPyTorch.utils.common import dict_repr, subsampler
 
-__all__ = ['TrainEvaluator', 'eval_train_function']
+__all__ = ['Evaluator', 'eval_fn']
+
 
 class _CrossValidationResultsManager:
     def __init__(self, num_folds: int):
@@ -83,15 +83,13 @@ class _CrossValidationResultsManager:
         )
 
 
-class TrainEvaluator(AbstractEvaluator):
+class Evaluator(AbstractEvaluator):
     """
     This class builds a pipeline using the provided configuration.
     A pipeline implementing the provided configuration is fitted
     using the datamanager object retrieved from disc, via the backend.
     After the pipeline is fitted, it is save to disc and the performance estimate
-    is communicated to the main process via a Queue. It is only compatible
-    with `CrossValTypes`, `HoldoutValTypes`, i.e, when the training data
-    is split and the validation set is used for SMBO optimisation.
+    is communicated to the main process via a Queue.
 
     Args:
         queue (Queue):
@@ -101,52 +99,27 @@ class TrainEvaluator(AbstractEvaluator):
             Fixed parameters for a pipeline
         evaluator_params (EvaluatorParams):
             The parameters for an evaluator.
+
+    Attributes:
+        train (bool):
+            Whether the training data is split and the validation set is used for SMBO optimisation.
+        cross_validation (bool):
+            Whether we use cross validation or not.
     """
-    def __init__(self, backend: Backend, queue: Queue,
-                 metric: autoPyTorchMetric,
-                 budget: float,
-                 configuration: Union[int, str, Configuration],
-                 budget_type: str = None,
-                 pipeline_config: Optional[Dict[str, Any]] = None,
-                 seed: int = 1,
-                 output_y_hat_optimization: bool = True,
-                 num_run: Optional[int] = None,
-                 include: Optional[Dict[str, Any]] = None,
-                 exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-                 init_params: Optional[Dict[str, Any]] = None,
-                 logger_port: Optional[int] = None,
-                 keep_models: Optional[bool] = None,
-                 all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
-        super().__init__(
-            backend=backend,
-            queue=queue,
-            configuration=configuration,
-            metric=metric,
-            seed=seed,
-            output_y_hat_optimization=output_y_hat_optimization,
-            num_run=num_run,
-            include=include,
-            exclude=exclude,
-            disable_file_output=disable_file_output,
-            init_params=init_params,
-            budget=budget,
-            budget_type=budget_type,
-            logger_port=logger_port,
-            all_supported_metrics=all_supported_metrics,
-            pipeline_config=pipeline_config,
-            search_space_updates=search_space_updates
-        )
+    def __init__(self, queue: Queue, fixed_pipeline_params: FixedPipelineParams, evaluator_params: EvaluatorParams):
+        resampling_strategy = fixed_pipeline_params.backend.load_datamanager().resampling_strategy
+        self.train = not isinstance(resampling_strategy, NoResamplingStrategyTypes)
+        self.cross_validation = isinstance(resampling_strategy, CrossValTypes)
 
-        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
-            raise ValueError(
-                f'resampling_strategy for TrainEvaluator must be in '
-                f'(CrossValTypes, HoldoutValTypes), but got {self.resampling_strategy}'
-            )
+        if not self.train and fixed_pipeline_params.save_y_opt:
+            # TODO: Add the test to cover here
+            # No resampling can not be used for building ensembles. save_y_opt=False ensures it
+            fixed_pipeline_params = fixed_pipeline_params._replace(save_y_opt=False)
 
-        self.num_folds: int = len(self.splits)
-        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+        super().__init__(queue=queue, fixed_pipeline_params=fixed_pipeline_params, evaluator_params=evaluator_params)
+
+        if self.train:
+            self.logger.debug("Search space updates :{}".format(self.fixed_pipeline_params.search_space_updates))
 
     def _evaluate_on_split(self, split_id: int) -> EvaluationResults:
         """
@@ -175,7 +148,7 @@ class TrainEvaluator(AbstractEvaluator):
 
         return EvaluationResults(
             pipeline=pipeline,
-            opt_loss=self._loss(labels=self.y_train[opt_split], preds=opt_pred),
+            opt_loss=self._loss(labels=self.y_train[opt_split] if self.train else self.y_test, preds=opt_pred),
             train_loss=self._loss(labels=self.y_train[train_split], preds=train_pred),
             opt_pred=opt_pred,
             valid_pred=valid_pred,
@@ -201,6 +174,7 @@ class TrainEvaluator(AbstractEvaluator):
             results = self._evaluate_on_split(split_id)
 
             self.pipelines[split_id] = results.pipeline
+            assert opt_split is not None  # mypy redefinition
             cv_results.update(split_id, results, len(train_split), len(opt_split))
 
         self.y_opt = np.concatenate([y_opt for y_opt in Y_opt if y_opt is not None])
@@ -212,15 +186,16 @@ class TrainEvaluator(AbstractEvaluator):
         if self.splits is None:
             raise ValueError(f"cannot fit pipeline {self.__class__.__name__} with datamanager.splits None")
 
-        if self.num_folds == 1:
+        if self.cross_validation:
+            results = self._cross_validation()
+        else:
             _, opt_split = self.splits[0]
             results = self._evaluate_on_split(split_id=0)
-            self.y_opt, self.pipelines[0] = self.y_train[opt_split], results.pipeline
-        else:
-            results = self._cross_validation()
+            self.pipelines[0] = results.pipeline
+            self.y_opt = self.y_train[opt_split] if self.train else self.y_test
 
         self.logger.debug(
-            f"In train evaluator.evaluate_loss, num_run: {self.num_run}, loss:{results.opt_loss},"
+            f"In evaluate_loss, num_run: {self.num_run}, loss:{results.opt_loss},"
             f" status: {results.status},\nadditional run info:\n{dict_repr(results.additional_run_info)}"
         )
         self.record_evaluation(results=results)
@@ -240,41 +215,23 @@ class TrainEvaluator(AbstractEvaluator):
 
         kwargs = {'pipeline': pipeline, 'unique_train_labels': self.unique_train_labels[split_id]}
         train_pred = self.predict(subsampler(self.X_train, train_indices), **kwargs)
-        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs)
-        valid_pred = self.predict(self.X_valid, **kwargs)
         test_pred = self.predict(self.X_test, **kwargs)
+        valid_pred = self.predict(self.X_valid, **kwargs)
+
+        # No resampling ===> evaluate on test dataset
+        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs) if self.train else test_pred
 
         assert train_pred is not None and opt_pred is not None  # mypy check
         return train_pred, opt_pred, valid_pred, test_pred
 
 
-# create closure for evaluating an algorithm
-def eval_train_function(
-    backend: Backend,
-    queue: Queue,
-    metric: autoPyTorchMetric,
-    budget: float,
-    config: Optional[Configuration],
-    seed: int,
-    output_y_hat_optimization: bool,
-    num_run: int,
-    include: Optional[Dict[str, Any]],
-    exclude: Optional[Dict[str, Any]],
-    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-    pipeline_config: Optional[Dict[str, Any]] = None,
-    budget_type: str = None,
-    init_params: Optional[Dict[str, Any]] = None,
-    logger_port: Optional[int] = None,
-    all_supported_metrics: bool = True,
-    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-    instance: str = None,
-) -> None:
+def eval_fn(queue: Queue, fixed_pipeline_params: FixedPipelineParams, evaluator_params: EvaluatorParams) -> None:
     """
     This closure allows the communication between the TargetAlgorithmQuery and the
-    pipeline trainer (TrainEvaluator).
+    pipeline trainer (Evaluator).
 
     Fundamentally, smac calls the TargetAlgorithmQuery.run() method, which internally
-    builds a TrainEvaluator. The TrainEvaluator builds a pipeline, stores the output files
+    builds an Evaluator. The Evaluator builds a pipeline, stores the output files
     to disc via the backend, and puts the performance result of the run in the queue.
 
     Args:
@@ -286,7 +243,11 @@ def eval_train_function(
         evaluator_params (EvaluatorParams):
             The parameters for an evaluator.
     """
-    evaluator = TrainEvaluator(
+    resampling_strategy = fixed_pipeline_params.backend.load_datamanager().resampling_strategy
+    check_resampling_strategy(resampling_strategy)
+
+    # NoResamplingStrategyTypes ==> test evaluator, otherwise ==> train evaluator
+    evaluator = Evaluator(
         queue=queue,
         evaluator_params=evaluator_params,
         fixed_pipeline_params=fixed_pipeline_params

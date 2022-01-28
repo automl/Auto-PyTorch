@@ -4,11 +4,11 @@ from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue,
 
 from autoPyTorch.constants import REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import fit_pipeline
+from autoPyTorch.evaluation.evaluator import Evaluator
 from autoPyTorch.evaluation.pipeline_class_collection import (
     DummyClassificationPipeline,
     DummyRegressionPipeline
 )
-from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
 from autoPyTorch.utils.common import subsampler
 
@@ -28,7 +28,7 @@ def dummy_traditional_classification(self, time_left: int, func_eval_time_limit_
 # ========
 # Fixtures
 # ========
-class DummyTrainEvaluator(TrainEvaluator):
+class DummyEvaluator(Evaluator):
     def _get_pipeline(self):
         if self.task_type in REGRESSION_TASKS:
             pipeline = DummyRegressionPipeline(config=1)
@@ -44,37 +44,21 @@ class DummyTrainEvaluator(TrainEvaluator):
         self.logger.info("Model fitted, now predicting")
 
         kwargs = {'pipeline': pipeline, 'unique_train_labels': self.unique_train_labels[split_id]}
+
         train_pred = self.predict(subsampler(self.X_train, train_indices), **kwargs)
-        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs)
-        valid_pred = self.predict(self.X_valid, **kwargs)
         test_pred = self.predict(self.X_test, **kwargs)
+        valid_pred = self.predict(self.X_valid, **kwargs)
+
+        # No resampling ===> evaluate on test dataset
+        opt_pred = self.predict(subsampler(self.X_train, opt_indices), **kwargs) if self.train else test_pred
 
         assert train_pred is not None and opt_pred is not None  # mypy check
         return train_pred, opt_pred, valid_pred, test_pred
 
 
 # create closure for evaluating an algorithm
-def dummy_eval_train_function(
-        backend,
-        queue,
-        metric,
-        budget: float,
-        config,
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include,
-        exclude,
-        disable_file_output,
-        pipeline_config=None,
-        budget_type=None,
-        init_params=None,
-        logger_port=None,
-        all_supported_metrics=True,
-        search_space_updates=None,
-        instance: str = None,
-) -> None:
-    evaluator = DummyTrainEvaluator(
+def dummy_eval_fn(queue, fixed_pipeline_params, evaluator_params):
+    evaluator = DummyEvaluator(
         queue=queue,
         fixed_pipeline_params=fixed_pipeline_params,
         evaluator_params=evaluator_params

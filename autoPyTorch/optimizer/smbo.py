@@ -1,7 +1,7 @@
 import copy
 import json
 import logging.handlers
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import ConfigSpace
 from ConfigSpace.configuration_space import Configuration
@@ -22,7 +22,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldoutValTypes,
-    NoResamplingStrategyTypes
+    ResamplingStrategies
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import TargetAlgorithmQuery
@@ -98,9 +98,7 @@ class AutoMLSMBO(object):
                  pipeline_config: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: Union[HoldoutValTypes,
-                                            CrossValTypes,
-                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
