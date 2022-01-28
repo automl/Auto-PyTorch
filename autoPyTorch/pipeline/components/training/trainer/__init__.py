@@ -516,13 +516,9 @@ class TrainerChoice(autoPyTorchChoice):
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
 
-<<<<<<< HEAD
         last_epoch = self.run_summary.get_last_epoch()
         best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)
         epochs_since_best = last_epoch - best_epoch
-=======
-        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
->>>>>>> [FIX] Tests after rebase of `reg_cocktails` (#359)
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
