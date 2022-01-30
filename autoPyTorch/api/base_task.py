@@ -47,7 +47,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes,
     ResamplingStrategies,
 )
-from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
+from autoPyTorch.ensemble.ensemble_builder_manager import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.ensemble.utils import EnsembleSelectionTypes
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
