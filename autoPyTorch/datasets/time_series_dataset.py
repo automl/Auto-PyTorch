@@ -230,6 +230,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             else:
                 tmp_freq = min([freq_value for freq_value in freq if freq_value >= n_prediction_steps])
             freq_value = tmp_freq
+        else:
+            freq_value = min(1, n_prediction_steps)
+
         if isinstance(freq_value, list):
             if np.max(freq_value) < n_prediction_steps:
                 tmp_freq = n_prediction_steps
@@ -416,9 +419,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         # TODO doing experiments to give the most proper way of defining these two values
         if lagged_value is None:
-            freq = FREQUENCY_MAP[self.freq]
-            lagged_value = [0] + get_lags_for_frequency(freq)
-
+            if self.freq in FREQUENCY_MAP:
+                freq = FREQUENCY_MAP[self.freq]
+                lagged_value = [0] + get_lags_for_frequency(freq)
+            else:
+                lagged_value = list(range(8))
         self.lagged_value = lagged_value
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
