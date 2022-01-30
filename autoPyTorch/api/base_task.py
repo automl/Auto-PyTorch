@@ -610,9 +610,10 @@ class BaseTask(ABC):
 
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
-            self.models_ = self._backend.load_models_by_identifiers(identifiers)
+            nonnull_identifiers = [i for i in identifiers if i is not None]
+            self.models_ = self._backend.load_models_by_identifiers(nonnull_identifiers)
             if isinstance(self.resampling_strategy, CrossValTypes):
-                self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
+                self.cv_models_ = self._backend.load_cv_models_by_identifiers(nonnull_identifiers)
 
             if isinstance(self.resampling_strategy, CrossValTypes):
                 if len(self.cv_models_) == 0:
@@ -1962,7 +1963,7 @@ class BaseTask(ABC):
             joblib.delayed(_pipeline_predict)(
                 models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type]
             )
-            for identifier in self.ensemble_.get_selected_model_identifiers()
+            for identifier in self.ensemble_.get_selected_model_identifiers() if identifier is not None
         )
 
         if len(all_predictions) == 0:
