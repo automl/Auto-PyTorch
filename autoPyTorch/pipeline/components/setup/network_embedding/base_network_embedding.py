@@ -44,7 +44,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             num_numerical_columns = numerical_column_transformer.transform(
                 X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
         num_input_features = np.zeros((num_numerical_columns + len(X['dataset_properties']['categorical_columns'])),
-                                      dtype=int)
+                                      dtype=np.int32)
         categories = X['dataset_properties']['categories']
 
         for i, category in enumerate(categories):
