@@ -329,9 +329,8 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
 
     def _genreate_dummy_forecasting(self, X):
         if isinstance(X[0], TimeSeriesSequence):
-            X_tail = [x.X[-1] for x in X]
+            X_tail = [x.Y[-1 - self.n_prediction_steps] for x in X]
         else:
-            # test
             X_tail = [x[-1] for x in X]
         return X_tail
 
@@ -342,7 +341,9 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.array:
-        X_tail = self._genreate_dummy_forecasting(X)
+        X_tail = np.asarray(self._genreate_dummy_forecasting(X))
+        if X_tail.ndim == 1:
+            X_tail = np.expand_dims(X_tail, -1)
         return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
 
     @staticmethod
