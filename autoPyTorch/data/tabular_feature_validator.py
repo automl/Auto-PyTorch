@@ -277,7 +277,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if len(self.categorical_columns) > 0:
             if self.column_transformer is None:
                 raise AttributeError("Expect column transformer to be built"
-                                        "if there are categorical columns")
+                                     "if there are categorical columns")
             categorical_columns = self.column_transformer.transformers_[0][-1]
             for column in categorical_columns:
                 if X[column].isna().all():
