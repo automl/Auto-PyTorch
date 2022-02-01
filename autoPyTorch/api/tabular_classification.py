@@ -384,13 +384,6 @@ class TabularClassificationTask(BaseTask):
             dataset_name=dataset_name
         )
 
-        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
-            raise ValueError(
-                'Hyperparameter optimization requires a validation split. '
-                'Expected `self.resampling_strategy` to be either '
-                '(CrossValTypes, HoldoutValTypes), but got {}'.format(self.resampling_strategy)
-            )
-
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,

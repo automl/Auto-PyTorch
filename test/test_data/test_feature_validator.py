@@ -381,7 +381,7 @@ def test_feature_validator_remove_nan_catcolumns():
         ],
         dtype='category',
     )
-    ans_test = np.array([[0, np.nan, 5], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
+    ans_test = np.array([[0, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
     feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
     # Second case, there exist null columns (B and C) in the training set and

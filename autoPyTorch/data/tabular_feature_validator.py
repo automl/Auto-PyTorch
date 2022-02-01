@@ -150,6 +150,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
             all_nan_columns = X.columns[X.isna().all()]
             for col in all_nan_columns:
                 X[col] = pd.to_numeric(X[col])
+
+            # Handle objects if possible
+            exist_object_columns = has_object_columns(X.dtypes.values)
+            if exist_object_columns:
+                X = self.infer_objects(X)
+
             self.dtypes = [dt.name for dt in X.dtypes]  # Also note this change in self.dtypes
             self.all_nan_columns = set(all_nan_columns)
 
@@ -260,20 +266,22 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = cast(Type[pd.DataFrame], X)
-            if self.all_nan_columns is not None:
-                for column in X.columns:
-                    if column in self.all_nan_columns:
-                        if not X[column].isna().all():
-                            X[column] = np.nan
-                        X[column] = pd.to_numeric(X[column])
-            if len(self.categorical_columns) > 0:
-                if self.column_transformer is None:
-                    raise AttributeError("Expect column transformer to be built"
-                                         "if there are categorical columns")
-                categorical_columns = self.column_transformer.transformers_[0][-1]
-                for column in categorical_columns:
-                    if X[column].isna().all():
-                        X[column] = X[column].astype('object')
+
+            if self.all_nan_columns is None:
+                raise ValueError('_fit must be called before calling transform')
+
+            for col in list(self.all_nan_columns):
+                X[col] = np.nan
+                X[col] = pd.to_numeric(X[col])
+
+        if len(self.categorical_columns) > 0:
+            if self.column_transformer is None:
+                raise AttributeError("Expect column transformer to be built"
+                                        "if there are categorical columns")
+            categorical_columns = self.column_transformer.transformers_[0][-1]
+            for column in categorical_columns:
+                if X[column].isna().all():
+                    X[column] = X[column].astype('object')
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
@@ -366,10 +374,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 self.column_order = column_order
 
             dtypes = [dtype.name for dtype in X.dtypes]
-
+            diff_cols = X.columns[[s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]]
             if len(self.dtypes) == 0:
                 self.dtypes = dtypes
-            elif self.dtypes != dtypes:
+            elif not self._is_datasets_consistent(diff_cols, X):
                 raise ValueError("The dtype of the features must not be changed after fit(), but"
                                  " the dtypes of some columns are different between training ({}) and"
                                  " test ({}) datasets.".format(self.dtypes, dtypes))
@@ -517,11 +525,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     self.logger.warning(f'Casting the column {key} to {dtype} caused the exception {e}')
                     pass
         else:
-            # Calling for the first time to infer the categories
-            X = X.infer_objects()
-            for column, data_type in zip(X.columns, X.dtypes):
-                if not is_numeric_dtype(data_type):
-                    X[column] = X[column].astype('category')
+            if len(self.dtypes) != 0:
+                # when train data has no object dtype, but test does
+                # we prioritise the datatype given in training data
+                for column, data_type in zip(X.columns, self.dtypes):
+                    X[column] = X[column].astype(data_type)
+            else:
+                # Calling for the first time to infer the categories
+                X = X.infer_objects()
+                for column, data_type in zip(X.columns, X.dtypes):
+                    if not is_numeric_dtype(data_type):
+                        X[column] = X[column].astype('category')
 
             # only numerical attributes and categories
             self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
