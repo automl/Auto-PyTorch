@@ -32,13 +32,15 @@ class HoldOutFunc(Protocol):
         ...
 
 
-def holdout_split_forecasting(holdout: TimeSeriesSplit, indices: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def holdout_split_forecasting(holdout: TimeSeriesSplit, indices: np.ndarray, n_prediction_steps: int,
+                              n_repeat: int = 1) -> Tuple[np.ndarray, np.ndarray]:
     """
     A function that do holdout split without raising an error: When the target sequence is too short to be split into
     training and validation set, the training set will simply ignore that and we only consider the validation set.
     """
     try:
         train, val = list(holdout.split(indices))[-1]
+        val = [val[-1 - i * n_prediction_steps] for i in reversed(range(n_repeat))]
     except ValueError:
         train = np.array([], dtype=indices.dtype)
         val = [-1]
@@ -159,17 +161,22 @@ class HoldOutFuncs():
 
         Returns:
         """
+        n_prediction_steps = kwargs['n_prediction_steps']
+        n_repeat = kwargs['n_repeat']
         # TODO consider how we handle test size properly
         # Time Series prediction only requires on set of prediction for each
         # This implement needs to be combined with time series forecasting dataloader, where each time an entire
         # time series is used for prediction
-        cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=kwargs['n_prediction_steps'] - 1)
-        train, val = holdout_split_forecasting(holdout=cv, indices=indices)
+        cv = TimeSeriesSplit(n_splits=2, test_size=1 + n_prediction_steps * (n_repeat - 1), gap=n_prediction_steps - 1)
+
+        train, val = holdout_split_forecasting(holdout=cv,
+                                               indices=indices,
+                                               n_prediction_steps=n_prediction_steps,
+                                               n_repeat=n_repeat)
         return train, val
 
     @classmethod
     def get_holdout_validators(cls, *holdout_val_types: HoldoutValTypes) -> Dict[str, HoldOutFunc]:
-
         holdout_validators = {
             holdout_val_type.name: getattr(cls, holdout_val_type.name)
             for holdout_val_type in holdout_val_types
@@ -256,8 +263,11 @@ class CrossValFuncs():
 
         """
         test_size = kwargs['n_prediction_steps']
-        cv = TimeSeriesSplit(n_splits=num_splits, test_size=test_size, gap=0)
-        splits = [(indices[split[0]], indices[split[1][-1:]]) for split in cv.split(indices)]
+        n_repeat = kwargs['n_repeat']
+        cv = TimeSeriesSplit(n_splits=num_splits, test_size=test_size * n_repeat, gap=0)
+        splits = [(
+            indices[split[0]],
+            indices[split[1][[-1 - n * test_size for n in reversed(range(n_repeat))]]]) for split in cv.split(indices)]
         return splits
 
     @staticmethod
@@ -283,24 +293,36 @@ class CrossValFuncs():
         """
         n_prediction_steps = kwargs['n_prediction_steps']
         seasonality_h_value = kwargs['seasonality_h_value']
+        n_repeat = kwargs["n_repeat"]
         assert seasonality_h_value >= n_prediction_steps
         cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=n_prediction_steps - 1)
-        train_t, val_t = holdout_split_forecasting(cv, indices)
+
+        train_t, val_t = holdout_split_forecasting(holdout=cv,
+                                                   indices=indices,
+                                                   n_prediction_steps=n_prediction_steps,
+                                                   n_repeat=n_repeat)
+
         splits = [(train_t, val_t)]
         if len(indices) < seasonality_h_value - n_prediction_steps:
             if len(indices) == 1:
                 train_s = train_t
                 val_s = val_t
             else:
-                train_s, val_s = holdout_split_forecasting(cv, indices[:-1])
+                train_s, val_s = holdout_split_forecasting(cv, indices[:-1],
+                                                           n_prediction_steps=n_prediction_steps,
+                                                           n_repeat=n_repeat)
         else:
-            train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps])
+            train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps],
+                                                       n_prediction_steps=n_prediction_steps,
+                                                       n_repeat=n_repeat)
         splits.append((train_s, val_s))
         if num_splits > 2:
             freq_value = int(kwargs['freq_value'])
             for i_split in range(2, num_splits):
                 n_tail = (i_split - 1) * freq_value + seasonality_h_value - n_prediction_steps
-                train_s, val_s = holdout_split_forecasting(cv, indices[:-n_tail])
+                train_s, val_s = holdout_split_forecasting(cv, indices[:-n_tail],
+                                                           n_prediction_steps=n_prediction_steps,
+                                                           n_repeat=n_repeat)
                 splits.append((train_s, val_s))
         return splits
 

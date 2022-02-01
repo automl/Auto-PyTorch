@@ -334,6 +334,48 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 else:
                     resampling_strategy_args.update({'num_splits': num_splits})
 
+        num_seqs = len(sequence_lengths)
+
+        if resampling_strategy_args is not None and "n_repeat" not in resampling_strategy_args:
+            n_repeat = resampling_strategy_args["n_repeat"]
+        else:
+            n_repeat = None
+        if (num_seqs < 100 and minimal_seq_length > 10 * n_prediction_steps) or \
+                minimal_seq_length > 50 * n_prediction_steps:
+            if n_repeat is None:
+                if num_seqs < 100:
+                    n_repeat = int(np.ceil(100.0 / num_seqs))
+                else:
+                    n_repeat = int(np.round(minimal_seq_length / (50 * n_prediction_steps)))
+
+            if resampling_strategy == CrossValTypes.time_series_cross_validation:
+                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps * num_splits))
+            elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
+                seasonality_h_value = int(np.round(
+                    (self.n_prediction_steps * n_repeat // int(self.freq_value) + 1) * self.freq_value)
+                )
+
+                while minimal_seq_length // 5 < (num_splits - 1) * n_repeat * freq_value \
+                        + seasonality_h_value - n_repeat * n_prediction_steps:
+                    n_repeat -= 1
+                    seasonality_h_value = int(np.round(
+                        (self.n_prediction_steps * n_repeat // int(self.freq_value) + 1) * self.freq_value)
+                    )
+            elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
+                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps ) - 1)
+
+            else:
+                raise NotImplementedError("Unsupported resampling_strategy")
+
+            n_repeat = max(n_repeat, 1)
+        if n_repeat is None:
+            n_repeat = 1
+
+        if resampling_strategy_args is None:
+            resampling_strategy_args = {'n_repeat': n_repeat}
+        else:
+            resampling_strategy_args.update({'n_repeat': n_repeat})
+
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
 
@@ -642,18 +684,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 'val_share', None)
             if self.resampling_strategy_args is not None:
                 val_share = self.resampling_strategy_args.get('val_share', val_share)
+                n_repeat = self.resampling_strategy_args.get("n_repeat", 1)
+            else:
+                n_repeat = 1
             splits.append(self.create_holdout_val_split(holdout_val_type=self.resampling_strategy,
-                                                        val_share=val_share))
+                                                        val_share=val_share,
+                                                        n_repeat=n_repeat))
 
         elif isinstance(self.resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[self.resampling_strategy].get(
                 'num_splits', None)
             if self.resampling_strategy_args is not None:
                 num_splits = self.resampling_strategy_args.get('num_splits', num_splits)
+                n_repeat = self.resampling_strategy_args.get("n_repeat", 1)
+            else:
+                n_repeat = 1
             # Create the split if it was not created before
             splits.extend(self.create_cross_val_splits(
                 cross_val_type=self.resampling_strategy,
                 num_splits=cast(int, num_splits),
+                n_repeat=n_repeat
             ))
         elif self.resampling_strategy is None:
             splits.append(self.create_refit_split())
@@ -690,7 +740,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def create_cross_val_splits(
             self,
             cross_val_type: CrossValTypes,
-            num_splits: int
+            num_splits: int,
+            n_repeat=1,
     ) -> List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]:
         """
         This function creates the cross validation split for the given task.
@@ -699,6 +750,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         Args:
             cross_val_type (CrossValTypes):
             num_splits (int): number of splits to be created
+            n_repeat (int): how many n_prediction_steps to repeat in the validation set
 
         Returns:
             (List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]):
@@ -719,6 +771,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             seasonality_h_value = int(np.round((self.n_prediction_steps // int(self.freq_value) + 1) * self.freq_value))
             kwargs.update({'seasonality_h_value': seasonality_h_value,
                            'freq_value': self.freq_value})
+        kwargs["n_repeat"] = n_repeat
+
         splits = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
 
         for idx_seq, dataset in enumerate(self.datasets):
@@ -753,6 +807,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self,
             holdout_val_type: HoldoutValTypes,
             val_share: float,
+            n_repeat: int = 1,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         This function creates the holdout split for the given task.
@@ -761,6 +816,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         Args:
             holdout_val_type (HoldoutValTypes):
             val_share (float): share of the validation data
+            n_repeat (int): how many n_prediction_steps to repeat in the validation set
 
         Returns:
             (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
@@ -774,7 +830,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             raise ValueError(f"`val_share` must be between 0 and 1, got {val_share}.")
         if not isinstance(holdout_val_type, HoldoutValTypes):
             raise NotImplementedError(f'The specified `holdout_val_type` "{holdout_val_type}" is not supported.')
-        kwargs = {"n_prediction_steps": self.n_prediction_steps}
+        kwargs = {"n_prediction_steps": self.n_prediction_steps,
+                  "n_repeat": n_repeat}
 
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
