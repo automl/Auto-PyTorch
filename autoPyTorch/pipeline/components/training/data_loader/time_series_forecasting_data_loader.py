@@ -437,7 +437,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         else:
             _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
         # create masks for masking
-        seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)
+        seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)[0]
+        if len(seq_idx_inactivate) == seq_train_length.size:
+            seq_idx_inactivate = self.random_state.choice(seq_idx_inactivate, len(seq_idx_inactivate)-1, replace=False )
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
 
         """
