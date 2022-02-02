@@ -278,10 +278,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if self.column_transformer is None:
                 raise AttributeError("Expect column transformer to be built"
                                      "if there are categorical columns")
-            categorical_columns = self.column_transformer.transformers_[0][-1]
-            for column in categorical_columns:
-                if X[column].isna().all():
-                    X[column] = X[column].astype('object')
+            cat_cols = self.column_transformer.transformers_[0][-1]  # categorical columns
+            all_nan_cat_cols = set(X[cat_cols].columns[X[cat_cols].isna().all()])
+            dtype_dict = {col: 'object' for col in cat_cols if col in all_nan_cat_cols}
+            X = X.astype(dtype_dict)
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
@@ -528,15 +528,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if len(self.dtypes) != 0:
                 # when train data has no object dtype, but test does
                 # we prioritise the datatype given in training data
-                for column, data_type in zip(X.columns, self.dtypes):
-                    X[column] = X[column].astype(data_type)
+                dtype_dict = {col: dtype for col, dtype in zip(X.columns, self.dtypes)}
+                X = X.astype(dtype_dict)
             else:
                 # Calling for the first time to infer the categories
                 X = X.infer_objects()
-                for column, data_type in zip(X.columns, X.dtypes):
-                    if not is_numeric_dtype(data_type):
-                        X[column] = X[column].astype('category')
-
+                dtype_dict = {col: 'category' for col, dtype in zip(X.columns, X.dtypes) if not is_numeric_dtype(dtype)}
+                X = X.astype(dtype_dict)
             # only numerical attributes and categories
             self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
 
