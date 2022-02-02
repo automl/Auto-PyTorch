@@ -24,7 +24,8 @@ class QuantileTransformer(BaseScaler):
         self,
         n_quantiles: int = 1000,
         output_distribution: str = "normal",
-        random_state: Optional[Union[np.random.RandomState, int]] = None):
+        random_state: Optional[Union[np.random.RandomState, int]] = None
+    ):
         super().__init__()
         self.random_state = random_state
         self.n_quantiles = n_quantiles
@@ -39,16 +40,18 @@ class QuantileTransformer(BaseScaler):
                                                                     copy=False)
         return self
 
+    @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         n_quantiles: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="n_quantiles",
-                                                                    value_range=(10, 2000),
-                                                                    default_value=1000,
-                                                                    ),
+                                                                           value_range=(10, 2000),
+                                                                           default_value=1000,
+                                                                           ),
         output_distribution: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_distribution",
-                                                                    value_range=("uniform", "normal"),
-                                                                    default_value="normal",
-                                                                    )) -> ConfigurationSpace:
+                                                                                   value_range=("uniform", "normal"),
+                                                                                   default_value="normal",
+                                                                                   )
+    ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         # TODO parametrize like the Random Forest as n_quantiles = n_features^param

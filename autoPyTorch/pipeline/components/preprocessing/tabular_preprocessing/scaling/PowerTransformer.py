@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling
 class PowerTransformer(BaseScaler):
     """
     Map data to as close to a Gaussian distribution as possible
-    in order to reduce variance and minimize skewness. 
+    in order to reduce variance and minimize skewness.
 
     Uses `yeo-johnson` power transform method. Also, data is normalised
     to zero mean and unit variance.
