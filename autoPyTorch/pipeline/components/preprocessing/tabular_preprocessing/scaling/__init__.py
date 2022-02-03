@@ -72,6 +72,7 @@ class ScalerChoice(autoPyTorchChoice):
                 'MinMaxScaler',
                 'PowerTransformer',
                 'QuantileTransformer',
+                'RobustScaler',
                 'NoScaler'
             ]
             for default_ in defaults:

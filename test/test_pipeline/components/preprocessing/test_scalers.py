@@ -13,6 +13,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling
     PowerTransformer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.QuantileTransformer import \
     QuantileTransformer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.RobustScaler import RobustScaler
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.StandardScaler import StandardScaler
 
 
@@ -283,6 +284,46 @@ def test_power_transformer():
     assert_allclose(transformed, np.array([[0.531648, 0.522782, 0.515394],
                                            [1.435794, 1.451064, 1.461685],
                                            [0.993609, 1.001055, 1.005734]]), rtol=1e-06)
+
+
+def test_robust_scaler():
+    data = np.array([[1, 2, 3],
+                    [7, 8, 9],
+                    [4, 5, 6],
+                    [11, 12, 13],
+                    [17, 18, 19],
+                    [14, 15, 16]])
+    train_indices = np.array([0, 2, 5])
+    test_indices = np.array([1, 4, 3])
+    categorical_columns = list()
+    numerical_columns = [0, 1, 2]
+    dataset_properties = {'categorical_columns': categorical_columns,
+                          'numerical_columns': numerical_columns,
+                          'issparse': False}
+    X = {
+        'X_train': data[train_indices],
+        'dataset_properties': dataset_properties
+    }
+    scaler_component = RobustScaler()
+
+    scaler_component = scaler_component.fit(X)
+    X = scaler_component.transform(X)
+    scaler = X['scaler']['numerical']
+
+    # check if the fit dictionary X is modified as expected
+    assert isinstance(X['scaler'], dict)
+    assert isinstance(scaler, BaseEstimator)
+    assert X['scaler']['categorical'] is None
+
+    # make column transformer with returned encoder to fit on data
+    column_transformer = make_column_transformer((scaler, X['dataset_properties']['numerical_columns']),
+                                                 remainder='passthrough')
+    column_transformer = column_transformer.fit(X['X_train'])
+    transformed = column_transformer.transform(data[test_indices])
+
+    assert_allclose(transformed, np.array([[100, 100, 100],
+                                           [433.33333333, 433.33333333, 433.33333333],
+                                           [233.33333333, 233.33333333, 233.33333333]]))
 
 
 class TestQuantileTransformer():
