@@ -16,11 +16,11 @@ from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, 
 
 class RobustScaler(BaseScaler):
     """
-    Transform the features to follow a uniform or a normal distribution
-    using quantiles information.
+    Remove the median and scale features according to the quantile_range to make
+    the features robust to outliers.
 
-    For more details of each attribute, see:
-    https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html
+    For more details of the preprocessor, see:
+    https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html
     """
     def __init__(
         self,
