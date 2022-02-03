@@ -515,15 +515,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
             pd.DataFrame
         """
         if hasattr(self, 'object_dtype_mapping'):
-            # Mypy does not process the has attr. This dict is defined below
-            for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
-                # honor the training data types
-                try:
-                    X[key] = X[key].astype(dtype.name)
-                except Exception as e:
-                    # Try inference if possible
-                    self.logger.warning(f'Casting the column {key} to {dtype} caused the exception {e}')
-                    pass
+            # honor the training data types
+            try:
+                # Mypy does not process the has attr.
+                X = X.astype(self.object_dtype_mapping)  # type: ignore[has-type]
+            except Exception as e:
+                # Try inference if possible
+                self.logger.warning(f'Casting the columns to training dtypes '  # type: ignore[has-type]
+                                    f'{self.object_dtype_mapping} caused the exception {e}')
+                pass
         else:
             if len(self.dtypes) != 0:
                 # when train data has no object dtype, but test does
