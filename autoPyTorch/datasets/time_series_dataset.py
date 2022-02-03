@@ -365,7 +365,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps ) - 1)
 
             else:
-                raise NotImplementedError("Unsupported resampling_strategy")
+                n_repeat = 1
 
             n_repeat = max(n_repeat, 1)
         if n_repeat is None:
