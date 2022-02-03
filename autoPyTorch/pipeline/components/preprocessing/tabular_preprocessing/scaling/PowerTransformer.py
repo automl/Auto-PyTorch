@@ -17,7 +17,7 @@ class PowerTransformer(BaseScaler):
     to zero mean and unit variance.
     """
     def __init__(self,
-                 random_state: Optional[Union[np.random.RandomState, int]] = None):
+                 random_state: Optional[np.random.RandomState] = None):
         super().__init__()
         self.random_state = random_state
 
@@ -25,7 +25,7 @@ class PowerTransformer(BaseScaler):
 
         self.check_requirements(X, y)
 
-        self.preprocessor['numerical'] = SklearnPowerTransformer(copy=False)
+        self.preprocessor['numerical'] = SklearnPowerTransformer(method='yeo-johnson', copy=False)
         return self
 
     @staticmethod

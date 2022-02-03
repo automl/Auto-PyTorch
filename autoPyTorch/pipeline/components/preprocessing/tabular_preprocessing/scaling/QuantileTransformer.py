@@ -17,14 +17,17 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class QuantileTransformer(BaseScaler):
     """
-    Transforms the features to follow a uniform or a normal distribution
+    Transform the features to follow a uniform or a normal distribution
     using quantiles information.
+
+    For more details of each attribute, see:
+    https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html
     """
     def __init__(
         self,
         n_quantiles: int = 1000,
-        output_distribution: str = "normal",
-        random_state: Optional[Union[np.random.RandomState, int]] = None
+        output_distribution: str = "normal",  # Literal["normal", "uniform"]
+        random_state: Optional[np.random.RandomState] = None
     ):
         super().__init__()
         self.random_state = random_state
