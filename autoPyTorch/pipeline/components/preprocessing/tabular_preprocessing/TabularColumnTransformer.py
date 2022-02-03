@@ -48,13 +48,16 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             "TabularColumnTransformer": an instance of self
         """
         self.check_requirements(X, y)
-        numerical_pipeline = 'drop'
-        categorical_pipeline = 'drop'
+        # in case the preprocessing steps are disabled
+        # i.e, NoEncoder for categorical, we want to
+        # let the data in categorical columns pass through
+        numerical_pipeline = 'passthrough'
+        categorical_pipeline = 'passthrough'
 
         preprocessors = get_tabular_preprocessers(X)
-        if len(X['dataset_properties']['numerical_columns']):
+        if len(X['dataset_properties']['numerical_columns']) and len(preprocessors['numerical']):
             numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-        if len(X['dataset_properties']['categorical_columns']):
+        if len(X['dataset_properties']['categorical_columns']) and len(preprocessors['categorical']):
             categorical_pipeline = make_pipeline(*preprocessors['categorical'])
 
         self.preprocessor = ColumnTransformer([
