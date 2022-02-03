@@ -5,7 +5,8 @@ from numpy.testing import assert_array_equal
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding.VarianceThreshold import VarianceThreshold
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding. \
+    VarianceThreshold import VarianceThreshold
 
 
 def test_variance_threshold():
@@ -38,8 +39,8 @@ def test_variance_threshold():
 
     # make column transformer with returned encoder to fit on data
     column_transformer = make_column_transformer((variance_threshold,
-                                                    X['dataset_properties']['numerical_columns']),
-                                                    remainder='passthrough')
+                                                  X['dataset_properties']['numerical_columns']),
+                                                 remainder='passthrough')
     column_transformer = column_transformer.fit(X['X_train'])
     transformed = column_transformer.transform(data[test_indices])
 
