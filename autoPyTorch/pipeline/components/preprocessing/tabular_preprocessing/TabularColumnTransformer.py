@@ -51,13 +51,17 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         self.check_requirements(X, y)
 
         preprocessors = get_tabular_preprocessers(X)
-        column_transformers: List[Tuple(str, BaseEstimator, List[int])] = []
+        column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
         if len(preprocessors['numerical']) > 0:
             numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-            column_transformers.append(('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns']))
+            column_transformers.append(
+                ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns'])
+            )
         if len(preprocessors['categorical']) > 0:
             categorical_pipeline = make_pipeline(*preprocessors['categorical'])
-            column_transformers.append(('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns']))
+            column_transformers.append(
+                ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])
+            )
 
         # in case the preprocessing steps are disabled
         # i.e, NoEncoder for categorical, we want to
