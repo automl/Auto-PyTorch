@@ -20,7 +20,7 @@ def random_state():
     return 11
 
 
-@pytest.fixture(params=['TruncatedSVD', 'PolynomialFeatures', 'PowerTransformer',
+@pytest.fixture(params=['TruncatedSVD', 'PolynomialFeatures',
                         'Nystroem', 'KernelPCA', 'RandomKitchenSinks'])
 def preprocessor(request):
     return request.param
