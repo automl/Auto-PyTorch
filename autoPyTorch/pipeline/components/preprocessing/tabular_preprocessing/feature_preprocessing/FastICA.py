@@ -1,5 +1,5 @@
 from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ConfigSpace.conditions import EqualsCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,8 +10,8 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from sklearn.decomposition import FastICA
 from sklearn.base import BaseEstimator
+from sklearn.decomposition import FastICA as SklearnFastICA
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -34,7 +34,7 @@ class FastICA(autoPyTorchFeaturePreprocessingComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        self.preprocessor['numerical'] = FastICA(
+        self.preprocessor['numerical'] = SklearnFastICA(
             n_components=self.n_components, algorithm=self.algorithm,
             fun=self.fun, whiten=self.whiten, random_state=self.random_state)
 
@@ -57,7 +57,7 @@ class FastICA(autoPyTorchFeaturePreprocessingComponent):
                                                                       ),
         fun: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='fun',
                                                                    value_range=('logcosh', 'exp', 'cube'),
-                                                                   default_value='logcash',
+                                                                   default_value='logcosh',
                                                                    ),
     ) -> ConfigurationSpace:
         if dataset_properties is not None:
@@ -91,7 +91,6 @@ class FastICA(autoPyTorchFeaturePreprocessingComponent):
             cs.add_condition(EqualsCondition(n_components_hp, whiten_hp, True))
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:

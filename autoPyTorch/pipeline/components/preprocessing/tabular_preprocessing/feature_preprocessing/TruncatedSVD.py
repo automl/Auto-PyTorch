@@ -35,7 +35,9 @@ class TruncatedSVD(autoPyTorchFeaturePreprocessingComponent):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'TruncSVD',
                 'name': 'Truncated Singular Value Decomposition',
-                'handles_sparse': True}
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True}
 
     @staticmethod
     def get_hyperparameter_search_space(

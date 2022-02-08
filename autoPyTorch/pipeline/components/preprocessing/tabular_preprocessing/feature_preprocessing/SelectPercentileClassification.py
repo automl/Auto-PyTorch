@@ -1,6 +1,5 @@
 from functools import partial
-from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,8 +9,8 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from sklearn.feature_selection import SelectPercentile, chi2, f_classif, mutual_info_classif
 from sklearn.base import BaseEstimator
+from sklearn.feature_selection import SelectPercentile, chi2, f_classif, mutual_info_classif
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -21,7 +20,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, score_func: str = "chi2",
-                 percentile: int = 50, 
+                 percentile: int = 50,
                  random_state: Optional[np.random.RandomState] = None
                  ):
         self.percentile = percentile
@@ -48,13 +47,15 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         percentile: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="percentile",
-                                                                            value_range=(1, 99),
-                                                                            default_value=50,
-                                                                            ),
+                                                                          value_range=(1, 99),
+                                                                          default_value=50,
+                                                                          ),
         score_func: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="score_func",
-                                                                         value_range=("chi2", "f_classif", "mutual_info"),
-                                                                         default_value="chi2",
-                                                                         ),
+                                                                          value_range=("chi2",
+                                                                                       "f_classif",
+                                                                                       "mutual_info"),
+                                                                          default_value="chi2",
+                                                                          ),
     ) -> ConfigurationSpace:
         if dataset_properties is not None:
             if 'issparse' in dataset_properties and dataset_properties['issparse']:
@@ -68,7 +69,6 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
         add_hyperparameter(cs, percentile, UniformIntegerHyperparameter)
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:

@@ -2,18 +2,20 @@ from math import ceil, floor
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.forbidden import ForbiddenInClause, \
-    ForbiddenAndConjunction, ForbiddenEqualsClause
+from ConfigSpace.forbidden import (
+    ForbiddenAndConjunction,
+    ForbiddenEqualsClause,
+    ForbiddenInClause
+)
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
-    UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
 
 import numpy as np
 
-from sklearn.cluster import FeatureAgglomeration
 from sklearn.base import BaseEstimator
+from sklearn.cluster import FeatureAgglomeration as SklearnFeatureAgglomeration
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -41,7 +43,7 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
         if not callable(self.pooling_func):
             self.pooling_func = self.pooling_func_mapping[self.pooling_func]
 
-        self.preprocessor['numerical'] = FeatureAgglomeration(
+        self.preprocessor['numerical'] = SklearnFeatureAgglomeration(
             n_clusters=self.n_clusters, affinity=self.affinity,
             linkage=self.linkage, pooling_func=self.pooling_func)
 
@@ -50,12 +52,14 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        n_components: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                                            value_range=(0.5, 0.9),
-                                                                            default_value=0.5,
-                                                                            ),
+        n_clusters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='n_clusters',
+                                                                          value_range=(0.5, 0.9),
+                                                                          default_value=0.5,
+                                                                          ),
         affinity: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='affinity',
-                                                                        value_range=("euclidean", "manhattan", "cosine"),
+                                                                        value_range=("euclidean",
+                                                                                     "manhattan",
+                                                                                     "cosine"),
                                                                         default_value="euclidean",
                                                                         ),
         linkage: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='linkage',
@@ -73,21 +77,21 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
             if n_features == 1:
                 log = False
             else:
-                log = n_components.log
-            n_components = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                     value_range=(
-                                                         floor(float(n_components.value_range[0]) * n_features),
-                                                         ceil(float(n_components.value_range[1]) * n_features)),
-                                                     default_value=ceil(float(n_components.default_value) * n_features),
-                                                     log=log)
+                log = n_clusters.log
+            n_clusters = HyperparameterSearchSpace(hyperparameter='n_clusters',
+                                                   value_range=(
+                                                       floor(float(n_clusters.value_range[0]) * n_features),
+                                                       ceil(float(n_clusters.value_range[1]) * n_features)),
+                                                   default_value=ceil(float(n_clusters.default_value) * n_features),
+                                                   log=log)
         else:
-            n_components = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                     value_range=(10, 2000),
-                                                     default_value=100,
-                                                     log=n_components.log)
+            n_clusters = HyperparameterSearchSpace(hyperparameter='n_clusters',
+                                                   value_range=(2, 400),
+                                                   default_value=25,
+                                                   log=n_clusters.log)
         cs = ConfigurationSpace()
 
-        add_hyperparameter(cs, n_components, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, n_clusters, UniformIntegerHyperparameter)
         affinity_hp = get_hyperparameter(affinity, CategoricalHyperparameter)
         linkage_hp = get_hyperparameter(linkage, CategoricalHyperparameter)
         add_hyperparameter(cs, pooling_func, CategoricalHyperparameter)
@@ -98,7 +102,7 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
             affinity_choices.append("manhattan")
         if "cosine" in affinity_hp.choices:
             affinity_choices.append("cosine")
-        
+
         if "ward" in linkage_hp.choices and len(affinity_choices) > 0:
             forbidden_condition = ForbiddenAndConjunction(
                 ForbiddenInClause(affinity_hp, affinity_choices),
@@ -107,7 +111,6 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
             cs.add_forbidden_clause(forbidden_condition)
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:

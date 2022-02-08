@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
@@ -46,6 +47,79 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
         components.update(_addons.components)
         return components
 
+    def get_available_components(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        include: List[str] = None,
+        exclude: List[str] = None,
+    ) -> Dict[str, autoPyTorchComponent]:
+        """Filters out components based on user provided
+        include/exclude directives, as well as the dataset properties
+
+        Args:
+         include (Optional[Dict[str, Any]]): what hyper-parameter configurations
+            to honor when creating the configuration space
+         exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
+             to remove from the configuration space
+         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Characteristics
+             of the dataset to guide the pipeline choices of components
+
+        Returns:
+            Dict[str, autoPyTorchComponent]: A filtered dict of learning
+                rate backbones
+
+        """
+        if dataset_properties is None:
+            dataset_properties = {}
+
+        if include is not None and exclude is not None:
+            raise ValueError(
+                "The argument include and exclude cannot be used together.")
+
+        available_comp = self.get_components()
+
+        if include is not None:
+            for incl in include:
+                if incl not in available_comp:
+                    raise ValueError("Trying to include unknown component: "
+                                     "%s" % incl)
+
+        components_dict = OrderedDict()
+        for name in available_comp:
+            if include is not None and name not in include:
+                continue
+            elif exclude is not None and name in exclude:
+                continue
+
+            entry = available_comp[name]
+
+            # Exclude itself to avoid infinite loop
+            if entry == FeatureProprocessorChoice or hasattr(entry, 'get_components'):
+                continue
+
+            task_type = str(dataset_properties['task_type'])
+            properties = entry.get_properties()
+            if (
+                STRING_TO_TASK_TYPES[task_type] in CLASSIFICATION_TASKS
+                and not bool(properties['handles_classification'])
+            ):
+                continue
+            elif (
+                STRING_TO_TASK_TYPES[task_type] in REGRESSION_TASKS
+                and not bool(properties['handles_regression'])
+            ):
+                continue
+
+            # target_type = dataset_properties['target_type']
+            # Apply some automatic filtering here for
+            # backbones based on the dataset!
+            # TODO: Think if there is any case where a preprocessor
+            # is not compatible for a certain dataset
+
+            components_dict[name] = entry
+
+        return components_dict
+
     def get_hyperparameter_search_space(self,
                                         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
@@ -73,6 +147,15 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                         'Nystroem',
                         'PolynomialFeatures',
                         'TruncatedSVD',
+                        'ExtraTreesPreprocessorClassification',
+                        'ExtraTreesPreprocessorRegression',
+                        'FeatureAgglomeration',
+                        'RandomTreesEmbedding',
+                        'SelectPercentileClassification',
+                        'SelectPercentileRegression',
+                        'SelectRatesClassification',
+                        'SelectRatesRegression',
+                        'LibLinearSVCPreprocessor'
                         ]
             for default_ in defaults:
                 if default_ in available_:

@@ -1,6 +1,5 @@
 from functools import partial
-from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,8 +9,8 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from sklearn.feature_selection import SelectPercentile, f_regression, mutual_info_regression
 from sklearn.base import BaseEstimator
+from sklearn.feature_selection import SelectPercentile, f_regression, mutual_info_regression
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -60,7 +59,6 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
         add_hyperparameter(cs, percentile, UniformIntegerHyperparameter)
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:

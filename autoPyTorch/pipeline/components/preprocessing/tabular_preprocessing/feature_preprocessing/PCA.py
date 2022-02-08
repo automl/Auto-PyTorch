@@ -1,12 +1,9 @@
-from math import ceil, floor
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
-    UniformIntegerHyperparameter,
 )
 
 import numpy as np
@@ -17,7 +14,7 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
 class PCA(autoPyTorchFeaturePreprocessingComponent):
@@ -44,13 +41,13 @@ class PCA(autoPyTorchFeaturePreprocessingComponent):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         keep_variance: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='keep_variance',
-                                                                      value_range=(2, 3),
-                                                                      default_value=2,
-                                                                      log=True),
+                                                                             value_range=(2, 3),
+                                                                             default_value=2,
+                                                                             log=True),
         whiten: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='whiten',
-                                                                                value_range=(True, False),
-                                                                                default_value=False,
-                                                                                ),
+                                                                      value_range=(True, False),
+                                                                      default_value=False,
+                                                                      ),
     ) -> ConfigurationSpace:
 
         cs = ConfigurationSpace()

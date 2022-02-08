@@ -245,3 +245,20 @@ def add_hyperparameter(cs: ConfigurationSpace,
         None
     """
     cs.add_hyperparameter(get_hyperparameter(hyperparameter, hyperparameter_type))
+
+
+def check_none(p: Any) -> bool:
+    """
+    utility function to check if `p` is None.
+
+    Args:
+        p (str):
+            variable to check
+
+    Returns:
+        bool:
+            True, if `p` is in (None, "none", "None")
+    """
+    if p in ("None", "none", None):
+        return True
+    return False

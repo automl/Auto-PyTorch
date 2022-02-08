@@ -1,6 +1,4 @@
-from functools import partial
-from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -10,8 +8,8 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from sklearn.feature_selection import GenericUnivariateSelect, chi2, f_classif, mutual_info_classif
 from sklearn.base import BaseEstimator
+from sklearn.feature_selection import GenericUnivariateSelect, chi2, f_classif
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -73,7 +71,6 @@ class SelectRatesClassification(autoPyTorchFeaturePreprocessingComponent):
         add_hyperparameter(cs, mode, CategoricalHyperparameter)
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
