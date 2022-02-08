@@ -50,5 +50,7 @@ class NoFeaturePreprocessor(autoPyTorchFeaturePreprocessingComponent):
         return {
             'shortname': 'NoFeaturePreprocessing',
             'name': 'No Feature Preprocessing',
-            'handles_sparse': True
-        }
+            'handles_sparse': True,
+            'handles_classification': True,
+            'handles_regression': True
+            }

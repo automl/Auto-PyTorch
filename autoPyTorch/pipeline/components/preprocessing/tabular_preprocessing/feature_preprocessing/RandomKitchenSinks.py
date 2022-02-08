@@ -75,5 +75,7 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'KitchenSink',
                 'name': 'Random Kitchen Sinks',
-                'handles_sparse': True
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True
                 }

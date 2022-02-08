@@ -119,5 +119,7 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'Nystroem',
                 'name': 'Nystroem kernel approximation',
-                'handles_sparse': True
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True
                 }

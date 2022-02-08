@@ -121,5 +121,7 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'KernelPCA',
                 'name': 'Kernel Principal Component Analysis',
-                'handles_sparse': True
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True
                 }
