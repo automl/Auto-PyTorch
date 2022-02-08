@@ -27,7 +27,7 @@ class VarianceThreshold(autoPyTorchTabularPreprocessingComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         if self.preprocessor['numerical'] is None:
-            raise ValueError("cant call transform on {} without fitting first."
+            raise ValueError("cannot call transform on {} without fitting first."
                              .format(self.__class__.__name__))
         X.update({'variance_threshold': self.preprocessor})
         return X
