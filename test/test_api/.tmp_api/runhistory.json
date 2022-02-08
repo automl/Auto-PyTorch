@@ -705,6 +705,7 @@
     "1": {
       "data_loader:batch_size": 64,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "NoFeaturePreprocessor",
       "imputer:numerical_strategy": "mean",
       "lr_scheduler:__choice__": "ReduceLROnPlateau",
@@ -737,6 +738,7 @@
     "2": {
       "data_loader:batch_size": 101,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:numerical_strategy": "most_frequent",
       "lr_scheduler:__choice__": "CyclicLR",
@@ -801,6 +803,7 @@
     "3": {
       "data_loader:batch_size": 242,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:numerical_strategy": "median",
       "lr_scheduler:__choice__": "NoScheduler",
@@ -831,6 +834,7 @@
     "4": {
       "data_loader:batch_size": 115,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "Nystroem",
       "imputer:numerical_strategy": "median",
       "lr_scheduler:__choice__": "CosineAnnealingLR",
@@ -864,6 +868,7 @@
     "5": {
       "data_loader:batch_size": 185,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:numerical_strategy": "median",
       "lr_scheduler:__choice__": "ReduceLROnPlateau",
@@ -904,6 +909,7 @@
     "6": {
       "data_loader:batch_size": 95,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:numerical_strategy": "most_frequent",
       "lr_scheduler:__choice__": "ExponentialLR",
@@ -937,6 +943,7 @@
     "7": {
       "data_loader:batch_size": 119,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "Nystroem",
       "imputer:numerical_strategy": "mean",
       "lr_scheduler:__choice__": "StepLR",
@@ -979,6 +986,7 @@
     "8": {
       "data_loader:batch_size": 130,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PolynomialFeatures",
       "imputer:numerical_strategy": "median",
       "lr_scheduler:__choice__": "CyclicLR",
@@ -1032,6 +1040,7 @@
     "9": {
       "data_loader:batch_size": 137,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "Nystroem",
       "imputer:numerical_strategy": "mean",
       "lr_scheduler:__choice__": "CosineAnnealingLR",
