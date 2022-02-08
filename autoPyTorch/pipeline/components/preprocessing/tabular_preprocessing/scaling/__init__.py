@@ -77,6 +77,10 @@ class ScalerChoice(autoPyTorchChoice):
             ]
             for default_ in defaults:
                 if default_ in available_scalers:
+                    if include is not None and default_ not in include:
+                        continue
+                    if exclude is not None and default_ in exclude:
+                        continue
                     default = default_
                     break
 
