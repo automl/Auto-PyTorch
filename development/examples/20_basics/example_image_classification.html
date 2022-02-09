@@ -22,10 +22,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -30330,28 +30330,25 @@ Configuration space object:
 
 Pipeline Random Config:
  ________________________________________
-Configuration:
-  image_augmenter:GaussianBlur:sigma_min, Value: 2.4981384751028837
-  image_augmenter:GaussianBlur:sigma_offset, Value: 1.3265778731850062
-  image_augmenter:GaussianBlur:use_augmenter, Value: True
-  image_augmenter:GaussianNoise:use_augmenter, Value: False
-  image_augmenter:RandomAffine:rotate, Value: 332
-  image_augmenter:RandomAffine:scale_offset, Value: 0.20046574757452593
-  image_augmenter:RandomAffine:shear, Value: 31
-  image_augmenter:RandomAffine:translate_percent_offset, Value: 0.14608328354295247
-  image_augmenter:RandomAffine:use_augmenter, Value: True
-  image_augmenter:RandomCutout:p, Value: 0.2648052996462756
-  image_augmenter:RandomCutout:use_augmenter, Value: True
-  image_augmenter:Resize:use_augmenter, Value: False
-  image_augmenter:ZeroPadAndCrop:percent, Value: 0.17842798149849115
-  normalizer:__choice__, Value: &#39;NoNormalizer&#39;
+Configuration(values={
+  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 2.5825628129058305,
+  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 0.4548687619380444,
+  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: True,
+  &#39;image_augmenter:GaussianNoise:sigma_offset&#39;: 2.065404323877688,
+  &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: True,
+  &#39;image_augmenter:RandomAffine:use_augmenter&#39;: False,
+  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: False,
+  &#39;image_augmenter:Resize:use_augmenter&#39;: False,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.0806044230263594,
+  &#39;normalizer:__choice__&#39;: &#39;ImageNormalizer&#39;,
+})
 
 Fitting the pipeline...
 ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        NoNormalizer
+        ImageNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -30416,7 +30413,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.128 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.799 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>

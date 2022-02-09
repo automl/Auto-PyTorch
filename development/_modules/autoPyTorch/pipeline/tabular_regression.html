@@ -21,10 +21,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -140,6 +140,8 @@
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer</span> <span class="kn">import</span> <span class="n">SimpleImputer</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling</span> <span class="kn">import</span> <span class="n">ScalerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding.</span> \
+    <span class="n">VarianceThreshold</span> <span class="kn">import</span> <span class="nn">VarianceThreshold</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing</span> <span class="kn">import</span> <span class="n">EarlyPreprocessing</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.lr_scheduler</span> <span class="kn">import</span> <span class="n">SchedulerChoice</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network.base_network</span> <span class="kn">import</span> <span class="n">NetworkComponent</span>
@@ -370,6 +372,7 @@
 
         <span class="n">steps</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
             <span class="p">(</span><span class="s2">&quot;imputer&quot;</span><span class="p">,</span> <span class="n">SimpleImputer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;variance_threshold&quot;</span><span class="p">,</span> <span class="n">VarianceThreshold</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
             <span class="p">(</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="n">EncoderChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
             <span class="p">(</span><span class="s2">&quot;scaler&quot;</span><span class="p">,</span> <span class="n">ScalerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
             <span class="p">(</span><span class="s2">&quot;feature_preprocessor&quot;</span><span class="p">,</span> <span class="n">FeatureProprocessorChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
