@@ -77,24 +77,26 @@ class SelectRatesClassification(autoPyTorchFeaturePreprocessingComponent):
                                                                           default_value="chi2",
                                                                           ),
     ) -> ConfigurationSpace:
-        value_range = ["mutual_info_classif"]
+        value_range = list(score_func.value_range)
         if dataset_properties is not None:
             if (
-                dataset_properties.get("issigned") is False
+                dataset_properties.get("issigned") is True
             ):
-                value_range.append("chi2")
-            if dataset_properties.get("issparse") is False:
-                value_range.append("f_classif")
-        else:
-            value_range.extend(["chi2", "f_classif"])
+                value_range = [value for value in value_range if value not in ("chi2", "mutual_info_classif")]
+            if dataset_properties.get("issparse") is True:
+                value_range = [value for value in value_range if value != "f_classif"]
 
-        if sorted(value_range) != sorted(list(score_func.value_range)):
-            warnings.warn(f"Given choices {score_func.value_range} for `score_func`"
-                          f" are not compatible with the dataset. Updating choices to {value_range}")
+        if value_range != list(score_func.value_range):
+            warnings.warn(f"Given choices for `score_func` are not compatible with the dataset. "
+                          f"Updating choices to {value_range}")
 
+        if len(value_range) == 0:
+            raise TypeError("`SelectRatesClassification` is not compatible with the"
+                            " current dataset as it is both `signed` and `sparse`")
+        default_value = score_func.default_value if score_func.default_value in value_range else value_range[-1]
         score_func = HyperparameterSearchSpace(hyperparameter="score_func",
                                                value_range=value_range,
-                                               default_value=value_range[-1],
+                                               default_value=default_value,
                                                )
         cs = ConfigurationSpace()
 
@@ -105,8 +107,9 @@ class SelectRatesClassification(autoPyTorchFeaturePreprocessingComponent):
         cs.add_hyperparameters([mode_hp, score_func_hp])
         # mutual_info_classif constantly crashes if mode is not percentile
         # as a WA, fix the mode for this score
-        cond = NotEqualsCondition(mode_hp, score_func_hp, 'mutual_info_classif')
-        cs.add_condition(cond)
+        if "mutual_info_classif" in score_func_hp.choices:
+            cond = NotEqualsCondition(mode_hp, score_func_hp, 'mutual_info_classif')
+            cs.add_condition(cond)
 
         return cs
 
