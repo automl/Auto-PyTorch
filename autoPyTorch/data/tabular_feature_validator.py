@@ -275,12 +275,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 X[col] = pd.to_numeric(X[col])
 
         if len(self.categorical_columns) > 0:
-            if self.column_transformer is None:
-                raise AttributeError("Expect column transformer to be built"
-                                     "if there are categorical columns")
-            cat_cols = self.column_transformer.transformers_[0][-1]  # categorical columns
-            all_nan_cat_cols = set(X[cat_cols].columns[X[cat_cols].isna().all()])
-            dtype_dict = {col: 'object' for col in cat_cols if col in all_nan_cat_cols}
+            # when some categorical columns are not all nan in the training set
+            # but they are all nan in the testing or validation set
+            # we change those columns to `object` dtype
+            # to ensure that these columns are changed to appropriate dtype
+            # in self.infer_objects
+            all_nan_cat_cols = set(X[self.enc_columns].columns[X[self.enc_columns].isna().all()])
+            dtype_dict = {col: 'object' for col in self.enc_columns if col in all_nan_cat_cols}
             X = X.astype(dtype_dict)
 
         # Check the data here so we catch problems on new test data
