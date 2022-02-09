@@ -38,7 +38,7 @@ class SelectRatesClassification(autoPyTorchFeaturePreprocessingComponent):
             self.score_func = f_classif
         elif score_func == "mutual_info_classif":
             self.score_func = partial(mutual_info_classif,
-                                      random_state=self.random_state)
+                                      random_state=random_state)
             # mutual info classif constantly crashes without mode percentile
             self.mode = "percentile"
         else:

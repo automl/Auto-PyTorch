@@ -31,7 +31,7 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
         if score_func == "f_regression":
             self.score_func = f_regression
         elif score_func == "mutual_info":
-            self.score_func = partial(mutual_info_regression, random_state=self.random_state)
+            self.score_func = partial(mutual_info_regression, random_state=random_state)
         else:
             raise ValueError("score_func must be in ('f_regression', 'mutual_info'), "
                              "but is: %s" % score_func)

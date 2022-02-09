@@ -34,7 +34,7 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
         elif score_func == "f_classif":
             self.score_func = f_classif
         elif score_func == "mutual_info_classif":
-            self.score_func = partial(mutual_info_classif, random_state=self.random_state)
+            self.score_func = partial(mutual_info_classif, random_state=random_state)
         else:
             raise ValueError("score_func must be in ('chi2, 'f_classif', 'mutual_info_classif'), "
                              "but is: %s" % score_func)
