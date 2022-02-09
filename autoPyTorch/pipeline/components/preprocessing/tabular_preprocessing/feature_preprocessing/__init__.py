@@ -72,7 +72,6 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                         'RandomKitchenSinks',
                         'Nystroem',
                         'PolynomialFeatures',
-                        'PowerTransformer',
                         'TruncatedSVD',
                         ]
             for default_ in defaults:
