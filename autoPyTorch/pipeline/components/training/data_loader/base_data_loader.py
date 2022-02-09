@@ -56,8 +56,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         # Define fit requirements
         self.add_fit_requirements([
             FitRequirement("split_id", (int,), user_defined=True, dataset_property=False),
-            FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
-            FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
+            FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False)
+        ])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """The transform function calls the transform function of the
@@ -102,10 +102,9 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             self.val_transform,
             train=False,
         )
-        if X['dataset_properties']["is_small_preprocess"]:
-            # This parameter indicates that the data has been pre-processed for speed
-            # Overwrite the datamanager with the pre-processes data
-            datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
+        # This parameter indicates that the data has been pre-processed for speed
+        # Overwrite the datamanager with the pre-processes data
+        datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
         train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
@@ -220,10 +219,6 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                              "Currently X={}.".format(X))
         if 'backend' not in X:
             raise ValueError("backend is needed to load the data from disk")
-
-        if 'is_small_preprocess' not in X['dataset_properties']:
-            raise ValueError("is_small_pre-process is required to know if the data was preprocessed"
-                             " or if the data-loader should transform it while loading a batch")
 
         # We expect this class to be a base for image/tabular/time
         # And the difference among this data types should be mainly

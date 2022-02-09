@@ -1,7 +1,6 @@
 import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-
 import numpy as np
 
 from sklearn.base import BaseEstimator
@@ -19,7 +18,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        num_numerical_columns, num_input_features = self._get_args(X)
+        num_numerical_columns, num_input_features = self._get_required_info_from_data(X)
 
         self.embedding, num_output_features = self.build_embedding(
             num_input_features=num_input_features,
@@ -50,31 +49,39 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                         num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
         raise NotImplementedError
 
-    def _get_args(self, X: Dict[str, Any]) -> Tuple[None, None]:  # Tuple[int, np.ndarray]:
+    def _get_required_info_from_data(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
+        """
+        Returns the number of numerical columns after preprocessing and
+        an array of size equal to the number of input features
+        containing zeros for numerical data and number of categories
+        for categorical data. This is required to build the embedding.
+
+        Args:
+            X (Dict[str, Any]):
+                Fit dictionary
+
+        Returns:
+            Tuple[int, np.ndarray]:
+                number of numerical columns and array indicating
+                number of categories for categorical columns and
+                0 for numerical columns
+        """
         # Feature preprocessors can alter numerical columns
         if len(X['dataset_properties']['numerical_columns']) == 0:
             num_numerical_columns = 0
         else:
             X_train = copy.deepcopy(X['backend'].load_datamanager().train_tensors[0][:2])
 
-            if 'tabular_transformer' in X:
-                numerical_column_transformer = X['tabular_transformer'].preprocessor. \
-                    named_transformers_['numerical_pipeline']
-            elif 'time_series_feature_transformer' in X:
-                numerical_column_transformer = X['time_series_feature_transformer'].preprocessor. \
-                    named_transformers_['numerical_pipeline']
-            else:
-                raise ValueError("Either a tabular or time_series transformer must be contained!")
-            if hasattr(X_train, 'iloc'):
-                num_numerical_columns = numerical_column_transformer.transform(
-                    X_train.iloc[:, X['dataset_properties']['numerical_columns']]).shape[1]
-            else:
-                num_numerical_columns = numerical_column_transformer.transform(
-                    X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
-        num_input_features = np.zeros((num_numerical_columns + len(X['dataset_properties']['categorical_columns'])),
-                                      dtype=np.int32)
-        categories = X['dataset_properties']['categories']
+            numerical_column_transformer = X['tabular_transformer'].preprocessor. \
+                named_transformers_['numerical_pipeline']
+            num_numerical_columns = numerical_column_transformer.transform(
+                X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
 
-        for i, category in enumerate(categories):
-            num_input_features[num_numerical_columns + i, ] = len(category)
-        return num_numerical_columns, num_input_features
+        num_cols = num_numerical_columns + len(X['dataset_properties']['categorical_columns'])
+        num_input_feats = np.zeros(num_cols, dtype=np.int32)
+
+        categories = X['dataset_properties']['categories']
+        for idx, cats in enumerate(categories, start=num_numerical_columns):
+            num_input_feats[idx] = len(cats)
+
+        return num_numerical_columns, num_input_feats

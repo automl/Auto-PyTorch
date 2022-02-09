@@ -18,7 +18,6 @@ from autoPyTorch.data.utils import (
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
-    CrossValTypes,
     ResamplingStrategies,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset

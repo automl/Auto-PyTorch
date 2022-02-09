@@ -29,7 +29,6 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import (
     FORECASTING_METRICS,
     REGRESSION_METRICS,
 )
-from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_update
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter

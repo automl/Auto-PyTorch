@@ -43,7 +43,7 @@ class NoScaler(BaseScaler):
         Returns:
             np.ndarray: Transformed features
         """
-        # X.update({'scaler': self.preprocessor})
+        X.update({'scaler': self.preprocessor})
         return X
 
     @staticmethod

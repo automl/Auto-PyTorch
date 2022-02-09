@@ -28,7 +28,6 @@ class NetworkBackboneComponent(autoPyTorchComponent):
                  **kwargs: Any):
         super().__init__()
         self.add_fit_requirements([
-            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, spmatrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
@@ -52,12 +51,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         self.check_requirements(X, y)
         X_train = X['X_train']
 
-        if X["dataset_properties"]["is_small_preprocess"]:
-            input_shape = X_train.shape[1:]
-        else:
-            # get input shape by transforming first two elements of the training set
-            column_transformer = X['tabular_transformer'].preprocessor
-            input_shape = column_transformer.transform(X_train[:1]).shape[1:]
+        input_shape = X_train.shape[1:]
 
         input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
         self.input_shape = input_shape

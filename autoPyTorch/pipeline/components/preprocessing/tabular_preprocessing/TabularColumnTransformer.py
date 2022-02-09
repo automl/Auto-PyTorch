@@ -4,14 +4,14 @@ import numpy as np
 
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
-# from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline
 
 import torch
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import (
     autoPyTorchTabularPreprocessingComponent
 )
-# from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.utils import get_tabular_preprocessers
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.utils import get_tabular_preprocessers
 from autoPyTorch.utils.common import FitRequirement, subsampler
 
 
