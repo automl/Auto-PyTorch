@@ -81,16 +81,18 @@ class TestSimpleImputer(unittest.TestCase):
                                                   [4, 3.5, 3]]))
 
     def test_median_imputation(self):
-        data = np.array([[1.0, np.nan, 3],
-                         [np.nan, 8, 9],
-                         [4.0, 5, np.nan],
-                         [np.nan, 2, 3],
-                         [7.0, np.nan, 9],
-                         [4.0, np.nan, np.nan]])
+        data = np.array([[1.0, np.nan, 7],
+                         [np.nan, 9, 10],
+                         [10.0, 7, 7],
+                         [9.0, np.nan, 11],
+                         [9.0, 9, np.nan],
+                         [np.nan, 5, 6],
+                         [12.0, np.nan, 8],
+                         [9.0, np.nan, np.nan]])
         numerical_columns = [0, 1, 2]
         categorical_columns = []
-        train_indices = np.array([0, 2, 3])
-        test_indices = np.array([1, 4, 5])
+        train_indices = np.array([0, 2, 3, 4, 7])
+        test_indices = np.array([1, 5, 6])
         dataset_properties = {
             'categorical_columns': categorical_columns,
             'numerical_columns': numerical_columns,
@@ -118,21 +120,23 @@ class TestSimpleImputer(unittest.TestCase):
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(data[test_indices])
 
-        assert_array_equal(transformed, np.array([[2.5, 8, 9],
-                                                  [7, 3.5, 9],
-                                                  [4, 3.5, 3]]))
+        assert_array_equal(transformed, np.array([[9, 9, 10],
+                                                  [9, 5, 6],
+                                                  [12, 8, 8]]))
 
     def test_frequent_imputation(self):
-        data = np.array([[1.0, np.nan, 3],
-                         [np.nan, 8, 9],
-                         [4.0, 5, np.nan],
-                         [np.nan, 2, 3],
-                         [7.0, np.nan, 9],
-                         [4.0, np.nan, np.nan]])
+        data = np.array([[1.0, np.nan, 7],
+                         [np.nan, 9, 10],
+                         [10.0, 7, 7],
+                         [9.0, np.nan, 11],
+                         [9.0, 9, np.nan],
+                         [np.nan, 5, 6],
+                         [12.0, np.nan, 8],
+                         [9.0, np.nan, np.nan]])
         numerical_columns = [0, 1, 2]
         categorical_columns = []
-        train_indices = np.array([0, 2, 3])
-        test_indices = np.array([1, 4, 5])
+        train_indices = np.array([0, 2, 4, 5, 7])
+        test_indices = np.array([1, 3, 6])
         dataset_properties = {
             'categorical_columns': categorical_columns,
             'numerical_columns': numerical_columns,
@@ -160,9 +164,9 @@ class TestSimpleImputer(unittest.TestCase):
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(data[test_indices])
 
-        assert_array_equal(transformed, np.array([[1, 8, 9],
-                                                  [7, 2, 9],
-                                                  [4, 2, 3]]))
+        assert_array_equal(transformed, np.array([[9, 9, 10],
+                                                  [9, 5, 11],
+                                                  [12, 5, 8]]))
 
     def test_constant_imputation(self):
         data = np.array([[1.0, np.nan, 3],
