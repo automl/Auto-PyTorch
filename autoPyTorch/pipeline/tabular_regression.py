@@ -27,6 +27,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding. \
+    VarianceThreshold import VarianceThreshold
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
@@ -257,6 +259,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
 
         steps.extend([
             ("imputer", SimpleImputer(random_state=self.random_state)),
+            ("variance_threshold", VarianceThreshold(random_state=self.random_state)),
             ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,

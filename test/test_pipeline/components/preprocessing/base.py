@@ -6,6 +6,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import EncoderChoice
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding. \
+    VarianceThreshold import VarianceThreshold
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -28,6 +30,7 @@ class TabularPipeline(TabularClassificationPipeline):
 
         steps.extend([
             ("imputer", SimpleImputer()),
+            ("variance_threshold", VarianceThreshold()),
             ("encoder", EncoderChoice(default_dataset_properties)),
             ("scaler", ScalerChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
