@@ -155,7 +155,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
-        self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -164,10 +163,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_shape, self.output_type = _get_output_properties(self.train_tensors)
-
-        # TODO: Look for a criteria to define small enough to preprocess
-        # False for the regularization cocktails initially
-        self.is_small_preprocess = False
 
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)

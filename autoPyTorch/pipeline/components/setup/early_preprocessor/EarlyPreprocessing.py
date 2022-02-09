@@ -20,7 +20,6 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
         super().__init__()
         self.random_state = random_state
         self.add_fit_requirements([
-            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, spmatrix), user_defined=True,
                            dataset_property=False)])
 
@@ -32,14 +31,13 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
 
         transforms = get_preprocess_transforms(X)
-        if X['dataset_properties']['is_small_preprocess']:
-            if 'X_train' in X:
-                X_train = X['X_train']
-            else:
-                # Incorporate the transform to the dataset
-                X_train = X['backend'].load_datamanager().train_tensors[0]
+        if 'X_train' in X:
+            X_train = X['X_train']
+        else:
+            # Incorporate the transform to the dataset
+            X_train = X['backend'].load_datamanager().train_tensors[0]
 
-            X['X_train'] = preprocess(dataset=X_train, transforms=transforms)
+        X['X_train'] = preprocess(dataset=X_train, transforms=transforms)
 
         # We need to also save the preprocess transforms for inference
         X.update({'preprocess_transforms': transforms})

@@ -46,7 +46,7 @@ class BaseLRComponent(autoPyTorchSetupComponent):
         X.update(
             lr_scheduler=self.scheduler,
             step_interval=self.step_interval,
-            is_cyclic_scheduler= self.get_properties()['cyclic']
+            is_cyclic_scheduler=self.get_properties()['cyclic']
         )
         return X
 

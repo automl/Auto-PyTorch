@@ -152,13 +152,6 @@ class TrainEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
-            raise ValueError(
-                'TrainEvaluator expect to have (CrossValTypes, HoldoutValTypes) as '
-                'resampling_strategy, but got {}'.format(self.datamanager.resampling_strategy)
-            )
-
-
         if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
             raise ValueError(
                 f'resampling_strategy for TrainEvaluator must be in '
@@ -424,10 +417,10 @@ def eval_train_function(
     budget: float,
     config: Optional[Configuration],
     seed: int,
+    output_y_hat_optimization: bool,
     num_run: int,
     include: Optional[Dict[str, Any]],
     exclude: Optional[Dict[str, Any]],
-    output_y_hat_optimization: bool,
     disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     pipeline_config: Optional[Dict[str, Any]] = None,
     budget_type: str = None,

@@ -167,10 +167,120 @@ def test_featurevalidator_get_columns_to_encode():
     for col in df.columns:
         df[col] = df[col].astype(col)
 
-    transformed_columns, feature_types = validator._get_columns_to_encode(df)
+    validator.fit(df)
 
-    assert transformed_columns == ['category', 'bool']
-    assert feature_types == ['numerical', 'numerical', 'categorical', 'categorical']
+    categorical_columns, feat_type = validator._get_columns_info(df)
+
+    assert categorical_columns == ['category', 'bool']
+    assert feat_type == ['numerical', 'numerical', 'categorical', 'categorical']
+
+
+def feature_validator_remove_nan_catcolumns(df_train: pd.DataFrame, df_test: pd.DataFrame,
+                                            ans_train: np.ndarray, ans_test: np.ndarray) -> None:
+    validator = TabularFeatureValidator()
+    validator.fit(df_train)
+    transformed_df_train = validator.transform(df_train)
+    transformed_df_test = validator.transform(df_test)
+
+    np.testing.assert_array_equal(transformed_df_train, ans_train)
+    np.testing.assert_array_equal(transformed_df_test, ans_test)
+
+
+def test_feature_validator_remove_nan_catcolumns():
+    """
+    Make sure categorical columns that have only nan values are removed.
+    Transform performs the folloing:
+        * simple imputation for both
+        * scaling for numerical
+        * one-hot encoding for categorical
+    For example,
+        data = [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'B': 3, 'C': np.nan},
+            {'A': 2, 'B': np.nan, 'C': np.nan}
+        ]
+    and suppose all the columns are categorical,
+    then
+        * `A` in {np.nan, 1, 2}
+        * `B` in {np.nan, 3}
+        * `C` in {np.nan} <=== it will be dropped.
+
+    So in the column A,
+        * np.nan ==> [1, 0, 0]
+        * 1      ==> [0, 1, 0]
+        * 2      ==> [0, 0, 1]
+    in the column B,
+        * np.nan ==> [1, 0]
+        * 3      ==> [0, 1]
+    Therefore, by concatenating,
+        * {'A': 1, 'B': np.nan, 'C': np.nan} ==> [0, 1, 0, 1, 0]
+        * {'A': np.nan, 'B': 3, 'C': np.nan} ==> [1, 0, 0, 0, 1]
+        * {'A': 2, 'B': np.nan, 'C': np.nan} ==> [0, 0, 1, 1, 0]
+    """
+    # First case, there exist null columns (B and C) in the train set
+    # and a same column (C) are not all null for the test set.
+
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    ans_train = np.array([[1, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan, 'C': 5},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    ans_test = np.array([[0, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
+
+    # Second case, there exist null columns (B and C) in the training set and
+    # the same columns (B and C) are null in the test set.
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    ans_train = np.array([[1, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan, 'C': np.nan},
+            {'A': np.nan, 'C': np.nan},
+            {'A': 1}
+        ],
+        dtype='category',
+    )
+    ans_test = np.array([[0, np.nan, np.nan], [0, np.nan, np.nan], [1, np.nan, np.nan]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
+
+    # Third case, there exist no null columns in the training set and
+    # null columns exist in the test set.
+    df_train = pd.DataFrame(
+        [
+            {'A': 1, 'B': 1},
+            {'A': 2, 'B': 2}
+        ],
+        dtype='category',
+    )
+    ans_train = np.array([[0, 0], [1, 1]], dtype=np.float64)
+    df_test = pd.DataFrame(
+        [
+            {'A': np.nan, 'B': np.nan},
+            {'A': np.nan, 'B': np.nan}
+        ],
+        dtype='category',
+    )
+    ans_test = np.array([[-1, -1], [-1, -1]], dtype=np.float64)
+    feature_validator_remove_nan_catcolumns(df_train, df_test, ans_train, ans_test)
 
 
 def test_features_unsupported_calls_are_raised():
@@ -256,7 +366,7 @@ def test_column_transformer_created(input_data_featuretest):
 
     # Make sure that the encoded features are actually encoded. Categorical columns are at
     # the start after transformation. In our fixtures, this is also honored prior encode
-    transformed_columns, feature_types = validator._get_columns_to_encode(input_data_featuretest)
+    cat_columns, feature_types = validator._get_columns_info(input_data_featuretest)
 
     # At least one categorical
     assert 'categorical' in validator.feat_type
@@ -442,6 +552,7 @@ def test_feature_validator_imbalanced_data():
         if transformed_X_test[column].isna().all():
             null_columns.append(column)
     assert null_columns == [0, 2, 3]
+    assert sorted(validator.all_nan_columns) == sorted(['A', 'C', 'D'])
 
     # Columns with not all null values in the train split and
     # completely null on the test split.

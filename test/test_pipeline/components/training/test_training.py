@@ -93,12 +93,6 @@ class TestBaseDataLoader(unittest.TestCase):
                                     'backend is needed to load the data from'):
             loader.fit(fit_dictionary)
 
-        # Then the is small fit
-        fit_dictionary.update({'backend': unittest.mock.Mock()})
-        with self.assertRaisesRegex(ValueError,
-                                    'is_small_pre-process is required to know if th'):
-            loader.fit(fit_dictionary)
-
     def test_fit_transform(self):
         """ Makes sure that fit and transform work as intended """
         backend = unittest.mock.Mock()

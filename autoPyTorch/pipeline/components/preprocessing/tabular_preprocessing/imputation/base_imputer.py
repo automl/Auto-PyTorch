@@ -28,5 +28,5 @@ class BaseImputer(autoPyTorchTabularPreprocessingComponent):
         if self.preprocessor['numerical'] is None and len(X["dataset_properties"]["numerical_columns"]) != 0:
             raise ValueError("cant call transform on {} without fitting first."
                              .format(self.__class__.__name__))
-        # X.update({'imputer': self.preprocessor})
+        X.update({'imputer': self.preprocessor})
         return X
