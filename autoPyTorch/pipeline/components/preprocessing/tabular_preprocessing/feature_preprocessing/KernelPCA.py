@@ -38,6 +38,8 @@ class KernelPCA(autoPyTorchFeaturePreprocessingComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
+        self.check_requirements(X, y)
+
         self.preprocessor['numerical'] = sklearn.decomposition.KernelPCA(
             n_components=self.n_components, kernel=self.kernel,
             degree=self.degree, gamma=self.gamma, coef0=self.coef0,

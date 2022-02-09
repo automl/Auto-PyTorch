@@ -89,6 +89,7 @@ class TabularDataset(BaseDataset):
                          seed=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)
+        self.issigned = bool(np.any(X.data if self.issparse else X < 0))
         if self.output_type is not None:
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.task_type = TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION]
@@ -127,6 +128,7 @@ class TabularDataset(BaseDataset):
         info.update({
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
-            'task_type': self.task_type
+            'task_type': self.task_type,
+            'issigned': self.issigned
         })
         return info

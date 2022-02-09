@@ -18,6 +18,10 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Univariate feature selector by selecting the best features based on
+    univariate statistical tests. Tests can be one of 'f_regression'
+    """
     def __init__(self, score_func: str = "f_regression",
                  alpha: float = 0.1, mode: str = "fpr",
                  random_state: Optional[np.random.RandomState] = None
@@ -33,6 +37,8 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
         super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+
+        self.check_requirements(X, y)
 
         self.preprocessor['numerical'] = GenericUnivariateSelect(
             mode=self.mode, score_func=self.score_func, param=self.alpha)

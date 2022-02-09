@@ -80,10 +80,7 @@ class TestFeaturePreprocessors:
         column_transformer = make_column_transformer((sklearn_preprocessor,
                                                       X['dataset_properties']['numerical_columns']),
                                                      remainder='passthrough')
-        try:
-            column_transformer.fit(X['X_train'], X['y_train'])
-        except ValueError:
-            pytest.skip("fails when input is non negative")
+        column_transformer.fit(X['X_train'], X['y_train'])
 
         transformed = column_transformer.transform(X['X_train'])
         assert isinstance(transformed, np.ndarray)

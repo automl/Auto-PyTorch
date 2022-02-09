@@ -20,6 +20,9 @@ from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, 
 
 
 class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Selects features based on importance weights using extra trees
+    """
     def __init__(self, bootstrap: bool = True, n_estimators: int = 10,
                  criterion: str = "mse", max_features: float = 1,
                  max_depth: Optional[Union[str, int]] = 5, min_samples_split: int = 2,

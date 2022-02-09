@@ -15,10 +15,14 @@ from sklearn.feature_selection import SelectPercentile, f_regression, mutual_inf
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
 class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Select features according to a percentile of the highest scores.
+    Scores are calculated using one of 'f_regression', 'mutual_info'
+    """
     def __init__(self, score_func: str = "f_regression",
                  percentile: int = 50,
                  random_state: Optional[np.random.RandomState] = None
@@ -33,8 +37,12 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
                              "but is: %s" % score_func)
 
         super().__init__(random_state=random_state)
+        self.add_fit_requirements([
+            FitRequirement('issigned', (bool,), user_defined=True, dataset_property=True)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+
+        self.check_requirements(X, y)
 
         self.preprocessor['numerical'] = SelectPercentile(
             percentile=self.percentile, score_func=self.score_func)

@@ -1,6 +1,10 @@
 from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.forbidden import (
+    ForbiddenAndConjunction,
+    ForbiddenEqualsClause,
+)
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
@@ -17,10 +21,13 @@ from sklearn.svm import LinearSVC
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Selects features based on importance weights using svm classifier
+    """
     def __init__(self, dual: bool = False, penalty: str = "l1",
                  loss: str = "squared_hinge", tol: float = 1e-4,
                  C: float = 1, multi_class: str = "ovr",
@@ -74,7 +81,7 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
                                                                        default_value="l1",
                                                                        ),
         loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='loss',
-                                                                    value_range=("hinge", "squared_hinge"),
+                                                                    value_range=("squared_hinge", "hinge"),
                                                                     default_value="squared_hinge",
                                                                     ),
         dual: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='dual',
@@ -106,12 +113,19 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
 
         cs = ConfigurationSpace()
         add_hyperparameter(cs, fit_intercept, CategoricalHyperparameter)
-        add_hyperparameter(cs, penalty, CategoricalHyperparameter)
+        penalty_hp = get_hyperparameter(penalty, CategoricalHyperparameter)
         add_hyperparameter(cs, multi_class, CategoricalHyperparameter)
-        add_hyperparameter(cs, loss, CategoricalHyperparameter)
+        loss_hp = get_hyperparameter(loss, CategoricalHyperparameter)
         add_hyperparameter(cs, dual, CategoricalHyperparameter)
         add_hyperparameter(cs, tol, UniformFloatHyperparameter)
         add_hyperparameter(cs, C, UniformFloatHyperparameter)
         add_hyperparameter(cs, intercept_scaling, UniformIntegerHyperparameter)
 
+        cs.add_hyperparameters([loss_hp, penalty_hp])
+        if "l1" in penalty_hp.choices and "hinge" in loss_hp.choices:
+            penalty_and_loss = ForbiddenAndConjunction(
+                ForbiddenEqualsClause(penalty_hp, "l1"),
+                ForbiddenEqualsClause(loss_hp, "hinge")
+            )
+            cs.add_forbidden_clause(penalty_and_loss)
         return cs

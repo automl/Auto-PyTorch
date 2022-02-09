@@ -1,3 +1,4 @@
+import warnings
 from math import ceil, floor
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +18,7 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class Nystroem(autoPyTorchFeaturePreprocessingComponent):
@@ -32,6 +33,8 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
         self.gamma = gamma
         self.coef0 = coef0
         super().__init__(random_state=random_state)
+        self.add_fit_requirements([
+            FitRequirement('issigned', (bool,), user_defined=True, dataset_property=True)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
@@ -50,7 +53,11 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
                                                                             default_value=0.5,
                                                                             ),
         kernel: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='kernel',
-                                                                      value_range=('poly', 'rbf', 'sigmoid', 'cosine'),
+                                                                      value_range=('poly',
+                                                                                   'rbf',
+                                                                                   'sigmoid',
+                                                                                   'cosine',
+                                                                                   'chi2'),
                                                                       default_value='rbf',
                                                                       ),
         gamma: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='gamma',
@@ -90,6 +97,34 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
                                                      log=n_components.log)
 
         add_hyperparameter(cs, n_components, UniformIntegerHyperparameter)
+        value_range = list(kernel.value_range)
+
+        allow_chi = True
+
+        if dataset_properties is not None:
+            if (
+                dataset_properties.get("issigned")
+                or dataset_properties.get("issparse")
+            ):
+                # chi kernel does not support negative numbers or
+                # a sparse matrix
+                allow_chi = False
+            else:
+                allow_chi = True
+        if not allow_chi:
+            value_range = [value for value in value_range if value != "chi2"]
+            if len(value_range) == 0:
+                value_range = ["poly"]
+
+        if value_range != list(kernel.value_range):
+            warnings.warn(f"Given choices for `score_func` are not compatible with the dataset. "
+                          f"Updating choices to {value_range}")
+
+        kernel = HyperparameterSearchSpace(hyperparameter='kernel',
+                                           value_range=value_range,
+                                           default_value=value_range[-1],
+                                           )
+
         kernel_hp = get_hyperparameter(kernel, CategoricalHyperparameter)
         gamma = get_hyperparameter(gamma, UniformFloatHyperparameter)
         coef0 = get_hyperparameter(coef0, UniformFloatHyperparameter)
@@ -121,5 +156,6 @@ class Nystroem(autoPyTorchFeaturePreprocessingComponent):
                 'name': 'Nystroem kernel approximation',
                 'handles_sparse': True,
                 'handles_classification': True,
-                'handles_regression': True
+                'handles_regression': True,
+                'handles_signed': True
                 }

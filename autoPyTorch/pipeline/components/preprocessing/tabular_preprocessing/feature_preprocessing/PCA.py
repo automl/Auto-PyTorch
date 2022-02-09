@@ -30,6 +30,8 @@ class PCA(autoPyTorchFeaturePreprocessingComponent):
             FitRequirement('issparse', (bool,), user_defined=True, dataset_property=True)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        self.check_requirements(X, y)
+
         n_components = float(self.keep_variance)
         self.preprocessor['numerical'] = sklearn.decomposition.PCA(
             n_components=n_components, whiten=self.whiten,
@@ -41,8 +43,8 @@ class PCA(autoPyTorchFeaturePreprocessingComponent):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         keep_variance: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='keep_variance',
-                                                                             value_range=(2, 3),
-                                                                             default_value=2,
+                                                                             value_range=(0.5, 0.9999),
+                                                                             default_value=0.9999,
                                                                              log=True),
         whiten: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='whiten',
                                                                       value_range=(True, False),

@@ -10,14 +10,17 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
     def test_get_set_config_space(self):
         """Make sure that we can setup a valid choice in the feature preprocessor
         choice"""
-        dataset_properties = {'numerical_columns': list(range(4)), 'categorical_columns': [5]}
+        dataset_properties = {'numerical_columns': list(range(4)),
+                              'categorical_columns': [5],
+                              'task_type': 'tabular_classification'}
         feature_preprocessor_choice = FeatureProprocessorChoice(dataset_properties)
         cs = feature_preprocessor_choice.get_hyperparameter_search_space()
 
         # Make sure that all hyperparameters are part of the search space
         self.assertListEqual(
             sorted(cs.get_hyperparameter('__choice__').choices),
-            sorted(list(feature_preprocessor_choice.get_components().keys()))
+            sorted(list(feature_preprocessor_choice.get_available_components(
+                dataset_properties=dataset_properties).keys()))
         )
 
         # Make sure we can properly set some random configs
@@ -42,7 +45,9 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
                 self.assertEqual(value, feature_preprocessor_choice.choice.__dict__[key])
 
     def test_only_categorical(self):
-        dataset_properties = {'numerical_columns': [], 'categorical_columns': list(range(4))}
+        dataset_properties = {'numerical_columns': [],
+                              'categorical_columns': [5],
+                              'task_type': 'tabular_classification'}
 
         chooser = FeatureProprocessorChoice(dataset_properties)
         configspace = chooser.get_hyperparameter_search_space().sample_configuration().get_dictionary()

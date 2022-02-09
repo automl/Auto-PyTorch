@@ -20,6 +20,9 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Selects features based on importance weights calculated using extra trees
+    """
     def __init__(self, bootstrap: bool = True, n_estimators: int = 10,
                  criterion: str = "gini", max_features: float = 0.5,
                  max_depth: Optional[Union[str, int]] = 5, min_samples_split: int = 2,
