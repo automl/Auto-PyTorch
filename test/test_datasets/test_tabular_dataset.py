@@ -28,7 +28,6 @@ def test_get_dataset_properties(backend, fit_dictionary_tabular):
         'categorical_columns',
         'numerical_columns',
         'issparse',
-        'is_small_preprocess',
         'task_type',
         'output_type',
         'input_shape',

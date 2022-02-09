@@ -76,7 +76,7 @@ class AdversarialTrainer(BaseTrainerComponent):
         # Initial implementation, consider the adversarial loss and the normal network loss
         # equally.
         return lambda criterion, pred, adversarial_pred: 0.5 * criterion(pred, y_a) + \
-                                                         0.5 * criterion(adversarial_pred, y_a)
+            0.5 * criterion(adversarial_pred, y_a)
 
     def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
         """

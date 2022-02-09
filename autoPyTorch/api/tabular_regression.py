@@ -17,7 +17,6 @@ from autoPyTorch.data.utils import (
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
-    CrossValTypes,
     ResamplingStrategies,
 )
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
@@ -420,8 +419,13 @@ class TabularRegressionTask(BaseTask):
             y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
+<<<<<<< HEAD
             dataset_name=dataset_name,
             dataset_compression=self._dataset_compression)
+=======
+            dataset_name=dataset_name
+        )
+>>>>>>> [FIX] Enable preprocessing in reg_cocktails (#369)
 
         return self._search(
             dataset=self.dataset,
