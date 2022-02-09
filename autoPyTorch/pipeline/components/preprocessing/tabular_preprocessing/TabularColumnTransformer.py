@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 
@@ -48,18 +49,25 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             "TabularColumnTransformer": an instance of self
         """
         self.check_requirements(X, y)
-        numerical_pipeline = 'drop'
-        categorical_pipeline = 'drop'
 
         preprocessors = get_tabular_preprocessers(X)
-        if len(X['dataset_properties']['numerical_columns']):
+        column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
+        if len(preprocessors['numerical']) > 0:
             numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-        if len(X['dataset_properties']['categorical_columns']):
+            column_transformers.append(
+                ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns'])
+            )
+        if len(preprocessors['categorical']) > 0:
             categorical_pipeline = make_pipeline(*preprocessors['categorical'])
+            column_transformers.append(
+                ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])
+            )
 
-        self.preprocessor = ColumnTransformer([
-            ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns']),
-            ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])],
+        # in case the preprocessing steps are disabled
+        # i.e, NoEncoder for categorical, we want to
+        # let the data in categorical columns pass through
+        self.preprocessor = ColumnTransformer(
+            column_transformers,
             remainder='passthrough'
         )
 

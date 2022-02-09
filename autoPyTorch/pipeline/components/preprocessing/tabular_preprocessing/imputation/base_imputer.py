@@ -14,8 +14,7 @@ class BaseImputer(autoPyTorchTabularPreprocessingComponent):
     def __init__(self) -> None:
         super().__init__()
         self.add_fit_requirements([
-            FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True)])
+            FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True)])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -26,7 +25,7 @@ class BaseImputer(autoPyTorchTabularPreprocessingComponent):
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
-        if self.preprocessor['numerical'] is None and self.preprocessor['categorical'] is None:
+        if self.preprocessor['numerical'] is None and len(X["dataset_properties"]["numerical_columns"]) != 0:
             raise ValueError("cant call transform on {} without fitting first."
                              .format(self.__class__.__name__))
         X.update({'imputer': self.preprocessor})

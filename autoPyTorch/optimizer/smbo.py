@@ -246,8 +246,11 @@ class AutoMLSMBO(object):
 
         self.initial_configurations: Optional[List[Configuration]] = None
         if portfolio_selection is not None:
-            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                             portfolio_selection=portfolio_selection)
+            initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                        portfolio_selection=portfolio_selection)
+            # incase we dont have any valid configuration from the portfolio
+            self.initial_configurations = initial_configurations \
+                if len(initial_configurations) > 0 else None
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
