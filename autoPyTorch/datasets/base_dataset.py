@@ -125,7 +125,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
         self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
-        self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
         self.resampling_strategy_args = resampling_strategy_args
@@ -142,10 +141,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 self.output_shape = len(np.unique(self.train_tensors[1]))
             else:
                 self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
-
-        # TODO: Look for a criteria to define small enough to preprocess
-        # False for the regularization cocktails initially
-        self.is_small_preprocess = False
 
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
