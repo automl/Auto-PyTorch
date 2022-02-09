@@ -44,7 +44,9 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
         Returns:
             Tuple[int, np.ndarray]:
-                number of numerical columns
+                number of numerical columns and array indicating
+                number of categories for categorical columns and
+                0 for numerical columns
         """
         # Feature preprocessors can alter numerical columns
         if len(X['dataset_properties']['numerical_columns']) == 0:
