@@ -38,7 +38,7 @@ class RobustScaler(BaseScaler):
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseScaler:
 
         self.check_requirements(X, y)
-        with_centering = False if X['dataset_properties']['issparse'] else True
+        with_centering = bool(not X['dataset_properties']['issparse'])
 
         self.preprocessor['numerical'] = SklearnRobustScaler(quantile_range=(self.q_min, self.q_max),
                                                              with_centering=with_centering,
