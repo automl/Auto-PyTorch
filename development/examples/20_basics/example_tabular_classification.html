@@ -187,7 +187,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f5f46714070&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f6d20d85100&gt;
 </pre></div>
 </div>
 </section>
@@ -205,37 +205,33 @@ with AutoPyTorch</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8497109826589595}
-|    | Preprocessing                                                                         | Estimator                                                          |   Weight |
-|---:|:--------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,NoEncoder,PowerTransformer,NoFeaturePreprocessing    | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
-|  1 | SimpleImputer,Variance Threshold,NoEncoder,MinMaxScaler,KitchenSink                   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
-|  2 | None                                                                                  | CBLearner                                                          |     0.12 |
-|  3 | None                                                                                  | SVMLearner                                                         |     0.12 |
-|  4 | None                                                                                  | RFLearner                                                          |     0.08 |
-|  5 | SimpleImputer,Variance Threshold,NoEncoder,MinMaxScaler,NoFeaturePreprocessing        | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.06 |
-|  6 | None                                                                                  | KNNLearner                                                         |     0.06 |
-|  7 | SimpleImputer,Variance Threshold,OneHotEncoder,QuantileTransformer,PolynomialFeatures | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  8 | SimpleImputer,Variance Threshold,OneHotEncoder,MinMaxScaler,PolynomialFeatures        | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.04 |
-|  9 | SimpleImputer,Variance Threshold,OneHotEncoder,NoScaler,PolynomialFeatures            | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-| 10 | None                                                                                  | LGBMLearner                                                        |     0.04 |
-| 11 | None                                                                                  | ETLearner                                                          |     0.04 |
-| 12 | SimpleImputer,Variance Threshold,OneHotEncoder,NoScaler,PolynomialFeatures            | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
-| 13 | SimpleImputer,Variance Threshold,OneHotEncoder,QuantileTransformer,PolynomialFeatures | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
-| 14 | SimpleImputer,Variance Threshold,NoEncoder,PowerTransformer,NoFeaturePreprocessing    | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-| 15 | SimpleImputer,Variance Threshold,OneHotEncoder,StandardScaler,NoFeaturePreprocessing  | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
-| 16 | SimpleImputer,Variance Threshold,OneHotEncoder,StandardScaler,NoFeaturePreprocessing  | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+|    | Preprocessing                                                                        | Estimator                                                          |   Weight |
+|---:|:-------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,Variance Threshold,NoEncoder,MinMaxScaler,Nystroem                     | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+|  1 | SimpleImputer,Variance Threshold,NoEncoder,NoScaler,KitchenSink                      | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.16 |
+|  2 | SimpleImputer,Variance Threshold,NoEncoder,NoScaler,KitchenSink                      | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
+|  3 | None                                                                                 | CBLearner                                                          |     0.12 |
+|  4 | None                                                                                 | SVMLearner                                                         |     0.1  |
+|  5 | None                                                                                 | RFLearner                                                          |     0.06 |
+|  6 | None                                                                                 | KNNLearner                                                         |     0.06 |
+|  7 | SimpleImputer,Variance Threshold,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
+|  8 | SimpleImputer,Variance Threshold,NoEncoder,StandardScaler,PolynomialFeatures         | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  9 | None                                                                                 | LGBMLearner                                                        |     0.04 |
+| 10 | SimpleImputer,Variance Threshold,OneHotEncoder,RobustScaler,KernelPCA                | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.02 |
+| 11 | SimpleImputer,Variance Threshold,OneHotEncoder,QuantileTransformer,KitchenSink       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+| 12 | None                                                                                 | ETLearner                                                          |     0.02 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 26
-        Number of successful target algorithm runs: 24
-        Number of crashed target algorithm runs: 1
-        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithm runs: 24
+        Number of successful target algorithm runs: 22
+        Number of crashed target algorithm runs: 0
+        Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  22.134 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  26.257 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
