@@ -30331,16 +30331,17 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration(values={
-  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 2.5825628129058305,
-  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 0.4548687619380444,
-  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: True,
-  &#39;image_augmenter:GaussianNoise:sigma_offset&#39;: 2.065404323877688,
-  &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: True,
-  &#39;image_augmenter:RandomAffine:use_augmenter&#39;: False,
+  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: False,
+  &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: False,
+  &#39;image_augmenter:RandomAffine:rotate&#39;: 171,
+  &#39;image_augmenter:RandomAffine:scale_offset&#39;: 0.16968859827986923,
+  &#39;image_augmenter:RandomAffine:shear&#39;: 42,
+  &#39;image_augmenter:RandomAffine:translate_percent_offset&#39;: 0.0006590163048096454,
+  &#39;image_augmenter:RandomAffine:use_augmenter&#39;: True,
   &#39;image_augmenter:RandomCutout:use_augmenter&#39;: False,
-  &#39;image_augmenter:Resize:use_augmenter&#39;: False,
-  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.0806044230263594,
-  &#39;normalizer:__choice__&#39;: &#39;ImageNormalizer&#39;,
+  &#39;image_augmenter:Resize:use_augmenter&#39;: True,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.058124084899998096,
+  &#39;normalizer:__choice__&#39;: &#39;NoNormalizer&#39;,
 })
 
 Fitting the pipeline...
@@ -30348,7 +30349,7 @@ ________________________________________
         ImageClassificationPipeline
 ________________________________________
 0-) normalizer:
-        ImageNormalizer
+        NoNormalizer
 
 1-) preprocessing:
         EarlyPreprocessing
@@ -30413,7 +30414,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.799 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.506 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
