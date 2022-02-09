@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
-class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
+class SelectRatesRegression(autoPyTorchFeaturePreprocessingComponent):
     """
     Univariate feature selector by selecting the best features based on
     univariate statistical tests. Tests can be one of 'f_regression'

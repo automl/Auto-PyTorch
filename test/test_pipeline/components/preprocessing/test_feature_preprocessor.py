@@ -93,6 +93,14 @@ class TestFeaturePreprocessors:
         in the include
         """
 
+        task_type = str(fit_dictionary_tabular['dataset_properties']['task_type'])
+        if (
+            ("Classification" in preprocessor or preprocessor == "LibLinearSVCPreprocessor")
+            and STRING_TO_TASK_TYPES[task_type] not in CLASSIFICATION_TASKS
+        ):
+            pytest.skip("Tests not relevant for {}".format(preprocessor.__class__.__name__))
+        elif "Regression" in preprocessor and STRING_TO_TASK_TYPES[task_type] not in REGRESSION_TASKS:
+            pytest.skip("Tests not relevant for {}".format(preprocessor.__class__.__name__))
         fit_dictionary_tabular['epochs'] = 1
 
         pipeline = TabularClassificationPipeline(

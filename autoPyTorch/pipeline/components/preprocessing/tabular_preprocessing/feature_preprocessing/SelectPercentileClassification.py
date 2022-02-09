@@ -66,12 +66,12 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
                                                                           default_value="chi2",
                                                                           ),
     ) -> ConfigurationSpace:
-        value_range = ["mutual_info_classif"]
+        value_range = []
         if dataset_properties is not None:
             if (
                 dataset_properties.get("issigned") is False
             ):
-                value_range.append("chi2")
+                value_range.extend(["mutual_info_classif", "chi2"])
             if dataset_properties.get("issparse") is False:
                 value_range.append("f_classif")
         else:
@@ -81,6 +81,9 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
             warnings.warn(f"Given choices for `score_func` are not compatible with the dataset. "
                           f"Updating choices to {value_range}")
 
+        if len(value_range) == 0:
+            raise TypeError("`SelectPercentileClassification` is not compatible with the"
+                            " current dataset as it is both `signed` and `sparse`")
         score_func = HyperparameterSearchSpace(hyperparameter="score_func",
                                                value_range=value_range,
                                                default_value=value_range[-1],
