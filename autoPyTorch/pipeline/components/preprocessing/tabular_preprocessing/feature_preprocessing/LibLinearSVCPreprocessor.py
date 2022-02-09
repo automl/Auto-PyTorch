@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -9,14 +9,15 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from sklearn.svm import LinearSVC
-from sklearn.feature_selection import SelectFromModel
 from sklearn.base import BaseEstimator
+from sklearn.feature_selection import SelectFromModel
+from sklearn.svm import LinearSVC
+
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, check_none
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
@@ -56,7 +57,6 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
                                                          prefit=False)
         return self
 
-
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'LinearSVC Preprocessor',
@@ -70,9 +70,9 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         penalty: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='penalty',
-                                                                         value_range=("l1",),
-                                                                         default_value="l1",
-                                                                         ),
+                                                                       value_range=("l1",),
+                                                                       default_value="l1",
+                                                                       ),
         loss: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='loss',
                                                                     value_range=("hinge", "squared_hinge"),
                                                                     default_value="squared_hinge",
@@ -82,22 +82,22 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
                                                                     default_value=False,
                                                                     ),
         tol: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='tol',
-                                                                                 value_range=(1e-5, 1e-1),
-                                                                                 default_value=1e-4,
-                                                                                 log=True
-                                                                                 ),
+                                                                   value_range=(1e-5, 1e-1),
+                                                                   default_value=1e-4,
+                                                                   log=True
+                                                                   ),
         C: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='C',
-                                                                                value_range=(0.03125, 32768),
-                                                                                default_value=1,
-                                                                                log=True
-                                                                                ),
+                                                                 value_range=(0.03125, 32768),
+                                                                 default_value=1,
+                                                                 log=True
+                                                                 ),
         multi_class: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='multi_class',
                                                                            value_range=("ovr",),
                                                                            default_value="ovr"),
         fit_intercept: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='fit_intercept',
-                                                                              value_range=(True,),
-                                                                              default_value=True,
-                                                                              ),
+                                                                             value_range=(True,),
+                                                                             default_value=True,
+                                                                             ),
         intercept_scaling: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='intercept_scaling',
                                                                                  value_range=(1,),
                                                                                  default_value=1,

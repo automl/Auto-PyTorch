@@ -1,6 +1,4 @@
-from functools import partial
-from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -11,9 +9,9 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
+from sklearn.base import BaseEstimator
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.feature_selection import SelectFromModel
-from sklearn.base import BaseEstimator
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
@@ -27,7 +25,7 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
                  max_depth: Optional[Union[str, int]] = 5, min_samples_split: int = 2,
                  min_samples_leaf: int = 1, min_weight_fraction_leaf: float = 0,
                  max_leaf_nodes: Optional[Union[str, int]] = "none",
-                 oob_score=False, verbose=0,
+                 oob_score: bool = False, verbose: int = 0,
                  random_state: Optional[np.random.RandomState] = None):
         self.bootstrap = bootstrap
         self.n_estimators = n_estimators
@@ -55,13 +53,19 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
 
         if check_none(self.max_leaf_nodes):
             self.max_leaf_nodes = None
-        else:
+        elif isinstance(self.max_leaf_nodes, int):
             self.max_leaf_nodes = int(self.max_leaf_nodes)
+        else:
+            raise ValueError(f"Expected `max_leaf_nodes` to be either "
+                             f"in ('None', 'none', None) or an integer, got {self.max_leaf_nodes}")
 
         if check_none(self.max_depth):
             self.max_depth = None
-        else:
+        elif isinstance(self.max_depth, int):
             self.max_depth = int(self.max_depth)
+        else:
+            raise ValueError(f"Expected `max_depth` to be either "
+                             f"in ('None', 'none', None) or an integer, got {self.max_depth}")
 
         num_features = len(X['dataset_properties']['numerical_columns'])
         max_features = int(
@@ -106,9 +110,9 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
                                                                          default_value="none",
                                                                          ),
         max_features: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='max_features',
-                                                                         value_range=(0.1, 1),
-                                                                         default_value=1,
-                                                                         ),
+                                                                            value_range=(0.1, 1),
+                                                                            default_value=1,
+                                                                            ),
         criterion: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='criterion',
                                                                          value_range=('mse', 'friedman_mse', 'mae'),
                                                                          default_value="mse",
@@ -143,7 +147,6 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
         add_hyperparameter(cs, max_leaf_nodes, UniformIntegerHyperparameter)
 
         return cs
-
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
