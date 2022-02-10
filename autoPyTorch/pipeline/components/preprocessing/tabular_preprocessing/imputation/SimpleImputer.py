@@ -13,13 +13,8 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 
 class SimpleImputer(BaseImputer):
-    """An imputer for categorical and numerical columns
-
-    Impute missing values for categorical columns with 'constant_!missing!'
-
-    Note:
-        In case of numpy data, the constant value is set to -1, under the assumption
-        that categorical data is fit with an Ordinal Scaler.
+    """
+    An imputer for numerical columns
 
     Attributes:
         random_state (Optional[np.random.RandomState]):
@@ -27,55 +22,32 @@ class SimpleImputer(BaseImputer):
         numerical_strategy (str: default='mean'):
             The strategy to use for imputing numerical columns.
             Can be one of ['most_frequent', 'constant_!missing!']
-        categorical_strategy (str: default='most_frequent')
-            The strategy to use for imputing categorical columns.
-            Can be one of ['mean', 'median', 'most_frequent', 'constant_zero']
     """
 
     def __init__(
         self,
         random_state: Optional[np.random.RandomState] = None,
         numerical_strategy: str = 'mean',
-        categorical_strategy: str = 'most_frequent'
     ):
-        """
-        Note:
-            'constant' as numerical_strategy uses 0 as the default fill_value while
-            'constant_!missing!' uses a fill_value of -1.
-            This behaviour should probably be fixed.
-        """
         super().__init__()
         self.random_state = random_state
         self.numerical_strategy = numerical_strategy
-        self.categorical_strategy = categorical_strategy
 
     def fit(self, X: Dict[str, Any], y: Optional[Any] = None) -> BaseImputer:
-        """ Fits the underlying model and returns the transformed array.
+        """
+        Builds the preprocessor based on the given fit dictionary 'X'.
 
         Args:
-            X (np.ndarray):
-                The input features to fit on
-            y (Optional[np.ndarray]):
-                The labels for the input features `X`
+            X (Dict[str, Any]):
+                The fit dictionary
+            y (Optional[Any]):
+                Not Used -- to comply with API
 
         Returns:
-            SimpleImputer:
-                returns self
+            self:
+                returns an instance of self.
         """
         self.check_requirements(X, y)
-
-        # Choose an imputer for any categorical columns
-        categorical_columns = X['dataset_properties']['categorical_columns']
-
-        if isinstance(categorical_columns, List) and len(categorical_columns) != 0:
-            if self.categorical_strategy == 'constant_!missing!':
-                # Train data is numpy as of this point, where an Ordinal Encoding is used
-                # for categoricals. Only Numbers are allowed for `fill_value`
-                imputer = SklearnSimpleImputer(strategy='constant', fill_value=-1, copy=False)
-                self.preprocessor['categorical'] = imputer
-            else:
-                imputer = SklearnSimpleImputer(strategy=self.categorical_strategy, copy=False)
-                self.preprocessor['categorical'] = imputer
 
         # Choose an imputer for any numerical columns
         numerical_columns = X['dataset_properties']['numerical_columns']
@@ -98,11 +70,6 @@ class SimpleImputer(BaseImputer):
             value_range=("mean", "median", "most_frequent", "constant_zero"),
             default_value="mean",
         ),
-        categorical_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter='categorical_strategy',
-            value_range=("most_frequent", "constant_!missing!"),
-            default_value="most_frequent"
-        )
     ) -> ConfigurationSpace:
         """Get the hyperparameter search space for the SimpleImputer
 
@@ -112,8 +79,6 @@ class SimpleImputer(BaseImputer):
                 Note: Not actually Optional, just adhering to its supertype
             numerical_strategy (HyperparameterSearchSpace: default = ...)
                 The strategy to use for numerical imputation
-            caterogical_strategy (HyperparameterSearchSpace: default = ...)
-                The strategy to use for categorical imputation
 
         Returns:
             ConfigurationSpace
@@ -131,12 +96,6 @@ class SimpleImputer(BaseImputer):
             and len(dataset_properties['numerical_columns']) != 0
         ):
             add_hyperparameter(cs, numerical_strategy, CategoricalHyperparameter)
-
-        if (
-            isinstance(dataset_properties['categorical_columns'], List)
-            and len(dataset_properties['categorical_columns'])
-        ):
-            add_hyperparameter(cs, categorical_strategy, CategoricalHyperparameter)
 
         return cs
 
