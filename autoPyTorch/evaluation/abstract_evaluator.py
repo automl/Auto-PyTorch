@@ -424,7 +424,8 @@ class AbstractEvaluator(object):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 use_ensemble_opt_loss=False
                  ) -> None:
 
         self.starttime = time.time()
@@ -541,6 +542,8 @@ class AbstractEvaluator(object):
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+
+        self.use_ensemble_opt_loss = use_ensemble_opt_loss
 
     def _init_fit_dictionary(
         self,

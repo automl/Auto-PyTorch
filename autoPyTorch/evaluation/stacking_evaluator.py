@@ -115,7 +115,8 @@ class StackingEvaluator(AbstractEvaluator):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 use_ensemble_opt_loss=False) -> None:
         super().__init__(
             backend=backend,
             queue=queue,
@@ -133,14 +134,15 @@ class StackingEvaluator(AbstractEvaluator):
             logger_port=logger_port,
             all_supported_metrics=all_supported_metrics,
             pipeline_config=pipeline_config,
-            search_space_updates=search_space_updates
+            search_space_updates=search_space_updates,
+            use_ensemble_opt_loss=use_ensemble_opt_loss
         )
 
         self.splits = self.datamanager.splits
         if self.splits is None:
             raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
 
-        self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+        self.logger.debug("use_ensemble_loss :{}".format(self.use_ensemble_opt_loss))
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   valid_pred: Optional[np.ndarray],
@@ -177,8 +179,7 @@ class StackingEvaluator(AbstractEvaluator):
         if loss_ is not None:
             return self.duration, loss_, self.seed, additional_run_info_
 
-        cost = loss[self.metric.name]
-        # cost = loss["ensemble_opt_loss"]
+        cost = loss["ensemble_opt_loss"] if self.use_ensemble_opt_loss else loss[self.metric.name]
 
         additional_run_info = (
             {} if additional_run_info is None else additional_run_info
@@ -308,7 +309,7 @@ class StackingEvaluator(AbstractEvaluator):
                                   )
         train_loss = self._loss(self.y_train[train_split], y_train_pred)
         loss = self._loss(self.y_train[test_split], y_ensemble_opt_pred)
-        # loss['ensemble_opt_loss'] = calculate_nomalised_margin_loss(y_ensemble_preds, self.y_train[test_split])
+        loss['ensemble_opt_loss'] = calculate_nomalised_margin_loss(y_ensemble_preds, self.y_train[test_split], self.task_type)
         additional_run_info = pipeline.get_additional_run_info() if hasattr(
             pipeline, 'get_additional_run_info') else {}
 
@@ -419,6 +420,7 @@ def eval_function(
     logger_port: Optional[int] = None,
     all_supported_metrics: bool = True,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    use_ensemble_opt_loss=False,
     instance: str = None,
 ) -> None:
     """
@@ -500,6 +502,7 @@ def eval_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
+        use_ensemble_opt_loss=use_ensemble_opt_loss
     )
     evaluator.fit_predict_and_loss()

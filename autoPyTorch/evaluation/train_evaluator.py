@@ -131,7 +131,8 @@ class TrainEvaluator(AbstractEvaluator):
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None) -> None:
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 use_ensemble_opt_loss=False) -> None:
         super().__init__(
             backend=backend,
             queue=queue,
@@ -149,7 +150,8 @@ class TrainEvaluator(AbstractEvaluator):
             logger_port=logger_port,
             all_supported_metrics=all_supported_metrics,
             pipeline_config=pipeline_config,
-            search_space_updates=search_space_updates
+            search_space_updates=search_space_updates,
+            use_ensemble_opt_loss=use_ensemble_opt_loss
         )
 
         if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
@@ -432,6 +434,7 @@ def eval_train_function(
     logger_port: Optional[int] = None,
     all_supported_metrics: bool = True,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    use_ensemble_opt_loss=False,
     instance: str = None,
 ) -> None:
     """
@@ -513,6 +516,7 @@ def eval_train_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
+        use_ensemble_opt_loss=use_ensemble_opt_loss
     )
     evaluator.fit_predict_and_loss()
