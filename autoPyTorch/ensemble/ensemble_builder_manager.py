@@ -47,6 +47,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         random_state: int,
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         pynisher_context: str = 'fork',
+        use_ensemble_loss=False
     ):
         """ SMAC callback to handle ensemble building
         Args:
@@ -134,6 +135,8 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
 
         # Keep track of when we started to know when we need to finish!
         self.start_time = time.time()
+
+        self.use_ensemble_loss = use_ensemble_loss
 
     def __call__(
         self,
@@ -226,6 +229,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
                     pynisher_context=self.pynisher_context,
                     logger_port=self.logger_port,
                     unit_test=unit_test,
+                    use_ensemble_opt_loss=self.use_ensemble_loss
                 ))
 
                 logger.info(
@@ -268,6 +272,7 @@ def fit_and_return_ensemble(
     pynisher_context: str,
     logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
     unit_test: bool = False,
+    use_ensemble_opt_loss=False
 ) -> Tuple[
         List[Dict[str, float]],
         int,
@@ -352,6 +357,7 @@ def fit_and_return_ensemble(
         random_state=random_state,
         logger_port=logger_port,
         unit_test=unit_test,
+        use_ensemble_opt_loss=use_ensemble_opt_loss
     ).run(
         end_at=end_at,
         iteration=iteration,
@@ -359,5 +365,3 @@ def fit_and_return_ensemble(
         pynisher_context=pynisher_context,
     )
     return result
-
-

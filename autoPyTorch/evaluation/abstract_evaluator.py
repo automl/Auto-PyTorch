@@ -424,7 +424,8 @@ class AbstractEvaluator(object):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 use_ensemble_opt_loss=False
                  ) -> None:
 
         self.starttime = time.time()
@@ -509,6 +510,8 @@ class AbstractEvaluator(object):
             name=logger_name,
             port=logger_port,
         )
+
+        self.use_ensemble_opt_loss = use_ensemble_opt_loss
 
         self._init_fit_dictionary(logger_port=logger_port, pipeline_config=pipeline_config, metrics_dict=metrics_dict)
         self.Y_optimization: Optional[np.ndarray] = None

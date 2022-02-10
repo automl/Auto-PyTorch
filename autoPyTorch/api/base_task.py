@@ -939,7 +939,8 @@ class BaseTask(ABC):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None,
-        smbo_class: Optional[SMBO] = None
+        smbo_class: Optional[SMBO] = None,
+        use_ensemble_opt_loss: bool = False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1196,6 +1197,7 @@ class BaseTask(ABC):
                                     func_eval_time_limit_secs=func_eval_time_limit_secs)
 
         # ============> Starting ensemble
+        self.use_ensemble_opt_loss = use_ensemble_opt_loss
         self.precision = precision
         self.opt_metric = optimize_metric
         elapsed_time = self._stopwatch.wall_elapsed(self.dataset_name)
@@ -1268,7 +1270,8 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
-                smbo_class = smbo_class,
+                smbo_class=smbo_class,
+                use_ensemble_opt_loss=self.use_ensemble_opt_loss,
                 other_callbacks=[proc_runhistory_updater] if proc_runhistory_updater is not None else None
             )
             try:
@@ -1876,6 +1879,7 @@ class BaseTask(ABC):
             random_state=self.seed,
             precision=precision,
             logger_port=self._logger_port,
+            use_ensemble_loss=self.use_ensemble_opt_loss
         )
         self._stopwatch.stop_task(ensemble_task_name)
 

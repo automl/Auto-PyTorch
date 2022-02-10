@@ -252,7 +252,8 @@ class TabularClassificationTask(BaseTask):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dataset_compression: Union[Mapping[str, Any], bool] = False,
-        smbo_class: Optional[SMBO] = None
+        smbo_class: Optional[SMBO] = None,
+        use_ensemble_opt_loss=False
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -443,7 +444,8 @@ class TabularClassificationTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
-            smbo_class=smbo_class
+            smbo_class=smbo_class,
+            use_ensemble_opt_loss=use_ensemble_opt_loss
         )
 
     def predict(
