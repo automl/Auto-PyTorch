@@ -9,7 +9,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-import torch.optim.lr_scheduler
+from torch.optim.lr_scheduler import CyclicLR
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -70,7 +70,7 @@ class CyclicLR(BaseLRComponent):
         if 'Adam' in X['optimizer'].__class__.__name__:
             cycle_momentum = False
 
-        self.scheduler = torch.optim.lr_scheduler.CyclicLR(
+        self.scheduler = CyclicLR(
             optimizer=X['optimizer'],
             base_lr=float(self.base_lr),
             max_lr=float(self.max_lr),

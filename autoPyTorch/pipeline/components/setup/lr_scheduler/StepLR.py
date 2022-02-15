@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-import torch.optim.lr_scheduler
+from torch.optim.lr_scheduler import StepLR
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -55,7 +55,7 @@ class StepLR(BaseLRComponent):
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
+        self.scheduler = StepLR(
             optimizer=X['optimizer'],
             step_size=int(self.step_size),
             gamma=float(self.gamma),
