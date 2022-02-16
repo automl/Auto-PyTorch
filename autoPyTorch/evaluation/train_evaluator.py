@@ -152,16 +152,12 @@ class TrainEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        if not isinstance(self.datamanager.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
-            resampling_strategy = self.datamanager.resampling_strategy
+        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
             raise ValueError(
                 f'resampling_strategy for TrainEvaluator must be in '
-                f'(CrossValTypes, HoldoutValTypes), but got {resampling_strategy}'
+                f'(CrossValTypes, HoldoutValTypes), but got {self.resampling_strategy}'
             )
 
-        self.splits = self.datamanager.splits
-        if self.splits is None:
-            raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
         self.num_folds: int = len(self.splits)
         self.Y_targets: List[Optional[np.ndarray]] = [None] * self.num_folds
         self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN

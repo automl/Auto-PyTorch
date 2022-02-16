@@ -145,16 +145,11 @@ class TestEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        if not isinstance(self.datamanager.resampling_strategy, (NoResamplingStrategyTypes)):
-            resampling_strategy = self.datamanager.resampling_strategy
+        if not isinstance(self.resampling_strategy, (NoResamplingStrategyTypes)):
             raise ValueError(
                 f'resampling_strategy for TestEvaluator must be in '
-                f'NoResamplingStrategyTypes, but got {resampling_strategy}'
+                f'NoResamplingStrategyTypes, but got {self.resampling_strategy}'
             )
-
-        self.splits = self.datamanager.splits
-        if self.splits is None:
-            raise AttributeError("create_splits must be called  in {}".format(self.datamanager.__class__.__name__))
 
     def fit_predict_and_loss(self) -> None:
 

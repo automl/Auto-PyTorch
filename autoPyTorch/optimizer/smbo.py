@@ -194,9 +194,8 @@ class AutoMLSMBO(object):
         super(AutoMLSMBO, self).__init__()
         # data related
         self.dataset_name = dataset_name
-        self.datamanager: Optional[BaseDataset] = None
         self.metric = metric
-        self.task: Optional[str] = None
+
         self.backend = backend
         self.all_supported_metrics = all_supported_metrics
 
@@ -252,21 +251,11 @@ class AutoMLSMBO(object):
             self.initial_configurations = initial_configurations \
                 if len(initial_configurations) > 0 else None
 
-    def reset_data_manager(self) -> None:
-        if self.datamanager is not None:
-            del self.datamanager
-        self.datamanager = self.backend.load_datamanager()
-
-        if self.datamanager is not None and self.datamanager.task_type is not None:
-            self.task = self.datamanager.task_type
-
     def run_smbo(self, func: Optional[Callable] = None
                  ) -> Tuple[RunHistory, List[TrajEntry], str]:
 
         self.watcher.start_task('SMBO')
         self.logger.info("Started run of SMBO")
-        # == first things first: load the datamanager
-        self.reset_data_manager()
 
         # == Initialize non-SMBO stuff
         # first create a scenario
