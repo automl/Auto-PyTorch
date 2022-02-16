@@ -5,7 +5,10 @@ from typing import Dict, List, Literal, Optional, Sequence
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import HyperparameterSearchSpace, HyperparameterValueType
 
-NoneType_ = Optional[Literal["none", "None"]]
+
+NoneType_ = Optional[str]  # This typing is exclusively for Literal["none", "None", None]
+# TODO: when we drop support for 3.7 use the following line
+# NoneType_ = Optional[Literal["none", "None"]]
 
 
 def filter_score_func_choices(
@@ -82,7 +85,7 @@ def percentage_value_range_to_integer_range(
             hyperparameter=hyperparameter_name,
             value_range=(
                 floor(float(hyperparameter_search_space.value_range[0]) * n_features),
-                ceil(float(hyperparameter_search_space.value_range[1]) * n_features)),
+                floor(float(hyperparameter_search_space.value_range[1]) * n_features)),
             default_value=ceil(float(hyperparameter_search_space.default_value) * n_features),
             log=log)
     else:
