@@ -8,7 +8,6 @@ from ConfigSpace.forbidden import (
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
-    UniformIntegerHyperparameter
 )
 
 import numpy as np
@@ -31,7 +30,7 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, dual: bool = False, penalty: str = "l1",
                  loss: str = "squared_hinge", tol: float = 1e-4,
                  C: float = 1, multi_class: str = "ovr",
-                 intercept_scaling: int = 1, fit_intercept: bool = True,
+                 intercept_scaling: float = 1, fit_intercept: bool = True,
                  random_state: Optional[np.random.RandomState] = None):
 
         self.dual = dual
@@ -66,6 +65,7 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
+        self.check_requirements(X, y)
         # TODO: add class_weights
         estimator = LinearSVC(**self.get_components_kwargs())
 
@@ -77,7 +77,7 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'LinearSVC Preprocessor',
-                'name': 'Liblinear Support Vector Classification Preprocessing',
+                'name': 'linear Support Vector Classification Preprocessing',
                 'handles_sparse': True,
                 'handles_classification': True,
                 'handles_regression': False
@@ -129,7 +129,7 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
         add_hyperparameter(cs, dual, CategoricalHyperparameter)
         add_hyperparameter(cs, tol, UniformFloatHyperparameter)
         add_hyperparameter(cs, C, UniformFloatHyperparameter)
-        add_hyperparameter(cs, intercept_scaling, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, intercept_scaling, UniformFloatHyperparameter)
 
         cs.add_hyperparameters([loss_hp, penalty_hp])
         if "l1" in penalty_hp.choices and "hinge" in loss_hp.choices:
