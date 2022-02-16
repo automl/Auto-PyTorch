@@ -461,3 +461,5 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                 torch.cuda.empty_cache()
                 batch_size = batch_size // 2
                 return self.predict(X, batch_size=batch_size // 2)
+            else:
+                raise e
