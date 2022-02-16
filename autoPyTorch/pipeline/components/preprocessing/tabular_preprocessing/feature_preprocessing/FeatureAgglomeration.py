@@ -1,5 +1,4 @@
-from math import ceil, floor
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.forbidden import (
@@ -20,10 +19,36 @@ from sklearn.cluster import FeatureAgglomeration as SklearnFeatureAgglomeration
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    utils import percentage_value_range_to_integer_range
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Recursively merge pair of clusters of features constructed
+    using agglomerative clustering.
+
+    Args:
+            n_clusters (int):
+                The number of clusters to find. Defaults to 25.
+                Note:
+                    This number needs to be less than the total number of
+                    features. To keep the hyperparameter search space general
+                    to different datasets, autoPyTorch defines its value
+                    range as the percentage of the number of features (in float).
+                    This is then used to construct the range of n_clusters using
+                    n_clusters = percentage of features * number of features.
+            affinity (str):
+                Metric used to compute the linkage. If linkage is “ward”, only
+                “euclidean” is accepted. Defaults to 'euclidean'.
+            linkage (str):
+                Which linkage criterion to use. The linkage criterion determines
+                which distance to use between sets of features. Defaults to 'ward'.
+            pooling_func (str):
+                Combines the values of agglomerated features into a single value,
+                autoPyTorch uses (max, min and median) functions from numpy. Defaults to "max".
+    """
     def __init__(self, n_clusters: int = 25,
                  affinity: str = 'euclidean', linkage: str = 'ward',
                  pooling_func: str = "max",
@@ -32,16 +57,13 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
         self.n_clusters = n_clusters
         self.affinity = affinity
         self.linkage = linkage
-        self.pooling_func: Union[str, Callable] = pooling_func
-        self.pooling_func_mapping: Dict[str, Callable] = dict(mean=np.mean,
-                                                              median=np.median,
-                                                              max=np.max)
+        self.pooling_func: Callable = getattr(np, pooling_func)
 
         super().__init__(random_state=random_state)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        if not callable(self.pooling_func):
-            self.pooling_func = self.pooling_func_mapping[self.pooling_func]
+
+        self.check_requirements(X, y)
 
         self.preprocessor['numerical'] = SklearnFeatureAgglomeration(
             n_clusters=self.n_clusters, affinity=self.affinity,
@@ -71,24 +93,12 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
                                                                             default_value="max",
                                                                             ),
     ) -> ConfigurationSpace:
-        if dataset_properties is not None:
-            n_features = len(dataset_properties['numerical_columns']) if isinstance(
-                dataset_properties['numerical_columns'], List) else 0
-            if n_features == 1:
-                log = False
-            else:
-                log = n_clusters.log
-            n_clusters = HyperparameterSearchSpace(hyperparameter='n_clusters',
-                                                   value_range=(
-                                                       floor(float(n_clusters.value_range[0]) * n_features),
-                                                       ceil(float(n_clusters.value_range[1]) * n_features)),
-                                                   default_value=ceil(float(n_clusters.default_value) * n_features),
-                                                   log=log)
-        else:
-            n_clusters = HyperparameterSearchSpace(hyperparameter='n_clusters',
-                                                   value_range=(2, 400),
-                                                   default_value=25,
-                                                   log=n_clusters.log)
+        n_clusters = percentage_value_range_to_integer_range(
+            hyperparameter_search_space=n_clusters,
+            default_value_range=(2, 400),
+            default_value=25,
+            dataset_properties=dataset_properties,
+        )
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, n_clusters, UniformIntegerHyperparameter)
@@ -97,15 +107,12 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
         add_hyperparameter(cs, pooling_func, CategoricalHyperparameter)
         cs.add_hyperparameters([affinity_hp, linkage_hp])
 
-        affinity_choices = []
-        if "manhattan" in affinity_hp.choices:
-            affinity_choices.append("manhattan")
-        if "cosine" in affinity_hp.choices:
-            affinity_choices.append("cosine")
+        # If linkage is “ward”, only “euclidean” is accepted.
+        non_euclidian_affinity = [choice for choice in ["manhattan", "cosine"] if choice in affinity_hp.choices]
 
-        if "ward" in linkage_hp.choices and len(affinity_choices) > 0:
+        if "ward" in linkage_hp.choices and len(non_euclidian_affinity) > 0:
             forbidden_condition = ForbiddenAndConjunction(
-                ForbiddenInClause(affinity_hp, affinity_choices),
+                ForbiddenInClause(affinity_hp, non_euclidian_affinity),
                 ForbiddenEqualsClause(linkage_hp, "ward")
             )
             cs.add_forbidden_clause(forbidden_condition)
@@ -114,8 +121,8 @@ class FeatureAgglomeration(autoPyTorchFeaturePreprocessingComponent):
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
-        return {'shortname': 'PCA',
-                'name': 'Principal Component Analysis',
+        return {'shortname': 'FeatureAgglomeration',
+                'name': 'Feature Agglomeration',
                 'handles_sparse': False,
                 'handles_classification': True,
                 'handles_regression': True

@@ -16,6 +16,8 @@ from sklearn.feature_selection import SelectFromModel
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    utils import NoneType_
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, check_none
 
 
@@ -28,9 +30,9 @@ class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingCompon
     """
     def __init__(self, bootstrap: bool = True, n_estimators: int = 10,
                  criterion: str = "gini", max_features: float = 0.5,
-                 max_depth: Optional[Union[str, int]] = 5, min_samples_split: int = 2,
+                 max_depth: Union[int, NoneType_] = 5, min_samples_split: int = 2,
                  min_samples_leaf: int = 1, min_weight_fraction_leaf: float = 0,
-                 max_leaf_nodes: Optional[Union[str, int]] = "none",
+                 max_leaf_nodes: Union[int, NoneType_] = "none",
                  min_impurity_decrease: float = 0, oob_score: bool = False,
                  verbose: int = 0,
                  random_state: Optional[np.random.RandomState] = None):

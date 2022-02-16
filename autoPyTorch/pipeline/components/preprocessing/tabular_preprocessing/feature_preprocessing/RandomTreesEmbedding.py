@@ -13,14 +13,16 @@ from sklearn.ensemble import RandomTreesEmbedding as SklearnRandomTreesEmbedding
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    utils import NoneType_
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, check_none
 
 
 class RandomTreesEmbedding(autoPyTorchFeaturePreprocessingComponent):
     def __init__(self, n_estimators: int = 10,
-                 max_depth: Optional[Union[str, int]] = 5, min_samples_split: int = 2,
+                 max_depth: Union[int, NoneType_] = 5, min_samples_split: int = 2,
                  min_samples_leaf: int = 1,
-                 max_leaf_nodes: Optional[Union[str, int]] = "none",
+                 max_leaf_nodes: Union[int, NoneType_] = "none",
                  sparse_output: bool = False,
                  random_state: Optional[np.random.RandomState] = None):
         self.n_estimators = n_estimators

@@ -1,5 +1,4 @@
-from math import ceil, floor
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -15,10 +14,30 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
+    utils import percentage_value_range_to_integer_range
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
+    """
+    Approximate a RBF kernel feature map using random Fourier features.
+
+    Args:
+        n_components (int):
+            Number of Monte Carlo samples per original feature.
+            Equals the dimensionality of the computed feature space.
+            Note:
+                This number needs to be less than the total number of
+                features. To keep the hyperparameter search space general
+                to different datasets, autoPyTorch defines its value
+                range as the percentage of the number of features (in float).
+                This is then used to construct the range of n_components using
+                n_components = percentage of features * number of features.
+                Defaults to 100.
+        gamma (float):
+            Parameter of RBF kernel: exp(-gamma * x^2). Defaults to 1.0.
+    """
     def __init__(self, n_components: int = 100,
                  gamma: float = 1.0,
                  random_state: Optional[np.random.RandomState] = None
@@ -47,24 +66,12 @@ class RandomKitchenSinks(autoPyTorchFeaturePreprocessingComponent):
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        if dataset_properties is not None:
-            n_features = len(dataset_properties['numerical_columns']) \
-                if isinstance(dataset_properties['numerical_columns'], List) else 0
-            if n_features == 1:
-                log = False
-            else:
-                log = n_components.log
-            n_components = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                     value_range=(
-                                                         floor(float(n_components.value_range[0]) * n_features),
-                                                         ceil(float(n_components.value_range[1]) * n_features)),
-                                                     default_value=ceil(float(n_components.default_value) * n_features),
-                                                     log=log)
-        else:
-            n_components = HyperparameterSearchSpace(hyperparameter='n_components',
-                                                     value_range=(10, 2000),
-                                                     default_value=100,
-                                                     log=n_components.log)
+        n_components = percentage_value_range_to_integer_range(
+            hyperparameter_search_space=n_components,
+            default_value_range=(10, 2000),
+            default_value=100,
+            dataset_properties=dataset_properties,
+        )
 
         add_hyperparameter(cs, n_components, UniformIntegerHyperparameter)
 
