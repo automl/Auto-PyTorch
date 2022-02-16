@@ -10,8 +10,7 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import torch
-from torch import nn
+from torch import Tensor, cat, nn
 from torch.nn import functional as F
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -39,11 +38,11 @@ class _DenseLayer(nn.Sequential):
                                            kernel_size=3, stride=1, padding=1, bias=False)),
         self.drop_rate = drop_rate
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         new_features = super(_DenseLayer, self).forward(x)
         if self.drop_rate > 0:
             new_features = F.dropout(new_features, p=self.drop_rate, training=self.training)
-        return torch.cat([x, new_features], 1)
+        return cat([x, new_features], 1)
 
 
 class _DenseBlock(nn.Sequential):

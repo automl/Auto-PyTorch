@@ -6,14 +6,14 @@ from scipy import sparse
 
 from sklearn.base import BaseEstimator, TransformerMixin
 
-import torch
+from torch import Tensor, nn
 
 
-def get_loss_weight_strategy(loss: Type[torch.nn.Module]) -> Callable:
+def get_loss_weight_strategy(loss: Type[nn.Module]) -> Callable:
     """
     Utility function that returns strategy for the given loss
     Args:
-        loss (Type[torch.nn.Module]): type of the loss function
+        loss (Type[nn.Module]): type of the loss function
     Returns:
         (Callable): Relevant Callable strategy
     """
@@ -26,8 +26,8 @@ def get_loss_weight_strategy(loss: Type[torch.nn.Module]) -> Callable:
 
 
 class LossWeightStrategyWeighted():
-    def __call__(self, y: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
-        if isinstance(y, torch.Tensor):
+    def __call__(self, y: Union[np.ndarray, Tensor]) -> np.ndarray:
+        if isinstance(y, Tensor):
             y = y.detach().cpu().numpy() if y.is_cuda else y.numpy()
         counts = np.sum(y, axis=0)
         total_weight = y.shape[0]
@@ -51,8 +51,8 @@ class LossWeightStrategyWeighted():
 
 
 class LossWeightStrategyWeightedBinary():
-    def __call__(self, y: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
-        if isinstance(y, torch.Tensor):
+    def __call__(self, y: Union[np.ndarray, Tensor]) -> np.ndarray:
+        if isinstance(y, Tensor):
             y = y.detach().cpu().numpy() if y.is_cuda else y.numpy()
         counts_one = np.sum(y, axis=0)
         counts_zero = y.shape[0] - counts_one

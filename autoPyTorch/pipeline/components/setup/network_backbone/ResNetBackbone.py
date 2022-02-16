@@ -8,8 +8,7 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import torch
-from torch import nn
+from torch import FloatTensor, nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
@@ -28,7 +27,7 @@ class ResNetBackbone(NetworkBackboneComponent):
     Implementation of a Residual Network backbone
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> torch.nn.Sequential:
+    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Sequential:
         layers: List[nn.Module] = list()
         in_features = input_shape[0]
         layers.append(nn.Linear(in_features, self.config["num_units_0"]))
@@ -253,7 +252,7 @@ class ResBlock(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
+    def forward(self, x: FloatTensor) -> FloatTensor:
         residual = x
 
         # if shortcut is not none we need a layer such that x matches the output dimension

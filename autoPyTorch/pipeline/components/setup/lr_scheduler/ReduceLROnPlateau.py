@@ -9,7 +9,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau as TorchReduceLROnPlateau
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -67,7 +67,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
-        self.scheduler = ReduceLROnPlateau(
+        self.scheduler = TorchReduceLROnPlateau(
             optimizer=X['optimizer'],
             mode=self.mode,
             factor=float(self.factor),

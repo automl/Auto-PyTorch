@@ -1,7 +1,7 @@
-import torch
+from torch import nn
 
 _activations = {
-    "relu": torch.nn.ReLU,
-    "tanh": torch.nn.Tanh,
-    "sigmoid": torch.nn.Sigmoid
+    "relu": nn.ReLU,
+    "tanh": nn.Tanh,
+    "sigmoid": nn.Sigmoid
 }

@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts as TorchCosineAnnealingWarmRestarts
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -56,7 +56,7 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
-        self.scheduler = CosineAnnealingWarmRestarts(
+        self.scheduler = TorchCosineAnnealingWarmRestarts(
             optimizer=X['optimizer'],
             T_0=int(self.T_0),
             T_mult=int(self.T_mult),

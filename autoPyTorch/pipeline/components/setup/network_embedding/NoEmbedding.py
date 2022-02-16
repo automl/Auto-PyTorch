@@ -4,15 +4,14 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
-import torch
-from torch import nn
+from torch import Tensor, nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 
 
 class _NoEmbedding(nn.Module):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return x
 
 

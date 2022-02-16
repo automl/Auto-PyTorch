@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, List, Tuple
 
-import torch
+from torch import FloatTensor, Tensor, as_tensor, float as torch_float, nn, no_grad, rand, randn
 from torch.autograd import Function
 
 __author__ = "Max Dippel, Michael Burkart and Matthias Urban"
@@ -10,13 +10,13 @@ __license__ = "BSD"
 
 
 _activations = {
-    "relu": torch.nn.ReLU,
-    "tanh": torch.nn.Tanh,
-    "sigmoid": torch.nn.Sigmoid
+    "relu": nn.ReLU,
+    "tanh": nn.Tanh,
+    "sigmoid": nn.Sigmoid
 }
 
 
-def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...]
+def get_output_shape(network: nn.Module, input_shape: Tuple[int, ...]
                      ) -> Tuple[int, ...]:
     """
     Run a dummy forward pass to get the output shape of the backbone.
@@ -25,8 +25,8 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...]
     :param input_shape: shape of the input
     :return: output_shape
     """
-    placeholder = torch.randn((2, *input_shape), dtype=torch.float)
-    with torch.no_grad():
+    placeholder = randn((2, *input_shape), dtype=torch_float)
+    with no_grad():
         output = network(placeholder)
     return tuple(output.shape[1:])
 
@@ -42,11 +42,11 @@ class ShakeShakeFunction(Function):
     @staticmethod
     def forward(
         ctx: Any,  # No typing for AutogradContext
-        x1: torch.Tensor,
-        x2: torch.Tensor,
-        alpha: torch.Tensor,
-        beta: torch.Tensor,
-    ) -> torch.Tensor:
+        x1: Tensor,
+        x2: Tensor,
+        alpha: Tensor,
+        beta: Tensor,
+    ) -> Tensor:
         ctx.save_for_backward(x1, x2, alpha, beta)
 
         y = x1 * alpha + x2 * (1 - alpha)
@@ -54,8 +54,8 @@ class ShakeShakeFunction(Function):
 
     @staticmethod
     def backward(ctx: Any,
-                 grad_output: torch.Tensor
-                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 grad_output: Tensor
+                 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         x1, x2, alpha, beta = ctx.saved_tensors
         grad_x1 = grad_x2 = grad_alpha = grad_beta = None
 
@@ -83,11 +83,11 @@ class ShakeDropFunction(Function):
     """
     @staticmethod
     def forward(ctx: Any,
-                x: torch.Tensor,
-                alpha: torch.Tensor,
-                beta: torch.Tensor,
-                bl: torch.Tensor,
-                ) -> torch.Tensor:
+                x: Tensor,
+                alpha: Tensor,
+                beta: Tensor,
+                bl: Tensor,
+                ) -> Tensor:
         ctx.save_for_backward(x, alpha, beta, bl)
 
         y = (bl + alpha - bl * alpha) * x
@@ -95,8 +95,8 @@ class ShakeDropFunction(Function):
 
     @staticmethod
     def backward(ctx: Any,
-                 grad_output: torch.Tensor
-                 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                 grad_output: Tensor
+                 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         x, alpha, beta, bl = ctx.saved_tensors
         grad_x = grad_alpha = grad_beta = grad_bl = None
 
@@ -110,7 +110,7 @@ shake_drop = ShakeDropFunction.apply
 
 
 def shake_get_alpha_beta(is_training: bool, is_cuda: bool
-                         ) -> Tuple[torch.Tensor, torch.Tensor]:
+                         ) -> Tuple[Tensor, Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
     Currently, this function supports `shake-shake`.
@@ -134,12 +134,12 @@ def shake_get_alpha_beta(is_training: bool, is_cuda: bool
         Currently, this function supports `shake-shake`.
     """
     if not is_training:
-        result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
+        result = (FloatTensor([0.5]), FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
-    alpha = torch.rand(1)
-    beta = torch.rand(1)
+    alpha = rand(1)
+    beta = rand(1)
 
     if is_cuda:
         alpha = alpha.cuda()
@@ -154,7 +154,7 @@ def shake_drop_get_bl(
         num_blocks: int,
         is_training: bool,
         is_cuda: bool
-) -> torch.Tensor:
+) -> Tensor:
     """
     The sampling of Bernoulli random variable
     based on Eq. (4) in the paper
@@ -167,7 +167,7 @@ def shake_drop_get_bl(
         is_cuda (bool): Whether the tensor is on CUDA
 
     Returns:
-        bl (torch.Tensor): a Bernoulli random variable in {0, 1}
+        bl (Tensor): a Bernoulli random variable in {0, 1}
 
     Reference:
         ShakeDrop Regularization for Deep Residual Learning
@@ -179,10 +179,10 @@ def shake_drop_get_bl(
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if is_training:
-        # Move to torch.rand(1) for reproducibility
-        bl = torch.as_tensor(1.0) if torch.rand(1) <= pl else torch.as_tensor(0.0)
+        # Move to rand(1) for reproducibility
+        bl = as_tensor(1.0) if rand(1) <= pl else as_tensor(0.0)
     else:
-        bl = torch.as_tensor(pl)
+        bl = as_tensor(pl)
 
     if is_cuda:
         bl = bl.cuda()

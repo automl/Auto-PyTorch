@@ -7,8 +7,7 @@ import pandas as pd
 
 from scipy.sparse import csr_matrix
 
-import torch
-from torch import nn
+from torch import float as torch_float, nn, no_grad, randn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.base_component import (
@@ -106,8 +105,8 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         Returns:
             output_shape (Tuple[int, ...]): shape of the backbone output
         """
-        placeholder = torch.randn((2, *input_shape), dtype=torch.float)
-        with torch.no_grad():
+        placeholder = randn((2, *input_shape), dtype=torch_float)
+        with no_grad():
             output = self.backbone(placeholder)
         return tuple(output.shape[1:])
 

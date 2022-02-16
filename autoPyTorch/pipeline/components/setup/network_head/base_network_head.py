@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Dict, Iterable, Tuple
 
-import torch.nn as nn
+from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape

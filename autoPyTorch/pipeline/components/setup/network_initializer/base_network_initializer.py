@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-import torch
+from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
@@ -29,7 +29,7 @@ class BaseNetworkInitializerComponent(autoPyTorchSetupComponent):
         self.bias_strategy = bias_strategy
         self.random_state = random_state
         self.add_fit_requirements([
-            FitRequirement('network', (torch.nn.Module,), user_defined=False, dataset_property=False)])
+            FitRequirement('network', (nn.Module,), user_defined=False, dataset_property=False)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchSetupComponent:
         """

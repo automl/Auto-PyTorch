@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-import torch
+from torch import nn
 from torch.optim import Optimizer
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
@@ -15,7 +15,7 @@ class BaseOptimizerComponent(autoPyTorchSetupComponent):
         super().__init__()
         self.optimizer: Optional[Optimizer] = None
         self.add_fit_requirements([
-            FitRequirement('network', (torch.nn.Module,), user_defined=False, dataset_property=False)])
+            FitRequirement('network', (nn.Module,), user_defined=False, dataset_property=False)])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """The transform function calls the transform function of the

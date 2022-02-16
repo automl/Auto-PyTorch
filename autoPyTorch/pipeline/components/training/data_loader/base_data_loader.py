@@ -7,9 +7,9 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-import torch
+from torch.utils.data import DataLoader
 
-import torchvision
+from torchvision import datasets, transforms
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
@@ -35,23 +35,23 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                  random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__(random_state=random_state)
         self.batch_size = batch_size
-        self.train_data_loader: Optional[torch.utils.data.DataLoader] = None
-        self.val_data_loader: Optional[torch.utils.data.DataLoader] = None
-        self.test_data_loader: Optional[torch.utils.data.DataLoader] = None
+        self.train_data_loader: Optional[DataLoader] = None
+        self.val_data_loader: Optional[DataLoader] = None
+        self.test_data_loader: Optional[DataLoader] = None
 
         # We also support existing datasets!
         self.dataset = None
         self.vision_datasets = self.get_torchvision_datasets()
 
         # Save the transformations for reuse
-        self.train_transform: Optional[torchvision.transforms.Compose] = None
+        self.train_transform: Optional[transforms.Compose] = None
 
         # The only reason we have val/test transform separated is to speed up
         # prediction during training. Namely, if is_small_preprocess is set to true
         # X_train data will be pre-processed, so we do no need preprocessing in the transform
         # Regardless, test/inference always need this transformation
-        self.val_transform: Optional[torchvision.transforms.Compose] = None
-        self.test_transform: Optional[torchvision.transforms.Compose] = None
+        self.val_transform: Optional[transforms.Compose] = None
+        self.test_transform: Optional[transforms.Compose] = None
 
         # Define fit requirements
         self.add_fit_requirements([
@@ -74,7 +74,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
                   'test_data_loader': self.test_data_loader})
         return X
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> DataLoader:
         """
         Fits a component by using an input dictionary with pre-requisites
 
@@ -109,7 +109,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
-        self.train_data_loader = torch.utils.data.DataLoader(
+        self.train_data_loader = DataLoader(
             train_dataset,
             batch_size=min(self.batch_size, len(train_dataset)),
             shuffle=True,
@@ -121,7 +121,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         if X.get('val_indices', None) is not None:
             val_dataset = datamanager.get_dataset(split_id=X['split_id'], train=False)
-            self.val_data_loader = torch.utils.data.DataLoader(
+            self.val_data_loader = DataLoader(
                 val_dataset,
                 batch_size=min(self.batch_size, len(val_dataset)),
                 shuffle=False,
@@ -139,7 +139,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         return self
 
     def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
-                   ) -> torch.utils.data.DataLoader:
+                   ) -> DataLoader:
         """
         Creates a data loader object from the provided data,
         applying the transformations meant to validation objects
@@ -152,14 +152,14 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
         )
-        return torch.utils.data.DataLoader(
+        return DataLoader(
             dataset,
             batch_size=min(batch_size, len(dataset)),
             shuffle=False,
             collate_fn=custom_collate_fn,
         )
 
-    def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
+    def build_transform(self, X: Dict[str, Any], mode: str) -> transforms.Compose:
         """
         Method to build a transformation that can pre-process input data
 
@@ -172,28 +172,28 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         """
         raise NotImplementedError()
 
-    def get_train_data_loader(self) -> torch.utils.data.DataLoader:
+    def get_train_data_loader(self) -> DataLoader:
         """Returns a data loader object for the train data
 
         Returns:
-            torch.utils.data.DataLoader: A train data loader
+            DataLoader: A train data loader
         """
         assert self.train_data_loader is not None, "No train data loader fitted"
         return self.train_data_loader
 
-    def get_val_data_loader(self) -> torch.utils.data.DataLoader:
+    def get_val_data_loader(self) -> DataLoader:
         """Returns a data loader object for the validation data
 
         Returns:
-            torch.utils.data.DataLoader: A validation data loader
+            DataLoader: A validation data loader
         """
         return self.val_data_loader
 
-    def get_test_data_loader(self) -> torch.utils.data.DataLoader:
+    def get_test_data_loader(self) -> DataLoader:
         """Returns a data loader object for the test data
 
         Returns:
-            torch.utils.data.DataLoader: A validation data loader
+            DataLoader: A validation data loader
         """
         return self.test_data_loader
 
@@ -243,20 +243,20 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         """
         raise NotImplementedError()
 
-    def get_torchvision_datasets(self) -> Dict[str, torchvision.datasets.VisionDataset]:
+    def get_torchvision_datasets(self) -> Dict[str, datasets.VisionDataset]:
         """ Returns the supported dataset classes from torchvision
 
         This is gonna be used to instantiate a dataset object for the dataloader
 
         Returns:
-            Dict[str, torchvision.datasets.VisionDataset]: A mapping from dataset name to class
+            Dict[str, datasets.VisionDataset]: A mapping from dataset name to class
 
         """
         return {
-            'FashionMNIST': torchvision.datasets.FashionMNIST,
-            'MNIST': torchvision.datasets.MNIST,
-            'CIFAR10': torchvision.datasets.CIFAR10,
-            'CIFAR100': torchvision.datasets.CIFAR100,
+            'FashionMNIST': datasets.FashionMNIST,
+            'MNIST': datasets.MNIST,
+            'CIFAR10': datasets.CIFAR10,
+            'CIFAR100': datasets.CIFAR100,
         }
 
     @staticmethod

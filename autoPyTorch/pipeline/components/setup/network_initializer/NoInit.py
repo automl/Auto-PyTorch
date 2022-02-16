@@ -1,6 +1,6 @@
 from typing import Callable
 
-import torch
+from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_initializer.base_network_initializer import (
     BaseNetworkInitializerComponent
@@ -19,6 +19,6 @@ class NoInit(BaseNetworkInitializerComponent):
         self.config is a dictionary created form a given config in the config space.
         It contains the necessary information to build a network.
         """
-        def initialization(m: torch.nn.Module) -> None:
+        def initialization(m: nn.Module) -> None:
             pass
         return initialization

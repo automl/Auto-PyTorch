@@ -8,8 +8,7 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import torch
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.utils import weight_norm
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -25,7 +24,7 @@ class _Chomp1d(nn.Module):
         super(_Chomp1d, self).__init__()
         self.chomp_size = chomp_size
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return x[:, :, :-self.chomp_size].contiguous()
 
 
@@ -64,7 +63,7 @@ class _TemporalBlock(nn.Module):
         if self.downsample is not None:
             self.downsample.weight.data.normal_(0, 0.01)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         out = self.net(x)
         res = x if self.downsample is None else self.downsample(x)
         return self.relu(out + res)
@@ -88,7 +87,7 @@ class _TemporalConvNet(nn.Module):
                                       dropout=dropout)]
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         x = self.network(x)

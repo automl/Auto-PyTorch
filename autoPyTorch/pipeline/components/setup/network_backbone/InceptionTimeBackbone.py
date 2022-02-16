@@ -5,8 +5,7 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import torch
-from torch import nn
+from torch import Tensor, cat, nn, relu
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
@@ -58,16 +57,16 @@ class _InceptionBlock(nn.Module):
     def get_n_outputs(self) -> int:
         return 4 * self.n_filters
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         if self.bottleneck is not None:
             x = self.bottleneck(x)
         x1 = self.conv1(self.pad1(x))
         x2 = self.conv2(self.pad2(x))
         x3 = self.conv3(self.pad3(x))
         x4 = self.convpool(self.maxpool(x))
-        x = torch.cat([x1, x2, x3, x4], dim=1)
+        x = cat([x1, x2, x3, x4], dim=1)
         x = self.bn(x)
-        return torch.relu(x)
+        return relu(x)
 
 
 class _ResidualBlock(nn.Module):
@@ -76,11 +75,11 @@ class _ResidualBlock(nn.Module):
         self.shortcut = nn.Conv1d(n_res_inputs, n_outputs, 1, bias=False)
         self.bn = nn.BatchNorm1d(n_outputs)
 
-    def forward(self, x: torch.Tensor, res: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor, res: Tensor) -> Tensor:
         shortcut = self.shortcut(res)
         shortcut = self.bn(shortcut)
         x = x + shortcut
-        return torch.relu(x)
+        return relu(x)
 
 
 class _InceptionTime(nn.Module):
@@ -109,7 +108,7 @@ class _InceptionTime(nn.Module):
                 n_res_inputs = n_res_outputs
             n_inputs = block.get_n_outputs()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         res = x

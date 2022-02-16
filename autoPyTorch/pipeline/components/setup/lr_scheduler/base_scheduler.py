@@ -1,8 +1,7 @@
-from typing import Any, Dict, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, Optional, Union
 
 from torch.optim import Optimizer
-if TYPE_CHECKING:
-    from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit, StepIntervalUnitChoices

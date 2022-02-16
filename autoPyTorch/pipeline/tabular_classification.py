@@ -9,7 +9,7 @@ import numpy as np
 
 from sklearn.base import ClassifierMixin
 
-import torch
+from torch import manual_seed
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -132,7 +132,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         # Because a pipeline is passed to a worker, we need to honor the random seed
         # in this context. A tabular classification pipeline will implement a torch
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
-        torch.manual_seed(self.random_state.get_state()[1][0])
+        manual_seed(self.random_state.get_state()[1][0])
 
     def _predict_proba(self, X: np.ndarray) -> np.ndarray:
         # Pre-process X

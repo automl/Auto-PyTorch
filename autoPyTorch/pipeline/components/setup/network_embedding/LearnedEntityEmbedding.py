@@ -8,8 +8,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-import torch
-from torch import nn
+from torch import Tensor, cat, nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
@@ -52,7 +51,7 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.ee_layers = self._create_ee_layers()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # pass the columns of each categorical feature through entity embedding layer
         # before passing it through the model
         concat_seq = []
@@ -72,7 +71,7 @@ class _LearnedEntityEmbedding(nn.Module):
             last_concat = x_pointer
 
         concat_seq.append(x[:, last_concat:])
-        return torch.cat(concat_seq, dim=1)
+        return cat(concat_seq, dim=1)
 
     def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers

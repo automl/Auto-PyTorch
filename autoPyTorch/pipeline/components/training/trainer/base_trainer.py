@@ -7,9 +7,10 @@ import pandas as pd
 
 from sklearn.utils import check_random_state
 
-import torch
+from torch import Tensor, cat, device as torch_device, from_numpy, nn, no_grad
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
@@ -206,15 +207,15 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def prepare(
         self,
         metrics: List[Any],
-        model: torch.nn.Module,
-        criterion: Type[torch.nn.Module],
+        model: nn.Module,
+        criterion: Type[nn.Module],
         budget_tracker: BudgetTracker,
         optimizer: Optimizer,
-        device: torch.device,
+        device: torch_device,
         metrics_during_training: bool,
         scheduler: _LRScheduler,
         task_type: int,
-        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        labels: Union[np.ndarray, Tensor, pd.DataFrame],
         step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
     ) -> None:
 
@@ -285,14 +286,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         except TypeError:
             self.scheduler.step()
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
+    def train_epoch(self, train_loader: DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
                     ) -> Tuple[Optional[float], Dict[str, float]]:
         """
         Train the model for a single epoch.
 
         Args:
-            train_loader (torch.utils.data.DataLoader): generator of features/label
+            train_loader (DataLoader): generator of features/label
             epoch (int): The current epoch used solely for tracking purposes
 
         Returns:
@@ -337,7 +338,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             return loss_sum / N, {}
 
-    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+    def cast_targets(self, targets: Tensor) -> Tensor:
         if self.task_type in REGRESSION_TASKS:
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
@@ -347,16 +348,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             targets = targets.long().to(self.device)
         return targets
 
-    def train_step(self, data: torch.Tensor, targets: torch.Tensor) -> Tuple[float, torch.Tensor]:
+    def train_step(self, data: Tensor, targets: Tensor) -> Tuple[float, Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
         Args:
-            data (torch.Tensor): input features to the network
-            targets (torch.Tensor): ground truth to calculate loss
+            data (Tensor): input features to the network
+            targets (Tensor): ground truth to calculate loss
 
         Returns:
-            torch.Tensor: The predictions of the network
+            Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
         # prepare
@@ -376,14 +377,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         return loss.item(), outputs
 
-    def evaluate(self, test_loader: torch.utils.data.DataLoader, epoch: int,
+    def evaluate(self, test_loader: DataLoader, epoch: int,
                  writer: Optional[SummaryWriter],
                  ) -> Tuple[float, Dict[str, float]]:
         """
         Evaluate the model in both metrics and criterion
 
         Args:
-            test_loader (torch.utils.data.DataLoader): generator of features/label
+            test_loader (DataLoader): generator of features/label
             epoch (int): the current epoch for tracking purposes
 
         Returns:
@@ -397,7 +398,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         outputs_data = list()
         targets_data = list()
 
-        with torch.no_grad():
+        with no_grad():
             for step, (data, targets) in enumerate(test_loader):
                 batch_size = data.shape[0]
 
@@ -425,26 +426,26 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.model.train()
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
 
-    def compute_metrics(self, outputs_data: List[torch.Tensor], targets_data: List[torch.Tensor]
+    def compute_metrics(self, outputs_data: List[Tensor], targets_data: List[Tensor]
                         ) -> Dict[str, float]:
         # TODO: change once Ravin Provides the PR
-        outputs_data = torch.cat(outputs_data, dim=0).numpy()
-        targets_data = torch.cat(targets_data, dim=0).numpy()
+        outputs_data = cat(outputs_data, dim=0).numpy()
+        targets_data = cat(targets_data, dim=0).numpy()
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics)
 
-    def get_class_weights(self, criterion: Type[torch.nn.Module], labels: Union[np.ndarray, torch.Tensor, pd.DataFrame]
-                          ) -> Dict[str, torch.Tensor]:
+    def get_class_weights(self, criterion: Type[nn.Module], labels: Union[np.ndarray, Tensor, pd.DataFrame]
+                          ) -> Dict[str, Tensor]:
         strategy = get_loss_weight_strategy(criterion)
         weights = strategy(y=labels)
-        weights = torch.from_numpy(weights)
+        weights = from_numpy(weights)
         weights = weights.float().to(self.device)
         if criterion.__name__ == 'BCEWithLogitsLoss':
             return {'pos_weight': weights}
         else:
             return {'weight': weights}
 
-    def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
-                         ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
+    def data_preparation(self, X: Tensor, y: Tensor,
+                         ) -> Tuple[Tensor, Dict[str, np.ndarray]]:
         """
         Depending on the trainer choice, data fed to the network might be pre-processed
         on a different way. That is, in standard training we provide the data to the
@@ -452,17 +453,17 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         alter the data.
 
         Args:
-            X (torch.Tensor): The batch training features
-            y (torch.Tensor): The batch training labels
+            X (Tensor): The batch training features
+            y (Tensor): The batch training labels
 
         Returns:
-            torch.Tensor: that processes data
+            Tensor: that processes data
             Dict[str, np.ndarray]: arguments to the criterion function
                                    TODO: Fix this typing. It is not np.ndarray.
         """
         raise NotImplementedError
 
-    def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
+    def criterion_preparation(self, y_a: Tensor, y_b: Tensor = None, lam: float = 1.0
                               ) -> Callable:  # type: ignore
         """
         Depending on the trainer choice, the criterion is not directly applied to the

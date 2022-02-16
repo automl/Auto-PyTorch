@@ -16,7 +16,7 @@ import pandas as pd
 
 import scipy.sparse
 
-import torch
+from torch import Tensor, cuda, device
 from torch.utils.data.dataloader import default_collate
 
 HyperparameterValueType = Union[int, str, float]
@@ -97,7 +97,7 @@ class autoPyTorchEnum(str, Enum):
         return hash(self.value)
 
 
-def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
+def custom_collate_fn(batch: List) -> List[Optional[Tensor]]:
     """
     In the case of not providing a y tensor, in a
     dataset of form {X, y}, y would be None.
@@ -110,7 +110,7 @@ def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
         batch (List): a batch from a dataset
 
     Returns:
-        List[Optional[torch.Tensor]]
+        List[Optional[Tensor]]
     """
 
     items = list(zip(*batch))
@@ -151,7 +151,7 @@ def replace_string_bool_to_bool(dictionary: Dict[str, Any]) -> Dict[str, Any]:
     return dictionary
 
 
-def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
+def get_device_from_fit_dictionary(X: Dict[str, Any]) -> device:
     """
     Get a torch device object by checking if the fit dictionary specifies a device. If not, or if no GPU is available
     return a CPU device.
@@ -160,12 +160,12 @@ def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
         X (Dict[str, Any]): A fit dictionary to control how the pipeline is fitted
 
     Returns:
-        torch.device: Device to be used for training/inference
+        device: Device to be used for training/inference
     """
-    if not torch.cuda.is_available():
-        return torch.device("cpu")
+    if not cuda.is_available():
+        return device("cpu")
 
-    return torch.device(X.get("device", "cpu"))
+    return device(X.get("device", "cpu"))
 
 
 def subsampler(data: Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix],

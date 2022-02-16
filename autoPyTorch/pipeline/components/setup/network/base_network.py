@@ -4,8 +4,8 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 
 import numpy as np
 
-import torch
-from torch import nn
+from torch import Tensor, cat, device as torch_device, nn, no_grad
+from torch.utils.data.dataloader import DataLoader
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -21,19 +21,19 @@ class NetworkComponent(autoPyTorchTrainingComponent):
 
     def __init__(
             self,
-            network: Optional[torch.nn.Module] = None,
+            network: Optional[nn.Module] = None,
             random_state: Optional[np.random.RandomState] = None
     ) -> None:
         super(NetworkComponent, self).__init__()
         self.random_state = random_state
         self.device = None
         self.add_fit_requirements([
-            FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_head", (nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_backbone", (nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_embedding", (nn.Module,), user_defined=False, dataset_property=False),
         ])
         self.network = network
-        self.final_activation: Optional[torch.nn.Module] = None
+        self.final_activation: Optional[nn.Module] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         """
@@ -50,7 +50,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         # information to fit this stage
         self.check_requirements(X, y)
 
-        self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
+        self.network = nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
         # Properly set the network training device
         if self.device is None:
@@ -91,12 +91,12 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         # Honor the parent requirements
         super().check_requirements(X, y)
 
-    def get_network_weights(self) -> torch.nn.parameter.Parameter:
+    def get_network_weights(self) -> nn.parameter.Parameter:
         """Returns the weights of the network"""
         assert self.network is not None, "No network was initialized"
         return self.network.parameters()
 
-    def to(self, device: Optional[torch.device] = None) -> None:
+    def to(self, device: Optional[torch_device] = None) -> None:
         """Setups the network in cpu or gpu"""
         assert self.network is not None, "No network was initialized"
         if device is not None:
@@ -104,7 +104,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         else:
             self.network = self.network.to(self.device)
 
-    def predict(self, loader: torch.utils.data.DataLoader) -> torch.Tensor:
+    def predict(self, loader: DataLoader) -> Tensor:
         """
         Performs batched prediction given a loader object
         """
@@ -118,14 +118,14 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             # Predict on batch
             X_batch = X_batch.float().to(self.device)
 
-            with torch.no_grad():
+            with no_grad():
                 Y_batch_pred = self.network(X_batch)
                 if self.final_activation is not None:
                     Y_batch_pred = self.final_activation(Y_batch_pred)
 
             Y_batch_preds.append(Y_batch_pred.cpu())
 
-        return torch.cat(Y_batch_preds, 0).cpu().numpy()
+        return cat(Y_batch_preds, 0).cpu().numpy()
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,

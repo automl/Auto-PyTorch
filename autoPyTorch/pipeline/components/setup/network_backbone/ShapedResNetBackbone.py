@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter
 )
 
-import torch
+from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.ResNetBackbone import ResNetBackbone
@@ -25,8 +25,8 @@ class ShapedResNetBackbone(ResNetBackbone):
     for shaped number of units per group.
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> torch.nn.Sequential:
-        layers: List[torch.nn.Module] = list()
+    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Sequential:
+        layers: List[nn.Module] = list()
         in_features = input_shape[0]
         out_features = self.config["output_dim"]
 
@@ -55,7 +55,7 @@ class ShapedResNetBackbone(ResNetBackbone):
             self.config.update(
                 {"dropout_%d" % (i + 1): dropout for i, dropout in enumerate(dropout_shape)}
             )
-        layers.append(torch.nn.Linear(in_features, self.config["num_units_0"]))
+        layers.append(nn.Linear(in_features, self.config["num_units_0"]))
 
         # build num_groups-1 groups each consisting of blocks_per_group ResBlocks
         # the output features of each group is defined by num_units_i
@@ -70,8 +70,8 @@ class ShapedResNetBackbone(ResNetBackbone):
                 )
             )
 
-        layers.append(torch.nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
-        backbone = torch.nn.Sequential(*layers)
+        layers.append(nn.BatchNorm1d(self.config["num_units_%i" % self.config['num_groups']]))
+        backbone = nn.Sequential(*layers)
         return backbone
 
     @staticmethod

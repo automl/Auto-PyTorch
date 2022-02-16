@@ -4,8 +4,7 @@ import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
 
-import torch
-from torch import nn
+from torch import Tensor, nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
@@ -41,7 +40,7 @@ class _FullyConvolutional2DHead(nn.Module):
             layers.append(nn.AdaptiveMaxPool2d(output_size=1))
         self.head = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         B, C, H, W = x.size()
         return self.head(x).view(B, -1)
 

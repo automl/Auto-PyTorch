@@ -7,7 +7,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR as TorchCosineAnnealingLR
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -49,7 +49,7 @@ class CosineAnnealingLR(BaseLRComponent):
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
-        self.scheduler = CosineAnnealingLR(
+        self.scheduler = TorchCosineAnnealingLR(
             optimizer=X['optimizer'],
             T_max=int(self.T_max)
         )

@@ -7,7 +7,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import ExponentialLR as TorchExponentialLR
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.base_scheduler import BaseLRComponent
@@ -50,7 +50,7 @@ class ExponentialLR(BaseLRComponent):
         # Make sure there is an optimizer
         self.check_requirements(X, y)
 
-        self.scheduler = ExponentialLR(
+        self.scheduler = TorchExponentialLR(
             optimizer=X['optimizer'],
             gamma=float(self.gamma)
         )

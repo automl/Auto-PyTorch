@@ -4,7 +4,7 @@ import numpy as np
 
 from sklearn.utils import check_array
 
-import torch
+from torch import from_numpy
 
 import torchvision
 
@@ -78,7 +78,7 @@ class FeatureDataLoader(BaseDataLoaderComponent):
             candidate_transformations.append((ContractTransform()))
 
         # Transform to tensor
-        candidate_transformations.append(torch.from_numpy)
+        candidate_transformations.append(from_numpy)
 
         return torchvision.transforms.Compose(candidate_transformations)
 
