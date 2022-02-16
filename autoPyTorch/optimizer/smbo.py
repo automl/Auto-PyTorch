@@ -18,7 +18,6 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
