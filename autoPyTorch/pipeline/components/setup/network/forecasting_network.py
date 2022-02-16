@@ -887,18 +887,18 @@ class ForecastingNetworkComponent(NetworkComponent):
 
         for i, (X_batch, Y_batch) in enumerate(loader):
             # Predict on batch
-            past_target = X_batch['past_target']
+            past_targets = X_batch['past_targets']
             past_features = X_batch['past_features']
             future_features = X_batch["future_features"]
-            statistic_features = X_batch["statistic_features"]
+            static_features = X_batch["static_features"]
 
-            if past_target.ndim == 2:
-                past_target = past_target.unsqueeze(-1)
+            if past_targets.ndim == 2:
+                past_targets = past_targets.unsqueeze(-1)
 
-            pred_kwargs = {"past_target": past_target,
+            pred_kwargs = {"past_targets": past_targets,
                            "past_features": past_features,
                            "future_features": future_features,
-                           "statistic_features": statistic_features}
+                           "static_features": static_features}
 
             for key in pred_kwargs.keys():
                 if pred_kwargs[key] is not None:

@@ -53,11 +53,12 @@ class TimeSeriesSequence(Dataset):
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
-                 statistic_features: Optional[np.ndarray] = None,
+                 static_features: Optional[np.ndarray] = None,
                  n_prediction_steps: int = 1,
                  sp: int = 1,
                  known_future_features: Optional[List[Union[str, int]]] = None,
                  only_has_past_targets: bool = False,
+                 compute_mase_coefficient_value: bool = True,
                  ):
         """
         A dataset representing a time series sequence.
@@ -78,18 +79,22 @@ class TimeSeriesSequence(Dataset):
         self.X_test = X_test
         self.Y_tet = Y_test
 
-        self.statistic_features = statistic_features
+        self.static_features = static_features
 
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
         self.train_transform = train_transforms
         self.val_transform = val_transforms
         self.sp = sp
-        if only_has_past_targets:
-            self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp, n_prediction_steps=n_prediction_steps)
+        if compute_mase_coefficient_value:
+            if only_has_past_targets:
+                self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp,
+                                                                 n_prediction_steps=n_prediction_steps)
+            else:
+                self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp,
+                                                                 n_prediction_steps=n_prediction_steps)
         else:
-            self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp,
-                                                             n_prediction_steps=n_prediction_steps)
+            self.mase_coefficient = 1.0
         self.only_has_past_targets = only_has_past_targets
         self.known_future_features = known_future_features
 
@@ -138,10 +143,10 @@ class TimeSeriesSequence(Dataset):
         past_target = targets[:index + 1]
         past_target = torch.from_numpy(past_target)
 
-        return {"past_target": past_target,
+        return {"past_targets": past_target,
                 "past_features": past_features,
                 "future_features": future_features,
-                "statistic_features": self.statistic_features,
+                "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient}, targets_future
 
     def __len__(self) -> int:
@@ -184,13 +189,15 @@ class TimeSeriesSequence(Dataset):
             else:
                 X = None
             return TimeSeriesSequence(X,
-                                      self.Y[:index + 1 + self.n_prediction_steps],
+                                      self.Y[:index + 1],
                                       train_transforms=self.train_transform,
                                       val_transforms=self.val_transform,
                                       n_prediction_steps=self.n_prediction_steps,
-                                      statistic_features=self.statistic_features,
+                                      static_features=self.static_features,
                                       known_future_features=self.known_future_features,
-                                      sp=self.sp)
+                                      sp=self.sp,
+                                      only_has_past_targets=True,
+                                      compute_mase_coefficient_value=False)
 
     def get_test_target(self, test_idx: int):
         if self.only_has_past_targets:
@@ -225,7 +232,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  dataset_name: Optional[str] = None,
                  shift_input_data: bool = True,
                  normalize_y: bool = True,
-                 statistic_features: Optional[np.ndarray] = None,
+                 static_features: Optional[np.ndarray] = None,
                  ):
         """
         :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
@@ -242,7 +249,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if y values needs to be normalized with mean 0 and variance 1
         if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
         header's configspace can be built beforehand.
-        :param statistic_features: statistic features, invariant across different
+        :param static_features: statistic features, invariant across different
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
 
@@ -299,7 +306,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
                                n_prediction_steps=n_prediction_steps)
 
-        self._is_uni_variant = self.validator._is_uni_variant
+        self.is_uni_variant = self.validator._is_uni_variant
 
         self.numerical_columns = self.validator.feature_validator.numerical_columns
         self.categorical_columns = self.validator.feature_validator.categorical_columns
@@ -414,7 +421,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                             "n_prediction_steps": n_prediction_steps,
                             "sp": self.seasonality,
                             "known_future_features": known_future_features,
-                            "statistic_features": statistic_features}
+                            "static_features": static_features}
 
         self.y_train_mean = [0] * len(self.sequence_lengths_train)
         self.y_train_std = [1] * len(self.sequence_lengths_train)
@@ -428,7 +435,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
         self.known_future_features = known_future_features
-        self.statistic_features = statistic_features
+        self.static_features = static_features
 
         self.seq_length_min = int(np.min(self.sequence_lengths_train))
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
@@ -750,7 +757,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'sequence_lengths_train': self.sequence_lengths_train,
                                    'seq_length_max': self.seq_length_max,
                                    'lagged_value': self.lagged_value,
-                                   'uni_variant': self._is_uni_variant})
+                                   'uni_variant': self.is_uni_variant})
         return dataset_properties
 
     def create_cross_val_splits(

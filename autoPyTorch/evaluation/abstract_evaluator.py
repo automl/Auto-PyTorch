@@ -325,7 +325,8 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
     def fit(self, X: Dict[str, Any], y: Any,
             sample_weight: Optional[np.ndarray] = None) -> object:
         self.n_prediction_steps = X['dataset_properties']['n_prediction_steps']
-        return super(DummyTimeSeriesForecastingPipeline, self).fit(X, y)
+        y_train = subsampler(X['y_train'], X['train_indices'])
+        return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train,sample_weight)
 
     def _genreate_dummy_forecasting(self, X):
         if isinstance(X[0], TimeSeriesSequence):

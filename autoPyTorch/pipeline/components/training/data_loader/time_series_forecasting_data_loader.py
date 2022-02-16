@@ -75,7 +75,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector = None
 
-        self.statistic_features = None
+        self.static_features = None
         self.known_future_features = None
         self._is_uni_variant = False
 
@@ -99,7 +99,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if self.backcast:
             self.window_size = self.backcast_period * self.n_prediction_steps
 
-        self.statistic_features = datamanager.statistic_features
+        self.static_features = datamanager.static_features
         self.known_future_features = datamanager.known_future_features
 
         # this value corresponds to budget type resolution
@@ -272,9 +272,31 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         applying the transformations meant to validation objects
         This is a lazy loaded test set, each time only one piece of series
         """
-        if isinstance(X, TimeSeriesSequence):
-            X.update_transform(self.test_transform, train=False)
-            dataset = [X]
+        if self._is_uni_variant:
+            if isinstance(X, TimeSeriesSequence):
+                X.update_transform(self.test_transform, train=False)
+                dataset = [X]
+            elif isinstance(X, Sequence):
+                dataset = []
+                if isinstance(X[0], TimeSeriesSequence):
+                    for X_seq in X:
+                        X_seq.update_transform(self.test_transform, train=False)
+                        dataset.append(X_seq)
+                else:
+                    for X_seq in X:
+                        seq = TimeSeriesSequence(
+                            X=None, Y=X_seq,
+                            # This dataset is used for loading test data in a batched format
+                            train_transforms=self.test_transform,
+                            val_transforms=self.test_transform,
+                            n_prediction_steps=0,
+                            static_features=self.static_features,
+                            known_future_features=self.known_future_features,
+                            only_has_past_targets=True,
+                        )
+                        dataset.append(seq)
+            else:
+                raise NotImplementedError(f"Unsupported type of input: {type(y)}")
         else:
             if y is None:
                 # TODO consider other circumstances!
@@ -285,12 +307,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             if isinstance(y, (np.ndarray, torch.Tensor)):
                 if isinstance(y, torch.Tensor):
                     y = y.numpy()
-                    if self._is_uni_variant:
-                        X = X.numpy()
+                    X = X.numpy()
                 if y.ndim == 1:
                     y = [y]
-                    if self._is_uni_variant:
-                        X = [X]
+                if X.ndim == 1:
+                    X = [X]
 
             if isinstance(y, Sequence):
                 dataset = []
@@ -299,34 +320,20 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                         y_seq.update_transform(self.test_transform, train=False)
                         dataset.append(y_seq)
                 else:
-                    if self._is_uni_variant:
-                        for y_seq in y:
-                            seq = TimeSeriesSequence(
-                                X=None, Y=y_seq,
-                                # This dataset is used for loading test data in a batched format
-                                train_transforms=self.test_transform,
-                                val_transforms=self.test_transform,
-                                n_prediction_steps=0,
-                                statistic_features=self.statistic_features,
-                                known_future_features=self.known_future_features,
-                                only_has_past_targets=True,
-                            )
-                            dataset.append(seq)
-                    else:
-                        for X_seq, y_seq in zip(X, y):
-                            seq = TimeSeriesSequence(
-                                X=X_seq, Y=y_seq,
-                                # This dataset is used for loading test data in a batched format
-                                train_transforms=self.test_transform,
-                                val_transforms=self.test_transform,
-                                n_prediction_steps=0,
-                                statistic_features=self.statistic_features,
-                                known_future_features=self.known_future_features,
-                                only_has_past_targets=True,
-                            )
-                            dataset.append(seq)
+                    for X_seq, y_seq in zip(X, y):
+                        seq = TimeSeriesSequence(
+                            X=X_seq, Y=y_seq,
+                            # This dataset is used for loading test data in a batched format
+                            train_transforms=self.test_transform,
+                            val_transforms=self.test_transform,
+                            n_prediction_steps=0,
+                            static_features=self.static_features,
+                            known_future_features=self.known_future_features,
+                            only_has_past_targets=True,
+                        )
+                        dataset.append(seq)
             else:
-                raise NotImplementedError(f"Unsupported type of input X: {type(X)}")
+                raise NotImplementedError(f"Unsupported type of input: {type(y)}")
 
         dataset_test = TestSequenceDataset(dataset, train=False)
 

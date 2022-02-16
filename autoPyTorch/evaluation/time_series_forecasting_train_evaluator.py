@@ -89,7 +89,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.max_budget = max_budget
         self.min_num_test_instances = min_num_test_instances
 
-
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
         holdout"""
