@@ -104,57 +104,57 @@ class NBEATSDecoder(BaseForecastingDecoder):
         in_features = input_shape[-1]
         n_beats_type = self.config['n_beats_type']
         if n_beats_type == 'G':
-            stacks = [[] for _ in range(self.config['num_stacks_G'])]
-            for stack_idx in range(1, self.config['num_stacks_G'] + 1):
-                for block_idx in range(self.config['num_blocks_G']):
-                    if self.config['weight_sharing_G'] and block_idx > 0:
+            stacks = [[] for _ in range(self.config['num_stacks_g'])]
+            for stack_idx in range(1, self.config['num_stacks_g'] + 1):
+                for block_idx in range(self.config['num_blocks_g']):
+                    if self.config['weight_sharing_g'] and block_idx > 0:
                         # for weight sharing, we only create one instance
                         break
-                    ecl = self.config['expansion_coefficient_length_G']
+                    ecl = self.config['expansion_coefficient_length_g']
                     stacks[stack_idx - 1].append(NBEATSBLock(in_features,
                                                              stack_idx=stack_idx,
                                                              stack_type='generic',
-                                                             num_blocks=self.config['num_blocks_G'],
-                                                             num_layers=self.config['num_layers_G'],
-                                                             width=self.config['width_G'],
+                                                             num_blocks=self.config['num_blocks_g'],
+                                                             num_layers=self.config['num_layers_g'],
+                                                             width=self.config['width_g'],
                                                              normalization=self.config['normalization'],
                                                              activation=self.config['activation'],
-                                                             weight_sharing=self.config['weight_sharing_G'],
+                                                             weight_sharing=self.config['weight_sharing_g'],
                                                              expansion_coefficient_length=ecl,
-                                                             use_dropout=self.config['use_dropout_G'],
-                                                             dropout_rate=self.config.get('dropout_G', None),
+                                                             use_dropout=self.config['use_dropout_g'],
+                                                             dropout_rate=self.config.get('dropout_g', None),
                                                              ))
 
         elif n_beats_type == 'I':
-            stacks = [[] for _ in range(self.config['num_stacks_I'])]
-            for stack_idx in range(1, self.config['num_stacks_I'] + 1):
-                for block_idx in range(self.config['num_blocks_I_%d' % stack_idx]):
-                    if self.config['weight_sharing_I_%d' % stack_idx] and block_idx > 0:
+            stacks = [[] for _ in range(self.config['num_stacks_i'])]
+            for stack_idx in range(1, self.config['num_stacks_i'] + 1):
+                for block_idx in range(self.config['num_blocks_i_%d' % stack_idx]):
+                    if self.config['weight_sharing_i_%d' % stack_idx] and block_idx > 0:
                         # for weight sharing, we only create one instance
                         break
-                    stack_type = self.config['stack_type_I_%d' % stack_idx]
+                    stack_type = self.config['stack_type_i_%d' % stack_idx]
                     if stack_type == 'generic':
-                        ecl = self.config['expansion_coefficient_length_I_generic_%d' % stack_idx]
+                        ecl = self.config['expansion_coefficient_length_i_generic_%d' % stack_idx]
                     elif stack_type == 'trend':
-                        ecl = self.config['expansion_coefficient_length_I_trend_%d' % stack_idx]
+                        ecl = self.config['expansion_coefficient_length_i_trend_%d' % stack_idx]
                     elif stack_type == 'seasonality':
-                        ecl = self.config['expansion_coefficient_length_I_seasonality_%d' % stack_idx]
+                        ecl = self.config['expansion_coefficient_length_i_seasonality_%d' % stack_idx]
                     else:
                         raise ValueError(f"Unsupported stack_type {stack_type}")
 
                     stacks[stack_idx - 1].append(NBEATSBLock(in_features,
                                                              stack_idx=stack_idx,
                                                              stack_type=stack_type,
-                                                             num_blocks=self.config['num_blocks_I_%d' % stack_idx],
-                                                             num_layers=self.config['num_layers_I_%d' % stack_idx],
-                                                             width=self.config['width_I_%d' % stack_idx],
+                                                             num_blocks=self.config['num_blocks_i_%d' % stack_idx],
+                                                             num_layers=self.config['num_layers_i_%d' % stack_idx],
+                                                             width=self.config['width_i_%d' % stack_idx],
                                                              normalization=self.config['normalization'],
                                                              activation=self.config['activation'],
-                                                             weight_sharing=self.config[f'weight_sharing_I_%d' %
+                                                             weight_sharing=self.config[f'weight_sharing_i_%d' %
                                                                                         stack_idx],
                                                              expansion_coefficient_length=ecl,
-                                                             use_dropout=self.config['use_dropout_I'],
-                                                             dropout_rate=self.config.get('dropout_I_%d' %
+                                                             use_dropout=self.config['use_dropout_i'],
+                                                             dropout_rate=self.config.get('dropout_i_%d' %
                                                                                           stack_idx, None),
                                                              ))
         else:
@@ -189,44 +189,44 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 default_value='I'
             ),
             num_stacks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="num_stacks_G",
+                hyperparameter="num_stacks_g",
                 value_range=(2, 32),
                 default_value=30,
                 log=True,
             ),
             num_blocks_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_blocks_G',
+                'num_blocks_g',
                 value_range=(1, 2),
                 default_value=1
             ),
             num_layers_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_layers_G',
+                'num_layers_g',
                 value_range=(1, 4),
                 default_value=4
             ),
             width_g: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'width_G',
+                'width_g',
                 value_range=(16, 512),
                 default_value=256,
                 log=True
             ),
             num_stacks_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="num_stacks_I",
+                hyperparameter="num_stacks_i",
                 value_range=(1, 4),
                 default_value=2
             ),
             num_blocks_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_blocks_I',
+                'num_blocks_i',
                 value_range=(1, 5),
                 default_value=3
             ),
             num_layers_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'num_layers_I',
+                'num_layers_i',
                 value_range=(1, 5),
                 default_value=3
             ),
             width_i: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                'width_I',
+                'width_i',
                 value_range=(16, 2048),
                 default_value=512,
                 log=True
@@ -335,20 +335,20 @@ class NBEATSDecoder(BaseForecastingDecoder):
         cs.add_hyperparameter(n_beats_type)
         # N-BEATS-G
 
-        weight_sharing_g = HyperparameterSearchSpace(hyperparameter='weight_sharing_G',
+        weight_sharing_g = HyperparameterSearchSpace(hyperparameter='weight_sharing_g',
                                                      value_range=weight_sharing.value_range,
                                                      default_value=weight_sharing.default_value,
                                                      log=weight_sharing.log)
-        use_dropout_g = HyperparameterSearchSpace(hyperparameter='use_dropout_G',
+        use_dropout_g = HyperparameterSearchSpace(hyperparameter='use_dropout_g',
                                                   value_range=use_dropout.value_range,
                                                   default_value=use_dropout.default_value,
                                                   log=use_dropout.log)
-        dropout_g = HyperparameterSearchSpace(hyperparameter='dropout_G',
+        dropout_g = HyperparameterSearchSpace(hyperparameter='dropout_g',
                                               value_range=dropout.value_range,
                                               default_value=dropout.default_value,
                                               log=dropout.log)
         ecl_g_search_space = HyperparameterSearchSpace(
-            hyperparameter='expansion_coefficient_length_G',
+            hyperparameter='expansion_coefficient_length_g',
             value_range=expansion_coefficient_length_generic.value_range,
             default_value=expansion_coefficient_length_generic.default_value,
             log=expansion_coefficient_length_generic.log
@@ -374,7 +374,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
 
         min_num_stacks_i, max_num_stacks_i = num_stacks_i.value_range
 
-        use_dropout_i = HyperparameterSearchSpace(hyperparameter='use_dropout_I',
+        use_dropout_i = HyperparameterSearchSpace(hyperparameter='use_dropout_i',
                                                   value_range=use_dropout.value_range,
                                                   default_value=use_dropout.default_value,
                                                   log=use_dropout.log)
@@ -388,40 +388,40 @@ class NBEATSDecoder(BaseForecastingDecoder):
                            ])
 
         for stack_idx in range(1, int(max_num_stacks_i) + 1):
-            num_blocks_i_search_space = HyperparameterSearchSpace(hyperparameter='num_blocks_I_%d' % stack_idx,
+            num_blocks_i_search_space = HyperparameterSearchSpace(hyperparameter='num_blocks_i_%d' % stack_idx,
                                                                   value_range=num_blocks_i.value_range,
                                                                   default_value=num_blocks_i.default_value,
                                                                   log=num_blocks_i.log)
-            num_layers_i_search_space = HyperparameterSearchSpace(hyperparameter='num_layers_I_%d' % stack_idx,
+            num_layers_i_search_space = HyperparameterSearchSpace(hyperparameter='num_layers_i_%d' % stack_idx,
                                                                   value_range=num_layers_i.value_range,
                                                                   default_value=num_layers_i.default_value,
                                                                   log=num_layers_i.log)
-            width_i_search_space = HyperparameterSearchSpace(hyperparameter='width_I_%d' % stack_idx,
+            width_i_search_space = HyperparameterSearchSpace(hyperparameter='width_i_%d' % stack_idx,
                                                              value_range=width_i.value_range,
                                                              default_value=width_i.default_value,
                                                              log=width_i.log)
-            weight_sharing_i_search_space = HyperparameterSearchSpace(hyperparameter='weight_sharing_I_%d' % stack_idx,
+            weight_sharing_i_search_space = HyperparameterSearchSpace(hyperparameter='weight_sharing_i_%d' % stack_idx,
                                                                       value_range=weight_sharing.value_range,
                                                                       default_value=weight_sharing.default_value,
                                                                       log=weight_sharing.log)
-            stack_type_i_search_space = HyperparameterSearchSpace(hyperparameter='stack_type_I_%d' % stack_idx,
+            stack_type_i_search_space = HyperparameterSearchSpace(hyperparameter='stack_type_i_%d' % stack_idx,
                                                                   value_range=stack_type.value_range,
                                                                   default_value=stack_type.default_value,
                                                                   log=stack_type.log)
             expansion_coefficient_length_generic_search_space = HyperparameterSearchSpace(
-                hyperparameter='expansion_coefficient_length_I_generic_%d' % stack_idx,
+                hyperparameter='expansion_coefficient_length_i_generic_%d' % stack_idx,
                 value_range=expansion_coefficient_length_generic.value_range,
                 default_value=expansion_coefficient_length_generic.default_value,
                 log=expansion_coefficient_length_generic.log
             )
             expansion_coefficient_length_seasonality_search_space = HyperparameterSearchSpace(
-                hyperparameter='expansion_coefficient_length_I_seasonality_%d' % stack_idx,
+                hyperparameter='expansion_coefficient_length_i_seasonality_%d' % stack_idx,
                 value_range=expansion_coefficient_length_seasonality.value_range,
                 default_value=expansion_coefficient_length_seasonality.default_value,
                 log=expansion_coefficient_length_seasonality.log
             )
             expansion_coefficient_length_trend_search_space = HyperparameterSearchSpace(
-                hyperparameter='expansion_coefficient_length_I_trend_%d' % stack_idx,
+                hyperparameter='expansion_coefficient_length_i_trend_%d' % stack_idx,
                 value_range=expansion_coefficient_length_trend.value_range,
                 default_value=expansion_coefficient_length_trend.default_value,
                 log=expansion_coefficient_length_trend.log
@@ -480,7 +480,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 ]
                 )
 
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_I_%d' % stack_idx,
+            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_i_%d' % stack_idx,
                                                              value_range=dropout.value_range,
                                                              default_value=dropout.default_value,
                                                              log=dropout.log)
