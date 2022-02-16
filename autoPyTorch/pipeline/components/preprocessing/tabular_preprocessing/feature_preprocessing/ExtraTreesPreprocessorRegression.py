@@ -19,6 +19,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, check_none
 
 
+CRITERION_CHOICES = ('mse', 'friedman_mse', 'mae')
+
+
 class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent):
     """
     Selects features based on importance weights using extra trees
@@ -32,9 +35,9 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
                  random_state: Optional[np.random.RandomState] = None):
         self.bootstrap = bootstrap
         self.n_estimators = n_estimators
-        if criterion not in ('mse', 'friedman_mse', 'mae'):
-            raise ValueError("'criterion' is not in ('mse', 'friedman_mse', 'mae'): "
-                             "%s" % criterion)
+        if criterion not in CRITERION_CHOICES:
+            raise ValueError(f"`criterion` of {self.__class__.__name__} "
+                             f"must be in {CRITERION_CHOICES}, but got: {criterion}")
         self.criterion = criterion
         self.max_features = max_features
         self.max_depth = max_depth
@@ -49,6 +52,28 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
 
         self.add_fit_requirements([
             FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True)])
+
+    def get_components_kwargs(self) -> Dict[str, Any]:
+        """
+        returns keyword arguments required by the feature preprocessor
+
+        Returns:
+            Dict[str, Any]: kwargs
+        """
+        return dict(
+            bootstrap=self.bootstrap,
+            n_estimators=self.n_estimators,
+            criterion=self.criterion,
+            max_features=self.max_features,
+            max_depth=self.max_depth,
+            min_samples_split=self.min_samples_split,
+            min_samples_leaf=self.min_samples_leaf,
+            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+            max_leaf_nodes=self.max_leaf_nodes,
+            oob_score=self.oob_score,
+            verbose=self.verbose,
+            random_state=self.random_state,
+        )
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
@@ -77,20 +102,7 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
         max_features = max(1, min(int(num_features / 2), max_features))
 
         # TODO: add class_weights
-        estimator = ExtraTreesRegressor(
-            n_estimators=self.n_estimators,
-            criterion=self.criterion,
-            max_depth=self.max_depth,
-            min_samples_split=self.min_samples_split,
-            min_samples_leaf=self.min_samples_leaf,
-            bootstrap=self.bootstrap,
-            max_features=self.max_features,
-            max_leaf_nodes=self.max_leaf_nodes,
-            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
-            oob_score=self.oob_score,
-            verbose=self.verbose,
-            random_state=self.random_state,
-        )
+        estimator = ExtraTreesRegressor(**self.get_components_kwargs())
 
         self.preprocessor['numerical'] = SelectFromModel(estimator=estimator,
                                                          threshold='mean',
@@ -117,7 +129,7 @@ class ExtraTreesPreprocessorRegression(autoPyTorchFeaturePreprocessingComponent)
                                                                             default_value=1,
                                                                             ),
         criterion: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='criterion',
-                                                                         value_range=('mse', 'friedman_mse', 'mae'),
+                                                                         value_range=CRITERION_CHOICES,
                                                                          default_value="mse",
                                                                          ),
         min_samples_split: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='min_samples_split',

@@ -45,19 +45,29 @@ class LibLinearSVCPreprocessor(autoPyTorchFeaturePreprocessingComponent):
 
         super().__init__(random_state=random_state)
 
+    def get_components_kwargs(self) -> Dict[str, Any]:
+        """
+        returns keyword arguments required by the feature preprocessor
+
+        Returns:
+            Dict[str, Any]: kwargs
+        """
+        return dict(
+            dual=self.dual,
+            penalty=self.penalty,
+            loss=self.loss,
+            multi_class=self.multi_class,
+            intercept_scaling=self.intercept_scaling,
+            tol=self.tol,
+            fit_intercept=self.fit_intercept,
+            C=self.C,
+            random_state=self.random_state
+        )
+
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
         # TODO: add class_weights
-        estimator = LinearSVC(penalty=self.penalty,
-                              loss=self.loss,
-                              dual=self.dual,
-                              tol=self.tol,
-                              C=self.C,
-                              fit_intercept=self.fit_intercept,
-                              intercept_scaling=self.intercept_scaling,
-                              multi_class=self.multi_class,
-                              random_state=self.random_state
-                              )
+        estimator = LinearSVC(**self.get_components_kwargs())
 
         self.preprocessor['numerical'] = SelectFromModel(estimator=estimator,
                                                          threshold='mean',

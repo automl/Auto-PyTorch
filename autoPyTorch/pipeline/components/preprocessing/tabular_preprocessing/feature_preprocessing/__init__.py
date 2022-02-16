@@ -94,7 +94,7 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
             entry = available_comp[name]
 
             # Exclude itself to avoid infinite loop
-            if entry == FeatureProprocessorChoice or hasattr(entry, 'get_components'):
+            if entry is FeatureProprocessorChoice or hasattr(entry, 'get_components'):
                 continue
 
             task_type = str(dataset_properties['task_type'])

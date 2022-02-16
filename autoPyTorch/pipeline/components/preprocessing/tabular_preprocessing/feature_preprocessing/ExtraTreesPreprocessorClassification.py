@@ -19,6 +19,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, check_none
 
 
+CRITERION_CHOICES = ("gini", "entropy")
+
+
 class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingComponent):
     """
     Selects features based on importance weights calculated using extra trees
@@ -33,9 +36,9 @@ class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingCompon
                  random_state: Optional[np.random.RandomState] = None):
         self.bootstrap = bootstrap
         self.n_estimators = n_estimators
-        if criterion not in ("gini", "entropy"):
-            raise ValueError("'criterion' is not in ('gini', 'entropy'): "
-                             "%s" % criterion)
+        if criterion not in CRITERION_CHOICES:
+            raise ValueError(f"`criterion` of {self.__class__.__name__} "
+                             f"must be in {CRITERION_CHOICES}, but got: {criterion}")
         self.criterion = criterion
         self.max_features = max_features
         self.min_impurity_decrease = min_impurity_decrease
@@ -48,6 +51,29 @@ class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingCompon
         self.verbose = verbose
 
         super().__init__(random_state=random_state)
+
+    def get_components_kwargs(self) -> Dict[str, Any]:
+        """
+        returns keyword arguments required by the feature preprocessor
+
+        Returns:
+            Dict[str, Any]: kwargs
+        """
+        return dict(
+            bootstrap=self.bootstrap,
+            n_estimators=self.n_estimators,
+            criterion=self.criterion,
+            max_features=self.max_features,
+            min_impurity_decrease=self.min_impurity_decrease,
+            max_depth=self.max_depth,
+            min_samples_split=self.min_samples_split,
+            min_samples_leaf=self.min_samples_leaf,
+            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+            max_leaf_nodes=self.max_leaf_nodes,
+            oob_score=self.oob_score,
+            verbose=self.verbose,
+            random_state=self.random_state,
+        )
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
@@ -68,20 +94,7 @@ class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingCompon
                              f"in ('None', 'none', None) or an integer, got {self.max_depth}")
 
         # TODO: add class_weights
-        estimator = ExtraTreesClassifier(
-            n_estimators=self.n_estimators,
-            criterion=self.criterion,
-            max_depth=self.max_depth,
-            min_samples_split=self.min_samples_split,
-            min_samples_leaf=self.min_samples_leaf,
-            bootstrap=self.bootstrap,
-            max_features=self.max_features,
-            max_leaf_nodes=self.max_leaf_nodes,
-            min_impurity_decrease=self.min_impurity_decrease,
-            oob_score=self.oob_score,
-            verbose=self.verbose,
-            random_state=self.random_state,
-        )
+        estimator = ExtraTreesClassifier(**self.get_components_kwargs())
 
         self.preprocessor['numerical'] = SelectFromModel(estimator=estimator,
                                                          threshold='mean',
@@ -112,7 +125,7 @@ class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingCompon
             value_range=(0,),
             default_value=0),
         criterion: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='criterion',
-                                                                         value_range=("gini", "entropy"),
+                                                                         value_range=CRITERION_CHOICES,
                                                                          default_value="gini",
                                                                          ),
         min_samples_split: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='min_samples_split',

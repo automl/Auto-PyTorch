@@ -17,10 +17,13 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
+SCORE_FUNC_CHOICES = ('f_regression',)
+
+
 class SelectRatesRegression(autoPyTorchFeaturePreprocessingComponent):
     """
     Univariate feature selector by selecting the best features based on
-    univariate statistical tests. Tests can be one of 'f_regression'
+    univariate statistical tests. Tests can be one of SCORE_FUNC_CHOICES
     """
     def __init__(self, score_func: str = "f_regression",
                  alpha: float = 0.1, mode: str = "fpr",
@@ -31,8 +34,8 @@ class SelectRatesRegression(autoPyTorchFeaturePreprocessingComponent):
         if score_func == "f_regression":
             self.score_func = f_regression
         else:
-            raise ValueError("score_func must be in ('f_regression'), "
-                             "but is: %s" % score_func)
+            raise ValueError(f"score_func of {self.__class__.__name__} must be in {SCORE_FUNC_CHOICES}, "
+                             "but is: {score_func}")
 
         super().__init__(random_state=random_state)
 
@@ -57,7 +60,7 @@ class SelectRatesRegression(autoPyTorchFeaturePreprocessingComponent):
                                                                     default_value='fpr',
                                                                     ),
         score_func: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="score_func",
-                                                                          value_range=("f_regression",),
+                                                                          value_range=SCORE_FUNC_CHOICES,
                                                                           default_value="f_regression",
                                                                           ),
     ) -> ConfigurationSpace:

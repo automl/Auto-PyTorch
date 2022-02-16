@@ -18,10 +18,13 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
+SCORE_FUNC_CHOICES = ('f_regression', 'mutual_info')
+
+
 class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
     """
     Select features according to a percentile of the highest scores.
-    Scores are calculated using one of 'f_regression', 'mutual_info'
+    Scores are calculated using one of SCORE_FUNC_CHOICES
     """
     def __init__(self, score_func: str = "f_regression",
                  percentile: int = 50,
@@ -33,8 +36,8 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
         elif score_func == "mutual_info":
             self.score_func = partial(mutual_info_regression, random_state=random_state)
         else:
-            raise ValueError("score_func must be in ('f_regression', 'mutual_info'), "
-                             "but is: %s" % score_func)
+            raise ValueError(f"score_func of {self.__class__.__name__} must be in {SCORE_FUNC_CHOICES}, "
+                             "but is: {score_func}")
 
         super().__init__(random_state=random_state)
         self.add_fit_requirements([
@@ -57,7 +60,7 @@ class SelectPercentileRegression(autoPyTorchFeaturePreprocessingComponent):
                                                                           default_value=50,
                                                                           ),
         score_func: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="score_func",
-                                                                          value_range=("f_regression", "mutual_info"),
+                                                                          value_range=SCORE_FUNC_CHOICES,
                                                                           default_value="f_regression",
                                                                           ),
     ) -> ConfigurationSpace:

@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Dict, Optional
 
@@ -16,13 +15,18 @@ from sklearn.feature_selection import SelectPercentile, chi2, f_classif, mutual_
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing. \
     base_feature_preprocessor import autoPyTorchFeaturePreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.utils \
+    import filter_score_func_choices
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
+
+
+SCORE_FUNC_CHOICES = ("chi2", "mutual_info_classif", "f_classif")
 
 
 class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
     """
     Select features according to a percentile of the highest scores.
-    Scores are calculated using one of 'chi2, 'f_classif', 'mutual_info_classif'
+    Scores are calculated using one of SCORE_FUNC_CHOICES
     """
     def __init__(self, score_func: str = "chi2",
                  percentile: int = 50,
@@ -36,8 +40,8 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
         elif score_func == "mutual_info_classif":
             self.score_func = partial(mutual_info_classif, random_state=random_state)
         else:
-            raise ValueError("score_func must be in ('chi2, 'f_classif', 'mutual_info_classif'), "
-                             "but is: %s" % score_func)
+            raise ValueError(f"score_func of {self.__class__.__name__} must be in {SCORE_FUNC_CHOICES}, "
+                             "but is: {score_func}")
 
         super().__init__(random_state=random_state)
         self.add_fit_requirements([
@@ -60,33 +64,13 @@ class SelectPercentileClassification(autoPyTorchFeaturePreprocessingComponent):
                                                                           default_value=50,
                                                                           ),
         score_func: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="score_func",
-                                                                          value_range=("chi2",
-                                                                                       "f_classif",
-                                                                                       "mutual_info_classif"),
+                                                                          value_range=SCORE_FUNC_CHOICES,
                                                                           default_value="chi2",
                                                                           ),
     ) -> ConfigurationSpace:
-        value_range = list(score_func.value_range)
-        if dataset_properties is not None:
-            if (
-                dataset_properties.get("issigned") is True
-            ):
-                value_range = [value for value in value_range if value not in ("chi2", "mutual_info_classif")]
-            if dataset_properties.get("issparse") is True:
-                value_range = [value for value in value_range if value != "f_classif"]
-
-        if value_range != list(score_func.value_range):
-            warnings.warn(f"Given choices for `score_func` are not compatible with the dataset. "
-                          f"Updating choices to {value_range}")
-
-        if len(value_range) == 0:
-            raise TypeError("`SelectPercentileClassification` is not compatible with the"
-                            " current dataset as it is both `signed` and `sparse`")
-        default_value = score_func.default_value if score_func.default_value in value_range else value_range[-1]
-        score_func = HyperparameterSearchSpace(hyperparameter="score_func",
-                                               value_range=value_range,
-                                               default_value=default_value,
-                                               )
+        score_func = filter_score_func_choices(class_name="SelectPercentileClassification",
+                                               dataset_properties=dataset_properties,
+                                               score_func=score_func)
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, score_func, CategoricalHyperparameter)
