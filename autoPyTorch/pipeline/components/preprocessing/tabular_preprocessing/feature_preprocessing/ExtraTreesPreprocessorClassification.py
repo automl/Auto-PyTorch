@@ -24,7 +24,7 @@ CRITERION_CHOICES = ("gini", "entropy")
 
 class ExtraTreesPreprocessorClassification(autoPyTorchFeaturePreprocessingComponent):
     """
-    Selects features based on importance weights calculated using extra trees
+    Select features based on importance weights calculated using extra trees
     """
     def __init__(self, bootstrap: bool = True, n_estimators: int = 10,
                  criterion: str = "gini", max_features: float = 0.5,
