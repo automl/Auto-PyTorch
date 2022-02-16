@@ -11,7 +11,6 @@ from torch import nn
 from abc import abstractmethod
 from typing import Any, Dict, Iterable, Optional, Tuple, List
 
-
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.pipeline.components.base_component import (
@@ -61,12 +60,13 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         return [
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                               dataset_property=False),
+                           dataset_property=False),
             FitRequirement('y_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                               dataset_property=False),
-            FitRequirement('uni_variant', (bool, ), user_defined=False, dataset_property=True),
+                           dataset_property=False),
+            FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('static_features_shape', (int, ), user_defined=True, dataset_property=True),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -76,27 +76,26 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         input_shape = X["dataset_properties"]['input_shape']
         output_shape = X["dataset_properties"]['output_shape']
+        static_features_shape = X["dataset_properties"]["static_features_shape"]
 
-        if X["dataset_properties"]["uni_variant"]:
+        if not X["dataset_properties"]["uni_variant"]:
             if not X["dataset_properties"]["is_small_preprocess"]:
                 # get input shape by transforming first two elements of the training set
                 transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
                 X_train = X_train[:1, np.newaxis, ...]
-                y_train = y_train[:1, np.newaxis, ...]
                 X_train = transforms(X_train)
-                input_shape = np.concatenate(X_train, y_train).shape[1:]
-        else:
-            y_train = y_train[:1, np.newaxis, ...]
-            input_shape = y_train.shape[1:]
+                input_shape = np.concatenate(X_train).shape[1:]
 
         if 'network_embedding' in X.keys():
             input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
-            input_shape = (*input_shape[:-1], input_shape[-1] + output_shape[-1])
-        self.input_shape = input_shape
 
-        self.encoder = self.build_encoder(
+        self.encoder, in_features = self.build_encoder(
+            targets_shape=output_shape,
             input_shape=input_shape,
+            static_feature_shape=static_features_shape
         )
+
+        self.input_shape = (X['window_size'], in_features)
 
         return self
 
@@ -111,12 +110,17 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         return X
 
     @abstractmethod
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+    def build_encoder(self,
+                      targets_shape: Tuple[int, ...],
+                      input_shape: Tuple[int, ...] = (0,),
+                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
         """
         Builds the backbone module and returns it
 
         Args:
-            input_shape (Tuple[int, ...]): shape of the input to the backbone
+            targets_shape (Tuple[int, ...]): shape of target
+            input_shape (Tuple[int, ...]): input feature shape
+            static_feature_shape (int): static feature shape.
 
         Returns:
             nn.Module: backbone module
@@ -142,4 +146,3 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                               'lagged_input': False,
                               }
         return encoder_properties
-

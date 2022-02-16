@@ -90,15 +90,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             self.n_prediction_heads = output_shape[0]
 
         encoder_properties = X['encoder_properties']
-        fixed_input_seq_length = encoder_properties.get("fixed_input_seq_length", False)
         has_hidden_states = encoder_properties.get("has_hidden_states", False)
-
-        if fixed_input_seq_length:
-            input_shape = (X["window_size"], input_shape[-1])
-
-        if encoder_properties.get('lagged_input', False):
-            lagged_value = X['network_encoder'].lagged_value
-            input_shape = (X["window_size"], input_shape[-1] * len(lagged_value))
 
         self.decoder, self.n_decoder_output_features = self.build_decoder(
             input_shape=get_output_shape(X['network_encoder'], input_shape=input_shape,

@@ -118,7 +118,10 @@ class TCNEncoder(BaseForecastingEncoder):
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
 
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+    def build_encoder(self,
+                      targets_shape: Tuple[int, ...],
+                      input_shape: Tuple[int, ...] = (0,),
+                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
         num_channels = [self.config["num_filters_1"]]
         kernel_size = [self.config["kernel_size_1"]]
         dropout = [self.config[f"dropout_1"] if self.config["use_dropout"] else 0.0]
@@ -126,13 +129,14 @@ class TCNEncoder(BaseForecastingEncoder):
             num_channels.append(self.config[f"num_filters_{i}"])
             kernel_size.append(self.config[f"kernel_size_{i}"])
             dropout.append(self.config[f"dropout_{i}"] if self.config["use_dropout"] else 0.0)
-        encoder = _TemporalConvNet(input_shape[-1],
+        in_features = input_shape[-1] + static_feature_shape + targets_shape[-1]
+        encoder = _TemporalConvNet(in_features,
                                    num_channels,
                                    kernel_size=kernel_size,
                                    dropout=dropout
                                    )
         self._receptive_field = encoder.receptive_field
-        return encoder
+        return encoder, in_features
 
     @staticmethod
     def allowed_decoders():

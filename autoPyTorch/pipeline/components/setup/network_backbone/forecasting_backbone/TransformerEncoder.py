@@ -32,11 +32,12 @@ class _TransformerEncoder(EncoderNetwork):
                  use_layer_norm_output: bool,
                  dropout_pe: float = 0.0,
                  layer_norm_eps_output: Optional[float] = None,
-                 lagged_value: Optional[Union[List, np.ndarray]] = None):
+                 lagged_value: Optional[List[int]] = None):
         super().__init__()
-        self.lagged_value = lagged_value
-        in_features = in_features if self.lagged_value is None else len(self.lagged_value) * in_features
-
+        if lagged_value is None:
+            self.lagged_value = [0]
+        else:
+            self.lagged_value = lagged_value
         self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
         if use_positional_encoder:
             self.input_layer.append(PositionalEncoding(d_model, dropout_pe))
@@ -74,11 +75,15 @@ class TransformerEncoder(BaseForecastingEncoder):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+    def build_encoder(self, targets_shape: Tuple[int, ...],
+                      input_shape: Tuple[int, ...] = (0,),
+                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
+        in_features = len(self.lagged_value) * targets_shape[-1] + input_shape[-1] + static_feature_shape
+
         d_model = 2 ** self.config['d_model_log']
         transformer_encoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='encoder')
 
-        encoder = _TransformerEncoder(in_features=input_shape[-1],
+        encoder = _TransformerEncoder(in_features=in_features,
                                       d_model=d_model,
                                       num_layers=self.config['num_layers'],
                                       transformer_encoder_layers=transformer_encoder_layers,
@@ -87,7 +92,7 @@ class TransformerEncoder(BaseForecastingEncoder):
                                       dropout_pe=self.config.get('dropout_positional_encoder', 0.0),
                                       layer_norm_eps_output=self.config.get('layer_norm_eps_output', None),
                                       lagged_value=self.lagged_value)
-        return encoder
+        return encoder, in_features
 
     @staticmethod
     def allowed_decoders():

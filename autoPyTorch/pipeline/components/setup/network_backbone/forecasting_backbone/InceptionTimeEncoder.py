@@ -137,11 +137,14 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
 
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        encoder = _InceptionTime(in_features=input_shape[-1],
+    def build_encoder(self, targets_shape: Tuple[int, ...],
+                      input_shape: Tuple[int, ...] = (0,),
+                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
+        in_features = input_shape[-1] + targets_shape[-1] + static_feature_shape
+        encoder = _InceptionTime(in_features=in_features,
                                   config=self.config)
         self._receptive_field = encoder.receptive_field
-        return encoder
+        return encoder, in_features
 
     @staticmethod
     def allowed_decoders():

@@ -454,7 +454,16 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
         # TODO find a way to edit input shape!
-        self.input_shape: Tuple[int] = (self.seq_length_min, self.num_features)
+        self.input_shape: Tuple[int, int] = (self.seq_length_min, self.num_features)
+        if static_features is None:
+            self.static_features_shape: int = 0
+        else:
+            self.static_features_shape: int = static_features.size
+
+        if known_future_features is None:
+            self.future_feature_shape: Tuple[int, int] = (self.seq_length_min, 0)
+        else:
+            self.input_shape_future: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1][0])
@@ -469,6 +478,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
                 num_target = Y.shape[-1] if Y.ndim > 1 else 1
             self.output_shape = [self.n_prediction_steps, num_target]
+        else:
+            raise ValueError('Forecasting dataset must contain target values!')
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True

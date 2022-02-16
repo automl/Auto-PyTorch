@@ -25,15 +25,17 @@ class _RNN(EncoderNetwork):
     def __init__(self,
                  in_features: int,
                  config: Dict[str, Any],
-                 lagged_value: Optional[Union[List, np.ndarray]] = None):
+                 lagged_value: Optional[List[int]] = None):
         super().__init__()
+        if lagged_value is None:
+            self.lagged_value = [0]
+        else:
+            self.lagged_value = lagged_value
         self.config = config
         if config['cell_type'] == 'lstm':
             cell_type = nn.LSTM
         else:
             cell_type = nn.GRU
-        self.lagged_value = lagged_value
-        in_features = in_features if self.lagged_value is None else len(self.lagged_value) * in_features
         self.lstm = cell_type(input_size=in_features,
                               hidden_size=config["hidden_size"],
                               num_layers=config["num_layers"],
@@ -77,11 +79,15 @@ class RNNEncoder(BaseForecastingEncoder):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        encoder = _RNN(in_features=input_shape[-1],
+    def build_encoder(self, targets_shape: Tuple[int, ...],
+                      input_shape: Tuple[int, ...] = (0,),
+                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
+        in_features = len(self.lagged_value) * targets_shape[-1] + input_shape[-1] + static_feature_shape
+        encoder = _RNN(in_features=in_features,
                        config=self.config,
-                       lagged_value=self.lagged_value)
-        return encoder
+                       lagged_value=self.lagged_value,
+                       )
+        return encoder, in_features
 
     @staticmethod
     def allowed_decoders():
