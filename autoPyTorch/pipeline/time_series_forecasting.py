@@ -6,6 +6,7 @@ from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenInClause
 
 import numpy as np
+import pandas as pd
 
 from sklearn.base import RegressorMixin
 from sklearn.pipeline import Pipeline
@@ -21,6 +22,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.Tim
     TimeSeriesTransformer
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
@@ -76,9 +78,9 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                  init_params: Optional[Dict[str, Any]] = None,
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  ):
-        super().__init__(
-            config, steps, dataset_properties, include, exclude,
-            random_state, init_params, search_space_updates)
+        BasePipeline.__init__(self,
+                              config, steps, dataset_properties, include, exclude,
+                              random_state, init_params, search_space_updates)
 
         self.target_scaler = None
 
@@ -280,7 +282,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
             forbidden_backcast_false = ForbiddenEqualsClause(data_loader_backcast, False)
 
-
             # Ensure that NBEATS encoder only works with NBEATS decoder
             if 'NBEATSEncoder' in network_encoder_hp.choices:
                 forbidden_NBEATS.append(ForbiddenAndConjunction(
@@ -337,7 +338,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             cs.get_hyperparameter_names()
         """
 
-
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs
@@ -358,13 +358,17 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         default_dataset_properties = {'target_type': 'time_series_prediction'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
+
+        if not default_dataset_properties.get("uni_variant", False):
+            steps.extend([("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+                          ("imputer", SimpleImputer(random_state=self.random_state)),
+                          ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+                          ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
+                          ])
+
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
             ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
-            ("imputer", SimpleImputer(random_state=self.random_state)),
-            # ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
-            ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
-            ("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
             ("target_scaler", TargetScalerChoice(default_dataset_properties,
                                                  random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
@@ -426,8 +430,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         return "time_series_forecasting"
 
-
-    def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
+    def predict(self, X: Union[Dict[str, np.ndarray], pd.DataFrame], batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
         Args:

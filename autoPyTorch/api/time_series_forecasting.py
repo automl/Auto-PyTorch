@@ -336,16 +336,22 @@ class TimeSeriesForecastingTask(BaseTask):
 
     def predict(
             self,
-            X_test: List[np.ndarray],
+            X_test: Union[Optional[Union[List[np.ndarray]], pd.DataFrame], Dict]=None,
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
-            y_train: Optional[List[np.ndarray]] = None,
+            past_targets: Optional[List[np.ndarray]] = None,
     ) -> np.ndarray:
         """
                     target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
                 (used for multi-variable prediction), indicates which value needs to be predicted
         """
+        if past_targets is None:
+            if not isinstance(X_test, Dict) or "past_targets" not in X_test:
+                raise ValueError("Past Targets must be given")
+        else:
+            X_test = {"features": X_test,
+                      "past_targets": past_targets}
         flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
         if self.dataset.num_target == 1:
-            return flattened_res.reshape([len(X_test), self.dataset.n_prediction_steps])
-        return flattened_res.reshape([len(X_test), self.dataset.n_prediction_steps, self.dataset.num_target])
+            return flattened_res.reshape([-1, self.dataset.n_prediction_steps])
+        return flattened_res.reshape([-1, self.dataset.n_prediction_steps, self.dataset.num_target])

@@ -59,27 +59,39 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:
         return [
-                FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-                FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
+            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
                                dataset_property=False),
-                FitRequirement('time_series_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),
-                FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            ]
+            FitRequirement('y_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+                               dataset_property=False),
+            FitRequirement('uni_variant', (bool, ), user_defined=False, dataset_property=True),
+            FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
+        ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.check_requirements(X, y)
         X_train = X['X_train']
+        y_train = X['y_train']
 
         input_shape = X["dataset_properties"]['input_shape']
+        output_shape = X["dataset_properties"]['output_shape']
 
-        if not X["dataset_properties"]["is_small_preprocess"]:
-            # get input shape by transforming first two elements of the training set
-            transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
-            X_train = X_train[:1, np.newaxis, ...]
-            input_shape = transforms(X_train).shape[1:]
+        if X["dataset_properties"]["uni_variant"]:
+            if not X["dataset_properties"]["is_small_preprocess"]:
+                # get input shape by transforming first two elements of the training set
+                transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
+                X_train = X_train[:1, np.newaxis, ...]
+                y_train = y_train[:1, np.newaxis, ...]
+                X_train = transforms(X_train)
+                input_shape = np.concatenate(X_train, y_train).shape[1:]
+        else:
+            y_train = y_train[:1, np.newaxis, ...]
+            input_shape = y_train.shape[1:]
 
         if 'network_embedding' in X.keys():
             input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
+            input_shape = (*input_shape[:-1], input_shape[-1] + output_shape[-1])
         self.input_shape = input_shape
 
         self.encoder = self.build_encoder(

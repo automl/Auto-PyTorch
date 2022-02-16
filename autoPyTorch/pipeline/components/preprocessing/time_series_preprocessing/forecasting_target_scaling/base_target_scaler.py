@@ -21,9 +21,6 @@ class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
         super().__init__()
         self.random_state = random_state
         self.preprocessor: Optional[Pipeline] = None
-        self.add_fit_requirements([
-            FitRequirement('target_columns', (Tuple,), user_defined=True, dataset_property=True),
-        ])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> "BaseBatchScaler":
         """
@@ -36,7 +33,6 @@ class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
             "TabularColumnTransformer": an instance of self
         """
         self.check_requirements(X, y)
-        self.target_columns = X['dataset_properties']['target_columns']
         self.scaler = TargetScaler(mode=self.scaler_mode)
         return self
 

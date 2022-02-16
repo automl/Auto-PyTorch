@@ -67,25 +67,17 @@ class TargetScalerChoice(ScalerChoice):
             raise ValueError("no scalers found, please add a scaler")
 
         if default is None:
-            defaults = ['StandardScaler', 'MinMaxScaler', 'MaxAbsScaler', 'NoScaler']
+            defaults = ['TargetStandardScaler', 'TargetMinMaxScaler', 'TargetMaxAbsScaler', 'TargetNoScaler']
             for default_ in defaults:
                 if default_ in available_scalers:
                     default = default_
                     break
 
         # add only no scaler to choice hyperparameters in case the dataset is only categorical
-        if len(dataset_properties['numerical_features']) == 0:
-            default = 'NoScaler'
-            if include is not None and default not in include:
-                raise ValueError("Provided {} in include, however, "
-                                 "the dataset is incompatible with it".format(include))
-            preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         ['NoScaler'],
-                                                         default_value=default)
-        else:
-            preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         list(available_scalers.keys()),
-                                                         default_value=default)
+
+        preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                     list(available_scalers.keys()),
+                                                     default_value=default)
         cs.add_hyperparameter(preprocessor)
 
         # add only child hyperparameters of early_preprocessor choices
@@ -111,5 +103,3 @@ class TargetScalerChoice(ScalerChoice):
 
         """
         super()._check_dataset_properties(dataset_properties)
-        assert "target_columns" in dataset_properties, \
-            "Dataset properties must contain information about the target_columns"

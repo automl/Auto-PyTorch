@@ -47,14 +47,17 @@ TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
 
 class TimeSeriesSequence(Dataset):
     def __init__(self,
-                 X: Union[np.ndarray, pd.DataFrame],
+                 X: Optional[Union[np.ndarray, pd.DataFrame]],
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
+                 statistic_features: Optional[np.ndarray] = None,
                  n_prediction_steps: int = 1,
                  sp: int = 1,
+                 known_future_features: Optional[List[Union[str, int]]] = None,
+                 only_has_past_targets: bool = False,
                  ):
         """
         A dataset representing a time series sequence.
@@ -75,13 +78,20 @@ class TimeSeriesSequence(Dataset):
         self.X_test = X_test
         self.Y_tet = Y_test
 
+        self.statistic_features = statistic_features
+
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
         self.train_transform = train_transforms
         self.val_transform = val_transforms
         self.sp = sp
-
-        self.mase_coefficient = compute_mase_coefficient(self.X, sp=self.sp, n_prediction_steps=n_prediction_steps)
+        if only_has_past_targets:
+            self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp, n_prediction_steps=n_prediction_steps)
+        else:
+            self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp,
+                                                             n_prediction_steps=n_prediction_steps)
+        self.only_has_past_targets = only_has_past_targets
+        self.known_future_features = known_future_features
 
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
@@ -98,34 +108,44 @@ class TimeSeriesSequence(Dataset):
         """
         if index < 0:
             index = self.__len__() + index
+        if self.X is not None:
+            if hasattr(self.X, 'loc'):
+                past_features = self.X.iloc[:index + 1]
+            else:
+                past_features = self.X[:index + 1]
 
-        if hasattr(self.X, 'loc'):
-            X = self.X.iloc[:index + 1]
+            if self.train_transform is not None and train:
+                past_features = self.train_transform(past_features)
+            elif self.val_transform is not None and not train:
+                past_features = self.val_transform(past_features)
+
+            if self.known_future_features is not None:
+                future_features = self.X[index + 1: index + self.n_prediction_steps + 1, self.known_future_features]
+            else:
+                future_features = None
         else:
-            X = self.X[:index + 1]
-
-        if self.train_transform is not None and train:
-            X = self.train_transform(X)
-        elif self.val_transform is not None and not train:
-            X = self.val_transform(X)
+            past_features = None
+            future_features = None
 
         # In case of prediction, the targets are not provided
-        Y = self.Y
-        if Y is not None:
-            # Y = Y[:index + self.n_prediction_steps]
-            # Y = Y[index + 1: index + self.n_prediction_steps + 1]
-            Y_future = Y[index + 1: index + self.n_prediction_steps + 1]
-
-            Y_future = torch.from_numpy(Y_future)
-            # Y_Past does not need to be fed to the network, we keep it as np array
+        targets = self.Y
+        if self.only_has_past_targets:
+            targets_future = None
         else:
-            Y_future = None
+            targets_future = targets[index + 1: index + self.n_prediction_steps + 1]
+            targets_future = torch.from_numpy(targets_future)
 
-        return {"past_target": torch.from_numpy(X),
-                "mase_coefficient": self.mase_coefficient}, Y_future
+        past_target = targets[:index + 1]
+        past_target = torch.from_numpy(past_target)
+
+        return {"past_target": past_target,
+                "past_features": past_features,
+                "future_features": future_features,
+                "statistic_features": self.statistic_features,
+                "mase_coefficient": self.mase_coefficient}, targets_future
 
     def __len__(self) -> int:
-        return self.X.shape[0]
+        return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
                          train: bool = True,
@@ -152,19 +172,29 @@ class TimeSeriesSequence(Dataset):
         return self
 
     def get_val_seq_set(self, index: int) -> "TimeSeriesSequence":
+        if self.only_has_past_targets:
+            raise ValueError("get_val_seq_set is not supported for the sequence that only has past targets!")
         if index < 0:
             index = self.__len__() + index
         if index == self.__len__() - 1:
             return copy.copy(self)
         else:
-            return TimeSeriesSequence(self.X[:index + 1],
+            if self.X is not None:
+                X = self.X[:index + 1 + self.n_prediction_steps]
+            else:
+                X = None
+            return TimeSeriesSequence(X,
                                       self.Y[:index + 1 + self.n_prediction_steps],
                                       train_transforms=self.train_transform,
                                       val_transforms=self.val_transform,
                                       n_prediction_steps=self.n_prediction_steps,
+                                      statistic_features=self.statistic_features,
+                                      known_future_features=self.known_future_features,
                                       sp=self.sp)
 
     def get_test_target(self, test_idx: int):
+        if self.only_has_past_targets:
+            raise ValueError("get_test_target is not supported for the sequence that only has past targets!")
         if test_idx < 0:
             test_idx = self.__len__() + test_idx
         Y_future = self.Y[test_idx + 1: test_idx + self.n_prediction_steps + 1]
@@ -176,11 +206,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     cumulative_sizes: List[int]
 
     def __init__(self,
-                 X: Union[np.ndarray, List[List]],
+                 X: Optional[Union[np.ndarray, List[List]]],
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 target_variables: Optional[Union[Tuple[int], int]] = None,
+                 known_future_features: Optional[Union[Tuple[int], int]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  resampling_strategy: Optional[Union[
                      CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
@@ -195,6 +225,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  dataset_name: Optional[str] = None,
                  shift_input_data: bool = True,
                  normalize_y: bool = True,
+                 statistic_features: Optional[np.ndarray] = None,
                  ):
         """
         :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
@@ -211,6 +242,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if y values needs to be normalized with mean 0 and variance 1
         if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
         header's configspace can be built beforehand.
+        :param statistic_features: statistic features, invariant across different
         """
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
 
@@ -264,7 +296,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                              f"but receive {type(validator)}")
 
         if not self.validator._is_fitted:
-            self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test, )
+            self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
+                               n_prediction_steps=n_prediction_steps)
+
+        self._is_uni_variant = self.validator._is_uni_variant
 
         self.numerical_columns = self.validator.feature_validator.numerical_columns
         self.categorical_columns = self.validator.feature_validator.categorical_columns
@@ -275,31 +310,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.categories = self.validator.feature_validator.categories
 
         self.shift_input_data = shift_input_data
-        self.target_variables = target_variables
-        if target_variables is None:
-            if self.num_target != 1:
-                raise ValueError("target_variables must be specified if more the input has more than one feature value")
-            self.target_columns = (0,)  # to keep the output dimension unchanged
-        elif isinstance(target_variables, int):
-            self.target_columns = (target_variables,)
-        else:
-            self.target_columns = target_variables
 
-        X, sequence_lengths, Y = self.validator.transform(X, Y,
-                                                          shift_input_data=shift_input_data,
-                                                          n_prediction_steps=n_prediction_steps)
+        X, Y, sequence_lengths = self.validator.transform(X, Y)
         if X_test is not None:
-            X_test, self.sequence_lengths_tests, Y_test = self.validator.transform(X_test, Y_test,
-                                                                                   shift_input_data=shift_input_data,
-                                                                                   n_prediction_steps=n_prediction_steps
-                                                                                   )
+            X_test, Y_test, self.sequence_lengths_tests = self.validator.transform(X_test, Y_test)
         else:
             self.sequence_lengths_tests = None
 
         self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
 
-        minimal_seq_length = np.min(sequence_lengths)
+        minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
         if isinstance(resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy].get(
                 'num_splits', None)
@@ -362,10 +383,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                         (self.n_prediction_steps * n_repeat // int(self.freq_value) + 1) * self.freq_value)
                     )
             elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
-                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps ) - 1)
+                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps) - 1)
 
             else:
-                raise NotImplementedError("Unsupported resampling_strategy")
+                n_repeat = 1
 
             n_repeat = max(n_repeat, 1)
         if n_repeat is None:
@@ -384,14 +405,16 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.train_transform = train_transforms
         self.val_transform = val_transforms
 
-        self.num_sequences = len(X)
-        self.sequence_lengths_train = sequence_lengths
+        self.num_sequences = len(Y)
+        self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
 
         # initialize datasets
         sequences_kwargs = {"train_transforms": self.train_transform,
                             "val_transforms": self.val_transform,
                             "n_prediction_steps": n_prediction_steps,
-                            "sp": self.seasonality}
+                            "sp": self.seasonality,
+                            "known_future_features": known_future_features,
+                            "statistic_features": statistic_features}
 
         self.y_train_mean = [0] * len(self.sequence_lengths_train)
         self.y_train_std = [1] * len(self.sequence_lengths_train)
@@ -404,6 +427,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.normalize_y = normalize_y
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
+        self.known_future_features = known_future_features
+        self.statistic_features = statistic_features
 
         self.seq_length_min = int(np.min(self.sequence_lengths_train))
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
@@ -435,7 +460,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 # self.output_shape = len(np.unique(Y))
             else:
                 # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
-                num_target = X.shape[-1] if X.ndim > 1 else 1
+                num_target = Y.shape[-1] if Y.ndim > 1 else 1
             self.output_shape = [self.n_prediction_steps, num_target]
 
         # TODO: Look for a criteria to define small enough to preprocess
@@ -443,8 +468,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.task_type = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
 
-        self.numerical_features: List[int] = list(range(self.num_features))
-        self.categorical_features: List[int] = []
+        self.numerical_features: List[int] = self.numerical_columns
+        self.categorical_features: List[int] = self.categorical_columns
 
         if isinstance(resampling_strategy, CrossValTypes):
             self.cross_validators = CrossValFuncs.get_cross_validators(resampling_strategy)
@@ -551,52 +576,43 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_train = 0
         idx_start_test = 0
 
-        for seq_idx, seq_length_train in enumerate(self.sequence_lengths_train):
+        seq_length_train_flat = self.sequence_lengths_train + self.n_prediction_steps
+
+        for seq_idx, seq_length_train in enumerate(seq_length_train_flat):
             idx_end_train = idx_start_train + seq_length_train
 
             X_seq = X[idx_start_train: idx_end_train]
-            if self.shift_input_data:
-                Y_seq = Y[idx_start_train + seq_idx * self.n_prediction_steps:
-                          idx_end_train + (1 + seq_idx) * self.n_prediction_steps]
-            else:
-                Y_seq = Y[idx_start_train: idx_end_train]
+            Y_seq = Y[idx_start_train: idx_end_train]
 
             if normalize_y:
                 Y_seq_mean = np.mean(Y_seq)
                 Y_seq_std = np.std(Y_seq)
                 Y_seq = (Y_seq - Y_seq_mean) / Y_seq_std
 
-            if self.shift_input_data:
-                Y[idx_start_train + seq_idx * self.n_prediction_steps:
-                  idx_end_train + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
-            else:
-                Y[idx_start_train: idx_end_train] = Y_seq
+            Y[idx_start_train: idx_end_train] = Y_seq
 
             if X_test is not None and Y_test is not None:
                 seq_length_test = self.sequence_lengths_tests[seq_idx]
                 idx_end_test = idx_start_test + seq_length_test
 
                 X_test_seq = X_test[idx_start_test: idx_end_test]
-                if self.shift_input_data:
-                    Y_test_seq = Y[idx_start_test + seq_idx * self.n_prediction_steps:
-                                   idx_end_test + (1 + seq_idx) * self.n_prediction_steps]
-                else:
-                    Y_test_seq = Y_test[idx_start_test: idx_end_test]
+                Y_test_seq = Y_test[idx_start_test: idx_end_test]
 
                 if normalize_y:
                     Y_test_seq_mean = np.mean(Y_test_seq)
                     Y_test_seq_std = np.std(Y_test_seq)
                     Y_seq = (Y_seq - Y_test_seq_mean) / Y_test_seq_std
 
-                if self.shift_input_data:
-                    Y_test[idx_start_test + seq_idx * self.n_prediction_steps:
-                           idx_end_test + (1 + seq_idx) * self.n_prediction_steps] = Y_seq
-                else:
-                    Y_test[idx_start_test: idx_end_test] = Y_seq
+
+                Y_test[idx_start_test: idx_end_test] = Y_seq
 
             else:
                 X_test_seq = None
                 Y_test_seq = None
+
+            if not X_seq:
+                X_seq = None
+                X_test_seq = None
 
             sequence = TimeSeriesSequence(X=X_seq,
                                           Y=Y_seq,
@@ -615,7 +631,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             # Y_test_seq_all.append(Y_test_seq)
         # train_tensors = (X_seq_all, Y_seq_all)
         train_tensors = (X, Y)
-        if X_test is None or Y_test is None:
+        if Y_test is None:
             test_tensors = None
         else:
             # test_tensors = (X_test_seq_all, Y_test_seq_all)
@@ -625,7 +641,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def replace_data(self, X_train: BaseDatasetInputType, X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
-        self.update_tensros_seqs(X_train, self.sequence_lengths_train, is_train=True)
+        self.update_tensros_seqs(X_train, self.sequence_lengths_train + self.n_prediction_steps, is_train=True)
         if X_test is not None:
             self.update_tensros_seqs(X_test, self.sequence_lengths_tests, is_train=False)
         return self
@@ -723,7 +739,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
             'categories': self.categories,
-            'target_columns': self.target_columns
         })
         return info
 
@@ -734,7 +749,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train,
                                    'seq_length_max': self.seq_length_max,
-                                   'lagged_value': self.lagged_value})
+                                   'lagged_value': self.lagged_value,
+                                   'uni_variant': self._is_uni_variant})
         return dataset_properties
 
     def create_cross_val_splits(
