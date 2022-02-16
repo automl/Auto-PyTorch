@@ -1,6 +1,6 @@
 import warnings
 from math import ceil, floor
-from typing import Dict, List, Literal, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import HyperparameterSearchSpace, HyperparameterValueType
