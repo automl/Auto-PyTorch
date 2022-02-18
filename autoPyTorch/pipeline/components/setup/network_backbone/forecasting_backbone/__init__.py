@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Union, Tuple
 from sklearn.pipeline import Pipeline
 
 import ConfigSpace.hyperparameters as CSH
@@ -16,24 +16,21 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import (
     BaseForecastingEncoder,
 )
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
+    import FlatForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder import \
+    SeqForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
     decoders, decoder_addons, add_decoder
-
-directory = os.path.split(__file__)[0]
-_encoders = find_components(__package__,
-                            directory,
-                            BaseForecastingEncoder)
-_addons = ThirdPartyComponents(BaseForecastingEncoder)
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
-def add_encoder(encoder: BaseForecastingEncoder) -> None:
-    _addons.add_component(encoder)
-
-
-class ForecastingBackboneChoice(autoPyTorchChoice):
+class ForecastingNetworkChoice(autoPyTorchChoice):
     """
     A network is composed of an encoder and decoder. In most of the case, the choice of decoder is heavily dependent on
     the choice of encoder. Thus here "choice" indicates the choice of encoder, then decoder will be determined by
@@ -43,7 +40,8 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
                  **kwargs,
                  ):
         super().__init__(**kwargs)
-        self.decoder_choice = None
+        self.include_components = None
+        self.exclude_components = None
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
@@ -56,20 +54,9 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         components = OrderedDict()
-        components.update(_encoders)
-        components.update(_addons.components)
+        components.update({"flat_encoder": FlatForecastingEncoderChoice,
+                           "seq_encoder": SeqForecastingEncoderChoice})
         return components
-
-    def get_decoder_components(self) -> Dict[str, autoPyTorchComponent]:
-        components = OrderedDict()
-        components.update(decoders)
-        components.update(decoder_addons.components)
-        return components
-
-    @property
-    def additional_components(self):
-        # This function is deigned to add additional components rather than the components in __choice__
-        return [self.get_decoder_components]
 
     def get_available_components(
         self,
@@ -107,10 +94,34 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
             available_comp = components
 
         if include is not None:
+            include_top = set()
+            self.include_components = {}
             for incl in include:
                 if incl not in available_comp:
-                    raise ValueError("Trying to include unknown component: "
-                                     "%s" % incl)
+                    for comp in available_comp.keys():
+                        self.include_components[comp] = []
+                        if incl.startswith(comp):
+                            incl_sub = ":".join(incl.split(":")[1:])
+                            if comp in self.include_components:
+                                self.include_components[comp].append(incl_sub)
+                            else:
+                                self.include_components[comp] = [incl_sub]
+                            include_top.add(comp)
+                else:
+                    include_top.add(incl)
+            if not include_top:
+                raise ValueError(f"Trying to include unknown component: {include}")
+            include = list(include_top)
+        elif exclude is not None:
+            self.exclude_components = {}
+            for excl in exclude:
+                for comp in available_comp.keys():
+                    if excl.startswith(comp):
+                        excl_sub = ":".join(excl.split(":")[1:])
+                        if comp in self.exclude_components:
+                            self.exclude_components[comp].append(excl_sub)
+                        else:
+                            self.exclude_components[comp] = [excl_sub]
 
         components_dict = OrderedDict()
         for name in available_comp:
@@ -122,7 +133,7 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
             entry = available_comp[name]
 
             # Exclude itself to avoid infinite loop
-            if entry == NetworkBackboneChoice or hasattr(entry, 'get_components'):
+            if entry == ForecastingNetworkChoice:
                 continue
 
             task_type = str(dataset_properties['task_type'])
@@ -144,6 +155,7 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
 
         return components_dict
 
+
     def get_hyperparameter_search_space(
         self,
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
@@ -159,30 +171,26 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
             exclude: Optional[Dict[str, Any]]: which components to skip
+            network_type: type of the network, it determines how to handle the sequential data: flat networks
+            (FFNN and NBEATS) simply flat the input to a 2D input, whereas seq network receives sequential 3D inputs:
+            thus, seq networks could be stacked to form a larger network that is composed of different parts.
 
         Returns:
             ConfigurationSpace: the configuration space of the hyper-parameters of the
                  chosen component
         """
-        cs = ConfigurationSpace()
-
         if dataset_properties is None:
             dataset_properties = {}
+
+        cs = ConfigurationSpace()
 
         # Compile a list of legal preprocessors for this problem
         available_encoders = self.get_available_components(
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        available_decoders = self.get_available_components(
-            dataset_properties=dataset_properties,
-            include=None, exclude=None,
-            components=self.get_decoder_components())
-
         if len(available_encoders) == 0:
             raise ValueError("No Encoder found")
-        if len(available_decoders) == 0:
-            raise ValueError("No Decoder found")
 
         if default is None:
             defaults = self._defaults_network
@@ -209,157 +217,43 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
             )
         cs.add_hyperparameter(hp_encoder)
 
-        decoder2encoder = {key: [] for key in available_decoders.keys()}
-        encoder2decoder = {}
-        for encoder_name in hp_encoder.choices:
-            updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
-                                                                                     **updates)
-            parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
+        for name in hp_encoder.choices:
+            updates = self._get_search_space_updates(prefix=name)
+            include_encoder = None
+            exclude_encoder = None
+            if include is not None:
+                if name in self.include_components:
+                    include_encoder = self.include_components[name]
+            if exclude is not None:
+                if name in self.exclude_components:
+                    exclude_encoder = self.exclude_components[name]
+            import pdb
+            pdb.set_trace()
+
+            config_space = available_encoders[name].get_hyperparameter_search_space(
+                dataset_properties=dataset_properties,  # type: ignore
+                include=include_encoder,
+                exclude=exclude_encoder,
+                **updates)
+            parent_hyperparameter = {'parent': hp_encoder, 'value': name}
             cs.add_configuration_space(
-                encoder_name,
+                name,
                 config_space,
                 parent_hyperparameter=parent_hyperparameter
             )
 
-            allowed_decoders = available_encoders[encoder_name].allowed_decoders()
-            if len(allowed_decoders) > 1:
-                if 'decoder_type' not in config_space:
-                    raise ValueError('When a specific encoder has more than one allowed decoder, its ConfigSpace'
-                                     'must contain the hyperparameter "decoder_type" ! Please check your encoder '
-                                     'setting!')
-                hp_decoder_choice = config_space.get_hyperparameter('decoder_type').choices
-                if not set(hp_decoder_choice).issubset(allowed_decoders):
-                    raise ValueError('The encoder hyperparameter decoder_type must be a subset of the allowed_decoders')
-                allowed_decoders = hp_decoder_choice
-            for decoder_name in allowed_decoders:
-                decoder2encoder[decoder_name].append(encoder_name)
-            encoder2decoder[encoder_name] = allowed_decoders
-
-        for decoder_name in available_decoders.keys():
-            if not decoder2encoder[decoder_name]:
-                continue
-            updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
-                                                                                            **updates)
-            compatible_encoders = decoder2encoder[decoder_name]
-            encoders_with_multi_decoder = []
-            encoder_with_uni_decoder = []
-            # this could happen if its parent encoder is not part of
-            inactive_decoder = []
-            for encoder in compatible_encoders:
-                if len(encoder2decoder[encoder]) > 1:
-                    encoders_with_multi_decoder.append(encoder)
-                else:
-                    encoder_with_uni_decoder.append(encoder)
-
-            cs.add_configuration_space(
-                decoder_name,
-                config_space,
-                #parent_hyperparameter=parent_hyperparameter
-            )
-            hps = cs.get_hyperparameters() # type: List[CSH.Hyperparameter]
-            conditions_to_add = []
-            for hp in hps:
-                # TODO consider if this will raise any unexpected behavior
-                if hp.name.startswith(decoder_name):
-                    # From the implementation of ConfigSpace
-                    # Only add a condition if the parameter is a top-level
-                    # parameter of the new configuration space (this will be some
-                    #  kind of tree structure).
-                    if cs.get_parents_of(hp):
-                        continue
-                    or_cond = []
-                    for encoder_uni in encoder_with_uni_decoder:
-                        or_cond.append(EqualsCondition(hp,
-                                                       hp_encoder,
-                                                       encoder_uni))
-                    for encode_multi in encoders_with_multi_decoder:
-                        hp_decoder_type = cs.get_hyperparameter(f'{encode_multi}:decoder_type')
-                        or_cond.append(EqualsCondition(hp,
-                                                       hp_decoder_type,
-                                                       decoder_name))
-                    if len(or_cond) == 0:
-                        continue
-                    elif len(or_cond) > 1:
-                        conditions_to_add.append(OrConjunction(*or_cond))
-                    else:
-                        conditions_to_add.append(or_cond[0])
-            cs.add_conditions(conditions_to_add)
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
         return cs
 
-    def set_hyperparameters(self,
-                            configuration: Configuration,
-                            init_params: Optional[Dict[str, Any]] = None
-                            ) -> 'autoPyTorchChoice':
-        """
-        Applies a configuration to the given component.
-        This method translate a hierarchical configuration key,
-        to an actual parameter of the autoPyTorch component.
-
-        Args:
-            configuration (Configuration):
-                Which configuration to apply to the chosen component
-            init_params (Optional[Dict[str, any]]):
-                Optional arguments to initialize the chosen component
-
-        Returns:
-            self: returns an instance of self
-        """
-        new_params = {}
-
-        params = configuration.get_dictionary()
-        choice = params['__choice__']
-        del params['__choice__']
-
-        for param, value in params.items():
-            param = param.replace(choice + ':', '')
-            new_params[param] = value
-
-        if init_params is not None:
-            for param, value in init_params.items():
-                param = param.replace(choice + ':', '')
-                new_params[param] = value
-
-        decoder_components = self.get_decoder_components()
-
-        decoder_type = None
-
-        decoder_params = {}
-        decoder_params_names = []
-        for param, value in new_params.items():
-            if decoder_type is None:
-                for decoder_component in decoder_components.keys():
-                    if param.startswith(decoder_component):
-                        decoder_type = decoder_component
-                        decoder_params_names.append(param)
-                        param = param.replace(decoder_type + ':', '')
-                        decoder_params[param] = value
-            else:
-                if param.startswith(decoder_type):
-                    decoder_params_names.append(param)
-                    param = param.replace(decoder_type + ':', '')
-                    decoder_params[param] = value
-
-        for param_name in decoder_params_names:
-            del new_params[param_name]
-
-        new_params['random_state'] = self.random_state
-        decoder_params['random_state'] = self.random_state
-
-        self.new_params = new_params
-        self.choice = self.get_components()[choice](**new_params)
-        self.decoder_choice = decoder_components[decoder_type](**decoder_params)
-        self.pipe = Pipeline([('encoder', self.choice), ('decoder', self.decoder_choice)])
-        return self
+    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
+        self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
 
 
     @property
     def _defaults_network(self):
-        return ['MLPEncoder',
-                'RNNEncpder']
+        return ['flat_network',
+                'seq_network']
 
     def fit(self, X: Dict[str, Any], y: Any) -> autoPyTorchComponent:
         """Handy method to check if a component is fitted
@@ -372,15 +266,15 @@ class ForecastingBackboneChoice(autoPyTorchChoice):
         """
         # Allows to use check_is_fitted on the choice object
         self.fitted_ = True
-        assert self.pipe is not None, "Cannot call fit without initializing the component"
-        return self.pipe.fit(X, y)
+        assert self.choice is not None, "Cannot call fit without initializing the component"
+        return self.choice.fit(X, y)
         #self.choice.fit(X, y)
         #self.choice.transform(X)
         #return self.choice
 
     def transform(self, X: Dict) -> Dict:
-        assert self.pipe is not None, "Cannot call transform before the object is initialized"
-        return self.pipe.transform(X)
+        assert self.choice is not None, "Cannot call transform before the object is initialized"
+        return self.choice.transform(X)
 
     @property
     def _defaults_network(self):

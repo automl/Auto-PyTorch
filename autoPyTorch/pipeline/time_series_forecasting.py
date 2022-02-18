@@ -27,9 +27,7 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
-    ForecastingDecoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
@@ -374,8 +372,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),
-            ("network_backbone", ForecastingBackboneChoice(dataset_properties=default_dataset_properties,
-                                                           random_state=self.random_state)),
+            ("network_backbone", ForecastingNetworkChoice(dataset_properties=default_dataset_properties,
+                                                          random_state=self.random_state)),
             ("network_head", ForecastingHead(random_state=self.random_state)),
             ("network", ForecastingNetworkComponent(random_state=self.random_state)),
             ("network_init", NetworkInitializerChoice(default_dataset_properties,

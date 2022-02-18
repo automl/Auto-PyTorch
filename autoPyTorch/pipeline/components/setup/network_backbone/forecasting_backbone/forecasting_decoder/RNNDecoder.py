@@ -1,5 +1,4 @@
 from typing import Any, Dict, Optional, Tuple, List, Union
-import warnings
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -13,10 +12,10 @@ import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
-    BaseForecastingDecoder, RecurrentDecoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, RecurrentDecoderNetwork
 
-from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
+from autoPyTorch.utils.common import FitRequirement
 
 
 class RNN_Module(RecurrentDecoderNetwork):

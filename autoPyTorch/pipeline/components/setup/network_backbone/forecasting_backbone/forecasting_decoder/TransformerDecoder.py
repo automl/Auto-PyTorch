@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional, Tuple, List, Union
 
-import warnings
 import torch
 from torch import nn
 import numpy as np
@@ -15,10 +14,10 @@ from ConfigSpace.hyperparameters import (
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import add_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
-    BaseForecastingDecoder, RecurrentDecoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, RecurrentDecoderNetwork
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.transformer_util import \
     PositionalEncoding, build_transformer_layers

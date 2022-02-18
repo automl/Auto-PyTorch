@@ -8,10 +8,10 @@ from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
-    BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
 
 
 class ForecastingMLPDecoder(BaseForecastingDecoder):

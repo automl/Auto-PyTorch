@@ -19,8 +19,8 @@ from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder \
-    import EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import EncoderNetwork
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter

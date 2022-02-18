@@ -3,7 +3,7 @@ from typing import List
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter, \
     UniformFloatHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition, InCondition, EqualsCondition, AndConjunction
+from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition, AndConjunction
 
 from typing import Dict, Optional, Tuple, Union, Any
 
@@ -13,8 +13,8 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import \
-    BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
 
 
 # TODO we need to rewrite NBEATS part to make it neater!!!

@@ -11,11 +11,11 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
     BaseForecastingEncoder, EncoderNetwork
 )
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 # _Chomp1d, _TemporalBlock and _TemporalConvNet copied from

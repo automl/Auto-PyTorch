@@ -4,13 +4,13 @@ from torch import nn
 
 from ConfigSpace import ConfigurationSpace
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
+    BaseForecastingEncoder
 )
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.MLPEncoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.MLPEncoder import \
     TimeSeriesMLPrecpocessor
 
 

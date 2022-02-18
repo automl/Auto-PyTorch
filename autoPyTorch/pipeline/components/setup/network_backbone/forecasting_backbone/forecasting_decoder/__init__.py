@@ -11,9 +11,9 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
-    BaseForecastingDecoder,
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
+
 
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
