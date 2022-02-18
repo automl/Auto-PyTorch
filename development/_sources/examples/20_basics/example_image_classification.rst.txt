@@ -86,16 +86,17 @@ Image Classification
      ________________________________________ 
     Configuration(values={
       'image_augmenter:GaussianBlur:use_augmenter': False,
-      'image_augmenter:GaussianNoise:use_augmenter': False,
-      'image_augmenter:RandomAffine:rotate': 242,
-      'image_augmenter:RandomAffine:scale_offset': 0.33257410970986145,
-      'image_augmenter:RandomAffine:shear': 9,
-      'image_augmenter:RandomAffine:translate_percent_offset': 0.08322219618477589,
+      'image_augmenter:GaussianNoise:sigma_offset': 1.746304541085565,
+      'image_augmenter:GaussianNoise:use_augmenter': True,
+      'image_augmenter:RandomAffine:rotate': 60,
+      'image_augmenter:RandomAffine:scale_offset': 0.22600480469728468,
+      'image_augmenter:RandomAffine:shear': 4,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.14146389752228222,
       'image_augmenter:RandomAffine:use_augmenter': True,
-      'image_augmenter:RandomCutout:p': 0.5931559928447478,
+      'image_augmenter:RandomCutout:p': 0.2650210115648416,
       'image_augmenter:RandomCutout:use_augmenter': True,
       'image_augmenter:Resize:use_augmenter': True,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.04133682475059958,
+      'image_augmenter:ZeroPadAndCrop:percent': 0.27645895609259974,
       'normalizer:__choice__': 'NoNormalizer',
     })
 
@@ -176,7 +177,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.050 seconds)
+   **Total running time of the script:** ( 0 minutes  6.603 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:

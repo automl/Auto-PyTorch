@@ -30332,16 +30332,17 @@ Pipeline Random Config:
  ________________________________________
 Configuration(values={
   &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: False,
-  &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: False,
-  &#39;image_augmenter:RandomAffine:rotate&#39;: 242,
-  &#39;image_augmenter:RandomAffine:scale_offset&#39;: 0.33257410970986145,
-  &#39;image_augmenter:RandomAffine:shear&#39;: 9,
-  &#39;image_augmenter:RandomAffine:translate_percent_offset&#39;: 0.08322219618477589,
+  &#39;image_augmenter:GaussianNoise:sigma_offset&#39;: 1.746304541085565,
+  &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: True,
+  &#39;image_augmenter:RandomAffine:rotate&#39;: 60,
+  &#39;image_augmenter:RandomAffine:scale_offset&#39;: 0.22600480469728468,
+  &#39;image_augmenter:RandomAffine:shear&#39;: 4,
+  &#39;image_augmenter:RandomAffine:translate_percent_offset&#39;: 0.14146389752228222,
   &#39;image_augmenter:RandomAffine:use_augmenter&#39;: True,
-  &#39;image_augmenter:RandomCutout:p&#39;: 0.5931559928447478,
+  &#39;image_augmenter:RandomCutout:p&#39;: 0.2650210115648416,
   &#39;image_augmenter:RandomCutout:use_augmenter&#39;: True,
   &#39;image_augmenter:Resize:use_augmenter&#39;: True,
-  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.04133682475059958,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.27645895609259974,
   &#39;normalizer:__choice__&#39;: &#39;NoNormalizer&#39;,
 })
 
@@ -30415,7 +30416,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.050 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.603 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
