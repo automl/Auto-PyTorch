@@ -116,6 +116,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         stats: Optional[Stats] = None,
         run_obj: str = 'quality',
         par_factor: int = 1,
+        multi_objectives: List[str] = None,
         output_y_hat_optimization: bool = True,
         include: Optional[Dict[str, Any]] = None,
         exclude: Optional[Dict[str, Any]] = None,
