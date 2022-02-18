@@ -111,6 +111,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         cost_for_crash: float,
         abort_on_first_run_crash: bool,
         pynisher_context: str,
+        multi_objectives: List[str],
         pipeline_config: Optional[Dict[str, Any]] = None,
         initial_num_run: int = 1,
         stats: Optional[Stats] = None,
