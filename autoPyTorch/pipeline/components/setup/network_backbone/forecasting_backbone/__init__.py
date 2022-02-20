@@ -281,12 +281,19 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         return self
 
     def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
-        sub_module_name = hyperparameter_search_space_update.hyperparameter.split(':')
-        if sub_module_name[1] == '__choice__':
+        sub_module_name_component = hyperparameter_search_space_update.hyperparameter.split(':')
+        if len(sub_module_name_component) <= 2:
             super()._apply_search_space_update(hyperparameter_search_space_update)
         else:
+            sub_module_name = sub_module_name_component[0]
             # TODO create a new update and consider special HPs for seq encoder!!!
-            update_sub_module = hyperparameter_search_space_update.get_search_space(sub_module_name[0])
+            update_sub_module = HyperparameterSearchSpaceUpdate(
+                hyperparameter_search_space_update.node_name,
+                hyperparameter=hyperparameter_search_space_update.hyperparameter.replace(f'{sub_module_name}:', ''),
+                value_range=hyperparameter_search_space_update.value_range,
+                default_value=hyperparameter_search_space_update.default_value,
+                log=hyperparameter_search_space_update.log
+            )
             self.get_components()[sub_module_name]._apply_search_space_update(update_sub_module)
 
     @property
@@ -307,14 +314,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         self.fitted_ = True
         assert self.choice is not None, "Cannot call fit without initializing the component"
         return self.choice.fit(X, y)
-        # self.choice.fit(X, y)
-        # self.choice.transform(X)
-        # return self.choice
 
     def transform(self, X: Dict) -> Dict:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
         return self.choice.transform(X)
-
-    @property
-    def _defaults_network(self):
-        return ['MLPEncoder']
