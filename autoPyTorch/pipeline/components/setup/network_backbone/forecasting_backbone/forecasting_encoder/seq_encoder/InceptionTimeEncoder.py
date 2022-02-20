@@ -172,8 +172,8 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                          value_range=(1, 10),
-                                                                          default_value=5,
+                                                                          value_range=(1, 5),
+                                                                          default_value=3,
                                                                           ),
         num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                            value_range=(4, 64),

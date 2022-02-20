@@ -164,7 +164,7 @@ class TCNEncoder(BaseForecastingEncoder):
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                              value_range=(1, 6),
+                                                                              value_range=(1, 4),
                                                                               default_value=3),
             num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                                value_range=(4, 64),

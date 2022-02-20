@@ -45,7 +45,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
                  **kwargs,
                  ):
         super().__init__(**kwargs)
-        self.encoder_choice = None
+        self.pipeline = None
         self.decoder_choice = None
 
     @abstractmethod
@@ -355,9 +355,9 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         decoder_params['random_state'] = self.random_state
 
         self.new_params = new_params
-        self.encoder_choice = self.get_components()[choice](**new_params)
+        self.choice = self.get_components()[choice](**new_params)
         self.decoder_choice = decoder_components[decoder_type](**decoder_params)
-        self.choice = Pipeline([('encoder', self.encoder_choice), ('decoder', self.decoder_choice)])
+        self.pipeline = Pipeline([('encoder', self.choice), ('decoder', self.decoder_choice)])
         return self
 
     @property
@@ -375,15 +375,15 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         """
         # Allows to use check_is_fitted on the choice object
         self.fitted_ = True
-        assert self.choice is not None, "Cannot call fit without initializing the component"
-        return self.choice.fit(X, y)
+        assert self.pipeline is not None, "Cannot call fit without initializing the component"
+        return self.pipeline.fit(X, y)
         #self.choice.fit(X, y)
         #self.choice.transform(X)
         #return self.choice
 
     def transform(self, X: Dict) -> Dict:
-        assert self.choice is not None, "Cannot call transform before the object is initialized"
-        return self.choice.transform(X)
+        assert self.pipeline is not None, "Cannot call transform before the object is initialized"
+        return self.pipeline.transform(X)
 
     @property
     def _defaults_network(self):

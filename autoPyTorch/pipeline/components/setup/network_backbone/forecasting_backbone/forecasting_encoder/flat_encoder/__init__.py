@@ -52,3 +52,4 @@ class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             'handles_image': False,
             'handles_time_series': True,
         }
+

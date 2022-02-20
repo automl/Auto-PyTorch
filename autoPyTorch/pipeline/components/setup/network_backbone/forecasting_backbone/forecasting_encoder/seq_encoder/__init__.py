@@ -43,7 +43,7 @@ def add_encoder(encoder: BaseForecastingEncoder) -> None:
 
 class ForecastingNetworkStructure(autoPyTorchComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None,
-                 num_blocks:int = 1,
+                 num_blocks: int = 1,
                  variable_selection: bool = False,
                  skip_connection: bool = False) -> None:
         super().__init__()
@@ -61,7 +61,7 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
             'num_blocks': self.num_blocks,
             'variable_selection': self.variable_selection,
             'skip_connection': self.skip_connection
-                  })
+        })
         return X
 
     @staticmethod
@@ -310,10 +310,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         del params['variable_selection']
         del params['skip_connection']
 
-        pipeline_steps = [ForecastingNetworkStructure(random_state=self.random_state,
-                                                     num_blocks=num_blocks,
-                                                     variable_selection=variable_selection,
-                                                     skip_connection=skip_connection)]
+        pipeline_steps = [('net_structure', ForecastingNetworkStructure(random_state=self.random_state,
+                                                                        num_blocks=num_blocks,
+                                                                        variable_selection=variable_selection,
+                                                                        skip_connection=skip_connection))]
         self.encoder_choice = []
         self.decoder_choice = []
 
@@ -360,11 +360,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             decoder_params['random_state'] = self.random_state
             encoder = self.get_components()[choice](**new_params)
             decoder = decoder_components[decoder_type](**decoder_params)
-            pipeline_steps.extend([(f'encoder_{i}', encoder), f'decoder_{i}', decoder])
+            pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)
 
-        self.choice = Pipeline(pipeline_steps)
+        self.pipeline = Pipeline(pipeline_steps)
+        self.choice = self.encoder_choice[0]
         return self
 
     @staticmethod

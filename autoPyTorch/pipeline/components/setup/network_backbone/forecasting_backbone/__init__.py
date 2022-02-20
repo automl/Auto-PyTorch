@@ -36,12 +36,19 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
     the choice of encoder. Thus here "choice" indicates the choice of encoder, then decoder will be determined by
     the encoder.
     """
+
     def __init__(self,
                  **kwargs,
                  ):
         super().__init__(**kwargs)
         self.include_components = None
         self.exclude_components = None
+
+        self.default_components = OrderedDict(
+            {"flat_encoder": FlatForecastingEncoderChoice(dataset_properties=self.dataset_properties,
+                                                          random_state=self.random_state),
+             "seq_encoder": SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties,
+                                                        random_state=self.random_state)})
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
@@ -53,17 +60,14 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all basebackbone components available
                 as choices for learning rate scheduling
         """
-        components = OrderedDict()
-        components.update({"flat_encoder": FlatForecastingEncoderChoice,
-                           "seq_encoder": SeqForecastingEncoderChoice})
-        return components
+        return self.default_components
 
     def get_available_components(
-        self,
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        include: List[str] = None,
-        exclude: List[str] = None,
-        components: Optional[Dict[str, autoPyTorchComponent]] = None
+            self,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            include: List[str] = None,
+            exclude: List[str] = None,
+            components: Optional[Dict[str, autoPyTorchComponent]] = None
     ) -> Dict[str, autoPyTorchComponent]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -155,13 +159,12 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
 
         return components_dict
 
-
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -207,8 +210,8 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                                                                available_encoders,
                                                                choice_hyperparameter.value_range))
             hp_encoder = CSH.CategoricalHyperparameter('__choice__',
-                                                     choice_hyperparameter.value_range,
-                                                     default_value=choice_hyperparameter.default_value)
+                                                       choice_hyperparameter.value_range,
+                                                       default_value=choice_hyperparameter.default_value)
         else:
             hp_encoder = CSH.CategoricalHyperparameter(
                 '__choice__',
@@ -227,8 +230,6 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             if exclude is not None:
                 if name in self.exclude_components:
                     exclude_encoder = self.exclude_components[name]
-            import pdb
-            pdb.set_trace()
 
             config_space = available_encoders[name].get_hyperparameter_search_space(
                 dataset_properties=dataset_properties,  # type: ignore
@@ -244,11 +245,49 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
 
         self.configuration_space_ = cs
         self.dataset_properties_ = dataset_properties
+
         return cs
 
-    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
-        self._cs_updates[hyperparameter_search_space_update.hyperparameter] = hyperparameter_search_space_update
+    def set_hyperparameters(self,
+                            configuration: Configuration,
+                            init_params: Optional[Dict[str, Any]] = None
+                            ) -> 'autoPyTorchChoice':
+        new_params = {}
 
+        params = configuration.get_dictionary()
+        choice = params['__choice__']
+        del params['__choice__']
+
+        for param, value in params.items():
+            param = param.replace(choice + ':', '')
+            new_params[param] = value
+
+        if init_params is not None:
+            for param, value in init_params.items():
+                param = param.replace(choice + ':', '')
+                new_params[param] = value
+
+        choice_component = self.get_components()[choice]
+
+        self.new_params = new_params
+        sub_configuration_space = choice_component.get_hyperparameter_search_space(  # type: ignore[call-arg]
+            self.dataset_properties,
+        )
+
+        sub_configuration = Configuration(sub_configuration_space,
+                                          values=new_params)
+        self.choice = choice_component.set_hyperparameters(sub_configuration)
+
+        return self
+
+    def _apply_search_space_update(self, hyperparameter_search_space_update: HyperparameterSearchSpaceUpdate) -> None:
+        sub_module_name = hyperparameter_search_space_update.hyperparameter.split(':')
+        if sub_module_name[1] == '__choice__':
+            super()._apply_search_space_update(hyperparameter_search_space_update)
+        else:
+            # TODO create a new update and consider special HPs for seq encoder!!!
+            update_sub_module = hyperparameter_search_space_update.get_search_space(sub_module_name[0])
+            self.get_components()[sub_module_name]._apply_search_space_update(update_sub_module)
 
     @property
     def _defaults_network(self):
@@ -268,9 +307,9 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         self.fitted_ = True
         assert self.choice is not None, "Cannot call fit without initializing the component"
         return self.choice.fit(X, y)
-        #self.choice.fit(X, y)
-        #self.choice.transform(X)
-        #return self.choice
+        # self.choice.fit(X, y)
+        # self.choice.transform(X)
+        # return self.choice
 
     def transform(self, X: Dict) -> Dict:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
