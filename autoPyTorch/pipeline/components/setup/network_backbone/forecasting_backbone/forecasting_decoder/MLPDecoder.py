@@ -71,7 +71,11 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                                                               value_range=tuple(_activations.keys()),
                                                                               default_value=list(_activations.keys())[
                                                                                   0]),
-            auto_regressive: bool = False,
+            can_be_auto_regressive:bool = False,
+            auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
+                                                                                   value_range=(True, False),
+                                                                                   default_value=False,
+                                                                                   ),
             has_local_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='has_local_layer',
                                                                                    value_range=(True, False),
                                                                                    default_value=True),
@@ -145,13 +149,19 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                 cs.add_condition(GreaterThanCondition(num_units_hp, num_layers_hp, i - 1))
 
         # add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
+        has_local_layer = get_hyperparameter(has_local_layer, CategoricalHyperparameter)
+        units_local_layer = get_hyperparameter(units_local_layer, UniformIntegerHyperparameter)
 
-        if not auto_regressive:
-            has_local_layer = get_hyperparameter(has_local_layer, CategoricalHyperparameter)
-            units_local_layer = get_hyperparameter(units_local_layer, UniformIntegerHyperparameter)
+        cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
 
-            cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
-            cs.add_hyperparameters([has_local_layer, units_local_layer])
-            cs.add_conditions([cond_units_local_layer])
+        cs.add_hyperparameters([has_local_layer, units_local_layer])
+        cs.add_conditions([cond_units_local_layer])
+
+        if can_be_auto_regressive:
+            auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
+
+            cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive, False)
+            cs.add_hyperparameters([auto_regressive])
+            cs.add_conditions([cond_use_local_layer])
 
         return cs

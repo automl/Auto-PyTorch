@@ -33,10 +33,10 @@ class BaseForecastingDecoder(autoPyTorchComponent):
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 
     def __init__(self,
-                 **kwargs: Any):
+                 **kwargs: Dict[str, Any]):
         super().__init__()
         self.add_fit_requirements(self._required_fit_requirements)
-
+        self.auto_regressive = kwargs.get('auto_regressive', False)
         self.config = kwargs
         self.decoder: Optional[nn.Module] = None
         self.n_decoder_output_features = None
