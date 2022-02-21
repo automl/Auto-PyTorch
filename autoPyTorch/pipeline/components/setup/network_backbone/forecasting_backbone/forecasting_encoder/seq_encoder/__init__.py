@@ -315,8 +315,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             self.configuration_space_ = cs
             self.dataset_properties_ = dataset_properties
 
-        cs.get_parent_conditions_of('block_1:MLPDecoder:has_local_layer')
-
         return cs
 
     def set_hyperparameters(self,
