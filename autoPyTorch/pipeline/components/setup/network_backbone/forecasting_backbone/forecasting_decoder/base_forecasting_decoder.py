@@ -36,7 +36,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                  **kwargs: Any):
         super().__init__()
         self.add_fit_requirements(self._required_fit_requirements)
-        self.auto_regressive = kwargs.get('auto_regressive', False)
 
         self.config = kwargs
         self.decoder: Optional[nn.Module] = None

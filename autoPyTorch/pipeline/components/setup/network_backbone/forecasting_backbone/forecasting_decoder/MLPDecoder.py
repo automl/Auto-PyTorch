@@ -22,7 +22,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         layers = []
         in_features = input_shape[-1]
         num_decoder_output_features = in_features
-        if self.config["num_layers"] > 0:
+        if 'num_layers' in self.config and self.config["num_layers"] > 0:
             for i in range(1, self.config["num_layers"]):
                 layers.append(nn.Linear(in_features=in_features,
                                         out_features=self.config[f"units_layer_{i}"]))
@@ -71,9 +71,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                                                               value_range=tuple(_activations.keys()),
                                                                               default_value=list(_activations.keys())[
                                                                                   0]),
-            auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
-                                                                                   value_range=(True, False),
-                                                                                   default_value=False),
+            auto_regressive: bool = False,
             has_local_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='has_local_layer',
                                                                                    value_range=(True, False),
                                                                                    default_value=True),
@@ -102,7 +100,8 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
             could start from 0)
             units_layer (HyperparameterSearchSpace): number of units of each layer (except for the last layer)
             activation (HyperparameterSearchSpace): activation function
-            auto_regressive (HyperparameterSearchSpace): if the model acts as a DeepAR model
+            auto_regressive (bool): if the model acts as a DeepAR model, the corresponding hyperparaemter is
+            controlled by seq_encoder
             has_local_layer (HyperparameterSearchSpace): if local MLP layer is applied, if not, the output of the
                 network will be directly attached with different heads
             units_local_layer (HyperparameterSearchSpace): number of units of local layer. The size of this layer is
@@ -147,14 +146,12 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
 
         # add_hyperparameter(cs, units_final_layer, UniformIntegerHyperparameter)
 
-        # TODO let dataset_properties decide if auto_regressive models is applicable
-        auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
-        has_local_layer = get_hyperparameter(has_local_layer, CategoricalHyperparameter)
-        units_local_layer = get_hyperparameter(units_local_layer, UniformIntegerHyperparameter)
+        if not auto_regressive:
+            has_local_layer = get_hyperparameter(has_local_layer, CategoricalHyperparameter)
+            units_local_layer = get_hyperparameter(units_local_layer, UniformIntegerHyperparameter)
 
-        cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive, False)
-        cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
-        cs.add_hyperparameters([auto_regressive, has_local_layer, units_local_layer])
-        cs.add_conditions([cond_use_local_layer, cond_units_local_layer])
+            cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
+            cs.add_hyperparameters([has_local_layer, units_local_layer])
+            cs.add_conditions([cond_units_local_layer])
 
         return cs

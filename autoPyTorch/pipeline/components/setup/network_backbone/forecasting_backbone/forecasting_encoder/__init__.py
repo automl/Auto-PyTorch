@@ -250,8 +250,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
             encoder_with_uni_decoder = []
-            # this could happen if its parent encoder is not part of
-            inactive_decoder = []
+
             for encoder in compatible_encoders:
                 if len(encoder2decoder[encoder]) > 1:
                     encoders_with_multi_decoder.append(encoder)
@@ -377,9 +376,6 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         self.fitted_ = True
         assert self.pipeline is not None, "Cannot call fit without initializing the component"
         return self.pipeline.fit(X, y)
-        #self.choice.fit(X, y)
-        #self.choice.transform(X)
-        #return self.choice
 
     def transform(self, X: Dict) -> Dict:
         assert self.pipeline is not None, "Cannot call transform before the object is initialized"

@@ -6,7 +6,9 @@ from sklearn.pipeline import Pipeline
 
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
-from ConfigSpace.conditions import EqualsCondition, OrConjunction, GreaterThanCondition
+from ConfigSpace.conditions import (
+    EqualsCondition, OrConjunction, GreaterThanCondition, NotEqualsCondition, AndConjunction
+)
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 
@@ -45,12 +47,14 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None,
                  num_blocks: int = 1,
                  variable_selection: bool = False,
-                 skip_connection: bool = False) -> None:
+                 skip_connection: bool = False,
+                 auto_regressive: str = 'not_applied') -> None:
         super().__init__()
         self.num_blocks = num_blocks
         self.random_state = random_state
         self.variable_selection = variable_selection
         self.skip_connection = skip_connection
+        self.auto_regressive = auto_regressive
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> "ForecastingNetworkStructure":
         self.check_requirements(X, y)
@@ -60,7 +64,8 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
         X.update({
             'num_blocks': self.num_blocks,
             'variable_selection': self.variable_selection,
-            'skip_connection': self.skip_connection
+            'skip_connection': self.skip_connection,
+            'auto_regressive': self.auto_regressive,
         })
         return X
 
@@ -86,6 +91,8 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
 
 
 class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
+    deepAR_decoder_name = 'MLPDecoder'
+    deepAR_decoder_prefix = 'deepAR_decoder'
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
 
@@ -115,6 +122,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="skip_connection",
                                                                                    value_range=(True, False),
                                                                                    default_value=False),
+            auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="auto_regressive",
+                value_range=('encoder', 'decoder'),
+                default_value='encoder',
+            ),
             default: Optional[str] = None,
             include: Optional[List[str]] = None,
             exclude: Optional[List[str]] = None,
@@ -127,7 +139,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             variable_selection: HyperparameterSearchSpace: if variable selection is applied, if True, then the first
             block will be attached with a variable selection block while the following will be enriched with static
             features.
-            skip_connection: HyperparameterSearchSpace: if skip connection is applied to
+            skip_connection: HyperparameterSearchSpace: if skip connection is applied
+            auto_regressive: HyperparameterSearchSpace: if auto-regressive is applied, depending on the choice,
+            auto-regressive strategy is applied to either encoder (DeepAR model), decoder or not applied (in which case
+            )
             default (Optional[str]): Default backbone to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
@@ -147,7 +162,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         min_num_blocks, max_num_blcoks = num_blocks.value_range
 
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
-        cs.add_hyperparameter(num_blocks)
+        auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
+        cs.add_hyperparameters([num_blocks, auto_regressive])
 
         # Compile a list of legal preprocessors for this problem
         available_encoders = self.get_available_components(
@@ -226,59 +242,81 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     decoder2encoder[decoder_name].append(encoder_name)
                 encoder2decoder[encoder_name] = allowed_decoders
 
-            for decoder_name in available_decoders.keys():
-                if not decoder2encoder[decoder_name]:
-                    continue
-                updates = self._get_search_space_updates(prefix=block_prefix + decoder_name)
+            if len(auto_regressive.choices) > 1 or auto_regressive.choices[0] != 'encoder':
+                for decoder_name in available_decoders.keys():
+                    if not decoder2encoder[decoder_name]:
+                        continue
+                    updates = self._get_search_space_updates(prefix=block_prefix + decoder_name)
+                    config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
+                                                                                                    # type: ignore
+                                                                                                    **updates)
+                    compatible_encoders = decoder2encoder[decoder_name]
+                    encoders_with_multi_decoder = []
+                    encoder_with_single_decoder = []
+                    for encoder in compatible_encoders:
+                        if len(encoder2decoder[encoder]) > 1:
+                            encoders_with_multi_decoder.append(encoder)
+                        else:
+                            encoder_with_single_decoder.append(encoder)
+
+                    cs.add_configuration_space(
+                        block_prefix + decoder_name,
+                        config_space,
+                        # parent_hyperparameter=parent_hyperparameter
+                    )
+
+                    hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
+                    conditions_to_add = []
+                    for hp in hps:
+                        # TODO consider if this will raise any unexpected behavior
+                        if hp.name.startswith(block_prefix + decoder_name):
+                            # From the implementation of ConfigSpace
+                            # Only add a condition if the parameter is a top-level
+                            # parameter of the new configuration space (this will be some
+                            #  kind of tree structure).
+                            if cs.get_parents_of(hp):
+                                continue
+                            or_cond = []
+                            for encoder_single in encoder_with_single_decoder:
+                                or_cond.append(EqualsCondition(hp,
+                                                               hp_encoder,
+                                                               encoder_single))
+                            for encode_multi in encoders_with_multi_decoder:
+                                hp_decoder_type = cs.get_hyperparameter(f'{block_prefix + encode_multi}:decoder_type')
+                                or_cond.append(EqualsCondition(hp, hp_decoder_type, decoder_name))
+                            if len(or_cond) == 1:
+                                conditions_to_add.append(
+                                    AndConjunction(or_cond[0],
+                                                   NotEqualsCondition(hp, auto_regressive, 'encoder'))
+                                )
+                            elif len(or_cond) > 1:
+                                conditions_to_add.append(
+                                    AndConjunction(OrConjunction(*or_cond),
+                                                   NotEqualsCondition(hp, auto_regressive, 'encoder'))
+                                )
+
+                    cs.add_conditions(conditions_to_add)
+
+        if 'encoder' in auto_regressive.choices:
+            decoder_name = self.deepAR_decoder_name
+            if decoder_name in available_decoders:
+                updates = self._get_search_space_updates(prefix=self.deepAR_decoder_prefix + decoder_name)
+                updates['auto_regressive'] = True
                 config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
                                                                                                 # type: ignore
                                                                                                 **updates)
-                compatible_encoders = decoder2encoder[decoder_name]
-                encoders_with_multi_decoder = []
-                encoder_with_uni_decoder = []
-                # this could happen if its parent encoder is not part of
-                inactive_decoder = []
-                for encoder in compatible_encoders:
-                    if len(encoder2decoder[encoder]) > 1:
-                        encoders_with_multi_decoder.append(encoder)
-                    else:
-                        encoder_with_uni_decoder.append(encoder)
-
+                parent_hyperparameter = {'parent': auto_regressive, 'value': 'encoder'}
                 cs.add_configuration_space(
-                    block_prefix + decoder_name,
+                    self.deepAR_decoder_prefix + decoder_name,
                     config_space,
-                    # parent_hyperparameter=parent_hyperparameter
+                    parent_hyperparameter=parent_hyperparameter
                 )
-                hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
-                conditions_to_add = []
-                for hp in hps:
-                    # TODO consider if this will raise any unexpected behavior
-                    if hp.name.startswith(block_prefix + decoder_name):
-                        # From the implementation of ConfigSpace
-                        # Only add a condition if the parameter is a top-level
-                        # parameter of the new configuration space (this will be some
-                        #  kind of tree structure).
-                        if cs.get_parents_of(hp):
-                            continue
-                        or_cond = []
-                        for encoder_uni in encoder_with_uni_decoder:
-                            or_cond.append(EqualsCondition(hp,
-                                                           hp_encoder,
-                                                           encoder_uni))
-                        for encode_multi in encoders_with_multi_decoder:
-                            hp_decoder_type = cs.get_hyperparameter(f'{block_prefix + encode_multi}:decoder_type')
-                            or_cond.append(EqualsCondition(hp,
-                                                           hp_decoder_type,
-                                                           decoder_name))
-                        if len(or_cond) == 0:
-                            continue
-                        elif len(or_cond) > 1:
-                            conditions_to_add.append(OrConjunction(*or_cond))
-                        else:
-                            conditions_to_add.append(or_cond[0])
-                cs.add_conditions(conditions_to_add)
+
             self.configuration_space_ = cs
             self.dataset_properties_ = dataset_properties
+
+        cs.get_parent_conditions_of('block_1:MLPDecoder:has_local_layer')
+
         return cs
 
     def set_hyperparameters(self,
@@ -306,6 +344,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         num_blocks = params['num_blocks']
         variable_selection = params['variable_selection']
         skip_connection = params['skip_connection']
+        auto_regressive = params['auto_regressive']
         del params['num_blocks']
         del params['variable_selection']
         del params['skip_connection']
@@ -313,9 +352,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         pipeline_steps = [('net_structure', ForecastingNetworkStructure(random_state=self.random_state,
                                                                         num_blocks=num_blocks,
                                                                         variable_selection=variable_selection,
-                                                                        skip_connection=skip_connection))]
+                                                                        skip_connection=skip_connection,
+                                                                        auto_regressive=auto_regressive,))]
         self.encoder_choice = []
         self.decoder_choice = []
+
+        decoder_components = self.get_decoder_components()
 
         for i in range(1, num_blocks + 1):
             block_prefix = f'block_{i}:'
@@ -333,35 +375,49 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         param = param.replace(block_prefix + choice + ':', '')
                         new_params[param] = value
 
-            decoder_components = self.get_decoder_components()
+            if auto_regressive != 'encoder':
+                decoder_type = None
 
-            decoder_type = None
-
-            decoder_params = {}
-            decoder_params_names = []
-            for param, value in new_params.items():
-                if decoder_type is None:
-                    for decoder_component in decoder_components.keys():
-                        if param.startswith(block_prefix + decoder_component):
-                            decoder_type = decoder_component
+                decoder_params = {}
+                decoder_params_names = []
+                for param, value in new_params.items():
+                    if decoder_type is None:
+                        for decoder_component in decoder_components.keys():
+                            if param.startswith(block_prefix + decoder_component):
+                                decoder_type = decoder_component
+                                decoder_params_names.append(param)
+                                param = param.replace(block_prefix + decoder_type + ':', '')
+                                decoder_params[param] = value
+                    else:
+                        if param.startswith(block_prefix + decoder_type):
                             decoder_params_names.append(param)
                             param = param.replace(block_prefix + decoder_type + ':', '')
                             decoder_params[param] = value
-                else:
-                    if param.startswith(block_prefix + decoder_type):
-                        decoder_params_names.append(param)
-                        param = param.replace(block_prefix + decoder_type + ':', '')
-                        decoder_params[param] = value
 
-            for param_name in decoder_params_names:
-                del new_params[param_name]
+                for param_name in decoder_params_names:
+                    del new_params[param_name]
+                new_params['random_state'] = self.random_state
+                decoder_params['random_state'] = self.random_state
+                encoder = self.get_components()[choice](**new_params)
+                decoder = decoder_components[decoder_type](**decoder_params)
+                pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
+                self.encoder_choice.append(encoder)
+                self.decoder_choice.append(decoder)
+            else:
+                new_params['random_state'] = self.random_state
+                encoder = self.get_components()[choice](**new_params)
+                pipeline_steps.extend([(f'encoder_{i}', encoder)])
+                self.encoder_choice.append(encoder)
 
-            new_params['random_state'] = self.random_state
+        if auto_regressive == 'encoder':
+            decoder_params = {}
+            for param, value in new_params.items():
+                if param.startswith(self.deepAR_decoder_prefix + self.deepAR_decoder_name):
+                    param = param.replace(self.deepAR_decoder_prefix + self.deepAR_decoder_name + ':', '')
+                    decoder_params[param] = value
             decoder_params['random_state'] = self.random_state
-            encoder = self.get_components()[choice](**new_params)
-            decoder = decoder_components[decoder_type](**decoder_params)
-            pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
-            self.encoder_choice.append(encoder)
+            decoder = decoder_components[self.deepAR_decoder_name](**decoder_params)
+            pipeline_steps.extend([(f'decoder', decoder)])
             self.decoder_choice.append(decoder)
 
         self.pipeline = Pipeline(pipeline_steps)
