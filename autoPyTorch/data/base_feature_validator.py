@@ -12,7 +12,7 @@ from sklearn.base import BaseEstimator
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
-SUPPORTED_FEAT_TYPES = Union[
+SupportedFeatTypes = Union[
     List,
     pd.DataFrame,
     np.ndarray,
@@ -68,8 +68,8 @@ class BaseFeatureValidator(BaseEstimator):
 
     def fit(
         self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+        X_train: SupportedFeatTypes,
+        X_test: Optional[SupportedFeatTypes] = None,
     ) -> BaseEstimator:
         """
         Validates and fit a categorical encoder (if needed) to the features.
@@ -77,10 +77,10 @@ class BaseFeatureValidator(BaseEstimator):
         CSR sparse data types are also supported
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SupportedFeatTypes]):
                 A hold out set of data used for checking
         """
 
@@ -109,11 +109,11 @@ class BaseFeatureValidator(BaseEstimator):
 
     def _fit(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> BaseEstimator:
         """
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
         Returns:
@@ -124,11 +124,11 @@ class BaseFeatureValidator(BaseEstimator):
 
     def transform(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> np.ndarray:
         """
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features, whose categorical features are going to be
                 transformed
 
