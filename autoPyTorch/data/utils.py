@@ -1,0 +1,302 @@
+# Implementation used from https://github.com/automl/auto-sklearn/blob/development/autosklearn/util/data.py
+from math import floor
+import warnings
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast
+)
+
+import numpy as np
+
+import pandas as pd
+
+from scipy.sparse import spmatrix, issparse
+
+
+# TODO: TypedDict with python 3.8
+#
+#   When upgrading to python 3.8 as minimum version, this should be a TypedDict
+#   so that mypy can identify the fields types
+DatasetCompressionSpec = Dict[str, Union[int, float, List[str]]]
+DatasetDTypeContainerType = Union[Type, Dict[str, Type]]
+DatasetCompressionInputType = Union[np.ndarray, spmatrix, pd.DataFrame]
+
+# Default specification for arg `dataset_compression`
+default_dataset_compression_arg: DatasetCompressionSpec = {
+    "memory_allocation": 0.1,
+    "methods": ["precision"]
+}
+
+
+def validate_dataset_compression_arg(
+    dataset_compression: Mapping[str, Any],
+    memory_limit: int
+) -> DatasetCompressionSpec:
+    """Validates and return a correct dataset_compression argument
+
+    The returned value can be safely used with `reduce_dataset_size_if_too_large`.
+
+    Parameters
+    ----------
+    dataset_compression: Mapping[str, Any]
+        The argumnents to validate
+
+    Returns
+    -------
+    DatasetCompressionSpec
+        The validated and correct dataset compression spec
+    """
+    if isinstance(dataset_compression, Mapping):
+        # Fill with defaults if they don't exist
+        dataset_compression = {
+            **default_dataset_compression_arg,
+            **dataset_compression
+        }
+
+        # Must contain known keys
+        if set(dataset_compression.keys()) != set(default_dataset_compression_arg.keys()):
+            raise ValueError(
+                f"Unknown key in dataset_compression, {list(dataset_compression.keys())}."
+                f"\nPossible keys are {list(default_dataset_compression_arg.keys())}"
+            )
+
+        memory_allocation = dataset_compression["memory_allocation"]
+
+        # "memory_allocation" must be float or int
+        if not (isinstance(memory_allocation, float) or isinstance(memory_allocation, int)):
+            raise ValueError(
+                "key 'memory_allocation' must be an `int` or `float`"
+                f"\ntype = {memory_allocation}"
+                f"\ndataset_compression = {dataset_compression}"
+            )
+
+        # "memory_allocation" if absolute, should be > 0 and < memory_limit
+        if isinstance(memory_allocation, int) and not (0 < memory_allocation < memory_limit):
+            raise ValueError(
+                f"key 'memory_allocation' if int must be in (0, memory_limit={memory_limit})"
+                f"\nmemory_allocation = {memory_allocation}"
+                f"\ndataset_compression = {dataset_compression}"
+            )
+
+        # "memory_allocation" must be in (0,1) if float
+        if isinstance(memory_allocation, float):
+            if not (0.0 < memory_allocation < 1.0):
+                raise ValueError(
+                    "key 'memory_allocation' if float must be in (0, 1)"
+                    f"\nmemory_allocation = {memory_allocation}"
+                    f"\ndataset_compression = {dataset_compression}"
+                )
+            # convert to int so we can directly use
+            dataset_compression["memory_allocation"] = floor(memory_allocation * memory_limit)
+
+        # "methods" must be non-empty sequence
+        if (
+            not isinstance(dataset_compression["methods"], Sequence)
+            or len(dataset_compression["methods"]) <= 0
+        ):
+            raise ValueError(
+                "key 'methods' must be a non-empty list"
+                f"\nmethods = {dataset_compression['methods']}"
+                f"\ndataset_compression = {dataset_compression}"
+            )
+
+        # "methods" must contain known methods
+        if any(
+            method not in cast(Sequence, default_dataset_compression_arg["methods"])  # mypy
+            for method in dataset_compression["methods"]
+        ):
+            raise ValueError(
+                f"key 'methods' can only contain {default_dataset_compression_arg['methods']}"
+                f"\nmethods = {dataset_compression['methods']}"
+                f"\ndataset_compression = {dataset_compression}"
+            )
+
+        return cast(DatasetCompressionSpec, dataset_compression)
+    else:
+        raise ValueError(
+            f"Unknown type for `dataset_compression` {type(dataset_compression)}"
+            f"\ndataset_compression = {dataset_compression}"
+        )
+
+
+class _DtypeReductionMapping(Mapping):
+    """
+    Unfortuantly, mappings compare by hash(item) and not the __eq__ operator
+    between the key and the item.
+
+    Hence we wrap the dict in a Mapping class and implement our own __getitem__
+    such that we do use __eq__ between keys and query items.
+
+    >>> np.float32 == dtype('float32') # True, they are considered equal
+    >>>
+    >>> mydict = { np.float32: 'hello' }
+    >>>
+    >>> # Equal by __eq__ but dict operations fail
+    >>> np.dtype('float32') in mydict # False
+    >>> mydict[dtype('float32')]  # KeyError
+
+    This mapping class fixes that supporting the `in` operator as well as `__getitem__`
+
+    >>> reduction_mapping = _DtypeReductionMapping()
+    >>>
+    >>> reduction_mapping[np.dtype('float64')] # np.float32
+    >>> np.dtype('float32') in reduction_mapping # True
+    """
+
+    # Information about dtype support
+    _mapping: Dict[type, type] = {
+        np.float32: np.float32,
+        np.float64: np.float32,
+        np.int32: np.int32,
+        np.int64: np.int32
+    }
+
+    # In spite of the names, np.float96 and np.float128
+    # provide only as much precision as np.longdouble,
+    # that is, 80 bits on most x86 machines and 64 bits
+    # in standard Windows builds.
+    if hasattr(np, 'float96'):
+        _mapping[np.float96] = np.float64
+
+    if hasattr(np, 'float128'):
+        _mapping[np.float128] = np.float64
+
+    @classmethod
+    def __getitem__(cls, item: type) -> type:
+        for k, v in cls._mapping.items():
+            if k == item:
+                return v
+        raise KeyError(item)
+
+    @classmethod
+    def __iter__(cls) -> Iterator[type]:
+        return iter(cls._mapping.keys())
+
+    @classmethod
+    def __len__(cls) -> int:
+        return len(cls._mapping)
+
+
+reduction_mapping = _DtypeReductionMapping()
+supported_precision_reductions = list(reduction_mapping)
+
+
+def reduce_precision(
+    X: DatasetCompressionInputType
+) -> Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]:
+    """ Reduces the precision of a dataset containing floats or ints
+
+    Parameters
+    ----------
+    X:  DatasetCompressionInputType
+        The data to reduce precision of.
+
+    Returns
+    -------
+    Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]
+        Returns the reduced data X along with the dtypes it and the dtypes it was reduced to.
+    """
+    precision: Optional[DatasetDTypeContainerType] = None
+    if isinstance(X, np.ndarray) or issparse(X):
+        dtypes = X.dtype
+        if X.dtype not in supported_precision_reductions:
+            raise ValueError(f"X.dtype = {X.dtype} not equal to any supported"
+                             f" {supported_precision_reductions}")
+        precision = reduction_mapping[X.dtype]
+        X = X.astype(precision)
+    elif hasattr(X, 'iloc'):
+        dtypes = {col: X[col].dtype for col in X.columns}
+        precision = {col: reduction_mapping[dtype] for col, dtype in dtypes.items()
+                     if dtype in supported_precision_reductions}
+        X = X.astype(precision)
+    else:
+        raise ValueError(f"Unrecognised data type of X, expected data type to "
+                         f"be in (ndarray, spmatrix, pd.DataFrame), but got :{type(X)}")
+
+    return X, precision, dtypes
+
+
+def reduce_dataset_size_if_too_large(
+    X: DatasetCompressionInputType,
+    memory_allocation: int,
+    methods: List[str] = ['precision'],
+) -> Tuple[DatasetCompressionInputType, Optional[DatasetDTypeContainerType]]:
+    f""" Reduces the size of the dataset if it's too close to the memory limit.
+
+    Follows the order of the operations passed in and retains the type of its
+    input.
+
+    Precision reduction will only work on the following data types:
+    -   {supported_precision_reductions}
+
+    Precision reduction will only perform one level of precision reduction.
+    Technically, you could supply multiple rounds of precision reduction, i.e.
+    to reduce np.float128 to np.float32 you could use `methods = ['precision'] * 2`.
+
+    However, if that's the use case, it'd be advised to simply use the function
+    `autoPyTorch.data.utils.reduce_precision`.
+
+    Parameters
+    ----------
+    X: DatasetCompressionInputType
+        The features of the dataset.
+
+    methods: List[str] = ['precision']
+        A list of operations that are permitted to be performed to reduce
+        the size of the dataset.
+
+        **precision**
+
+        Reduce the precision of float types
+
+    memory_allocation: int
+        The amount of memory to allocate to the dataset. It should specify an
+        absolute amount.
+
+    Returns
+    -------
+    DatasetCompressionInputType
+        The reduced X if reductions were needed
+    Optional[DatasetDTypeContainerType]
+        If the precision of the dataset is reduced,
+        we return the precision dtype container that can be
+        used for any other dataset in the current experiment.
+    """
+
+    def megabytes(arr: DatasetCompressionInputType) -> float:
+        memory_in_bytes: Optional[int] = None
+        if isinstance(arr, np.ndarray):
+            memory_in_bytes = arr.nbytes
+        elif issparse(arr):
+            memory_in_bytes = arr.data.nbytes
+        elif hasattr(arr, 'iloc'):
+            memory_in_bytes = arr.memory_usage(index=True, deep=True).sum()
+        else:
+            return 0
+        return memory_in_bytes / (2**20)
+
+    precision: Optional[DatasetDTypeContainerType] = None
+    for method in methods:
+
+        if method == 'precision':
+            # If the dataset is too big for the allocated memory,
+            # we then try to reduce the precision if it's a high precision dataset
+            if megabytes(X) > memory_allocation:
+                X, precision, dtypes = reduce_precision(X)
+                warnings.warn(
+                    f'Dataset too large for allocated memory {memory_allocation}MB, '
+                    f'reduced the precision from {dtypes} to {precision}',
+                )
+        else:
+            raise ValueError(f"Unknown operation `{method}`")
+
+    return X, precision

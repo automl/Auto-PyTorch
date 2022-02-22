@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +11,11 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.utils import (
+    DatasetCompressionSpec,
+    default_dataset_compression_arg,
+    validate_dataset_compression_arg
+)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
@@ -163,6 +168,7 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -202,6 +208,7 @@ class TabularClassificationTask(BaseTask):
         InputValidator = TabularInputValidator(
             is_classification=True,
             logger_port=self._logger_port,
+            dataset_compression=dataset_compression
         )
 
         # Fit a input validator to check the provided data
@@ -242,6 +249,7 @@ class TabularClassificationTask(BaseTask):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -374,6 +382,20 @@ class TabularClassificationTask(BaseTask):
 
         """
 
+        self._dataset_compression: Optional[DatasetCompressionSpec]
+
+        if isinstance(dataset_compression, bool):
+            if dataset_compression is True:
+                self._dataset_compression = default_dataset_compression_arg
+            else:
+                self._dataset_compression = None
+        else:
+            self._dataset_compression = dataset_compression
+
+        if self._dataset_compression is not None:
+            self._dataset_compression = validate_dataset_compression_arg(
+                self._dataset_compression, memory_limit=memory_limit)
+
         self.dataset, self.InputValidator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
@@ -381,7 +403,9 @@ class TabularClassificationTask(BaseTask):
             y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-            dataset_name=dataset_name)
+            dataset_name=dataset_name,
+            dataset_compression=self._dataset_compression)
+
 
         return self._search(
             dataset=self.dataset,

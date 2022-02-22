@@ -1,5 +1,6 @@
 import functools
-from typing import Dict, List, Optional, Tuple, cast
+from logging import Logger
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
 import numpy as np
 
@@ -17,6 +18,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
+from autoPyTorch.data.utils import DatasetDTypeContainerType, reduce_dataset_size_if_too_large
+from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def _create_column_transformer(
@@ -92,6 +95,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
         categorical_columns (List[int]):
             List of indices of categorical columns
     """
+    def __init__(
+        self,
+        logger: Optional[Union[PicklableClientLogger, Logger]] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        self._dataset_compression = dataset_compression
+        self._precision: Optional[DatasetDTypeContainerType] = None
+        super().__init__(logger)
+
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
@@ -258,6 +270,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Not all sparse format support index sorting
         if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
+
+        if (
+            (
+                isinstance(X, np.ndarray) or scipy.sparse.issparse(X) or hasattr(X, 'iloc')
+            )
+            and self._dataset_compression is not None
+        ):
+            if self._precision is not None:
+                X.astype(self._precision)
+            else:
+                X, self._precision = reduce_dataset_size_if_too_large(X, **self._dataset_compression)
 
         try:
             X = sklearn.utils.check_array(
