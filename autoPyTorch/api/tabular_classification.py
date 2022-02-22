@@ -396,15 +396,15 @@ class TabularClassificationTask(BaseTask):
                     performed. If the dataset fits into the allocated memory, any further methods
                     listed in ``"methods"`` will not be performed.
 
-                    **methods**
-                    We currently provide the following methods for reducing the dataset size.
-                    These can be provided in a list and are performed in the order as given.
-                    *   ``"precision"`` - We reduce floating point precision as follows:
-                        *   ``np.float128 -> np.float64``
-                        *   ``np.float96 -> np.float64``
-                        *   ``np.float64 -> np.float32``
-                        *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
-                            to the lowest possible precision.
+                **methods**
+                We currently provide the following methods for reducing the dataset size.
+                These can be provided in a list and are performed in the order as given.
+                *   ``"precision"`` - We reduce floating point precision as follows:
+                    *   ``np.float128 -> np.float64``
+                    *   ``np.float96 -> np.float64``
+                    *   ``np.float64 -> np.float32``
+                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                        to the lowest possible precision.
 
         Returns:
             self

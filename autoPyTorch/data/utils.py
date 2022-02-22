@@ -46,15 +46,13 @@ def validate_dataset_compression_arg(
 
     The returned value can be safely used with `reduce_dataset_size_if_too_large`.
 
-    Parameters
-    ----------
-    dataset_compression: Mapping[str, Any]
-        The argumnents to validate
+    Args:
+        dataset_compression: Mapping[str, Any]
+            The argumnents to validate
 
-    Returns
-    -------
-    DatasetCompressionSpec
-        The validated and correct dataset compression spec
+    Returns:
+        DatasetCompressionSpec
+            The validated and correct dataset compression spec
     """
     if isinstance(dataset_compression, Mapping):
         # Fill with defaults if they don't exist
@@ -199,15 +197,13 @@ def reduce_precision(
     Note:
         For dataframe, the column's precision is reduced using pd.to_numeric.
 
-    Parameters
-    ----------
-    X:  DatasetCompressionInputType
-        The data to reduce precision of.
+    Args:
+        X:  DatasetCompressionInputType
+            The data to reduce precision of.
 
-    Returns
-    -------
-    Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]
-        Returns the reduced data X along with the dtypes it and the dtypes it was reduced to.
+    Returns:
+        Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]
+            Returns the reduced data X along with the dtypes it and the dtypes it was reduced to.
     """
     precision: Optional[DatasetDTypeContainerType] = None
     if isinstance(X, np.ndarray) or issparse(X):
@@ -274,27 +270,25 @@ def reduce_dataset_size_if_too_large(
     However, if that's the use case, it'd be advised to simply use the function
     `autoPyTorch.data.utils.reduce_precision`.
 
-    Parameters
-    ----------
-    X: DatasetCompressionInputType
-        The features of the dataset.
+    Args:
+        X: DatasetCompressionInputType
+            The features of the dataset.
 
-    methods: List[str] = ['precision']
-        A list of operations that are permitted to be performed to reduce
-        the size of the dataset.
+        methods: List[str] = ['precision']
+            A list of operations that are permitted to be performed to reduce
+            the size of the dataset.
 
-        **precision**
+            **precision**
 
-        Reduce the precision of float types
+            Reduce the precision of float types
 
-    memory_allocation: int
-        The amount of memory to allocate to the dataset. It should specify an
-        absolute amount.
+        memory_allocation: int
+            The amount of memory to allocate to the dataset. It should specify an
+            absolute amount.
 
-    Returns
-    -------
-    DatasetCompressionInputType
-        The reduced X if reductions were needed
+    Returns:
+        DatasetCompressionInputType
+            The reduced X if reductions were needed
     """
 
     precision: Optional[DatasetDTypeContainerType] = None

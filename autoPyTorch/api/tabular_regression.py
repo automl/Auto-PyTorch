@@ -376,6 +376,36 @@ class TabularRegressionTask(BaseTask):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_.
+            dataset_compression: Union[bool, Mapping[str, Any]] = True
+                We compress datasets so that they fit into some predefined amount of memory.
+                **NOTE**
+
+                Default configuration when left as ``True``:
+                .. code-block:: python
+                    {
+                        "memory_allocation": 0.1,
+                        "methods": ["precision"]
+                    }
+                You can also pass your own configuration with the same keys and choosing
+                from the available ``"methods"``.
+                The available options are described here:
+                **memory_allocation**
+                    By default, we attempt to fit the dataset into ``0.1 * memory_limit``. This
+                    float value can be set with ``"memory_allocation": 0.1``. We also allow for
+                    specifying absolute memory in MB, e.g. 10MB is ``"memory_allocation": 10``.
+                    The memory used by the dataset is checked after each reduction method is
+                    performed. If the dataset fits into the allocated memory, any further methods
+                    listed in ``"methods"`` will not be performed.
+
+                **methods**
+                We currently provide the following methods for reducing the dataset size.
+                These can be provided in a list and are performed in the order as given.
+                *   ``"precision"`` - We reduce floating point precision as follows:
+                    *   ``np.float128 -> np.float64``
+                    *   ``np.float96 -> np.float64``
+                    *   ``np.float64 -> np.float32``
+                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                        to the lowest possible precision.
 
         Returns:
             self
