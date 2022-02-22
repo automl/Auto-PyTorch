@@ -49,6 +49,36 @@ def type_check(train_tensors: BaseDatasetInputType,
             check_valid_data(val_tensors[i])
 
 
+def _get_output_properties(train_tensors: BaseDatasetInputType) -> Tuple[int, str]:
+    """
+    Return the dimension of output given a target_labels and output_type.
+
+    Args:
+        train_tensors (BaseDatasetInputType):
+            Training data.
+
+    Returns:
+        output_dim (int):
+            The dimension of outputs.
+        output_type (str):
+            The output type according to sklearn specification.
+    """
+    if isinstance(train_tensors, Dataset):
+        target_labels = np.array([sample[-1] for sample in train_tensors])
+    else:
+        target_labels = np.array(train_tensors[1])
+
+    output_type: str = type_of_target(target_labels)
+    if STRING_TO_OUTPUT_TYPES.get(output_type, None) in CLASSIFICATION_OUTPUTS:
+        output_dim = len(np.unique(target_labels))
+    elif target_labels.ndim > 1:
+        output_dim = target_labels.shape[-1]
+    else:
+        output_dim = 1
+
+    return output_dim, output_type
+
+
 class TransformSubset(Subset):
     """Wrapper of BaseDataset for splitted datasets
 
@@ -132,15 +162,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
-            self.output_type: str = type_of_target(self.train_tensors[1])
-
-            if (
-                self.output_type in STRING_TO_OUTPUT_TYPES
-                and STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS
-            ):
-                self.output_shape = len(np.unique(self.train_tensors[1]))
-            else:
-                self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
+            self.output_shape, self.output_type = _get_output_properties(self.train_tensors)
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True

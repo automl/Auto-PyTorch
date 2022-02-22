@@ -904,3 +904,31 @@ def test_tabular_classification_test_evaluator(openml_id, backend, n_samples):
     assert 'opt_loss' in incumbent_results, "run history: {}, successful_num_run: {}".format(estimator.run_history.data,
                                                                                              successful_num_run)
     assert 'train_loss' in incumbent_results
+
+
+@pytest.mark.parametrize("ans,task_class", (
+    ("continuous", TabularRegressionTask),
+    ("multiclass", TabularClassificationTask))
+)
+def test_task_inference(ans, task_class, backend):
+    # Get the data and check that contents of data-manager make sense
+    X = np.random.random((5, 1))
+    y = np.array([0, 1, 2, 3, 4]) + 10 ** 15
+
+    X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X, y, random_state=42)
+
+    estimator = task_class(
+        backend=backend,
+        resampling_strategy=HoldoutValTypes.holdout_validation,
+        resampling_strategy_args=None,
+        seed=42,
+    )
+    dataset = estimator.get_dataset(X_train, y_train)
+    assert dataset.output_type == ans
+
+    y_train += 1
+    if ans == 'continuous':
+        with pytest.raises(ValueError):  # ValueError due to `Too large value`
+            estimator.get_dataset(X_train, y_train)
+    else:
+        estimator.get_dataset(X_train, y_train)

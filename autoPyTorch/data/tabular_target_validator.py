@@ -145,10 +145,18 @@ class TabularTargetValidator(BaseTargetValidator):
         if y.ndim == 2 and y.shape[1] == 1:
             y = np.ravel(y)
 
-        if not self.is_classification:
-            # Regression targets must be cast to float
+        if not self.is_classification and "continuous" not in type_of_target(y):
+            # Regression targets must have numbers after a decimal point.
             # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
-            y = y.astype(dtype=np.float64)
+            y_min = np.abs(y).min()
+            offset = y_min * 1e-16  # Sufficiently small number
+            if y_min > 1e15:
+                raise ValueError(
+                    "The minimum value for the target labels of regression tasks must be smaller than "
+                    f"1e15 to avoid errors caused by an overflow, but got {y_min}"
+                )
+
+            y = y.astype(dtype=np.float64) + offset  # Since it is all integer, we can just add a random small number
 
         return y
 
