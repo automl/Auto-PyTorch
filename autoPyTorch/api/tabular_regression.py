@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +11,10 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.utils import (
+    default_dataset_compression_arg,
+    validate_dataset_compression_arg
+)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
@@ -164,6 +168,7 @@ class TabularRegressionTask(BaseTask):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -203,6 +208,7 @@ class TabularRegressionTask(BaseTask):
         InputValidator = TabularInputValidator(
             is_classification=False,
             logger_port=self._logger_port,
+            dataset_compression=dataset_compression
         )
 
         # Fit a input validator to check the provided data
@@ -235,7 +241,7 @@ class TabularRegressionTask(BaseTask):
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
-        memory_limit: Optional[int] = 4096,
+        memory_limit: int = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
         all_supported_metrics: bool = True,
@@ -243,6 +249,7 @@ class TabularRegressionTask(BaseTask):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
+        dataset_compression: Union[Mapping[str, Any], bool] = False,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -311,7 +318,7 @@ class TabularRegressionTask(BaseTask):
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]: default=4096):
+            memory_limit (int: default=4096):
                 Memory limit in MB for the machine learning algorithm.
                 Autopytorch will stop fitting the machine learning algorithm
                 if it tries to allocate more than memory_limit MB. If None
@@ -374,6 +381,20 @@ class TabularRegressionTask(BaseTask):
             self
 
         """
+        self._dataset_compression: Optional[Mapping[str, Any]]
+
+        if isinstance(dataset_compression, bool):
+            if dataset_compression is True:
+                self._dataset_compression = default_dataset_compression_arg
+            else:
+                self._dataset_compression = None
+        else:
+            self._dataset_compression = dataset_compression
+
+        if self._dataset_compression is not None:
+            self._dataset_compression = validate_dataset_compression_arg(
+                self._dataset_compression, memory_limit=memory_limit)
+
         self.dataset, self.InputValidator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
@@ -381,7 +402,8 @@ class TabularRegressionTask(BaseTask):
             y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-            dataset_name=dataset_name)
+            dataset_name=dataset_name,
+            dataset_compression=self._dataset_compression)
 
         return self._search(
             dataset=self.dataset,

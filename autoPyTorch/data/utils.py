@@ -1,6 +1,6 @@
 # Implementation used from https://github.com/automl/auto-sklearn/blob/development/autosklearn/util/data.py
-from math import floor
 import warnings
+from math import floor
 from typing import (
     Any,
     Dict,
@@ -18,8 +18,9 @@ from typing import (
 import numpy as np
 
 import pandas as pd
+from pandas.api.types import is_float_dtype, is_numeric_dtype
 
-from scipy.sparse import spmatrix, issparse
+from scipy.sparse import issparse, spmatrix
 
 
 # TODO: TypedDict with python 3.8
@@ -195,6 +196,9 @@ def reduce_precision(
 ) -> Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]:
     """ Reduces the precision of a dataset containing floats or ints
 
+    Note:
+        For dataframe, the column's precision is reduced using pd.to_numeric.
+
     Parameters
     ----------
     X:  DatasetCompressionInputType
@@ -214,22 +218,47 @@ def reduce_precision(
         precision = reduction_mapping[X.dtype]
         X = X.astype(precision)
     elif hasattr(X, 'iloc'):
-        dtypes = {col: X[col].dtype for col in X.columns}
-        precision = {col: reduction_mapping[dtype] for col, dtype in dtypes.items()
-                     if dtype in supported_precision_reductions}
-        X = X.astype(precision)
+        dtypes = dict(X.dtypes)
+
+        integer_columns = []
+        float_columns = []
+
+        for col, dtype in dtypes.items():
+            if is_numeric_dtype(dtype):
+                if is_float_dtype(dtype):
+                    float_columns.append(col)
+                else:
+                    integer_columns.append(col)
+
+        if len(integer_columns) > 0:
+            X[integer_columns] = X[integer_columns].apply(lambda column: pd.to_numeric(column, downcast='integer'))
+        if len(float_columns) > 0:
+            X[float_columns] = X[float_columns].apply(lambda column: pd.to_numeric(column, downcast='float'))
+        precision = dict(X.dtypes)
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
-                         f"be in (ndarray, spmatrix, pd.DataFrame), but got :{type(X)}")
+                         f"be in (np.ndarray, spmatrix, pd.DataFrame), but got :{type(X)}")
 
     return X, precision, dtypes
+
+
+def megabytes(arr: DatasetCompressionInputType) -> float:
+    if isinstance(arr, np.ndarray):
+        memory_in_bytes = arr.nbytes
+    elif issparse(arr):
+        memory_in_bytes = arr.data.nbytes
+    elif hasattr(arr, 'iloc'):
+        memory_in_bytes = arr.memory_usage(index=True, deep=True).sum()
+    else:
+        return 0
+    return float(memory_in_bytes / (2**20))
 
 
 def reduce_dataset_size_if_too_large(
     X: DatasetCompressionInputType,
     memory_allocation: int,
     methods: List[str] = ['precision'],
-) -> Tuple[DatasetCompressionInputType, Optional[DatasetDTypeContainerType]]:
+) -> DatasetCompressionInputType:
     f""" Reduces the size of the dataset if it's too close to the memory limit.
 
     Follows the order of the operations passed in and retains the type of its
@@ -266,23 +295,7 @@ def reduce_dataset_size_if_too_large(
     -------
     DatasetCompressionInputType
         The reduced X if reductions were needed
-    Optional[DatasetDTypeContainerType]
-        If the precision of the dataset is reduced,
-        we return the precision dtype container that can be
-        used for any other dataset in the current experiment.
     """
-
-    def megabytes(arr: DatasetCompressionInputType) -> float:
-        memory_in_bytes: Optional[int] = None
-        if isinstance(arr, np.ndarray):
-            memory_in_bytes = arr.nbytes
-        elif issparse(arr):
-            memory_in_bytes = arr.data.nbytes
-        elif hasattr(arr, 'iloc'):
-            memory_in_bytes = arr.memory_usage(index=True, deep=True).sum()
-        else:
-            return 0
-        return memory_in_bytes / (2**20)
 
     precision: Optional[DatasetDTypeContainerType] = None
     for method in methods:
@@ -299,4 +312,4 @@ def reduce_dataset_size_if_too_large(
         else:
             raise ValueError(f"Unknown operation `{method}`")
 
-    return X, precision
+    return X

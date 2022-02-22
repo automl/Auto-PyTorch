@@ -1,6 +1,6 @@
 import functools
 from logging import Logger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 
 import numpy as np
 
@@ -271,17 +271,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
 
-        if (
-            (
-                isinstance(X, np.ndarray) or scipy.sparse.issparse(X) or hasattr(X, 'iloc')
-            )
-            and self._dataset_compression is not None
-        ):
-            if self._precision is not None:
-                X.astype(self._precision)
-            else:
-                X, self._precision = reduce_dataset_size_if_too_large(X, **self._dataset_compression)
-
         try:
             X = sklearn.utils.check_array(
                 X,
@@ -295,6 +284,19 @@ class TabularFeatureValidator(BaseFeatureValidator):
                                   "Please try to manually cast it to a supported "
                                   "numerical or categorical values.")
             raise e
+
+        if (
+            (
+                isinstance(X, np.ndarray) or scipy.sparse.issparse(X) or hasattr(X, 'iloc')
+            )
+            and self._dataset_compression is not None
+        ):
+            if self._precision is not None:
+                X = X.astype(self._precision)
+            else:
+                X = reduce_dataset_size_if_too_large(X, **self._dataset_compression)
+                self._precision = dict(X.dtypes) if hasattr(X, 'iloc') else X.dtype
+
         return X
 
     def _check_data(
