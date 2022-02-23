@@ -86,17 +86,16 @@ Image Classification
      ________________________________________ 
     Configuration(values={
       'image_augmenter:GaussianBlur:use_augmenter': False,
-      'image_augmenter:GaussianNoise:sigma_offset': 1.746304541085565,
+      'image_augmenter:GaussianNoise:sigma_offset': 2.925784534700399,
       'image_augmenter:GaussianNoise:use_augmenter': True,
-      'image_augmenter:RandomAffine:rotate': 60,
-      'image_augmenter:RandomAffine:scale_offset': 0.22600480469728468,
-      'image_augmenter:RandomAffine:shear': 4,
-      'image_augmenter:RandomAffine:translate_percent_offset': 0.14146389752228222,
+      'image_augmenter:RandomAffine:rotate': 79,
+      'image_augmenter:RandomAffine:scale_offset': 0.3303982552097816,
+      'image_augmenter:RandomAffine:shear': 22,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.068262359976932,
       'image_augmenter:RandomAffine:use_augmenter': True,
-      'image_augmenter:RandomCutout:p': 0.2650210115648416,
-      'image_augmenter:RandomCutout:use_augmenter': True,
-      'image_augmenter:Resize:use_augmenter': True,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.27645895609259974,
+      'image_augmenter:RandomCutout:use_augmenter': False,
+      'image_augmenter:Resize:use_augmenter': False,
+      'image_augmenter:ZeroPadAndCrop:percent': 0.019686612530780023,
       'normalizer:__choice__': 'NoNormalizer',
     })
 
@@ -177,7 +176,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.603 seconds)
+   **Total running time of the script:** ( 0 minutes  6.576 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
