@@ -912,10 +912,8 @@ def test_tabular_classification_test_evaluator(openml_id, backend, n_samples):
 )
 def test_task_inference(ans, task_class, backend):
     # Get the data and check that contents of data-manager make sense
-    X = np.random.random((5, 1))
-    y = np.array([0, 1, 2, 3, 4]) + 10 ** 15
-
-    X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X, y, random_state=42)
+    X = np.random.random((6, 1))
+    y = np.array([-10 ** 12, 0, 1, 2, 3, 4], dtype=np.int64) + 10 ** 12
 
     estimator = task_class(
         backend=backend,
@@ -923,12 +921,12 @@ def test_task_inference(ans, task_class, backend):
         resampling_strategy_args=None,
         seed=42,
     )
-    dataset = estimator.get_dataset(X_train, y_train)
+    dataset = estimator.get_dataset(X, y)
     assert dataset.output_type == ans
 
-    y_train += 1
+    y += 10 ** 12 + 10  # Check if the function catches overflow possibilities
     if ans == 'continuous':
         with pytest.raises(ValueError):  # ValueError due to `Too large value`
-            estimator.get_dataset(X_train, y_train)
+            estimator.get_dataset(X, y)
     else:
-        estimator.get_dataset(X_train, y_train)
+        estimator.get_dataset(X, y)

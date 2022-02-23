@@ -69,7 +69,7 @@ def _get_output_properties(train_tensors: BaseDatasetInputType) -> Tuple[int, st
         target_labels = np.array(train_tensors[1])
 
     output_type: str = type_of_target(target_labels)
-    if STRING_TO_OUTPUT_TYPES.get(output_type, None) in CLASSIFICATION_OUTPUTS:
+    if STRING_TO_OUTPUT_TYPES[output_type] in CLASSIFICATION_OUTPUTS:
         output_dim = len(np.unique(target_labels))
     elif target_labels.ndim > 1:
         output_dim = target_labels.shape[-1]

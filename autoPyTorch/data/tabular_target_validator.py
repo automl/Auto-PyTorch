@@ -29,11 +29,11 @@ def _modify_regression_target(y: ArrayType) -> ArrayType:
     # Regression targets must have numbers after a decimal point.
     # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
     y_min = np.abs(y).min()
-    offset = y_min * 1e-16  # Sufficiently small number
-    if y_min > 1e15:
+    offset = max(y_min, 1e-13) * 1e-13  # Sufficiently small number
+    if y_min > 1e12:
         raise ValueError(
             "The minimum value for the target labels of regression tasks must be smaller than "
-            f"1e15 to avoid errors caused by an overflow, but got {y_min}"
+            f"1e12 to avoid errors caused by an overflow, but got {y_min}"
         )
 
     # Since it is all integer, we can just add a random small number
