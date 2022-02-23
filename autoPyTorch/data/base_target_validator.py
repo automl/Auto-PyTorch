@@ -5,26 +5,13 @@ import numpy as np
 
 import pandas as pd
 
-import scipy.sparse
-
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.utils.common import SparseMatrixType
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
-SUPPORTED_TARGET_TYPES = Union[
-    List,
-    pd.Series,
-    pd.DataFrame,
-    np.ndarray,
-    scipy.sparse.bsr_matrix,
-    scipy.sparse.coo_matrix,
-    scipy.sparse.csc_matrix,
-    scipy.sparse.csr_matrix,
-    scipy.sparse.dia_matrix,
-    scipy.sparse.dok_matrix,
-    scipy.sparse.lil_matrix,
-]
+SupportedTargetTypes = Union[List, pd.Series, pd.DataFrame, np.ndarray, SparseMatrixType]
 
 
 class BaseTargetValidator(BaseEstimator):
@@ -69,17 +56,17 @@ class BaseTargetValidator(BaseEstimator):
 
     def fit(
         self,
-        y_train: SUPPORTED_TARGET_TYPES,
-        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_train: SupportedTargetTypes,
+        y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         Validates and fit a categorical encoder (if needed) to the targets
         The supported data types are List, numpy arrays and pandas DataFrames.
 
         Args:
-            y_train (SUPPORTED_TARGET_TYPES)
+            y_train (SupportedTargetTypes)
                 A set of targets set aside for training
-            y_test (Union[SUPPORTED_TARGET_TYPES])
+            y_test (Union[SupportedTargetTypes])
                 A hold out set of data used of the targets. It is also used to fit the
                 categories of the encoder.
         """
@@ -128,26 +115,26 @@ class BaseTargetValidator(BaseEstimator):
 
     def _fit(
         self,
-        y_train: SUPPORTED_TARGET_TYPES,
-        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_train: SupportedTargetTypes,
+        y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         Args:
-            y_train (SUPPORTED_TARGET_TYPES)
+            y_train (SupportedTargetTypes)
                 The labels of the current task. They are going to be encoded in case
                 of classification
-            y_test (Optional[SUPPORTED_TARGET_TYPES])
+            y_test (Optional[SupportedTargetTypes])
                 A holdout set of labels
         """
         raise NotImplementedError()
 
     def transform(
         self,
-        y: Union[SUPPORTED_TARGET_TYPES],
+        y: Union[SupportedTargetTypes],
     ) -> np.ndarray:
         """
         Args:
-            y (SUPPORTED_TARGET_TYPES)
+            y (SupportedTargetTypes)
                 A set of targets that are going to be encoded if the current task
                 is classification
         Returns:
@@ -158,7 +145,7 @@ class BaseTargetValidator(BaseEstimator):
 
     def inverse_transform(
         self,
-        y: SUPPORTED_TARGET_TYPES,
+        y: SupportedTargetTypes,
     ) -> np.ndarray:
         """
         Revert any encoding transformation done on a target array

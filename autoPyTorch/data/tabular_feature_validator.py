@@ -16,7 +16,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 
-from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
+from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
 
 
 def _create_column_transformer(
@@ -117,7 +117,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def _fit(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> BaseEstimator:
         """
         In case input data is a pandas DataFrame, this utility encodes the user provided
@@ -125,7 +125,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         will be able to use
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and an encoder fitted in the case the data needs encoding
 
@@ -204,14 +204,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def transform(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> np.ndarray:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features, whose categorical features are going to be
                 transformed
 
@@ -276,13 +276,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def _check_data(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> None:
         """
         Feature dimensionality and data type checks
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and an encoder fitted in the case the data needs encoding
         """
@@ -429,8 +429,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def list_to_dataframe(
         self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+        X_train: SupportedFeatTypes,
+        X_test: Optional[SupportedFeatTypes] = None,
     ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """
         Converts a list to a pandas DataFrame. In this process, column types are inferred.
@@ -438,10 +438,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
         If test data is provided, we proactively match it to train data
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SupportedFeatTypes]):
                 A hold out set of data used for checking
 
         Returns:
