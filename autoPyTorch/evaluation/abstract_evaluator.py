@@ -560,7 +560,7 @@ class AbstractEvaluator(object):
         self.splits = datamanager.splits
         if self.splits is None:
             raise AttributeError(f"create_splits on {datamanager.__class__.__name__} must be called "
-             f"before the instantiation of {self.__class__.__name__}")
+                                 f"before the instantiation of {self.__class__.__name__}")
 
         # delete datamanager from memory
         del datamanager
