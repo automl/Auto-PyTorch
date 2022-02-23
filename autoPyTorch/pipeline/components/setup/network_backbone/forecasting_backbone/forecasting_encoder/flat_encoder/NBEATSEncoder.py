@@ -47,12 +47,9 @@ class NBEATSEncoder(BaseForecastingEncoder):
         return super().fit(X, y)
 
     def build_encoder(self,
-                      targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
-        in_features = targets_shape[-1] + input_shape[-1] + static_feature_shape
+                      input_shape: Tuple[int, ...]) -> nn.Module:
         preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
-        return preprocessor, in_features
+        return preprocessor
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None

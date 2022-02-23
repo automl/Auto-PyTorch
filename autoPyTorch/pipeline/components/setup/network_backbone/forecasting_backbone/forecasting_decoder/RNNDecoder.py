@@ -13,12 +13,12 @@ import numpy as np
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, RecurrentDecoderNetwork
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
 
 from autoPyTorch.utils.common import FitRequirement
 
 
-class RNN_Module(RecurrentDecoderNetwork):
+class RNN_Module(DecoderNetwork):
     def __init__(self,
                  in_features: int,
                  hidden_size: int,
@@ -41,10 +41,10 @@ class RNN_Module(RecurrentDecoderNetwork):
                          batch_first=True)
 
     def forward(self, x_future: torch.Tensor,
-                features_latent: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
+                encoder_output: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
         if x_future.ndim == 2:
             x_future = x_future.unsqueeze(1)
-        outputs, hidden_state, = self.lstm(x_future, features_latent)
+        outputs, hidden_state, = self.lstm(x_future, encoder_output)
         return outputs, hidden_state
 
 
@@ -56,7 +56,6 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
-        self.auto_regressive = True
         self.rnn_kwargs = None
         self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
 
@@ -67,7 +66,8 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
         return fit_requirement
 
     def _build_decoder(self,
-                       input_shape: Tuple[int, ...],
+                       encoder_output_shape: Tuple[int, ...],
+                       future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         # RNN decoder only allows RNN encoder, these parameters need to exists.
@@ -76,7 +76,7 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
             'num_layers']
         cell_type = self.rnn_kwargs['cell_type']
         dropout = self.rnn_kwargs['dropout']
-        decoder = RNN_Module(in_features=dataset_properties['output_shape'][-1],
+        decoder = RNN_Module(in_features=future_variable_input[-1],
                              hidden_size=hidden_size,
                              num_layers=num_layers,
                              cell_type=cell_type,
@@ -89,8 +89,9 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
     def fitted_encoder(self):
         return ['RNNEncoder']
 
-    def decoder_properties(self):
-        decoder_properties = super().decoder_properties()
+    @staticmethod
+    def decoder_properties():
+        decoder_properties = BaseForecastingDecoder.decoder_properties()
         decoder_properties.update({'has_hidden_states': True,
                                    'recurrent': True,
                                    'lagged_input': True,

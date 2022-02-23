@@ -69,14 +69,8 @@ class ProjectionLayer(nn.Module):
 
             """
             if decoder_has_local_layer:
-                if auto_regressive:
-                    unflatten_layer = []
-                else:
-                    # we need to unflatten the input from 2D to 3D such that local MLP can be applied to each prediction
-                    # separately
-                    unflatten_layer = [nn.Unflatten(-1, (n_prediction_heads, num_in_features))]
-                return nn.Sequential(*unflatten_layer,
-                                     nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
+
+                return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
                                      nn.Unflatten(-1, (*output_shape, arg_dim)))
             else:
                 return nn.Sequential(

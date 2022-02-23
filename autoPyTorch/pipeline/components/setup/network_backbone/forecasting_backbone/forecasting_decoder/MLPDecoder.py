@@ -1,5 +1,7 @@
 from typing import Dict, Optional, Tuple, Union, Any
 
+import numpy as np
+import torch
 from torch import nn
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -10,33 +12,67 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone. \
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
+
+
+class MLPDecoderModule(DecoderNetwork):
+    def __init__(self,
+                 global_layers: nn.Module,
+                 local_layers: Optional[nn.Module],
+                 auto_regressive: bool = False
+                 ):
+        self.global_layers = global_layers
+        self.local_layers = local_layers
+        self.auto_regressive = auto_regressive
+
+    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor):
+        if x_future is not None or self.auto_regressive:
+            # for auto-regressive model, x_future is fed to the encoders
+            x = self.global_layers(encoder_output)
+            if self.local_layers is None:
+                return x
+            else:
+                # auto regressive model does not have local layers
+                return self.local_layers(x)
+        if self.local_layers is None:
+            x = torch.concat([encoder_output, x_future.flatten(-2)], dim=-1)
+            return self.global_layers(x)
+        x = self.global_layers(encoder_output)
+        x = self.local_layers(x)
+        return torch.concat([x, x_future], dim=-1)
 
 
 class ForecastingMLPDecoder(BaseForecastingDecoder):
     def _build_decoder(self,
-                       input_shape: Tuple[int, ...],
+                       encoder_output_shape: Tuple[int, ...],
+                       future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
-        layers = []
-        in_features = input_shape[-1]
+        global_layers = []
+        in_features = encoder_output_shape[-1]
         num_decoder_output_features = in_features
         if 'num_layers' in self.config and self.config["num_layers"] > 0:
+            in_features += int(np.prod(future_variable_input))
             for i in range(1, self.config["num_layers"]):
-                layers.append(nn.Linear(in_features=in_features,
-                                        out_features=self.config[f"units_layer_{i}"]))
-                layers.append(_activations[self.config["activation"]]())
+                global_layers.append(nn.Linear(in_features=in_features,
+                                               out_features=self.config[f"units_layer_{i}"]))
+                global_layers.append(_activations[self.config["activation"]]())
                 in_features = self.config[f"units_layer_{i}"]
                 num_decoder_output_features = in_features
         if 'units_local_layer' in self.config:
-            layers.append(nn.Linear(in_features=in_features,
-                                    out_features=self.config['units_local_layer'] * n_prediction_heads))
+            local_layers = [nn.Linear(in_features=in_features,
+                                      out_features=self.config['units_local_layer'] * n_prediction_heads)]
             if 'activation' in self.config:
-                layers.append(_activations[self.config["activation"]]())
-            num_decoder_output_features = self.config['units_local_layer']
+                local_layers.append(_activations[self.config["activation"]]())
+            local_layers.append(nn.Unflatten(-1, (n_prediction_heads, self.config['units_local_layer'])))
+            num_decoder_output_features = self.config['units_local_layer'] + future_variable_input[-1]
+        else:
+            local_layers = None
 
-        return nn.Sequential(*layers), num_decoder_output_features
+        return MLPDecoderModule(global_layers=nn.Sequential(*global_layers),
+                                local_layers=nn.Sequential(*local_layers) if local_layers is not None else None,
+                                auto_regressive=self.auto_regressive), num_decoder_output_features
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
@@ -60,6 +96,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            can_be_auto_regressive: bool = False,
             num_layers: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_layers",
                                                                               value_range=(0, 3),
                                                                               default_value=1),
@@ -71,7 +108,6 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                                                               value_range=tuple(_activations.keys()),
                                                                               default_value=list(_activations.keys())[
                                                                                   0]),
-            can_be_auto_regressive:bool = False,
             auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="auto_regressive",
                                                                                    value_range=(True, False),
                                                                                    default_value=False,
@@ -100,6 +136,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
 
         Args:
             dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Dataset Properties
+            can_be_auto_regressive: bool: if this decoder is allowed to be auto-regressive
             num_layers (HyperparameterSearchSpace): number of decoder layers (the last layer is not included, thus it
             could start from 0)
             units_layer (HyperparameterSearchSpace): number of units of each layer (except for the last layer)
@@ -113,6 +150,13 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         Returns:
             cs (ConfigurationSpace): ConfigurationSpace
         """
+        if dataset_properties is not None:
+            num_in_features = dataset_properties.get('input_shape', (0,))
+            future_feature_shapes = dataset_properties.get('future_feature_shapes', (0,))
+            if num_in_features[-1] != future_feature_shapes[-1]:
+                # deepAR model cannot be applied
+                auto_regressive.value_range = False
+
         cs = ConfigurationSpace()
 
         min_num_layers: int = num_layers.value_range[0]  # type: ignore

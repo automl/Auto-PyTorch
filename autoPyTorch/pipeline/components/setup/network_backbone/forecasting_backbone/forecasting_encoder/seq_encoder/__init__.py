@@ -118,6 +118,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 value_range=(True, False),
                 default_value=False
             ),
+            decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="decoder_auto_regressive",
+                value_range=(True, False),
+                default_value=False,
+            ),
             skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="skip_connection",
                                                                                    value_range=(True, False),
                                                                                    default_value=False),
@@ -134,9 +139,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             block will be attached with a variable selection block while the following will be enriched with static
             features.
             skip_connection: HyperparameterSearchSpace: if skip connection is applied
-            auto_regressive: HyperparameterSearchSpace: if auto-regressive is applied, depending on the choice,
-            auto-regressive strategy is applied to either encoder (DeepAR model), decoder or not applied (in which case
-            )
+            decoder_auto_regressive: HyperparameterSearchSpace: if decoder is auto_regressive, e.g., if the decoder
+            receives the output of its input, this only works for auto_regressive decoder models
             default (Optional[str]): Default backbone to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
@@ -149,14 +153,29 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         if dataset_properties is None:
             dataset_properties = {}
 
+        # TODO
+        static_features_shape = dataset_properties.get("static_features_shape", 0)
+        future_feature_shapes = dataset_properties.get("future_feature_shapes", (0,))
+
         cs = ConfigurationSpace()
-        add_hyperparameter(cs, variable_selection, CategoricalHyperparameter)
         add_hyperparameter(cs, skip_connection, CategoricalHyperparameter)
 
         min_num_blocks, max_num_blocks = num_blocks.value_range
 
+        variable_selection = get_hyperparameter(variable_selection, CategoricalHyperparameter)
+        decoder_auto_regressive = get_hyperparameter(decoder_auto_regressive, CategoricalHyperparameter)
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
-        cs.add_hyperparameters([num_blocks])
+        cs.add_hyperparameters([num_blocks, decoder_auto_regressive, variable_selection])
+
+        if static_features_shape + future_feature_shapes[-1] == 0:
+            if False in variable_selection.choices and True in decoder_auto_regressive.choices:
+                if variable_selection.num_choices == 1 and decoder_auto_regressive.num_choices == 1:
+                    raise ValueError("When no future information is available, it is not possible to disable variable"
+                                     "selection and enable auto-regressive decoder model")
+                cs.add_forbidden_clause(ForbiddenAndConjunction(
+                    ForbiddenEqualsClause(variable_selection, False),
+                    ForbiddenEqualsClause(decoder_auto_regressive, True)
+                ))
 
         # Compile a list of legal preprocessors for this problem
         available_encoders = self.get_available_components(
@@ -180,6 +199,13 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     default = default_
                     break
         updates_choice = self._get_search_space_updates()
+
+        forbiddens_decoder_auto_regressive = []
+
+        if False in decoder_auto_regressive.choices:
+            forbidden_decoder_ar = ForbiddenEqualsClause(decoder_auto_regressive, True)
+        else:
+            forbidden_decoder_ar = None
 
         for i in range(1, int(max_num_blocks) + 1):
             block_prefix = f'block_{i}:'
@@ -259,6 +285,20 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     config_space,
                     # parent_hyperparameter=parent_hyperparameter
                 )
+                if not available_decoders[decoder_name].decoder_properties()["recurrent"]:
+                    hp_encoder_choice = cs.get_hyperparameter(block_prefix + '__choice__')
+                    for encoder_single in encoder_with_single_decoder:
+                        if encoder_single in hp_encoder_choice.choices:
+                            forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
+                                forbidden_decoder_ar,
+                                ForbiddenEqualsClause(hp_encoder_choice, encoder_single)
+                            ))
+                    for encode_multi in encoders_with_multi_decoder:
+                        hp_decoder_type = cs.get_hyperparameter(f"{block_prefix}{encode_multi}:decoder_type")
+                        forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
+                            forbidden_decoder_ar,
+                            ForbiddenEqualsClause(hp_decoder_type, decoder_name)
+                        ))
 
                 hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
                 conditions_to_add = []
@@ -287,6 +327,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                             conditions_to_add.append(or_cond[0])
 
                 cs.add_conditions(conditions_to_add)
+
+        cs.add_forbidden_clauses(forbiddens_decoder_auto_regressive)
         if self.deepAR_decoder_name in available_decoders:
             deep_ar_hp = ':'.join([self.deepAR_decoder_prefix, self.deepAR_decoder_name, 'auto_regressive'])
             if deep_ar_hp in cs:
@@ -301,6 +343,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     else:
                         forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_ar)
                     cs.add_forbidden_clause(forbidden)
+
+
         return cs
 
     def set_hyperparameters(self,
@@ -328,14 +372,16 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         num_blocks = params['num_blocks']
         variable_selection = params['variable_selection']
         skip_connection = params['skip_connection']
+        decoder_auto_regressive = params['decoder_auto_regressive']
         del params['num_blocks']
         del params['variable_selection']
         del params['skip_connection']
+        del params['decoder_auto_regressive']
 
         pipeline_steps = [('net_structure', ForecastingNetworkStructure(random_state=self.random_state,
                                                                         num_blocks=num_blocks,
                                                                         variable_selection=variable_selection,
-                                                                        skip_connection=skip_connection,))]
+                                                                        skip_connection=skip_connection))]
         self.encoder_choice = []
         self.decoder_choice = []
 
@@ -378,7 +424,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             for param_name in decoder_params_names:
                 del new_params[param_name]
             new_params['random_state'] = self.random_state
+            new_params['block_number'] = i
             decoder_params['random_state'] = self.random_state
+            decoder_params['block_number'] = i
+            # for mlp decoder, to avoid decoder's auto_regressive being overwritten by decoder_auto_regressive
+            if 'auto_regressive' not in decoder_params:
+                decoder_params['auto_regressive'] = decoder_auto_regressive
             encoder = self.get_components()[choice](**new_params)
             decoder = decoder_components[decoder_type](**decoder_params)
             pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])

@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.utils.common import add_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, RecurrentDecoderNetwork
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.transformer_util import \
     PositionalEncoding, build_transformer_layers
@@ -25,7 +25,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
 
 
-class _TransformerDecoder(RecurrentDecoderNetwork):
+class _TransformerDecoder(DecoderNetwork):
     def __init__(self,
                  in_features: int,
                  d_model: int,
@@ -55,13 +55,13 @@ class _TransformerDecoder(RecurrentDecoderNetwork):
                                                                 num_layers=num_layers,
                                                                 norm=norm)
 
-    def forward(self, x_future: torch.Tensor, features_latent: torch.Tensor,
+    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor,
                 tgt_mask: Optional[torch.Tensor] = None,
                 memory_mask: Optional[torch.Tensor] = None,
                 tgt_key_padding_mask: Optional[torch.Tensor] = None,
                 memory_key_padding_mask: Optional[torch.Tensor] = None):
         output = self.input_layer(x_future)
-        output = self.transformer_decoder_layers(output, features_latent, tgt_mask=tgt_mask,
+        output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=tgt_mask,
                                                  memory_mask=memory_mask,
                                                  tgt_key_padding_mask=tgt_key_padding_mask,
                                                  memory_key_padding_mask=memory_key_padding_mask)
@@ -72,18 +72,18 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
     def __init__(self, **kwargs: Dict):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
-        self.auto_regressive = True
         self.transformer_encoder_kwargs = None
         self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
 
     def _build_decoder(self,
-                       input_shape: Tuple[int, ...],
+                       encoder_output_shape: Tuple[int, ...],
+                       future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
-                       dataset_properties: Dict) -> nn.Module:
+                       dataset_properties: Dict) -> Tuple[nn.Module, int]:
         d_model = 2 ** self.transformer_encoder_kwargs['d_model_log']
         transformer_decoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='decoder')
 
-        decoder = _TransformerDecoder(in_features=dataset_properties['output_shape'][-1],
+        decoder = _TransformerDecoder(in_features=future_variable_input[-1],
                                       d_model=d_model,
                                       num_layers=self.config['num_layers'],
                                       transformer_decoder_layers=transformer_decoder_layers,
@@ -102,8 +102,9 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                                               dataset_property=False))
         return fit_requirement
 
-    def decoder_properties(self):
-        decoder_properties = super().decoder_properties()
+    @staticmethod
+    def decoder_properties():
+        decoder_properties = BaseForecastingDecoder.decoder_properties()
         decoder_properties.update({'recurrent': True,
                                    'lagged_input': True,
                                    'mask_on_future_target': True,

@@ -73,10 +73,8 @@ class TransformerEncoder(BaseForecastingEncoder):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
-    def build_encoder(self, targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
-        in_features = len(self.lagged_value) * targets_shape[-1] + input_shape[-1] + static_feature_shape
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        in_features = input_shape[-1]
 
         d_model = 2 ** self.config['d_model_log']
         transformer_encoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='encoder')
@@ -90,7 +88,7 @@ class TransformerEncoder(BaseForecastingEncoder):
                                       dropout_pe=self.config.get('dropout_positional_encoder', 0.0),
                                       layer_norm_eps_output=self.config.get('layer_norm_eps_output', None),
                                       lagged_value=self.lagged_value)
-        return encoder, in_features
+        return encoder
 
     @staticmethod
     def allowed_decoders():

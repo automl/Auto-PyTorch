@@ -17,9 +17,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.\
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
 
 
-# TODO we need to rewrite NBEATS part to make it neater!!!
-
-
 class NBEATSBLock(nn.Module):
     def __init__(self,
                  n_in_features: int,
@@ -92,16 +89,20 @@ class NBEATSDecoder(BaseForecastingDecoder):
     fill_lower_resolution_seq = False
     fill_kwargs = {}
 
-    def decoder_properties(self):
-        decoder_properties = super().decoder_properties()
+    @staticmethod
+    def decoder_properties():
+        decoder_properties = BaseForecastingDecoder.decoder_properties()
         decoder_properties.update({
             'multi_blocks': True
         })
         return decoder_properties
 
-    def _build_decoder(self, input_shape: Tuple[int, ...], n_prediction_heads: int,
+    def _build_decoder(self,
+                       encoder_output_shape: Tuple[int, ...],
+                       future_variable_input: Tuple[int, ...],
+                       n_prediction_heads: int,
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
-        in_features = input_shape[-1]
+        in_features = encoder_output_shape[-1]
         n_beats_type = self.config['n_beats_type']
         if n_beats_type == 'G':
             stacks = [[] for _ in range(self.config['num_stacks_g'])]

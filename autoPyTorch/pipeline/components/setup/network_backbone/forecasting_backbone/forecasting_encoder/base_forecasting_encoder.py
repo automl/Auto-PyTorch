@@ -46,6 +46,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 
     def __init__(self,
+                 block_number: int = 1,
                  **kwargs: Any):
         autoPyTorchComponent.__init__(self)
         self.add_fit_requirements(
@@ -54,6 +55,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         self.encoder: nn.Module = None
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
+        self.block_number = block_number
+        self.encoder_output_shape: Optional[Iterable] = None
 
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:
@@ -66,7 +69,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('static_features_shape', (int, ), user_defined=True, dataset_property=True),
+            FitRequirement('static_features_shape', (int,), user_defined=True, dataset_property=True),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -78,24 +81,41 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         output_shape = X["dataset_properties"]['output_shape']
         static_features_shape = X["dataset_properties"]["static_features_shape"]
 
-        if not X["dataset_properties"]["uni_variant"]:
-            if not X["dataset_properties"]["is_small_preprocess"]:
-                # get input shape by transforming first two elements of the training set
-                transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
-                X_train = X_train[:1, np.newaxis, ...]
-                X_train = transforms(X_train)
-                input_shape = np.concatenate(X_train).shape[1:]
+        if self.block_number == 1:
+            if not X["dataset_properties"]["uni_variant"]:
+                if not X["dataset_properties"]["is_small_preprocess"]:
+                    # get input shape by transforming first two elements of the training set
+                    transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
+                    X_train = X_train[:1, np.newaxis, ...]
+                    X_train = transforms(X_train)
+                    input_shape = np.concatenate(X_train).shape[1:]
 
-        if 'network_embedding' in X.keys():
-            input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
+            if 'network_embedding' in X.keys():
+                input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
 
-        self.encoder, in_features = self.build_encoder(
-            targets_shape=output_shape,
+            in_features = input_shape[-1]
+
+            variable_selection = X.get("variable_selection", False)
+            if variable_selection:
+                # TODO
+                pass
+            elif self.encoder_properties()["lagged_input"] and hasattr(self, 'lagged_value'):
+                in_features = len(self.lagged_value) * output_shape[-1] + input_shape[-1] + static_features_shape
+            else:
+                in_features = output_shape[-1] + input_shape[-1] + static_features_shape
+
+            input_shape = (X['window_size'], in_features)
+        else:
+            input_shape = X['encoder_output_shape']
+
+        self.encoder = self.build_encoder(
             input_shape=input_shape,
-            static_feature_shape=static_features_shape
         )
 
-        self.input_shape = (X['window_size'], in_features)
+        self.input_shape = input_shape
+
+        has_hidden_states = self.encoder_properties().get("has_hidden_states", False)
+        self.encoder_output_shape = get_output_shape(input_shape, has_hidden_states)
 
         return self
 
@@ -105,15 +125,15 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X['dataset_properties'].update({'input_shape': self.input_shape})
-        X.update({'network_encoder': self.encoder})
-        X.update({'encoder_properties': self.encoder_properties()})
+        X.update({'network_encoder': self.encoder,
+                  'encoder_properties': self.encoder_properties(),
+                  'encoder_output_shape': self.encoder_output_shape
+                  })
         return X
 
     @abstractmethod
     def build_encoder(self,
-                      targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
+                      input_shape: Tuple[int, ...]) -> nn.Module:
         """
         Builds the backbone module and returns it
 

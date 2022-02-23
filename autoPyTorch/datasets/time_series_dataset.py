@@ -461,9 +461,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.static_features_shape: int = static_features.size
 
         if known_future_features is None:
-            self.future_feature_shape: Tuple[int, int] = (self.seq_length_min, 0)
+            self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, 0)
         else:
-            self.input_shape_future: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
+            self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1][0])
@@ -767,7 +767,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train,
                                    'seq_length_max': self.seq_length_max,
+                                   'input_shape':self.input_shape,
                                    'lagged_value': self.lagged_value,
+                                   'static_features': self.static_features,
+                                   'future_feature_shapes': self.future_feature_shapes,
                                    'uni_variant': self.is_uni_variant})
         return dataset_properties
 

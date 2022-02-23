@@ -77,15 +77,13 @@ class RNNEncoder(BaseForecastingEncoder):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
-    def build_encoder(self, targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
-        in_features = len(self.lagged_value) * targets_shape[-1] + input_shape[-1] + static_feature_shape
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        in_features = input_shape[-1]
         encoder = _RNN(in_features=in_features,
                        config=self.config,
                        lagged_value=self.lagged_value,
                        )
-        return encoder, in_features
+        return encoder
 
     @staticmethod
     def allowed_decoders():

@@ -137,14 +137,12 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
 
-    def build_encoder(self, targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
-        in_features = input_shape[-1] + targets_shape[-1] + static_feature_shape
+    def build_encoder(self, input_shape: Tuple[int, ...] = (0,)) -> nn.Module:
+        in_features = input_shape[-1]
         encoder = _InceptionTime(in_features=in_features,
-                                  config=self.config)
+                                 config=self.config)
         self._receptive_field = encoder.receptive_field
-        return encoder, in_features
+        return encoder
 
     @staticmethod
     def allowed_decoders():
@@ -170,26 +168,26 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                          value_range=(1, 5),
-                                                                          default_value=3,
-                                                                          ),
-        num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
-                                                                           value_range=(4, 64),
-                                                                           default_value=32,
-                                                                           log=True,
-                                                                           ),
-        kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
-                                                                           value_range=(4, 64),
-                                                                           default_value=32,
-                                                                           log=True,
-                                                                           ),
-        bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
-                                                                               value_range=(16, 64),
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
+                                                                              value_range=(1, 5),
+                                                                              default_value=3,
+                                                                              ),
+            num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
+                                                                               value_range=(4, 64),
                                                                                default_value=32,
-                                                                               log=True
+                                                                               log=True,
                                                                                ),
+            kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
+                                                                               value_range=(4, 64),
+                                                                               default_value=32,
+                                                                               log=True,
+                                                                               ),
+            bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
+                                                                                   value_range=(16, 64),
+                                                                                   default_value=32,
+                                                                                   log=True
+                                                                                   ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 

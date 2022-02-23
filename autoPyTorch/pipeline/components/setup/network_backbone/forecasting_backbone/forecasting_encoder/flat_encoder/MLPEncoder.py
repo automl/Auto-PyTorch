@@ -87,12 +87,10 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
         # when resolution is smaller
         return super().fit(X, y)
 
-    def build_encoder(self, targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
-        in_features = (input_shape[-1] + targets_shape[-1] + static_feature_shape)
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
+        in_features = input_shape[-1]
         feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
-        return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features * self.window_size)), in_features
+        return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features * self.window_size))
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:

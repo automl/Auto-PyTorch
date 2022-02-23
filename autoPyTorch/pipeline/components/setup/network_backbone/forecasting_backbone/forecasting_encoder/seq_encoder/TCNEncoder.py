@@ -92,7 +92,7 @@ class _TemporalConvNet(EncoderNetwork):
                                       stride=stride,
                                       dilation=dilation_size,
                                       padding=(kernel_size[i] - 1) * dilation_size,
-                                      dropout=dropout[i])]
+                                      dropout=dropout)]
             # receptive_field_block = 1 + (kernel_size - 1) * dilation_size * \
             #                        (int(np.prod(stride_values[:-2])) * (1 + stride_values[-2]))
             # stride = 1, we ignore stride computation
@@ -118,18 +118,14 @@ class TCNEncoder(BaseForecastingEncoder):
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
 
-    def build_encoder(self,
-                      targets_shape: Tuple[int, ...],
-                      input_shape: Tuple[int, ...] = (0,),
-                      static_feature_shape: int = 0) -> Tuple[nn.Module, int]:
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> Tuple[nn.Module, int]:
         num_channels = [self.config["num_filters_1"]]
         kernel_size = [self.config["kernel_size_1"]]
-        dropout = [self.config[f"dropout_1"] if self.config["use_dropout"] else 0.0]
+        dropout = self.config[f"dropout"] if self.config["use_dropout"] else 0.0
         for i in range(2, self.config["num_blocks"] + 1):
             num_channels.append(self.config[f"num_filters_{i}"])
             kernel_size.append(self.config[f"kernel_size_{i}"])
-            dropout.append(self.config[f"dropout_{i}"] if self.config["use_dropout"] else 0.0)
-        in_features = input_shape[-1] + static_feature_shape + targets_shape[-1]
+        in_features = input_shape[-1]
         encoder = _TemporalConvNet(in_features,
                                    num_channels,
                                    kernel_size=kernel_size,
@@ -190,6 +186,14 @@ class TCNEncoder(BaseForecastingEncoder):
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameter(use_dropout)
 
+
+        dropout_hp = get_hyperparameter(dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameter(dropout_hp)
+
+        dropout_condition = CS.EqualsCondition(dropout_hp, use_dropout, True)
+
+        cs.add_condition(dropout_condition)
+
         for i in range(1, int(max_num_blocks) + 1):
             num_filter_search_space = HyperparameterSearchSpace(f"num_filters_{i}",
                                                                 value_range=num_filters.value_range,
@@ -208,20 +212,5 @@ class TCNEncoder(BaseForecastingEncoder):
                     CS.GreaterThanCondition(num_filters_hp, num_blocks, i - 1),
                     CS.GreaterThanCondition(kernel_size_hp, num_blocks, i - 1)
                 ])
-
-            dropout_search_space = HyperparameterSearchSpace(hyperparameter='dropout_%d' % i,
-                                                             value_range=dropout.value_range,
-                                                             default_value=dropout.default_value,
-                                                             log=dropout.log)
-            dropout_hp = get_hyperparameter(dropout_search_space, UniformFloatHyperparameter)
-            cs.add_hyperparameter(dropout_hp)
-
-            dropout_condition_1 = CS.EqualsCondition(dropout_hp, use_dropout, True)
-
-            if i > int(min_num_blocks):
-                dropout_condition_2 = CS.GreaterThanCondition(dropout_hp, num_blocks, i - 1)
-                cs.add_condition(CS.AndConjunction(dropout_condition_1, dropout_condition_2))
-            else:
-                cs.add_condition(dropout_condition_1)
 
         return cs
