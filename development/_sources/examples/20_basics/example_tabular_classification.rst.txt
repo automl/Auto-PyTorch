@@ -134,7 +134,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc57dba9700>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fe3b78f6550>
 
 
 
@@ -180,10 +180,10 @@ Print the final ensemble performance
             Dataset name: Australian
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 24
-            Number of successful target algorithm runs: 21
+            Number of target algorithm runs: 22
+            Number of successful target algorithm runs: 20
             Number of crashed target algorithm runs: 2
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -193,7 +193,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  16.919 seconds)
+   **Total running time of the script:** ( 5 minutes  31.550 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
