@@ -20,6 +20,15 @@ import torch
 from torch.utils.data.dataloader import default_collate
 
 HyperparameterValueType = Union[int, str, float]
+SparseMatrixType = Union[
+    scipy.sparse.bsr_matrix,
+    scipy.sparse.coo_matrix,
+    scipy.sparse.csc_matrix,
+    scipy.sparse.csr_matrix,
+    scipy.sparse.dia_matrix,
+    scipy.sparse.dok_matrix,
+    scipy.sparse.lil_matrix,
+]
 
 
 class FitRequirement(NamedTuple):

@@ -5,26 +5,13 @@ import numpy as np
 
 import pandas as pd
 
-import scipy.sparse
-
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.utils.common import SparseMatrixType
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
-SupportedTargetTypes = Union[
-    List,
-    pd.Series,
-    pd.DataFrame,
-    np.ndarray,
-    scipy.sparse.bsr_matrix,
-    scipy.sparse.coo_matrix,
-    scipy.sparse.csc_matrix,
-    scipy.sparse.csr_matrix,
-    scipy.sparse.dia_matrix,
-    scipy.sparse.dok_matrix,
-    scipy.sparse.lil_matrix,
-]
+SupportedTargetTypes = Union[List, pd.Series, pd.DataFrame, np.ndarray, SparseMatrixType]
 
 
 class BaseTargetValidator(BaseEstimator):

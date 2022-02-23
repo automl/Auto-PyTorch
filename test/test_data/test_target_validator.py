@@ -150,17 +150,17 @@ def test_targetvalidator_supported_types_noclassification(input_data_targettest)
     assert validator.encoder is None
 
     if hasattr(input_data_targettest, "iloc"):
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(input_data_targettest.to_numpy()),
             np.ravel(transformed_y)
         )
     elif sparse.issparse(input_data_targettest):
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(input_data_targettest.todense()),
             np.ravel(transformed_y.todense())
         )
     else:
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(np.array(input_data_targettest)),
             np.ravel(transformed_y)
         )

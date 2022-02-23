@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import List, Optional, Union, cast
 
 import numpy as np
 
@@ -14,11 +14,35 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.multiclass import type_of_target
 
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
+from autoPyTorch.utils.common import SparseMatrixType
 
 
-def _check_and_to_numpy(y: SupportedTargetTypes) -> np.ndarray:
+ArrayType = Union[np.ndarray, SparseMatrixType]
+
+
+def _check_and_to_array(y: SupportedTargetTypes) -> ArrayType:
     """ sklearn check array will make sure we have the correct numerical features for the array """
     return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
+
+
+def _modify_regression_target(y: ArrayType) -> ArrayType:
+    # Regression targets must have numbers after a decimal point.
+    # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
+    y_min = np.abs(y).min()
+    offset = y_min * 1e-16  # Sufficiently small number
+    if y_min > 1e15:
+        raise ValueError(
+            "The minimum value for the target labels of regression tasks must be smaller than "
+            f"1e15 to avoid errors caused by an overflow, but got {y_min}"
+        )
+
+    # Since it is all integer, we can just add a random small number
+    if isinstance(y, np.ndarray):
+        y = y.astype(dtype=np.float64) + offset
+    else:
+        y.data = y.data.astype(dtype=np.float64) + offset
+
+    return y
 
 
 class TabularTargetValidator(BaseTargetValidator):
@@ -101,7 +125,7 @@ class TabularTargetValidator(BaseTargetValidator):
 
     def _transform_by_encoder(self, y: SupportedTargetTypes) -> np.ndarray:
         if self.encoder is None:
-            return _check_and_to_numpy(y)
+            return _check_and_to_array(y)
 
         # remove ravel warning from pandas Series
         shape = np.shape(y)
@@ -115,12 +139,9 @@ class TabularTargetValidator(BaseTargetValidator):
         else:
             y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
 
-        return _check_and_to_numpy(y)
+        return _check_and_to_array(y)
 
-    def transform(
-        self,
-        y: SupportedTargetTypes,
-    ) -> np.ndarray:
+    def transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
@@ -146,24 +167,11 @@ class TabularTargetValidator(BaseTargetValidator):
             y = np.ravel(y)
 
         if not self.is_classification and "continuous" not in type_of_target(y):
-            # Regression targets must have numbers after a decimal point.
-            # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
-            y_min = np.abs(y).min()
-            offset = y_min * 1e-16  # Sufficiently small number
-            if y_min > 1e15:
-                raise ValueError(
-                    "The minimum value for the target labels of regression tasks must be smaller than "
-                    f"1e15 to avoid errors caused by an overflow, but got {y_min}"
-                )
-
-            y = y.astype(dtype=np.float64) + offset  # Since it is all integer, we can just add a random small number
+            y = _modify_regression_target(y)
 
         return y
 
-    def inverse_transform(
-        self,
-        y: SupportedTargetTypes,
-    ) -> np.ndarray:
+    def inverse_transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
         Revert any encoding transformation done on a target array
 
@@ -197,10 +205,7 @@ class TabularTargetValidator(BaseTargetValidator):
             y = y.astype(self.dtype)
         return y
 
-    def _check_data(
-        self,
-        y: SupportedTargetTypes,
-    ) -> None:
+    def _check_data(self, y: SupportedTargetTypes) -> None:
         """
         Perform dimensionality and data type checks on the targets
 
