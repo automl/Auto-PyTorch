@@ -549,8 +549,7 @@ class AbstractEvaluator(object):
 
         self.resampling_strategy = datamanager.resampling_strategy
 
-        self.num_classes: Optional[int] = datamanager.num_classes if hasattr(datamanager, 'num_classes') \
-            else None
+        self.num_classes: Optional[int] = getattr(datamanager, "num_classes", None)
 
         self.dataset_properties = datamanager.get_dataset_properties(
             get_dataset_requirements(info=datamanager.get_required_dataset_info(),
@@ -560,7 +559,8 @@ class AbstractEvaluator(object):
                                      ))
         self.splits = datamanager.splits
         if self.splits is None:
-            raise AttributeError("Must have called create_splits on {}".format(datamanager.__class__.__name__))
+            raise AttributeError(f"create_splits on {datamanager.__class__.__name__} must be called "
+             f"before the instantiation of {self.__class__.__name__}")
 
         # delete datamanager from memory
         del datamanager
