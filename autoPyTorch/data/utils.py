@@ -167,7 +167,10 @@ class _DtypeReductionMapping(Mapping):
 
     @classmethod
     def __getitem__(cls, item: type) -> type:
-        return cls._mapping[item]
+        for k, v in cls._mapping.items():
+            if k == item:
+                return v
+        raise KeyError(item)
 
     @classmethod
     def __iter__(cls) -> Iterator[type]:
