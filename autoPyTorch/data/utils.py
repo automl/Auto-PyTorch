@@ -42,7 +42,7 @@ def validate_dataset_compression_arg(
     dataset_compression: Mapping[str, Any],
     memory_limit: int
 ) -> DatasetCompressionSpec:
-    """Validates and return a correct dataset_compression argument
+    """Validate and return a correct dataset_compression argument
 
     The returned value can be safely used with `reduce_dataset_size_if_too_large`.
 
@@ -163,18 +163,11 @@ class _DtypeReductionMapping(Mapping):
     # provide only as much precision as np.longdouble,
     # that is, 80 bits on most x86 machines and 64 bits
     # in standard Windows builds.
-    if hasattr(np, 'float96'):
-        _mapping[np.float96] = np.float64
-
-    if hasattr(np, 'float128'):
-        _mapping[np.float128] = np.float64
+    _mapping.update({getattr(np, s): np.float64 for s in ['float96', 'float128'] if hasattr(np, s)})
 
     @classmethod
     def __getitem__(cls, item: type) -> type:
-        for k, v in cls._mapping.items():
-            if k == item:
-                return v
-        raise KeyError(item)
+        return cls._mapping[item]
 
     @classmethod
     def __iter__(cls) -> Iterator[type]:
@@ -192,7 +185,7 @@ supported_precision_reductions = list(reduction_mapping)
 def reduce_precision(
     X: DatasetCompressionInputType
 ) -> Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]:
-    """ Reduces the precision of a dataset containing floats or ints
+    """ Reduce the precision of a dataset containing floats or ints
 
     Note:
         For dataframe, the column's precision is reduced using pd.to_numeric.
