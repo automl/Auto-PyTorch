@@ -194,21 +194,21 @@ def reduce_precision(
         For dataframe, the column's precision is reduced using pd.to_numeric.
 
     Args:
-        X:  DatasetCompressionInputType
+        X (DatasetCompressionInputType):
             The data to reduce precision of.
 
     Returns:
         Tuple[DatasetCompressionInputType, DatasetDTypeContainerType, DatasetDTypeContainerType]
             Returns the reduced data X along with the dtypes it and the dtypes it was reduced to.
     """
-    precision: Optional[DatasetDTypeContainerType] = None
+    reduced_dtypes: Optional[DatasetDTypeContainerType] = None
     if isinstance(X, np.ndarray) or issparse(X):
         dtypes = X.dtype
         if X.dtype not in supported_precision_reductions:
             raise ValueError(f"X.dtype = {X.dtype} not equal to any supported"
                              f" {supported_precision_reductions}")
-        precision = reduction_mapping[X.dtype]
-        X = X.astype(precision)
+        reduced_dtypes = reduction_mapping[X.dtype]
+        X = X.astype(reduced_dtypes)
     elif hasattr(X, 'iloc'):
         dtypes = dict(X.dtypes)
 
@@ -226,15 +226,16 @@ def reduce_precision(
             X[integer_columns] = X[integer_columns].apply(lambda column: pd.to_numeric(column, downcast='integer'))
         if len(float_columns) > 0:
             X[float_columns] = X[float_columns].apply(lambda column: pd.to_numeric(column, downcast='float'))
-        precision = dict(X.dtypes)
+        reduced_dtypes = dict(X.dtypes)
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
                          f"be in (np.ndarray, spmatrix, pd.DataFrame), but got :{type(X)}")
 
-    return X, precision, dtypes
+    return X, reduced_dtypes, dtypes
 
 
 def megabytes(arr: DatasetCompressionInputType) -> float:
+
     if isinstance(arr, np.ndarray):
         memory_in_bytes = arr.nbytes
     elif issparse(arr):
@@ -242,7 +243,9 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
     elif hasattr(arr, 'iloc'):
         memory_in_bytes = arr.memory_usage(index=True, deep=True).sum()
     else:
-        return 0
+        raise ValueError(f"Unrecognised data type of X, expected data type to "
+                         f"be in (np.ndarray, spmatrix, pd.DataFrame) but got :{type(arr)}")
+
     return float(memory_in_bytes / (2**20))
 
 
@@ -287,17 +290,16 @@ def reduce_dataset_size_if_too_large(
             The reduced X if reductions were needed
     """
 
-    precision: Optional[DatasetDTypeContainerType] = None
     for method in methods:
 
         if method == 'precision':
             # If the dataset is too big for the allocated memory,
             # we then try to reduce the precision if it's a high precision dataset
             if megabytes(X) > memory_allocation:
-                X, precision, dtypes = reduce_precision(X)
+                X, reduced_dtypes, dtypes = reduce_precision(X)
                 warnings.warn(
                     f'Dataset too large for allocated memory {memory_allocation}MB, '
-                    f'reduced the precision from {dtypes} to {precision}',
+                    f'reduced the precision from {dtypes} to {reduced_dtypes}',
                 )
         else:
             raise ValueError(f"Unknown operation `{method}`")

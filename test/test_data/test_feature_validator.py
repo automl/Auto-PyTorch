@@ -591,7 +591,7 @@ def test_featurevalidator_reduce_precision(input_data_featuretest):
     validator.fit(X_train=X_train)
     transformed_X_train = validator.transform(X_train.copy())
 
-    assert validator._precision is not None
+    assert validator._reduced_dtype is not None
     assert megabytes(transformed_X_train) < megabytes(X_train)
 
     transformed_X_test = validator.transform(X_test.copy())
@@ -601,4 +601,4 @@ def test_featurevalidator_reduce_precision(input_data_featuretest):
         assert all(transformed_X_train.dtypes == validator._precision)
     else:
         assert transformed_X_train.dtype == transformed_X_test.dtype
-        assert transformed_X_test.dtype == validator._precision
+    assert transformed_X_test.dtype == validator._reduced_dtype

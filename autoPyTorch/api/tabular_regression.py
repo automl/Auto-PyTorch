@@ -12,6 +12,7 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.utils import (
+    DatasetCompressionSpec,
     default_dataset_compression_arg,
     validate_dataset_compression_arg
 )
@@ -411,19 +412,8 @@ class TabularRegressionTask(BaseTask):
             self
 
         """
-        self._dataset_compression: Optional[Mapping[str, Any]]
 
-        if isinstance(dataset_compression, bool):
-            if dataset_compression is True:
-                self._dataset_compression = default_dataset_compression_arg
-            else:
-                self._dataset_compression = None
-        else:
-            self._dataset_compression = dataset_compression
-
-        if self._dataset_compression is not None:
-            self._dataset_compression = validate_dataset_compression_arg(
-                self._dataset_compression, memory_limit=memory_limit)
+        self._dataset_compression = self._get_dataset_compression_mapping(memory_limit, dataset_compression)
 
         self.dataset, self.input_validator = self._get_dataset_input_validator(
             X_train=X_train,
@@ -453,6 +443,43 @@ class TabularRegressionTask(BaseTask):
             load_models=load_models,
             portfolio_selection=portfolio_selection,
         )
+
+    def _get_dataset_compression_mapping(
+        self,
+        memory_limit: int,
+        dataset_compression: Union[bool, Mapping[str, Any]]
+    ) -> Optional[DatasetCompressionSpec]:
+        """
+        Internal function to get value for `self._dataset_compression`
+        based on the value of `dataset_compression` passed.
+
+        If True, it returns the default_dataset_compression_arg. In case
+        of a mapping, it is validated and returned as a `DatasetCompressionSpec`.
+
+        If False, it returns None.
+
+        Args:
+            memory_limit (int):
+                memory limit of the current search.
+            dataset_compression (Union[bool, Mapping[str, Any]]):
+                mapping passed to the `search` function.
+
+        Returns:
+            Optional[DatasetCompressionSpec]:
+                Validated data compression spec or None.
+        """
+        dataset_compression_mapping: Optional[Mapping[str, Any]] = None
+
+        if not isinstance(dataset_compression, bool):
+            dataset_compression_mapping = dataset_compression
+        elif dataset_compression:
+            dataset_compression_mapping = default_dataset_compression_arg
+
+        if dataset_compression_mapping is not None:
+            dataset_compression_mapping = validate_dataset_compression_arg(
+                dataset_compression_mapping, memory_limit=memory_limit)
+
+        return dataset_compression_mapping
 
     def predict(
             self,
