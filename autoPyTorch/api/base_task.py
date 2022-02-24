@@ -243,7 +243,7 @@ class BaseTask(ABC):
         if self.n_jobs == 1:
             self._multiprocessing_context = 'fork'
 
-        self.InputValidator: Optional[BaseInputValidator] = None
+        self.input_validator: Optional[BaseInputValidator] = None
 
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:

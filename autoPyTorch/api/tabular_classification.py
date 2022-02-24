@@ -204,7 +204,7 @@ class TabularClassificationTask(BaseTask):
 
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
-        InputValidator = TabularInputValidator(
+        input_validator = TabularInputValidator(
             is_classification=True,
             logger_port=self._logger_port,
             dataset_compression=dataset_compression
@@ -213,18 +213,18 @@ class TabularClassificationTask(BaseTask):
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
-        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+        input_validator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
 
         dataset = TabularDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
-            validator=InputValidator,
+            validator=input_validator,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name
         )
 
-        return dataset, InputValidator
+        return dataset, input_validator
 
     def search(
         self,
@@ -424,7 +424,7 @@ class TabularClassificationTask(BaseTask):
             self._dataset_compression = validate_dataset_compression_arg(
                 self._dataset_compression, memory_limit=memory_limit)
 
-        self.dataset, self.InputValidator = self._get_dataset_input_validator(
+        self.dataset, self.input_validator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
             X_test=X_test,
@@ -469,28 +469,28 @@ class TabularClassificationTask(BaseTask):
         Returns:
             Array with estimator predictions.
         """
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
 
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         predicted_probabilities = super().predict(X_test, batch_size=batch_size,
                                                   n_jobs=n_jobs)
 
-        if self.InputValidator.target_validator.is_single_column_target():
+        if self.input_validator.target_validator.is_single_column_target():
             predicted_indexes = np.argmax(predicted_probabilities, axis=1)
         else:
             predicted_indexes = (predicted_probabilities > 0.5).astype(int)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
+        return self.input_validator.target_validator.inverse_transform(predicted_indexes)
 
     def predict_proba(self,
                       X_test: Union[np.ndarray, pd.DataFrame, List],
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)
