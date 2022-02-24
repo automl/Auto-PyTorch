@@ -140,6 +140,7 @@ class SchedulerChoice(autoPyTorchChoice):
 
         if default is None:
             defaults = [
+                'CosineAnnealingWarmRestarts',
                 'ReduceLROnPlateau',
                 'CosineAnnealingLR',
                 'no_LRScheduler',
