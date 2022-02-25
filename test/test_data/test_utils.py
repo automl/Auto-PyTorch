@@ -110,3 +110,18 @@ def test_get_dataset_compression_mapping(memory_limit):
         memory_limit=memory_limit
     )
     assert dataset_compression_mapping is None
+
+
+def test_unsupported_errors():
+    """
+    Checks if errors are raised when unsupported data is passed to reduce
+    """
+    X = np.array([
+        ['a', 'b', 'c', 'a', 'b', 'c'],
+        ['a', 'b', 'd', 'r', 'b', 'c']])
+    with pytest.raises(ValueError, match=r'X.dtype = .*'):
+        reduce_dataset_size_if_too_large(X, 0)
+
+    X = [[1, 2], [2, 3]]
+    with pytest.raises(ValueError, match=r'Unrecognised data type of X, expected data type to be in .*'):
+        reduce_dataset_size_if_too_large(X, 0)

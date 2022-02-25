@@ -18,7 +18,6 @@ from typing import (
 import numpy as np
 
 import pandas as pd
-from pandas.api.types import is_float_dtype, is_numeric_dtype
 
 from scipy.sparse import issparse, spmatrix
 
@@ -246,23 +245,17 @@ def reduce_precision(
                              f" {supported_precision_reductions}")
         reduced_dtypes = reduction_mapping[X.dtype]
         X = X.astype(reduced_dtypes)
+
     elif hasattr(X, 'iloc'):
         dtypes = dict(X.dtypes)
 
-        integer_columns = []
-        float_columns = []
+        col_names = X.dtypes.index
 
-        for col, dtype in dtypes.items():
-            if is_numeric_dtype(dtype):
-                if is_float_dtype(dtype):
-                    float_columns.append(col)
-                else:
-                    integer_columns.append(col)
+        float_cols = col_names[[dt.name.startswith("float") for dt in X.dtypes.values]]
+        int_cols = col_names[[dt.name.startswith("int") for dt in X.dtypes.values]]
+        X[int_cols] = X[int_cols].apply(lambda column: pd.to_numeric(column, downcast='integer'))
+        X[float_cols] = X[float_cols].apply(lambda column: pd.to_numeric(column, downcast='float'))
 
-        if len(integer_columns) > 0:
-            X[integer_columns] = X[integer_columns].apply(lambda column: pd.to_numeric(column, downcast='integer'))
-        if len(float_columns) > 0:
-            X[float_columns] = X[float_columns].apply(lambda column: pd.to_numeric(column, downcast='float'))
         reduced_dtypes = dict(X.dtypes)
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
