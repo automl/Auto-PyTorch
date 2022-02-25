@@ -30331,14 +30331,15 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration(values={
-  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 1.5935371448528923,
-  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 0.7844116418329459,
+  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 2.068090231601102,
+  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 1.9329308760314452,
   &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: True,
   &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: False,
   &#39;image_augmenter:RandomAffine:use_augmenter&#39;: False,
-  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: False,
-  &#39;image_augmenter:Resize:use_augmenter&#39;: True,
-  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.44360967675348173,
+  &#39;image_augmenter:RandomCutout:p&#39;: 0.9739889046885781,
+  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: True,
+  &#39;image_augmenter:Resize:use_augmenter&#39;: False,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.27792641387037204,
   &#39;normalizer:__choice__&#39;: &#39;ImageNormalizer&#39;,
 })
 
@@ -30412,7 +30413,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.133 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.519 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
