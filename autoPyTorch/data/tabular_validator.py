@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
-from typing import Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
@@ -32,9 +32,11 @@ class TabularInputValidator(BaseInputValidator):
         self,
         is_classification: bool = False,
         logger_port: Optional[int] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> None:
         self.is_classification = is_classification
         self.logger_port = logger_port
+        self.dataset_compression = dataset_compression
         if self.logger_port is not None:
             self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
                 name='Validation',
@@ -43,7 +45,9 @@ class TabularInputValidator(BaseInputValidator):
         else:
             self.logger = logging.getLogger('Validation')
 
-        self.feature_validator = TabularFeatureValidator(logger=self.logger)
+        self.feature_validator = TabularFeatureValidator(
+            dataset_compression=self.dataset_compression,
+            logger=self.logger)
         self.target_validator = TabularTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger

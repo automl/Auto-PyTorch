@@ -1,12 +1,13 @@
 import functools
-from typing import Dict, List, Optional, Tuple, cast
+from logging import Logger
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 
 import numpy as np
 
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-import scipy.sparse
+from scipy.sparse import issparse, spmatrix
 
 import sklearn.utils
 from sklearn import preprocessing
@@ -17,6 +18,12 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
+from autoPyTorch.data.utils import (
+    DatasetCompressionInputType,
+    DatasetDTypeContainerType,
+    reduce_dataset_size_if_too_large
+)
+from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def _create_column_transformer(
@@ -92,6 +99,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
         categorical_columns (List[int]):
             List of indices of categorical columns
     """
+    def __init__(
+        self,
+        logger: Optional[Union[PicklableClientLogger, Logger]] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        self._dataset_compression = dataset_compression
+        self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
+        super().__init__(logger)
+
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
@@ -139,7 +155,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+        if hasattr(X, "iloc") and not issparse(X):
             X = cast(pd.DataFrame, X)
             # Treat a column with all instances a NaN as numerical
             # This will prevent doing encoding to a categorical column made completely
@@ -205,7 +221,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def transform(
         self,
         X: SupportedFeatTypes,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
@@ -229,7 +245,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+        if hasattr(X, "iloc") and not issparse(X):
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
@@ -256,7 +272,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Sparse related transformations
         # Not all sparse format support index sorting
-        if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
+        if issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
 
         try:
@@ -272,7 +288,38 @@ class TabularFeatureValidator(BaseFeatureValidator):
                                   "Please try to manually cast it to a supported "
                                   "numerical or categorical values.")
             raise e
+
+        X = self._compress_dataset(X)
+
         return X
+
+    # TODO: modify once we have added subsampling as well.
+    def _compress_dataset(self, X: DatasetCompressionInputType) -> DatasetCompressionInputType:
+        """
+        Compress the dataset. This function ensures that
+        the testing data is converted to the same dtype as
+        the training data.
+
+
+        Args:
+            X (DatasetCompressionInputType):
+                Dataset
+
+        Returns:
+            DatasetCompressionInputType:
+                Compressed dataset.
+        """
+        is_dataframe = hasattr(X, 'iloc')
+        is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
+        if not is_reducible_type or self._dataset_compression is None:
+            return X
+        elif self._reduced_dtype is not None:
+            X = X.astype(self._reduced_dtype)
+            return X
+        else:
+            X = reduce_dataset_size_if_too_large(X, **self._dataset_compression)
+            self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
+            return X
 
     def _check_data(
         self,
@@ -287,7 +334,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 checks) and an encoder fitted in the case the data needs encoding
         """
 
-        if not isinstance(X, (np.ndarray, pd.DataFrame)) and not scipy.sparse.issparse(X):
+        if not isinstance(X, (np.ndarray, pd.DataFrame)) and not issparse(X):
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " scipy sparse and Python Lists, yet, the provided input is"
                              " of type {}".format(type(X))

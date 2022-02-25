@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +11,9 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.utils import (
+    get_dataset_compression_mapping
+)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
@@ -163,6 +166,7 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -199,26 +203,27 @@ class TabularClassificationTask(BaseTask):
 
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
-        InputValidator = TabularInputValidator(
+        input_validator = TabularInputValidator(
             is_classification=True,
             logger_port=self._logger_port,
+            dataset_compression=dataset_compression
         )
 
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
-        InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+        input_validator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
 
         dataset = TabularDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
-            validator=InputValidator,
+            validator=input_validator,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name
         )
 
-        return dataset, InputValidator
+        return dataset, input_validator
 
     def search(
         self,
@@ -234,7 +239,7 @@ class TabularClassificationTask(BaseTask):
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
-        memory_limit: Optional[int] = 4096,
+        memory_limit: int = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
         all_supported_metrics: bool = True,
@@ -242,6 +247,7 @@ class TabularClassificationTask(BaseTask):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
+        dataset_compression: Union[Mapping[str, Any], bool] = False,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -310,7 +316,7 @@ class TabularClassificationTask(BaseTask):
                 feature by turning this flag to False. All machine learning
                 algorithms that are fitted during search() are considered for
                 ensemble building.
-            memory_limit (Optional[int]: default=4096):
+            memory_limit (int: default=4096):
                 Memory limit in MB for the machine learning algorithm.
                 Autopytorch will stop fitting the machine learning algorithm
                 if it tries to allocate more than memory_limit MB. If None
@@ -368,20 +374,52 @@ class TabularClassificationTask(BaseTask):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_.
+            dataset_compression: Union[bool, Mapping[str, Any]] = True
+                We compress datasets so that they fit into some predefined amount of memory.
+                **NOTE**
+
+                Default configuration when left as ``True``:
+                .. code-block:: python
+                    {
+                        "memory_allocation": 0.1,
+                        "methods": ["precision"]
+                    }
+                You can also pass your own configuration with the same keys and choosing
+                from the available ``"methods"``.
+                The available options are described here:
+                **memory_allocation**
+                    By default, we attempt to fit the dataset into ``0.1 * memory_limit``. This
+                    float value can be set with ``"memory_allocation": 0.1``. We also allow for
+                    specifying absolute memory in MB, e.g. 10MB is ``"memory_allocation": 10``.
+                    The memory used by the dataset is checked after each reduction method is
+                    performed. If the dataset fits into the allocated memory, any further methods
+                    listed in ``"methods"`` will not be performed.
+
+                **methods**
+                We currently provide the following methods for reducing the dataset size.
+                These can be provided in a list and are performed in the order as given.
+                *   ``"precision"`` - We reduce floating point precision as follows:
+                    *   ``np.float128 -> np.float64``
+                    *   ``np.float96 -> np.float64``
+                    *   ``np.float64 -> np.float32``
+                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                        to the lowest possible precision.
 
         Returns:
             self
 
         """
+        self._dataset_compression = get_dataset_compression_mapping(memory_limit, dataset_compression)
 
-        self.dataset, self.InputValidator = self._get_dataset_input_validator(
+        self.dataset, self.input_validator = self._get_dataset_input_validator(
             X_train=X_train,
             y_train=y_train,
             X_test=X_test,
             y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-            dataset_name=dataset_name)
+            dataset_name=dataset_name,
+            dataset_compression=self._dataset_compression)
 
         return self._search(
             dataset=self.dataset,
@@ -418,28 +456,28 @@ class TabularClassificationTask(BaseTask):
         Returns:
             Array with estimator predictions.
         """
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
 
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         predicted_probabilities = super().predict(X_test, batch_size=batch_size,
                                                   n_jobs=n_jobs)
 
-        if self.InputValidator.target_validator.is_single_column_target():
+        if self.input_validator.target_validator.is_single_column_target():
             predicted_indexes = np.argmax(predicted_probabilities, axis=1)
         else:
             predicted_indexes = (predicted_probabilities > 0.5).astype(int)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
+        return self.input_validator.target_validator.inverse_transform(predicted_indexes)
 
     def predict_proba(self,
                       X_test: Union[np.ndarray, pd.DataFrame, List],
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         return super().predict(X_test, batch_size=batch_size, n_jobs=n_jobs)

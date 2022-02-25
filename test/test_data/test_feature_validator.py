@@ -13,6 +13,7 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
+from autoPyTorch.data.utils import megabytes
 
 
 # Fixtures to be used in this class. By default all elements have 100 datapoints
@@ -557,3 +558,47 @@ def test_comparator():
         key=functools.cmp_to_key(validator._comparator)
     )
     assert ans == feat_type
+
+
+# Actual checks for the features
+@pytest.mark.parametrize(
+    'input_data_featuretest',
+    (
+        'numpy_numericalonly_nonan',
+        'numpy_numericalonly_nan',
+        'numpy_mixed_nan',
+        'pandas_numericalonly_nan',
+        'sparse_bsr_nonan',
+        'sparse_bsr_nan',
+        'sparse_coo_nonan',
+        'sparse_coo_nan',
+        'sparse_csc_nonan',
+        'sparse_csc_nan',
+        'sparse_csr_nonan',
+        'sparse_csr_nan',
+        'sparse_dia_nonan',
+        'sparse_dia_nan',
+        'sparse_dok_nonan',
+        'sparse_dok_nan',
+        'openml_40981',  # Australian
+    ),
+    indirect=True
+)
+def test_featurevalidator_reduce_precision(input_data_featuretest):
+    X_train, X_test = sklearn.model_selection.train_test_split(
+        input_data_featuretest, test_size=0.1, random_state=1)
+    validator = TabularFeatureValidator(dataset_compression={'memory_allocation': 0, 'methods': ['precision']})
+    validator.fit(X_train=X_train)
+    transformed_X_train = validator.transform(X_train.copy())
+
+    assert validator._reduced_dtype is not None
+    assert megabytes(transformed_X_train) < megabytes(X_train)
+
+    transformed_X_test = validator.transform(X_test.copy())
+    assert megabytes(transformed_X_test) < megabytes(X_test)
+    if hasattr(transformed_X_train, 'iloc'):
+        assert all(transformed_X_train.dtypes == transformed_X_test.dtypes)
+        assert all(transformed_X_train.dtypes == validator._precision)
+    else:
+        assert transformed_X_train.dtype == transformed_X_test.dtype
+    assert transformed_X_test.dtype == validator._reduced_dtype
