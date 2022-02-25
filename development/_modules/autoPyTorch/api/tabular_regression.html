@@ -111,7 +111,7 @@
     <div class="body col-md-9 content" role="main">
       
   <h1>Source code for autoPyTorch.api.tabular_regression</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -124,6 +124,9 @@
     <span class="n">TASK_TYPES_TO_STRING</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_validator</span> <span class="kn">import</span> <span class="n">TabularInputValidator</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.data.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_dataset_compression_mapping</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">HoldoutValTypes</span><span class="p">,</span>
@@ -277,6 +280,7 @@
         <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResamplingStrategies</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TabularDataset</span><span class="p">,</span> <span class="n">TabularInputValidator</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns an object of `TabularDataset` and an object of</span>
@@ -313,26 +317,27 @@
 
         <span class="c1"># Create a validator object to make sure that the data provided by</span>
         <span class="c1"># the user matches the autopytorch requirements</span>
-        <span class="n">InputValidator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
+        <span class="n">input_validator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
             <span class="n">is_classification</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="n">dataset_compression</span>
         <span class="p">)</span>
 
         <span class="c1"># Fit a input validator to check the provided data</span>
         <span class="c1"># Also, an encoder is fit to both train and test data,</span>
         <span class="c1"># to prevent unseen categories during inference</span>
-        <span class="n">InputValidator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+        <span class="n">input_validator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
             <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
             <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
-            <span class="n">validator</span><span class="o">=</span><span class="n">InputValidator</span><span class="p">,</span>
+            <span class="n">validator</span><span class="o">=</span><span class="n">input_validator</span><span class="p">,</span>
             <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
             <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
             <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">InputValidator</span>
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">input_validator</span>
 
 <div class="viewcode-block" id="TabularRegressionTask.search"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_regression.TabularRegressionTask.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -348,7 +353,7 @@
         <span class="n">total_walltime_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">func_eval_time_limit_secs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">enable_traditional_pipeline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">memory_limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
+        <span class="n">memory_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
         <span class="n">smac_scenario_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">get_smac_object_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">all_supported_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -356,6 +361,7 @@
         <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DisableFileOutputParameters</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">load_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">portfolio_selection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BaseTask&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Search for the best pipeline configuration for the given dataset.</span>
@@ -424,7 +430,7 @@
 <span class="sd">                feature by turning this flag to False. All machine learning</span>
 <span class="sd">                algorithms that are fitted during search() are considered for</span>
 <span class="sd">                ensemble building.</span>
-<span class="sd">            memory_limit (Optional[int]: default=4096):</span>
+<span class="sd">            memory_limit (int: default=4096):</span>
 <span class="sd">                Memory limit in MB for the machine learning algorithm.</span>
 <span class="sd">                Autopytorch will stop fitting the machine learning algorithm</span>
 <span class="sd">                if it tries to allocate more than memory_limit MB. If None</span>
@@ -482,19 +488,53 @@
 <span class="sd">                Additionally, the keyword &#39;greedy&#39; is supported,</span>
 <span class="sd">                which would use the default portfolio from</span>
 <span class="sd">                `AutoPyTorch Tabular &lt;https://arxiv.org/abs/2006.13799&gt;`_.</span>
+<span class="sd">            dataset_compression: Union[bool, Mapping[str, Any]] = True</span>
+<span class="sd">                We compress datasets so that they fit into some predefined amount of memory.</span>
+<span class="sd">                **NOTE**</span>
+
+<span class="sd">                Default configuration when left as ``True``:</span>
+<span class="sd">                .. code-block:: python</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;memory_allocation&quot;: 0.1,</span>
+<span class="sd">                        &quot;methods&quot;: [&quot;precision&quot;]</span>
+<span class="sd">                    }</span>
+<span class="sd">                You can also pass your own configuration with the same keys and choosing</span>
+<span class="sd">                from the available ``&quot;methods&quot;``.</span>
+<span class="sd">                The available options are described here:</span>
+<span class="sd">                **memory_allocation**</span>
+<span class="sd">                    By default, we attempt to fit the dataset into ``0.1 * memory_limit``. This</span>
+<span class="sd">                    float value can be set with ``&quot;memory_allocation&quot;: 0.1``. We also allow for</span>
+<span class="sd">                    specifying absolute memory in MB, e.g. 10MB is ``&quot;memory_allocation&quot;: 10``.</span>
+<span class="sd">                    The memory used by the dataset is checked after each reduction method is</span>
+<span class="sd">                    performed. If the dataset fits into the allocated memory, any further methods</span>
+<span class="sd">                    listed in ``&quot;methods&quot;`` will not be performed.</span>
+
+<span class="sd">                **methods**</span>
+<span class="sd">                We currently provide the following methods for reducing the dataset size.</span>
+<span class="sd">                These can be provided in a list and are performed in the order as given.</span>
+<span class="sd">                *   ``&quot;precision&quot;`` - We reduce floating point precision as follows:</span>
+<span class="sd">                    *   ``np.float128 -&gt; np.float64``</span>
+<span class="sd">                    *   ``np.float96 -&gt; np.float64``</span>
+<span class="sd">                    *   ``np.float64 -&gt; np.float32``</span>
+<span class="sd">                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`</span>
+<span class="sd">                        to the lowest possible precision.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataset_input_validator</span><span class="p">(</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span> <span class="o">=</span> <span class="n">get_dataset_compression_mapping</span><span class="p">(</span><span class="n">memory_limit</span><span class="p">,</span> <span class="n">dataset_compression</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataset_input_validator</span><span class="p">(</span>
             <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
             <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
             <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
             <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
             <span class="n">resampling_strategy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span>
             <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
-            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">)</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
@@ -521,17 +561,17 @@
             <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
                              <span class="s2">&quot;the estimator search() method.&quot;</span><span class="p">)</span>
 
-        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="n">predicted_values</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
                                            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
 
         <span class="c1"># Allow to predict in the original domain -- that is, the user is not interested</span>
         <span class="c1"># in our encoded values</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_values</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_values</span><span class="p">)</span></div></div>
 </pre></div>
 
     </div>

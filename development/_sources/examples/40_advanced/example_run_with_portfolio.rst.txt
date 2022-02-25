@@ -131,7 +131,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f5b9b6c8970>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7e225db490>
 
 
 
@@ -166,22 +166,23 @@ Print the final ensemble performance
     |    | Preprocessing                                                                                    | Estimator                                                          |   Weight |
     |---:|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
     |  0 | None                                                                                             | CBLearner                                                          |     0.36 |
-    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,Nystroem               | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.3  |
-    |  2 | None                                                                                             | RFLearner                                                          |     0.08 |
-    |  3 | None                                                                                             | ETLearner                                                          |     0.08 |
+    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,Nystroem               | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential             |     0.28 |
+    |  2 | None                                                                                             | ETLearner                                                          |     0.1  |
+    |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     |  6 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-    |  7 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  7 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,Normalizer,KernelPCA                      | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
     |  8 | None                                                                                             | LGBMLearner                                                        |     0.02 |
+    |  9 | None                                                                                             | KNNLearner                                                         |     0.02 |
     autoPyTorch results:
-            Dataset name: 43e3f3b3-9648-11ec-87d9-dfb614d36051
+            Dataset name: d96f0b7f-964d-11ec-87e7-95e9f01c72a4
             Optimisation Metric: accuracy
             Best validation score: 0.8771929824561403
-            Number of target algorithm runs: 25
-            Number of successful target algorithm runs: 23
-            Number of crashed target algorithm runs: 1
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithm runs: 30
+            Number of successful target algorithm runs: 28
+            Number of crashed target algorithm runs: 2
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -191,7 +192,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  27.317 seconds)
+   **Total running time of the script:** ( 5 minutes  23.620 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_run_with_portfolio.py:
