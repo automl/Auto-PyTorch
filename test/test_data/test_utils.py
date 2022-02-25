@@ -1,5 +1,5 @@
-from tkinter.tix import Tree
 from typing import Mapping
+
 import numpy as np
 
 from pandas.testing import assert_frame_equal
@@ -9,7 +9,7 @@ import pytest
 from sklearn.datasets import fetch_openml
 
 from autoPyTorch.data.utils import (
-    DatasetCompressionSpec,
+    default_dataset_compression_arg,
     get_dataset_compression_mapping,
     megabytes,
     reduce_dataset_size_if_too_large,
@@ -78,10 +78,11 @@ def test_error_raised_reduce_precision():
         reduce_precision(X='not expected')
 
 
-def _verify_dataset_compression_mapping(mapping):
+def _verify_dataset_compression_mapping(mapping, expected_mapping):
     assert isinstance(mapping, Mapping)
     assert 'methods' in mapping
     assert 'memory_allocation' in mapping
+    assert mapping == expected_mapping
 
 
 @pytest.mark.parametrize('memory_limit', [2048])
@@ -92,13 +93,17 @@ def test_get_dataset_compression_mapping(memory_limit):
     dataset_compression_mapping = get_dataset_compression_mapping(
         dataset_compression=True,
         memory_limit=memory_limit)
-    _verify_dataset_compression_mapping(dataset_compression_mapping)
+    # validation converts the memory allocation from float to integer based on the memory limit
+    expected_mapping = validate_dataset_compression_arg(default_dataset_compression_arg, memory_limit)
+    _verify_dataset_compression_mapping(dataset_compression_mapping, expected_mapping)
 
+    mapping = {'memory_allocation': 0.01, 'methods': ['precision']}
     dataset_compression_mapping = get_dataset_compression_mapping(
-        dataset_compression={'memory_allocation': 0.01, 'methods': ['precision']},
+        dataset_compression=mapping,
         memory_limit=memory_limit
     )
-    _verify_dataset_compression_mapping(dataset_compression_mapping)
+    expected_mapping = validate_dataset_compression_arg(mapping, memory_limit)
+    _verify_dataset_compression_mapping(dataset_compression_mapping, expected_mapping)
 
     dataset_compression_mapping = get_dataset_compression_mapping(
         dataset_compression=False,
