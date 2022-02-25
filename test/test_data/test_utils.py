@@ -1,3 +1,5 @@
+from tkinter.tix import Tree
+from typing import Mapping
 import numpy as np
 
 from pandas.testing import assert_frame_equal
@@ -7,6 +9,8 @@ import pytest
 from sklearn.datasets import fetch_openml
 
 from autoPyTorch.data.utils import (
+    DatasetCompressionSpec,
+    get_dataset_compression_mapping,
     megabytes,
     reduce_dataset_size_if_too_large,
     reduce_precision,
@@ -72,3 +76,32 @@ def test_error_raised_reduce_precision():
     # in case X is not an expected type
     with pytest.raises(ValueError, match=r'Unrecognised data type of X, expected data type to .*'):
         reduce_precision(X='not expected')
+
+
+def _verify_dataset_compression_mapping(mapping):
+    assert isinstance(mapping, Mapping)
+    assert 'methods' in mapping
+    assert 'memory_allocation' in mapping
+
+
+@pytest.mark.parametrize('memory_limit', [2048])
+def test_get_dataset_compression_mapping(memory_limit):
+    """
+    Tests the functionalities of `get_dataset_compression_mapping`
+    """
+    dataset_compression_mapping = get_dataset_compression_mapping(
+        dataset_compression=True,
+        memory_limit=memory_limit)
+    _verify_dataset_compression_mapping(dataset_compression_mapping)
+
+    dataset_compression_mapping = get_dataset_compression_mapping(
+        dataset_compression={'memory_allocation': 0.01, 'methods': ['precision']},
+        memory_limit=memory_limit
+    )
+    _verify_dataset_compression_mapping(dataset_compression_mapping)
+
+    dataset_compression_mapping = get_dataset_compression_mapping(
+        dataset_compression=False,
+        memory_limit=memory_limit
+    )
+    assert dataset_compression_mapping is None

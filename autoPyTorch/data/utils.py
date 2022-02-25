@@ -38,6 +38,43 @@ default_dataset_compression_arg: DatasetCompressionSpec = {
 }
 
 
+def get_dataset_compression_mapping(
+    memory_limit: int,
+    dataset_compression: Union[bool, Mapping[str, Any]]
+) -> Optional[DatasetCompressionSpec]:
+    """
+    Internal function to get value for `BaseTask._dataset_compression`
+    based on the value of `dataset_compression` passed.
+
+    If True, it returns the default_dataset_compression_arg. In case
+    of a mapping, it is validated and returned as a `DatasetCompressionSpec`.
+
+    If False, it returns None.
+
+    Args:
+        memory_limit (int):
+            memory limit of the current search.
+        dataset_compression (Union[bool, Mapping[str, Any]]):
+            mapping passed to the `search` function.
+
+    Returns:
+        Optional[DatasetCompressionSpec]:
+            Validated data compression spec or None.
+    """
+    dataset_compression_mapping: Optional[Mapping[str, Any]] = None
+
+    if not isinstance(dataset_compression, bool):
+        dataset_compression_mapping = dataset_compression
+    elif dataset_compression:
+        dataset_compression_mapping = default_dataset_compression_arg
+
+    if dataset_compression_mapping is not None:
+        dataset_compression_mapping = validate_dataset_compression_arg(
+            dataset_compression_mapping, memory_limit=memory_limit)
+
+    return dataset_compression_mapping
+
+
 def validate_dataset_compression_arg(
     dataset_compression: Mapping[str, Any],
     memory_limit: int
@@ -54,77 +91,77 @@ def validate_dataset_compression_arg(
         DatasetCompressionSpec
             The validated and correct dataset compression spec
     """
-    if isinstance(dataset_compression, Mapping):
-        # Fill with defaults if they don't exist
-        dataset_compression = {
-            **default_dataset_compression_arg,
-            **dataset_compression
-        }
-
-        # Must contain known keys
-        if set(dataset_compression.keys()) != set(default_dataset_compression_arg.keys()):
-            raise ValueError(
-                f"Unknown key in dataset_compression, {list(dataset_compression.keys())}."
-                f"\nPossible keys are {list(default_dataset_compression_arg.keys())}"
-            )
-
-        memory_allocation = dataset_compression["memory_allocation"]
-
-        # "memory_allocation" must be float or int
-        if not (isinstance(memory_allocation, float) or isinstance(memory_allocation, int)):
-            raise ValueError(
-                "key 'memory_allocation' must be an `int` or `float`"
-                f"\ntype = {memory_allocation}"
-                f"\ndataset_compression = {dataset_compression}"
-            )
-
-        # "memory_allocation" if absolute, should be > 0 and < memory_limit
-        if isinstance(memory_allocation, int) and not (0 < memory_allocation < memory_limit):
-            raise ValueError(
-                f"key 'memory_allocation' if int must be in (0, memory_limit={memory_limit})"
-                f"\nmemory_allocation = {memory_allocation}"
-                f"\ndataset_compression = {dataset_compression}"
-            )
-
-        # "memory_allocation" must be in (0,1) if float
-        if isinstance(memory_allocation, float):
-            if not (0.0 < memory_allocation < 1.0):
-                raise ValueError(
-                    "key 'memory_allocation' if float must be in (0, 1)"
-                    f"\nmemory_allocation = {memory_allocation}"
-                    f"\ndataset_compression = {dataset_compression}"
-                )
-            # convert to int so we can directly use
-            dataset_compression["memory_allocation"] = floor(memory_allocation * memory_limit)
-
-        # "methods" must be non-empty sequence
-        if (
-            not isinstance(dataset_compression["methods"], Sequence)
-            or len(dataset_compression["methods"]) <= 0
-        ):
-            raise ValueError(
-                "key 'methods' must be a non-empty list"
-                f"\nmethods = {dataset_compression['methods']}"
-                f"\ndataset_compression = {dataset_compression}"
-            )
-
-        # "methods" must contain known methods
-        if any(
-            method not in cast(Sequence, default_dataset_compression_arg["methods"])  # mypy
-            for method in dataset_compression["methods"]
-        ):
-            raise ValueError(
-                f"key 'methods' can only contain {default_dataset_compression_arg['methods']}"
-                f"\nmethods = {dataset_compression['methods']}"
-                f"\ndataset_compression = {dataset_compression}"
-            )
-
-        return cast(DatasetCompressionSpec, dataset_compression)
-    else:
+    if not isinstance(dataset_compression, Mapping):
         raise ValueError(
             f"Unknown type for `dataset_compression` {type(dataset_compression)}"
             f"\ndataset_compression = {dataset_compression}"
         )
+
+    # Fill with defaults if they don't exist
+    dataset_compression = {
+        **default_dataset_compression_arg,
+        **dataset_compression
+    }
+
+    # Must contain known keys
+    if set(dataset_compression.keys()) != set(default_dataset_compression_arg.keys()):
+        raise ValueError(
+            f"Unknown key in dataset_compression, {list(dataset_compression.keys())}."
+            f"\nPossible keys are {list(default_dataset_compression_arg.keys())}"
+        )
+
+    memory_allocation = dataset_compression["memory_allocation"]
+
+    # "memory_allocation" must be float or int
+    if not (isinstance(memory_allocation, float) or isinstance(memory_allocation, int)):
+        raise ValueError(
+            "key 'memory_allocation' must be an `int` or `float`"
+            f"\ntype = {memory_allocation}"
+            f"\ndataset_compression = {dataset_compression}"
+        )
+
+    # "memory_allocation" if absolute, should be > 0 and < memory_limit
+    if isinstance(memory_allocation, int) and not (0 < memory_allocation < memory_limit):
+        raise ValueError(
+            f"key 'memory_allocation' if int must be in (0, memory_limit={memory_limit})"
+            f"\nmemory_allocation = {memory_allocation}"
+            f"\ndataset_compression = {dataset_compression}"
+        )
+
+    # "memory_allocation" must be in (0,1) if float
+    if isinstance(memory_allocation, float):
+        if not (0.0 < memory_allocation < 1.0):
+            raise ValueError(
+                "key 'memory_allocation' if float must be in (0, 1)"
+                f"\nmemory_allocation = {memory_allocation}"
+                f"\ndataset_compression = {dataset_compression}"
+            )
+        # convert to int so we can directly use
+        dataset_compression["memory_allocation"] = floor(memory_allocation * memory_limit)
+
+    # "methods" must be non-empty sequence
+    if (
+        not isinstance(dataset_compression["methods"], Sequence)
+        or len(dataset_compression["methods"]) <= 0
+    ):
+        raise ValueError(
+            "key 'methods' must be a non-empty list"
+            f"\nmethods = {dataset_compression['methods']}"
+            f"\ndataset_compression = {dataset_compression}"
+        )
+
+    # "methods" must contain known methods
+    if any(
+        method not in cast(Sequence, default_dataset_compression_arg["methods"])  # mypy
+        for method in dataset_compression["methods"]
+    ):
+        raise ValueError(
+            f"key 'methods' can only contain {default_dataset_compression_arg['methods']}"
+            f"\nmethods = {dataset_compression['methods']}"
+            f"\ndataset_compression = {dataset_compression}"
+        )
+
+    return cast(DatasetCompressionSpec, dataset_compression)
 
 
 class _DtypeReductionMapping(Mapping):
