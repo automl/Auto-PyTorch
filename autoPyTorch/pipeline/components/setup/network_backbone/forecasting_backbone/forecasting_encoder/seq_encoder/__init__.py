@@ -65,7 +65,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                              value_range=(1, 2),
+                                                                              value_range=(1, 1),
                                                                               default_value=1),
             variable_selection: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="variable_selection",
@@ -82,8 +82,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                                                                    default_value=False),
             skip_connection_type: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="skip_connection_type",
-                value_range=("add", "grn"),
-                default_value="grn",
+                value_range=("add", "gate_add_norm"),
+                default_value="gate_add_norm",
             ),
             grn_use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="grn_use_dropout",
                                                                                    value_range=(True, False),
@@ -329,18 +329,28 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 deep_ar_hp = cs.get_hyperparameter(deep_ar_hp)
                 forbidden_ar = ForbiddenEqualsClause(deep_ar_hp, True)
                 if min_num_blocks == 1:
-                    if max_num_blocks - min_num_blocks > 1:
-                        forbidden = ForbiddenAndConjunction(
-                            ForbiddenInClause(num_blocks, list(range(1, max_num_blocks))),
-                            forbidden_ar
-                        )
-                    else:
-                        forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_ar)
-                    cs.add_forbidden_clause(forbidden)
-
-        import pdb
-
-        pdb.set_trace()
+                    if max_num_blocks > 1:
+                        if max_num_blocks - min_num_blocks > 1:
+                            forbidden = ForbiddenAndConjunction(
+                                ForbiddenInClause(num_blocks, list(range(1, max_num_blocks))),
+                                forbidden_ar
+                            )
+                        else:
+                            forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_ar)
+                        cs.add_forbidden_clause(forbidden)
+                if 'RNNEncoder' in available_encoders:
+                    for i in range(min_num_blocks, max_num_blocks + 1):
+                        rnn_bidirectional_hp = ':'.join([f'block_{min_num_blocks}',
+                                                         'RNNEncoder',
+                                                         'bidirectional'])
+                        if rnn_bidirectional_hp in cs:
+                            rnn_bidirectional_hp = cs.get_hyperparameter(rnn_bidirectional_hp)
+                            if 'True' in rnn_bidirectional_hp.choices:
+                                forbidden = ForbiddenAndConjunction(
+                                    ForbiddenEqualsClause(rnn_bidirectional_hp, True),
+                                    deep_ar_hp
+                                )
+                                cs.add_forbidden_clause(forbidden)
         return cs
 
     def set_hyperparameters(self,
@@ -368,8 +378,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         decoder_auto_regressive = params['decoder_auto_regressive']
         forecasting_structure_kwargs = dict(num_blocks=num_blocks,
                                             variable_selection=params['variable_selection'],
-                                            skip_connection=params['skip_connection'],
-                                            decoder_auto_regressive=decoder_auto_regressive, )
+                                            skip_connection=params['skip_connection'])
 
         del params['num_blocks']
         del params['variable_selection']

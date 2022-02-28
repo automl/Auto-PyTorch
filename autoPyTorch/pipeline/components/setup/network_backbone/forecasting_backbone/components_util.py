@@ -4,10 +4,175 @@ from torch import nn
 from functools import partial
 import torch.nn.functional as F
 import math
+
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone. \
+    forecasting_encoder.base_forecasting_encoder import (
+    NetworkStructure,
+    EncoderBlockInfo
+)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone. \
+    forecasting_decoder.base_forecasting_decoder import DecoderBlockInfo
+
 from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
     TimeDistributed, TimeDistributedInterpolation, GatedLinearUnit, ResampleNorm, AddNorm, GateAddNorm,
-    GatedResidualNetwork, VariableSelectionNetwork, InterpretableMultiHeadAttention
+    GatedResidualNetwork, VariableSelectionNetwork, InterpretableMultiHeadAttention,
 )
+from pytorch_forecasting.utils import create_mask
+
+
+class AddLayer(nn.Module):
+    def __init__(self, input_size: int, skip_size: int):
+        super().__init__()
+        if input_size == skip_size:
+            self.fc = nn.Linear(skip_size, input_size)
+
+    def forward(self, input: torch.Tensor, skip: torch.Tensor):
+        if hasattr(self, 'fc'):
+            return input + self.fc(skip)
+        else:
+            return input
+
+
+class TemporalFusionLayer(nn.Module):
+    """
+    (Lim et al.
+    Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting,
+    https://arxiv.org/abs/1912.09363)
+    we follow the implementation from pytorch forecasting:
+    https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/temporal_fusion_transformer/__init__.py
+    """
+
+    def __init__(self,
+                 window_size: int,
+                 n_prediction_steps: int,
+                 network_structure: NetworkStructure,
+                 network_encoder: Dict[str, EncoderBlockInfo],
+                 n_decoder_output_features: int,
+                 d_model: int,
+                 n_head: int,
+                 dropout: Optional[float] = None):
+        super().__init__()
+        num_blocks = network_structure.num_blocks
+        last_block = f'block_{num_blocks}'
+        n_encoder_output = network_encoder[last_block].encoder_output_shape_[-1]
+        self.window_size = window_size
+        self.n_prediction_steps = n_prediction_steps
+        self.timestep = window_size + n_prediction_steps
+
+        if n_decoder_output_features != n_encoder_output:
+            self.decoder_proj_layer = nn.Linear(n_decoder_output_features, n_encoder_output, bias=False)
+        else:
+            self.decoder_proj_layer = None
+        if network_structure.variable_selection:
+            if network_structure.skip_connection:
+                # static feature selector needs to generate the same number of features as the output of the encoder
+                n_encoder_output_first = network_encoder['block_1'].encoder_output_shape_[-1]
+                self.static_context_enrichment = GatedResidualNetwork(
+                    n_encoder_output_first, n_encoder_output_first, n_encoder_output_first, dropout
+                )
+                self.enrichment = GatedResidualNetwork(
+                    input_size=n_encoder_output,
+                    hidden_size=n_encoder_output,
+                    output_size=d_model,
+                    dropout=dropout,
+                    context_size=n_encoder_output_first,
+                    residual=True,
+                )
+                self.enrich_with_static = True
+        if not hasattr(self, 'enrichment'):
+            self.enrichment = GatedResidualNetwork(
+                input_size=n_encoder_output,
+                hidden_size=n_encoder_output,
+                output_size=d_model,
+                dropout=self.dropout_rate if self.use_dropout else None,
+                residual=True,
+            )
+            self.enrich_with_static = False
+
+        self.attention_fusion = InterpretableMultiHeadAttention(
+            d_model=d_model,
+            n_head=n_head,
+            dropout=dropout
+        )
+        self.post_attn_gate_norm = GateAddNorm(d_model, dropout=dropout, trainable_add=False)
+        self.pos_wise_ff = GatedResidualNetwork(input_size=d_model, hidden_size=d_model,
+                                                output_size=d_model, dropout=self.hparams.dropout)
+
+        self.network_structure = network_structure
+        if network_structure.skip_connection:
+            if network_structure.skip_connection_type == 'add':
+                self.residual_connection = AddLayer(d_model, n_encoder_output)
+            elif network_structure.skip_connection_type == 'gate_add_norm':
+                self.residual_connection = GateAddNorm(d_model, skip_size=n_encoder_output,
+                                                       dropout=None, trainable_add=False)
+
+    def forward(self, encoder_output: torch.Tensor, decoder_output: torch.Tensor, encoder_lengths: torch.LongTensor,
+                static_embedding: Optional[torch.Tensor] = None):
+        """
+        Args:
+            encoder_output: the output of the last layer of encoder network
+            decoder_output: the output of the last layer of decoder network
+            encoder_lengths: length of encoder network
+            static_embedding: output of static variable selection network (if applible)
+        """
+        if self.decoder_proj_layer is not None:
+            decoder_output = self.decoder_proj_layer(decoder_output)
+        network_output = torch.cat([encoder_output, decoder_output], dim=1)
+
+        if self.enrich_with_static:
+            static_context_enrichment = self.static_context_enrichment(static_embedding)
+            attn_input = self.enrichment(
+                network_output, static_context_enrichment[:, None].expand(-1, self.timesteps, -1)
+            )
+        else:
+            attn_input = self.enrichment(network_output)
+
+        # Attention
+        attn_output, attn_output_weights = self.attention_fusion(
+            q=attn_input[:, self.window_size:],  # query only for predictions
+            k=attn_input,
+            v=attn_input,
+            mask=self.get_attention_mask(
+                encoder_lengths=encoder_lengths, decoder_length=self.n_prediction_steps
+            ),
+        )
+        # skip connection over attention
+        attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, self.window_size:])
+        output = self.pos_wise_ff(attn_output)
+
+        if self.network_structure.skip_connection:
+            return self.residual_connection(output, decoder_output)
+        else:
+            return output
+
+    def get_attention_mask(self, encoder_lengths: torch.LongTensor, decoder_length: int):
+        """
+        https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/
+        temporal_fusion_transformer/__init__.py
+        """
+        # indices to which is attended
+        attend_step = torch.arange(decoder_length, device=self.device)
+        # indices for which is predicted
+        predict_step = torch.arange(0, decoder_length, device=self.device)[:, None]
+        # do not attend to steps to self or after prediction
+        # todo: there is potential value in attending to future forecasts if they are made with knowledge currently
+        #   available
+        #   one possibility is here to use a second attention layer for future attention (assuming different effects
+        #   matter in the future than the past)
+        #   or alternatively using the same layer but allowing forward attention - i.e. only masking out non-available
+        #   data and self
+        decoder_mask = attend_step >= predict_step
+        # do not attend to steps where data is padded
+        encoder_mask = create_mask(encoder_lengths.max(), encoder_lengths)
+        # combine masks along attended time - first encoder and then decoder
+        mask = torch.cat(
+            (
+                encoder_mask.unsqueeze(1).expand(-1, decoder_length, -1),
+                decoder_mask.unsqueeze(0).expand(encoder_lengths.size(0), -1, -1),
+            ),
+            dim=2,
+        )
+        return mask
 
 
 def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='encoder'):
@@ -26,50 +191,6 @@ def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='e
                                           layer_norm_eps=layer_norm_eps, batch_first=True)
     else:
         raise ValueError('layer_type must be encoder or decoder!')
-
-
-class TunableAddNorm(AddNorm):
-    def __init__(self, input_size: int, skip_size: int = None, trainable_add: bool = True,
-                 layer_norm_eps: float = 1e-5):
-        super(TunableAddNorm, self).__init__(input_size, skip_size, trainable_add)
-        self.norm = nn.LayerNorm(self.input_size, eps=layer_norm_eps)
-
-
-class TunableGateAddNorm(GateAddNorm):
-    def __init__(self, input_size: int, hidden_size: int = None, skip_size: int = None, trainable_add: bool = False,
-                 dropout: Optional[float] = None, layer_norm_eps: float = 1e-5):
-        super().__init__(input_size, hidden_size, skip_size, trainable_add, dropout)
-        self.add_norm = TunableAddNorm(self.hidden_size, skip_size=self.skip_size, trainable_add=trainable_add,
-                                       layer_norm_eps=layer_norm_eps)
-
-
-class TunableGatedResidualNetwork(GatedResidualNetwork):
-    def __init__(self, input_size: int, hidden_size: int, output_size: int, dropout: float = 0.1,
-                 context_size: int = None, residual: bool = False, layer_norm_eps: float = 1e-5):
-        super().__init__(input_size, hidden_size, output_size, dropout, context_size, residual)
-        self.gate_norm = TunableGateAddNorm(
-            input_size=self.hidden_size,
-            skip_size=self.output_size,
-            hidden_size=self.output_size,
-            dropout=self.dropout,
-            trainable_add=False,
-            layer_norm_eps=layer_norm_eps
-        )
-
-
-class InterpretableMultiAttentionEncoderLayer(nn.Module):
-    def __init__(self, d_model: int, nhead: int, dim_feedforward: int = 2048, dropout: float = 0.1,
-                 layer_norm_eps: float = 1e-5, device=None, dtype=None) -> None:
-        self.multi_attention = InterpretableMultiHeadAttention(n_head=nhead, d_model=d_model, dropout=dropout)
-        self.post_attn_gate_norm = TunableGateAddNorm(input_size=d_model,
-                                                      hidden_size=dim_feedforward,
-                                                      dropout=dropout,
-                                                      trainable_add=False,
-                                                      layer_norm_eps=layer_norm_eps
-                                                      )
-        self.pos_wise_ff = TunableGatedResidualNetwork(
-            self.hparams.hidden_size, self.hparams.hidden_size, self.hparams.hidden_size, dropout=self.hparams.dropout
-        )
 
 
 # https://github.com/pytorch/examples/blob/master/word_language_model/model.py

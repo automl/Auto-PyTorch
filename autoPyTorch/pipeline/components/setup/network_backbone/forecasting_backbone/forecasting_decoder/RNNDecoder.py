@@ -76,8 +76,7 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         # RNN decoder only allows RNN encoder, these parameters need to exists.
         hidden_size = self.rnn_kwargs['hidden_size']
-        num_layers = 2 * self.rnn_kwargs['num_layers'] if self.rnn_kwargs['bidirectional'] else self.rnn_kwargs[
-            'num_layers']
+        num_layers = self.rnn_kwargs['num_layers']
         cell_type = self.rnn_kwargs['cell_type']
         dropout = self.rnn_kwargs['dropout']
         decoder = RNN_Module(in_features=future_variable_input[-1],

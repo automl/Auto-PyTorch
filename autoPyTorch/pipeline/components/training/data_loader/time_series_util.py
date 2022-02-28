@@ -10,6 +10,7 @@ from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_co
 
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
+from torch.nn.utils.rnn import pad_sequence
 
 
 class TestSequenceDataset(TransformSubset):
@@ -24,15 +25,14 @@ class TestSequenceDataset(TransformSubset):
         return seq.__getitem__(len(seq) - 1, self.train)
 
 
-def pad_sequence_from_start(sequences: List[torch.Tensor],
-                            seq_minimal_length: int,
-                            seq_max_length: int = np.inf,
-                            batch_first=True,
-                            padding_value=0.0) -> torch.Tensor:
+def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
+                                     seq_minimal_length: int,
+                                     seq_max_length: int = np.inf,
+                                     batch_first=True,
+                                     padding_value=0.0) -> torch.Tensor:
     r"""
-    This function is quite similar to  torch.nn.utils.rnn.pad_sequence except that we pad new values from the start of
-    the sequence. i.e., instead of extending [1,2,3] to [1,2,3,0,0], we extend it as [0,0,1,2,3]. Additionally, the
-    generated sequnece needs to have a length of at least seq_minimal_length
+    This function is quite similar to  torch.nn.utils.rnn.pad_sequence except that we constraint the sequence to be
+    at least seq_minimal_length and at most seq_max_length
     """
 
     # assuming trailing dimensions and type of all the Tensors
@@ -52,9 +52,9 @@ def pad_sequence_from_start(sequences: List[torch.Tensor],
         length = min(tensor.size(0), seq_max_length)
         # use index notation to prevent duplicate references to the tensor
         if batch_first:
-            out_tensor[i, -length:, ...] = tensor[-length:]
+            out_tensor[i, :length, ...] = tensor[-length:]
         else:
-            out_tensor[-length:, i, ...] = tensor[-length:]
+            out_tensor[length:, i, ...] = tensor[-length:]
 
     return out_tensor
 
@@ -67,7 +67,8 @@ class PadSequenceCollector:
 
     """
 
-    def __init__(self, window_size: int, sample_interval, target_padding_value: float = 0.0, seq_max_length: int = np.inf):
+    def __init__(self, window_size: int, sample_interval, target_padding_value: float = 0.0,
+                 seq_max_length: int = np.inf):
         self.window_size = window_size
         self.sample_interval = sample_interval
         self.target_padding_value = target_padding_value
@@ -77,7 +78,7 @@ class PadSequenceCollector:
         elem = batch[0]
         elem_type = type(elem)
         if isinstance(elem, torch.Tensor):
-            seq = pad_sequence_from_start(batch,
+            seq = pad_sequence_with_minimal_length(batch,
                                           seq_minimal_length=self.window_size,
                                           seq_max_length=self.seq_max_length,
                                           batch_first=True, padding_value=padding_value)  # type: torch.Tensor

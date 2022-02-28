@@ -144,6 +144,9 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         self._receptive_field = encoder.receptive_field
         return encoder
 
+    def n_encoder_output_feature(self) -> int:
+        return self.config['num_filters']
+
     @staticmethod
     def allowed_decoders():
         """
@@ -195,5 +198,4 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         add_hyperparameter(cs, num_filters, UniformIntegerHyperparameter)
         add_hyperparameter(cs, kernel_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, bottleneck_size, UniformIntegerHyperparameter)
-
         return cs

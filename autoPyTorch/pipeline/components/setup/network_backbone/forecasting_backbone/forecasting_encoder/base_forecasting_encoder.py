@@ -31,7 +31,7 @@ class NetworkStructure(NamedTuple):
     num_blocks: int = 1
     variable_selection: bool = False
     skip_connection: bool = False
-    skip_connection_type: str = "add"
+    skip_connection_type: str = "add"  # could be 'add' or 'gate_add_norm'
     grn_dropout_rate: float = 0.0
 
 
@@ -166,8 +166,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
             variable_selection = X.get("variable_selection", False)
             if variable_selection:
-                # TODO
-                pass
+                in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                 in_features = len(self.lagged_value) * output_shape[-1] + input_shape[-1] + static_features_shape
             else:
@@ -185,11 +184,14 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         has_hidden_states = self.encoder_properties().has_hidden_states
         self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
-
         return self
 
     @staticmethod
     def allowed_decoders():
+        raise NotImplementedError
+
+    @abstractmethod
+    def n_encoder_output_feature(self) -> int:
         raise NotImplementedError
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

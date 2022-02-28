@@ -43,6 +43,10 @@ class NBEATSEncoder(BaseForecastingEncoder):
         self.window_size = X["window_size"]
         return super().fit(X, y)
 
+    def n_encoder_output_feature(self):
+        # THIS function should never be called!!!
+        raise NotImplementedError
+
     def build_encoder(self,
                       input_shape: Tuple[int, ...]) -> nn.Module:
         preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)

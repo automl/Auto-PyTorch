@@ -36,7 +36,10 @@ class _TransformerEncoder(EncoderNetwork):
             self.lagged_value = [0]
         else:
             self.lagged_value = lagged_value
-        self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
+        if in_features != d_model:
+            self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
+        else:
+            self.input_layer = []
         if use_positional_encoder:
             self.input_layer.append(PositionalEncoding(d_model, dropout_pe))
         self.input_layer = nn.Sequential(*self.input_layer)
@@ -89,6 +92,9 @@ class TransformerEncoder(BaseForecastingEncoder):
                                       layer_norm_eps_output=self.config.get('layer_norm_eps_output', None),
                                       lagged_value=self.lagged_value)
         return encoder
+
+    def n_encoder_output_feature(self) -> int:
+        return 2 ** self.config['d_model_log']
 
     @staticmethod
     def allowed_decoders():

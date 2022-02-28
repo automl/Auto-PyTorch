@@ -88,6 +88,10 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
         feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
         return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features * self.window_size))
 
+    def n_encoder_output_feature(self) -> int:
+        # This function should never be called!!
+        return self.config["num_units_%d" % (self.config['num_groups'])]
+
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:
         """

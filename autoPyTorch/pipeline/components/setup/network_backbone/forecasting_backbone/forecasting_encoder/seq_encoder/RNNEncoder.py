@@ -85,6 +85,9 @@ class RNNEncoder(BaseForecastingEncoder):
                        )
         return encoder
 
+    def n_encoder_output_feature(self) -> int:
+        return 2 * self.config['hidden_size'] if self.config['bidirectional'] else self.config['hidden_size']
+
     @staticmethod
     def allowed_decoders():
         """
