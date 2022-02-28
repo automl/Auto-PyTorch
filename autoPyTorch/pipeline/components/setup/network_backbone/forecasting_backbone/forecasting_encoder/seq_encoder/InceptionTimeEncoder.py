@@ -10,7 +10,7 @@ from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder
+    BaseForecastingEncoder,
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 

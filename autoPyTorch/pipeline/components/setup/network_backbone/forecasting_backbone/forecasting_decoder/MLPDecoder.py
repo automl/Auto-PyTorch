@@ -22,6 +22,7 @@ class MLPDecoderModule(DecoderNetwork):
                  local_layers: Optional[nn.Module],
                  auto_regressive: bool = False
                  ):
+        super().__init__()
         self.global_layers = global_layers
         self.local_layers = local_layers
         self.auto_regressive = auto_regressive
@@ -86,7 +87,8 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         }
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
-        X.update({'mlp_has_local_layer': self.config.get('has_local_layer', True)})
+        if self.is_last_decoder:
+            X.update({'mlp_has_local_layer': self.config.get('has_local_layer', True)})
         return super().transform(X)
 
     @property

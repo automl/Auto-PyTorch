@@ -13,10 +13,10 @@ from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork
+    BaseForecastingEncoder, EncoderNetwork, EncoderProperties
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.transformer_util import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     PositionalEncoding, build_transformer_layers
 
 
@@ -97,11 +97,9 @@ class TransformerEncoder(BaseForecastingEncoder):
         """
         return ['MLPDecoder', 'TransformerDecoder']
 
-    def encoder_properties(self):
-        encoder_properties = super().encoder_properties()
-        encoder_properties.update({'lagged_input': True,
-                                   })
-        return encoder_properties
+    @staticmethod
+    def encoder_properties():
+        return EncoderProperties(lagged_input=True)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         if 'lagged_value' in X['dataset_properties']:

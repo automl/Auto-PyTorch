@@ -8,7 +8,7 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork
+    BaseForecastingEncoder, EncoderNetwork, EncoderProperties
 )
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -61,13 +61,9 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
 
-    def encoder_properties(self):
-        encoder_properties = super().encoder_properties()
-        encoder_properties.update({
-            'bijective_seq_output': False,
-            'fixed_input_seq_length': True,
-        })
-        return encoder_properties
+    @staticmethod
+    def encoder_properties() -> EncoderProperties:
+        return EncoderProperties(bijective_seq_output=False, fixed_input_seq_length=True)
 
     @staticmethod
     def allowed_decoders():

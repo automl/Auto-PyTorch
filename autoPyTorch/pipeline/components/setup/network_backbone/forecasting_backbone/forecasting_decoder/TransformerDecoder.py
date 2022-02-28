@@ -17,9 +17,13 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.utils.common import add_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
+    BaseForecastingDecoder,
+    DecoderNetwork,
+    DecoderProperties
+)
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.transformer_util import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     PositionalEncoding, build_transformer_layers
 
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
@@ -104,12 +108,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
 
     @staticmethod
     def decoder_properties():
-        decoder_properties = BaseForecastingDecoder.decoder_properties()
-        decoder_properties.update({'recurrent': True,
-                                   'lagged_input': True,
-                                   'mask_on_future_target': True,
-                                   })
-        return decoder_properties
+        return DecoderProperties(recurrent=True, lagged_input=True, mask_on_future_target=True)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.transformer_encoder_kwargs = X['transformer_encoder_kwargs']

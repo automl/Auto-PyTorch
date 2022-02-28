@@ -1,7 +1,13 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import torch
 from torch import nn
+from functools import partial
+import torch.nn.functional as F
 import math
+from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
+    TimeDistributed, TimeDistributedInterpolation, GatedLinearUnit, ResampleNorm, AddNorm, GateAddNorm,
+    GatedResidualNetwork, VariableSelectionNetwork, InterpretableMultiHeadAttention
+)
 
 
 def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='encoder'):
@@ -20,6 +26,50 @@ def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='e
                                           layer_norm_eps=layer_norm_eps, batch_first=True)
     else:
         raise ValueError('layer_type must be encoder or decoder!')
+
+
+class TunableAddNorm(AddNorm):
+    def __init__(self, input_size: int, skip_size: int = None, trainable_add: bool = True,
+                 layer_norm_eps: float = 1e-5):
+        super(TunableAddNorm, self).__init__(input_size, skip_size, trainable_add)
+        self.norm = nn.LayerNorm(self.input_size, eps=layer_norm_eps)
+
+
+class TunableGateAddNorm(GateAddNorm):
+    def __init__(self, input_size: int, hidden_size: int = None, skip_size: int = None, trainable_add: bool = False,
+                 dropout: Optional[float] = None, layer_norm_eps: float = 1e-5):
+        super().__init__(input_size, hidden_size, skip_size, trainable_add, dropout)
+        self.add_norm = TunableAddNorm(self.hidden_size, skip_size=self.skip_size, trainable_add=trainable_add,
+                                       layer_norm_eps=layer_norm_eps)
+
+
+class TunableGatedResidualNetwork(GatedResidualNetwork):
+    def __init__(self, input_size: int, hidden_size: int, output_size: int, dropout: float = 0.1,
+                 context_size: int = None, residual: bool = False, layer_norm_eps: float = 1e-5):
+        super().__init__(input_size, hidden_size, output_size, dropout, context_size, residual)
+        self.gate_norm = TunableGateAddNorm(
+            input_size=self.hidden_size,
+            skip_size=self.output_size,
+            hidden_size=self.output_size,
+            dropout=self.dropout,
+            trainable_add=False,
+            layer_norm_eps=layer_norm_eps
+        )
+
+
+class InterpretableMultiAttentionEncoderLayer(nn.Module):
+    def __init__(self, d_model: int, nhead: int, dim_feedforward: int = 2048, dropout: float = 0.1,
+                 layer_norm_eps: float = 1e-5, device=None, dtype=None) -> None:
+        self.multi_attention = InterpretableMultiHeadAttention(n_head=nhead, d_model=d_model, dropout=dropout)
+        self.post_attn_gate_norm = TunableGateAddNorm(input_size=d_model,
+                                                      hidden_size=dim_feedforward,
+                                                      dropout=dropout,
+                                                      trainable_add=False,
+                                                      layer_norm_eps=layer_norm_eps
+                                                      )
+        self.pos_wise_ff = TunableGatedResidualNetwork(
+            self.hparams.hidden_size, self.hparams.hidden_size, self.hparams.hidden_size, dropout=self.hparams.dropout
+        )
 
 
 # https://github.com/pytorch/examples/blob/master/word_language_model/model.py

@@ -14,7 +14,7 @@ from autoPyTorch.pipeline.components.setup.network_head.utils import _activation
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
 
 
 class NBEATSBLock(nn.Module):
@@ -90,12 +90,8 @@ class NBEATSDecoder(BaseForecastingDecoder):
     fill_kwargs = {}
 
     @staticmethod
-    def decoder_properties():
-        decoder_properties = BaseForecastingDecoder.decoder_properties()
-        decoder_properties.update({
-            'multi_blocks': True
-        })
-        return decoder_properties
+    def decoder_properties() -> DecoderProperties:
+        return DecoderProperties(multi_blocks=True)
 
     def _build_decoder(self,
                        encoder_output_shape: Tuple[int, ...],

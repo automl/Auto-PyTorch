@@ -1,21 +1,90 @@
 import numpy as np
+from collections import OrderedDict
 
 import pandas as pd
-
 from scipy.sparse import csr_matrix
 
 import torch
 import torchvision
+from ConfigSpace import ConfigurationSpace
 from autoPyTorch.utils.common import FitRequirement
 from torch import nn
 from abc import abstractmethod
-from typing import Any, Dict, Iterable, Optional, Tuple, List
+from typing import Any, Dict, Iterable, Optional, Tuple, List, Union, NamedTuple
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
+
+
+class EncoderProperties(NamedTuple):
+    has_hidden_states: bool = False
+    bijective_seq_output: bool = True
+    fixed_input_seq_length: bool = False
+    lagged_input: bool = False
+
+
+class NetworkStructure(NamedTuple):
+    num_blocks: int = 1
+    variable_selection: bool = False
+    skip_connection: bool = False
+    skip_connection_type: str = "add"
+    grn_dropout_rate: float = 0.0
+
+
+class EncoderBlockInfo(NamedTuple):
+    encoder: nn.Module
+    encoder_properties: EncoderProperties
+    encoder_output_shape_: Tuple[int, ...]
+
+
+class ForecastingNetworkStructure(autoPyTorchComponent):
+    def __init__(self, random_state: Optional[np.random.RandomState] = None,
+                 num_blocks: int = 1,
+                 variable_selection: bool = False,
+                 skip_connection: bool = False,
+                 skip_connection_type: str = "add",
+                 grn_dropout_rate: float = 0.0,
+                 ) -> None:
+        super().__init__()
+        self.network_structure = NetworkStructure(num_blocks=num_blocks,
+                                                  variable_selection=variable_selection,
+                                                  skip_connection=skip_connection,
+                                                  skip_connection_type=skip_connection_type,
+                                                  grn_dropout_rate=grn_dropout_rate)
+
+    def fit(self, X: Dict[str, Any], y: Any = None) -> "ForecastingNetworkStructure":
+        self.check_requirements(X, y)
+        return self
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        X.update({
+            'network_structure': self.network_structure,
+        })
+        return X
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            **kwargs: Any
+    ) -> ConfigurationSpace:
+        return ConfigurationSpace()
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+        return {
+            'shortname': 'EarlyPreprocessing',
+            'name': 'Early Preprocessing Node',
+        }
+
+    def __str__(self) -> str:
+        """ Allow a nice understanding of what components where used """
+        string = self.__class__.__name__
+        return string
 
 
 class EncoderNetwork(nn.Module):
@@ -56,7 +125,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         self.config = kwargs
         self.input_shape: Optional[Iterable] = None
         self.block_number = block_number
-        self.encoder_output_shape: Optional[Iterable] = None
+        self.encoder_output_shape: Optional[Tuple[int, ...]] = None
 
     @property
     def _required_fit_arguments(self) -> List[FitRequirement]:
@@ -99,7 +168,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             if variable_selection:
                 # TODO
                 pass
-            elif self.encoder_properties()["lagged_input"] and hasattr(self, 'lagged_value'):
+            elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                 in_features = len(self.lagged_value) * output_shape[-1] + input_shape[-1] + static_features_shape
             else:
                 in_features = output_shape[-1] + input_shape[-1] + static_features_shape
@@ -114,8 +183,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         self.input_shape = input_shape
 
-        has_hidden_states = self.encoder_properties().get("has_hidden_states", False)
-        self.encoder_output_shape = get_output_shape(input_shape, has_hidden_states)
+        has_hidden_states = self.encoder_properties().has_hidden_states
+        self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
 
         return self
 
@@ -125,10 +194,12 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X['dataset_properties'].update({'input_shape': self.input_shape})
-        X.update({'network_encoder': self.encoder,
-                  'encoder_properties': self.encoder_properties(),
-                  'encoder_output_shape': self.encoder_output_shape
-                  })
+        network_encoder = X.get('network_encoder', OrderedDict())
+        network_encoder[f'block_{self.block_number}'] = EncoderBlockInfo(encoder=self.encoder,
+                                                                         encoder_properties=self.encoder_properties(),
+                                                                         encoder_output_shape_=self.encoder_output_shape)
+
+        X.update({f'network_encoder': network_encoder})
         return X
 
     @abstractmethod
@@ -147,7 +218,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         """
         raise NotImplementedError()
 
-    def encoder_properties(self):
+    @staticmethod
+    def encoder_properties(self) -> EncoderProperties:
         """
         Encoder properties, this determines how the data flows over the forecasting networks
 
@@ -160,9 +232,5 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         implemented in gluonTS:
         https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/model/deepar/module.py
         """
-        encoder_properties = {'has_hidden_states': False,
-                              'bijective_seq_output': True,
-                              'fixed_input_seq_length': False,
-                              'lagged_input': False,
-                              }
+        encoder_properties = EncoderProperties()
         return encoder_properties

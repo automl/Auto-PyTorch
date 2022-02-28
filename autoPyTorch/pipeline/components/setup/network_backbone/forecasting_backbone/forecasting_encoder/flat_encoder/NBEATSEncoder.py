@@ -5,7 +5,7 @@ from torch import nn
 from ConfigSpace import ConfigurationSpace
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder
+    BaseForecastingEncoder, EncoderProperties
 )
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -22,12 +22,9 @@ class NBEATSEncoder(BaseForecastingEncoder):
     _fixed_seq_length = True
     window_size = 1
 
-    def encoder_properties(self):
-        encoder_properties = super().encoder_properties()
-        encoder_properties.update({
-            'fixed_input_seq_length': True,
-        })
-        return encoder_properties
+    @staticmethod
+    def encoder_properties() -> EncoderProperties:
+        return EncoderProperties(fixed_input_seq_length=True)
 
     @staticmethod
     def allowed_decoders():

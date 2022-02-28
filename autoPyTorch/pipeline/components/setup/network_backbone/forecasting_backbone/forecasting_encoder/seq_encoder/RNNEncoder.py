@@ -13,7 +13,7 @@ from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork
+    BaseForecastingEncoder, EncoderNetwork, EncoderProperties
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
@@ -92,12 +92,9 @@ class RNNEncoder(BaseForecastingEncoder):
         """
         return ['MLPDecoder', 'RNNDecoder']
 
-    def encoder_properties(self):
-        encoder_properties = super().encoder_properties()
-        encoder_properties.update({'has_hidden_states': True,
-                                   'lagged_input': True,
-                                   })
-        return encoder_properties
+    @staticmethod
+    def encoder_properties() -> EncoderProperties:
+        return EncoderProperties(has_hidden_states=True, lagged_input=True)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         if 'lagged_value' in X['dataset_properties']:

@@ -7,6 +7,8 @@ from ConfigSpace import ConfigurationSpace
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    base_forecasting_decoder import DecoderBlockInfo
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
@@ -36,10 +38,10 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
             FitRequirement('auto_regressive', (bool,), user_defined=False, dataset_property=False),
-            FitRequirement('decoder_properties', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_decoder_output_features', (int,), user_defined=False, dataset_property=False),
+            FitRequirement('network_decoder', (Dict,),  user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
-            FitRequirement('output_shape', (Iterable, int), user_defined=True, dataset_property=True),
+            FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -58,10 +60,8 @@ class ForecastingHead(NetworkHeadComponent):
 
         self.required_net_out_put_type = X['required_net_out_put_type']
 
-        if X['decoder_properties']['multi_blocks']:
+        if 'block_1' in X['network_decoder'] and X['network_decoder']['block_1'].decoder_properties.multi_blocks:
             # if the decoder is a stacked block, we directly build head inside the decoder
-            if X.get('network_decoder', None) is None:
-                raise ValueError("when decoder has multi_blocks, it must be specified!")
             if self.required_net_out_put_type != 'regression':
                 raise ValueError("decoder with multi block structure only allow regression loss!")
             self.output_shape = output_shape
@@ -112,7 +112,7 @@ class ForecastingHead(NetworkHeadComponent):
                    input_shape: Tuple[int, ...],
                    output_shape: Tuple[int, ...],
                    auto_regressive: bool = False,
-                   decoder_has_local_layer: bool =True,
+                   decoder_has_local_layer: bool = True,
                    dist_cls: Optional[str] = None,
                    n_prediction_heads: int = 1) -> nn.Module:
         """

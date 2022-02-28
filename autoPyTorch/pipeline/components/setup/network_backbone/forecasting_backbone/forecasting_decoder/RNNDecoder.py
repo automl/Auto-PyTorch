@@ -13,7 +13,11 @@ import numpy as np
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
+    BaseForecastingDecoder,
+    DecoderNetwork,
+    DecoderProperties
+)
 
 from autoPyTorch.utils.common import FitRequirement
 
@@ -90,12 +94,10 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
         return ['RNNEncoder']
 
     @staticmethod
-    def decoder_properties():
-        decoder_properties = BaseForecastingDecoder.decoder_properties()
-        decoder_properties.update({'has_hidden_states': True,
-                                   'recurrent': True,
-                                   'lagged_input': True,
-                                   })
+    def decoder_properties() -> DecoderProperties:
+        decoder_properties = DecoderProperties(has_hidden_states=True,
+                                               recurrent=True,
+                                               lagged_input=True)
         return decoder_properties
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:

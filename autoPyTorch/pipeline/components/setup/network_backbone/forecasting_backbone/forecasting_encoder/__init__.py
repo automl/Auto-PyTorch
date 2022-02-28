@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Type
 from abc import abstractmethod
 from sklearn.pipeline import Pipeline
 
@@ -19,6 +19,7 @@ from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
     BaseForecastingEncoder,
+    ForecastingNetworkStructure
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
     decoders, decoder_addons, add_decoder
@@ -28,10 +29,6 @@ _encoders = find_components(__package__,
                             directory,
                             BaseForecastingEncoder)
 _addons = ThirdPartyComponents(BaseForecastingEncoder)
-
-
-def add_encoder(encoder: BaseForecastingEncoder) -> None:
-    _addons.add_component(encoder)
 
 
 class AbstractForecastingEncoderChoice(autoPyTorchChoice):
@@ -49,7 +46,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         self.decoder_choice = None
 
     @abstractmethod
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
         """Returns the available backbone components
 
         Args:
@@ -60,10 +57,6 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
                 as choices for learning rate scheduling
         """
         raise NotImplementedError
-        components = OrderedDict()
-        components.update(_encoders)
-        components.update(_addons.components)
-        return components
 
     def get_decoder_components(self) -> Dict[str, autoPyTorchComponent]:
         components = OrderedDict()
@@ -82,7 +75,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         include: List[str] = None,
         exclude: List[str] = None,
         components: Optional[Dict[str, autoPyTorchComponent]] = None
-    ) -> Dict[str, autoPyTorchComponent]:
+    ) -> Dict[str, Type[autoPyTorchComponent]]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
 
@@ -356,7 +349,10 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         self.new_params = new_params
         self.choice = self.get_components()[choice](**new_params)
         self.decoder_choice = decoder_components[decoder_type](**decoder_params)
-        self.pipeline = Pipeline([('encoder', self.choice), ('decoder', self.decoder_choice)])
+
+        self.pipeline = Pipeline([('net_structure', ForecastingNetworkStructure(random_state=self.random_state)),
+                                  ('encoder', self.choice),
+                                  ('decoder', self.decoder_choice)])
         return self
 
     @property

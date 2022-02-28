@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Any, Dict, Optional, Union, Tuple, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -20,7 +21,19 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import EncoderNetwork
+    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
+    EncoderNetwork,
+    NetworkStructure,
+    EncoderBlockInfo,
+    NetworkStructure,
+    EncoderProperties
+)
+from autoPyTorch.pipeline.components.setup.network_backbone.\
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
+    DecoderBlockInfo,
+    DecoderProperties
+)
+
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
@@ -148,15 +161,14 @@ class ForecastingNet(nn.Module):
     future_target_required = False
 
     def __init__(self,
+                 network_structure: NetworkStructure,
                  network_embedding: nn.Module,  # TODO consider  embedding for past, future and static features
-                 network_encoder: EncoderNetwork,
-                 network_decoder: nn.Module,
+                 network_encoder: Dict[str, EncoderBlockInfo],
+                 network_decoder: Dict[str, DecoderBlockInfo],
                  network_head: Optional[nn.Module],
                  window_size: int,
                  target_scaler: BaseTargetScaler,
                  dataset_properties: Dict,
-                 encoder_properties: Dict,
-                 decoder_properties: Dict,
                  output_type: str = 'regression',
                  forecast_strategy: Optional[str] = 'mean',
                  num_samples: Optional[int] = 100,
@@ -185,10 +197,26 @@ class ForecastingNet(nn.Module):
             aggregation (str): how the samples are aggregated. We could take their mean or median values.
         """
         super(ForecastingNet, self).__init__()
+        self.network_structure = network_structure
         self.embedding = network_embedding
-        self.encoder = network_encoder  # type:EncoderNetwork
-        self.decoder = network_decoder
         self.head = network_head
+
+        encoders = OrderedDict()
+        decoders = OrderedDict()
+
+        first_decoder = 0
+        for i in range(1, network_structure.num_blocks + 1):
+            block_number = f'block_{i}'
+            encoders[block_number] = network_encoder[block_number].encoder
+            if block_number in decoders:
+                if first_decoder == 0:
+                    first_decoder = block_number
+                decoders[block_number] = network_decoder[block_number].decoder
+
+        if first_decoder == 0:
+            raise ValueError("At least one decoder must be specified!")
+        self.encoder = nn.ModuleDict(encoders)
+        self.decoder = nn.ModuleDict(decoders)
 
         self.target_scaler = target_scaler
 
@@ -200,17 +228,15 @@ class ForecastingNet(nn.Module):
         self.num_samples = num_samples
         self.aggregation = aggregation
 
-        if decoder_properties['has_hidden_states']:
-            if not encoder_properties['has_hidden_states']:
-                raise ValueError('when decoder contains hidden states, encoder must provide the hidden states '
-                                 'for decoder!')
-        self.encoder_has_hidden_states = encoder_properties['has_hidden_states']
-        self.decoder_has_hidden_states = decoder_properties['has_hidden_states']
         # self.mask_futur_features = decoder_properties['mask_future_features']
         self._device = torch.device('cpu')
 
-        self.encoder_lagged_input = encoder_properties['lagged_input']
-        self.decoder_lagged_input = decoder_properties['lagged_input']
+        if not network_structure.variable_selection:
+            self.encoder_lagged_input = network_encoder['block_1'].encoder_properties.lagged_input
+            self.decoder_lagged_input = network_decoder[f'block_{first_decoder}'].decoder_properties.lagged_input
+        else:
+            self.encoder_lagged_input = False
+            self.decoder_lagged_input = False
 
         if self.encoder_lagged_input:
             self.cached_lag_mask_encoder = None
@@ -267,7 +293,6 @@ class ForecastingNet(nn.Module):
                 future_features: Optional[torch.Tensor] = None,
                 static_features: Optional[torch.Tensor] = None,
                 hidden_states: Optional[Tuple[torch.Tensor]] = None):
-        # TODO We need to replace thus None with empty tensors to avoid checking if they are None every time!
         if self.encoder_lagged_input:
             past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(past_targets[:, -self.window_size:])
             past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
@@ -558,7 +583,7 @@ class ForecastingDeepARNet(ForecastingNet):
         """
         super(ForecastingDeepARNet, self).__init__(**kwargs)
         # this determines the training targets
-        self.encoder_bijective_seq_output = kwargs['encoder_properties']['bijective_seq_output']
+        self.encoder_bijective_seq_output = kwargs['network_encoder']['block_1'].encoder_properties.bijective_seq_output
 
         self.cached_lag_mask_encoder_test = None
         self.only_generate_future_dist = False
@@ -816,14 +841,16 @@ class ForecastingNetworkComponent(NetworkComponent):
         return [
             FitRequirement('dataset_properties', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
+            FitRequirement('network_structure', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_encoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_decoder", (torch.nn.Module,), user_defined=False, dataset_property=False),
+            FitRequirement("network_encoder", (Dict[str, EncoderBlockInfo]), user_defined=False,
+                           dataset_property=False),
+            FitRequirement("network_decoder", (Dict[str, DecoderBlockInfo]), user_defined=False,
+                           dataset_property=False),
             FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
             FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
             FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
-            FitRequirement("encoder_properties", (Dict,), user_defined=False, dataset_property=False),
-            FitRequirement("decoder_properties", (Dict,), user_defined=False, dataset_property=False),
+            FitRequirement("encoder_properties_1", (Dict,), user_defined=False, dataset_property=False),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
@@ -836,14 +863,17 @@ class ForecastingNetworkComponent(NetworkComponent):
                              f"loss function. However, net_out_type is {self.net_out_type} and "
                              f"required_net_out_put_type is {X['required_net_out_put_type']}")
 
-        network_init_kwargs = dict(network_embedding=X['network_embedding'],
-                                   network_encoder=X['network_encoder'],
-                                   network_decoder=X['network_decoder'],
+        network_structure = X['network_structure']
+        network_encoder = X['network_encoder']
+        network_decoder = X['network_decoder']
+
+        network_init_kwargs = dict(network_structure=network_structure,
+                                   network_embedding=X['network_embedding'],
+                                   network_encoder=network_encoder,
+                                   network_decoder=network_decoder,
                                    network_head=X['network_head'],
                                    window_size=X['window_size'],
                                    dataset_properties=X['dataset_properties'],
-                                   encoder_properties=X['encoder_properties'],
-                                   decoder_properties=X['decoder_properties'],
                                    target_scaler=X['target_scaler'],
                                    output_type=self.net_out_type,
                                    forecast_strategy=self.forecast_strategy,

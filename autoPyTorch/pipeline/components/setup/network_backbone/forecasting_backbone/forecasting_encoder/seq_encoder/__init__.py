@@ -4,7 +4,11 @@ from typing import Dict, Optional, List, Any, Union
 import numpy as np
 from sklearn.pipeline import Pipeline
 
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    UniformIntegerHyperparameter,
+    UniformFloatHyperparameter
+)
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
 from ConfigSpace.conditions import (
     EqualsCondition, OrConjunction, GreaterThanCondition, NotEqualsCondition, AndConjunction
@@ -19,19 +23,13 @@ from autoPyTorch.pipeline.components.base_component import (
     find_components,
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder,
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
-    decoders, decoder_addons, add_decoder
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
     AbstractForecastingEncoderChoice
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
-    base_forecasting_encoder import BaseForecastingEncoder
+    base_forecasting_encoder import BaseForecastingEncoder, ForecastingNetworkStructure
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -42,50 +40,6 @@ _addons = ThirdPartyComponents(BaseForecastingEncoder)
 
 def add_encoder(encoder: BaseForecastingEncoder) -> None:
     _addons.add_component(encoder)
-
-
-class ForecastingNetworkStructure(autoPyTorchComponent):
-    def __init__(self, random_state: Optional[np.random.RandomState] = None,
-                 num_blocks: int = 1,
-                 variable_selection: bool = False,
-                 skip_connection: bool = False) -> None:
-        super().__init__()
-        self.num_blocks = num_blocks
-        self.random_state = random_state
-        self.variable_selection = variable_selection
-        self.skip_connection = skip_connection
-
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "ForecastingNetworkStructure":
-        self.check_requirements(X, y)
-        return self
-
-    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
-        X.update({
-            'num_blocks': self.num_blocks,
-            'variable_selection': self.variable_selection,
-            'skip_connection': self.skip_connection,
-        })
-        return X
-
-    @staticmethod
-    def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            **kwargs: Any
-    ) -> ConfigurationSpace:
-        return ConfigurationSpace()
-
-    @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> Dict[str, Union[str, bool]]:
-        return {
-            'shortname': 'EarlyPreprocessing',
-            'name': 'Early Preprocessing Node',
-        }
-
-    def __str__(self) -> str:
-        """ Allow a nice understanding of what components where used """
-        string = self.__class__.__name__
-        return string
 
 
 class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
@@ -126,6 +80,17 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="skip_connection",
                                                                                    value_range=(True, False),
                                                                                    default_value=False),
+            skip_connection_type: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="skip_connection_type",
+                value_range=("add", "grn"),
+                default_value="grn",
+            ),
+            grn_use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="grn_use_dropout",
+                                                                                   value_range=(True, False),
+                                                                                   default_value=True),
+            grn_dropout_rate: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='grn_dropout_rate',
+                                                                                    value_range=(0.0, 0.8),
+                                                                                    default_value=0.1),
             default: Optional[str] = None,
             include: Optional[List[str]] = None,
             exclude: Optional[List[str]] = None,
@@ -134,13 +99,19 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
         Args:
             dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
-            num_blocks: HyperparameterSearchSpace: number of encoder-decoder structure blocks
-            variable_selection: HyperparameterSearchSpace: if variable selection is applied, if True, then the first
-            block will be attached with a variable selection block while the following will be enriched with static
-            features.
+            num_blocks (HyperparameterSearchSpace): number of encoder-decoder structure blocks
+            variable_selection (HyperparameterSearchSpace): if variable selection is applied, if True, then the first
+                block will be attached with a variable selection block while the following will be enriched with static
+                features.
             skip_connection: HyperparameterSearchSpace: if skip connection is applied
+            skip_connection_type (HyperparameterSearchSpace): skip connection type, it could be directly added or a grn
+                network (
+                Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
+                https://arxiv.org/abs/1912.09363) TODO consider hidden size of grn as a new HP
+            grn_use_dropout (HyperparameterSearchSpace): if dropout layer is applied to grn
+            grn_dropout_rate (HyperparameterSearchSpace): dropout rate of grn
             decoder_auto_regressive: HyperparameterSearchSpace: if decoder is auto_regressive, e.g., if the decoder
-            receives the output of its input, this only works for auto_regressive decoder models
+                receives the output as its input, this only works for  auto_regressive decoder models
             default (Optional[str]): Default backbone to use
             include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
                 list, and will exclusively use this components.
@@ -158,14 +129,33 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         future_feature_shapes = dataset_properties.get("future_feature_shapes", (0,))
 
         cs = ConfigurationSpace()
-        add_hyperparameter(cs, skip_connection, CategoricalHyperparameter)
 
         min_num_blocks, max_num_blocks = num_blocks.value_range
 
         variable_selection = get_hyperparameter(variable_selection, CategoricalHyperparameter)
         decoder_auto_regressive = get_hyperparameter(decoder_auto_regressive, CategoricalHyperparameter)
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
-        cs.add_hyperparameters([num_blocks, decoder_auto_regressive, variable_selection])
+
+        skip_connection = get_hyperparameter(skip_connection, CategoricalHyperparameter)
+
+        hp_network_structures = [num_blocks, decoder_auto_regressive, variable_selection, skip_connection]
+        cond_skip_connections = []
+        if True in skip_connection.choices:
+            skip_connection_type = get_hyperparameter(skip_connection_type, CategoricalHyperparameter)
+            hp_network_structures.append(skip_connection_type)
+            cond_skip_connections.append(EqualsCondition(skip_connection_type, skip_connection, True))
+            if 'grn' in skip_connection_type.choices:
+                grn_use_dropout = get_hyperparameter(grn_use_dropout, CategoricalHyperparameter)
+                hp_network_structures.append(grn_use_dropout)
+                cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"))
+                if True in grn_use_dropout.choices:
+                    grn_dropout_rate = get_hyperparameter(grn_dropout_rate, UniformFloatHyperparameter)
+                    hp_network_structures.append(grn_dropout_rate)
+                    cond_skip_connections.append(EqualsCondition(grn_dropout_rate, grn_use_dropout, True))
+
+        cs.add_hyperparameters(hp_network_structures)
+        if cond_skip_connections:
+            cs.add_conditions(cond_skip_connections)
 
         if static_features_shape + future_feature_shapes[-1] == 0:
             if False in variable_selection.choices and True in decoder_auto_regressive.choices:
@@ -268,6 +258,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 if i == 1 and decoder_name == self.deepAR_decoder_name:
                     # TODO this is only a temporary solution, a fix on ConfigSpace needs to be implemented
                     updates['can_be_auto_regressive'] = True
+                if decoder_name == "MLPDecoder" and i < int(max_num_blocks):
+                    updates['has_local_layer'] = HyperparameterSearchSpace('has_local_layer',
+                                                                           value_range=(True,),
+                                                                           default_value=True)
                 config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
                                                                                                 # type: ignore
                                                                                                 **updates)
@@ -285,7 +279,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     config_space,
                     # parent_hyperparameter=parent_hyperparameter
                 )
-                if not available_decoders[decoder_name].decoder_properties()["recurrent"]:
+                if not available_decoders[decoder_name].decoder_properties().recurrent:
                     hp_encoder_choice = cs.get_hyperparameter(block_prefix + '__choice__')
                     for encoder_single in encoder_with_single_decoder:
                         if encoder_single in hp_encoder_choice.choices:
@@ -344,7 +338,9 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_ar)
                     cs.add_forbidden_clause(forbidden)
 
+        import pdb
 
+        pdb.set_trace()
         return cs
 
     def set_hyperparameters(self,
@@ -368,20 +364,30 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         new_params = {}
 
         params = configuration.get_dictionary()
-
         num_blocks = params['num_blocks']
-        variable_selection = params['variable_selection']
-        skip_connection = params['skip_connection']
         decoder_auto_regressive = params['decoder_auto_regressive']
+        forecasting_structure_kwargs = dict(num_blocks=num_blocks,
+                                            variable_selection=params['variable_selection'],
+                                            skip_connection=params['skip_connection'],
+                                            decoder_auto_regressive=decoder_auto_regressive, )
+
         del params['num_blocks']
         del params['variable_selection']
         del params['skip_connection']
         del params['decoder_auto_regressive']
 
-        pipeline_steps = [('net_structure', ForecastingNetworkStructure(random_state=self.random_state,
-                                                                        num_blocks=num_blocks,
-                                                                        variable_selection=variable_selection,
-                                                                        skip_connection=skip_connection))]
+        if 'skip_connection_type' in params:
+            forecasting_structure_kwargs['skip_connection_type'] = params['skip_connection_type']
+            del params['skip_connection_type']
+            if 'grn_use_dropout' in params:
+                del params['grn_use_dropout']
+                if 'grn_dropout_rate' in params:
+                    forecasting_structure_kwargs['grn_dropout_rate'] = params['grn_dropout_rate']
+                    del params['grn_dropout_rate']
+                else:
+                    forecasting_structure_kwargs['grn_dropout_rate'] = 0.0
+
+        pipeline_steps = [('net_structure', ForecastingNetworkStructure(**forecasting_structure_kwargs))]
         self.encoder_choice = []
         self.decoder_choice = []
 
