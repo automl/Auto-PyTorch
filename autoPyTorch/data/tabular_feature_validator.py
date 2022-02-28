@@ -1,10 +1,6 @@
 import functools
-<<<<<<< HEAD
 from logging import Logger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
-=======
-from typing import Dict, List, Optional, Tuple, Type, Union, cast
->>>>>>> [FIX] Tests after rebase of `reg_cocktails` (#359)
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
 import numpy as np
 
@@ -283,13 +279,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
-<<<<<<< HEAD
         if hasattr(X, "iloc") and not issparse(X):
-            X = cast(pd.DataFrame, X)
-=======
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
             X = cast(Type[pd.DataFrame], X)
->>>>>>> [FIX] Tests after rebase of `reg_cocktails` (#359)
 
             if self.all_nan_columns is None:
                 raise ValueError('_fit must be called before calling transform')

@@ -418,13 +418,8 @@ class TabularClassificationTask(BaseTask):
             y_test=y_test,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
-<<<<<<< HEAD
             dataset_name=dataset_name,
             dataset_compression=self._dataset_compression)
-=======
-            dataset_name=dataset_name
-        )
->>>>>>> [FIX] Enable preprocessing in reg_cocktails (#369)
 
         return self._search(
             dataset=self.dataset,
@@ -465,23 +460,23 @@ class TabularClassificationTask(BaseTask):
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
 
-        X_test = self.InputValidator.feature_validator.transform(X_test)
+        X_test = self.input_validator.feature_validator.transform(X_test)
         predicted_probabilities = super().predict(X_test, batch_size=batch_size,
                                                   n_jobs=n_jobs)
 
-        if self.InputValidator.target_validator.is_single_column_target():
+        if self.input_validator.target_validator.is_single_column_target():
             predicted_indexes = np.argmax(predicted_probabilities, axis=1)
         else:
             predicted_indexes = (predicted_probabilities > 0.5).astype(int)
 
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
-        return self.InputValidator.target_validator.inverse_transform(predicted_indexes)
+        return self.input_validator.target_validator.inverse_transform(predicted_indexes)
 
     def predict_proba(self,
                       X_test: Union[np.ndarray, pd.DataFrame, List],
                       batch_size: Optional[int] = None, n_jobs: int = 1) -> np.ndarray:
-        if self.InputValidator is None or not self.InputValidator._is_fitted:
+        if self.input_validator is None or not self.input_validator._is_fitted:
             raise ValueError("predict() is only supported after calling search. Kindly call first "
                              "the estimator search() method.")
         X_test = self.input_validator.feature_validator.transform(X_test)
