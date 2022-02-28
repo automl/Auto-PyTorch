@@ -334,6 +334,35 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         pass
 
+    def _swa_update(self) -> None:
+        """
+        perform swa model update
+        """
+        assert self.swa_model is not None, "SWA model can't be none when" \
+                                           " stochastic weight averaging is enabled"
+        self.swa_model.update_parameters(self.model)
+        self.swa_updated = True
+
+    def _se_update(self, epoch: int) -> None:
+        """
+        Add latest model or swa_model to model snapshot ensemble
+        Args:
+            epoch (int):
+                current epoch
+        """
+        assert self.model_snapshots is not None, "model snapshots container can't be " \
+                                                 "none when snapshot ensembling is enabled"
+        is_last_epoch = (epoch == self.budget_tracker.max_epochs)
+        if is_last_epoch and self.use_stochastic_weight_averaging:
+            model_copy = deepcopy(self.swa_model)
+        else:
+            model_copy = deepcopy(self.model)
+
+        assert model_copy is not None
+        model_copy.cpu()
+        self.model_snapshots.append(model_copy)
+        self.model_snapshots = self.model_snapshots[-self.se_lastk:]
+
     def on_epoch_end(self, X: Dict[str, Any], epoch: int) -> bool:
         """
         Optional place holder for AutoPytorch Extensions.
@@ -344,39 +373,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if X['is_cyclic_scheduler']:
             if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
                 if self.use_stochastic_weight_averaging:
-                    assert self.swa_model is not None, "SWA model can't be none when" \
-                                                       " stochastic weight averaging is enabled"
-                    self.swa_model.update_parameters(self.model)
-                    self.swa_updated = True
+                    self._swa_update()
                 if self.use_snapshot_ensemble:
-                    assert self.model_snapshots is not None, "model snapshots container can't be " \
-                                                             "none when snapshot ensembling is enabled"
-                    is_last_epoch = (epoch == self.budget_tracker.max_epochs)
-                    if is_last_epoch and self.use_stochastic_weight_averaging:
-                        model_copy = deepcopy(self.swa_model)
-                    else:
-                        model_copy = deepcopy(self.model)
-
-                    assert model_copy is not None
-                    model_copy.cpu()
-                    self.model_snapshots.append(model_copy)
-                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
+                    self._se_update(epoch=epoch)
         else:
-            if epoch > self._budget_threshold:
-                if self.use_stochastic_weight_averaging:
-                    assert self.swa_model is not None, "SWA model can't be none when" \
-                                                       " stochastic weight averaging is enabled"
-                    self.swa_model.update_parameters(self.model)
-                    self.swa_updated = True
-                if self.use_snapshot_ensemble:
-                    assert self.model_snapshots is not None, "model snapshots container can't be " \
-                                                             "none when snapshot ensembling is enabled"
-                    model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
-                        else deepcopy(self.model)
-                    assert model_copy is not None
-                    model_copy.cpu()
-                    self.model_snapshots.append(model_copy)
-                    self.model_snapshots = self.model_snapshots[-self.se_lastk:]
+            if epoch > self._budget_threshold and self.use_stochastic_weight_averaging:
+                self._swa_update()
+
+            if (
+                self.use_snapshot_ensemble
+                and self.budget_tracker.max_epochs is not None
+                and epoch > (self.budget_tracker.max_epochs - self.se_lastk)
+            ):
+                self._se_update(epoch=epoch)
         return False
 
     def _scheduler_step(
