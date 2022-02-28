@@ -1,6 +1,6 @@
 import functools
 from logging import Logger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
 import numpy as np
 
@@ -279,7 +279,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+        if hasattr(X, "iloc") and not issparse(X):
             X = cast(Type[pd.DataFrame], X)
 
             if self.all_nan_columns is None:

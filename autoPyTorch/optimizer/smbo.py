@@ -250,7 +250,7 @@ class AutoMLSMBO(object):
             self.initial_configurations = initial_configurations \
                 if len(initial_configurations) > 0 else None
 
-            if len(self.initial_configurations) == 0:
+            if self.initial_configurations is None:
                 self.logger.warning("None of the portfolio configurations are compatible"
                                     " with the current search space. Skipping initial configuration...")
 
