@@ -113,13 +113,13 @@ class BaseFeatureValidator(BaseEstimator):
 
     def _check_data(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> None:
         """
         Feature dimensionality and data type checks
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
         """
@@ -145,8 +145,8 @@ class BaseFeatureValidator(BaseEstimator):
 
     def list_to_pandas(
         self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+        X_train: SupportedFeatTypes,
+        X_test: Optional[SupportedFeatTypes] = None,
     ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """
         Converts a list to a pandas DataFrame. In this process, column types are inferred.
@@ -154,10 +154,10 @@ class BaseFeatureValidator(BaseEstimator):
         If test data is provided, we proactively match it to train data
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SupportedFeatTypes]):
                 A hold out set of data used for checking
         Returns:
             pd.DataFrame:
