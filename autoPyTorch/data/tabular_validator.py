@@ -1,10 +1,19 @@
 # -*- encoding: utf-8 -*-
 import logging
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Tuple, Union
+
+import numpy as np
+
+from scipy.sparse import issparse
 
 from autoPyTorch.data.base_validator import BaseInputValidator
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
-from autoPyTorch.data.tabular_target_validator import TabularTargetValidator
+from autoPyTorch.data.tabular_feature_validator import SupportedFeatTypes, TabularFeatureValidator
+from autoPyTorch.data.tabular_target_validator import SupportedTargetTypes, TabularTargetValidator
+from autoPyTorch.data.utils import (
+    DatasetCompressionInputType,
+    DatasetDTypeContainerType,
+    reduce_dataset_size_if_too_large
+)
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
 
@@ -33,9 +42,13 @@ class TabularInputValidator(BaseInputValidator):
         is_classification: bool = False,
         logger_port: Optional[int] = None,
         dataset_compression: Optional[Mapping[str, Any]] = None,
+        seed: int = 42,
     ) -> None:
+        self._dataset_compression = dataset_compression
+        self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
+        self.seed = seed
         self.dataset_compression = dataset_compression
         if self.logger_port is not None:
             self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
@@ -46,10 +59,59 @@ class TabularInputValidator(BaseInputValidator):
             self.logger = logging.getLogger('Validation')
 
         self.feature_validator = TabularFeatureValidator(
-            dataset_compression=self.dataset_compression,
             logger=self.logger)
         self.target_validator = TabularTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger
         )
         self._is_fitted = False
+
+    # TODO: modify once we have added subsampling as well.
+    def _compress_dataset(
+        self,
+        X: DatasetCompressionInputType,
+        y: SupportedTargetTypes,
+    ) -> DatasetCompressionInputType:
+        """
+        Compress the dataset. This function ensures that
+        the testing data is converted to the same dtype as
+        the training data.
+
+
+        Args:
+            X (DatasetCompressionInputType):
+                features of dataset
+            y (SupportedTargetTypes):
+                targets of dataset
+        Returns:
+            DatasetCompressionInputType:
+                Compressed dataset.
+        """
+        is_dataframe = hasattr(X, 'iloc')
+        is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
+        if not is_reducible_type or self._dataset_compression is None:
+            return X, y
+        elif self._reduced_dtype is not None:
+            X = X.astype(self._reduced_dtype)
+            return X, y
+        else:
+            X, y = reduce_dataset_size_if_too_large(
+                X,
+                y=y,
+                is_classification=self.is_classification,
+                random_state=self.seed,
+                **self._dataset_compression
+            )
+            self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
+            return X, y
+
+    def transform(
+        self,
+        X: SupportedFeatTypes,
+        y: Optional[SupportedTargetTypes] = None,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+
+        X, y = super().transform(X, y)
+        X_reduced, y_reduced = self._compress_dataset(X, y)
+
+        return X_reduced, y_reduced

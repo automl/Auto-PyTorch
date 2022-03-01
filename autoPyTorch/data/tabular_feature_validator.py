@@ -100,15 +100,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         categorical_columns (List[int]):
             List of indices of categorical columns
     """
-    def __init__(
-        self,
-        logger: Optional[Union[PicklableClientLogger, Logger]] = None,
-        dataset_compression: Optional[Mapping[str, Any]] = None,
-    ) -> None:
-        self._dataset_compression = dataset_compression
-        self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
-        super().__init__(logger)
-
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
@@ -290,37 +281,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                                   "numerical or categorical values.")
             raise e
 
-        X = self._compress_dataset(X)
-
         return X
-
-    # TODO: modify once we have added subsampling as well.
-    def _compress_dataset(self, X: DatasetCompressionInputType) -> DatasetCompressionInputType:
-        """
-        Compress the dataset. This function ensures that
-        the testing data is converted to the same dtype as
-        the training data.
-
-
-        Args:
-            X (DatasetCompressionInputType):
-                Dataset
-
-        Returns:
-            DatasetCompressionInputType:
-                Compressed dataset.
-        """
-        is_dataframe = ispandas(X)
-        is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
-        if not is_reducible_type or self._dataset_compression is None:
-            return X
-        elif self._reduced_dtype is not None:
-            X = X.astype(self._reduced_dtype)
-            return X
-        else:
-            X = reduce_dataset_size_if_too_large(X, **self._dataset_compression)
-            self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
-            return X
 
     def _check_data(
         self,

@@ -21,8 +21,13 @@ import pandas as pd
 
 from scipy.sparse import issparse, spmatrix
 
-from autoPyTorch.utils.common import ispandas
+from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
+from sklearn.model_selection._split import _validate_shuffle_split
+from sklearn.utils import _approximate_mode, check_random_state
+from sklearn.utils.validation import _num_samples, check_array
 
+from autoPyTorch.data.base_target_validator import SupportedTargetTypes
+from autoPyTorch.utils.common import ispandas
 
 # TODO: TypedDict with python 3.8
 #
@@ -35,8 +40,106 @@ DatasetCompressionInputType = Union[np.ndarray, spmatrix, pd.DataFrame]
 # Default specification for arg `dataset_compression`
 default_dataset_compression_arg: DatasetCompressionSpec = {
     "memory_allocation": 0.1,
-    "methods": ["precision"]
+    "methods": ["precision", "subsample"]
 }
+
+
+class CustomStratifiedShuffleSplit(StratifiedShuffleSplit):
+    """Splitter that deals with classes with too few samples"""
+
+    def _iter_indices(self, X, y, groups=None):  # type: ignore
+        n_samples = _num_samples(X)
+        y = check_array(y, ensure_2d=False, dtype=None)
+        n_train, n_test = _validate_shuffle_split(
+            n_samples,
+            self.test_size,
+            self.train_size,
+            default_test_size=self._default_test_size,
+        )
+
+        if y.ndim == 2:
+            # for multi-label y, map each distinct row to a string repr
+            # using join because str(row) uses an ellipsis if len(row) > 1000
+            y = np.array([" ".join(row.astype("str")) for row in y])
+
+        classes, y_indices = np.unique(y, return_inverse=True)
+        n_classes = classes.shape[0]
+
+        class_counts = np.bincount(y_indices)
+
+        if n_train < n_classes:
+            raise ValueError(
+                "The train_size = %d should be greater or "
+                "equal to the number of classes = %d" % (n_train, n_classes)
+            )
+        if n_test < n_classes:
+            raise ValueError(
+                "The test_size = %d should be greater or "
+                "equal to the number of classes = %d" % (n_test, n_classes)
+            )
+
+        # Find the sorted list of instances for each class:
+        # (np.unique above performs a sort, so code is O(n logn) already)
+        class_indices = np.split(
+            np.argsort(y_indices, kind="mergesort"), np.cumsum(class_counts)[:-1]
+        )
+
+        rng = check_random_state(self.random_state)
+
+        for _ in range(self.n_splits):
+            # if there are ties in the class-counts, we want
+            # to make sure to break them anew in each iteration
+            n_i = _approximate_mode(class_counts, n_train, rng)
+            class_counts_remaining = class_counts - n_i
+            t_i = _approximate_mode(class_counts_remaining, n_test, rng)
+            train = []
+            test = []
+
+            # NOTE: Adapting for unique instances
+            #
+            #   Each list n_i, t_i represent the list of class in the
+            #   training_set and test_set resepectively.
+            #
+            #   n_i = [100, 100, 0, 3]  # 100 of class '0', 0 of class '2'
+            #   t_i = [300, 300, 1, 3]  # 300 of class '0', 1 of class '2'
+            #
+            #  To support unique labels such as class '2', which only has one sample
+            #  between both n_i and t_i, we need to make sure that n_i has at least
+            #  one sample of all classes. There is also the extra check to ensure
+            #  that the sizes stay the same.
+            #
+            #   n_i = [ 99, 100, 1, 3]  # 100 of class '0', 0 of class '2'
+            #            |       ^
+            #            v       |
+            #   t_i = [301, 300, 0, 3]  # 300 of class '0', 1 of class '2'
+            #
+            for i, class_count in enumerate(n_i):
+                if class_count == 0:
+                    t_i[i] -= 1
+                    n_i[i] += 1
+
+                    j = np.argmax(n_i)
+                    if n_i[j] == 1:
+                        warnings.warn(
+                            "Can't respect size requirements for split.",
+                            " The training set must contain all of the unique"
+                            " labels that exist in the dataset.",
+                        )
+                    else:
+                        n_i[j] -= 1
+                        t_i[j] += 1
+
+            for i in range(n_classes):
+                permutation = rng.permutation(class_counts[i])
+                perm_indices_class_i = class_indices[i].take(permutation, mode="clip")
+
+                train.extend(perm_indices_class_i[: n_i[i]])
+                test.extend(perm_indices_class_i[n_i[i]: n_i[i] + t_i[i]])
+
+            train = rng.permutation(train)
+            test = rng.permutation(test)
+
+            yield train, test
 
 
 def get_dataset_compression_mapping(
@@ -266,6 +369,84 @@ def reduce_precision(
     return X, reduced_dtypes, dtypes
 
 
+def subsample(
+    X: DatasetCompressionInputType,
+    is_classification: bool,
+    sample_size: Union[float, int],
+    y: Optional[SupportedTargetTypes] = None,
+    random_state: Optional[Union[int, np.random.RandomState]] = None,
+) -> Tuple[DatasetCompressionInputType, np.ndarray]:
+    """Subsamples data returning the same type as it recieved.
+
+    If `is_classification`, we split using a stratified shuffle split which
+    preserves unique labels in the training set.
+
+    NOTE:
+    It's highly unadvisable to use lists here. In order to preserve types,
+    we convert to a numpy array and then back to a list.
+
+    NOTE2:
+    Interestingly enough, StratifiedShuffleSplut and descendants don't support
+    sparse `y` in `split(): _check_array` call. Hence, neither do we.
+
+    Args:
+        X: DatasetCompressionInputType
+            The X's to subsample
+        y: SupportedTargetTypes
+            The Y's to subsample
+        is_classification: bool
+            Whether this is classification data or regression data. Required for
+            knowing how to split.
+        sample_size: float | int
+            If float, percentage of data to take otherwise if int, an absolute
+            count of samples to take.
+        random_state: int | RandomState = None
+            The random state to pass to the splitted
+
+    Returns:
+        (DatasetCompressionInputType, SupportedTargetTypes)
+            The X and y subsampled according to sample_size
+    """
+
+    if isinstance(X, List):
+        X = np.asarray(X)
+    if isinstance(y, List):
+        y = np.asarray(y)
+
+    if is_classification and y is not None:
+        splitter = CustomStratifiedShuffleSplit(
+            train_size=sample_size, random_state=random_state
+        )
+        left_idxs, _ = next(splitter.split(X=X, y=y))
+
+        if isinstance(X, pd.DataFrame):
+            idxs = X.index[left_idxs]
+            X = X.loc[idxs]
+        else:
+            X = X[left_idxs]
+
+        if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
+            idxs = y.index[left_idxs]
+            y = y.loc[idxs]
+        else:
+            y = y[left_idxs]
+    elif y is None:
+        X, _ = train_test_split(  # type: ignore
+            X,
+            train_size=sample_size,
+            random_state=random_state,
+        )
+    else:
+        X, _, y, _ = train_test_split(  # type: ignore
+            X,
+            y,
+            train_size=sample_size,
+            random_state=random_state,
+        )
+
+    return X, y
+
+
 def megabytes(arr: DatasetCompressionInputType) -> float:
 
     if isinstance(arr, np.ndarray):
@@ -284,7 +465,10 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
 def reduce_dataset_size_if_too_large(
     X: DatasetCompressionInputType,
     memory_allocation: int,
-    methods: List[str] = ['precision'],
+    is_classification: bool,
+    random_state: Union[int, np.random.RandomState],
+    y: Optional[SupportedTargetTypes] = None,
+    methods: List[str] = ['precision', 'subsample'],
 ) -> DatasetCompressionInputType:
     f""" Reduces the size of the dataset if it's too close to the memory limit.
 
@@ -305,13 +489,18 @@ def reduce_dataset_size_if_too_large(
         X: DatasetCompressionInputType
             The features of the dataset.
 
-        methods: List[str] = ['precision']
+        methods: List[str] = ['precision', 'subsample']
             A list of operations that are permitted to be performed to reduce
             the size of the dataset.
 
             **precision**
 
-            Reduce the precision of float types
+                Reduce the precision of float types
+
+            **subsample**
+                Reduce the amount of samples of the dataset such that it fits into the allocated
+                memory. Ensures stratification and that unique labels are present
+
 
         memory_allocation: int
             The amount of memory to allocate to the dataset. It should specify an
@@ -333,7 +522,34 @@ def reduce_dataset_size_if_too_large(
                     f'Dataset too large for allocated memory {memory_allocation}MB, '
                     f'reduced the precision from {dtypes} to {reduced_dtypes}',
                 )
+        elif method == "subsample":
+            # If the dataset is still too big such that we couldn't fit
+            # into the allocated memory, we subsample it so that it does
+            if megabytes(X) > memory_allocation:
+
+                n_samples_before = X.shape[0]
+                sample_percentage = memory_allocation / megabytes(X)
+
+                # NOTE: type ignore
+                #
+                # Tried the generic `def subsample(X: T) -> T` approach but it was
+                # failing elsewhere, keeping it simple for now
+                X, y = subsample(  # type: ignore
+                    X,
+                    y=y,
+                    sample_size=sample_percentage,
+                    is_classification=is_classification,
+                    random_state=random_state,
+                )
+
+                n_samples_after = X.shape[0]
+                warnings.warn(
+                    f"Dataset too large for allocated memory {memory_allocation}MB,"
+                    f" reduced number of samples from {n_samples_before} to"
+                    f" {n_samples_after}."
+                )
+
         else:
             raise ValueError(f"Unknown operation `{method}`")
 
-    return X
+    return X, y
