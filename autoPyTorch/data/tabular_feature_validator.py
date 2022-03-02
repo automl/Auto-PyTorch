@@ -1,6 +1,12 @@
+"""
+TODO:
+    1. Add dtypes argument to TabularFeatureValidator
+    2. Modify dtypes from List[str] to Dict[str, str]
+    3. Add the feature to enforce the dtype to the provided dtypes
+"""
 import functools
 from logging import Logger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 
@@ -23,8 +29,18 @@ from autoPyTorch.data.utils import (
     DatasetDTypeContainerType,
     reduce_dataset_size_if_too_large
 )
-from autoPyTorch.utils.common import ispandas
+from autoPyTorch.utils.common import autoPyTorchEnum, ispandas
 from autoPyTorch.utils.logging_ import PicklableClientLogger
+
+
+class ColumnDTypes(autoPyTorchEnum):
+    numerical = "numerical"
+    categorical = "categorical"
+
+
+def convert_dtype_enum_dict_to_str_dict(dtype_dict: Dict[str, ColumnDTypes]) -> Dict[str, str]:
+    enum2str = {type_choice: str(type_choice) for type_choice in ColumnDTypes}
+    return {col_name: enum2str[dtype_choice] for col_name, dtype_choice in dtype_dict.items()}
 
 
 def _create_column_transformer(
@@ -129,6 +145,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
     ) -> None:
         self._dataset_compression = dataset_compression
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
+        self.all_nan_columns: Optional[Set[str]] = None
         super().__init__(logger)
 
     @staticmethod
@@ -146,10 +163,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Returns:
             int: either [0, -1, 1]
         """
-        choices = ['categorical', 'numerical']
+        choices = [str(ColumnDTypes.categorical), str(ColumnDTypes.numerical)]
         if cmp1 not in choices or cmp2 not in choices:
-            raise ValueError('The comparator for the column order only accepts {}, '
-                             'but got {} and {}'.format(choices, cmp1, cmp2))
+            raise ValueError(
+                f"The comparator for the column order only accepts {choices}, "
+                f"but got {cmp1} and {cmp2}"
+            )
 
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
@@ -164,7 +183,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             fit (bool):
                 Whether this call is the fit to X or the transform using pre-fitted transformer.
         """
-        if not fit and self.all_nan_columns is None:
+        if not fit and not issparse(X) and self.all_nan_columns is None:
             raise ValueError('_fit must be called before calling transform')
 
         if fit:
@@ -200,6 +219,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.column_transformer.fit(X)
 
         # The column transformer moves categoricals to the left side
+        assert self.feat_type is not None
         self.feat_type = sorted(self.feat_type, key=functools.cmp_to_key(self._comparator))
 
         encoded_categories = self.column_transformer.\
@@ -242,8 +262,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if len(self.enc_columns) > 0:
                 self._encode_categories(X)
 
-            for i, type_ in enumerate(self.feat_type):
-                if 'numerical' in type_:
+            for i, type_name in enumerate(self.feat_type):
+                if ColumnDTypes.numerical in type_name:
                     self.numerical_columns.append(i)
                 else:
                     self.categorical_columns.append(i)
@@ -453,9 +473,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
         for dtype, column in zip(X.dtypes, X.columns):
             if dtype.name in ['category', 'bool']:
                 enc_columns.append(column)
-                feat_type.append('categorical')
+                feat_type.append(str(ColumnDTypes.categorical))
             elif is_numeric_dtype(dtype):
-                feat_type.append('numerical')
+                feat_type.append(str(ColumnDTypes.numerical))
             else:
                 _error_due_to_unsupported_column(X, column)
 
