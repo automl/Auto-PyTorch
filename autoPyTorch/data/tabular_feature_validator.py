@@ -74,6 +74,28 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     return preprocessors
 
 
+def _error_due_to_unsupported_column(X: pd.DataFrame, column: str) -> None:
+    # Move away from np.issubdtype as it causes
+    # TypeError: data type not understood in certain pandas types
+    def _generate_error_message_prefix(type_name: str, proc_type: Optional[str] = None) -> str:
+        msg1 = f"column `{column}` has an invalid type `{type_name}`. "
+        msg2 = "Cast it to a numerical type, category type or bool type by astype method. "
+        msg3 = f"The following link might help you to know {proc_type} processing: "
+        return msg1 + msg2 + ("" if proc_type is None else msg3)
+
+    dtype = X[column].dtype
+    if dtype.name == 'object':
+        err_msg = _generate_error_message_prefix(type_name="object", proc_type="string")
+        url = "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html"
+        raise TypeError(f"{err_msg}{url}")
+    elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(dtype):
+        err_msg = _generate_error_message_prefix(type_name="time and/or date datatype", proc_type="datetime")
+        raise TypeError(f"{err_msg}https://stats.stackexchange.com/questions/311494/")
+    else:
+        err_msg = _generate_error_message_prefix(type_name=dtype.name)
+        raise TypeError(err_msg)
+
+
 class TabularFeatureValidator(BaseFeatureValidator):
     """
     A subclass of `BaseFeatureValidator` made for tabular data.
@@ -399,10 +421,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             else:
                 self.dtypes = dtypes
 
-    def _get_columns_to_encode(
-        self,
-        X: pd.DataFrame,
-    ) -> Tuple[List[str], List[str]]:
+    def _get_columns_to_encode(self, X: pd.DataFrame) -> Tuple[List[str], List[str]]:
         """
         Return the columns to be encoded from a pandas dataframe
 
@@ -428,51 +447,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
         feat_type = []
 
         # Make sure each column is a valid type
-        for i, column in enumerate(X.columns):
-            if X[column].dtype.name in ['category', 'bool']:
-
+        for dtype, column in zip(X.dtypes, X.columns):
+            if dtype.name in ['category', 'bool']:
                 enc_columns.append(column)
                 feat_type.append('categorical')
-            # Move away from np.issubdtype as it causes
-            # TypeError: data type not understood in certain pandas types
-            elif not is_numeric_dtype(X[column]):
-                if X[column].dtype.name == 'object':
-                    raise ValueError(
-                        "Input Column {} has invalid type object. "
-                        "Cast it to a valid dtype before using it in AutoPyTorch. "
-                        "Valid types are numerical, categorical or boolean. "
-                        "You can cast it to a valid dtype using "
-                        "pandas.Series.astype ."
-                        "If working with string objects, the following "
-                        "tutorial illustrates how to work with text data: "
-                        "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html".format(
-                            # noqa: E501
-                            column,
-                        )
-                    )
-                elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
-                    X[column].dtype
-                ):
-                    raise ValueError(
-                        "AutoPyTorch does not support time and/or date datatype as given "
-                        "in column {}. Please convert the time information to a numerical value "
-                        "first. One example on how to do this can be found on "
-                        "https://stats.stackexchange.com/questions/311494/".format(
-                            column,
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        "Input Column {} has unsupported dtype {}. "
-                        "Supported column types are categorical/bool/numerical dtypes. "
-                        "Make sure your data is formatted in a correct way, "
-                        "before feeding it to AutoPyTorch.".format(
-                            column,
-                            X[column].dtype.name,
-                        )
-                    )
-            else:
+            elif is_numeric_dtype(dtype):
                 feat_type.append('numerical')
+            else:
+                _error_due_to_unsupported_column(X, column)
+
         return enc_columns, feat_type
 
     def list_to_pandas(self, X: SupportedFeatTypes) -> pd.DataFrame:
