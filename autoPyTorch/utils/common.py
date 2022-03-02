@@ -14,21 +14,17 @@ import numpy as np
 
 import pandas as pd
 
-import scipy.sparse
+from scipy.sparse import spmatrix
 
 import torch
 from torch.utils.data.dataloader import default_collate
 
 HyperparameterValueType = Union[int, str, float]
-SparseMatrixType = Union[
-    scipy.sparse.bsr_matrix,
-    scipy.sparse.coo_matrix,
-    scipy.sparse.csc_matrix,
-    scipy.sparse.csr_matrix,
-    scipy.sparse.dia_matrix,
-    scipy.sparse.dok_matrix,
-    scipy.sparse.lil_matrix,
-]
+
+
+def ispandas(X: Any) -> bool:
+    """ Whether X is pandas.DataFrame or pandas.Series """
+    return hasattr(X, "iloc")
 
 
 class FitRequirement(NamedTuple):
@@ -177,10 +173,10 @@ def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
     return torch.device(X.get("device", "cpu"))
 
 
-def subsampler(data: Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix],
+def subsampler(data: Union[np.ndarray, pd.DataFrame, spmatrix],
                x: Union[np.ndarray, List[int]]
-               ) -> Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix]:
-    return data[x] if isinstance(data, (np.ndarray, scipy.sparse.csr_matrix)) else data.iloc[x]
+               ) -> Union[np.ndarray, pd.DataFrame, spmatrix]:
+    return data[x] if isinstance(data, (np.ndarray, spmatrix)) else data.iloc[x]
 
 
 def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,

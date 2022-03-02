@@ -27,7 +27,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes,
     ResamplingStrategies
 )
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, ispandas
 
 BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
 BaseDatasetPropertiesType = Union[int, float, str, List, bool]
@@ -220,7 +220,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             A transformed single point prediction
         """
 
-        X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
+        X = self.train_tensors[0].iloc[[index]] if ispandas(self.train_tensors[0]) \
             else self.train_tensors[0][index]
 
         if self.train_transform is not None and train:

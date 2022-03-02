@@ -23,6 +23,7 @@ from autoPyTorch.data.utils import (
     DatasetDTypeContainerType,
     reduce_dataset_size_if_too_large
 )
+from autoPyTorch.utils.common import ispandas
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
@@ -155,7 +156,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not issparse(X):
+        if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
             # Treat a column with all instances a NaN as numerical
             # This will prevent doing encoding to a categorical column made completely
@@ -245,7 +246,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not issparse(X):
+        if ispandas(X) and not issparse(X):
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
@@ -259,7 +260,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self._check_data(X)
 
         # Pandas related transformations
-        if hasattr(X, "iloc") and self.column_transformer is not None:
+        if ispandas(X) and self.column_transformer is not None:
             if np.any(pd.isnull(X)):
                 # After above check it means that if there is a NaN
                 # the whole column must be NaN
@@ -309,7 +310,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             DatasetCompressionInputType:
                 Compressed dataset.
         """
-        is_dataframe = hasattr(X, 'iloc')
+        is_dataframe = ispandas(X)
         is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
         if not is_reducible_type or self._dataset_compression is None:
             return X
@@ -363,7 +364,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 )
 
         # Then for Pandas, we do not support Nan in categorical columns
-        if hasattr(X, "iloc"):
+        if ispandas(X):
             # If entered here, we have a pandas dataframe
             X = cast(pd.DataFrame, X)
 
