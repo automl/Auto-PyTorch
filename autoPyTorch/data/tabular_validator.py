@@ -48,7 +48,7 @@ class TabularInputValidator(BaseInputValidator):
         dataset_compression: Optional[DatasetCompressionSpec] = None,
         seed: int = 42,
     ) -> None:
-        self._dataset_compression = dataset_compression
+        self.dataset_compression = dataset_compression
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
@@ -92,7 +92,7 @@ class TabularInputValidator(BaseInputValidator):
         """
         is_dataframe = hasattr(X, 'iloc')
         is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
-        if not is_reducible_type or self._dataset_compression is None:
+        if not is_reducible_type or self.dataset_compression is None:
             return X, y
         elif self._reduced_dtype is not None:
             X = X.astype(self._reduced_dtype)
@@ -103,7 +103,7 @@ class TabularInputValidator(BaseInputValidator):
                 y=y,
                 is_classification=self.is_classification,
                 random_state=self.seed,
-                **self._dataset_compression  # type: ignore [arg-type]
+                **self.dataset_compression  # type: ignore [arg-type]
             )
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
             return X, y

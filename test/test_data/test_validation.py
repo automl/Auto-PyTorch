@@ -163,7 +163,7 @@ def test_validation_unsupported():
     ),
     indirect=True
 )
-def test_featurevalidator_reduce_precision(input_data_featuretest):
+def test_featurevalidator_dataset_compression(input_data_featuretest):
     n_samples = input_data_featuretest.shape[0]
     input_data_targets = np.random.random_sample((n_samples))
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
