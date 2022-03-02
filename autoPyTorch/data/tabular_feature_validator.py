@@ -86,7 +86,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             List for which an element at each index is a
             list containing the categories for the respective
             categorical column.
-        transformed_columns (List[str])
+        enc_columns (List[str])
             List of columns that were transformed.
         column_transformer (Optional[BaseEstimator])
             Hosts an imputer and an encoder object if the data
@@ -175,16 +175,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             assert self.feat_type is not None
 
-            if len(self.transformed_columns) > 0:
+            if len(self.enc_columns) > 0:
 
                 preprocessors = get_tabular_preprocessors()
                 self.column_transformer = _create_column_transformer(
                     preprocessors=preprocessors,
-                    categorical_columns=self.transformed_columns,
+                    categorical_columns=self.enc_columns,
                 )
 
                 # Mypy redefinition
@@ -374,7 +374,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             # Define the column to be encoded here as the feature validator is fitted once
             # per estimator
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
@@ -412,17 +412,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 checks) and an encoder fitted in the case the data needs encoding
 
         Returns:
-            transformed_columns (List[str]):
+            enc_columns (List[str]):
                 Columns to encode, if any
             feat_type:
                 Type of each column numerical/categorical
         """
 
-        if len(self.transformed_columns) > 0 and self.feat_type is not None:
-            return self.transformed_columns, self.feat_type
+        if len(self.enc_columns) > 0 and self.feat_type is not None:
+            return self.enc_columns, self.feat_type
 
         # Register if a column needs encoding
-        transformed_columns = []
+        enc_columns = []
 
         # Also, register the feature types for the estimator
         feat_type = []
@@ -431,7 +431,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         for i, column in enumerate(X.columns):
             if X[column].dtype.name in ['category', 'bool']:
 
-                transformed_columns.append(column)
+                enc_columns.append(column)
                 feat_type.append('categorical')
             # Move away from np.issubdtype as it causes
             # TypeError: data type not understood in certain pandas types
@@ -473,7 +473,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     )
             else:
                 feat_type.append('numerical')
-        return transformed_columns, feat_type
+        return enc_columns, feat_type
 
     def list_to_dataframe(
         self,
