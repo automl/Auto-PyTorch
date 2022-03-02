@@ -3,7 +3,6 @@ import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
@@ -210,56 +209,7 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
 
         # Here we add custom code, like this with this
         # is not a valid configuration
-        # Learned Entity Embedding is only valid when encoder is one hot encoder
-        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
-            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
-            if 'LearnedEntityEmbedding' in embeddings:
-                encoders = cs.get_hyperparameter('encoder:__choice__').choices
-                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
-                possible_default_embeddings = copy.copy(list(embeddings))
-                del possible_default_embeddings[possible_default_embeddings.index(default)]
-
-                for encoder in encoders:
-                    if encoder == 'OneHotEncoder':
-                        continue
-                    while True:
-                        try:
-                            cs.add_forbidden_clause(ForbiddenAndConjunction(
-                                ForbiddenEqualsClause(cs.get_hyperparameter(
-                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
-                            ))
-                            break
-                        except ValueError:
-                            # change the default and try again
-                            try:
-                                default = possible_default_embeddings.pop()
-                            except IndexError:
-                                raise ValueError("Cannot find a legal default configuration")
-                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
-
-        # Disable CyclicLR until todo is completed.
-        if 'lr_scheduler' in self.named_steps.keys() and 'trainer' in self.named_steps.keys():
-            trainers = cs.get_hyperparameter('trainer:__choice__').choices
-            for trainer in trainers:
-                available_schedulers = self.named_steps['lr_scheduler'].get_available_components(
-                    dataset_properties=dataset_properties,
-                    exclude=exclude if bool(exclude) else None,
-                    include=include if bool(include) else None)
-                # TODO: update cyclic lr to use n_restarts and adjust according to batch size
-                cyclic_lr_name = 'CyclicLR'
-                if cyclic_lr_name in available_schedulers:
-                    # disable snapshot ensembles and stochastic weight averaging
-                    cs.add_forbidden_clause(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(cs.get_hyperparameter(
-                            f'trainer:{trainer}:use_snapshot_ensemble'), True),
-                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
-                    ))
-                    cs.add_forbidden_clause(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(cs.get_hyperparameter(
-                            f'trainer:{trainer}:use_stochastic_weight_averaging'), True),
-                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
-                    ))
+        cs = self._add_forbidden_conditions(cs)
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
