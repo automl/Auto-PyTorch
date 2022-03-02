@@ -189,6 +189,29 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         return X
 
+    def _encode_categories(self, X: pd.DataFrame) -> None:
+        preprocessors = get_tabular_preprocessors()
+        self.column_transformer = _create_column_transformer(
+            preprocessors=preprocessors,
+            categorical_columns=self.enc_columns,
+        )
+
+        assert self.column_transformer is not None  # Mypy redefinition
+        self.column_transformer.fit(X)
+
+        # The column transformer moves categoricals to the left side
+        self.feat_type = sorted(self.feat_type, key=functools.cmp_to_key(self._comparator))
+
+        encoded_categories = self.column_transformer.\
+            named_transformers_['categorical_pipeline'].\
+            named_steps['ordinalencoder'].categories_
+
+        # An ordinal encoder for each categorical columns
+        self.categories = [
+            list(range(len(cat)))
+            for cat in encoded_categories
+        ]
+
     def _fit(self, X: SupportedFeatTypes) -> BaseEstimator:
         """
         In case input data is a pandas DataFrame, this utility encodes the user provided
@@ -216,36 +239,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             assert self.feat_type is not None
-
             if len(self.enc_columns) > 0:
-
-                preprocessors = get_tabular_preprocessors()
-                self.column_transformer = _create_column_transformer(
-                    preprocessors=preprocessors,
-                    categorical_columns=self.enc_columns,
-                )
-
-                # Mypy redefinition
-                assert self.column_transformer is not None
-                self.column_transformer.fit(X)
-
-                # The column transformer reorders the feature types
-                # therefore, we need to change the order of columns as well
-                # This means categorical columns are shifted to the left
-                self.feat_type = sorted(
-                    self.feat_type,
-                    key=functools.cmp_to_key(self._comparator)
-                )
-
-                encoded_categories = self.column_transformer.\
-                    named_transformers_['categorical_pipeline'].\
-                    named_steps['ordinalencoder'].categories_
-                self.categories = [
-                    # We fit an ordinal encoder, where all categorical
-                    # columns are shifted to the left
-                    list(range(len(cat)))
-                    for cat in encoded_categories
-                ]
+                self._encode_categories(X)
 
             for i, type_ in enumerate(self.feat_type):
                 if 'numerical' in type_:
@@ -253,7 +248,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 else:
                     self.categorical_columns.append(i)
 
-        # Lastly, store the number of features
         self.num_features = np.shape(X)[1]
         return self
 
@@ -270,6 +264,41 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Return:
             np.ndarray:
                 The transformed array
+
+        Note:
+            The default transform performs the folloing:
+                * simple imputation for both
+                * scaling for numerical
+                * one-hot encoding for categorical
+            For example, here is a simple case
+            of which all the columns are categorical.
+                data = [
+                    {'A': 1, 'B': np.nan, 'C': np.nan},
+                    {'A': np.nan, 'B': 3, 'C': np.nan},
+                    {'A': 2, 'B': np.nan, 'C': np.nan}
+                ]
+            and suppose all the columns are categorical,
+            then
+                * `A` in {np.nan, 1, 2}
+                * `B` in {np.nan, 3}
+                * `C` in {np.nan} <=== it will be dropped.
+
+            So in the column A,
+                * np.nan ==> [1, 0, 0] (always the index 0)
+                * 1      ==> [0, 1, 0]
+                * 2      ==> [0, 0, 1]
+            in the column B,
+                * np.nan ==> [1, 0]
+                * 3      ==> [0, 1]
+            Therefore, by concatenating,
+                * {'A': 1, 'B': np.nan, 'C': np.nan} ==> [0, 1, 0, 1, 0]
+                * {'A': np.nan, 'B': 3, 'C': np.nan} ==> [1, 0, 0, 0, 1]
+                * {'A': 2, 'B': np.nan, 'C': np.nan} ==> [0, 0, 1, 1, 0]
+                ==> [
+                    [0, 1, 0, 1, 0],
+                    [1, 0, 0, 0, 1],
+                    [0, 0, 1, 1, 0]
+                ]
         """
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
@@ -288,14 +317,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Pandas related transformations
         if ispandas(X) and self.column_transformer is not None:
-            if np.any(pd.isnull(X)):
-                # After above check it means that if there is a NaN
-                # the whole column must be NaN
-                # Make sure it is numerical and let the pipeline handle it
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
-
             X = self.column_transformer.transform(X)
 
         # Sparse related transformations
@@ -304,17 +325,15 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X.sort_indices()
 
         try:
-            X = sklearn.utils.check_array(
-                X,
-                force_all_finite=False,
-                accept_sparse='csr'
-            )
+            X = sklearn.utils.check_array(X, force_all_finite=False, accept_sparse='csr')
         except Exception as e:
-            self.logger.exception(f"Conversion failed for input {X.dtypes} {X}"
-                                  "This means AutoPyTorch was not able to properly "
-                                  "Extract the dtypes of the provided input features. "
-                                  "Please try to manually cast it to a supported "
-                                  "numerical or categorical values.")
+            self.logger.exception(
+                f"Conversion failed for input {X.dtypes} {X}"
+                "This means AutoPyTorch was not able to properly "
+                "Extract the dtypes of the provided input features. "
+                "Please try to manually cast it to a supported "
+                "numerical or categorical values."
+            )
             raise e
 
         X = self._compress_dataset(X)
@@ -327,7 +346,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Compress the dataset. This function ensures that
         the testing data is converted to the same dtype as
         the training data.
-
 
         Args:
             X (DatasetCompressionInputType):
@@ -510,27 +528,31 @@ class TabularFeatureValidator(BaseFeatureValidator):
             pd.DataFrame
         """
         if hasattr(self, 'object_dtype_mapping'):
-            # Mypy does not process the has attr. This dict is defined below
-            for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
-                if 'int' in dtype.name:
-                    # In the case train data was interpreted as int
-                    # and test data was interpreted as float, because of 0.0
-                    # for example, honor training data
-                    X[key] = X[key].applymap(np.int64)
-                else:
-                    try:
-                        X[key] = X[key].astype(dtype.name)
-                    except Exception as e:
-                        # Try inference if possible
-                        self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
-                        pass
+            # honor the training data types
+            try:
+                # Mypy does not process the has attr.
+                X = X.astype(self.object_dtype_mapping)  # type: ignore[has-type]
+            except Exception as e:
+                # Try inference if possible
+                self.logger.warning(f'Casting the columns to training dtypes '  # type: ignore[has-type]
+                                    f'{self.object_dtype_mapping} caused the exception {e}')
+                pass
         else:
-            X = X.infer_objects()
-            for column in X.columns:
-                if not is_numeric_dtype(X[column]):
-                    X[column] = X[column].astype('category')
-            self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
+            if len(self.dtypes) != 0:
+                # when train data has no object dtype, but test does
+                # we prioritise the datatype given in training data
+                dtype_dict = {col: dtype for col, dtype in zip(X.columns, self.dtypes)}
+                X = X.astype(dtype_dict)
+            else:
+                # Calling for the first time to infer the categories
+                X = X.infer_objects()
+                dtype_dict = {col: 'category' for col, dtype in zip(X.columns, X.dtypes) if not is_numeric_dtype(dtype)}
+                X = X.astype(dtype_dict)
+            # only numerical attributes and categories
+            self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
+
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
+
         return X
 
 
