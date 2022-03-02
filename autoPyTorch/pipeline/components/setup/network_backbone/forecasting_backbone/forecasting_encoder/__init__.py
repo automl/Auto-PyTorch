@@ -17,8 +17,9 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder,
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.\
+    forecasting_encoder.base_forecasting_encoder import BaseForecastingEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
     ForecastingNetworkStructure
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \

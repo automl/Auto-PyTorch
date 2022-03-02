@@ -9,29 +9,16 @@ import numpy as np
 
 import torch
 from torch import nn
-import warnings
-
-from torch.distributions import (
-    AffineTransform,
-    TransformedDistribution,
-)
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    EncoderNetwork,
-    NetworkStructure,
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderBlockInfo,
-    NetworkStructure,
-    EncoderProperties
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderBlockInfo,
-    DecoderProperties
 )
 
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
@@ -107,8 +94,6 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    forecast_strategy=self.forecast_strategy,
                                    num_samples=self.num_samples,
                                    aggregation=self.aggregation, )
-        import pdb
-        pdb.set_trace()
 
         if X['decoder_properties']['recurrent']:
             # decoder is RNN or Transformer

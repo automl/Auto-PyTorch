@@ -15,21 +15,13 @@ from torch.distributions import (
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
     base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderNetwork,
-    NetworkStructure,
     EncoderBlockInfo,
-    NetworkStructure,
-    EncoderProperties
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder.\
-    RNNEncoder import _RNN
-
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
-    DecoderBlockInfo,
-    DecoderProperties
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderBlockInfo
 )
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import AddLayer
@@ -37,14 +29,6 @@ from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
     TimeDistributed, TimeDistributedInterpolation, GatedLinearUnit, ResampleNorm, AddNorm, GateAddNorm,
     GatedResidualNetwork, VariableSelectionNetwork, InterpretableMultiHeadAttention
 )
-
-
-class EncoderOutputForm(Enum):
-    NoOutput = 0
-    HiddenStates = 1 # RNN -> RNN
-    Sequence = 2   # RNN/TCN/Transformer -> MLP
-    SequenceLast = 3 # Transformer -> Transformer
-
 
 
 class TransformedDistribution_(TransformedDistribution):
@@ -164,61 +148,6 @@ def get_lagged_subsequences_inference(
     return lagged_seq
 
 
-class StackedEncoder(nn.Module):
-    def __init__(self,
-                 network_structure: NetworkStructure,
-                 has_temporal_fusion: bool,
-                 network_encoder: Dict[str, EncoderBlockInfo],
-                 network_decoder: Dict[str, DecoderBlockInfo],
-                 ):
-        self.num_blocks = network_structure.num_blocks
-        self.skip_connection = network_structure.skip_connection
-        self.has_temporal_fusion = has_temporal_fusion
-
-        self.encoder_output_type = {}
-        self.encoder_has_hidden_states = {}
-        encoder = nn.ModuleDict()
-        for i in range(1, self.num_blocks + 1):
-            block_id = f'block_{i}'
-            encoder[block_id] = network_encoder[block_id].encoder
-            if self.skip_connection:
-                input_size = network_encoder[block_id].encoder_output_shape_[-1]
-                skip_size = network_encoder[block_id].encoder_input_shape[-1]
-                if network_structure.skip_connection_type == 'add':
-                    encoder[f'skip_connection_{i}'] = AddLayer(input_size, skip_size)
-                elif network_structure.skip_connection_type == 'gate_add_norm':
-                    encoder[f'skip_connection_{i}'] = GateAddNorm(input_size,
-                                                                  hidden_size=input_size,
-                                                                  skip_size=skip_size,
-                                                                  dropout=network_structure.grn_dropout_rate)
-            if block_id in network_decoder:
-                if network_decoder[block_id].decoder_properties.recurrent:
-                    if network_decoder[block_id].decoder_properties.has_hidden_states:
-                        # RNN
-                        self.encoder_has_decoder[i] = EncoderOutputForm.HiddenStates
-                    else:
-                        # Transformer
-                        self.encoder_has_decoder[i] = EncoderOutputForm.Sequence
-                else:
-                    self.encoder_has_decoder[i] = EncoderOutputForm.SequenceLast
-            else:
-                self.encoder_has_decoder[i] = EncoderOutputForm.NoOutput
-            if network_decoder[block_id].decoder_properties.has_hidden_states:
-                self.encoder_has_hidden_states[i] = True
-            else:
-                self.encoder_has_hidden_states[i] = False
-        self.encoder = encoder
-
-    def forward(self, encoder_input: torch.Tensor, additional_input: List[Optional[torch.Tensor]], output_seq: bool):
-        output_for_decoder = []
-        for i in range(1, self.num_blocks + 1):
-            if self.encoder_has_hidden_states[i]:
-                x, hx = self.encoder[f'block_{i}'](encoder_input, )
-
-
-
-
-
 class AbstractForecastingNet(nn.Module):
     future_target_required = False
 
@@ -306,103 +235,6 @@ class AbstractForecastingNet(nn.Module):
             self.cached_lag_mask_encoder = None
         if self.decoder_lagged_input:
             self.cached_lag_mask_decoder = None
-
-        if network_structure.variable_selection:
-            # TODO rewrite forecasting dataset to allow mutli-variant models!!!
-            first_encoder = network_encoder['block_1']
-            first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape_[-1]
-            static_input_sizes = dataset_properties['static_features_shape']
-            variable_selector = nn.ModuleDict()
-            if static_input_sizes > 0:
-                variable_selector['static_variable_selection'] = VariableSelectionNetwork(
-                    input_sizes=static_input_sizes,
-                    hidden_size=first_encoder_output_shape,
-                    input_embedding_flags={},
-                    dropout=network_structure.grn_dropout_rate,
-                )
-            if dataset_properties['uni_variant']:
-                # variable selection for encoder and decoder
-                encoder_input_sizes = {
-                    'past_targets': dataset_properties['input_shape'][-1],
-                    'past_features': 0
-                }
-                decoder_input_sizes = {
-                    'future_features': 0
-                }
-                if auto_regressive:
-                    decoder_input_sizes.update({'future_prediction': dataset_properties['output_shape'][-1]})
-            else:
-                # TODO
-                pass
-
-            # create single variable grns that are shared across decoder and encoder
-            if network_structure.share_single_variable_networks:
-                variable_selector['shared_single_variable_grns'] = nn.ModuleDict()
-                for name, input_size in encoder_input_sizes.items():
-                    variable_selector['shared_single_variable_grns'][name] = GatedResidualNetwork(
-                        input_size,
-                        min(input_size, first_encoder_output_shape),
-                        first_encoder_output_shape,
-                        network_structure.grn_dropout_rate,
-                    )
-                for name, input_size in decoder_input_sizes.items():
-                    if name not in self.shared_single_variable_grns:
-                        variable_selector['shared_single_variable_grns'][name] = GatedResidualNetwork(
-                            input_size,
-                            min(input_size, first_encoder_output_shape),
-                            first_encoder_output_shape,
-                            network_structure.grn_dropout_rate,
-                        )
-
-            variable_selector['encoder_variable_selection'] = VariableSelectionNetwork(
-                input_sizes=encoder_input_sizes,
-                hidden_size=first_encoder_output_shape,
-                input_embedding_flags={},
-                dropout=network_structure.grn_dropout_rate,
-                context_size=first_encoder_output_shape,
-                single_variable_grns={}
-                if not network_structure.share_single_variable_networks
-                else variable_selector['shared_single_variable_grns'],
-            )
-
-            variable_selector['encoder_variable_selection'] = VariableSelectionNetwork(
-                input_sizes=decoder_input_sizes,
-                hidden_size=self.hparams.hidden_size,
-                input_embedding_flags={},
-                dropout=network_structure.grn_dropout_rate,
-                context_size=first_encoder_output_shape,
-                single_variable_grns={}
-                if not network_structure.share_single_variable_networks
-                else variable_selector['shared_single_variable_grns'],
-            )
-
-            variable_selector['static_context_variable_selection'] = GatedResidualNetwork(
-                input_size=first_encoder_output_shape,
-                hidden_size=first_encoder_output_shape,
-                output_size=first_encoder_output_shape,
-                dropout=network_structure.grn_dropout_rate,
-            )
-
-            if first_encoder.encoder_properties.has_hidden_states:
-                if isinstance(first_encoder.encoder, _RNN):
-                    # for hidden state of the rnn
-                    variable_selector['static_context_initial_hidden_lstm'] = GatedResidualNetwork(
-                        input_size=first_encoder_output_shape,
-                        hidden_size=first_encoder_output_shape,
-                        output_size=first_encoder_output_shape,
-                        dropout=network_structure.grn_dropout_rate,
-                    )
-                    if first_encoder.encoder.cell_type == 'lstm':
-                        # for cell state of the lstm
-                        variable_selector['static_context_initial_cell_lstm'] = GatedResidualNetwork(
-                            input_size=first_encoder_output_shape,
-                            hidden_size=first_encoder_output_shape,
-                            output_size=first_encoder_output_shape,
-                            dropout=network_structure.grn_dropout_rate,
-                        )
-                else:
-                    raise NotImplementedError
-
 
     @property
     def device(self):

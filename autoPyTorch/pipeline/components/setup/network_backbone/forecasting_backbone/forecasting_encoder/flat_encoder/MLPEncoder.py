@@ -16,9 +16,10 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activa
 from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
 
 
-class TimeSeriesMLPrecpocessor(EncoderNetwork):
+class TimeSeriesMLP(EncoderNetwork):
     def __init__(self,
                  window_size: int,
+                 network: Optional[nn.Module] = None
                  ):
         """
         Transform the input features (B, T, N) to fit the requirement of MLP
@@ -30,6 +31,7 @@ class TimeSeriesMLPrecpocessor(EncoderNetwork):
         """
         super().__init__()
         self.window_size = window_size
+        self.network = network
 
     def forward(self, x: torch.Tensor, output_seq: bool = False):
         """
@@ -54,6 +56,9 @@ class TimeSeriesMLPrecpocessor(EncoderNetwork):
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
         x = x.flatten(-2)
+        return x if self.network is not None else self.network(x)
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
 
@@ -85,8 +90,9 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
 
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         in_features = input_shape[-1]
-        feature_preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
-        return nn.Sequential(feature_preprocessor, *self._build_backbone(in_features * self.window_size))
+        network = nn.Sequential(*self._build_backbone(in_features * self.window_size))
+        return TimeSeriesMLP(window_size=self.window_size,
+                             network=network)
 
     def n_encoder_output_feature(self) -> int:
         # This function should never be called!!

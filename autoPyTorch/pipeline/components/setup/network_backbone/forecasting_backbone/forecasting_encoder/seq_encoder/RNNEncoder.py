@@ -12,8 +12,11 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork, EncoderProperties
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder
+
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+    EncoderNetwork, EncoderProperties
 )
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
@@ -91,6 +94,12 @@ class RNNEncoder(BaseForecastingEncoder):
 
     def n_encoder_output_feature(self) -> int:
         return 2 * self.config['hidden_size'] if self.config['bidirectional'] else self.config['hidden_size']
+
+    def n_hidden_states(self) -> int:
+        if self.config['cell_type'] == 'lstm':
+            return 2
+        elif self.config['cell_type'] == 'gru':
+            return 1
 
     @staticmethod
     def allowed_decoders():

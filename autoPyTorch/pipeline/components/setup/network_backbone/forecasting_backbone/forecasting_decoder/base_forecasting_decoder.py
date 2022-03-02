@@ -5,45 +5,12 @@ from collections import OrderedDict
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    EncoderBlockInfo,
-    NetworkStructure)
-
-
-class DecoderProperties(NamedTuple):
-    has_hidden_states: bool = False
-    has_local_layer: bool = True
-    recurrent: bool = False
-    lagged_input: bool = False
-    multi_blocks: bool = False
-    mask_on_future_target: bool = False
-
-
-class DecoderBlockInfo(NamedTuple):
-    decoder: nn.Module
-    decoder_properties: DecoderProperties
-    decoder_output_shape: Tuple[int, ...]
-    decoder_input_shape: Tuple[int, ...]
-
-
-class DecoderNetwork(nn.Module):
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor):
-        """
-        Base forecasting Decoder Network, its output needs to be a 3-d Tensor:
-
-
-        Args:
-            x_future: torch.Tensor(B, L_future, N_out), the future features
-            encoder_output: torch.Tensor(B, L_encoder, N), output of the encoder network, or the hidden states
-        Returns:
-            net_output: torch.Tensor with shape either (B, L_future, N)
-
-        """
-        raise NotImplementedError
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderBlockInfo, DecoderProperties
+)
 
 
 class BaseForecastingDecoder(autoPyTorchComponent):
@@ -100,7 +67,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         output_shape = X['dataset_properties']['output_shape']
         static_features_shape = X["dataset_properties"]["static_features_shape"]
 
-        encoder_output_shape = X['network_encoder'][f'block_{self.block_number}'].encoder_output_shape_
+        encoder_output_shape = X['network_encoder'][f'block_{self.block_number}'].encoder_output_shape
 
         auto_regressive = self.auto_regressive
 
@@ -111,22 +78,24 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
         network_structure = X['network_structure']
         variable_selection = network_structure.variable_selection
-        future_feature_shapes = X['dataset_properties']['future_feature_shapes']
+        if 'n_decoder_output_features' not in X:
+            future_feature_shapes = X['dataset_properties']['future_feature_shapes']
 
-        if self.block_number == network_structure.num_blocks:
-            self.is_last_decoder = True
+            if self.block_number == network_structure.num_blocks:
+                self.is_last_decoder = True
 
-        future_in_features = future_feature_shapes[-1] + static_features_shape
-        if variable_selection:
-            # TODO
-            pass
+            future_in_features = future_feature_shapes[-1] + static_features_shape
+            if variable_selection:
+                future_in_features = X['network_encoder']['block_1'].encoder_output_shape[-1]
+            else:
+                if auto_regressive:
+                    if self.decoder_properties()["lagged_input"] and hasattr(self, 'lagged_value'):
+                        future_in_features += len(self.lagged_value) * output_shape[-1]
+                    else:
+                        future_in_features += output_shape[-1]
+            future_variable_input = (self.n_prediction_heads, future_in_features)
         else:
-            if auto_regressive:
-                if self.decoder_properties()["lagged_input"] and hasattr(self, 'lagged_value'):
-                    future_in_features += len(self.lagged_value) * output_shape[-1]
-                else:
-                    future_in_features += output_shape[-1]
-        future_variable_input = (self.n_prediction_heads, future_in_features)
+            future_variable_input = (self.n_prediction_heads, X['n_decoder_output_features'])
 
         # TODO consider decoder auto regressive and fill in decoder part
 
@@ -138,8 +107,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         )
         self.decoder_input_shape = encoder_output_shape
 
-        X['n_decoder_output_features'] = self.n_decoder_output_features
         return self
+
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -166,7 +135,9 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                       'n_decoder_output_features': self.n_decoder_output_features,
                       'auto_regressive': self.auto_regressive})
         else:
-            X.update({f'network_decoder': network_decoder})
+            X.update({f'network_decoder': network_decoder,
+                      f'n_decoder_output_features': self.n_decoder_output_features,
+                      })
 
         return X
 

@@ -28,7 +28,7 @@ class MLPDecoderModule(DecoderNetwork):
         self.auto_regressive = auto_regressive
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor):
-        if x_future is not None or self.auto_regressive:
+        if x_future is None or self.auto_regressive:
             # for auto-regressive model, x_future is fed to the encoders
             x = self.global_layers(encoder_output)
             if self.local_layers is None:
@@ -74,6 +74,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         return MLPDecoderModule(global_layers=nn.Sequential(*global_layers),
                                 local_layers=nn.Sequential(*local_layers) if local_layers is not None else None,
                                 auto_regressive=self.auto_regressive), num_decoder_output_features
+
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None

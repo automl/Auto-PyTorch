@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.MLPEncoder import \
-    TimeSeriesMLPrecpocessor
+    TimeSeriesMLP
 
 
 class NBEATSEncoder(BaseForecastingEncoder):
@@ -49,7 +49,7 @@ class NBEATSEncoder(BaseForecastingEncoder):
 
     def build_encoder(self,
                       input_shape: Tuple[int, ...]) -> nn.Module:
-        preprocessor = TimeSeriesMLPrecpocessor(window_size=self.window_size)
+        preprocessor = TimeSeriesMLP(window_size=self.window_size)
         return preprocessor
 
     @staticmethod
