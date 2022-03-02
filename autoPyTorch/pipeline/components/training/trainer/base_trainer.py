@@ -338,8 +338,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         perform swa model update
         """
-        assert self.swa_model is not None, "SWA model can't be none when" \
-                                           " stochastic weight averaging is enabled"
+        if self.swa_model is None:
+            raise ValueError("SWA model cannot be none when stochastic weight averaging is enabled")
         self.swa_model.update_parameters(self.model)
         self.swa_updated = True
 
@@ -350,8 +350,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             epoch (int):
                 current epoch
         """
-        assert self.model_snapshots is not None, "model snapshots container can't be " \
-                                                 "none when snapshot ensembling is enabled"
+        if self.model_snapshots is None:
+            raise ValueError("model snapshots cannot be None when snapshot ensembling is enabled")
         is_last_epoch = (epoch == self.budget_tracker.max_epochs)
         if is_last_epoch and self.use_stochastic_weight_averaging:
             model_copy = deepcopy(self.swa_model)
