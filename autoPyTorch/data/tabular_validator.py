@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +11,7 @@ from autoPyTorch.data.tabular_feature_validator import SupportedFeatTypes, Tabul
 from autoPyTorch.data.tabular_target_validator import SupportedTargetTypes, TabularTargetValidator
 from autoPyTorch.data.utils import (
     DatasetCompressionInputType,
+    DatasetCompressionSpec,
     DatasetDTypeContainerType,
     reduce_dataset_size_if_too_large
 )
@@ -36,12 +37,15 @@ class TabularInputValidator(BaseInputValidator):
         target_validator (TargetValidator):
             A TargetValidator instance used to validate and encode (in case of classification)
             the target values
+        dataset_compression (Optional[DatasetCompressionSpec]):
+            specifications for dataset compression. For more info check
+            documentation for `BaseTask.get_dataset`.
     """
     def __init__(
         self,
         is_classification: bool = False,
         logger_port: Optional[int] = None,
-        dataset_compression: Optional[Mapping[str, Any]] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
         seed: int = 42,
     ) -> None:
         self._dataset_compression = dataset_compression
@@ -49,7 +53,6 @@ class TabularInputValidator(BaseInputValidator):
         self.is_classification = is_classification
         self.logger_port = logger_port
         self.seed = seed
-        self.dataset_compression = dataset_compression
         if self.logger_port is not None:
             self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
                 name='Validation',
@@ -66,7 +69,6 @@ class TabularInputValidator(BaseInputValidator):
         )
         self._is_fitted = False
 
-    # TODO: modify once we have added subsampling as well.
     def _compress_dataset(
         self,
         X: DatasetCompressionInputType,
@@ -76,7 +78,8 @@ class TabularInputValidator(BaseInputValidator):
         Compress the dataset. This function ensures that
         the testing data is converted to the same dtype as
         the training data.
-
+        See `autoPyTorch.data.utils.reduce_dataset_size_if_too_large`
+        for more information.
 
         Args:
             X (DatasetCompressionInputType):
@@ -100,7 +103,7 @@ class TabularInputValidator(BaseInputValidator):
                 y=y,
                 is_classification=self.is_classification,
                 random_state=self.seed,
-                **self._dataset_compression
+                **self._dataset_compression  # type: ignore [arg-type]
             )
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
             return X, y

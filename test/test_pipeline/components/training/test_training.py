@@ -423,7 +423,7 @@ class TestTrainer(unittest.TestCase):
 
 
 def test_early_stopping():
-    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'binary'}
+    dataset_properties = {'task_type': 'tabular_classification', 'output_type': 'binary', 'output_shape': 0}
     trainer_choice = TrainerChoice(dataset_properties=dataset_properties)
 
     def dummy_performance(*args, **kwargs):

@@ -1,6 +1,5 @@
 import functools
-from logging import Logger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 
@@ -18,13 +17,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
-from autoPyTorch.data.utils import (
-    DatasetCompressionInputType,
-    DatasetDTypeContainerType,
-    reduce_dataset_size_if_too_large
-)
 from autoPyTorch.utils.common import ispandas
-from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def _create_column_transformer(

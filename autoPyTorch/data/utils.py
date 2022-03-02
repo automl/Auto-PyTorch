@@ -1,6 +1,5 @@
 # Implementation used from https://github.com/automl/auto-sklearn/blob/development/autosklearn/util/data.py
 import warnings
-from math import floor
 from typing import (
     Any,
     Dict,
@@ -464,7 +463,7 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
 
 def reduce_dataset_size_if_too_large(
     X: DatasetCompressionInputType,
-    memory_allocation: float,
+    memory_allocation: Union[int, float],
     is_classification: bool,
     random_state: Union[int, np.random.RandomState],
     y: Optional[SupportedTargetTypes] = None,
@@ -489,7 +488,7 @@ def reduce_dataset_size_if_too_large(
         X: DatasetCompressionInputType
             The features of the dataset.
 
-        methods: List[str] = ['precision', 'subsample']
+        methods (List[str] = ['precision', 'subsample']):
             A list of operations that are permitted to be performed to reduce
             the size of the dataset.
 
@@ -502,7 +501,7 @@ def reduce_dataset_size_if_too_large(
                 memory. Ensures stratification and that unique labels are present
 
 
-        memory_allocation: int
+        memory_allocation (Union[int, float]):
             The amount of memory to allocate to the dataset. It should specify an
             absolute amount.
 

@@ -12,7 +12,7 @@ import typing
 import unittest.mock
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -39,6 +39,7 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
+from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
@@ -299,7 +300,7 @@ class BaseTask(ABC):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
-        dataset_compression: Optional[Mapping[str, Any]] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
     ) -> Tuple[BaseDataset, BaseInputValidator]:
         """
         Returns an object of a child class of `BaseDataset` and
@@ -324,6 +325,9 @@ class BaseTask(ABC):
                 in ```datasets/resampling_strategy.py```.
             dataset_name (Optional[str]):
                 name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                specifications for dataset compression. For more info check
+                documentation for `BaseTask.get_dataset`.
 
         Returns:
             BaseDataset:
@@ -342,7 +346,7 @@ class BaseTask(ABC):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
-        dataset_compression: Optional[Mapping[str, Any]] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
     ) -> BaseDataset:
         """
         Returns an object of a child class of `BaseDataset` according to the current task.
@@ -365,6 +369,38 @@ class BaseTask(ABC):
                 in ```datasets/resampling_strategy.py```.
             dataset_name (Optional[str]):
                 name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                We compress datasets so that they fit into some predefined amount of memory.
+                **NOTE**
+
+                You can also pass your own configuration with the same keys and choosing
+                from the available ``"methods"``.
+                The available options are described here:
+                **memory_allocation**
+                    Absolute memory in MB, e.g. 10MB is ``"memory_allocation": 10``.
+                    The memory used by the dataset is checked after each reduction method is
+                    performed. If the dataset fits into the allocated memory, any further methods
+                    listed in ``"methods"`` will not be performed.
+                    It can be either float or int.
+
+                **methods**
+                    We currently provide the following methods for reducing the dataset size.
+                    These can be provided in a list and are performed in the order as given.
+                    *   ``"precision"`` -
+                        We reduce floating point precision as follows:
+                            *   ``np.float128 -> np.float64``
+                            *   ``np.float96 -> np.float64``
+                            *   ``np.float64 -> np.float32``
+                            *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                                to the lowest possible precision.
+                    *   ``subsample`` -
+                        We subsample data such that it **fits directly into
+                        the memory allocation** ``memory_allocation * memory_limit``.
+                        Therefore, this should likely be the last method listed in
+                        ``"methods"``.
+                        Subsampling takes into account classification labels and stratifies
+                        accordingly. We guarantee that at least one occurrence of each
+                        label is included in the sampled set.
 
         Returns:
             BaseDataset:

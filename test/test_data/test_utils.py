@@ -2,8 +2,6 @@ from typing import Mapping
 
 import numpy as np
 
-from pandas.testing import assert_frame_equal
-
 import pytest
 
 from sklearn.datasets import fetch_openml
@@ -22,11 +20,20 @@ from autoPyTorch.utils.common import subsampler
 @pytest.mark.parametrize('openmlid', [2, 40984])
 @pytest.mark.parametrize('as_frame', [True, False])
 def test_reduce_dataset_if_too_large(openmlid, as_frame, n_samples):
-    X, _ = fetch_openml(data_id=openmlid, return_X_y=True, as_frame=as_frame)
+    X, y = fetch_openml(data_id=openmlid, return_X_y=True, as_frame=as_frame)
     X = subsampler(data=X, x=range(n_samples))
+    y = subsampler(data=y, x=range(n_samples))
 
-    X_converted = reduce_dataset_size_if_too_large(X.copy(), memory_allocation=0)
-    np.allclose(X, X_converted) if not as_frame else assert_frame_equal(X, X_converted, check_dtype=False)
+    X_converted, y_converted = reduce_dataset_size_if_too_large(
+        X.copy(),
+        y=y.copy(),
+        is_classification=True,
+        random_state=1,
+        memory_allocation=0.001)
+
+    assert X_converted.shape[0] < X.shape[0]
+    assert y_converted.shape[0] < y.shape[0]
+
     assert megabytes(X_converted) < megabytes(X)
 
 
@@ -37,8 +44,8 @@ def test_validate_dataset_compression_arg():
     # to fill in case args is empty
     assert data_compression_args is not None
 
-    # assert memory allocation is an integer after validation
-    assert isinstance(data_compression_args['memory_allocation'], int)
+    # assert memory allocation is a float after validation
+    assert isinstance(data_compression_args['memory_allocation'], float)
 
     # check whether the function raises an error
     # in case an unknown key is in args
