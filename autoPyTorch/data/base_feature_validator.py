@@ -75,7 +75,8 @@ class BaseFeatureValidator(BaseEstimator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X_train, list):
-            X_train, X_test = self.list_to_dataframe(X_train, X_test)
+            X_train = self.list_to_pandas(X_train)
+            X_test = self.list_to_pandas(X_test) if X_test is not None else None
 
         self._check_data(X_train)
 

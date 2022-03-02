@@ -241,7 +241,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X, list):
-            X, _ = self.list_to_dataframe(X)
+            X = self.list_to_pandas(X)
 
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
@@ -475,42 +475,28 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 feat_type.append('numerical')
         return enc_columns, feat_type
 
-    def list_to_dataframe(
-        self,
-        X_train: SupportedFeatTypes,
-        X_test: Optional[SupportedFeatTypes] = None,
-    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+    def list_to_pandas(self, X: SupportedFeatTypes) -> pd.DataFrame:
         """
-        Converts a list to a pandas DataFrame. In this process, column types are inferred.
-
-        If test data is provided, we proactively match it to train data
+        Convert a list to a pandas DataFrame. In this process, column types are inferred.
 
         Args:
-            X_train (SupportedFeatTypes):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
-                checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SupportedFeatTypes]):
-                A hold out set of data used for checking
+                checks) and an encoder fitted in the case the data needs encoding
 
         Returns:
             pd.DataFrame:
-                transformed train data from list to pandas DataFrame
-            pd.DataFrame:
-                transformed test data from list to pandas DataFrame
+                transformed data from list to pandas DataFrame
         """
 
         # If a list was provided, it will be converted to pandas
-        X_train = pd.DataFrame(data=X_train).infer_objects()
-        self.logger.warning("The provided feature types to AutoPyTorch are of type list."
-                            "Features have been interpreted as: {}".format([(col, t) for col, t in
-                                                                            zip(X_train.columns, X_train.dtypes)]))
-        if X_test is not None:
-            if not isinstance(X_test, list):
-                self.logger.warning("Train features are a list while the provided test data"
-                                    "is {}. X_test will be casted as DataFrame.".format(type(X_test))
-                                    )
-            X_test = pd.DataFrame(data=X_test).infer_objects()
-        return X_train, X_test
+        X = pd.DataFrame(data=X).infer_objects()
+        data_info = [(col, t) for col, t in zip(X.columns, X.dtypes)]
+        self.logger.warning(
+            "The provided feature types to AutoPyTorch are list."
+            f"Features have been interpreted as: {data_info}"
+        )
+        return X
 
     def numpy_array_to_pandas(
         self,
