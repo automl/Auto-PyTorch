@@ -25,11 +25,13 @@ class EncoderProperties(NamedTuple):
     bijective_seq_output: bool = True
     fixed_input_seq_length: bool = False
     lagged_input: bool = False
+    causality: bool = True  # this value indicates if the output of the model only depends on the past targets
 
 
 class NetworkStructure(NamedTuple):
     num_blocks: int = 1
     variable_selection: bool = False
+    share_single_variable_networks: bool = False
     skip_connection: bool = False
     skip_connection_type: str = "add"  # could be 'add' or 'gate_add_norm'
     grn_dropout_rate: float = 0.0
@@ -38,6 +40,7 @@ class NetworkStructure(NamedTuple):
 class EncoderBlockInfo(NamedTuple):
     encoder: nn.Module
     encoder_properties: EncoderProperties
+    encoder_input_shape: Tuple[int, ...]
     encoder_output_shape_: Tuple[int, ...]
 
 
@@ -45,6 +48,7 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None,
                  num_blocks: int = 1,
                  variable_selection: bool = False,
+                 share_single_variable_networks: bool = False,
                  skip_connection: bool = False,
                  skip_connection_type: str = "add",
                  grn_dropout_rate: float = 0.0,
@@ -52,6 +56,7 @@ class ForecastingNetworkStructure(autoPyTorchComponent):
         super().__init__()
         self.network_structure = NetworkStructure(num_blocks=num_blocks,
                                                   variable_selection=variable_selection,
+                                                  share_single_variable_networks=share_single_variable_networks,
                                                   skip_connection=skip_connection,
                                                   skip_connection_type=skip_connection_type,
                                                   grn_dropout_rate=grn_dropout_rate)
@@ -103,6 +108,18 @@ class EncoderNetwork(nn.Module):
             If this value is set as False, the network only returns the last item of the sequence.
         Returns:
             net_output: torch.Tensor with shape either (B, N) or (B, L_out, N)
+
+        """
+        raise NotImplementedError
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        get the last value of the sequential output
+        Args:
+            x: torch.Tensor(B, L, N): a sequential value output by the network, usually this value needs to be fed
+                to the decoder
+        Returns:
+            output: torch.Tensor(B, M): last element of the sequential value
 
         """
         raise NotImplementedError
@@ -199,6 +216,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         network_encoder = X.get('network_encoder', OrderedDict())
         network_encoder[f'block_{self.block_number}'] = EncoderBlockInfo(encoder=self.encoder,
                                                                          encoder_properties=self.encoder_properties(),
+                                                                         encoder_input_shape=self.input_shape,
                                                                          encoder_output_shape_=self.encoder_output_shape)
 
         X.update({f'network_encoder': network_encoder})

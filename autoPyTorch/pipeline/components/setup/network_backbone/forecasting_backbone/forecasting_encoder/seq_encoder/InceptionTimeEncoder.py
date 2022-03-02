@@ -128,7 +128,10 @@ class _InceptionTime(nn.Module):
         if output_seq:
             return x
         else:
-            return x[:, -1, :]
+            return self.get_last_seq_value(x)
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
+        return x[:, -1, :]
 
 
 class InceptionTimeEncoder(BaseForecastingEncoder):

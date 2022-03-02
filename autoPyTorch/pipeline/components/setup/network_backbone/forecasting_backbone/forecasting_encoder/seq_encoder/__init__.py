@@ -72,6 +72,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 value_range=(True, False),
                 default_value=False
             ),
+            share_single_variable_networks: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="share_single_variable_networks",
+                value_range=(True, False),
+                default_value=False,
+            ),
             decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="decoder_auto_regressive",
                 value_range=(True, False),
@@ -103,13 +108,17 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             variable_selection (HyperparameterSearchSpace): if variable selection is applied, if True, then the first
                 block will be attached with a variable selection block while the following will be enriched with static
                 features.
+            share_single_variable_networks( HyperparameterSearchSpace): if single variable networks are shared between
+                encoder and decoder
             skip_connection: HyperparameterSearchSpace: if skip connection is applied
             skip_connection_type (HyperparameterSearchSpace): skip connection type, it could be directly added or a grn
                 network (
                 Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
                 https://arxiv.org/abs/1912.09363) TODO consider hidden size of grn as a new HP
-            grn_use_dropout (HyperparameterSearchSpace): if dropout layer is applied to grn
-            grn_dropout_rate (HyperparameterSearchSpace): dropout rate of grn
+            grn_use_dropout (HyperparameterSearchSpace): if dropout layer is applied to GRN, since variable selection
+                network also contains GRN, this parameter also influence variable selection network
+            grn_dropout_rate (HyperparameterSearchSpace): dropout rate of GRN, same as above, this variable also
+                influence variable selection network
             decoder_auto_regressive: HyperparameterSearchSpace: if decoder is auto_regressive, e.g., if the decoder
                 receives the output as its input, this only works for  auto_regressive decoder models
             default (Optional[str]): Default backbone to use
@@ -133,6 +142,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         min_num_blocks, max_num_blocks = num_blocks.value_range
 
         variable_selection = get_hyperparameter(variable_selection, CategoricalHyperparameter)
+        share_single_variable_networks = get_hyperparameter(share_single_variable_networks, CategoricalHyperparameter)
         decoder_auto_regressive = get_hyperparameter(decoder_auto_regressive, CategoricalHyperparameter)
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
 
@@ -147,11 +157,19 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             if 'grn' in skip_connection_type.choices:
                 grn_use_dropout = get_hyperparameter(grn_use_dropout, CategoricalHyperparameter)
                 hp_network_structures.append(grn_use_dropout)
-                cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"))
+                if True in variable_selection.choices:
+                    cond_skip_connections.append(
+                        OrConjunction(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"),
+                                      EqualsCondition(grn_dropout_rate, variable_selection, True))
+                    )
+                else:
+                    cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"))
                 if True in grn_use_dropout.choices:
                     grn_dropout_rate = get_hyperparameter(grn_dropout_rate, UniformFloatHyperparameter)
                     hp_network_structures.append(grn_dropout_rate)
                     cond_skip_connections.append(EqualsCondition(grn_dropout_rate, grn_use_dropout, True))
+        elif True in variable_selection.choices:
+            cond_skip_connections.append(EqualsCondition(grn_dropout_rate, variable_selection, True))
 
         cs.add_hyperparameters(hp_network_structures)
         if cond_skip_connections:
@@ -166,6 +184,9 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     ForbiddenEqualsClause(variable_selection, False),
                     ForbiddenEqualsClause(decoder_auto_regressive, True)
                 ))
+        if True in variable_selection.choices:
+            cs.add_hyperparameter(share_single_variable_networks)
+            cs.add_condition(EqualsCondition(share_single_variable_networks, variable_selection, True))
 
         # Compile a list of legal preprocessors for this problem
         available_encoders = self.get_available_components(
@@ -283,16 +304,18 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     hp_encoder_choice = cs.get_hyperparameter(block_prefix + '__choice__')
                     for encoder_single in encoder_with_single_decoder:
                         if encoder_single in hp_encoder_choice.choices:
+                            if forbidden_decoder_ar is not None:
+                                forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
+                                    forbidden_decoder_ar,
+                                    ForbiddenEqualsClause(hp_encoder_choice, encoder_single)
+                                ))
+                    for encode_multi in encoders_with_multi_decoder:
+                        hp_decoder_type = cs.get_hyperparameter(f"{block_prefix}{encode_multi}:decoder_type")
+                        if forbidden_decoder_ar is not None:
                             forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
                                 forbidden_decoder_ar,
                                 ForbiddenEqualsClause(hp_encoder_choice, encoder_single)
                             ))
-                    for encode_multi in encoders_with_multi_decoder:
-                        hp_decoder_type = cs.get_hyperparameter(f"{block_prefix}{encode_multi}:decoder_type")
-                        forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
-                            forbidden_decoder_ar,
-                            ForbiddenEqualsClause(hp_decoder_type, decoder_name)
-                        ))
 
                 hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
                 conditions_to_add = []
@@ -322,7 +345,25 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 cs.add_conditions(conditions_to_add)
 
+        for encoder_name, encoder in available_encoders.item():
+            encoder_is_casual = encoder.encoder_properties()
+            if not encoder_is_casual:
+                # we do not allow non-casual encoder to appear in the lower layer of the network. e.g, if we have an
+                # encoder with 3 blocks, then non_casual encoder is only allowed to appear in the third layer
+                for i in range(max(min_num_blocks, 2), max_num_blocks + 1):
+                    for j in range(1, i):
+                        choice_hp = cs.get_hyperparameter(f"block_{j}:__choice__")
+                        if encoder_name in choice_hp.choices:
+                            forbidden_encoder_uncasual = [ForbiddenEqualsClause(num_blocks, i),
+                                                          ForbiddenEqualsClause(choice_hp, encoder_name)]
+                            if forbidden_decoder_ar is not None:
+                                forbidden_encoder_uncasual.append(forbidden_decoder_ar)
+                            forbiddens_decoder_auto_regressive.append(
+                                ForbiddenAndConjunction(*forbidden_encoder_uncasual)
+                            )
+
         cs.add_forbidden_clauses(forbiddens_decoder_auto_regressive)
+
         if self.deepAR_decoder_name in available_decoders:
             deep_ar_hp = ':'.join([self.deepAR_decoder_prefix, self.deepAR_decoder_name, 'auto_regressive'])
             if deep_ar_hp in cs:
@@ -379,11 +420,15 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         forecasting_structure_kwargs = dict(num_blocks=num_blocks,
                                             variable_selection=params['variable_selection'],
                                             skip_connection=params['skip_connection'])
+        if 'share_single_variable_networks' in params:
+            forecasting_structure_kwargs['forecasting_structure_kwargs'] = params['forecasting_structure_kwargs']
+            del params['forecasting_structure_kwargs']
 
         del params['num_blocks']
         del params['variable_selection']
         del params['skip_connection']
         del params['decoder_auto_regressive']
+
 
         if 'skip_connection_type' in params:
             forecasting_structure_kwargs['skip_connection_type'] = params['skip_connection_type']

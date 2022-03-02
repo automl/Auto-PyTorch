@@ -20,6 +20,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     PositionalEncoding, build_transformer_layers
 
 
+
 class _TransformerEncoder(EncoderNetwork):
     def __init__(self,
                  in_features: int,
@@ -63,7 +64,10 @@ class _TransformerEncoder(EncoderNetwork):
         if output_seq:
             return x
         else:
-            return x[:, -1, :]
+            return self.get_last_seq_value(x)
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
+        return x[:, -1, :]
 
 
 class TransformerEncoder(BaseForecastingEncoder):
@@ -105,7 +109,8 @@ class TransformerEncoder(BaseForecastingEncoder):
 
     @staticmethod
     def encoder_properties():
-        return EncoderProperties(lagged_input=True)
+        return EncoderProperties(lagged_input=True,
+                                 causality=False)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         if 'lagged_value' in X['dataset_properties']:

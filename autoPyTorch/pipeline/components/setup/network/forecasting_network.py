@@ -75,9 +75,9 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("network_decoder", (Dict[str, DecoderBlockInfo]), user_defined=False,
                            dataset_property=False),
             FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
+            FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),
             FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
             FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
-            FitRequirement("encoder_properties_1", (Dict,), user_defined=False, dataset_property=False),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
@@ -99,6 +99,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    network_encoder=network_encoder,
                                    network_decoder=network_decoder,
                                    network_head=X['network_head'],
+                                   auto_regressive=X['auto_regressive'],
                                    window_size=X['window_size'],
                                    dataset_properties=X['dataset_properties'],
                                    target_scaler=X['target_scaler'],
@@ -106,6 +107,8 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    forecast_strategy=self.forecast_strategy,
                                    num_samples=self.num_samples,
                                    aggregation=self.aggregation, )
+        import pdb
+        pdb.set_trace()
 
         if X['decoder_properties']['recurrent']:
             # decoder is RNN or Transformer

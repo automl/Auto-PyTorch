@@ -26,6 +26,8 @@ class DecoderProperties(NamedTuple):
 class DecoderBlockInfo(NamedTuple):
     decoder: nn.Module
     decoder_properties: DecoderProperties
+    decoder_output_shape: Tuple[int, ...]
+    decoder_input_shape: Tuple[int, ...]
 
 
 class DecoderNetwork(nn.Module):
@@ -62,6 +64,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         self.config = kwargs
         self.decoder: Optional[nn.Module] = None
         self.n_decoder_output_features = None
+        self.decoder_input_shape = None
         self.n_prediction_heads = 1
         self.is_last_decoder = False
 
@@ -133,6 +136,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             n_prediction_heads=self.n_prediction_heads,
             dataset_properties=X['dataset_properties']
         )
+        self.decoder_input_shape = encoder_output_shape
 
         X['n_decoder_output_features'] = self.n_decoder_output_features
         return self
@@ -150,8 +154,12 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         # 'n_prediction_heads' and 'n_decoder_output_features' are only applied to the head such that they could be
         # overwritten by the following decoders
         network_decoder = X.get('network_decoder', OrderedDict())
-        network_decoder[f'block_{self.block_number}'] = DecoderBlockInfo(decoder=self.decoder,
-                                                                         decoder_properties=self.decoder_properties())
+        network_decoder[f'block_{self.block_number}'] = DecoderBlockInfo(
+            decoder=self.decoder,
+            decoder_properties=self.decoder_properties(),
+            decoder_input_shape=self.decoder_input_shape,
+            decoder_output_shape=(self.n_prediction_heads, self.n_decoder_output_features)
+        )
         if self.is_last_decoder:
             X.update({f'network_decoder': network_decoder,
                       'n_prediction_heads': self.n_prediction_heads,

@@ -25,12 +25,13 @@ class AddLayer(nn.Module):
         super().__init__()
         if input_size == skip_size:
             self.fc = nn.Linear(skip_size, input_size)
+        self.norm = nn.LayerNorm(input_size)
 
     def forward(self, input: torch.Tensor, skip: torch.Tensor):
         if hasattr(self, 'fc'):
-            return input + self.fc(skip)
+            return self.norm(input + self.fc(skip))
         else:
-            return input
+            return self.norm(input)
 
 
 class TemporalFusionLayer(nn.Module):

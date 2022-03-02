@@ -40,6 +40,7 @@ class _RNN(EncoderNetwork):
                               dropout=config.get("dropout", 0.0),
                               bidirectional=config["bidirectional"],
                               batch_first=True)
+        self.cell_type = config['cell_type']
 
     def forward(self,
                 x: torch.Tensor,
@@ -52,19 +53,22 @@ class _RNN(EncoderNetwork):
         if output_seq:
             return outputs, hidden_state
         else:
-            if not self.config["bidirectional"]:
-                return outputs[:, -1, :], hidden_state
-            else:
-                # concatenate last forward hidden state with first backward hidden state
-                outputs_by_direction = outputs.view(B,
-                                                    T,
-                                                    2,
-                                                    self.config["hidden_size"])
-                out = torch.cat([
-                    outputs_by_direction[:, -1, 0, :],
-                    outputs_by_direction[:, 0, 1, :]
-                ], dim=-1)
-                return out, hidden_state
+            return self.get_last_seq_value(x), hidden_state
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
+        B, T, _ = x.shape
+        if not self.config["bidirectional"]:
+            return x[:, -1, :]
+        else:
+            x_by_direction = x.view(B,
+                                    T,
+                                    2,
+                                    self.config["hidden_size"])
+            x = torch.cat([
+                x_by_direction[:, -1, 0, :],
+                x_by_direction[:, 0, 1, :]
+            ], dim=-1)
+            return x
 
 
 class RNNEncoder(BaseForecastingEncoder):
@@ -143,15 +147,16 @@ class RNNEncoder(BaseForecastingEncoder):
                                                                            value_range=(0., 0.5),
                                                                            default_value=0.1),
             bidirectional: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='bidirectional',
-                                                                                 value_range=(True, False),
-                                                                                 default_value=True),
+                                                                                 value_range=(False,),
+                                                                                 default_value=False),
             decoder_type: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='decoder_type',
                                       value_range=('MLPDecoder', 'RNNDecoder'),
                                       default_value='MLPDecoder')
     ) -> ConfigurationSpace:
         """
-        get hyperparameter search space
+        get hyperparameter search space, bidirectional is not casual so I do not allow it to be set as True,
+        However, it might be further implemented to NLP tasks
 
         """
         cs = CS.ConfigurationSpace()
