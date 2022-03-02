@@ -154,10 +154,42 @@ class TabularFeatureValidator(BaseFeatureValidator):
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
-    def _fit(
-        self,
-        X: SupportedFeatTypes,
-    ) -> BaseEstimator:
+    def _convert_all_nan_columns_to_numeric(self, X: pd.DataFrame, fit: bool = False) -> pd.DataFrame:
+        """
+        Convert columns whose values were all nan in the training dataset to numeric.
+
+        Args:
+            X (pd.DataFrame):
+                The data to transform.
+            fit (bool):
+                Whether this call is the fit to X or the transform using pre-fitted transformer.
+        """
+        if not fit and self.all_nan_columns is None:
+            raise ValueError('_fit must be called before calling transform')
+
+        if fit:
+            all_nan_columns = X.columns[X.isna().all()]
+        else:
+            assert self.all_nan_columns is not None
+            all_nan_columns = list(self.all_nan_columns)
+
+        for col in all_nan_columns:
+            X[col] = np.nan
+            X[col] = pd.to_numeric(X[col])
+            if len(self.dtypes):
+                self.dtypes[list(X.columns).index(col)] = X[col].dtype
+
+        if has_object_columns(X.dtypes.values):
+            X = self.infer_objects(X)
+
+        if fit:
+            # TODO: Check how to integrate below
+            # self.dtypes = [dt.name for dt in X.dtypes]
+            self.all_nan_columns = set(all_nan_columns)
+
+        return X
+
+    def _fit(self, X: SupportedFeatTypes) -> BaseEstimator:
         """
         In case input data is a pandas DataFrame, this utility encodes the user provided
         features (from categorical for example) to a numerical value that further stages
@@ -180,23 +212,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
-            # Treat a column with all instances a NaN as numerical
-            # This will prevent doing encoding to a categorical column made completely
-            # out of nan values -- which will trigger a fail, as encoding is not supported
-            # with nan values.
-            # Columns that are completely made of NaN values are provided to the pipeline
-            # so that later stages decide how to handle them
-            if np.any(pd.isnull(X)):
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
-                        # Also note this change in self.dtypes
-                        if len(self.dtypes) != 0:
-                            self.dtypes[list(X.columns).index(column)] = X[column].dtype
-
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
-
+            X = self._convert_all_nan_columns_to_numeric(X, fit=True)
             self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             assert self.feat_type is not None
@@ -241,10 +257,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.num_features = np.shape(X)[1]
         return self
 
-    def transform(
-        self,
-        X: SupportedFeatTypes,
-    ) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
+    def transform(self, X: SupportedFeatTypes) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
@@ -264,19 +277,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # If a list was provided, it will be converted to pandas
         if isinstance(X, list):
             X = self.list_to_pandas(X)
-
-        if isinstance(X, np.ndarray):
+        elif isinstance(X, np.ndarray):
             X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
-            if np.any(pd.isnull(X)):
-                for column in X.columns:
-                    if X[column].isna().all():
-                        X[column] = pd.to_numeric(X[column])
-
-            # Also remove the object dtype for new data
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
+            X = self._convert_all_nan_columns_to_numeric(X)
 
         # Check the data here so we catch problems on new test data
         self._check_data(X)
@@ -344,10 +349,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
             return X
 
-    def _check_data(
-        self,
-        X: SupportedFeatTypes,
-    ) -> None:
+    def _check_data(self, X: SupportedFeatTypes) -> None:
         """
         Feature dimensionality and data type checks
 
@@ -481,10 +483,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         )
         return X
 
-    def numpy_to_pandas(
-        self,
-        X: np.ndarray,
-    ) -> pd.DataFrame:
+    def numpy_to_pandas(self, X: np.ndarray) -> pd.DataFrame:
         """
         Converts a numpy array to pandas for type inference
 
@@ -533,3 +532,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
         return X
+
+
+def has_object_columns(feature_types: pd.Series) -> bool:
+    """
+    Indicate whether on a Series of dtypes for a Pandas DataFrame
+    there exists one or more object columns.
+    Args:
+        feature_types (pd.Series): The feature types for a DataFrame.
+    Returns:
+        bool:
+            True if the DataFrame dtypes contain an object column, False
+            otherwise.
+    """
+    return np.dtype('O') in feature_types
