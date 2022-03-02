@@ -12,7 +12,7 @@ import typing
 import unittest.mock
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -299,6 +299,7 @@ class BaseTask(ABC):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> Tuple[BaseDataset, BaseInputValidator]:
         """
         Returns an object of a child class of `BaseDataset` and
@@ -341,6 +342,7 @@ class BaseTask(ABC):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
+        dataset_compression: Optional[Mapping[str, Any]] = None,
     ) -> BaseDataset:
         """
         Returns an object of a child class of `BaseDataset` according to the current task.
@@ -375,7 +377,8 @@ class BaseTask(ABC):
             y_test=y_test,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
-            dataset_name=dataset_name)
+            dataset_name=dataset_name,
+            dataset_compression=dataset_compression)
 
         return dataset
 

@@ -240,8 +240,8 @@ def validate_dataset_compression_arg(
                 f"\nmemory_allocation = {memory_allocation}"
                 f"\ndataset_compression = {dataset_compression}"
             )
-        # convert to int so we can directly use
-        dataset_compression["memory_allocation"] = floor(memory_allocation * memory_limit)
+        # convert to required memory so we can directly use
+        dataset_compression["memory_allocation"] = memory_allocation * memory_limit
 
     # "methods" must be non-empty sequence
     if (
@@ -464,7 +464,7 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
 
 def reduce_dataset_size_if_too_large(
     X: DatasetCompressionInputType,
-    memory_allocation: int,
+    memory_allocation: float,
     is_classification: bool,
     random_state: Union[int, np.random.RandomState],
     y: Optional[SupportedTargetTypes] = None,
