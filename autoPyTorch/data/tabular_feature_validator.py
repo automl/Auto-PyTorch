@@ -154,7 +154,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # The final output of a validator is a numpy array. But pandas
         # gives us information about the column dtype
         if isinstance(X, np.ndarray):
-            X = self.numpy_array_to_pandas(X)
+            X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
@@ -244,7 +244,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.list_to_pandas(X)
 
         if isinstance(X, np.ndarray):
-            X = self.numpy_array_to_pandas(X)
+            X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
             if np.any(pd.isnull(X)):
@@ -498,7 +498,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         )
         return X
 
-    def numpy_array_to_pandas(
+    def numpy_to_pandas(
         self,
         X: np.ndarray,
     ) -> pd.DataFrame:
