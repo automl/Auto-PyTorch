@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-import scipy.sparse
+from scipy.sparse import issparse, spmatrix
 
 import sklearn.utils
 from sklearn import preprocessing
@@ -14,10 +14,10 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.multiclass import type_of_target
 
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
-from autoPyTorch.utils.common import SparseMatrixType
+from autoPyTorch.utils.common import ispandas
 
 
-ArrayType = Union[np.ndarray, SparseMatrixType]
+ArrayType = Union[np.ndarray, spmatrix]
 
 
 def _check_and_to_array(y: SupportedTargetTypes) -> ArrayType:
@@ -71,7 +71,7 @@ class TabularTargetValidator(BaseTargetValidator):
             return self
 
         if y_test is not None:
-            if hasattr(y_train, "iloc"):
+            if ispandas(y_train):
                 y_train = pd.concat([y_train, y_test], ignore_index=True, sort=False)
             elif isinstance(y_train, list):
                 y_train = y_train + y_test
@@ -100,7 +100,7 @@ class TabularTargetValidator(BaseTargetValidator):
         if ndim > 1:
             self.encoder.fit(y_train)
         else:
-            if hasattr(y_train, 'iloc'):
+            if ispandas(y_train):
                 y_train = cast(pd.DataFrame, y_train)
                 self.encoder.fit(y_train.to_numpy().reshape(-1, 1))
             else:
@@ -131,7 +131,7 @@ class TabularTargetValidator(BaseTargetValidator):
         shape = np.shape(y)
         if len(shape) > 1:
             y = self.encoder.transform(y)
-        elif hasattr(y, 'iloc'):
+        elif ispandas(y):
             # The Ordinal encoder expects a 2 dimensional input.
             # The targets are 1 dimensional, so reshape to match the expected shape
             y = cast(pd.DataFrame, y)
@@ -192,7 +192,7 @@ class TabularTargetValidator(BaseTargetValidator):
             y = self.encoder.inverse_transform(y)
         else:
             # The targets should be a flattened array, hence reshape with -1
-            if hasattr(y, 'iloc'):
+            if ispandas(y):
                 y = cast(pd.DataFrame, y)
                 y = self.encoder.inverse_transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
             else:
@@ -216,7 +216,7 @@ class TabularTargetValidator(BaseTargetValidator):
 
         if not isinstance(y, (np.ndarray, pd.DataFrame,
                               List, pd.Series)) \
-                and not scipy.sparse.issparse(y):  # type: ignore[misc]
+                and not issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
                              "the provided input is of type {}".format(
@@ -225,8 +225,8 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # Sparse data muss be numerical
         # Type ignore on attribute because sparse targets have a dtype
-        if scipy.sparse.issparse(y) and not np.issubdtype(y.dtype.type,  # type: ignore[union-attr]
-                                                          np.number):
+        if issparse(y) and not np.issubdtype(y.dtype.type,  # type: ignore[union-attr]
+                                             np.number):
             raise ValueError("When providing a sparse matrix as targets, the only supported "
                              "values are numerical. Please consider using a dense"
                              " instead."
@@ -245,10 +245,10 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # No Nan is supported
         has_nan_values = False
-        if hasattr(y, 'iloc'):
+        if ispandas(y):
             has_nan_values = cast(pd.DataFrame, y).isnull().values.any()
-        if scipy.sparse.issparse(y):
-            y = cast(scipy.sparse.spmatrix, y)
+        if issparse(y):
+            y = cast(spmatrix, y)
             has_nan_values = not np.array_equal(y.data, y.data)
         else:
             # List and array like values are considered here

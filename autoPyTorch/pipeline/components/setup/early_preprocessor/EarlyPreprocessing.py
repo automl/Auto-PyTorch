@@ -6,7 +6,7 @@ import numpy as np
 
 import pandas as pd
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import spmatrix
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
@@ -21,7 +21,7 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
         self.random_state = random_state
         self.add_fit_requirements([
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+            FitRequirement('X_train', (np.ndarray, pd.DataFrame, spmatrix), user_defined=True,
                            dataset_property=False)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> "EarlyPreprocessing":

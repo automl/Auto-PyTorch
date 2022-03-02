@@ -21,6 +21,8 @@ import pandas as pd
 
 from scipy.sparse import issparse, spmatrix
 
+from autoPyTorch.utils.common import ispandas
+
 
 # TODO: TypedDict with python 3.8
 #
@@ -246,7 +248,7 @@ def reduce_precision(
         reduced_dtypes = reduction_mapping[X.dtype]
         X = X.astype(reduced_dtypes)
 
-    elif hasattr(X, 'iloc'):
+    elif ispandas(X):
         dtypes = dict(X.dtypes)
 
         col_names = X.dtypes.index
@@ -270,7 +272,7 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
         memory_in_bytes = arr.nbytes
     elif issparse(arr):
         memory_in_bytes = arr.data.nbytes
-    elif hasattr(arr, 'iloc'):
+    elif ispandas(arr):
         memory_in_bytes = arr.memory_usage(index=True, deep=True).sum()
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
