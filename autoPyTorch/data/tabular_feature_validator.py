@@ -132,6 +132,29 @@ class TabularFeatureValidator(BaseFeatureValidator):
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
+    def _encode_categories(self, X: pd.DataFrame) -> None:
+        preprocessors = get_tabular_preprocessors()
+        self.column_transformer = _create_column_transformer(
+            preprocessors=preprocessors,
+            categorical_columns=self.transformed_columns,
+        )
+
+        assert self.column_transformer is not None  # Mypy redefinition
+        self.column_transformer.fit(X)
+
+        # The column transformer moves categoricals to the left side
+        self.feat_type = sorted(self.feat_type, key=functools.cmp_to_key(self._comparator))
+
+        encoded_categories = self.column_transformer.\
+            named_transformers_['categorical_pipeline'].\
+            named_steps['ordinalencoder'].categories_
+
+        # An ordinal encoder for each categorical columns
+        self.categories = [
+            list(range(len(cat)))
+            for cat in encoded_categories
+        ]
+
     def _fit(
         self,
         X: SupportedFeatTypes,
@@ -180,34 +203,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             assert self.feat_type is not None
 
             if len(self.transformed_columns) > 0:
-
-                preprocessors = get_tabular_preprocessors()
-                self.column_transformer = _create_column_transformer(
-                    preprocessors=preprocessors,
-                    categorical_columns=self.transformed_columns,
-                )
-
-                # Mypy redefinition
-                assert self.column_transformer is not None
-                self.column_transformer.fit(X)
-
-                # The column transformer reorders the feature types
-                # therefore, we need to change the order of columns as well
-                # This means categorical columns are shifted to the left
-                self.feat_type = sorted(
-                    self.feat_type,
-                    key=functools.cmp_to_key(self._comparator)
-                )
-
-                encoded_categories = self.column_transformer.\
-                    named_transformers_['categorical_pipeline'].\
-                    named_steps['ordinalencoder'].categories_
-                self.categories = [
-                    # We fit an ordinal encoder, where all categorical
-                    # columns are shifted to the left
-                    list(range(len(cat)))
-                    for cat in encoded_categories
-                ]
+                self._encode_categories(X)
 
             for i, type_ in enumerate(self.feat_type):
                 if 'numerical' in type_:
