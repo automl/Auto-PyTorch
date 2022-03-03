@@ -3,16 +3,10 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 
-import pandas as pd
-
-from scipy.sparse import spmatrix
-
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.data.utils import SupportedFeatTypes, list_to_pandas
 from autoPyTorch.utils.logging_ import PicklableClientLogger
-
-
-SupportedFeatTypes = Union[List, pd.DataFrame, np.ndarray, spmatrix]
 
 
 class BaseFeatureValidator(BaseEstimator):
@@ -75,8 +69,8 @@ class BaseFeatureValidator(BaseEstimator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X_train, list):
-            X_train = self.list_to_pandas(X_train)
-            X_test = self.list_to_pandas(X_test) if X_test is not None else None
+            X_train = list_to_pandas(X_train, self.logger)
+            X_test = list_to_pandas(X_test, self.logger) if X_test is not None else None
 
         self._check_data(X_train)
 

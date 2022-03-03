@@ -31,7 +31,8 @@ from autoPyTorch.data.utils import (
     _check_and_to_array,
     _get_columns_to_encode,
     has_object_columns,
-    reduce_dataset_size_if_too_large
+    reduce_dataset_size_if_too_large,
+    to_pandas,
 )
 from autoPyTorch.utils.common import ispandas
 from autoPyTorch.utils.logging_ import PicklableClientLogger
@@ -202,10 +203,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 The fitted base estimator
         """
 
-        # The final output of a validator is a numpy array. But pandas
-        # gives us information about the column dtype
-        if isinstance(X, np.ndarray):
-            X = self.numpy_to_pandas(X)
+        X = to_pandas(X)  # there is the column dtype info, so convert it to pandas
 
         if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
@@ -277,12 +275,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
 
-        # If a list was provided, it will be converted to pandas
-        if isinstance(X, list):
-            X = self.list_to_pandas(X)
-        elif isinstance(X, np.ndarray):
-            X = self.numpy_to_pandas(X)
-
+        X = to_pandas(X)
         if ispandas(X) and not issparse(X):
             X = self._convert_all_nan_columns_to_numeric(X)
 
@@ -298,18 +291,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
 
-        try:
-            X = _check_and_to_array(X)
-        except Exception as e:
-            self.logger.exception(
-                f"Conversion failed for input {X.dtypes} {X}"
-                "This means AutoPyTorch was not able to properly "
-                "Extract the dtypes of the provided input features. "
-                "Please try to manually cast it to a supported "
-                "numerical or categorical values."
-            )
-            raise e
-
+        X = _check_and_to_array(X, logger=self.logger)
         X = self._compress_dataset(X)
 
         return X
@@ -415,42 +397,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             return self.enc_columns, self.feat_type
         else:
             return _get_columns_to_encode(X)
-
-    def list_to_pandas(self, X: SupportedFeatTypes) -> pd.DataFrame:
-        """
-        Convert a list to a pandas DataFrame. In this process, column types are inferred.
-
-        Args:
-            X (SupportedFeatTypes):
-                A set of features that are going to be validated (type and dimensionality
-                checks) and an encoder fitted in the case the data needs encoding
-
-        Returns:
-            pd.DataFrame:
-                transformed data from list to pandas DataFrame
-        """
-
-        # If a list was provided, it will be converted to pandas
-        X = pd.DataFrame(data=X).infer_objects()
-        data_info = [(col, t) for col, t in zip(X.columns, X.dtypes)]
-        self.logger.warning(
-            "The provided feature types to AutoPyTorch are list."
-            f"Features have been interpreted as: {data_info}"
-        )
-        return X
-
-    def numpy_to_pandas(self, X: np.ndarray) -> pd.DataFrame:
-        """
-        Converts a numpy array to pandas for type inference
-
-        Args:
-            X (np.ndarray):
-                data to be interpreted.
-
-        Returns:
-            pd.DataFrame
-        """
-        return pd.DataFrame(X).infer_objects().convert_dtypes()
 
     def infer_objects(self, X: pd.DataFrame) -> pd.DataFrame:
         """

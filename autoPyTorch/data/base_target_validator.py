@@ -1,18 +1,14 @@
 import logging
-from typing import List, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 
 import pandas as pd
 
-from scipy.sparse import spmatrix
-
 from sklearn.base import BaseEstimator
 
 from autoPyTorch.utils.logging_ import PicklableClientLogger
-
-
-SupportedTargetTypes = Union[List, pd.Series, pd.DataFrame, np.ndarray, spmatrix]
+from autoPyTorch.data.utils import SupportedTargetTypes
 
 
 class BaseTargetValidator(BaseEstimator):

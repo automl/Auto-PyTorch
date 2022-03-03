@@ -1,5 +1,6 @@
 # Implementation used from https://github.com/automl/auto-sklearn/blob/development/autosklearn/util/data.py
 import warnings
+from logging import Logger
 from math import floor
 from typing import (
     Any,
@@ -24,12 +25,12 @@ from scipy.sparse import issparse, spmatrix
 
 from sklearn.utils import check_array
 
-from autoPyTorch.data.base_target_validator import SupportedTargetTypes
-from autoPyTorch.data.base_feature_validator import SupportedFeatTypes
 from autoPyTorch.utils.common import autoPyTorchEnum, ispandas
 
 
 ArrayType = Union[np.ndarray, spmatrix]
+SupportedFeatTypes = Union[List, pd.DataFrame, np.ndarray, spmatrix]
+SupportedTargetTypes = Union[List, pd.Series, pd.DataFrame, np.ndarray, spmatrix]
 
 # TODO: TypedDict with python 3.8
 #
@@ -56,6 +57,60 @@ def convert_dtype_enum_dict_to_str_dict(dtype_dict: Dict[str, ColumnDTypes]) -> 
     return {col_name: enum2str[dtype_choice] for col_name, dtype_choice in dtype_dict.items()}
 
 
+def list_to_pandas(data: List, logger: Optional[Logger] = None) -> pd.DataFrame:
+    """
+    Convert a list to a pandas DataFrame. In this process, column types are inferred.
+
+    Args:
+        data (List):
+            A list of features.
+
+    Returns:
+        pd.DataFrame:
+            transformed data from list to pandas DataFrame
+    """
+    if not isinstance(data, list):
+        raise TypeError(f"data must be list, but got {type(data)}")
+
+    # If a list was provided, it will be converted to pandas
+    data = pd.DataFrame(data=data).infer_objects()
+    data_info = [(col, t) for col, t in zip(data.columns, data.dtypes)]
+
+    if logger is not None:
+        logger.warning(
+            "The provided feature types to AutoPyTorch are list."
+            f"Features have been interpreted as: {data_info}"
+        )
+
+    return data
+
+
+def numpy_to_pandas(data: np.ndarray) -> pd.DataFrame:
+    """
+    Converts a numpy array to pandas for type inference
+
+    Args:
+        X (np.ndarray):
+            data to be interpreted.
+
+    Returns:
+        pd.DataFrame
+    """
+    if not isinstance(data, np.ndarray):
+        raise TypeError(f"data must be np.ndarray, but got {type(data)}")
+
+    return pd.DataFrame(data).infer_objects().convert_dtypes()
+
+
+def to_pandas(data: SupportedFeatTypes, logger: Optional[Logger] = None) -> SupportedFeatTypes:
+    if isinstance(data, list):
+        data = list_to_pandas(data, logger)
+    elif isinstance(data, np.ndarray):
+        data = numpy_to_pandas(data)
+
+    return data
+
+
 def has_object_columns(feature_types: pd.Series) -> bool:
     """
     Indicate whether on a Series of dtypes for a Pandas DataFrame
@@ -72,12 +127,24 @@ def has_object_columns(feature_types: pd.Series) -> bool:
 
 def _check_and_to_array(
     data: Union[SupportedFeatTypes, SupportedTargetTypes],
+    logger: Optional[Logger] = None,
     **kwargs: Dict[str, Any]
 ) -> ArrayType:
     """ sklearn check array will make sure we have the correct numerical features for the array """
     _kwargs = dict(accept_sparse='csr', force_all_finite=False)
     _kwargs.update(kwargs)
-    return check_array(data, **_kwargs)
+    try:
+        return check_array(data, **_kwargs)
+    except Exception as e:
+        if logger is not None:
+            logger.exception(
+                f"Conversion failed for input {data}"
+                "This means AutoPyTorch was not able to properly "
+                "Extract the dtypes of the provided input features. "
+                "Please try to manually cast it to a supported "
+                "numerical or categorical values."
+            )
+        raise e
 
 
 def _error_due_to_unsupported_column(X: pd.DataFrame, column: str) -> None:
