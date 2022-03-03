@@ -322,6 +322,28 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
             return X
 
+    def _check_dataframe(self, X: pd.DataFrame) -> None:
+        err_msg = " of the features must be identical before/after fit(), "
+        err_msg += "but different between training and test datasets:\n"
+
+        if not X.select_dtypes(include='object').empty:  # TODO: Replace with has_object_columns
+            X = self.infer_objects(X)
+
+        # Define the column to be encoded as the feature validator is fitted once per estimator
+        self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+
+        column_order = [column for column in X.columns]
+        if len(self.column_order) == 0:
+            self.column_order = column_order
+        elif self.column_order != column_order:
+            raise ValueError(f"The column order{err_msg}train: {self.column_order}\ntest: {column_order}")
+
+        dtypes = [dtype.name for dtype in X.dtypes]
+        if len(self.dtypes) == 0:
+            self.dtypes = dtypes
+        elif self.dtypes != dtypes:
+            raise ValueError(f"The dtypes{err_msg}train: {self.dtypes}\ntest: {dtypes}")
+
     def _check_data(
         self,
         X: SupportedFeatTypes,
@@ -336,68 +358,29 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
 
         if not isinstance(X, (np.ndarray, pd.DataFrame)) and not issparse(X):
-            raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
-                             " scipy sparse and Python Lists, yet, the provided input is"
-                             " of type {}".format(type(X))
-                             )
+            raise TypeError(
+                "AutoPyTorch only supports numpy.ndarray, pandas.DataFrame,"
+                f" scipy.sparse and List, but got {type(X)}"
+            )
 
         if self.data_type is None:
             self.data_type = type(X)
         if self.data_type != type(X):
-            self.logger.warning("AutoPyTorch previously received features of type %s "
-                                "yet the current features have type %s. Changing the dtype "
-                                "of inputs to an estimator might cause problems" % (
-                                    str(self.data_type),
-                                    str(type(X)),
-                                ),
-                                )
+            self.logger.warning(
+                f"AutoPyTorch previously received features of type {str(self.data_type)}, "
+                f"but got type {str(type(X))} in the current features. This change might cause problems"
+            )
 
-        # Do not support category/string numpy data. Only numbers
-        if hasattr(X, "dtype"):
-            if not np.issubdtype(X.dtype.type, np.number):  # type: ignore[union-attr]
-                raise ValueError(
-                    "When providing a numpy array to AutoPyTorch, the only valid "
-                    "dtypes are numerical ones. The provided data type {} is not supported."
-                    "".format(
-                        X.dtype.type,  # type: ignore[union-attr]
-                    )
-                )
+        # For ndarray, no support of category/string
+        if isinstance(X, np.ndarray) and not np.issubdtype(X.dtype.type, np.number):
+            dt = X.dtype.type
+            raise TypeError(
+                f"AutoPyTorch does not support numpy.ndarray with non-numerical dtype, but got {dt}"
+            )
 
-        # Then for Pandas, we do not support Nan in categorical columns
-        if ispandas(X):
-            # If entered here, we have a pandas dataframe
+        if ispandas(X):  # For pandas, no support of nan in categorical cols
             X = cast(pd.DataFrame, X)
-
-            # Handle objects if possible
-            if not X.select_dtypes(include='object').empty:
-                X = self.infer_objects(X)
-
-            # Define the column to be encoded here as the feature validator is fitted once
-            # per estimator
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
-
-            column_order = [column for column in X.columns]
-            if len(self.column_order) > 0:
-                if self.column_order != column_order:
-                    raise ValueError("Changing the column order of the features after fit() is "
-                                     "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(self.column_order,
-                                                                                          column_order,)
-                                     )
-            else:
-                self.column_order = column_order
-
-            dtypes = [dtype.name for dtype in X.dtypes]
-            if len(self.dtypes) > 0:
-                if self.dtypes != dtypes:
-                    raise ValueError("Changing the dtype of the features after fit() is "
-                                     "not supported. Fit() method was called with "
-                                     "{} whereas the new features have {} as type".format(self.dtypes,
-                                                                                          dtypes,
-                                                                                          )
-                                     )
-            else:
-                self.dtypes = dtypes
+            self._check_dataframe(X)
 
     def _get_columns_to_encode(
         self,
