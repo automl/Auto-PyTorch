@@ -39,6 +39,20 @@ default_dataset_compression_arg: DatasetCompressionSpec = {
 }
 
 
+def has_object_columns(feature_types: pd.Series) -> bool:
+    """
+    Indicate whether on a Series of dtypes for a Pandas DataFrame
+    there exists one or more object columns.
+    Args:
+        feature_types (pd.Series): The feature types for a DataFrame.
+    Returns:
+        bool:
+            True if the DataFrame dtypes contain an object column, False
+            otherwise.
+    """
+    return np.dtype('O') in feature_types
+
+
 def get_dataset_compression_mapping(
     memory_limit: int,
     dataset_compression: Union[bool, Mapping[str, Any]]
