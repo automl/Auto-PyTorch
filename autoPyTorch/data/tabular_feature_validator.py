@@ -290,6 +290,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Pandas related transformations
         if ispandas(X) and self.column_transformer is not None:
+            if np.any(pd.isnull(X)):
+                # After above check it means that if there is a NaN
+                # the whole column must be NaN
+                # Make sure it is numerical and let the pipeline handle it
+                for column in X.columns:
+                    if X[column].isna().all():
+                        X[column] = pd.to_numeric(X[column])
+
             X = self.column_transformer.transform(X)
 
         # Sparse related transformations
