@@ -143,6 +143,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.column_transformer.fit(X)
 
         # The column transformer moves categoricals to the left side
+        assert self.feat_type is not None  # mypy definition
         self.feat_type = sorted(self.feat_type, key=functools.cmp_to_key(self._comparator))
 
         encoded_categories = self.column_transformer.\
