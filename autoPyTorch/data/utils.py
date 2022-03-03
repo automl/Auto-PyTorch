@@ -18,11 +18,18 @@ from typing import (
 import numpy as np
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from scipy.sparse import issparse, spmatrix
 
-from autoPyTorch.utils.common import ispandas
+from sklearn.utils import check_array
 
+from autoPyTorch.data.base_target_validator import SupportedTargetTypes
+from autoPyTorch.data.base_feature_validator import SupportedFeatTypes
+from autoPyTorch.utils.common import autoPyTorchEnum, ispandas
+
+
+ArrayType = Union[np.ndarray, spmatrix]
 
 # TODO: TypedDict with python 3.8
 #
@@ -37,6 +44,122 @@ default_dataset_compression_arg: DatasetCompressionSpec = {
     "memory_allocation": 0.1,
     "methods": ["precision"]
 }
+
+
+class ColumnDTypes(autoPyTorchEnum):
+    numerical = "numerical"
+    categorical = "categorical"
+
+
+def convert_dtype_enum_dict_to_str_dict(dtype_dict: Dict[str, ColumnDTypes]) -> Dict[str, str]:
+    enum2str = {type_choice: str(type_choice) for type_choice in ColumnDTypes}
+    return {col_name: enum2str[dtype_choice] for col_name, dtype_choice in dtype_dict.items()}
+
+
+def has_object_columns(feature_types: pd.Series) -> bool:
+    """
+    Indicate whether on a Series of dtypes for a Pandas DataFrame
+    there exists one or more object columns.
+    Args:
+        feature_types (pd.Series): The feature types for a DataFrame.
+    Returns:
+        bool:
+            True if the DataFrame dtypes contain an object column, False
+            otherwise.
+    """
+    return np.dtype('O') in feature_types
+
+
+def _check_and_to_array(
+    data: Union[SupportedFeatTypes, SupportedTargetTypes],
+    **kwargs: Dict[str, Any]
+) -> ArrayType:
+    """ sklearn check array will make sure we have the correct numerical features for the array """
+    _kwargs = dict(accept_sparse='csr', force_all_finite=False)
+    _kwargs.update(kwargs)
+    return check_array(data, **_kwargs)
+
+
+def _error_due_to_unsupported_column(X: pd.DataFrame, column: str) -> None:
+    # Move away from np.issubdtype as it causes
+    # TypeError: data type not understood in certain pandas types
+    def _generate_error_message_prefix(type_name: str, proc_type: Optional[str] = None) -> str:
+        msg1 = f"column `{column}` has an invalid type `{type_name}`. "
+        msg2 = "Cast it to a numerical type, category type or bool type by astype method. "
+        msg3 = f"The following link might help you to know {proc_type} processing: "
+        return msg1 + msg2 + ("" if proc_type is None else msg3)
+
+    dtype = X[column].dtype
+    if dtype.name == 'object':
+        err_msg = _generate_error_message_prefix(type_name="object", proc_type="string")
+        url = "https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html"
+        raise TypeError(f"{err_msg}{url}")
+    elif pd.core.dtypes.common.is_datetime_or_timedelta_dtype(dtype):
+        err_msg = _generate_error_message_prefix(type_name="time and/or date datatype", proc_type="datetime")
+        raise TypeError(f"{err_msg}https://stats.stackexchange.com/questions/311494/")
+    else:
+        err_msg = _generate_error_message_prefix(type_name=dtype.name)
+        raise TypeError(err_msg)
+
+
+def _get_columns_to_encode(X: pd.DataFrame) -> Tuple[List[str], Dict[str, str]]:
+    """
+    In case input data is a pandas DataFrame, this utility encodes the user provided
+    features (from categorical for example) to a numerical value that further stages
+    will be able to use
+
+    Args:
+        X (pd.DataFrame):
+            A set of features that are going to be validated (type and dimensionality
+            checks) and an encoder fitted in the case the data needs encoding
+
+    Returns:
+        enc_columns (List[str]):
+            Columns to encode
+        feat_type (Dict[str, str]):
+            Whether each column is numerical or categorical
+    """
+    enc_columns: List[str] = []
+    # feat_type: Dict[str, str] = {}
+    feat_type: List[str] = []
+
+    for dtype, col in zip(X.dtypes, X.columns):
+        if dtype.name in ['category', 'bool']:
+            enc_columns.append(col)
+            # feat_type[col] = str(ColumnDTypes.categorical)
+            feat_type.append(str(ColumnDTypes.categorical))
+        elif is_numeric_dtype(dtype):
+            # feat_type[col] = str(ColumnDTypes.numerical)
+            feat_type.append(str(ColumnDTypes.numerical))
+        else:
+            _error_due_to_unsupported_column(X, col)
+
+    return enc_columns, feat_type
+
+
+def _categorical_left_mover(cmp1: str, cmp2: str) -> int:
+    """Order so that categorical columns come left and numerical columns come right
+
+    Args:
+        cmp1 (str): First variable to compare
+        cmp2 (str): Second variable to compare
+
+    Raises:
+        ValueError: if the values of the variables to compare
+        are not in 'categorical' or 'numerical'
+
+    Returns:
+        int: either [0, -1, 1]
+    """
+    choices = [str(ColumnDTypes.categorical), str(ColumnDTypes.numerical)]
+    if cmp1 not in choices or cmp2 not in choices:
+        raise ValueError(
+            f"The comparator for the column order only accepts {choices}, "
+            f"but got {cmp1} and {cmp2}"
+        )
+
+    idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
+    return idx1 - idx2
 
 
 def get_dataset_compression_mapping(

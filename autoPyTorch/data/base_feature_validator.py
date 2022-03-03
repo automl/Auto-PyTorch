@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 
@@ -37,7 +37,7 @@ class BaseFeatureValidator(BaseEstimator):
         # Register types to detect unsupported data format changes
         self.feat_type: Optional[List[str]] = None
         self.data_type: Optional[type] = None
-        self.dtypes: List[str] = []
+        self.dtypes: Dict[str, str] = {}
         self.column_order: List[str] = []
 
         self.column_transformer: Optional[BaseEstimator] = None

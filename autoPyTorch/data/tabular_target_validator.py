@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, cast
+from typing import List, Optional, cast
 
 import numpy as np
 
@@ -7,22 +7,14 @@ from pandas.api.types import is_numeric_dtype
 
 from scipy.sparse import issparse, spmatrix
 
-import sklearn.utils
 from sklearn import preprocessing
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.multiclass import type_of_target
 
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
+from autoPyTorch.data.utils import ArrayType, _check_and_to_array
 from autoPyTorch.utils.common import ispandas
-
-
-ArrayType = Union[np.ndarray, spmatrix]
-
-
-def _check_and_to_array(y: SupportedTargetTypes) -> ArrayType:
-    """ sklearn check array will make sure we have the correct numerical features for the array """
-    return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
 
 
 def _modify_regression_target(y: ArrayType) -> ArrayType:
@@ -124,8 +116,9 @@ class TabularTargetValidator(BaseTargetValidator):
         return self
 
     def _transform_by_encoder(self, y: SupportedTargetTypes) -> np.ndarray:
+        kwargs = dict(force_all_finite=True, ensure_2d=False)
         if self.encoder is None:
-            return _check_and_to_array(y)
+            return _check_and_to_array(y, **kwargs)
 
         # remove ravel warning from pandas Series
         shape = np.shape(y)
@@ -139,7 +132,7 @@ class TabularTargetValidator(BaseTargetValidator):
         else:
             y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
 
-        return _check_and_to_array(y)
+        return _check_and_to_array(y, **kwargs)
 
     def transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
