@@ -103,7 +103,7 @@ def test_sparse_data_validation_for_regression():
 
     validator.fit(X_train=X_sp, y_train=y)
 
-    X_t, y_t = validator.transform(X, y)
+    X_t, y_t = validator.transform(X_sp, y)
     assert np.shape(X) == np.shape(X_t)
 
     # make sure everything was encoded to number
