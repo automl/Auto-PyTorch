@@ -27,8 +27,8 @@ class BaseFeatureValidator(BaseEstimator):
         column_transformer (Optional[BaseEstimator])
             Host a encoder object if the data requires transformation (for example,
             if provided a categorical column in a pandas DataFrame)
-        transformed_columns (List[str])
-            List of columns that were encoded.
+        enc_columns (List[str])
+            The list of column names that should be encoded.
     """
     def __init__(
         self,
@@ -41,7 +41,7 @@ class BaseFeatureValidator(BaseEstimator):
         self.column_order: List[str] = []
 
         self.column_transformer: Optional[BaseEstimator] = None
-        self.transformed_columns: List[str] = []
+        self.enc_columns: List[str] = []
 
         self.logger: Union[
             PicklableClientLogger, logging.Logger
@@ -75,7 +75,8 @@ class BaseFeatureValidator(BaseEstimator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X_train, list):
-            X_train, X_test = self.list_to_dataframe(X_train, X_test)
+            X_train = self.list_to_pandas(X_train)
+            X_test = self.list_to_pandas(X_test) if X_test is not None else None
 
         self._check_data(X_train)
 

@@ -86,7 +86,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             List for which an element at each index is a
             list containing the categories for the respective
             categorical column.
-        transformed_columns (List[str])
+        enc_columns (List[str])
             List of columns that were transformed.
         column_transformer (Optional[BaseEstimator])
             Hosts an imputer and an encoder object if the data
@@ -154,7 +154,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # The final output of a validator is a numpy array. But pandas
         # gives us information about the column dtype
         if isinstance(X, np.ndarray):
-            X = self.numpy_array_to_pandas(X)
+            X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
@@ -175,16 +175,16 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if not X.select_dtypes(include='object').empty:
                 X = self.infer_objects(X)
 
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             assert self.feat_type is not None
 
-            if len(self.transformed_columns) > 0:
+            if len(self.enc_columns) > 0:
 
                 preprocessors = get_tabular_preprocessors()
                 self.column_transformer = _create_column_transformer(
                     preprocessors=preprocessors,
-                    categorical_columns=self.transformed_columns,
+                    categorical_columns=self.enc_columns,
                 )
 
                 # Mypy redefinition
@@ -241,10 +241,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # If a list was provided, it will be converted to pandas
         if isinstance(X, list):
-            X, _ = self.list_to_dataframe(X)
-
-        if isinstance(X, np.ndarray):
-            X = self.numpy_array_to_pandas(X)
+            X = self.list_to_pandas(X)
+        elif isinstance(X, np.ndarray):
+            X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
             if np.any(pd.isnull(X)):
@@ -374,7 +373,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             # Define the column to be encoded here as the feature validator is fitted once
             # per estimator
-            self.transformed_columns, self.feat_type = self._get_columns_to_encode(X)
+            self.enc_columns, self.feat_type = self._get_columns_to_encode(X)
 
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
@@ -412,17 +411,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 checks) and an encoder fitted in the case the data needs encoding
 
         Returns:
-            transformed_columns (List[str]):
+            enc_columns (List[str]):
                 Columns to encode, if any
             feat_type:
                 Type of each column numerical/categorical
         """
 
-        if len(self.transformed_columns) > 0 and self.feat_type is not None:
-            return self.transformed_columns, self.feat_type
+        if len(self.enc_columns) > 0 and self.feat_type is not None:
+            return self.enc_columns, self.feat_type
 
         # Register if a column needs encoding
-        transformed_columns = []
+        enc_columns = []
 
         # Also, register the feature types for the estimator
         feat_type = []
@@ -431,7 +430,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         for i, column in enumerate(X.columns):
             if X[column].dtype.name in ['category', 'bool']:
 
-                transformed_columns.append(column)
+                enc_columns.append(column)
                 feat_type.append('categorical')
             # Move away from np.issubdtype as it causes
             # TypeError: data type not understood in certain pandas types
@@ -473,49 +472,33 @@ class TabularFeatureValidator(BaseFeatureValidator):
                     )
             else:
                 feat_type.append('numerical')
-        return transformed_columns, feat_type
+        return enc_columns, feat_type
 
-    def list_to_dataframe(
-        self,
-        X_train: SupportedFeatTypes,
-        X_test: Optional[SupportedFeatTypes] = None,
-    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+    def list_to_pandas(self, X: SupportedFeatTypes) -> pd.DataFrame:
         """
-        Converts a list to a pandas DataFrame. In this process, column types are inferred.
-
-        If test data is provided, we proactively match it to train data
+        Convert a list to a pandas DataFrame. In this process, column types are inferred.
 
         Args:
-            X_train (SupportedFeatTypes):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
-                checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SupportedFeatTypes]):
-                A hold out set of data used for checking
+                checks) and an encoder fitted in the case the data needs encoding
 
         Returns:
             pd.DataFrame:
-                transformed train data from list to pandas DataFrame
-            pd.DataFrame:
-                transformed test data from list to pandas DataFrame
+                transformed data from list to pandas DataFrame
         """
 
         # If a list was provided, it will be converted to pandas
-        X_train = pd.DataFrame(data=X_train).infer_objects()
-        self.logger.warning("The provided feature types to AutoPyTorch are of type list."
-                            "Features have been interpreted as: {}".format([(col, t) for col, t in
-                                                                            zip(X_train.columns, X_train.dtypes)]))
-        if X_test is not None:
-            if not isinstance(X_test, list):
-                self.logger.warning("Train features are a list while the provided test data"
-                                    "is {}. X_test will be casted as DataFrame.".format(type(X_test))
-                                    )
-            X_test = pd.DataFrame(data=X_test).infer_objects()
-        return X_train, X_test
+        X = pd.DataFrame(data=X).infer_objects()
+        data_info = [(col, t) for col, t in zip(X.columns, X.dtypes)]
+        self.logger.warning(
+            "The provided feature types to AutoPyTorch are list."
+            f"Features have been interpreted as: {data_info}"
+        )
 
-    def numpy_array_to_pandas(
-        self,
-        X: np.ndarray,
-    ) -> pd.DataFrame:
+        return X
+
+    def numpy_to_pandas(self, X: np.ndarray) -> pd.DataFrame:
         """
         Converts a numpy array to pandas for type inference
 
