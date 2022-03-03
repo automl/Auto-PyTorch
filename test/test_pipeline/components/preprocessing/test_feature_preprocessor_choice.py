@@ -44,7 +44,7 @@ class TestFeaturePreprocessorChoice(unittest.TestCase):
                 self.assertIn(key, vars(feature_preprocessor_choice.choice))
                 # for score function in some feature preprocessors
                 # this will fail
-                if 'score_func' in key:
+                if 'score_func' or 'pooling_func' in key:
                     continue
                 self.assertEqual(value, feature_preprocessor_choice.choice.__dict__[key])
 

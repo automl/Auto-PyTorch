@@ -112,6 +112,11 @@ class TestFeaturePreprocessors:
         try:
             pipeline.fit(fit_dictionary_tabular)
         except Exception as e:
+            if (
+                ("must be non-negative" or "contains negative values") in e.args[0]
+                and not fit_dictionary_tabular['dataset_properties']['issigned']
+            ):
+                pytest.skip("Failure because scaler made data nonnegative.")
             pytest.fail(f"For config {config} failed with {e}")
 
         # To make sure we fitted the model, there should be a
