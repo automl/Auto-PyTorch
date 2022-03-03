@@ -7,19 +7,19 @@ import pandas as pd
 
 import pytest
 
-from sklearn.datasets import fetch_openml
-
 from scipy.sparse import csr_matrix, spmatrix
+
+from sklearn.datasets import fetch_openml
 
 from autoPyTorch.constants import (
     BINARY,
     CLASSIFICATION_TASKS,
     CONTINUOUS,
+    CONTINUOUSMULTIOUTPUT,
     MULTICLASS,
     MULTICLASSMULTIOUTPUT,
-    CONTINUOUSMULTIOUTPUT,
-    TABULAR_REGRESSION,
     TABULAR_CLASSIFICATION,
+    TABULAR_REGRESSION
 )
 from autoPyTorch.data.utils import (
     default_dataset_compression_arg,
