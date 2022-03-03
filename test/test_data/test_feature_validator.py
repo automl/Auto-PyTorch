@@ -220,7 +220,7 @@ def test_featurevalidator_supported_types(input_data_featuretest):
 )
 def test_featurevalidator_unsupported_numpy(input_data_featuretest):
     validator = TabularFeatureValidator()
-    with pytest.raises(ValueError, match=r".*When providing a numpy array.*not supported."):
+    with pytest.raises(TypeError, match=r"AutoPyTorch does not support numpy.ndarray with non-numerical dtype"):
         validator.fit(input_data_featuretest)
 
 
@@ -332,7 +332,7 @@ def test_features_unsupported_calls_are_raised():
         validator.fit(
             pd.DataFrame({'datetime': [pd.Timestamp('20180310')]})
         )
-    with pytest.raises(ValueError, match=r"AutoPyTorch only supports.*yet, the provided input"):
+    with pytest.raises(TypeError, match=r"AutoPyTorch only supports numpy.ndarray, pandas.DataFrame"):
         validator.fit({'input1': 1, 'input2': 2})
     with pytest.raises(ValueError, match=r"has unsupported dtype string"):
         validator.fit(pd.DataFrame([{'A': 1, 'B': 2}], dtype='string'))
@@ -517,15 +517,16 @@ def test_featurevalidator_new_data_after_fit(openml_id,
 
     # And then check proper error messages
     if train_data_type == 'pandas':
+        pattern = r"of the features must be identical before/after fit()"
         old_dtypes = copy.deepcopy(validator.dtypes)
         validator.dtypes = ['dummy' for dtype in X_train.dtypes]
-        with pytest.raises(ValueError, match=r"Changing the dtype of the features after fit"):
+        with pytest.raises(ValueError, match=pattern):
             transformed_X = validator.transform(X_test)
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':
             columns = X_test.columns.tolist()
             X_test = X_test[reversed(columns)]
-            with pytest.raises(ValueError, match=r"Changing the column order of the features"):
+            with pytest.raises(ValueError, match=pattern):
                 transformed_X = validator.transform(X_test)
 
 
