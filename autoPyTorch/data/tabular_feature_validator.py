@@ -132,10 +132,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         idx1, idx2 = choices.index(cmp1), choices.index(cmp2)
         return idx1 - idx2
 
-    def _fit(
-        self,
-        X: SupportedFeatTypes,
-    ) -> BaseEstimator:
+    def _fit(self, X: SupportedFeatTypes) -> BaseEstimator:
         """
         In case input data is a pandas DataFrame, this utility encodes the user provided
         features (from categorical for example) to a numerical value that further stages
@@ -219,10 +216,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self.num_features = np.shape(X)[1]
         return self
 
-    def transform(
-        self,
-        X: SupportedFeatTypes,
-    ) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
+    def transform(self, X: SupportedFeatTypes) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
@@ -235,6 +229,41 @@ class TabularFeatureValidator(BaseFeatureValidator):
         Return:
             np.ndarray:
                 The transformed array
+
+        Note:
+            The default transform performs the folloing:
+                * simple imputation for both
+                * scaling for numerical
+                * one-hot encoding for categorical
+            For example, here is a simple case
+            of which all the columns are categorical.
+                data = [
+                    {'A': 1, 'B': np.nan, 'C': np.nan},
+                    {'A': np.nan, 'B': 3, 'C': np.nan},
+                    {'A': 2, 'B': np.nan, 'C': np.nan}
+                ]
+            and suppose all the columns are categorical,
+            then
+                * `A` in {np.nan, 1, 2}
+                * `B` in {np.nan, 3}
+                * `C` in {np.nan} <=== it will be dropped.
+
+            So in the column A,
+                * np.nan ==> [1, 0, 0] (always the index 0)
+                * 1      ==> [0, 1, 0]
+                * 2      ==> [0, 0, 1]
+            in the column B,
+                * np.nan ==> [1, 0]
+                * 3      ==> [0, 1]
+            Therefore, by concatenating,
+                * {'A': 1, 'B': np.nan, 'C': np.nan} ==> [0, 1, 0, 1, 0]
+                * {'A': np.nan, 'B': 3, 'C': np.nan} ==> [1, 0, 0, 0, 1]
+                * {'A': 2, 'B': np.nan, 'C': np.nan} ==> [0, 0, 1, 1, 0]
+                ==> [
+                    [0, 1, 0, 1, 0],
+                    [1, 0, 0, 0, 1],
+                    [0, 0, 1, 1, 0]
+                ]
         """
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
@@ -283,11 +312,13 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 accept_sparse='csr'
             )
         except Exception as e:
-            self.logger.exception(f"Conversion failed for input {X.dtypes} {X}"
-                                  "This means AutoPyTorch was not able to properly "
-                                  "Extract the dtypes of the provided input features. "
-                                  "Please try to manually cast it to a supported "
-                                  "numerical or categorical values.")
+            self.logger.exception(
+                f"Conversion failed for input {X.dtypes} {X}"
+                "This means AutoPyTorch was not able to properly "
+                "Extract the dtypes of the provided input features. "
+                "Please try to manually cast it to a supported "
+                "numerical or categorical values."
+            )
             raise e
 
         X = self._compress_dataset(X)
@@ -322,10 +353,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype
             return X
 
-    def _check_data(
-        self,
-        X: SupportedFeatTypes,
-    ) -> None:
+    def _check_data(self, X: SupportedFeatTypes) -> None:
         """
         Feature dimensionality and data type checks
 
@@ -399,10 +427,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             else:
                 self.dtypes = dtypes
 
-    def _get_columns_to_encode(
-        self,
-        X: pd.DataFrame,
-    ) -> Tuple[List[str], List[str]]:
+    def _get_columns_to_encode(self, X: pd.DataFrame) -> Tuple[List[str], List[str]]:
         """
         Return the columns to be encoded from a pandas dataframe
 
@@ -512,10 +537,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X_test = pd.DataFrame(data=X_test).infer_objects()
         return X_train, X_test
 
-    def numpy_array_to_pandas(
-        self,
-        X: np.ndarray,
-    ) -> pd.DataFrame:
+    def numpy_array_to_pandas(self, X: np.ndarray) -> pd.DataFrame:
         """
         Converts a numpy array to pandas for type inference
 
@@ -542,25 +564,28 @@ class TabularFeatureValidator(BaseFeatureValidator):
             pd.DataFrame
         """
         if hasattr(self, 'object_dtype_mapping'):
-            # Mypy does not process the has attr. This dict is defined below
-            for key, dtype in self.object_dtype_mapping.items():  # type: ignore[has-type]
-                if 'int' in dtype.name:
-                    # In the case train data was interpreted as int
-                    # and test data was interpreted as float, because of 0.0
-                    # for example, honor training data
-                    X[key] = X[key].applymap(np.int64)
-                else:
-                    try:
-                        X[key] = X[key].astype(dtype.name)
-                    except Exception as e:
-                        # Try inference if possible
-                        self.logger.warning(f"Tried to cast column {key} to {dtype} caused {e}")
-                        pass
+            # honor the training data types
+            try:
+                # Mypy does not process the has attr.
+                X = X.astype(self.object_dtype_mapping)  # type: ignore[has-type]
+            except Exception as e:
+                self.logger.warning(
+                    f'Casting the columns to training dtypes '  # type: ignore[has-type]
+                    f'{self.object_dtype_mapping} caused the exception {e}'
+                )
         else:
-            X = X.infer_objects()
-            for column in X.columns:
-                if not is_numeric_dtype(X[column]):
-                    X[column] = X[column].astype('category')
-            self.object_dtype_mapping = {column: X[column].dtype for column in X.columns}
+            if len(self.dtypes) != 0:
+                # when train data has no object dtype, but test does
+                # we prioritise the datatype given in training data
+                dtype_dict = {col: dtype for col, dtype in zip(X.columns, self.dtypes)}
+                X = X.astype(dtype_dict)
+            else:
+                # Calling for the first time to infer the categories
+                X = X.infer_objects()
+                dtype_dict = {col: 'category' for col, dtype in zip(X.columns, X.dtypes) if not is_numeric_dtype(dtype)}
+                X = X.astype(dtype_dict)
+            # only numerical attributes and categories
+            self.object_dtype_mapping = {column: data_type for column, data_type in zip(X.columns, X.dtypes)}
+
         self.logger.debug(f"Infer Objects: {self.object_dtype_mapping}")
         return X
