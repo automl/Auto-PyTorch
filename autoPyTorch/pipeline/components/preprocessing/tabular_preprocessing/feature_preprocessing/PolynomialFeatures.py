@@ -37,7 +37,10 @@ class PolynomialFeatures(autoPyTorchFeaturePreprocessingComponent):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {'shortname': 'PolynomialFeatures',
                 'name': 'PolynomialFeatures',
-                'handles_sparse': True}
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True
+                }
 
     @staticmethod
     def get_hyperparameter_search_space(

@@ -78,7 +78,13 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
-        self.preprocessor.fit(X_train)
+        if 'y_train' in X:
+            y_train = subsampler(X['y_train'], X['train_indices'])
+        else:
+            y_train = X['backend'].load_datamanager().train_tensors[1]
+
+        self.preprocessor.fit(X_train, y=y_train)
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

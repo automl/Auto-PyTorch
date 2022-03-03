@@ -47,8 +47,9 @@ class NoFeaturePreprocessor(autoPyTorchFeaturePreprocessingComponent):
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
-        return {
-            'shortname': 'NoFeaturePreprocessing',
-            'name': 'No Feature Preprocessing',
-            'handles_sparse': True
-        }
+        return {'shortname': 'NoFeaturePreprocessing',
+                'name': 'No Feature Preprocessing',
+                'handles_sparse': True,
+                'handles_classification': True,
+                'handles_regression': True
+                }

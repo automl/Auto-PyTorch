@@ -10,7 +10,8 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_ta
 
 
 class autoPyTorchFeaturePreprocessingComponent(autoPyTorchTabularPreprocessingComponent):
-    _required_properties: List[str] = ['handles_sparse']
+    _required_properties: List[str] = [
+        'handles_sparse', 'handles_classification', 'handles_regression']
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None):
         if random_state is None:
@@ -30,7 +31,7 @@ class autoPyTorchFeaturePreprocessingComponent(autoPyTorchTabularPreprocessingCo
         Returns:
             (Dict[str, Any]): the updated 'X' dictionary
         """
-        if self.preprocessor['numerical'] is None and self.preprocessor['categorical'] is None:
+        if self.preprocessor['numerical'] is None:
             raise AttributeError("{} can't tranform without fitting first"
                                  .format(self.__class__.__name__))
         X.update({'feature_preprocessor': self.preprocessor})
