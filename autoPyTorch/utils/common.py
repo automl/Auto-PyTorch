@@ -101,6 +101,9 @@ class autoPyTorchEnum(str, Enum):
     def __hash__(self) -> int:
         return hash(self.value)
 
+    def __str__(self) -> str:
+        return str(self.value)
+
 
 def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
     """
