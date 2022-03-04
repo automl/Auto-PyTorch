@@ -15,6 +15,7 @@ from autoPyTorch.data.utils import (
     DatasetDTypeContainerType,
     reduce_dataset_size_if_too_large
 )
+from autoPyTorch.utils.common import ispandas
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 
 
@@ -90,7 +91,7 @@ class TabularInputValidator(BaseInputValidator):
             DatasetCompressionInputType:
                 Compressed dataset.
         """
-        is_dataframe = hasattr(X, 'iloc')
+        is_dataframe = ispandas(X)
         is_reducible_type = isinstance(X, np.ndarray) or issparse(X) or is_dataframe
         if not is_reducible_type or self.dataset_compression is None:
             return X, y

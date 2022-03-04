@@ -258,13 +258,8 @@ class TrainerChoice(autoPyTorchChoice):
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
 
-        # Ensure that the split is not missing any class.
-        labels = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
-        if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
-            unique_labels = len(np.unique(labels))
-            if unique_labels < X['dataset_properties']['output_shape']:
-                raise ValueError(f"Expected number of unique labels {unique_labels} in train split: {X['split_id']}"
-                                 f" to be = num_classes {X['dataset_properties']['output_shape']}.")
+        labels = self._get_train_label(X)
+
         self.choice.prepare(
             model=X['network'],
             metrics=metrics,
@@ -388,6 +383,20 @@ class TrainerChoice(autoPyTorchChoice):
         self.fitted_ = True
 
         return self
+
+    def _get_train_label(self, X: Dict[str, Any]) -> List[int]:
+        """
+        Verifies and validates the labels from train split.
+        """
+        # Ensure that the split is not missing any class.
+        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
+            unique_labels = len(np.unique(labels))
+            if unique_labels < X['dataset_properties']['output_shape']:
+                raise ValueError(f"Expected number of unique labels {unique_labels} in train split: {X['split_id']}"
+                                 f" to be = num_classes {X['dataset_properties']['output_shape']}.")
+
+        return labels
 
     def _load_best_weights_and_clean_checkpoints(self, X: Dict[str, Any]) -> None:
         """

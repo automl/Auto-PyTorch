@@ -1,4 +1,5 @@
 import functools
+from logging import Logger
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
@@ -18,6 +19,7 @@ from sklearn.pipeline import make_pipeline
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
 from autoPyTorch.utils.common import ispandas
+from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def _create_column_transformer(
@@ -93,6 +95,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         categorical_columns (List[int]):
             List of indices of categorical columns
     """
+    def __init__(
+        self,
+        logger: Optional[Union[PicklableClientLogger, Logger]] = None,
+    ) -> None:
+        super().__init__(logger)
+
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
