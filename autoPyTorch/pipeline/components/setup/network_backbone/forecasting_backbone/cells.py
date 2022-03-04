@@ -292,6 +292,8 @@ class VariableSelector(nn.Module):
                 self.cached_static_contex = static_context_variable_selection
                 self.cached_static_embedding = static_embedding
         else:
+            static_embedding = self.cached_static_embedding
+            static_context_initial_hidden = None
             static_context_variable_selection = self.cached_static_contex
         static_context_variable_selection = static_context_variable_selection[:, None].expand(-1, timesteps, -1)
         if x_past is not None:
@@ -324,7 +326,9 @@ class StackedEncoder(nn.Module):
 
         self.encoder_output_type = [EncoderOutputForm.NoOutput] * self.num_blocks
         self.encoder_has_hidden_states = [False] * self.num_blocks
-        self.cached_intermediate_state = {}
+        len_cached_intermediate_states = self.num_blocks + 1 if self.has_temporal_fusion else self.num_blocks
+        self.cached_intermediate_state = [torch.empty(0) for _ in range(len_cached_intermediate_states)]
+
         self.encoder_num_hidden_states = []
         encoder = nn.ModuleDict()
         for i, block_idx in enumerate(range(1, self.num_blocks + 1)):
@@ -469,8 +473,7 @@ class StackedDecoder(nn.Module):
                                                                           hidden_size=input_size_decoder,
                                                                           skip_size=skip_size_decoder,
                                                                           dropout=network_structure.grn_dropout_rate)
-        self.cached_intermediate_state = {}
-
+        self.cached_intermediate_state = [torch.empty(0) for _ in range(self.num_blocks + 1 - self.first_block)]
         self.decoder = decoder
 
     def forward(self,
@@ -491,7 +494,7 @@ class StackedDecoder(nn.Module):
             else:
                 if incremental_update:
                     x_all = torch.cat([self.cached_intermediate_state[i], x], dim=1)
-                    fx = decoder_i(x_all, encoder_output=encoder_output[i])
+                    fx = decoder_i(x_all, encoder_output=encoder_output[i])[:, -1:]
                 else:
                     fx = decoder_i(x, encoder_output=encoder_output[i])
             if self.skip_connection:

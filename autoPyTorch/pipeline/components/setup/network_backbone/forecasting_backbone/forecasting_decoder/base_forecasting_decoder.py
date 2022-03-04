@@ -109,7 +109,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
         return self
 
-
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds the network head into the fit dictionary 'X' and returns it.

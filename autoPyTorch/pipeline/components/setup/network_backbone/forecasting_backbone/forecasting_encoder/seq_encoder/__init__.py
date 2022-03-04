@@ -77,6 +77,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 value_range=(True, False),
                 default_value=False,
             ),
+            use_temporal_fusion: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter='use_temporal_fusion',
+                value_range=(True, False),
+                default_value=False),
             decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="decoder_auto_regressive",
                 value_range=(True, False),
@@ -111,6 +115,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             share_single_variable_networks( HyperparameterSearchSpace): if single variable networks are shared between
                 encoder and decoder
             skip_connection: HyperparameterSearchSpace: if skip connection is applied
+            use_temporal_fusion (HyperparameterSearchSpace): if temporal fusion layer is applied
+            tf_attention_n_head_log (HyperparameterSearchSpace): log value of tf attention dims
+            tf_attention_d_model_log (HyperparameterSearchSpace): log value of tf attention d model
+            tf_use_dropout (HyperparameterSearchSpace): if tf uses dropout
+            tf_dropout_rate (HyperparameterSearchSpace): dropout rate of tf layer
             skip_connection_type (HyperparameterSearchSpace): skip connection type, it could be directly added or a grn
                 network (
                 Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
@@ -143,12 +152,15 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
         variable_selection = get_hyperparameter(variable_selection, CategoricalHyperparameter)
         share_single_variable_networks = get_hyperparameter(share_single_variable_networks, CategoricalHyperparameter)
+
+        use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
         decoder_auto_regressive = get_hyperparameter(decoder_auto_regressive, CategoricalHyperparameter)
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
 
         skip_connection = get_hyperparameter(skip_connection, CategoricalHyperparameter)
 
-        hp_network_structures = [num_blocks, decoder_auto_regressive, variable_selection, skip_connection]
+        hp_network_structures = [num_blocks, decoder_auto_regressive, variable_selection,
+                                 skip_connection, use_temporal_fusion]
         cond_skip_connections = []
         if True in skip_connection.choices:
             skip_connection_type = get_hyperparameter(skip_connection_type, CategoricalHyperparameter)
@@ -418,6 +430,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         num_blocks = params['num_blocks']
         decoder_auto_regressive = params['decoder_auto_regressive']
         forecasting_structure_kwargs = dict(num_blocks=num_blocks,
+                                            use_temporal_fusion=params['use_temporal_fusion'],
                                             variable_selection=params['variable_selection'],
                                             skip_connection=params['skip_connection'])
         if 'share_single_variable_networks' in params:
@@ -425,10 +438,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             del params['forecasting_structure_kwargs']
 
         del params['num_blocks']
+        del params['use_temporal_fusion']
         del params['variable_selection']
         del params['skip_connection']
         del params['decoder_auto_regressive']
-
 
         if 'skip_connection_type' in params:
             forecasting_structure_kwargs['skip_connection_type'] = params['skip_connection_type']

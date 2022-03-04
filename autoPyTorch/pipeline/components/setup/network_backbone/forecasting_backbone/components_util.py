@@ -11,6 +11,7 @@ class NetworkStructure(NamedTuple):
     num_blocks: int = 1
     variable_selection: bool = False
     share_single_variable_networks: bool = False
+    use_temporal_fusion: bool = False,
     skip_connection: bool = False
     skip_connection_type: str = "add"  # could be 'add' or 'gate_add_norm'
     grn_dropout_rate: float = 0.0
@@ -21,6 +22,7 @@ class ForecastingNetworkStructure(BaseEstimator):
                  num_blocks: int = 1,
                  variable_selection: bool = False,
                  share_single_variable_networks: bool = False,
+                 use_temporal_fusion: bool = False,
                  skip_connection: bool = False,
                  skip_connection_type: str = "add",
                  grn_dropout_rate: float = 0.0,
@@ -29,6 +31,7 @@ class ForecastingNetworkStructure(BaseEstimator):
         self.network_structure = NetworkStructure(num_blocks=num_blocks,
                                                   variable_selection=variable_selection,
                                                   share_single_variable_networks=share_single_variable_networks,
+                                                  use_temporal_fusion=use_temporal_fusion,
                                                   skip_connection=skip_connection,
                                                   skip_connection_type=skip_connection_type,
                                                   grn_dropout_rate=grn_dropout_rate)

@@ -125,7 +125,7 @@ class ForecastingHead(NetworkHeadComponent):
             decoder_has_local_layer=decoder_has_local_layer,
             n_prediction_heads=n_prediction_heads,
         )
-        self.head = nn.ModuleDict(head_components)
+        self.head = head_components
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

@@ -39,6 +39,7 @@ class _TransformerDecoder(DecoderNetwork):
                  use_layer_norm_output: bool,
                  dropout_pd: float = 0.0,
                  layer_norm_eps_output: Optional[float] = None,
+                 n_prediction_steps:int = 1,
                  lagged_value: Optional[Union[List, np.ndarray]] = None):
         super().__init__()
         self.lagged_value = lagged_value
@@ -58,17 +59,11 @@ class _TransformerDecoder(DecoderNetwork):
         self.transformer_decoder_layers = nn.TransformerDecoder(decoder_layer=transformer_decoder_layers,
                                                                 num_layers=num_layers,
                                                                 norm=norm)
+        self.tgt_mask = nn.Transformer.generate_square_subsequent_mask(self.n_prediction_steps)
 
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor,
-                tgt_mask: Optional[torch.Tensor] = None,
-                memory_mask: Optional[torch.Tensor] = None,
-                tgt_key_padding_mask: Optional[torch.Tensor] = None,
-                memory_key_padding_mask: Optional[torch.Tensor] = None):
+    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor):
         output = self.input_layer(x_future)
-        output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=tgt_mask,
-                                                 memory_mask=memory_mask,
-                                                 tgt_key_padding_mask=tgt_key_padding_mask,
-                                                 memory_key_padding_mask=memory_key_padding_mask)
+        output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=self.tgt_mask.to(self.device))
         return output
 
 
@@ -86,6 +81,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         d_model = 2 ** self.transformer_encoder_kwargs['d_model_log']
         transformer_decoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='decoder')
+        n_prediction_steps = dataset_properties['n_prediction_steps']
 
         decoder = _TransformerDecoder(in_features=future_variable_input[-1],
                                       d_model=d_model,
@@ -95,6 +91,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                                       use_layer_norm_output=self.config['use_layer_norm_output'],
                                       dropout_pd=self.config.get('dropout_positional_decoder', 0.0),
                                       layer_norm_eps_output=self.config.get('layer_norm_eps_output', None),
+                                      n_prediction_steps=n_prediction_steps,
                                       lagged_value=self.lagged_value)
 
         return decoder, d_model
