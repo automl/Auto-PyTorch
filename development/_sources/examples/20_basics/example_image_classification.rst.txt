@@ -85,16 +85,17 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration(values={
-      'image_augmenter:GaussianBlur:sigma_min': 0.10327976032627761,
-      'image_augmenter:GaussianBlur:sigma_offset': 0.45340318994125184,
-      'image_augmenter:GaussianBlur:use_augmenter': True,
-      'image_augmenter:GaussianNoise:sigma_offset': 0.643177287015827,
-      'image_augmenter:GaussianNoise:use_augmenter': True,
-      'image_augmenter:RandomAffine:use_augmenter': False,
-      'image_augmenter:RandomCutout:p': 0.58899963145322,
+      'image_augmenter:GaussianBlur:use_augmenter': False,
+      'image_augmenter:GaussianNoise:use_augmenter': False,
+      'image_augmenter:RandomAffine:rotate': 237,
+      'image_augmenter:RandomAffine:scale_offset': 0.32734086551151986,
+      'image_augmenter:RandomAffine:shear': 43,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.2150833219469362,
+      'image_augmenter:RandomAffine:use_augmenter': True,
+      'image_augmenter:RandomCutout:p': 0.6425251463645631,
       'image_augmenter:RandomCutout:use_augmenter': True,
-      'image_augmenter:Resize:use_augmenter': True,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.062191847988016136,
+      'image_augmenter:Resize:use_augmenter': False,
+      'image_augmenter:ZeroPadAndCrop:percent': 0.2638607299100123,
       'normalizer:__choice__': 'ImageNormalizer',
     })
 
@@ -175,7 +176,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.858 seconds)
+   **Total running time of the script:** ( 0 minutes  8.801 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
