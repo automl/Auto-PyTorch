@@ -15,8 +15,10 @@ from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.\
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
     BaseForecastingDecoder,
-    DecoderNetwork,
     DecoderProperties
+)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderNetwork
 )
 
 from autoPyTorch.utils.common import FitRequirement

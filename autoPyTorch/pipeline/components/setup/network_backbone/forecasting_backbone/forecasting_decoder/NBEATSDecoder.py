@@ -1,5 +1,5 @@
 from typing import List
-
+import torch
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter, \
     UniformFloatHyperparameter
@@ -15,9 +15,11 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 from autoPyTorch.pipeline.components.setup.network_backbone.\
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderNetwork
+)
 
-
-class NBEATSBLock(nn.Module):
+class NBEATSBLock(DecoderNetwork):
     def __init__(self,
                  n_in_features: int,
                  stack_idx: int,
@@ -72,12 +74,12 @@ class NBEATSBLock(nn.Module):
         if self.use_dropout:
             layers.append(nn.Dropout(self.dropout_rate))
 
-    def forward(self, x):
+    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor):
         if self.backcast_head is None and self.forecast_head is None:
             # used to compute head dimensions
-            return self.backbone(x)
+            return self.backbone(encoder_output)
         else:
-            x = self.backbone(x)
+            x = self.backbone(encoder_output)
             forecast = self.forecast_head(x)
             backcast = self.backcast_head(x)
             return backcast, forecast

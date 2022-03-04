@@ -95,16 +95,18 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    num_samples=self.num_samples,
                                    aggregation=self.aggregation, )
 
-        if X['decoder_properties']['recurrent']:
-            # decoder is RNN or Transformer
-            self.network = ForecastingSeq2SeqNet(**network_init_kwargs)
-        elif X['decoder_properties']['multi_blocks']:
-            self.network = NBEATSNet(**network_init_kwargs)
-        elif X['auto_regressive']:
-            # decoder is MLP and auto_regressive, we have deep AR model
-            self.network = ForecastingDeepARNet(**network_init_kwargs)
+        if X['auto_regressive']:
+            first_decoder = next(iter(network_decoder.items()))[1]
+            if first_decoder.decoder_properties.recurrent:
+                self.network = ForecastingSeq2SeqNet(**network_init_kwargs)
+            else:
+                self.network = ForecastingDeepARNet(**network_init_kwargs)
         else:
-            self.network = ForecastingNet(**network_init_kwargs)
+            first_decoder = next(iter(network_decoder.items()))[1]
+            if first_decoder.decoder_properties.multi_blocks:
+                self.network = NBEATSNet(**network_init_kwargs)
+            else:
+                self.network = ForecastingNet(**network_init_kwargs)
 
         # Properly set the network training device
         if self.device is None:

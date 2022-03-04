@@ -19,10 +19,11 @@ from autoPyTorch.utils.common import add_hyperparameter
 from autoPyTorch.pipeline.components.setup.network_backbone.\
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
     BaseForecastingDecoder,
-    DecoderNetwork,
     DecoderProperties
 )
-
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderNetwork
+)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     PositionalEncoding, build_transformer_layers
 
@@ -63,7 +64,11 @@ class _TransformerDecoder(DecoderNetwork):
 
     def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor):
         output = self.input_layer(x_future)
-        output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=self.tgt_mask.to(self.device))
+        if self.training:
+            output = self.transformer_decoder_layers(output, encoder_output,
+                                                     tgt_mask=self.tgt_mask.to(self.device))
+        else:
+            output = self.transformer_decoder_layers(output, encoder_output)
         return output
 
 

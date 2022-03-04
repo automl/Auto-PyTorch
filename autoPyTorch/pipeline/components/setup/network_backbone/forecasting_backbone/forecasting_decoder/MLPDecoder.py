@@ -13,7 +13,10 @@ from autoPyTorch.pipeline.components.setup.network_head.utils import _activation
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone. \
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderNetwork
+    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderNetwork
+)
 
 
 class MLPDecoderModule(DecoderNetwork):

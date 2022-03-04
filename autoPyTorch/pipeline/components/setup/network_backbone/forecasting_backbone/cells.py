@@ -262,9 +262,9 @@ class VariableSelector(nn.Module):
         self.cached_static_embedding = None
 
     def forward(self,
-                x_past: Optional[Dict[torch.Tensor]],
-                x_future: Optional[Dict[torch.Tensor]],
-                x_static: Optional[Dict[torch.Tensor]] = None,
+                x_past: Optional[Dict[str,torch.Tensor]],
+                x_future: Optional[Dict[str, torch.Tensor]],
+                x_static: Optional[Dict[str, torch.Tensor]] = None,
                 length_past: int = 0,
                 length_future: int = 0,
                 batch_size: int = 0,
@@ -320,6 +320,7 @@ class StackedEncoder(nn.Module):
                  encoder_info: Dict[str, EncoderBlockInfo],
                  decoder_info: Dict[str, DecoderBlockInfo],
                  ):
+        super().__init__()
         self.num_blocks = network_structure.num_blocks
         self.skip_connection = network_structure.skip_connection
         self.has_temporal_fusion = has_temporal_fusion
@@ -442,6 +443,7 @@ class StackedDecoder(nn.Module):
                  encoder_info: Dict[str, EncoderBlockInfo],
                  decoder_info: Dict[str, DecoderBlockInfo],
                  ):
+        super().__init__()
         self.num_blocks = network_structure.num_blocks
         self.first_block = None
         self.skip_connection = network_structure.skip_connection
@@ -477,7 +479,7 @@ class StackedDecoder(nn.Module):
         self.decoder = decoder
 
     def forward(self,
-                x_future: torch.Tensor,
+                x_future: Optional[torch.Tensor],
                 encoder_output: List[torch.Tensor],
                 cache_intermediate_state: bool = False,
                 incremental_update: bool = False

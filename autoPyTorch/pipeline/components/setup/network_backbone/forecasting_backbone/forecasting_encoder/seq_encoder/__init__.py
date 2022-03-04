@@ -29,7 +29,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     AbstractForecastingEncoderChoice
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
-    base_forecasting_encoder import BaseForecastingEncoder, ForecastingNetworkStructure
+    base_forecasting_encoder import BaseForecastingEncoder
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -357,7 +357,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 cs.add_conditions(conditions_to_add)
 
-        for encoder_name, encoder in available_encoders.item():
+        for encoder_name, encoder in available_encoders.items():
             encoder_is_casual = encoder.encoder_properties()
             if not encoder_is_casual:
                 # we do not allow non-casual encoder to appear in the lower layer of the network. e.g, if we have an

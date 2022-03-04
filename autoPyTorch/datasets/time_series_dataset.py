@@ -149,7 +149,7 @@ class TimeSeriesSequence(Dataset):
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
                 'encoder_length': past_target.shape[0],
-                'decoder_length': targets_future.shape[0]}, targets_future
+                'decoder_length': None if targets_future is None else targets_future.shape[0] }, targets_future
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps

@@ -351,7 +351,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         self.choice = self.get_components()[choice](**new_params)
         self.decoder_choice = decoder_components[decoder_type](**decoder_params)
 
-        self.pipeline = Pipeline([('net_structure', ForecastingNetworkStructure(random_state=self.random_state)),
+        self.pipeline = Pipeline([('net_structure', ForecastingNetworkStructure()),
                                   ('encoder', self.choice),
                                   ('decoder', self.decoder_choice)])
         return self

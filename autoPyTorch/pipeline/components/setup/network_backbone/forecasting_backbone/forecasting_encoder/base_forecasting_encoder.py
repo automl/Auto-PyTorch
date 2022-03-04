@@ -139,7 +139,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         raise NotImplementedError()
 
     @staticmethod
-    def encoder_properties(self) -> EncoderProperties:
+    def encoder_properties() -> EncoderProperties:
         """
         Encoder properties, this determines how the data flows over the forecasting networks
 

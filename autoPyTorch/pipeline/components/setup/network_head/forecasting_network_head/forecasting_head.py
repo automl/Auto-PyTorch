@@ -10,10 +10,7 @@ from ConfigSpace.conditions import EqualsCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
-    base_forecasting_encoder import NetworkStructure, EncoderBlockInfo
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    base_forecasting_decoder import DecoderBlockInfo
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
@@ -21,9 +18,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.NBEATS_head import build_NBEATS_network
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
-    TemporalFusionLayer
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import TemporalFusionLayer
 
 
 class ForecastingHead(NetworkHeadComponent):
