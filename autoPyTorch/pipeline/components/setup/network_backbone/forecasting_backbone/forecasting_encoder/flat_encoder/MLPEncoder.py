@@ -56,7 +56,7 @@ class TimeSeriesMLP(EncoderNetwork):
                 # we need to ensure that the input size fits the network shape
                 x = x[:, -self.window_size:]  # x.shape = (B, self.window, N)
         x = x.flatten(-2)
-        return x if self.network is not None else self.network(x)
+        return x if self.network is None else self.network(x)
 
     def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
         return x

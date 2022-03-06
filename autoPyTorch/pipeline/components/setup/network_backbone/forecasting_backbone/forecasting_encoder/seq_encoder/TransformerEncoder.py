@@ -67,7 +67,7 @@ class _TransformerEncoder(EncoderNetwork):
             return self.get_last_seq_value(x)
 
     def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
-        return x[:, -1, :]
+        return x[:, -1:]
 
 
 class TransformerEncoder(BaseForecastingEncoder):

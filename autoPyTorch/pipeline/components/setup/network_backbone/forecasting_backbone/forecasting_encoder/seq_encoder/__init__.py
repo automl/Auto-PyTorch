@@ -30,6 +30,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import ForecastingNetworkStructure
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -84,7 +85,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="decoder_auto_regressive",
                 value_range=(True, False),
-                default_value=False,
+                default_value=True,
             ),
             skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="skip_connection",
                                                                                    value_range=(True, False),
@@ -188,13 +189,13 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             cs.add_conditions(cond_skip_connections)
 
         if static_features_shape + future_feature_shapes[-1] == 0:
-            if False in variable_selection.choices and True in decoder_auto_regressive.choices:
+            if False in variable_selection.choices and False in decoder_auto_regressive.choices:
                 if variable_selection.num_choices == 1 and decoder_auto_regressive.num_choices == 1:
                     raise ValueError("When no future information is available, it is not possible to disable variable"
                                      "selection and enable auto-regressive decoder model")
                 cs.add_forbidden_clause(ForbiddenAndConjunction(
                     ForbiddenEqualsClause(variable_selection, False),
-                    ForbiddenEqualsClause(decoder_auto_regressive, True)
+                    ForbiddenEqualsClause(decoder_auto_regressive, False)
                 ))
         if True in variable_selection.choices:
             cs.add_hyperparameter(share_single_variable_networks)
@@ -312,22 +313,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     config_space,
                     # parent_hyperparameter=parent_hyperparameter
                 )
-                if not available_decoders[decoder_name].decoder_properties().recurrent:
-                    hp_encoder_choice = cs.get_hyperparameter(block_prefix + '__choice__')
-                    for encoder_single in encoder_with_single_decoder:
-                        if encoder_single in hp_encoder_choice.choices:
-                            if forbidden_decoder_ar is not None:
-                                forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
-                                    forbidden_decoder_ar,
-                                    ForbiddenEqualsClause(hp_encoder_choice, encoder_single)
-                                ))
-                    for encode_multi in encoders_with_multi_decoder:
-                        hp_decoder_type = cs.get_hyperparameter(f"{block_prefix}{encode_multi}:decoder_type")
-                        if forbidden_decoder_ar is not None:
-                            forbiddens_decoder_auto_regressive.append(ForbiddenAndConjunction(
-                                forbidden_decoder_ar,
-                                ForbiddenEqualsClause(hp_encoder_choice, encoder_single)
-                            ))
 
                 hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
                 conditions_to_add = []
@@ -391,19 +376,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         else:
                             forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_ar)
                         cs.add_forbidden_clause(forbidden)
-                if 'RNNEncoder' in available_encoders:
-                    for i in range(min_num_blocks, max_num_blocks + 1):
-                        rnn_bidirectional_hp = ':'.join([f'block_{min_num_blocks}',
-                                                         'RNNEncoder',
-                                                         'bidirectional'])
-                        if rnn_bidirectional_hp in cs:
-                            rnn_bidirectional_hp = cs.get_hyperparameter(rnn_bidirectional_hp)
-                            if 'True' in rnn_bidirectional_hp.choices:
-                                forbidden = ForbiddenAndConjunction(
-                                    ForbiddenEqualsClause(rnn_bidirectional_hp, True),
-                                    deep_ar_hp
-                                )
-                                cs.add_forbidden_clause(forbidden)
         return cs
 
     def set_hyperparameters(self,

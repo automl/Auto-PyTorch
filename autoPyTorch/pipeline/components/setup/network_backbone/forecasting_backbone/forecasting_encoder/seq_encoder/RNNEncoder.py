@@ -51,25 +51,25 @@ class _RNN(EncoderNetwork):
                 hx: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
         B, T, _ = x.shape
 
-        outputs, hidden_state = self.lstm(x, hx)
+        x, hidden_state = self.lstm(x, hx)
 
         if output_seq:
-            return outputs, hidden_state
+            return x, hidden_state
         else:
             return self.get_last_seq_value(x), hidden_state
 
     def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
         B, T, _ = x.shape
         if not self.config["bidirectional"]:
-            return x[:, -1, :]
+            return x[:, -1:, ]
         else:
             x_by_direction = x.view(B,
                                     T,
                                     2,
                                     self.config["hidden_size"])
             x = torch.cat([
-                x_by_direction[:, -1, 0, :],
-                x_by_direction[:, 0, 1, :]
+                x_by_direction[:, -1, [0], :],
+                x_by_direction[:, 0, [1], :]
             ], dim=-1)
             return x
 

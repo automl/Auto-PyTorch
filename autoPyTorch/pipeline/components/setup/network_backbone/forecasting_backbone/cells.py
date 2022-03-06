@@ -330,7 +330,7 @@ class StackedEncoder(nn.Module):
         len_cached_intermediate_states = self.num_blocks + 1 if self.has_temporal_fusion else self.num_blocks
         self.cached_intermediate_state = [torch.empty(0) for _ in range(len_cached_intermediate_states)]
 
-        self.encoder_num_hidden_states = []
+        self.encoder_num_hidden_states = [0] * self.num_blocks
         encoder = nn.ModuleDict()
         for i, block_idx in enumerate(range(1, self.num_blocks + 1)):
             block_id = f'block_{block_idx}'
@@ -348,12 +348,13 @@ class StackedEncoder(nn.Module):
             if block_id in decoder_info:
                 if decoder_info[block_id].decoder_properties.recurrent:
                     if decoder_info[block_id].decoder_properties.has_hidden_states:
-                        # RNN
+                        # RNN -> RNN
                         self.encoder_output_type[i] = EncoderOutputForm.HiddenStates
                     else:
-                        # Transformer
+                        # Transformer -> Transformer
                         self.encoder_output_type[i] = EncoderOutputForm.Sequence
                 else:
+                    # Deep AR
                     self.encoder_output_type[i] = EncoderOutputForm.SequenceLast
             if encoder_info[block_id].encoder_properties.has_hidden_states:
                 self.encoder_has_hidden_states[i] = True
@@ -374,7 +375,8 @@ class StackedEncoder(nn.Module):
              encoder_input (torch.Tensor): encoder input
              additional_input (List[Optional[torch.Tensor]]) additional input to the encoder, e.g., inital hidden states
              output_seq (bool) if a sequence output is generated
-             incremental_update (bool) if an incremental update is applied, this is normally applied for auto-regressive
+             cache_intermediate_state (bool): if store the intermediate values
+             incremental_update (bool): if an incremental update is applied, this is normally applied for auto-regressive
                 model, however, ony deepAR requires encoder to do incremental update, thus the decoder only need to
                 receive the last output of the encoder
         """
@@ -407,7 +409,7 @@ class StackedEncoder(nn.Module):
             if self.skip_connection:
                 fx = self.encoder[f'skip_connection_{block_id}'](fx, x)
 
-            if self.encoder_output_type == EncoderOutputForm.HiddenStates:
+            if self.encoder_output_type[i] == EncoderOutputForm.HiddenStates:
                 encoder2decoder.append(hx)
             elif self.encoder_output_type[i] == EncoderOutputForm.Sequence:
                 encoder2decoder.append(fx)
@@ -415,7 +417,8 @@ class StackedEncoder(nn.Module):
                 if output_seq or incremental_update:
                     encoder2decoder.append(fx)
                 else:
-                    encoder2decoder.append(encoder_i.get_last_seq_value(fx))
+                    encoder2decoder.append(fx.squeeze(1))
+
             if cache_intermediate_state:
                 if self.encoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
@@ -502,7 +505,7 @@ class StackedDecoder(nn.Module):
             if self.skip_connection:
                 fx = self.decoder[f'skip_connection_{block_id}'](fx, x)
             if cache_intermediate_state:
-                if self.encoder_has_hidden_states[i]:
+                if self.decoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
                 else:
                     if incremental_update:

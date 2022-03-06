@@ -69,7 +69,6 @@ class ProjectionLayer(nn.Module):
 
             """
             if decoder_has_local_layer:
-
                 return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
                                      nn.Unflatten(-1, (*output_shape, arg_dim)))
             else:

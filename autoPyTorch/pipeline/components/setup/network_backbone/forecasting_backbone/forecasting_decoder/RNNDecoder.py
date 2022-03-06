@@ -38,7 +38,7 @@ class RNN_Module(DecoderNetwork):
         else:
             cell = nn.GRU
         self.lagged_value = lagged_value
-        in_features = in_features if self.lagged_value is None else len(self.lagged_value) * in_features
+        in_features = in_features
         self.lstm = cell(input_size=in_features,
                          hidden_size=hidden_size,
                          num_layers=num_layers,

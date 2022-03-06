@@ -51,9 +51,9 @@ class EncoderNetwork(nn.Module):
         get the last value of the sequential output
         Args:
             x: torch.Tensor(B, L, N): a sequential value output by the network, usually this value needs to be fed
-                to the decoder
+                to the decoder (or a 2D tensor for a flat encoder)
         Returns:
-            output: torch.Tensor(B, M): last element of the sequential value
+            output: torch.Tensor(B, 1, M): last element of the sequential value (or a 2D tensor for flat encoder)
 
         """
         raise NotImplementedError

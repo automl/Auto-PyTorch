@@ -112,7 +112,7 @@ class _TemporalConvNet(EncoderNetwork):
             return self.get_last_seq_value(x)
 
     def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
-        return x[:, -1, :]
+        return x[:, -1:]
 
 
 class TCNEncoder(BaseForecastingEncoder):
@@ -121,7 +121,7 @@ class TCNEncoder(BaseForecastingEncoder):
     Temporal Convolutional Network backbone for time series data (see https://arxiv.org/pdf/1803.01271.pdf).
     """
 
-    def build_encoder(self, input_shape: Tuple[int, ...]) -> Tuple[nn.Module, int]:
+    def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_1"]]
         kernel_size = [self.config["kernel_size_1"]]
         dropout = self.config[f"dropout"] if self.config["use_dropout"] else 0.0
@@ -135,7 +135,7 @@ class TCNEncoder(BaseForecastingEncoder):
                                    dropout=dropout
                                    )
         self._receptive_field = encoder.receptive_field
-        return encoder, in_features
+        return encoder
 
     def n_encoder_output_feature(self) -> int:
         num_blocks = self.config["num_blocks"]

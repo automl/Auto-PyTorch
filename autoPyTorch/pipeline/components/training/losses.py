@@ -10,7 +10,7 @@ Regression:
             L1Loss: supports continuous output types
         Default: MSELoss
 """
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, List
 
 import torch
 from torch.nn.modules.loss import (
@@ -82,6 +82,31 @@ class MASELoss(Loss):
             return loss.sum()
         else:
             return loss
+
+
+class QuantileLoss(Loss):
+    __constants__ = ['reduction']
+
+    def __init__(self, reduction: str = 'mean',lower=0.1, upper=0.9) -> None:
+        super(QuantileLoss, self).__init__(reduction)
+        self.quantiles = [lower, 0.5, upper]
+
+    def forward(self,
+                input: List[torch.Tensor],
+                target_tensor: torch.Tensor) -> torch.Tensor:
+        assert len(self.quantiles) == len(input)
+        losses_all = []
+        for q, y_pred in zip(self.quantiles, input):
+            diff = target_tensor - y_pred
+            loss_q = max(torch.max(q * diff), (1-q) * diff)
+            losses_all.append(loss_q.unsqueeze(0))
+        losses_all = torch.concat(losses_all)
+        if self.reduction == 'mean':
+            return losses_all.mean()
+        elif self.reduction == 'sum':
+            return losses_all.sum()
+        else:
+            return losses_all
 
 
 losses = dict(

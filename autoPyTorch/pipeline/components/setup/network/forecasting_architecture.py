@@ -249,8 +249,10 @@ class AbstractForecastingNet(nn.Module):
 
         if self.encoder_lagged_input:
             self.cached_lag_mask_encoder = None
+            self.encoder_lagged_value = network_encoder['block_1'].encoder.lagged_value
         if self.decoder_lagged_input:
             self.cached_lag_mask_decoder = None
+            self.decoder_lagged_value = network_decoder[first_decoder].decoder.lagged_value
 
     @property
     def device(self):
@@ -324,13 +326,13 @@ class AbstractForecastingNet(nn.Module):
                                    intermediate_values: List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]],
                                    is_hidden_states: List[bool],
                                    repeats: int) -> List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]:
-        for i, (is_hx, inter_value) in enumerate(is_hidden_states, intermediate_values):
+        for i, (is_hx, inter_value) in enumerate(zip(is_hidden_states, intermediate_values)):
             if isinstance(inter_value, torch.Tensor):
                 repeated_value = inter_value.repeat_interleave(repeats=repeats, dim=1 if is_hx else 0)
                 intermediate_values[i] = repeated_value
             elif isinstance(inter_value, Tuple):
                 dim = 1 if is_hx else 0
-                repeated_value = (hx.repeat_interleave(repeats=repeats, dim=dim) for hx in inter_value)
+                repeated_value = tuple(hx.repeat_interleave(repeats=repeats, dim=dim) for hx in inter_value)
                 intermediate_values[i] = repeated_value
         return intermediate_values
 
@@ -350,7 +352,7 @@ class ForecastingNet(AbstractForecastingNet):
             past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
             x_past, self.cached_lag_mask_encoder = get_lagged_subsequences(past_targets,
                                                                            self.window_size,
-                                                                           self.encoder.lagged_value,
+                                                                           self.encoder_lagged_value,
                                                                            self.cached_lag_mask_encoder)
         else:
             if self.window_size < past_targets.shape[1]:
@@ -516,7 +518,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 future_targets = torch.cat([past_targets, future_targets[:, :-1, :]], dim=1)
                 future_targets, self.cached_lag_mask_decoder = get_lagged_subsequences(future_targets,
                                                                                        self.n_prediction_steps,
-                                                                                       self.decoder.lagged_value,
+                                                                                       self.decoder_lagged_value,
                                                                                        self.cached_lag_mask_decoder)
             else:
                 future_targets = torch.cat([past_targets[:, [-1], :], future_targets[:, :-1, :]], dim=1)
@@ -528,7 +530,9 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                                                     dim=-1)
             x_future = x_future.to(self.device)
 
-            encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
+            encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
+                                                           additional_input=encoder_additional)
+
             decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder)
 
             if self.has_temporal_fusion:
@@ -556,13 +560,15 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     predicted_target = predicted_target.cpu()
                     if self.decoder_lagged_input:
                         x_future = torch.cat([past_targets, predicted_target], dim=1)
-                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder.lagged_value)
+                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder_lagged_value)
                     else:
                         x_future = predicted_target[:, [-1]]
 
+                    x_future = x_future.to(self.device)
+
                     if self.network_structure.variable_selection:
                         x_future = self.decoder_select_variable(
-                            future_targets=predicted_target[:, -1:],
+                            future_targets=predicted_target[:, -1:].to(self.device),
                             future_features=future_features[:, [idx_pred]] if future_features is not None else None
                         )
                     else:
@@ -608,7 +614,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     repeats=self.num_samples)
 
                 if self.decoder_lagged_input:
-                    max_lag_seq_length = max(self.decoder.lagged_value) + 1
+                    max_lag_seq_length = max(self.decoder_lagged_value) + 1
                 else:
                     max_lag_seq_length = 1 + self.window_size
                 repeated_past_target = past_targets[:, -max_lag_seq_length:].repeat_interleave(repeats=self.num_samples,
@@ -627,7 +633,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 for idx_pred in range(self.n_prediction_steps):
                     if self.decoder_lagged_input:
                         x_future = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
-                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder.lagged_value)
+                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder_lagged_value)
                     else:
                         x_future = repeated_predicted_target[:, [-1]]
 
@@ -745,7 +751,7 @@ class ForecastingDeepARNet(ForecastingNet):
                 seq_length = self.window_size + self.n_prediction_steps
                 targets_all, self.cached_lag_mask_encoder = get_lagged_subsequences(targets_all,
                                                                                     seq_length - 1,
-                                                                                    self.encoder.lagged_value,
+                                                                                    self.encoder_lagged_value,
                                                                                     self.cached_lag_mask_encoder)
             else:
                 if self.window_size < past_targets.shape[1]:
@@ -764,12 +770,12 @@ class ForecastingDeepARNet(ForecastingNet):
                                                                dtype=self.dtype, device=self.device)}
 
                 x_input, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
-                                                                                              x_future=None,
-                                                                                              x_static=static_features,
-                                                                                              length_past=length_past,
-                                                                                              length_future=0,
-                                                                                              batch_size=batch_size,
-                                                                                              )
+                                                                                      x_future=None,
+                                                                                      x_static=static_features,
+                                                                                      length_past=length_past,
+                                                                                      length_future=0,
+                                                                                      batch_size=batch_size,
+                                                                                      )
             else:
                 x_input = targets_all
                 if past_features is not None:
@@ -783,10 +789,13 @@ class ForecastingDeepARNet(ForecastingNet):
             encoder_additional = [static_context_initial_hidden]
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
-            encoder2decoder, encoder_output = self.encoder(encoder_input=x_input, additional_input=encoder_additional)
+            encoder2decoder, encoder_output = self.encoder(encoder_input=x_input,
+                                                           additional_input=encoder_additional,
+                                                           output_seq=True)
 
             if self.only_generate_future_dist:
-                encoder2decoder = encoder2decoder[:, -self.n_prediction_steps:]
+                # DeepAR only receives the output of the last encoder
+                encoder2decoder = encoder2decoder[-1][:, -self.n_prediction_steps:]
             net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
             # DeepAR does not allow tf layers
             return self.rescale_output(net_output, loc, scale, self.device)
@@ -797,7 +806,7 @@ class ForecastingDeepARNet(ForecastingNet):
                 past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
                 x_past, self.cached_lag_mask_encoder_test = get_lagged_subsequences(past_targets,
                                                                                     self.window_size,
-                                                                                    self.encoder.lagged_value,
+                                                                                    self.encoder_lagged_value,
                                                                                     self.cached_lag_mask_encoder_test)
             else:
                 if self.window_size < past_targets.shape[1]:
@@ -816,13 +825,13 @@ class ForecastingDeepARNet(ForecastingNet):
                                                                dtype=self.dtype, device=self.device)}
 
                 x_past, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
-                                                                                             x_future=None,
-                                                                                             x_static=static_features,
-                                                                                             length_past=length_past,
-                                                                                             length_future=0,
-                                                                                             batch_size=batch_size,
-                                                                                             cache_static_contex=True
-                                                                                             )
+                                                                                     x_future=None,
+                                                                                     x_static=static_features,
+                                                                                     length_past=length_past,
+                                                                                     length_future=0,
+                                                                                     batch_size=batch_size,
+                                                                                     cache_static_contex=True
+                                                                                     )
             else:
                 if past_features is not None:
                     # features is one step ahead of target
@@ -849,9 +858,9 @@ class ForecastingDeepARNet(ForecastingNet):
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
-                                                                   additional_input=encoder_additional,
-                                                                   cache_intermediate_state=True,
-                                                                   )
+                                                           additional_input=encoder_additional,
+                                                           cache_intermediate_state=True,
+                                                           )
 
             self.repeat_intermediate_values(self.encoder.cached_intermediate_state,
                                             is_hidden_states=self.encoder.encoder_has_hidden_states,
@@ -862,7 +871,7 @@ class ForecastingDeepARNet(ForecastingNet):
                                                 repeats=self.num_samples)
 
             if self.encoder_lagged_input:
-                max_lag_seq_length = max(max(self.encoder.lagged_value), self.window_size)
+                max_lag_seq_length = max(max(self.encoder_lagged_value), self.window_size)
             else:
                 max_lag_seq_length = self.window_size
             # TODO considering padding targets here instead of inside get_lagged function
@@ -900,16 +909,18 @@ class ForecastingDeepARNet(ForecastingNet):
 
             for k in range(1, self.n_prediction_steps):
                 if self.encoder_lagged_input:
-                    x_next = torch.cat([repeated_past_target, *all_samples], dim=1)
-                    x_next = get_lagged_subsequences_inference(x_next, 1, self.encoder.lagged_value)
+                    repeated_past_target = torch.cat([repeated_past_target, all_samples[-1]], dim=1)
+                    x_next = get_lagged_subsequences_inference(repeated_past_target, 1, self.encoder_lagged_value)
                 else:
                     x_next = next_sample
+
+                x_next = x_next.to(self.device)
 
                 if self.network_structure.variable_selection:
                     batch_size = past_targets.shape[0]
                     if past_features is None:
                         if past_features is None:
-                            x_next = {'past_targets': x_next.to(device=self.device),
+                            x_next = {'past_targets': x_next,
                                       'past_features': torch.zeros((batch_size, 1, 0),
                                                                    dtype=self.dtype, device=self.device)}
 
@@ -922,11 +933,10 @@ class ForecastingDeepARNet(ForecastingNet):
                                                              cache_static_contex=False,
                                                              use_cached_static_contex=True,
                                                              )
-                encoder_output, _ = self.encoder(encoder_input=x_next,
-                                                 additional_input=[None] * self.network_structure.num_blocks,
-                                                 output_seq=False, cache_intermediate_state=True,
-                                                 incremental_update=True)
-
+                encoder2decoder, _ = self.encoder(encoder_input=x_next,
+                                                  additional_input=[None] * self.network_structure.num_blocks,
+                                                  output_seq=False, cache_intermediate_state=True,
+                                                  incremental_update=True)
 
                 net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
 

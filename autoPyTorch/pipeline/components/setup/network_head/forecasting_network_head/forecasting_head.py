@@ -11,6 +11,9 @@ from ConfigSpace.conditions import EqualsCondition
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+    DecoderBlockInfo
+)
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
@@ -136,7 +139,13 @@ class ForecastingHead(NetworkHeadComponent):
             X.update({'network_head': self.head})
         else:
             decoder = X['network_decoder']
-            decoder = build_NBEATS_network(decoder, self.output_shape)
+            # NBEATS is a flat encoder, it only has one decoder
+            first_decoder = decoder['block_1']
+            nbeats_decoder = build_NBEATS_network(first_decoder.decoder, self.output_shape)
+            decoder['block_1'] = DecoderBlockInfo(decoder=nbeats_decoder,
+                                                  decoder_properties=first_decoder.decoder_properties,
+                                                  decoder_output_shape=first_decoder.decoder_output_shape,
+                                                  decoder_input_shape=first_decoder.decoder_input_shape)
             X.update({'network_head': self.head,
                       'network_decoder': decoder})
         return X
@@ -232,18 +241,13 @@ class ForecastingHead(NetworkHeadComponent):
                                                      )
             return proj_layer
         elif net_out_put_type == 'regression':
-            if auto_regressive:
+            if decoder_has_local_layer:
                 proj_layer = nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
             else:
-                if decoder_has_local_layer:
-                    proj_layer = nn.Sequential(nn.Unflatten(-1, (n_prediction_heads, input_shape)),
-                                               nn.Linear(input_shape, np.product(output_shape[1:])),
-                                               )
-                else:
-                    proj_layer = nn.Sequential(
-                        nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
-                        nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
-                    )
+                proj_layer = nn.Sequential(
+                    nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
+                    nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
+                )
             return proj_layer
         else:
             raise ValueError(f"Unsupported network type "

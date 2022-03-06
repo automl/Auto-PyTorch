@@ -89,7 +89,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                 future_in_features = X['network_encoder']['block_1'].encoder_output_shape[-1]
             else:
                 if auto_regressive:
-                    if self.decoder_properties()["lagged_input"] and hasattr(self, 'lagged_value'):
+                    if self.decoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                         future_in_features += len(self.lagged_value) * output_shape[-1]
                     else:
                         future_in_features += output_shape[-1]
