@@ -30,8 +30,10 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import ForecastingNetworkStructure
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.TemporalFusion import TemporalFusion
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
+    ForecastingNetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.TemporalFusion import \
+    TemporalFusion
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -83,7 +85,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             use_temporal_fusion: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter='use_temporal_fusion',
                 value_range=(True, False),
-                default_value=False),
+                default_value=False,
+            ),
             decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="decoder_auto_regressive",
                 value_range=(True, False),
@@ -156,14 +159,13 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         variable_selection = get_hyperparameter(variable_selection, CategoricalHyperparameter)
         share_single_variable_networks = get_hyperparameter(share_single_variable_networks, CategoricalHyperparameter)
 
-        use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
         decoder_auto_regressive = get_hyperparameter(decoder_auto_regressive, CategoricalHyperparameter)
         num_blocks = get_hyperparameter(num_blocks, UniformIntegerHyperparameter)
 
         skip_connection = get_hyperparameter(skip_connection, CategoricalHyperparameter)
 
         hp_network_structures = [num_blocks, decoder_auto_regressive, variable_selection,
-                                 skip_connection, use_temporal_fusion]
+                                 skip_connection]
         cond_skip_connections = []
         if True in skip_connection.choices:
             skip_connection_type = get_hyperparameter(skip_connection_type, CategoricalHyperparameter)
@@ -344,7 +346,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 cs.add_conditions(conditions_to_add)
 
-
         use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
         cs.add_hyperparameter(use_temporal_fusion)
         if True in use_temporal_fusion.choices:
@@ -417,8 +418,9 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         params = configuration.get_dictionary()
         num_blocks = params['num_blocks']
         decoder_auto_regressive = params['decoder_auto_regressive']
+        use_temporal_fusion = params['use_temporal_fusion']
         forecasting_structure_kwargs = dict(num_blocks=num_blocks,
-                                            use_temporal_fusion=params['use_temporal_fusion'],
+                                            use_temporal_fusion=use_temporal_fusion,
                                             variable_selection=params['variable_selection'],
                                             skip_connection=params['skip_connection'])
         if 'share_single_variable_networks' in params:
@@ -497,7 +499,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)
 
-        use_temporal_fusion = params["use_temporal_fusion"]
         new_params = []
         if use_temporal_fusion:
             for param, value in params.items():

@@ -101,7 +101,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 outputs_data.append(outputs.detach().cpu())
                 targets_data.append(targets.detach().cpu())
 
-            batch_size = data["past_target"].size(0)
+            batch_size = data["past_targets"].size(0)
             loss_sum += loss * batch_size
             N += batch_size
 
@@ -142,7 +142,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        past_target = data['past_target'].float()
+        past_target = data['past_targets'].float()
 
         future_targets = self.cast_targets(future_targets)
 
@@ -224,7 +224,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         with torch.no_grad():
             for step, (data, future_targets) in enumerate(test_loader):
-                past_target = data['past_target'].float()
+                past_target = data['past_targets'].float()
 
                 mase_coefficients.append(data['mase_coefficient'])
                 if isinstance(self.criterion, MASELoss):

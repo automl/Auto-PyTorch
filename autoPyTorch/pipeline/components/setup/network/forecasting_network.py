@@ -85,6 +85,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    network_embedding=X['network_embedding'],
                                    network_encoder=network_encoder,
                                    network_decoder=network_decoder,
+                                   temporal_fusion=X.get("temporal_fusion", None),
                                    network_head=X['network_head'],
                                    auto_regressive=X['auto_regressive'],
                                    window_size=X['window_size'],

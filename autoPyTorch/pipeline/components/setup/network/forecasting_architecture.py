@@ -204,7 +204,7 @@ class AbstractForecastingNet(nn.Module):
                                                       dataset_properties=dataset_properties,
                                                       network_encoder=network_encoder,
                                                       auto_regressive=auto_regressive)
-        has_temporal_fusion = temporal_fusion is not None
+        has_temporal_fusion = network_structure.use_temporal_fusion
         self.encoder = StackedEncoder(network_structure=network_structure,
                                       has_temporal_fusion=has_temporal_fusion,
                                       encoder_info=network_encoder,
@@ -541,7 +541,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                       decoder_output=decoder_output,
                                                       encoder_lengths=encoder_lengths,
-                                                      self.n_prediction_steps,
+                                                      decoder_length=self.n_prediction_steps,
                                                       static_embedding=x_static
                                                       )
             net_output = self.head(decoder_output)
