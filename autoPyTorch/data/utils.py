@@ -374,7 +374,7 @@ def subsample(
     sample_size: Union[float, int],
     y: Optional[SupportedTargetTypes] = None,
     random_state: Optional[Union[int, np.random.RandomState]] = None,
-) -> Tuple[DatasetCompressionInputType, np.ndarray]:
+) -> Tuple[DatasetCompressionInputType, SupportedTargetTypes]:
     """Subsamples data returning the same type as it recieved.
 
     If `is_classification`, we split using a stratified shuffle split which
@@ -416,19 +416,9 @@ def subsample(
         splitter = CustomStratifiedShuffleSplit(
             train_size=sample_size, random_state=random_state
         )
-        left_idxs, _ = next(splitter.split(X=X, y=y))
+        indices_to_keep, _ = next(splitter.split(X=X, y=y))
+        X, y = _subsample_by_indices(X, y, indices_to_keep)
 
-        if isinstance(X, pd.DataFrame):
-            idxs = X.index[left_idxs]
-            X = X.loc[idxs]
-        else:
-            X = X[left_idxs]
-
-        if isinstance(y, pd.DataFrame) or isinstance(y, pd.Series):
-            idxs = y.index[left_idxs]
-            y = y.loc[idxs]
-        else:
-            y = y[left_idxs]
     elif y is None:
         X, _ = train_test_split(  # type: ignore
             X,
@@ -443,6 +433,29 @@ def subsample(
             random_state=random_state,
         )
 
+    return X, y
+
+
+def _subsample_by_indices(
+    X: DatasetCompressionInputType,
+    y: SupportedTargetTypes,
+    indices_to_keep: np.ndarray
+) -> Tuple[DatasetCompressionInputType, SupportedTargetTypes]:
+    """
+    subsample data by given indices
+    """
+    if ispandas(X):
+        idxs = X.index[indices_to_keep]
+        X = X.loc[idxs]
+    else:
+        X = X[indices_to_keep]
+
+    if ispandas(y):
+        # Ifnoring types as mypy does not infer y as dataframe.
+        idxs = y.index[indices_to_keep]  # type: ignore [index]
+        y = y.loc[idxs]  # type: ignore [union-attr]
+    else:
+        y = y[indices_to_keep]
     return X, y
 
 
@@ -511,20 +524,19 @@ def reduce_dataset_size_if_too_large(
     """
 
     for method in methods:
+        if megabytes(X) > memory_allocation:
 
-        if method == 'precision':
-            # If the dataset is too big for the allocated memory,
-            # we then try to reduce the precision if it's a high precision dataset
-            if megabytes(X) > memory_allocation:
+            if method == 'precision':
+                # If the dataset is too big for the allocated memory,
+                # we then try to reduce the precision if it's a high precision dataset
                 X, reduced_dtypes, dtypes = reduce_precision(X)
                 warnings.warn(
                     f'Dataset too large for allocated memory {memory_allocation}MB, '
                     f'reduced the precision from {dtypes} to {reduced_dtypes}',
                 )
-        elif method == "subsample":
-            # If the dataset is still too big such that we couldn't fit
-            # into the allocated memory, we subsample it so that it does
-            if megabytes(X) > memory_allocation:
+            elif method == "subsample":
+                # If the dataset is still too big such that we couldn't fit
+                # into the allocated memory, we subsample it so that it does
 
                 n_samples_before = X.shape[0]
                 sample_percentage = memory_allocation / megabytes(X)
@@ -548,7 +560,7 @@ def reduce_dataset_size_if_too_large(
                     f" {n_samples_after}."
                 )
 
-        else:
-            raise ValueError(f"Unknown operation `{method}`")
+            else:
+                raise ValueError(f"Unknown operation `{method}`")
 
     return X, y

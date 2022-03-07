@@ -98,7 +98,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
     def __init__(
         self,
         logger: Optional[Union[PicklableClientLogger, Logger]] = None,
-    ) -> None:
+    ):
         super().__init__(logger)
 
     @staticmethod

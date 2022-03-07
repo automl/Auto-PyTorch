@@ -394,7 +394,8 @@ class TrainerChoice(autoPyTorchChoice):
             unique_labels = len(np.unique(labels))
             if unique_labels < X['dataset_properties']['output_shape']:
                 raise ValueError(f"Expected number of unique labels {unique_labels} in train split: {X['split_id']}"
-                                 f" to be = num_classes {X['dataset_properties']['output_shape']}.")
+                                 f" to be = num_classes {X['dataset_properties']['output_shape']}."
+                                 f" Consider using stratified splitting strategies.")
 
         return labels
 

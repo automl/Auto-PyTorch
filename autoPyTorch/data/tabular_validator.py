@@ -48,7 +48,7 @@ class TabularInputValidator(BaseInputValidator):
         logger_port: Optional[int] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
         seed: int = 42,
-    ) -> None:
+    ):
         self.dataset_compression = dataset_compression
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
