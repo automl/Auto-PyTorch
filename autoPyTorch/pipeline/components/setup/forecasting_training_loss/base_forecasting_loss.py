@@ -9,7 +9,7 @@ class ForecastingLossComponents(autoPyTorchComponent):
     _required_properties = ["name", "handles_tabular", "handles_image", "handles_time_series",
                             'handles_regression', 'handles_classification']
     loss = None
-    required_net_out_put_type = None
+    net_output_type = None
 
     def __init__(self,
                  **kwargs: Any):
@@ -24,5 +24,5 @@ class ForecastingLossComponents(autoPyTorchComponent):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({"loss": self.loss,
-                  'required_net_out_put_type': self.required_net_out_put_type})
+                  'net_output_type': self.net_output_type})
         return X

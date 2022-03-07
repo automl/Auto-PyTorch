@@ -17,7 +17,7 @@
 # Additionally, scale information is not presented here to avoid
 
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, NamedTuple
 
 from abc import abstractmethod
 
@@ -200,6 +200,14 @@ ALL_DISTRIBUTIONS = {'studentT': StudentTOutput,
                      # 'gamma': GammaOutput,
                      # 'poisson': PoissonOutput
                      }  # type: Dict[str, ProjectionLayer]
+
+
+class DisForecastingStrategy(NamedTuple):
+    dist_cls: str
+    forecast_strategy: str = "sample"
+    num_samples: int = 100
+    aggregation: str = "mean"
+
 
 # TODO find components that are compatible with beta, gamma and poisson distrubtion!
 

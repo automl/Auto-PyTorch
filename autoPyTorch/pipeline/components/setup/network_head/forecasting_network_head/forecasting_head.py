@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
-    ALL_DISTRIBUTIONS
+    ALL_DISTRIBUTIONS, DisForecastingStrategy
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.NBEATS_head import build_NBEATS_network
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
@@ -38,7 +38,6 @@ class ForecastingHead(NetworkHeadComponent):
 
         self.add_fit_requirements(self._required_fit_requirements)
         self.head: Optional[nn.Module] = None
-        self.required_net_out_put_type: Optional[str] = None
         self.output_shape = None
 
     @property
@@ -68,20 +67,26 @@ class ForecastingHead(NetworkHeadComponent):
 
         output_shape = X['dataset_properties']['output_shape']
 
-        self.required_net_out_put_type = X['required_net_out_put_type']
+        net_output_type = X['net_output_type']
 
         if 'block_1' in X['network_decoder'] and X['network_decoder']['block_1'].decoder_properties.multi_blocks:
             # if the decoder is a stacked block, we directly build head inside the decoder
-            if self.required_net_out_put_type != 'regression':
+            if net_output_type != 'regression':
                 raise ValueError("decoder with multi block structure only allow regression loss!")
             self.output_shape = output_shape
             return self
 
-        if self.required_net_out_put_type == 'distribution':
-            if 'dist_cls' not in X:
-                raise ValueError('Distribution output type must contain dist_cls!')
-
-        dist_cls = X.get('dist_cls', None)
+        num_quantile = 0
+        dist_cls = None
+        if net_output_type == 'distribution':
+            if 'dist_forecasting_strategy' not in X:
+                raise ValueError('Distribution output type must contain dis_forecasting_strategy!')
+            dist_forecasting_strategy = X['dist_forecasting_strategy']  # type: DisForecastingStrategy
+            dist_cls = dist_forecasting_strategy.dist_cls
+        elif net_output_type == 'quantile':
+            if not hasattr(X['loss'], 'quantiles'):
+                raise ValueError("For Quantile losses, the attribute quantile must be given!")
+            num_quantile = len(X['loss'].quantile)
 
         auto_regressive = X.get('auto_regressive', False)
 
@@ -89,6 +94,7 @@ class ForecastingHead(NetworkHeadComponent):
         n_prediction_heads = X["n_prediction_heads"]
 
         decoder_has_local_layer = X.get('mlp_has_local_layer', True)
+
         head_components = self.build_head(
             input_shape=head_input_shape,
             output_shape=output_shape,
@@ -96,6 +102,7 @@ class ForecastingHead(NetworkHeadComponent):
             dist_cls=dist_cls,
             decoder_has_local_layer=decoder_has_local_layer,
             n_prediction_heads=n_prediction_heads,
+            num_quantile=num_quantile,
         )
         self.head = head_components
         return self
@@ -150,8 +157,11 @@ class ForecastingHead(NetworkHeadComponent):
                    output_shape: Tuple[int, ...],
                    auto_regressive: bool = False,
                    decoder_has_local_layer: bool = True,
+                   net_out_put_type: str="distribution",
                    dist_cls: Optional[str] = None,
-                   n_prediction_heads: int = 1) -> nn.Module:
+                   n_prediction_heads: int = 1,
+                   num_quantile:int = 3,
+                   ) -> nn.Module:
         """
         Builds the head module and returns it
 
@@ -160,22 +170,45 @@ class ForecastingHead(NetworkHeadComponent):
             output_shape (Tuple[int, ...]): shape of the output of the head
             auto_regressive (bool): if the network is auto-regressive
             decoder_has_local_layer (bool): if the decoder has local layer
+            net_out_put_type (str): network output type
             dist_cls (Optional[str]): output distribution, only works if required_net_out_put_type is 'distribution'
             n_prediction_heads (Dict): additional paramter for initializing architectures. How many heads to predict
+            num_quantile (int): number of quantile losses
 
         Returns:
             nn.Module: head module
         """
-        head_layer = self.build_proj_layer(
-            input_shape=input_shape,
-            output_shape=output_shape,
-            auto_regressive=auto_regressive,
-            decoder_has_local_layer=decoder_has_local_layer,
-            net_out_put_type=self.required_net_out_put_type,
-            dist_cls=dist_cls,
-            n_prediction_heads=n_prediction_heads
-        )
-        return head_layer
+        if net_out_put_type == 'distribution':
+            proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=input_shape,
+                                                     output_shape=output_shape[1:],
+                                                     n_prediction_heads=n_prediction_heads,
+                                                     auto_regressive=auto_regressive,
+                                                     decoder_has_local_layer=decoder_has_local_layer
+                                                     )
+            return proj_layer
+        elif net_out_put_type == 'regression':
+            if decoder_has_local_layer:
+                proj_layer = nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
+            else:
+                proj_layer = nn.Sequential(
+                    nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
+                    nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
+                )
+            return proj_layer
+        elif net_out_put_type == "quantile":
+            if decoder_has_local_layer:
+                proj_layer = [nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
+                              for _ in range(num_quantile)]
+            else:
+                proj_layer = [nn.Sequential(
+                    nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
+                    nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
+                ) for _ in range(num_quantile)]
+            proj_layer = nn.ModuleList[proj_layer]
+            return proj_layer
+        else:
+            raise NotImplementedError(f"Unsupported network type "
+                             f"{net_out_put_type} (should be regression or distribution)")
 
     @staticmethod
     def build_proj_layer(input_shape: Tuple[int, ...],

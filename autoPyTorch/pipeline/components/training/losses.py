@@ -87,9 +87,9 @@ class MASELoss(Loss):
 class QuantileLoss(Loss):
     __constants__ = ['reduction']
 
-    def __init__(self, reduction: str = 'mean',lower=0.1, upper=0.9) -> None:
+    def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5]) -> None:
         super(QuantileLoss, self).__init__(reduction)
-        self.quantiles = [lower, 0.5, upper]
+        self.quantiles = quantiles
 
     def forward(self,
                 input: List[torch.Tensor],

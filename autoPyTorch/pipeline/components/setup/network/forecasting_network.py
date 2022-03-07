@@ -38,17 +38,8 @@ class ForecastingNetworkComponent(NetworkComponent):
             self,
             network: Optional[torch.nn.Module] = None,
             random_state: Optional[np.random.RandomState] = None,
-            net_out_type: str = 'regression',
-            forecast_strategy: Optional[str] = 'mean',
-            num_samples: Optional[int] = None,
-            aggregation: Optional[str] = None,
-
     ) -> None:
         super(ForecastingNetworkComponent, self).__init__(network=network, random_state=random_state)
-        self.net_out_type = net_out_type
-        self.forecast_strategy = forecast_strategy
-        self.num_samples = num_samples
-        self.aggregation = aggregation
 
     @property
     def _required_fit_requirements(self):
@@ -64,7 +55,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
             FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),
             FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
-            FitRequirement("required_net_out_put_type", (str,), user_defined=False, dataset_property=False),
+            FitRequirement("net_output_type", (str,), user_defined=False, dataset_property=False),
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
@@ -72,15 +63,11 @@ class ForecastingNetworkComponent(NetworkComponent):
         # information to fit this stage
         self.check_requirements(X, y)
 
-        if self.net_out_type != X['required_net_out_put_type']:
-            raise ValueError(f"network output type must be the same as required_net_out_put_type defiend by "
-                             f"loss function. However, net_out_type is {self.net_out_type} and "
-                             f"required_net_out_put_type is {X['required_net_out_put_type']}")
-
         network_structure = X['network_structure']
         network_encoder = X['network_encoder']
         network_decoder = X['network_decoder']
 
+        net_output_type = X['net_output_type']
         network_init_kwargs = dict(network_structure=network_structure,
                                    network_embedding=X['network_embedding'],
                                    network_encoder=network_encoder,
@@ -91,10 +78,13 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    window_size=X['window_size'],
                                    dataset_properties=X['dataset_properties'],
                                    target_scaler=X['target_scaler'],
-                                   output_type=self.net_out_type,
-                                   forecast_strategy=self.forecast_strategy,
-                                   num_samples=self.num_samples,
-                                   aggregation=self.aggregation, )
+                                   output_type=net_output_type,)
+        if net_output_type == 'distribution':
+            dist_forecasting_strategy = X['dist_forecasting_strategy']  # type: DisForecastingStrategy
+
+            network_init_kwargs.update(dict(forecast_strategy=dist_forecasting_strategy.forecast_strategy,
+                                            num_samples=dist_forecasting_strategy.num_samples,
+                                            aggregation=dist_forecasting_strategy.aggregation, ))
 
         if X['auto_regressive']:
             first_decoder = next(iter(network_decoder.items()))[1]
@@ -162,38 +152,9 @@ class ForecastingNetworkComponent(NetworkComponent):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            net_out_type: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='net_out_type',
-                                                                                value_range=('regression',
-                                                                                             'distribution'),
-                                                                                default_value='distribution'
-                                                                                ),
-            forecast_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='forecast_strategy',
-                                                                                     value_range=('sample', 'mean'),
-                                                                                     default_value='sample'),
-            num_samples: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_samples',
-                                                                               value_range=(50, 200),
-                                                                               default_value=100),
-            aggregation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='aggregation',
-                                                                               value_range=('mean', 'median'),
-                                                                               default_value='mean')
     ) -> ConfigurationSpace:
         """
-        prediction steagy
         """
         cs = ConfigurationSpace()
-
-        net_out_type = get_hyperparameter(net_out_type, CategoricalHyperparameter)
-
-        forecast_strategy = get_hyperparameter(forecast_strategy, CategoricalHyperparameter)
-        num_samples = get_hyperparameter(num_samples, UniformIntegerHyperparameter)
-        aggregation = get_hyperparameter(aggregation, CategoricalHyperparameter)
-
-        cond_net_out_type = EqualsCondition(forecast_strategy, net_out_type, 'distribution')
-
-        cond_num_sample = EqualsCondition(num_samples, forecast_strategy, 'sample')
-        cond_aggregation = EqualsCondition(aggregation, forecast_strategy, 'sample')
-
-        cs.add_hyperparameters([net_out_type, forecast_strategy, num_samples, aggregation])
-        cs.add_conditions([cond_net_out_type, cond_aggregation, cond_num_sample])
 
         return cs

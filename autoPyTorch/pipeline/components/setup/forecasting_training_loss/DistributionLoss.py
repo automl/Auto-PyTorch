@@ -1,10 +1,13 @@
-from typing import Optional, Dict, Union, Any
+from typing import Optional, Dict, Union, Any, NamedTuple
 import numpy as np
 
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter
+from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    ALL_DISTRIBUTIONS,
+    DisForecastingStrategy
+)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
@@ -14,15 +17,22 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class DistributionLoss(ForecastingLossComponents):
     loss = LogProbLoss
-    required_net_out_put_type = 'distribution'
+    net_output_type = 'distribution'
 
     def __init__(self,
                  dist_cls: str,
                  random_state: Optional[np.random.RandomState] = None,
+                 forecast_strategy: str = "sample",
+                 num_samples: int = 100,
+                 aggregation: str = "mean",
                  ):
         super(DistributionLoss, self).__init__()
         self.dist_cls = dist_cls
         self.random_state = random_state
+        self.forecasting_strategy = DisForecastingStrategy(dist_cls=dist_cls,
+                                                           forecast_strategy=forecast_strategy,
+                                                           num_samples=num_samples,
+                                                           aggregation=aggregation)
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
@@ -39,18 +49,30 @@ class DistributionLoss(ForecastingLossComponents):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         required_padding_value = ALL_DISTRIBUTIONS[self.dist_cls].value_in_support
-        X.update({"dist_cls": self.dist_cls,
-                  "required_padding_value": required_padding_value})
+        X.update({"required_padding_value": required_padding_value,
+                  "dist_forecasting_strategy": self.forecasting_strategy})
         return super().transform(X)
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dist_cls",
-                                                                        value_range=tuple(ALL_DISTRIBUTIONS.keys()),
-                                                                        default_value=
-                                                                        list(ALL_DISTRIBUTIONS.keys())[0])
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dist_cls",
+                                                                            value_range=tuple(ALL_DISTRIBUTIONS.keys()),
+                                                                            default_value=
+                                                                            list(ALL_DISTRIBUTIONS.keys())[0]),
+            forecast_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='forecast_strategy',
+                                                                                     value_range=('sample', 'mean'),
+                                                                                     default_value='sample'),
+            num_samples: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='num_samples',
+                                                                               value_range=(50, 200),
+                                                                               default_value=100),
+            aggregation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='aggregation',
+                                                                               value_range=('mean', 'median'),
+                                                                               default_value='mean')
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, dist_cls, CategoricalHyperparameter)
+        add_hyperparameter(cs, forecast_strategy, CategoricalHyperparameter)
+        add_hyperparameter(cs, num_samples, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, aggregation, CategoricalHyperparameter)
         return cs

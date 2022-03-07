@@ -218,27 +218,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
                     forbidden_losses_all.append(forbidden_hp_dist)
 
-            hp_net_output_type = []
-            if 'network' in self.named_steps.keys():
-                hp_net_output_type.append(cs.get_hyperparameter('network:net_out_type'))
-
-            if 'RegressionLoss' in hp_loss.choices:
-                # TODO Quantile loses need to be added here
-                forbidden_hp_loss = ForbiddenInClause(hp_loss, ['RegressionLoss'])
-                # RegressionLos only allow regression hp_net_out
-                for hp_net_out in hp_net_output_type:
-                    forbidden_hp_dist = ForbiddenInClause(hp_net_out, ['distribution'])
-                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
-                    forbidden_losses_all.append(forbidden_hp_dist)
-
-            if 'DistributionLoss' in hp_loss.choices:
-                # TODO Quantile loses need to be added here
-                forbidden_hp_loss = ForbiddenInClause(hp_loss, ['DistributionLoss'])
-                # DistributionLoss only allow distribution hp_net_out
-                for hp_net_out in hp_net_output_type:
-                    forbidden_hp_dist = ForbiddenInClause(hp_net_out, ['regression'])
-                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_loss)
-                    forbidden_losses_all.append(forbidden_hp_dist)
 
             network_encoder_hp = cs.get_hyperparameter('network_backbone:__choice__')
 
@@ -260,7 +239,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
                     forbidden_losses_all.append(forbidden_hp_ar_mlp)
 
-            forecast_strategy = cs.get_hyperparameter('network:forecast_strategy')
+            forecast_strategy = cs.get_hyperparameter('loss:DistributionLoss:forecast_strategy')
             if 'mean' in forecast_strategy.choices:
                 for hp_ar in hp_auto_regressive:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
@@ -281,7 +260,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
             forbidden_backcast_false = ForbiddenEqualsClause(data_loader_backcast, False)
-
 
             hp_flat_encoder =  cs.get_hyperparameter("network_backbone:flat_encoder:__choice__")
 

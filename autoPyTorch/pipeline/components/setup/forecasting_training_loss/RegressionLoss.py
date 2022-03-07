@@ -15,7 +15,7 @@ from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss, MAP
 
 
 class RegressionLoss(ForecastingLossComponents):
-    required_net_out_put_type = 'regression'
+    net_output_type = 'regression'
 
     def __init__(self,
                  loss_name: str,
