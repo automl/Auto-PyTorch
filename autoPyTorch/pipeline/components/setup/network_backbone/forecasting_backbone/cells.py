@@ -32,7 +32,6 @@ class TemporalFusionLayer(nn.Module):
 
     def __init__(self,
                  window_size: int,
-                 n_prediction_steps: int,
                  network_structure: NetworkStructure,
                  network_encoder: Dict[str, EncoderBlockInfo],
                  n_decoder_output_features: int,
@@ -44,8 +43,6 @@ class TemporalFusionLayer(nn.Module):
         last_block = f'block_{num_blocks}'
         n_encoder_output = network_encoder[last_block].encoder_output_shape[-1]
         self.window_size = window_size
-        self.n_prediction_steps = n_prediction_steps
-        self.timestep = window_size + n_prediction_steps
 
         if n_decoder_output_features != n_encoder_output:
             self.decoder_proj_layer = nn.Linear(n_decoder_output_features, n_encoder_output, bias=False)
@@ -94,13 +91,18 @@ class TemporalFusionLayer(nn.Module):
                 self.residual_connection = GateAddNorm(d_model, skip_size=n_encoder_output,
                                                        dropout=None, trainable_add=False)
 
-    def forward(self, encoder_output: torch.Tensor, decoder_output: torch.Tensor, encoder_lengths: torch.LongTensor,
+    def forward(self,
+                encoder_output: torch.Tensor,
+                decoder_output: torch.Tensor,
+                encoder_lengths: torch.LongTensor,
+                decoder_length: int,
                 static_embedding: Optional[torch.Tensor] = None):
         """
         Args:
             encoder_output: the output of the last layer of encoder network
             decoder_output: the output of the last layer of decoder network
             encoder_lengths: length of encoder network
+            decoder_length: length of decoder network
             static_embedding: output of static variable selection network (if applible)
         """
         if self.decoder_proj_layer is not None:
@@ -110,7 +112,7 @@ class TemporalFusionLayer(nn.Module):
         if self.enrich_with_static:
             static_context_enrichment = self.static_context_enrichment(static_embedding)
             attn_input = self.enrichment(
-                network_output, static_context_enrichment[:, None].expand(-1, self.timesteps, -1)
+                network_output, static_context_enrichment[:, None].expand(-1, self.window_size + decoder_length, -1)
             )
         else:
             attn_input = self.enrichment(network_output)
@@ -121,7 +123,7 @@ class TemporalFusionLayer(nn.Module):
             k=attn_input,
             v=attn_input,
             mask=self.get_attention_mask(
-                encoder_lengths=encoder_lengths, decoder_length=self.n_prediction_steps
+                encoder_lengths=encoder_lengths, decoder_length=decoder_length
             ),
         )
         # skip connection over attention

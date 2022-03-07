@@ -162,6 +162,7 @@ class AbstractForecastingNet(nn.Module):
                  network_embedding: nn.Module,  # TODO consider  embedding for past, future and static features
                  network_encoder: Dict[str, EncoderBlockInfo],
                  network_decoder: Dict[str, DecoderBlockInfo],
+                 temporal_fusion: Optional[TemporalFusionLayer],
                  network_head: Optional[nn.Module],
                  window_size: int,
                  target_scaler: BaseTargetScaler,
@@ -203,7 +204,7 @@ class AbstractForecastingNet(nn.Module):
                                                       dataset_properties=dataset_properties,
                                                       network_encoder=network_encoder,
                                                       auto_regressive=auto_regressive)
-        has_temporal_fusion = "temporal_fusion" in network_head
+        has_temporal_fusion = temporal_fusion is not None
         self.encoder = StackedEncoder(network_structure=network_structure,
                                       has_temporal_fusion=has_temporal_fusion,
                                       encoder_info=network_encoder,
@@ -213,9 +214,9 @@ class AbstractForecastingNet(nn.Module):
                                       encoder_info=network_encoder,
                                       decoder_info=network_decoder)
         if has_temporal_fusion:
-            self.temporal_fusion = network_head['temporal_fusion']  # type: TemporalFusionLayer
+            self.temporal_fusion = temporal_fusion  # type: TemporalFusionLayer
         self.has_temporal_fusion = has_temporal_fusion
-        self.head = network_head['head']
+        self.head = network_head
 
         first_decoder = 0
         for i in range(1, network_structure.num_blocks + 1):
@@ -419,6 +420,7 @@ class ForecastingNet(AbstractForecastingNet):
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                   decoder_output=decoder_output,
                                                   encoder_lengths=encoder_lengths,
+                                                  decoder_lenght=self.n_prediction_steps,
                                                   static_embedding=x_static
                                                   )
         output = self.head(decoder_output)
@@ -539,6 +541,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                       decoder_output=decoder_output,
                                                       encoder_lengths=encoder_lengths,
+                                                      self.n_prediction_steps,
                                                       static_embedding=x_static
                                                       )
             net_output = self.head(decoder_output)
@@ -587,6 +590,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                         decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                               decoder_output=decoder_output_all,
                                                               encoder_lengths=encoder_lengths,
+                                                              decoder_length = idx_pred + 1,
                                                               static_embedding=x_static
                                                               )[:, -1:]
 

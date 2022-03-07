@@ -31,6 +31,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import ForecastingNetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.TemporalFusion import TemporalFusion
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -46,6 +47,7 @@ def add_encoder(encoder: BaseForecastingEncoder) -> None:
 class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
     deepAR_decoder_name = 'MLPDecoder'
     deepAR_decoder_prefix = 'block_1'
+    tf_prefix = "temporal_fusion"
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
@@ -342,6 +344,20 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 cs.add_conditions(conditions_to_add)
 
+
+        use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_temporal_fusion)
+        if True in use_temporal_fusion.choices:
+            update = self._get_search_space_updates(prefix=self.tf_prefix)
+            cs_tf = TemporalFusion.get_hyperparameter_search_space(dataset_properties,
+                                                                   **update)
+            parent_hyperparameter = {'parent': use_temporal_fusion, 'value': True}
+            cs.add_configuration_space(
+                self.tf_prefix,
+                cs_tf,
+                parent_hyperparameter=parent_hyperparameter
+            )
+
         for encoder_name, encoder in available_encoders.items():
             encoder_is_casual = encoder.encoder_properties()
             if not encoder_is_casual:
@@ -480,6 +496,17 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)
+
+        use_temporal_fusion = params["use_temporal_fusion"]
+        new_params = []
+        if use_temporal_fusion:
+            for param, value in params.items():
+                if param.startswith(self.tf_prefix):
+                    param = param.replace(self.tf_prefix + ':', '')
+                    new_params[param] = value
+            temporal_fusion = TemporalFusion(self.random_state,
+                                             **new_params)
+            pipeline_steps.extend([(f'temporal_fusion', temporal_fusion)])
 
         self.pipeline = Pipeline(pipeline_steps)
         self.choice = self.encoder_choice[0]
