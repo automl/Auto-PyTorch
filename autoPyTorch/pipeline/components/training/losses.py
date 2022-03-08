@@ -101,7 +101,7 @@ class QuantileLoss(Loss):
         losses_all = []
         for q, y_pred in zip(self.quantiles, input):
             diff = target_tensor - y_pred
-            loss_q = torch.max(q * diff, (1-q) * diff)
+            loss_q = torch.max(q * diff, (q - 1) * diff)
             losses_all.append(loss_q.unsqueeze(0))
         losses_all = torch.concat(losses_all)
 

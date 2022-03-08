@@ -69,7 +69,7 @@ class TemporalFusionLayer(nn.Module):
                 input_size=n_encoder_output,
                 hidden_size=n_encoder_output,
                 output_size=d_model,
-                dropout=self.dropout_rate if self.use_dropout else None,
+                dropout=dropout,
                 residual=True,
             )
             self.enrich_with_static = False

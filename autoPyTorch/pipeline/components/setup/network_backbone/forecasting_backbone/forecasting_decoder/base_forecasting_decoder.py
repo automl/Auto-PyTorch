@@ -105,7 +105,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             n_prediction_heads=self.n_prediction_heads,
             dataset_properties=X['dataset_properties']
         )
-        self.decoder_input_shape = encoder_output_shape
+
+        self.decoder_input_shape = future_variable_input
 
         return self
 

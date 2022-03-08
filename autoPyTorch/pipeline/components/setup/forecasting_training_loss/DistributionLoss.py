@@ -3,6 +3,7 @@ import numpy as np
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
+from ConfigSpace.conditions import EqualsCondition
 
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
     ALL_DISTRIBUTIONS,
@@ -72,7 +73,14 @@ class DistributionLoss(ForecastingLossComponents):
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, dist_cls, CategoricalHyperparameter)
-        add_hyperparameter(cs, forecast_strategy, CategoricalHyperparameter)
-        add_hyperparameter(cs, num_samples, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, aggregation, CategoricalHyperparameter)
+
+        forecast_strategy = get_hyperparameter(forecast_strategy, CategoricalHyperparameter)
+        num_samples = get_hyperparameter(num_samples, UniformIntegerHyperparameter)
+        aggregation = get_hyperparameter(aggregation, CategoricalHyperparameter)
+
+        cs.add_hyperparameters([forecast_strategy, num_samples, aggregation])
+
+        cond_n_samples = EqualsCondition(num_samples, forecast_strategy, 'sample')
+        cond_agg = EqualsCondition(aggregation, forecast_strategy, 'sample')
+        cs.add_conditions([cond_n_samples, cond_agg])
         return cs
