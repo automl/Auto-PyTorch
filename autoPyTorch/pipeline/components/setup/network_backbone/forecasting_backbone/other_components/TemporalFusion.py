@@ -32,7 +32,7 @@ class TemporalFusion(autoPyTorchComponent):
                  dropout_rate: Optional[float] = None,):
         autoPyTorchComponent.__init__(self)
         self.add_fit_requirements(
-            self._required_fit_arguments
+            self._required_fit_requirements
         )
         self.attention_n_head_log = attention_n_head_log
         self.attention_d_model_log = attention_d_model_log
@@ -67,6 +67,7 @@ class TemporalFusion(autoPyTorchComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({"n_decoder_output_features": self.n_decoder_output_features,
                   "temporal_fusion": self.temporal_fusion})
+        return X
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
@@ -81,10 +82,6 @@ class TemporalFusion(autoPyTorchComponent):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            use_temporal_fusion: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter='use_temporal_fusion',
-                value_range=(True, False),
-                default_value=False),
             attention_n_head_log: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter='attention_n_head_log',
                 value_range=(1, 3),
@@ -128,18 +125,12 @@ class TemporalFusion(autoPyTorchComponent):
                 The configuration space of this algorithm.
         """
         cs = ConfigurationSpace()
-
-        use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
-        attention_n_head_log = get_hyperparameter(attention_n_head_log, UniformIntegerHyperparameter)
-        attention_d_model_log = get_hyperparameter(attention_d_model_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, attention_n_head_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, attention_d_model_log, UniformIntegerHyperparameter)
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         dropout_rate = get_hyperparameter(dropout_rate, UniformFloatHyperparameter)
 
-        cs.add_hyperparameters([use_temporal_fusion, attention_n_head_log, attention_d_model_log, use_dropout,
-                                dropout_rate])
-        cond_attention_n_head_log = EqualsCondition(attention_n_head_log, use_temporal_fusion, True)
-        cond_attention_d_model_log = EqualsCondition(attention_d_model_log, use_temporal_fusion, True)
-        cond_use_dropout = EqualsCondition(use_dropout, use_temporal_fusion, True)
-        cond_dropout_rate = EqualsCondition(dropout_rate, use_dropout, True)
-        cs.add_conditions([cond_attention_n_head_log, cond_attention_d_model_log, cond_use_dropout, cond_dropout_rate])
+        cs.add_hyperparameters([use_dropout, dropout_rate])
+        cond_dropout = EqualsCondition(dropout_rate, use_dropout, True)
+        cs.add_condition(cond_dropout)
         return cs

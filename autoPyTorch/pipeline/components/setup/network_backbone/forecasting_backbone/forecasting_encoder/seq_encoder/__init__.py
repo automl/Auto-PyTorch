@@ -413,7 +413,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         Returns:
             self: returns an instance of self
         """
-        new_params = {}
 
         params = configuration.get_dictionary()
         num_blocks = params['num_blocks']
@@ -424,8 +423,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                             variable_selection=params['variable_selection'],
                                             skip_connection=params['skip_connection'])
         if 'share_single_variable_networks' in params:
-            forecasting_structure_kwargs['forecasting_structure_kwargs'] = params['forecasting_structure_kwargs']
-            del params['forecasting_structure_kwargs']
+            forecasting_structure_kwargs['share_single_variable_networks'] = params['share_single_variable_networks']
+            del params['share_single_variable_networks']
 
         del params['num_blocks']
         del params['use_temporal_fusion']
@@ -451,6 +450,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         decoder_components = self.get_decoder_components()
 
         for i in range(1, num_blocks + 1):
+            new_params = {}
+
             block_prefix = f'block_{i}:'
             choice = params[block_prefix + '__choice__']
             del params[block_prefix + '__choice__']
@@ -499,7 +500,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)
 
-        new_params = []
+        new_params = {}
         if use_temporal_fusion:
             for param, value in params.items():
                 if param.startswith(self.tf_prefix):

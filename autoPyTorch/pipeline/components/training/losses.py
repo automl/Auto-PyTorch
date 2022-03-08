@@ -91,6 +91,9 @@ class QuantileLoss(Loss):
         super(QuantileLoss, self).__init__(reduction)
         self.quantiles = quantiles
 
+    def set_quantiles(self, quantiles = List[float]):
+        self.quantiles = quantiles
+
     def forward(self,
                 input: List[torch.Tensor],
                 target_tensor: torch.Tensor) -> torch.Tensor:
@@ -98,9 +101,10 @@ class QuantileLoss(Loss):
         losses_all = []
         for q, y_pred in zip(self.quantiles, input):
             diff = target_tensor - y_pred
-            loss_q = max(torch.max(q * diff), (1-q) * diff)
+            loss_q = torch.max(q * diff, (1-q) * diff)
             losses_all.append(loss_q.unsqueeze(0))
         losses_all = torch.concat(losses_all)
+
         if self.reduction == 'mean':
             return losses_all.mean()
         elif self.reduction == 'sum':

@@ -81,7 +81,7 @@ class TemporalFusionLayer(nn.Module):
         )
         self.post_attn_gate_norm = GateAddNorm(d_model, dropout=dropout, trainable_add=False)
         self.pos_wise_ff = GatedResidualNetwork(input_size=d_model, hidden_size=d_model,
-                                                output_size=d_model, dropout=self.hparams.dropout)
+                                                output_size=d_model, dropout=dropout)
 
         self.network_structure = network_structure
         if network_structure.skip_connection:
@@ -118,6 +118,7 @@ class TemporalFusionLayer(nn.Module):
             attn_input = self.enrichment(network_output)
 
         # Attention
+        encoder_lengths = torch.where(encoder_lengths < self.window_size, encoder_lengths, self.window_size)
         attn_output, attn_output_weights = self.attention_fusion(
             q=attn_input[:, self.window_size:],  # query only for predictions
             k=attn_input,
@@ -134,6 +135,15 @@ class TemporalFusionLayer(nn.Module):
             return self.residual_connection(output, decoder_output)
         else:
             return output
+
+    @property
+    def device(self):
+        return self._device
+
+    @device.setter
+    def device(self, device: torch.device):
+        self.to(device)
+        self._device = device
 
     def get_attention_mask(self, encoder_lengths: torch.LongTensor, decoder_length: int):
         """
@@ -177,21 +187,26 @@ class VariableSelector(nn.Module):
         static_input_sizes = dataset_properties['static_features_shape']
         self.hidden_size = first_encoder_output_shape
         variable_selector = nn.ModuleDict()
-        self.static_variable_selection = VariableSelectionNetwork(
-            input_sizes=static_input_sizes,
-            hidden_size=self.hidden_size,
-            input_embedding_flags={},
-            dropout=network_structure.grn_dropout_rate,
-        )
+
+        self._device = torch.device('cpu')
+
+        if not dataset_properties['uni_variant']:
+            # TODO
+            self.static_variable_selection = VariableSelectionNetwork(
+                input_sizes=static_input_sizes,
+                hidden_size=self.hidden_size,
+                input_embedding_flags={},
+                dropout=network_structure.grn_dropout_rate,
+            )
         self.static_input_sizes = static_input_sizes
         if dataset_properties['uni_variant']:
             # variable selection for encoder and decoder
             encoder_input_sizes = {
                 'past_targets': dataset_properties['input_shape'][-1],
-                'past_features': 0
+                'features': 1
             }
             decoder_input_sizes = {
-                'future_features': 0
+                'features': 1
             }
             if auto_regressive:
                 decoder_input_sizes.update({'future_prediction': dataset_properties['output_shape'][-1]})
@@ -263,6 +278,15 @@ class VariableSelector(nn.Module):
         self.cached_static_contex = None
         self.cached_static_embedding = None
 
+    @property
+    def device(self):
+        return self._device
+
+    @device.setter
+    def device(self, device: torch.device):
+        self.to(device)
+        self._device = device
+
     def forward(self,
                 x_past: Optional[Dict[str,torch.Tensor]],
                 x_future: Optional[Dict[str, torch.Tensor]],
@@ -282,13 +306,14 @@ class VariableSelector(nn.Module):
             if self.static_input_sizes > 0:
                 static_embedding, _ = self.static_variable_selection(x_static)
             else:
+                model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(iter(x_future.values())).dtype
                 static_embedding = torch.zeros(
-                    (batch_size, self.hidden_size), dtype=self.dtype, device=self.device
+                    (batch_size, self.hidden_size), dtype=model_dtype, device=self.device
                 )
-                static_variable_selection = torch.zeros((batch_size, 0), dtype=self.dtype, device=self.device)
+                static_variable_selection = torch.zeros((batch_size, 0), dtype=model_dtype, device=self.device)
 
             static_context_variable_selection = self.static_context_variable_selection(static_embedding)[:, None]
-            static_context_initial_hidden = (init_hidden(static_embedding) for init_hidden in
+            static_context_initial_hidden = tuple(init_hidden(static_embedding) for init_hidden in
                                              self.static_context_initial_hidden)
             if cache_static_contex:
                 self.cached_static_contex = static_context_variable_selection
@@ -297,7 +322,7 @@ class VariableSelector(nn.Module):
             static_embedding = self.cached_static_embedding
             static_context_initial_hidden = None
             static_context_variable_selection = self.cached_static_contex
-        static_context_variable_selection = static_context_variable_selection[:, None].expand(-1, timesteps, -1)
+        static_context_variable_selection = static_context_variable_selection.expand(-1, timesteps, -1)
         if x_past is not None:
             embeddings_varying_encoder, _ = self.encoder_variable_selection(
                 x_past,
@@ -394,13 +419,13 @@ class StackedEncoder(nn.Module):
                 else:
                     rnn_num_layers = encoder_i.config['num_layers']
                     hx = additional_input[i]
-                    if rnn_num_layers == 1 or hx is None:
+                    if hx is None:
                         fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
                     else:
                         if self.encoder_num_hidden_states[i] == 1:
                             fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx.expand((rnn_num_layers, -1, -1)))
                         else:
-                            hx = (hx_i.expand(rnn_num_layers, -1, -1) for hx_i in hx)
+                            hx = tuple(hx_i.expand(rnn_num_layers, -1, -1) for hx_i in hx)
                             fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
             else:
                 if incremental_update:
@@ -431,14 +456,15 @@ class StackedEncoder(nn.Module):
                         self.cached_intermediate_state[i] = x
                     # otherwise the decoder does not exist for this layer
             x = fx
+
         if self.has_temporal_fusion:
             if incremental_update:
                 self.cached_intermediate_state[i + 1] = torch.cat([self.cached_intermediate_state[i+1], x], dim=1)
             else:
                 self.cached_intermediate_state[i + 1] = x
-            return encoder2decoder, None
-        else:
             return encoder2decoder, x
+        else:
+            return encoder2decoder, None
 
 
 class StackedDecoder(nn.Module):

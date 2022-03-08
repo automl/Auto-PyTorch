@@ -1,10 +1,10 @@
 from typing import Optional, Dict, Union, Any
+from functools import partial
 import numpy as np
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import ALL_DISTRIBUTIONS
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
@@ -23,7 +23,12 @@ class NetworkQuantileLoss(ForecastingLossComponents):
                  ):
         super().__init__()
         self.random_state = random_state
-        self.loss = QuantileLoss(quantiles=[lower_quantile, 0.5, upper_quantile])
+        self.quantiles = [0.5, lower_quantile, upper_quantile]
+        self.loss = partial(QuantileLoss, quantiles=self.quantiles)
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        X.update({"quantile_values": self.quantiles})
+        return super().transform(X)
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None

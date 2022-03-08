@@ -156,6 +156,7 @@ def get_lagged_subsequences_inference(
 
 class AbstractForecastingNet(nn.Module):
     future_target_required = False
+    dtype = torch.float
 
     def __init__(self,
                  network_structure: NetworkStructure,
@@ -199,11 +200,14 @@ class AbstractForecastingNet(nn.Module):
         super().__init__()
         self.network_structure = network_structure
         self.embedding = network_embedding
+        # modules that generate tensors while doing forward pass
+        self.lazy_modules = []
         if network_structure.variable_selection:
             self.variable_selector = VariableSelector(network_structure=network_structure,
                                                       dataset_properties=dataset_properties,
                                                       network_encoder=network_encoder,
                                                       auto_regressive=auto_regressive)
+            self.lazy_modules.append(self.variable_selector)
         has_temporal_fusion = network_structure.use_temporal_fusion
         self.encoder = StackedEncoder(network_structure=network_structure,
                                       has_temporal_fusion=has_temporal_fusion,
@@ -215,6 +219,7 @@ class AbstractForecastingNet(nn.Module):
                                       decoder_info=network_decoder)
         if has_temporal_fusion:
             self.temporal_fusion = temporal_fusion  # type: TemporalFusionLayer
+            self.lazy_modules.append(self.temporal_fusion)
         self.has_temporal_fusion = has_temporal_fusion
         self.head = network_head
 
@@ -238,7 +243,6 @@ class AbstractForecastingNet(nn.Module):
         self.num_samples = num_samples
         self.aggregation = aggregation
 
-        # self.mask_futur_features = decoder_properties['mask_future_features']
         self._device = torch.device('cpu')
 
         if not network_structure.variable_selection:
@@ -263,12 +267,16 @@ class AbstractForecastingNet(nn.Module):
     def device(self, device: torch.device):
         self.to(device)
         self._device = device
+        for model in self.lazy_modules:
+            model.device = device
 
     def rescale_output(self,
-                       outputs: Union[torch.distributions.Distribution, torch.Tensor],
+                       outputs: Union[torch.distributions.Distribution, torch.Tensor, List[torch.Tensor]],
                        loc: Optional[torch.Tensor],
                        scale: Optional[torch.Tensor],
                        device: torch.device = torch.device('cpu')):
+        if isinstance(outputs, List):
+            return [self.rescale_output(output, loc, scale, device) for output in outputs]
         if loc is not None or scale is not None:
             if isinstance(outputs, torch.distributions.Distribution):
                 transform = AffineTransform(loc=0.0 if loc is None else loc.to(device),
@@ -366,14 +374,14 @@ class ForecastingNet(AbstractForecastingNet):
             if length_past > 0:
                 if past_features is None:
                     x_past = {'past_targets': x_past.to(device=self.device),
-                              'past_features': torch.zeros((batch_size, length_past, 0),
-                                                           dtype=self.dtype, device=self.device)}
+                              'features': torch.zeros((batch_size, length_past, 1),
+                                                           dtype=past_targets.dtype, device=self.device)}
             else:
                 x_past = None
             if length_future > 0:
                 if future_features is None:
-                    x_future = {'future_features': torch.zeros((batch_size, length_future, 0),
-                                                               dtype=self.dtype, device=self.device)}
+                    x_future = {'features': torch.zeros((batch_size, length_future, 1),
+                                                               dtype=past_targets.dtype, device=self.device)}
             else:
                 x_future = None
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
@@ -411,6 +419,7 @@ class ForecastingNet(AbstractForecastingNet):
             length_past=self.window_size,
             length_future=self.n_prediction_steps
         )
+
         encoder_additional = [static_context_initial_hidden]
         encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
         encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
@@ -420,7 +429,7 @@ class ForecastingNet(AbstractForecastingNet):
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                   decoder_output=decoder_output,
                                                   encoder_lengths=encoder_lengths,
-                                                  decoder_lenght=self.n_prediction_steps,
+                                                  decoder_length=self.n_prediction_steps,
                                                   static_embedding=x_static
                                                   )
         output = self.head(decoder_output)
@@ -429,6 +438,8 @@ class ForecastingNet(AbstractForecastingNet):
     def pred_from_net_output(self, net_output):
         if self.output_type == 'regression':
             return net_output
+        elif self.output_type == 'quantile':
+            return net_output[0]
         elif self.output_type == 'distribution':
             if self.forecast_strategy == 'mean':
                 if isinstance(net_output, list):
@@ -455,9 +466,10 @@ class ForecastingNet(AbstractForecastingNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None
+                static_features: Optional[torch.Tensor] = None,
+                encoder_lengths: Optional[torch.LongTensor] = None,
                 ):
-        net_output = self(past_targets, past_features)
+        net_output = self(past_targets, past_features, encoder_lengths=encoder_lengths)
         return self.pred_from_net_output(net_output)
 
 
@@ -483,8 +495,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         if future_features is None:
             x_future = {
                 'future_prediction': future_targets.to(self.device),
-                'future_features': torch.zeros((batch_size, length_future, 0),
-                                               dtype=self.dtype, device=self.device)}
+                'features': torch.zeros((batch_size, length_future, 0),
+                                               dtype=future_targets.dtype, device=self.device)}
         _, x_future, _, _ = self.variable_selector(x_past=None,
                                                    x_future=x_future,
                                                    x_static=None,
@@ -724,8 +736,8 @@ class ForecastingDeepARNet(ForecastingNet):
         if future_features is None:
             x_future = {
                 'future_prediction': future_targets.to(self.device),
-                'future_features': torch.zeros((batch_size, length_future, 0),
-                                               dtype=self.dtype, device=self.device)}
+                'features': torch.zeros((batch_size, length_future, 0),
+                                               dtype=future_targets.dtype, device=self.device)}
         _, x_future, _, _ = self.variable_selector(x_past=None,
                                                    x_future=x_future,
                                                    x_static=None,
@@ -770,8 +782,8 @@ class ForecastingDeepARNet(ForecastingNet):
                 if past_features is None:
                     if past_features is None:
                         x_past = {'past_targets': targets_all.to(device=self.device),
-                                  'past_features': torch.zeros((batch_size, length_past, 0),
-                                                               dtype=self.dtype, device=self.device)}
+                                  'features': torch.zeros((batch_size, length_past, 0),
+                                                               dtype=targets_all.dtype, device=self.device)}
 
                 x_input, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
                                                                                       x_future=None,
@@ -825,8 +837,8 @@ class ForecastingDeepARNet(ForecastingNet):
                 if past_features is None:
                     if past_features is None:
                         x_past = {'past_targets': past_targets.to(device=self.device),
-                                  'past_features': torch.zeros((batch_size, length_past, 0),
-                                                               dtype=self.dtype, device=self.device)}
+                                  'features': torch.zeros((batch_size, length_past, 0),
+                                                               dtype=past_targets.dtype, device=self.device)}
 
                 x_past, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
                                                                                      x_future=None,
@@ -925,8 +937,8 @@ class ForecastingDeepARNet(ForecastingNet):
                     if past_features is None:
                         if past_features is None:
                             x_next = {'past_targets': x_next,
-                                      'past_features': torch.zeros((batch_size, 1, 0),
-                                                                   dtype=self.dtype, device=self.device)}
+                                      'features': torch.zeros((batch_size, 1, 0),
+                                                                   dtype=x_next.dtype, device=self.device)}
 
                     x_next, _, _, _ = self.variable_selector(x_past=x_next,
                                                              x_future=None,

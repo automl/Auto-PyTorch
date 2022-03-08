@@ -70,8 +70,6 @@ class ForecastingTrainerChoice(TrainerChoice):
         if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
 
-        additional_losses = X['additional_losses'] if 'additional_losses' in X else None
-
         self.choice.prepare(
             model=X['network'],
             metrics=metrics,
@@ -89,6 +87,7 @@ class ForecastingTrainerChoice(TrainerChoice):
             target_scaler=X['target_scaler'],
             backcast_loss_ratio=X.get('backcast_loss_ratio', 0.0)
         )
+
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available trainer components

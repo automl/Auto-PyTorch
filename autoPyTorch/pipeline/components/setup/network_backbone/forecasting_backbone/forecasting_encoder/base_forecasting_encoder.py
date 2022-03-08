@@ -19,6 +19,7 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderProperties, EncoderBlockInfo, EncoderNetwork
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 
 
 class BaseForecastingEncoder(autoPyTorchComponent):
@@ -52,6 +53,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('static_features_shape', (int,), user_defined=True, dataset_property=True),
+            FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -77,7 +79,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
             in_features = input_shape[-1]
 
-            variable_selection = X.get("variable_selection", False)
+            variable_selection = X['network_structure'].variable_selection
             if variable_selection:
                 in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
