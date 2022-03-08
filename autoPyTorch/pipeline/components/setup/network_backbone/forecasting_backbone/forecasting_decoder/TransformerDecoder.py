@@ -44,7 +44,7 @@ class _TransformerDecoder(DecoderNetwork):
                  lagged_value: Optional[Union[List, np.ndarray]] = None):
         super().__init__()
         self.lagged_value = lagged_value
-        in_features = in_features if self.lagged_value is None else len(self.lagged_value) * in_features
+        in_features = in_features
 
         self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
         if use_positional_decoder:
@@ -60,13 +60,13 @@ class _TransformerDecoder(DecoderNetwork):
         self.transformer_decoder_layers = nn.TransformerDecoder(decoder_layer=transformer_decoder_layers,
                                                                 num_layers=num_layers,
                                                                 norm=norm)
-        self.tgt_mask = nn.Transformer.generate_square_subsequent_mask(self.n_prediction_steps)
+        self.tgt_mask = nn.Transformer.generate_square_subsequent_mask(n_prediction_steps)
 
     def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor):
         output = self.input_layer(x_future)
         if self.training:
             output = self.transformer_decoder_layers(output, encoder_output,
-                                                     tgt_mask=self.tgt_mask.to(self.device))
+                                                     tgt_mask=self.tgt_mask.to(encoder_output.device))
         else:
             output = self.transformer_decoder_layers(output, encoder_output)
         return output
