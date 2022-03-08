@@ -119,6 +119,7 @@ class TemporalFusionLayer(nn.Module):
 
         # Attention
         encoder_lengths = torch.where(encoder_lengths < self.window_size, encoder_lengths, self.window_size)
+        encoder_lengths = encoder_lengths.to(self.device)
         attn_output, attn_output_weights = self.attention_fusion(
             q=attn_input[:, self.window_size:],  # query only for predictions
             k=attn_input,
