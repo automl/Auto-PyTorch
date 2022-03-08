@@ -375,13 +375,13 @@ class ForecastingNet(AbstractForecastingNet):
                 if past_features is None:
                     x_past = {'past_targets': x_past.to(device=self.device),
                               'features': torch.zeros((batch_size, length_past, 1),
-                                                           dtype=past_targets.dtype, device=self.device)}
+                                                      dtype=past_targets.dtype, device=self.device)}
             else:
                 x_past = None
             if length_future > 0:
                 if future_features is None:
                     x_future = {'features': torch.zeros((batch_size, length_future, 1),
-                                                               dtype=past_targets.dtype, device=self.device)}
+                                                        dtype=past_targets.dtype, device=self.device)}
             else:
                 x_future = None
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
@@ -495,8 +495,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         if future_features is None:
             x_future = {
                 'future_prediction': future_targets.to(self.device),
-                'features': torch.zeros((batch_size, length_future, 0),
-                                               dtype=future_targets.dtype, device=self.device)}
+                'features': torch.zeros((batch_size, length_future, 1),
+                                        dtype=future_targets.dtype, device=self.device)}
         _, x_future, _, _ = self.variable_selector(x_past=None,
                                                    x_future=x_future,
                                                    x_static=None,
@@ -520,6 +520,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             past_features=past_features,
             future_features=future_features,
             static_features=static_features,
+            length_past=self.window_size,
             length_future=0,
             variable_selector_kwargs={'cache_static_contex': True}
         )
@@ -602,7 +603,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                         decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                               decoder_output=decoder_output_all,
                                                               encoder_lengths=encoder_lengths,
-                                                              decoder_length = idx_pred + 1,
+                                                              decoder_length=idx_pred + 1,
                                                               static_embedding=x_static
                                                               )[:, -1:]
 
@@ -612,8 +613,10 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                     all_predictions.append(net_output)
 
-                if self.output_type != 'distribution':
+                if self.output_type == 'regression':
                     all_predictions = torch.cat(all_predictions, dim=1)
+                elif self.output_type == 'quantile':
+                    all_predictions = torch.cat([self.pred_from_net_output(pred) for pred in all_predictions], dim=1)
                 else:
                     all_predictions = self.pred_from_net_output(all_predictions)
 
@@ -698,10 +701,15 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None
+                static_features: Optional[torch.Tensor] = None,
+                encoder_lengths: Optional[torch.LongTensor] = None,
                 ):
-        net_output = self(past_targets, past_features, future_features)
-        if self.output_type != 'distribution':
+        net_output = self(past_targets=past_targets,
+                          past_features=past_features,
+                          future_features=future_features,
+                          static_features=static_features,
+                          encoder_lengths=encoder_lengths)
+        if self.output_type == 'regression':
             return self.pred_from_net_output(net_output)
         else:
             return net_output
@@ -736,8 +744,8 @@ class ForecastingDeepARNet(ForecastingNet):
         if future_features is None:
             x_future = {
                 'future_prediction': future_targets.to(self.device),
-                'features': torch.zeros((batch_size, length_future, 0),
-                                               dtype=future_targets.dtype, device=self.device)}
+                'features': torch.zeros((batch_size, length_future, 1),
+                                        dtype=future_targets.dtype, device=self.device)}
         _, x_future, _, _ = self.variable_selector(x_past=None,
                                                    x_future=x_future,
                                                    x_static=None,
@@ -782,8 +790,8 @@ class ForecastingDeepARNet(ForecastingNet):
                 if past_features is None:
                     if past_features is None:
                         x_past = {'past_targets': targets_all.to(device=self.device),
-                                  'features': torch.zeros((batch_size, length_past, 0),
-                                                               dtype=targets_all.dtype, device=self.device)}
+                                  'features': torch.zeros((batch_size, length_past, 1),
+                                                          dtype=targets_all.dtype, device=self.device)}
 
                 x_input, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
                                                                                       x_future=None,
@@ -837,8 +845,8 @@ class ForecastingDeepARNet(ForecastingNet):
                 if past_features is None:
                     if past_features is None:
                         x_past = {'past_targets': past_targets.to(device=self.device),
-                                  'features': torch.zeros((batch_size, length_past, 0),
-                                                               dtype=past_targets.dtype, device=self.device)}
+                                  'features': torch.zeros((batch_size, length_past, 1),
+                                                          dtype=past_targets.dtype, device=self.device)}
 
                 x_past, _, _, static_context_initial_hidden = self.variable_selector(x_past=x_past,
                                                                                      x_future=None,
@@ -937,8 +945,8 @@ class ForecastingDeepARNet(ForecastingNet):
                     if past_features is None:
                         if past_features is None:
                             x_next = {'past_targets': x_next,
-                                      'features': torch.zeros((batch_size, 1, 0),
-                                                                   dtype=x_next.dtype, device=self.device)}
+                                      'features': torch.zeros((batch_size, 1, 1),
+                                                              dtype=x_next.dtype, device=self.device)}
 
                     x_next, _, _, _ = self.variable_selector(x_past=x_next,
                                                              x_future=None,
@@ -976,9 +984,14 @@ class ForecastingDeepARNet(ForecastingNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None
+                static_features: Optional[torch.Tensor] = None,
+                encoder_lengths: Optional[torch.LongTensor] = None,
                 ):
-        net_output = self(past_targets, past_features, future_features)
+        net_output = self(past_targets=past_targets,
+                          past_features=past_features,
+                          future_features=future_features,
+                          static_features=static_features,
+                          encoder_lengths=encoder_lengths)
         return net_output
 
 

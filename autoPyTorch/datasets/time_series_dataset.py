@@ -265,14 +265,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                         "configuration space on the hyperparameter window_size, if you want to adapt this value"
                         "you could pass freq with a numerical value")
             freq_value = SEASONALITY_MAP.get(freq, None)
-        if isinstance(freq, list):
-            if np.max(freq) < n_prediction_steps:
-                tmp_freq = n_prediction_steps
-            else:
-                tmp_freq = min([freq_value for freq_value in freq if freq_value >= n_prediction_steps])
-            freq_value = tmp_freq
         else:
-            freq_value = min(1, n_prediction_steps)
+            freq_value = freq
 
         if isinstance(freq_value, list):
             if np.max(freq_value) < n_prediction_steps:

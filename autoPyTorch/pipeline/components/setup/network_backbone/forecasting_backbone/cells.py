@@ -186,7 +186,6 @@ class VariableSelector(nn.Module):
         first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape[-1]
         static_input_sizes = dataset_properties['static_features_shape']
         self.hidden_size = first_encoder_output_shape
-        variable_selector = nn.ModuleDict()
 
         self._device = torch.device('cpu')
 
@@ -243,7 +242,7 @@ class VariableSelector(nn.Module):
             context_size=self.hidden_size,
             single_variable_grns={}
             if not network_structure.share_single_variable_networks
-            else variable_selector['shared_single_variable_grns'],
+            else self.shared_single_variable_grns,
         )
 
         self.decoder_variable_selection = VariableSelectionNetwork(
@@ -254,7 +253,7 @@ class VariableSelector(nn.Module):
             context_size=self.hidden_size,
             single_variable_grns={}
             if not network_structure.share_single_variable_networks
-            else variable_selector['shared_single_variable_grns'],
+            else self.shared_single_variable_grns,
         )
 
         self.static_context_variable_selection = GatedResidualNetwork(
