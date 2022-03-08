@@ -524,43 +524,44 @@ def reduce_dataset_size_if_too_large(
     """
 
     for method in methods:
-        if megabytes(X) > memory_allocation:
+        if megabytes(X) <= memory_allocation:
+            break
 
-            if method == 'precision':
-                # If the dataset is too big for the allocated memory,
-                # we then try to reduce the precision if it's a high precision dataset
-                X, reduced_dtypes, dtypes = reduce_precision(X)
-                warnings.warn(
-                    f'Dataset too large for allocated memory {memory_allocation}MB, '
-                    f'reduced the precision from {dtypes} to {reduced_dtypes}',
-                )
-            elif method == "subsample":
-                # If the dataset is still too big such that we couldn't fit
-                # into the allocated memory, we subsample it so that it does
+        if method == 'precision':
+            # If the dataset is too big for the allocated memory,
+            # we then try to reduce the precision if it's a high precision dataset
+            X, reduced_dtypes, dtypes = reduce_precision(X)
+            warnings.warn(
+                f'Dataset too large for allocated memory {memory_allocation}MB, '
+                f'reduced the precision from {dtypes} to {reduced_dtypes}',
+            )
+        elif method == "subsample":
+            # If the dataset is still too big such that we couldn't fit
+            # into the allocated memory, we subsample it so that it does
 
-                n_samples_before = X.shape[0]
-                sample_percentage = memory_allocation / megabytes(X)
+            n_samples_before = X.shape[0]
+            sample_percentage = memory_allocation / megabytes(X)
 
-                # NOTE: type ignore
-                #
-                # Tried the generic `def subsample(X: T) -> T` approach but it was
-                # failing elsewhere, keeping it simple for now
-                X, y = subsample(  # type: ignore
-                    X,
-                    y=y,
-                    sample_size=sample_percentage,
-                    is_classification=is_classification,
-                    random_state=random_state,
-                )
+            # NOTE: type ignore
+            #
+            # Tried the generic `def subsample(X: T) -> T` approach but it was
+            # failing elsewhere, keeping it simple for now
+            X, y = subsample(  # type: ignore
+                X,
+                y=y,
+                sample_size=sample_percentage,
+                is_classification=is_classification,
+                random_state=random_state,
+            )
 
-                n_samples_after = X.shape[0]
-                warnings.warn(
-                    f"Dataset too large for allocated memory {memory_allocation}MB,"
-                    f" reduced number of samples from {n_samples_before} to"
-                    f" {n_samples_after}."
-                )
+            n_samples_after = X.shape[0]
+            warnings.warn(
+                f"Dataset too large for allocated memory {memory_allocation}MB,"
+                f" reduced number of samples from {n_samples_before} to"
+                f" {n_samples_after}."
+            )
 
-            else:
-                raise ValueError(f"Unknown operation `{method}`")
+        else:
+            raise ValueError(f"Unknown operation `{method}`")
 
     return X, y

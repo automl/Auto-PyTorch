@@ -1,5 +1,6 @@
 import warnings
-from typing import List, Mapping
+from test.test_data.utils import convert, dtype, size
+from typing import Mapping
 
 import numpy as np
 
@@ -7,7 +8,7 @@ import pandas as pd
 
 import pytest
 
-from scipy.sparse import csr_matrix, spmatrix
+from scipy.sparse import csr_matrix
 
 from sklearn.datasets import fetch_openml
 
@@ -86,14 +87,6 @@ def test_subsample_validity(X, x_type, y, y_type, random_state, sample_size, tas
         pytest.skip("Can't have pd.Series as y when task is n-dimensional")
 
     # Convert our data to its given x_type or y_type
-    def convert(arr, objtype):
-        if objtype == np.ndarray:
-            return arr
-        elif objtype == list:
-            return arr.tolist()
-        else:
-            return objtype(arr)
-
     X = convert(X, x_type)
     y = convert(y, y_type)
 
@@ -108,20 +101,6 @@ def test_subsample_validity(X, x_type, y, y_type, random_state, sample_size, tas
             is_classification=task in CLASSIFICATION_TASKS,
         )
 
-    # Function to get the type of an obj
-    def dtype(obj):
-        if isinstance(obj, List):
-            if isinstance(obj[0], List):
-                return type(obj[0][0])
-            else:
-                return type(obj[0])
-
-        elif isinstance(obj, pd.DataFrame):
-            return obj.dtypes
-
-        else:
-            return obj.dtype
-
     # Check that the types of X remain the same after subsampling
     if isinstance(X, pd.DataFrame):
         # Dataframe can have multiple types, one per column
@@ -134,13 +113,6 @@ def test_subsample_validity(X, x_type, y, y_type, random_state, sample_size, tas
         assert list(dtype(y_sampled)) == list(dtype(y))
     else:
         assert dtype(y_sampled) == dtype(y)
-
-    # Function to get the size of an object
-    def size(obj):
-        if isinstance(obj, spmatrix):  # spmatrix doesn't support __len__
-            return obj.shape[0] if obj.shape[0] > 1 else obj.shape[1]
-        else:
-            return len(obj)
 
     # check the right amount of samples were taken
     if sample_size < 1:
