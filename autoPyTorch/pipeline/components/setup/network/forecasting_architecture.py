@@ -1016,9 +1016,10 @@ class NBEATSNet(ForecastingNet):
         forcast_shape = [batch_size, self.n_prediction_steps, *output_shape]
 
         forecast = torch.zeros(forcast_shape).to(self.device).flatten(1)
-        backcast, _ = self.encoder(past_targets)
+        backcast, _ = self.encoder(past_targets, [None])
+        backcast = backcast[0]
         for block in self.decoder.decoder['block_1']:
-            backcast_block, forecast_block = block(backcast)
+            backcast_block, forecast_block = block([None], backcast)
 
             backcast = backcast - backcast_block
             forecast = forecast + forecast_block
