@@ -432,18 +432,18 @@ class BasePipeline(Pipeline):
                             if choice in exclude[update.node_name]:
                                 raise ValueError("Found {} in exclude".format(choice))
                         if choice not in components.keys():
-                            raise ValueError("Unknown hyperparameter for choice {}. "
-                                             "Expected update hyperparameter "
-                                             "to be in {} got {}".format(node.__class__.__name__,
-                                                                         components.keys(), choice))
+                            warnings.warn(f"Ignoring update {update}."
+                                          f" Unknown hyperparameter for choice {node.__class__.__name__}. "
+                                          f"Expected update hyperparameter "
+                                          f"to be in {components.keys()} got {choice}")
                 # check if the component whose hyperparameter
                 # needs to be updated is in components of the
                 # choice module
                 elif split_hyperparameter[0] not in components.keys():
-                    raise ValueError("Unknown hyperparameter for choice {}. "
-                                     "Expected update hyperparameter "
-                                     "to be in {} got {}".format(node.__class__.__name__,
-                                                                 components.keys(), split_hyperparameter[0]))
+                    warnings.warn(f"Ignoring update {update}."
+                                  f" Unknown hyperparameter for choice {node.__class__.__name__}. "
+                                  f"Expected update hyperparameter "
+                                  f"to be in {components.keys()} got {split_hyperparameter[0]}")
                 else:
                     # check if hyperparameter is in the search space of the component
                     component = components[split_hyperparameter[0]]
@@ -456,14 +456,11 @@ class BasePipeline(Pipeline):
                                 component.get_hyperparameter_search_space(
                                     dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
                             continue
-                        raise ValueError("Unknown hyperparameter for component {}. "
-                                         "Expected update hyperparameter "
-                                         "to be in {} got {}".format(node.__class__.__name__,
-                                                                     component.
-                                                                     get_hyperparameter_search_space(
-                                                                         dataset_properties=self.dataset_properties).
-                                                                     get_hyperparameter_names(),
-                                                                     split_hyperparameter[1]))
+                        warnings.warn(f"Ignoring update {update}."
+                                      f" Unknown hyperparameter for component {node.__class__.__name__}. "
+                                      f"Expected update hyperparameter "
+                                      f"to be in {component.get_hyperparameter_search_space(dataset_properties=self.dataset_properties).get_hyperparameter_names()}"
+                                      f" got {split_hyperparameter[1]}")
             else:
                 if update.hyperparameter not in node.get_hyperparameter_search_space(
                         dataset_properties=self.dataset_properties):
@@ -471,13 +468,11 @@ class BasePipeline(Pipeline):
                             node.get_hyperparameter_search_space(
                                 dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
                         continue
-                    raise ValueError("Unknown hyperparameter for component {}. "
-                                     "Expected update hyperparameter "
-                                     "to be in {} got {}".format(node.__class__.__name__,
-                                                                 node.
-                                                                 get_hyperparameter_search_space(
-                                                                     dataset_properties=self.dataset_properties).
-                                                                 get_hyperparameter_names(), update.hyperparameter))
+                    warnings.warn(f"Ignoring update {update}."
+                                  f"Unknown hyperparameter for component {node.__class__.__name__}. "
+                                  f"Expected update hyperparameter to be "
+                                  f"in {node.get_hyperparameter_search_space(dataset_properties=self.dataset_properties).get_hyperparameter_names()}"
+                                  f" got {update.hyperparameter}")
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
                             ) -> List[Tuple[str, PipelineStepType]]:
