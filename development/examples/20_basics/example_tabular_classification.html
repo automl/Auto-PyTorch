@@ -187,7 +187,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fcb49398130&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2712518fd0&gt;
 </pre></div>
 </div>
 </section>
@@ -204,32 +204,27 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,QuantileTransformer,KitchenSink | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
-|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.16 |
-|  2 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,NoScaler,KitchenSink            | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.14 |
-|  3 | None                                                                                             | CBLearner                                                       |     0.1  |
-|  4 | None                                                                                             | SVMLearner                                                      |     0.08 |
-|  5 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,NoScaler,KitchenSink            | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
-|  6 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,NoScaler,KitchenSink            | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.06 |
-|  7 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,SRC                    | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.04 |
-|  8 | None                                                                                             | LGBMLearner                                                     |     0.04 |
-|  9 | None                                                                                             | RFLearner                                                       |     0.04 |
-| 10 | None                                                                                             | KNNLearner                                                      |     0.04 |
+|  0 | None                                                                                             | CBLearner                                                       |     0.32 |
+|  1 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,QuantileTransformer,KitchenSink | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.2  |
+|  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,SRC                    | embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.2  |
+|  3 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,NoScaler,KitchenSink            | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.12 |
+|  4 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,QuantileTransformer,KitchenSink | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  5 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,QuantileTransformer,KitchenSink | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 20
-        Number of successful target algorithm runs: 18
+        Number of target algorithm runs: 21
+        Number of successful target algorithm runs: 19
         Number of crashed target algorithm runs: 0
         Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  32.091 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  20.869 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>

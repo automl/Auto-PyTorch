@@ -139,7 +139,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fcbdc95a250>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f27123d2940>
 
 
 
@@ -171,21 +171,23 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.861271676300578}
-    |    | Preprocessing   | Estimator   |   Weight |
-    |---:|:----------------|:------------|---------:|
-    |  0 | None            | CBLearner   |     0.76 |
-    |  1 | None            | SVMLearner  |     0.12 |
-    |  2 | None            | KNNLearner  |     0.06 |
-    |  3 | None            | ETLearner   |     0.04 |
-    |  4 | None            | RFLearner   |     0.02 |
+    {'accuracy': 0.8497109826589595}
+    |    | Preprocessing                                                                                        | Estimator                                                          |   Weight |
+    |---:|:-----------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+    |  0 | None                                                                                                 | SVMLearner                                                         |     0.38 |
+    |  1 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,StandardScaler,RandomTreesEmbedding | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.2  |
+    |  2 | None                                                                                                 | RFLearner                                                          |     0.16 |
+    |  3 | None                                                                                                 | CBLearner                                                          |     0.1  |
+    |  4 | None                                                                                                 | ETLearner                                                          |     0.06 |
+    |  5 | None                                                                                                 | KNNLearner                                                         |     0.06 |
+    |  6 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing     | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     autoPyTorch results:
-            Dataset name: bc693a22-9ba5-11ec-87e5-c7420ab3e9b2
+            Dataset name: b8bbd78a-9f9f-11ec-87f1-01dea1401669
             Optimisation Metric: accuracy
-            Best validation score: 0.8654970760233918
-            Number of target algorithm runs: 14
-            Number of successful target algorithm runs: 12
-            Number of crashed target algorithm runs: 1
+            Best validation score: 0.8713450292397661
+            Number of target algorithm runs: 17
+            Number of successful target algorithm runs: 14
+            Number of crashed target algorithm runs: 2
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -250,7 +252,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fcb4807d070>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f27118a3cd0>
 
 
 
@@ -288,13 +290,13 @@ Print the final ensemble performance
     |  0 | None            | TabularTraditionalModel |     0.98 |
     |  1 | None            | TabularTraditionalModel |     0.02 |
     autoPyTorch results:
-            Dataset name: 2a965f67-9ba6-11ec-87e5-c7420ab3e9b2
+            Dataset name: 23f0f004-9fa0-11ec-87f1-01dea1401669
             Optimisation Metric: accuracy
             Best validation score: 0.8742452475491833
-            Number of target algorithm runs: 12
-            Number of successful target algorithm runs: 7
-            Number of crashed target algorithm runs: 2
-            Number of target algorithms that exceeded the time limit: 3
+            Number of target algorithm runs: 14
+            Number of successful target algorithm runs: 8
+            Number of crashed target algorithm runs: 4
+            Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -360,7 +362,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fcb49021c40>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f27116ffb50>
 
 
 
@@ -392,20 +394,21 @@ Print the final ensemble performance
  .. code-block:: none
 
     {'accuracy': 0.8670520231213873}
-    |    | Preprocessing   | Estimator   |   Weight |
-    |---:|:----------------|:------------|---------:|
-    |  0 | None            | LGBMLearner |     0.36 |
-    |  1 | None            | CBLearner   |     0.26 |
-    |  2 | None            | KNNLearner  |     0.24 |
-    |  3 | None            | ETLearner   |     0.08 |
-    |  4 | None            | RFLearner   |     0.06 |
+    |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
+    |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | None                                                                                             | LGBMLearner                                                     |     0.38 |
+    |  1 | None                                                                                             | CBLearner                                                       |     0.28 |
+    |  2 | None                                                                                             | KNNLearner                                                      |     0.2  |
+    |  3 | None                                                                                             | RFLearner                                                       |     0.08 |
+    |  4 | None                                                                                             | ETLearner                                                       |     0.04 |
+    |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: 9e90662e-9ba6-11ec-87e5-c7420ab3e9b2
+            Dataset name: 8e23063b-9fa0-11ec-87f1-01dea1401669
             Optimisation Metric: accuracy
             Best validation score: 0.847953216374269
-            Number of target algorithm runs: 14
-            Number of successful target algorithm runs: 12
-            Number of crashed target algorithm runs: 1
+            Number of target algorithm runs: 18
+            Number of successful target algorithm runs: 15
+            Number of crashed target algorithm runs: 2
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -416,7 +419,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 9 minutes  8.712 seconds)
+   **Total running time of the script:** ( 8 minutes  43.592 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:

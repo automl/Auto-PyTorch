@@ -364,10 +364,10 @@ pipelines fit on each fold.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_classification.TabularClassificationTask.get_dataset">
-<span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.resampling_strategy.CrossValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.HoldoutValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.NoResamplingStrategyTypes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_dataset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.resampling_strategy.CrossValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.HoldoutValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.NoResamplingStrategyTypes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_compression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_classification.TabularClassificationTask.get_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an object of a child class of <cite>BaseDataset</cite> according to the current task.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
+<dl>
+<dt>Args:</dt><dd><dl>
 <dt>X_train (Union[List, pd.DataFrame, np.ndarray]):</dt><dd><p>Training feature set.</p>
 </dd>
 <dt>y_train (Union[List, pd.DataFrame, np.ndarray]):</dt><dd><p>Training target set.</p>
@@ -384,6 +384,48 @@ the default values provided in DEFAULT_RESAMPLING_PARAMETERS
 in <code class="docutils literal notranslate"><span class="pre">`datasets/resampling_strategy.py`</span></code>.</p>
 </dd>
 <dt>dataset_name (Optional[str]):</dt><dd><p>name of the dataset, used as experiment name.</p>
+</dd>
+<dt>dataset_compression (Optional[DatasetCompressionSpec]):</dt><dd><p>We compress datasets so that they fit into some predefined amount of memory.
+<strong>NOTE</strong></p>
+<p>You can also pass your own configuration with the same keys and choosing
+from the available <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+The available options are described here:
+<strong>memory_allocation</strong></p>
+<blockquote>
+<div><p>Absolute memory in MB, e.g. 10MB is <code class="docutils literal notranslate"><span class="pre">&quot;memory_allocation&quot;:</span> <span class="pre">10</span></code>.
+The memory used by the dataset is checked after each reduction method is
+performed. If the dataset fits into the allocated memory, any further methods
+listed in <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code> will not be performed.
+It can be either float or int.</p>
+</div></blockquote>
+<dl>
+<dt><strong>methods</strong></dt><dd><p>We currently provide the following methods for reducing the dataset size.
+These can be provided in a list and are performed in the order as given.
+*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> -</p>
+<blockquote>
+<div><dl class="simple">
+<dt>We reduce floating point precision as follows:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float128</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float96</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float64</span> <span class="pre">-&gt;</span> <span class="pre">np.float32</span></code></p></li>
+<li><p>pandas dataframes are reduced using the downcast option of <cite>pd.to_numeric</cite>
+to the lowest possible precision.</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">subsample</span></code> -
+We subsample data such that it <strong>fits directly into
+the memory allocation</strong> <code class="docutils literal notranslate"><span class="pre">memory_allocation</span> <span class="pre">*</span> <span class="pre">memory_limit</span></code>.
+Therefore, this should likely be the last method listed in
+<code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+Subsampling takes into account classification labels and stratifies
+accordingly. We guarantee that at least one occurrence of each
+label is included in the sampled set.</p></li>
+</ul>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -704,19 +746,34 @@ The memory used by the dataset is checked after each reduction method is
 performed. If the dataset fits into the allocated memory, any further methods
 listed in <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code> will not be performed.</p>
 </div></blockquote>
-<p><strong>methods</strong>
-We currently provide the following methods for reducing the dataset size.
+<dl>
+<dt><strong>methods</strong></dt><dd><p>We currently provide the following methods for reducing the dataset size.
 These can be provided in a list and are performed in the order as given.
-*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> - We reduce floating point precision as follows:</p>
+*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> -</p>
 <blockquote>
-<div><ul class="simple">
+<div><dl class="simple">
+<dt>We reduce floating point precision as follows:</dt><dd><ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float128</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float96</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float64</span> <span class="pre">-&gt;</span> <span class="pre">np.float32</span></code></p></li>
 <li><p>pandas dataframes are reduced using the downcast option of <cite>pd.to_numeric</cite>
 to the lowest possible precision.</p></li>
 </ul>
+</dd>
+</dl>
 </div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">subsample</span></code> -
+We subsample data such that it <strong>fits directly into
+the memory allocation</strong> <code class="docutils literal notranslate"><span class="pre">memory_allocation</span> <span class="pre">*</span> <span class="pre">memory_limit</span></code>.
+Therefore, this should likely be the last method listed in
+<code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+Subsampling takes into account classification labels and stratifies
+accordingly. We guarantee that at least one occurrence of each
+label is included in the sampled set.</p></li>
+</ul>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -1010,10 +1067,10 @@ pipelines fit on each fold.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="autoPyTorch.api.tabular_regression.TabularRegressionTask.get_dataset">
-<span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.resampling_strategy.CrossValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.HoldoutValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.NoResamplingStrategyTypes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_dataset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">autoPyTorch.datasets.resampling_strategy.CrossValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.HoldoutValTypes</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">autoPyTorch.datasets.resampling_strategy.NoResamplingStrategyTypes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampling_strategy_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_compression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">autoPyTorch.datasets.base_dataset.BaseDataset</span></span></span><a class="headerlink" href="#autoPyTorch.api.tabular_regression.TabularRegressionTask.get_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an object of a child class of <cite>BaseDataset</cite> according to the current task.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
+<dl>
+<dt>Args:</dt><dd><dl>
 <dt>X_train (Union[List, pd.DataFrame, np.ndarray]):</dt><dd><p>Training feature set.</p>
 </dd>
 <dt>y_train (Union[List, pd.DataFrame, np.ndarray]):</dt><dd><p>Training target set.</p>
@@ -1030,6 +1087,48 @@ the default values provided in DEFAULT_RESAMPLING_PARAMETERS
 in <code class="docutils literal notranslate"><span class="pre">`datasets/resampling_strategy.py`</span></code>.</p>
 </dd>
 <dt>dataset_name (Optional[str]):</dt><dd><p>name of the dataset, used as experiment name.</p>
+</dd>
+<dt>dataset_compression (Optional[DatasetCompressionSpec]):</dt><dd><p>We compress datasets so that they fit into some predefined amount of memory.
+<strong>NOTE</strong></p>
+<p>You can also pass your own configuration with the same keys and choosing
+from the available <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+The available options are described here:
+<strong>memory_allocation</strong></p>
+<blockquote>
+<div><p>Absolute memory in MB, e.g. 10MB is <code class="docutils literal notranslate"><span class="pre">&quot;memory_allocation&quot;:</span> <span class="pre">10</span></code>.
+The memory used by the dataset is checked after each reduction method is
+performed. If the dataset fits into the allocated memory, any further methods
+listed in <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code> will not be performed.
+It can be either float or int.</p>
+</div></blockquote>
+<dl>
+<dt><strong>methods</strong></dt><dd><p>We currently provide the following methods for reducing the dataset size.
+These can be provided in a list and are performed in the order as given.
+*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> -</p>
+<blockquote>
+<div><dl class="simple">
+<dt>We reduce floating point precision as follows:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float128</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float96</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">np.float64</span> <span class="pre">-&gt;</span> <span class="pre">np.float32</span></code></p></li>
+<li><p>pandas dataframes are reduced using the downcast option of <cite>pd.to_numeric</cite>
+to the lowest possible precision.</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">subsample</span></code> -
+We subsample data such that it <strong>fits directly into
+the memory allocation</strong> <code class="docutils literal notranslate"><span class="pre">memory_allocation</span> <span class="pre">*</span> <span class="pre">memory_limit</span></code>.
+Therefore, this should likely be the last method listed in
+<code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+Subsampling takes into account classification labels and stratifies
+accordingly. We guarantee that at least one occurrence of each
+label is included in the sampled set.</p></li>
+</ul>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -1350,19 +1449,34 @@ The memory used by the dataset is checked after each reduction method is
 performed. If the dataset fits into the allocated memory, any further methods
 listed in <code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code> will not be performed.</p>
 </div></blockquote>
-<p><strong>methods</strong>
-We currently provide the following methods for reducing the dataset size.
+<dl>
+<dt><strong>methods</strong></dt><dd><p>We currently provide the following methods for reducing the dataset size.
 These can be provided in a list and are performed in the order as given.
-*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> - We reduce floating point precision as follows:</p>
+*   <code class="docutils literal notranslate"><span class="pre">&quot;precision&quot;</span></code> -</p>
 <blockquote>
-<div><ul class="simple">
+<div><dl class="simple">
+<dt>We reduce floating point precision as follows:</dt><dd><ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float128</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float96</span> <span class="pre">-&gt;</span> <span class="pre">np.float64</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">np.float64</span> <span class="pre">-&gt;</span> <span class="pre">np.float32</span></code></p></li>
 <li><p>pandas dataframes are reduced using the downcast option of <cite>pd.to_numeric</cite>
 to the lowest possible precision.</p></li>
 </ul>
+</dd>
+</dl>
 </div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">subsample</span></code> -
+We subsample data such that it <strong>fits directly into
+the memory allocation</strong> <code class="docutils literal notranslate"><span class="pre">memory_allocation</span> <span class="pre">*</span> <span class="pre">memory_limit</span></code>.
+Therefore, this should likely be the last method listed in
+<code class="docutils literal notranslate"><span class="pre">&quot;methods&quot;</span></code>.
+Subsampling takes into account classification labels and stratifies
+accordingly. We guarantee that at least one occurrence of each
+label is included in the sampled set.</p></li>
+</ul>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>

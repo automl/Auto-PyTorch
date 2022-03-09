@@ -125,7 +125,8 @@
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_validator</span> <span class="kn">import</span> <span class="n">TabularInputValidator</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.utils</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">get_dataset_compression_mapping</span>
+    <span class="n">DatasetCompressionSpec</span><span class="p">,</span>
+    <span class="n">get_dataset_compression_mapping</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
@@ -280,7 +281,7 @@
         <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResamplingStrategies</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetCompressionSpec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TabularDataset</span><span class="p">,</span> <span class="n">TabularInputValidator</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns an object of `TabularDataset` and an object of</span>
@@ -304,6 +305,9 @@
 <span class="sd">                in ```datasets/resampling_strategy.py```.</span>
 <span class="sd">            dataset_name (Optional[str]):</span>
 <span class="sd">                name of the dataset, used as experiment name.</span>
+<span class="sd">            dataset_compression (Optional[DatasetCompressionSpec]):</span>
+<span class="sd">                specifications for dataset compression. For more info check</span>
+<span class="sd">                documentation for `BaseTask.get_dataset`.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            TabularDataset:</span>
 <span class="sd">                the dataset object.</span>
@@ -510,14 +514,23 @@
 <span class="sd">                    listed in ``&quot;methods&quot;`` will not be performed.</span>
 
 <span class="sd">                **methods**</span>
-<span class="sd">                We currently provide the following methods for reducing the dataset size.</span>
-<span class="sd">                These can be provided in a list and are performed in the order as given.</span>
-<span class="sd">                *   ``&quot;precision&quot;`` - We reduce floating point precision as follows:</span>
-<span class="sd">                    *   ``np.float128 -&gt; np.float64``</span>
-<span class="sd">                    *   ``np.float96 -&gt; np.float64``</span>
-<span class="sd">                    *   ``np.float64 -&gt; np.float32``</span>
-<span class="sd">                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`</span>
-<span class="sd">                        to the lowest possible precision.</span>
+<span class="sd">                    We currently provide the following methods for reducing the dataset size.</span>
+<span class="sd">                    These can be provided in a list and are performed in the order as given.</span>
+<span class="sd">                    *   ``&quot;precision&quot;`` -</span>
+<span class="sd">                        We reduce floating point precision as follows:</span>
+<span class="sd">                            *   ``np.float128 -&gt; np.float64``</span>
+<span class="sd">                            *   ``np.float96 -&gt; np.float64``</span>
+<span class="sd">                            *   ``np.float64 -&gt; np.float32``</span>
+<span class="sd">                            *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`</span>
+<span class="sd">                                to the lowest possible precision.</span>
+<span class="sd">                    *   ``subsample`` -</span>
+<span class="sd">                        We subsample data such that it **fits directly into</span>
+<span class="sd">                        the memory allocation** ``memory_allocation * memory_limit``.</span>
+<span class="sd">                        Therefore, this should likely be the last method listed in</span>
+<span class="sd">                        ``&quot;methods&quot;``.</span>
+<span class="sd">                        Subsampling takes into account classification labels and stratifies</span>
+<span class="sd">                        accordingly. We guarantee that at least one occurrence of each</span>
+<span class="sd">                        label is included in the sampled set.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
