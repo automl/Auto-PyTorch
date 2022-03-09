@@ -18,7 +18,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
@@ -257,6 +257,9 @@ class TrainerChoice(autoPyTorchChoice):
         if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+
+        labels = self._get_train_label(X)
+
         self.choice.prepare(
             model=X['network'],
             metrics=metrics,
@@ -268,7 +271,7 @@ class TrainerChoice(autoPyTorchChoice):
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
+            labels=labels,
             step_interval=X['step_interval']
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
@@ -380,6 +383,21 @@ class TrainerChoice(autoPyTorchChoice):
         self.fitted_ = True
 
         return self
+
+    def _get_train_label(self, X: Dict[str, Any]) -> List[int]:
+        """
+        Verifies and validates the labels from train split.
+        """
+        # Ensure that the split is not missing any class.
+        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
+            unique_labels = len(np.unique(labels))
+            if unique_labels < X['dataset_properties']['output_shape']:
+                raise ValueError(f"Expected number of unique labels {unique_labels} in train split: {X['split_id']}"
+                                 f" to be = num_classes {X['dataset_properties']['output_shape']}."
+                                 f" Consider using stratified splitting strategies.")
+
+        return labels
 
     def _load_best_weights_and_clean_checkpoints(self, X: Dict[str, Any]) -> None:
         """

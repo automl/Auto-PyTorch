@@ -12,7 +12,8 @@ from autoPyTorch.constants import (
 )
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.utils import (
-    get_dataset_compression_mapping
+    DatasetCompressionSpec,
+    get_dataset_compression_mapping,
 )
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.resampling_strategy import (
@@ -167,7 +168,7 @@ class TabularRegressionTask(BaseTask):
         resampling_strategy: Optional[ResamplingStrategies] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
-        dataset_compression: Optional[Mapping[str, Any]] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -191,6 +192,9 @@ class TabularRegressionTask(BaseTask):
                 in ```datasets/resampling_strategy.py```.
             dataset_name (Optional[str]):
                 name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                specifications for dataset compression. For more info check
+                documentation for `BaseTask.get_dataset`.
         Returns:
             TabularDataset:
                 the dataset object.
@@ -397,14 +401,23 @@ class TabularRegressionTask(BaseTask):
                     listed in ``"methods"`` will not be performed.
 
                 **methods**
-                We currently provide the following methods for reducing the dataset size.
-                These can be provided in a list and are performed in the order as given.
-                *   ``"precision"`` - We reduce floating point precision as follows:
-                    *   ``np.float128 -> np.float64``
-                    *   ``np.float96 -> np.float64``
-                    *   ``np.float64 -> np.float32``
-                    *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
-                        to the lowest possible precision.
+                    We currently provide the following methods for reducing the dataset size.
+                    These can be provided in a list and are performed in the order as given.
+                    *   ``"precision"`` -
+                        We reduce floating point precision as follows:
+                            *   ``np.float128 -> np.float64``
+                            *   ``np.float96 -> np.float64``
+                            *   ``np.float64 -> np.float32``
+                            *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                                to the lowest possible precision.
+                    *   ``subsample`` -
+                        We subsample data such that it **fits directly into
+                        the memory allocation** ``memory_allocation * memory_limit``.
+                        Therefore, this should likely be the last method listed in
+                        ``"methods"``.
+                        Subsampling takes into account classification labels and stratifies
+                        accordingly. We guarantee that at least one occurrence of each
+                        label is included in the sampled set.
 
         Returns:
             self

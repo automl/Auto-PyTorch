@@ -15,6 +15,8 @@ import pandas as pd
 
 import pytest
 
+from scipy import sparse
+
 from sklearn.datasets import fetch_openml, make_classification, make_regression
 
 import torch
@@ -466,3 +468,150 @@ def loss_details(request):
 @pytest.fixture
 def n_samples():
     return N_SAMPLES
+
+
+# Fixtures for input validators. By default all elements have 100 datapoints
+@pytest.fixture
+def input_data_featuretest(request):
+    if request.param == 'numpy_categoricalonly_nonan':
+        return np.random.randint(10, size=(100, 10))
+    elif request.param == 'numpy_numericalonly_nonan':
+        return np.random.uniform(10, size=(100, 10))
+    elif request.param == 'numpy_mixed_nonan':
+        return np.column_stack([
+            np.random.uniform(10, size=(100, 3)),
+            np.random.randint(10, size=(100, 3)),
+            np.random.uniform(10, size=(100, 3)),
+            np.random.randint(10, size=(100, 1)),
+        ])
+    elif request.param == 'numpy_string_nonan':
+        return np.array([
+            ['a', 'b', 'c', 'a', 'b', 'c'],
+            ['a', 'b', 'd', 'r', 'b', 'c'],
+        ])
+    elif request.param == 'numpy_categoricalonly_nan':
+        array = np.random.randint(10, size=(100, 10)).astype('float')
+        array[50, 0:5] = np.nan
+        return array
+    elif request.param == 'numpy_numericalonly_nan':
+        array = np.full(fill_value=10.0, shape=(100, 10), dtype=np.float64)
+        array[50, 0:5] = np.nan
+        # Somehow array is changed to dtype object after np.nan
+        return array.astype('float')
+    elif request.param == 'numpy_mixed_nan':
+        array = np.column_stack([
+            np.random.uniform(10, size=(100, 3)),
+            np.random.randint(10, size=(100, 3)),
+            np.random.uniform(10, size=(100, 3)),
+            np.random.randint(10, size=(100, 1)),
+        ])
+        array[50, 0:5] = np.nan
+        return array
+    elif request.param == 'numpy_string_nan':
+        return np.array([
+            ['a', 'b', 'c', 'a', 'b', 'c'],
+            [np.nan, 'b', 'd', 'r', 'b', 'c'],
+        ])
+    elif request.param == 'pandas_categoricalonly_nonan':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category')
+    elif request.param == 'pandas_numericalonly_nonan':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='float')
+    elif request.param == 'pandas_mixed_nonan':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category')
+        frame['B'] = pd.to_numeric(frame['B'])
+        return frame
+    elif request.param == 'pandas_categoricalonly_nan':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2, 'C': np.nan},
+            {'A': 3, 'C': np.nan},
+        ], dtype='category')
+    elif request.param == 'pandas_numericalonly_nan':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2, 'C': np.nan},
+            {'A': 3, 'C': np.nan},
+        ], dtype='float')
+    elif request.param == 'pandas_mixed_nan':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': 2, 'C': 8},
+            {'A': 3, 'B': 4},
+        ], dtype='category')
+        frame['B'] = pd.to_numeric(frame['B'])
+        return frame
+    elif request.param == 'pandas_string_nonan':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='string')
+    elif request.param == 'list_categoricalonly_nonan':
+        return [
+            ['a', 'b', 'c', 'd'],
+            ['e', 'f', 'c', 'd'],
+        ]
+    elif request.param == 'list_numericalonly_nonan':
+        return [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8]
+        ]
+    elif request.param == 'list_mixed_nonan':
+        return [
+            ['a', 2, 3, 4],
+            ['b', 6, 7, 8]
+        ]
+    elif request.param == 'list_categoricalonly_nan':
+        return [
+            ['a', 'b', 'c', np.nan],
+            ['e', 'f', 'c', 'd'],
+        ]
+    elif request.param == 'list_numericalonly_nan':
+        return [
+            [1, 2, 3, np.nan],
+            [5, 6, 7, 8]
+        ]
+    elif request.param == 'list_mixed_nan':
+        return [
+            ['a', np.nan, 3, 4],
+            ['b', 6, 7, 8]
+        ]
+    elif 'sparse' in request.param:
+        # We expect the names to be of the type sparse_csc_nonan
+        sparse_, type_, nan_ = request.param.split('_')
+        if 'nonan' in nan_:
+            data = np.ones(3)
+        else:
+            data = np.array([1, 2, np.nan])
+
+        # Then the type of sparse
+        row_ind = np.array([0, 1, 2])
+        col_ind = np.array([1, 2, 1])
+        if 'csc' in type_:
+            return sparse.csc_matrix((data, (row_ind, col_ind)))
+        elif 'csr' in type_:
+            return sparse.csr_matrix((data, (row_ind, col_ind)))
+        elif 'coo' in type_:
+            return sparse.coo_matrix((data, (row_ind, col_ind)))
+        elif 'bsr' in type_:
+            return sparse.bsr_matrix((data, (row_ind, col_ind)))
+        elif 'lil' in type_:
+            return sparse.lil_matrix((data))
+        elif 'dok' in type_:
+            return sparse.dok_matrix(np.vstack((data, data, data)))
+        elif 'dia' in type_:
+            return sparse.dia_matrix(np.vstack((data, data, data)))
+        else:
+            ValueError("Unsupported indirect fixture {}".format(request.param))
+    elif 'openml' in request.param:
+        _, openml_id = request.param.split('_')
+        X, y = fetch_openml(data_id=int(openml_id),
+                            return_X_y=True, as_frame=True)
+        return X
+    else:
+        ValueError("Unsupported indirect fixture {}".format(request.param))
