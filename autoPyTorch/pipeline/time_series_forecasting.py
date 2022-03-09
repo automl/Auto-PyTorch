@@ -203,45 +203,39 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             ar_forbidden = True
 
-            hp_auto_regressive = []
+            hp_deepAR = []
             for hp_name in cs.get_hyperparameter_names():
                 if hp_name.startswith('network_backbone:'):
                     if hp_name.endswith(':auto_regressive'):
-                        hp_auto_regressive.append(cs.get_hyperparameter(hp_name))
+                        hp_deepAR.append(cs.get_hyperparameter(hp_name))
 
-            # Auto-Regressive is incompatible with regression losses
+            # DeepAR
             forbidden_losses_all = []
-            if 'RegressionLoss' in hp_loss.choices:
-                forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
-                for hp_ar in hp_auto_regressive:
+            losses_non_ar = []
+            for loss in hp_loss.choices:
+                if loss != "DistributionLoss":
+                    losses_non_ar.append(loss)
+            if losses_non_ar:
+                forbidden_hp_regression_loss = ForbiddenInClause(hp_loss, losses_non_ar)
+                for hp_ar in hp_deepAR:
                     forbidden_hp_dist = ForbiddenEqualsClause(hp_ar, ar_forbidden)
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
                     forbidden_losses_all.append(forbidden_hp_dist)
 
+            network_flat_encoder_hp = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
 
-            network_encoder_hp = cs.get_hyperparameter('network_backbone:__choice__')
-
-            if 'MLPEncoder' in network_encoder_hp.choices:
+            if 'MLPEncoder' in network_flat_encoder_hp.choices:
                 forbidden = ['MLPEncoder']
-                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
-                for hp_ar in hp_auto_regressive:
+                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices]
+                for hp_ar in hp_deepAR:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                    forbidden_hp_mlpencoder = ForbiddenInClause(network_encoder_hp, forbidden_deepAREncoder)
-                    forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
-                    forbidden_losses_all.append(forbidden_hp_ar_mlp)
-
-            if 'MLPEncoder' in network_encoder_hp.choices:
-                forbidden = ['MLPEncoder']
-                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_encoder_hp.choices]
-                for hp_ar in hp_auto_regressive:
-                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                    forbidden_hp_mlpencoder = ForbiddenInClause(network_encoder_hp, forbidden_deepAREncoder)
+                    forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
                     forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
                     forbidden_losses_all.append(forbidden_hp_ar_mlp)
 
             forecast_strategy = cs.get_hyperparameter('loss:DistributionLoss:forecast_strategy')
             if 'mean' in forecast_strategy.choices:
-                for hp_ar in hp_auto_regressive:
+                for hp_ar in hp_deepAR:
                     forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
                     forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
                     forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
@@ -251,6 +245,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             cs.add_forbidden_clauses(forbidden_losses_all)
 
             # NBEATS
+            network_encoder_hp = cs.get_hyperparameter("network_backbone:__choice__")
             forbidden_NBEATS = []
             encoder_non_BEATS = [choice for choice in network_encoder_hp.choices if choice != 'flat_encoder']
             loss_non_regression = [choice for choice in hp_loss.choices if choice != 'RegressionLoss']
@@ -259,10 +254,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             forbidden_encoder_NBEATS = ForbiddenInClause(network_encoder_hp, encoder_non_BEATS)
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
-            forbidden_backcast_false = ForbiddenEqualsClause(data_loader_backcast, False)
 
-            hp_flat_encoder =  cs.get_hyperparameter("network_backbone:flat_encoder:__choice__")
-
+            hp_flat_encoder = cs.get_hyperparameter("network_backbone:flat_encoder:__choice__")
 
             # Ensure that NBEATS encoder only works with NBEATS decoder
             if 'NBEATSEncoder' in hp_flat_encoder.choices:
@@ -276,24 +269,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ))
 
             cs.add_forbidden_clauses(forbidden_NBEATS)
-
-        """
-        # rnn head only allow rnn backbone
-        if 'network_encoder' in self.named_steps.keys() and 'network_decoder' in self.named_steps.keys():
-            hp_encoder_choice = cs.get_hyperparameter('network_encoder:__choice__')
-            hp_decoder_choice = cs.get_hyperparameter('network_decoder:__choice__')
-
-            if 'RNNDecoder' in hp_decoder_choice.choices:
-                if len(hp_decoder_choice.choices) == 1 and 'RNNEncoder' not in hp_encoder_choice.choices:
-                    raise ValueError("RNN Header is only compatible with RNNBackbone, RNNHead is not allowed to be "
-                                     "the only network head choice if the backbone choices do not contain RNN!")
-                encoder_choices = [choice for choice in hp_encoder_choice.choices if choice != 'RNNEncoder']
-                forbidden_clause_encoder = ForbiddenInClause(hp_encoder_choice, encoder_choices)
-                forbidden_clause_decoder = ForbiddenEqualsClause(hp_decoder_choice, 'RNNDecoder')
-
-                cs.add_forbidden_clause(ForbiddenAndConjunction(forbidden_clause_encoder, forbidden_clause_decoder))
-            cs.get_hyperparameter_names()
-        """
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
