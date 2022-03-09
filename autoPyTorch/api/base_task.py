@@ -125,6 +125,97 @@ def get_search_updates(categorical_indicator: List[bool]):
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
+
+    resnet_backbone_choices = ['ShapedResNetBackbone', 'ResNetBackbone']
+    for resnet_backbone in resnet_backbone_choices:
+        search_space_updates.append(
+            node_name='network_backbone',
+            hyperparameter=f'{resnet_backbone}:use_skip_connection',
+            value_range=[True],
+            default_value=True,
+        )
+        search_space_updates.append(
+            node_name='network_backbone',
+            hyperparameter=f'{resnet_backbone}:use_batch_norm',
+            value_range=[True],
+            default_value=True,
+        )
+        search_space_updates.append(
+            node_name='network_backbone',
+            hyperparameter=f'{resnet_backbone}:shake_shake_update_func',
+            value_range=['shake-shake'],
+            default_value='shake-shake',
+        )
+
+    # training updates
+    search_space_updates.append(
+        node_name='data_loader',
+        hyperparameter='batch_size',
+        value_range=[16, 512],
+        default_value=128,
+        log=True
+    )
+
+    # preprocessing
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='__choice__',
+        value_range=['NoFeaturePreprocessor', 'TruncatedSVD'],
+        default_value='NoFeaturePreprocessor',
+    )
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='TruncatedSVD:target_dim',
+        value_range=[0.1, 0.9],
+        default_value=0.4,
+    )
+    search_space_updates.append(
+        node_name='imputer',
+        hyperparameter='numerical_strategy',
+        value_range=['mean'],
+        default_value='mean',
+    )
+    search_space_updates.append(
+        node_name='scaler',
+        hyperparameter='__choice__',
+        value_range=['StandardScaler'],
+        default_value='StandardScaler',
+    )
+    search_space_updates.append(
+        node_name='encoder',
+        hyperparameter='__choice__',
+        value_range=['OneHotEncoder'],
+        default_value='OneHotEncoder',
+    )
+    # trainer
+    trainer_choices = ['StandardTrainer', 'MixUpTrainer']
+    search_space_updates.append(
+        node_name='trainer',
+        hyperparameter='__choice__',
+        value_range=trainer_choices,
+        default_value=trainer_choices[0],
+    )
+    for trainer_choice in trainer_choices:
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_lookahead_optimizer',
+            value_range=[False],
+            default_value=False,
+        )
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_snapshot_ensemble',
+            value_range=[False],
+            default_value=False,
+        )
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_stochastic_weight_averaging',
+            value_range=[False],
+            default_value=False,
+        )
+
+
     return search_space_updates
 
 
