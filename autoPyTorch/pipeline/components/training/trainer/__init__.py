@@ -323,7 +323,7 @@ class TrainerChoice(autoPyTorchChoice):
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=labels,
-            step_interval=X['step_interval']
+            step_interval=X['step_interval'],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
                 'dataset_properties'] else None
         )
