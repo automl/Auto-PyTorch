@@ -21,6 +21,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
 )
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -191,6 +192,15 @@ class TrainEvaluator(AbstractEvaluator):
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
+
+            # add learning curve of configurations to additional_run_info
+            if isinstance(pipeline, TabularClassificationPipeline):
+                run_summary = pipeline.named_steps['trainer'].run_summary
+                split_types = ['train', 'val', 'test']
+                additional_run_info['run_summary'] = dict()
+                for split_type in split_types:
+                    additional_run_info['run_summary'][f'{split_type}_loss'] = run_summary.performance_tracker[f'{split_type}_loss']
+                    additional_run_info['run_summary'][f'{split_type}_metrics'] = run_summary.performance_tracker[f'{split_type}_metrics']
 
             status = StatusType.SUCCESS
 
