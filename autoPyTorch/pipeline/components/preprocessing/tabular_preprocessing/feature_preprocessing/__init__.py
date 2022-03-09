@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from typing import Dict, List, Optional
+import warnings
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -177,13 +178,17 @@ class FeatureProprocessorChoice(autoPyTorchChoice):
                                                                available_,
                                                                choice_hyperparameter.value_range))
             if len(numerical_columns) == 0:
-                assert len(choice_hyperparameter.value_range) == 1
-                assert 'NoFeaturePreprocessor' in choice_hyperparameter.value_range, \
-                    "Provided {} in choices, however, the dataset " \
-                    "is incompatible with it".format(choice_hyperparameter.value_range)
-            preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         choice_hyperparameter.value_range,
-                                                         default_value=choice_hyperparameter.default_value)
+                # assert len(choice_hyperparameter.value_range) == 1
+                if 'NoFeaturePreprocessor' not in choice_hyperparameter.value_range:
+                    warnings.warn("Provided {} in choices, however, the dataset "
+                                  "is incompatible with it, fixing it to `NoFeaturePreprocessor`".format(choice_hyperparameter.value_range))
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                            ['NoFeaturePreprocessor'],
+                                                            default_value='NoFeaturePreprocessor')
+            else:
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                            choice_hyperparameter.value_range,
+                                                            default_value=choice_hyperparameter.default_value)
         else:
             # add only no feature preprocessor to choice hyperparameters in case the dataset is only categorical
             if len(numerical_columns) == 0:

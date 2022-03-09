@@ -111,6 +111,20 @@ def _pipeline_predict(pipeline: BasePipeline,
     return prediction
 
 
+def get_search_updates():
+    """
+    These updates mimic the autopytorch tabular paper.
+    Returns:
+    ________
+    search_space_updates - HyperparameterSearchSpaceUpdates
+        The search space updates like setting different hps to different values or ranges.
+    """
+
+    search_space_updates = HyperparameterSearchSpaceUpdates()
+
+    return search_space_updates
+
+
 class BaseTask(ABC):
     """
     Base class for the tasks that serve as API to the pipelines.
@@ -249,7 +263,7 @@ class BaseTask(ABC):
 
         self.input_validator: Optional[BaseInputValidator] = None
 
-        self.search_space_updates = search_space_updates
+        self.search_space_updates = search_space_updates if search_space_updates is not None else get_search_updates()
         if search_space_updates is not None:
             if not isinstance(self.search_space_updates,
                               HyperparameterSearchSpaceUpdates):

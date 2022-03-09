@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from typing import Dict, List, Optional
+import warnings
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -86,15 +87,18 @@ class EncoderChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_preprocessors,
                                                                choice_hyperparameter.value_range))
-            if len(choice_hyperparameter) == 0:
-                assert len(choice_hyperparameter.value_range) == 1
-                assert 'NoEncoder' in choice_hyperparameter.value_range, \
-                    "Provided {} in choices, however, the dataset " \
-                    "is incompatible with it".format(choice_hyperparameter.value_range)
-
-            preprocessor = CSH.CategoricalHyperparameter('__choice__',
-                                                         choice_hyperparameter.value_range,
-                                                         default_value=choice_hyperparameter.default_value)
+            if len(categorical_columns) == 0:
+                # assert len(choice_hyperparameter.value_range) == 1
+                if 'NoEncoder' not in choice_hyperparameter.value_range:
+                    warnings.warn("Provided {} in choices, however, the dataset "
+                                  "is incompatible with it, fixing it to `NoEncoder`".format(choice_hyperparameter.value_range))
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                                ['NoEncoder'],
+                                                                default_value='NoEncoder')
+            else:
+                preprocessor = CSH.CategoricalHyperparameter('__choice__',
+                                                            choice_hyperparameter.value_range,
+                                                            default_value=choice_hyperparameter.default_value)
         else:
             # add only no encoder to choice hyperparameters in case the dataset is only numerical
             if len(categorical_columns) == 0:
