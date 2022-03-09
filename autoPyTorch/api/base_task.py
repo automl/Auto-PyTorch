@@ -121,6 +121,250 @@ def get_search_updates():
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
+    # architecture head
+    search_space_updates.append(
+        node_name='network_head',
+        hyperparameter='__choice__',
+        value_range=['no_head'],
+        default_value='no_head',
+    )
+    search_space_updates.append(
+        node_name='network_head',
+        hyperparameter='no_head:activation',
+        value_range=['relu'],
+        default_value='relu',
+    )
+
+    # weights initialisation
+    search_space_updates.append(
+        node_name='network_init',
+        hyperparameter='__choice__',
+        value_range=['NoInit'],
+        default_value='NoInit',
+    )
+    search_space_updates.append(
+        node_name='network_init',
+        hyperparameter='NoInit:bias_strategy',
+        value_range=['Zero'],
+        default_value='Zero',
+    )
+
+    # backbone architecture choices
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='__choice__',
+        value_range=['ShapedResNetBackbone', 'ShapedMLPBackbone'],
+        default_value='ShapedResNetBackbone',
+    )
+
+    # resnet backbone
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:resnet_shape',
+        value_range=['funnel'],
+        default_value='funnel',
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:num_groups',
+        value_range=[1, 4],
+        default_value=2,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:blocks_per_group',
+        value_range=[1, 3],
+        default_value=2,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:output_dim',
+        value_range=[32, 512],
+        default_value=64,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:max_units',
+        value_range=[32, 512],
+        default_value=64,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:activation',
+        value_range=['relu'],
+        default_value='relu',
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:use_skip_connection',
+        value_range=[True],
+        default_value=True,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:use_batch_norm',
+        value_range=[True],
+        default_value=True,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:shake_shake_update_func',
+        value_range=['shake-shake'],
+        default_value='shake-shake',
+    )
+    # mlp backbone
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedMLPBackbone:mlp_shape',
+        value_range=['funnel'],
+        default_value='funnel',
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedMLPBackbone:num_groups',
+        value_range=[1, 5],
+        default_value=2,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedMLPBackbone:output_dim',
+        value_range=[64, 1024],
+        default_value=64,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedMLPBackbone:max_units',
+        value_range=[64, 1024],
+        default_value=64,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedMLPBackbone:activation',
+        value_range=['relu'],
+        default_value='relu',
+    )
+
+    # training updates
+    # lr scheduler
+    search_space_updates.append(
+        node_name='lr_scheduler',
+        hyperparameter='__choice__',
+        value_range=['CosineAnnealingLR'],
+        default_value='CosineAnnealingLR',
+    )
+    search_space_updates.append(
+        node_name='lr_scheduler',
+        hyperparameter='CosineAnnealingLR:T_max',
+        value_range=[50],
+        default_value=50,
+    )
+    # optimizer
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='__choice__',
+        value_range=['AdamOptimizer', 'SGDOptimizer'],
+        default_value='AdamOptimizer',
+    )
+    # adam
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='AdamOptimizer:lr',
+        value_range=[1e-4, 1e-1],
+        default_value=1e-3,
+        log=True
+    )
+    # sgd
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='SGDOptimizer:lr',
+        value_range=[1e-4, 1e-1],
+        default_value=1e-3,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='SGDOptimizer:weight_decay',
+        value_range=[1e-5, 1e-1],
+        default_value=1e-3,
+    )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='SGDOptimizer:momentum',
+        value_range=[0.1, 0.999],
+        default_value=0.1,
+        log=True
+    )
+    search_space_updates.append(
+        node_name='data_loader',
+        hyperparameter='batch_size',
+        value_range=[16, 512],
+        default_value=128,
+        log=True
+    )
+
+    # preprocessing
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='__choice__',
+        value_range=['NoFeaturePreprocessor', 'TruncatedSVD'],
+        default_value='NoFeaturePreprocessor',
+    )
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='TruncatedSVD:target_dim',
+        value_range=[0.1, 0.9],
+        default_value=0.4,
+    )
+    search_space_updates.append(
+        node_name='imputer',
+        hyperparameter='numerical_strategy',
+        value_range=['mean'],
+        default_value='mean',
+    )
+    search_space_updates.append(
+        node_name='scaler',
+        hyperparameter='__choice__',
+        value_range=['StandardScaler'],
+        default_value='StandardScaler',
+    )
+    search_space_updates.append(
+        node_name='encoder',
+        hyperparameter='__choice__',
+        value_range=['OneHotEncoder'],
+        default_value='OneHotEncoder',
+    )
+    # trainer
+    trainer_choices = ['StandardTrainer', 'MixUpTrainer']
+    search_space_updates.append(
+        node_name='trainer',
+        hyperparameter='__choice__',
+        value_range=trainer_choices,
+        default_value=trainer_choices[0],
+    )
+    for trainer_choice in trainer_choices:
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_lookahead_optimizer',
+            value_range=[False],
+            default_value=False,
+        )
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_snapshot_ensemble',
+            value_range=[False],
+            default_value=False,
+        )
+        search_space_updates.append(
+            node_name='trainer',
+            hyperparameter=f'{trainer_choice}:use_stochastic_weight_averaging',
+            value_range=[False],
+            default_value=False,
+        )
+
     return search_space_updates
 
 
