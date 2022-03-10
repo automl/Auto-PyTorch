@@ -56,15 +56,17 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         global_layers = []
         in_features = encoder_output_shape[-1]
         num_decoder_output_features = in_features
+        has_local_layer = 'units_local_layer' in self.config
         if 'num_layers' in self.config and self.config["num_layers"] > 0:
-            in_features += int(np.prod(future_variable_input))
-            for i in range(1, self.config["num_layers"]):
+            if not has_local_layer:
+                in_features += int(np.prod(future_variable_input))
+            for i in range(1, self.config["num_layers"] + 1):
                 global_layers.append(nn.Linear(in_features=in_features,
                                                out_features=self.config[f"units_layer_{i}"]))
                 global_layers.append(_activations[self.config["activation"]]())
                 in_features = self.config[f"units_layer_{i}"]
                 num_decoder_output_features = in_features
-        if 'units_local_layer' in self.config:
+        if has_local_layer:
             local_layers = [nn.Linear(in_features=in_features,
                                       out_features=self.config['units_local_layer'] * n_prediction_heads)]
             if 'activation' in self.config:

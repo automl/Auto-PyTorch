@@ -70,14 +70,14 @@ class TemporalFusionLayer(nn.Module):
                 hidden_size=n_encoder_output,
                 output_size=d_model,
                 dropout=dropout,
-                residual=True,
+                residual=False,
             )
             self.enrich_with_static = False
 
         self.attention_fusion = InterpretableMultiHeadAttention(
             d_model=d_model,
             n_head=n_head,
-            dropout=dropout
+            dropout=dropout or 0.0
         )
         self.post_attn_gate_norm = GateAddNorm(d_model, dropout=dropout, trainable_add=False)
         self.pos_wise_ff = GatedResidualNetwork(input_size=d_model, hidden_size=d_model,
@@ -423,7 +423,7 @@ class StackedEncoder(nn.Module):
                         fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
                     else:
                         if self.encoder_num_hidden_states[i] == 1:
-                            fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx.expand((rnn_num_layers, -1, -1)))
+                            fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx[0].expand((rnn_num_layers, -1, -1)))
                         else:
                             hx = tuple(hx_i.expand(rnn_num_layers, -1, -1) for hx_i in hx)
                             fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
@@ -434,7 +434,10 @@ class StackedEncoder(nn.Module):
                 else:
                     fx = encoder_i(x, output_seq=output_seq_i)
             if self.skip_connection:
-                fx = self.encoder[f'skip_connection_{block_id}'](fx, x)
+                if output_seq_i:
+                    fx = self.encoder[f'skip_connection_{block_id}'](fx, x)
+                else:
+                    fx = self.encoder[f'skip_connection_{block_id}'](fx, x[:, -1:])
 
             if self.encoder_output_type[i] == EncoderOutputForm.HiddenStates:
                 encoder2decoder.append(hx)
@@ -443,6 +446,8 @@ class StackedEncoder(nn.Module):
             elif self.encoder_output_type[i] == EncoderOutputForm.SequenceLast:
                 if output_seq or incremental_update:
                     encoder2decoder.append(fx)
+                elif output_seq_i:
+                    encoder2decoder.append(encoder_i.get_last_seq_value(fx).squeeze(1))
                 else:
                     encoder2decoder.append(fx.squeeze(1))
 

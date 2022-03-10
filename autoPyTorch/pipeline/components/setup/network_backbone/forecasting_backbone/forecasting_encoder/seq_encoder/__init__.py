@@ -414,6 +414,19 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 if forbidden_deep_ars:
                     cs.add_forbidden_clauses(forbidden_deep_ars)
 
+        if True in skip_connection.choices:
+            forbidden_mlp_skip = []
+            forbidden_skip = ForbiddenEqualsClause(skip_connection, True)
+            for i in range(1, max_num_blocks + 1):
+                hp_mlp_has_local_layer = f"block_{i}:MLPDecoder:has_local_layer"
+                if hp_mlp_has_local_layer in cs:
+                    hp_mlp_has_local_layer = cs.get_hyperparameter(hp_mlp_has_local_layer)
+                    forbidden_mlp_skip.append(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
+                        forbidden_skip
+                    ))
+            cs.add_forbidden_clauses(forbidden_mlp_skip)
+
         return cs
 
     def set_hyperparameters(self,

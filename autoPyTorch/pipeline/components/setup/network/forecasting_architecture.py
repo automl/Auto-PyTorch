@@ -373,6 +373,7 @@ class ForecastingNet(AbstractForecastingNet):
             batch_size = x_past.shape[0]
             if length_past > 0:
                 if past_features is None:
+                    length_past = x_past.shape[1]
                     x_past = {'past_targets': x_past.to(device=self.device),
                               'features': torch.zeros((batch_size, length_past, 1),
                                                       dtype=past_targets.dtype, device=self.device)}
