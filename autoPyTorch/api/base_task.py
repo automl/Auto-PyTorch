@@ -157,7 +157,7 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='network_backbone',
         hyperparameter='__choice__',
-        value_range=['ShapedResNetBackbone', 'ShapedMLPBackbone'],
+        value_range=['ShapedResNetBackbone'],
         default_value='ShapedResNetBackbone',
     )
 
@@ -197,40 +197,6 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='network_backbone',
         hyperparameter='ShapedResNetBackbone:activation',
-        value_range=['relu'],
-        default_value='relu',
-    )
-
-    # mlp backbone
-    search_space_updates.append(
-        node_name='network_backbone',
-        hyperparameter='ShapedMLPBackbone:mlp_shape',
-        value_range=['funnel'],
-        default_value='funnel',
-    )
-    search_space_updates.append(
-        node_name='network_backbone',
-        hyperparameter='ShapedMLPBackbone:num_groups',
-        value_range=[1, 5],
-        default_value=2,
-    )
-    search_space_updates.append(
-        node_name='network_backbone',
-        hyperparameter='ShapedMLPBackbone:output_dim',
-        value_range=[64, 1024],
-        default_value=64,
-        log=True
-    )
-    search_space_updates.append(
-        node_name='network_backbone',
-        hyperparameter='ShapedMLPBackbone:max_units',
-        value_range=[64, 1024],
-        default_value=64,
-        log=True
-    )
-    search_space_updates.append(
-        node_name='network_backbone',
-        hyperparameter='ShapedMLPBackbone:activation',
         value_range=['relu'],
         default_value='relu',
     )
