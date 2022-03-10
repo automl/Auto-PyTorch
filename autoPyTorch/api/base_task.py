@@ -126,26 +126,31 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
 
-    resnet_backbone_choices = ['ShapedResNetBackbone', 'ResNetBackbone']
-    for resnet_backbone in resnet_backbone_choices:
-        search_space_updates.append(
-            node_name='network_backbone',
-            hyperparameter=f'{resnet_backbone}:use_skip_connection',
-            value_range=[True],
-            default_value=True,
-        )
-        search_space_updates.append(
-            node_name='network_backbone',
-            hyperparameter=f'{resnet_backbone}:use_batch_norm',
-            value_range=[True],
-            default_value=True,
-        )
-        search_space_updates.append(
-            node_name='network_backbone',
-            hyperparameter=f'{resnet_backbone}:shake_shake_update_func',
-            value_range=['shake-shake'],
-            default_value='shake-shake',
-        )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='__choice__',
+        value_range=['ShapedResNetBackbone', 'ShapedMLPBackbone'],
+        default_value='ShapedResNetBackbone',
+    )
+
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:use_skip_connection',
+        value_range=[True],
+        default_value=True,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:use_batch_norm',
+        value_range=[True],
+        default_value=True,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:shake_shake_update_func',
+        value_range=['shake-shake'],
+        default_value='shake-shake',
+    )
 
     # training updates
     search_space_updates.append(
