@@ -52,9 +52,9 @@ def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
         length = min(tensor.size(0), seq_max_length)
         # use index notation to prevent duplicate references to the tensor
         if batch_first:
-            out_tensor[i, :length, ...] = tensor[-length:]
+            out_tensor[i, -length:, ...] = tensor[-length:]
         else:
-            out_tensor[length:, i, ...] = tensor[-length:]
+            out_tensor[-length:, i, ...] = tensor[-length:]
 
     return out_tensor
 
