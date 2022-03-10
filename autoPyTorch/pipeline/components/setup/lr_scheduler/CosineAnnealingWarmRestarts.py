@@ -64,6 +64,23 @@ class CosineAnnealingWarmRestarts(BaseLRComponent):
         )
         return self
 
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adds the scheduler into the fit dictionary 'X' and returns it.
+        Args:
+            X (Dict[str, Any]): 'X' dictionary
+        Returns:
+            (Dict[str, Any]): the updated 'X' dictionary
+        """
+
+        X.update(
+            lr_scheduler=self.scheduler,
+            step_interval=self.step_interval,
+            is_cyclic_scheduler=self.get_properties()['cyclic'],
+            n_restarts=self.n_restarts
+        )
+        return X
+
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:

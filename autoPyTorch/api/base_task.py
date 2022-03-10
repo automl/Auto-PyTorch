@@ -212,8 +212,8 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='lr_scheduler',
         hyperparameter='CosineAnnealingWarmRestarts:n_restarts',
-        value_range=[3],
-        default_value=3,
+        value_range=[1, 3],
+        default_value=2,
     )
     # optimizer
     search_space_updates.append(
