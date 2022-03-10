@@ -176,6 +176,12 @@ def get_search_updates(categorical_indicator: List[bool]):
     )
     search_space_updates.append(
         node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:max_dropout',
+        value_range=[0, 1],
+        default_value=0.5,
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
         hyperparameter='ShapedResNetBackbone:num_groups',
         value_range=[1, 4],
         default_value=2,
