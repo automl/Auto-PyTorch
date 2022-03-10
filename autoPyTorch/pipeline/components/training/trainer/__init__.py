@@ -340,7 +340,7 @@ class TrainerChoice(autoPyTorchChoice):
         labels = self._get_train_label(X)
 
         # NOTE: Hack to tie se_lastk to n_restarts
-        self.choice.se_lastk = X.get('n_restarts', None)
+        self.choice.se_lastk = X.get('n_restarts', 3)
         self.logger.debug(f"setting se_lastk to: {self.choice.se_lastk}")
         self.choice.prepare(
             model=X['network'],
