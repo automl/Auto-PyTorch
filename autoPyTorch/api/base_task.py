@@ -170,6 +170,12 @@ def get_search_updates(categorical_indicator: List[bool]):
     )
     search_space_updates.append(
         node_name='network_backbone',
+        hyperparameter='ShapedResNetBackbone:dropout_shape',
+        value_range=['funnel'],
+        default_value='funnel',
+    )
+    search_space_updates.append(
+        node_name='network_backbone',
         hyperparameter='ShapedResNetBackbone:num_groups',
         value_range=[1, 4],
         default_value=2,
@@ -281,6 +287,18 @@ def get_search_updates(categorical_indicator: List[bool]):
         default_value=1e-3,
         log=True
     )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='AdamOptimizer:use_weight_decay',
+        value_range=[True],
+        default_value=True,
+    )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='AdamOptimizer:weight_decay',
+        value_range=[1e-5, 1e-1],
+        default_value=1e-3,
+    )
     # sgd
     search_space_updates.append(
         node_name='optimizer',
@@ -288,6 +306,12 @@ def get_search_updates(categorical_indicator: List[bool]):
         value_range=[1e-4, 1e-1],
         default_value=1e-3,
         log=True
+    )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='SGDOptimizer:use_weight_decay',
+        value_range=[True],
+        default_value=True,
     )
     search_space_updates.append(
         node_name='optimizer',
@@ -300,7 +324,6 @@ def get_search_updates(categorical_indicator: List[bool]):
         hyperparameter='SGDOptimizer:momentum',
         value_range=[0.1, 0.999],
         default_value=0.1,
-        log=True
     )
     search_space_updates.append(
         node_name='data_loader',
