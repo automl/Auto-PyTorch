@@ -299,6 +299,18 @@ def get_search_updates(categorical_indicator: List[bool]):
         value_range=[1e-5, 1e-1],
         default_value=1e-3,
     )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='AdamOptimizer:beta1',
+        value_range=[0.9],
+        default_value=0.9,
+    )
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='AdamOptimizer:beta2',
+        value_range=[0.999],
+        default_value=0.999,
+    )
     # sgd
     search_space_updates.append(
         node_name='optimizer',
