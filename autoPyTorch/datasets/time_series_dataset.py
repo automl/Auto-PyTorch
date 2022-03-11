@@ -232,7 +232,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  lagged_value: Optional[List[int]] = None,
                  n_prediction_steps: int = 1,
                  dataset_name: Optional[str] = None,
-                 shift_input_data: bool = True,
                  normalize_y: bool = True,
                  static_features: Optional[np.ndarray] = None,
                  ):
@@ -311,8 +310,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_target = self.validator.target_validator.out_dimensionality  # type: int
 
         self.categories = self.validator.feature_validator.categories
-
-        self.shift_input_data = shift_input_data
 
         X, Y, sequence_lengths = self.validator.transform(X, Y)
         if X_test is not None:
@@ -809,19 +806,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         splits = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
 
         for idx_seq, dataset in enumerate(self.datasets):
-            if self.shift_input_data:
-                split = self.cross_validators[cross_val_type.name](self.random_state,
-                                                                   num_splits,
-                                                                   indices=idx_start + np.arange(len(dataset)),
-                                                                   **kwargs)
-            else:
-                # If the data is not shifted, we need to discard the last n_prediction_steps such that we have enough
-                # y values
-                split = self.cross_validators[cross_val_type.name](self.random_state,
-                                                                   num_splits,
-                                                                   indices=idx_start + np.arange(
-                                                                       len(dataset) - self.n_prediction_steps),
-                                                                   **kwargs)
+            split = self.cross_validators[cross_val_type.name](self.random_state,
+                                                               num_splits,
+                                                               indices=idx_start + np.arange(len(dataset)),
+                                                               **kwargs)
+
             for idx_split in range(num_splits):
                 splits[idx_split][idx_seq] = split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
@@ -869,18 +858,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
-            if self.shift_input_data:
-                split = self.holdout_validators[holdout_val_type.name](self.random_state,
-                                                                       val_share,
-                                                                       indices=np.arange(len(dataset)) + idx_start,
-                                                                       **kwargs)
-            else:
-                split = self.holdout_validators[holdout_val_type.name](self.random_state,
-                                                                       val_share,
-                                                                       indices=idx_start + np.arange(
-                                                                           len(dataset) - self.n_prediction_steps),
-                                                                       **kwargs)
 
+            split = self.holdout_validators[holdout_val_type.name](self.random_state,
+                                                                   val_share,
+                                                                   indices=np.arange(len(dataset)) + idx_start,
+                                                                   **kwargs)
             for idx_split in range(2):
                 splits[idx_split][idx_seq] = split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
@@ -908,15 +890,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
-            if self.shift_input_data:
-                split = [np.arange(len(dataset)), np.array([len(dataset) - 1])]
-            else:
-                last_idx = len(dataset) - self.n_prediction_steps - 1
-                split = [np.arange(len(dataset) - self.n_prediction_steps), np.array([last_idx])]
+            split = [np.arange(len(dataset)), np.array([len(dataset) - 1])]
 
             for idx_split in range(2):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
+
 
         train_indices = np.hstack([sp for sp in splits[0]])
         test_indices = np.hstack([sp for sp in splits[1]])

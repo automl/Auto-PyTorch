@@ -135,7 +135,6 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output: List = [],
             load_models: bool = True,
             portfolio_selection: Optional[str] = None,
-            shift_input_data: bool = True,
             normalize_y: bool = True,
             suggested_init_models: Optional[List[str]] = None,
             custom_init_setting_path: Optional[str] = None,
@@ -236,8 +235,6 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            shift_input_data: bool
-                if the input data needs to be shifted
             normalize_y: bool
                 if the input y values need to be normalized
             suggested_init_models: Optional[List[str]]
@@ -279,7 +276,6 @@ class TimeSeriesForecastingTask(BaseTask):
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
             n_prediction_steps=n_prediction_steps,
-            shift_input_data=shift_input_data,
             normalize_y=normalize_y,
         )
 
