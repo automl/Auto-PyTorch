@@ -502,16 +502,17 @@ class StackedDecoder(nn.Module):
 
                     input_size_decoder = decoder_info[block_id].decoder_output_shape[-1]
                     skip_size_decoder = decoder_info[block_id].decoder_input_shape[-1]
-                    if input_size_encoder == input_size_decoder and skip_size_encoder == skip_size_decoder:
-                        decoder[f'skip_connection_{i}'] = encoder[f'skip_connection_{i}']
-                    else:
-                        if network_structure.skip_connection_type == 'add':
-                            decoder[f'skip_connection_{i}'] = AddLayer(input_size_decoder, skip_size_decoder)
-                        elif network_structure.skip_connection_type == 'gate_add_norm':
-                            decoder[f'skip_connection_{i}'] = GateAddNorm(input_size_decoder,
-                                                                          hidden_size=input_size_decoder,
-                                                                          skip_size=skip_size_decoder,
-                                                                          dropout=network_structure.grn_dropout_rate)
+                    if skip_size_decoder > 0:
+                        if input_size_encoder == input_size_decoder and skip_size_encoder == skip_size_decoder:
+                            decoder[f'skip_connection_{i}'] = encoder[f'skip_connection_{i}']
+                        else:
+                            if network_structure.skip_connection_type == 'add':
+                                decoder[f'skip_connection_{i}'] = AddLayer(input_size_decoder, skip_size_decoder)
+                            elif network_structure.skip_connection_type == 'gate_add_norm':
+                                decoder[f'skip_connection_{i}'] = GateAddNorm(input_size_decoder,
+                                                                              hidden_size=input_size_decoder,
+                                                                              skip_size=skip_size_decoder,
+                                                                              dropout=network_structure.grn_dropout_rate)
         self.cached_intermediate_state = [torch.empty(0) for _ in range(self.num_blocks + 1 - self.first_block)]
         self.decoder = decoder
 
@@ -536,8 +537,9 @@ class StackedDecoder(nn.Module):
                     fx = decoder_i(x_all, encoder_output=encoder_output[i])[:, -1:]
                 else:
                     fx = decoder_i(x, encoder_output=encoder_output[i])
-            if self.skip_connection:
-                fx = self.decoder[f'skip_connection_{block_id}'](fx, x)
+            skip_id = f'skip_connection_{block_id}'
+            if self.skip_connection and skip_id in self.decoder:
+                fx = self.decoder[skip_id](fx, x)
             if cache_intermediate_state:
                 if self.decoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
