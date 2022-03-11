@@ -1237,7 +1237,7 @@ class BaseTask:
             # could alleviate the problem in algorithms that depend on
             # the ordering of the data.
             X = self._get_fit_dictionary(
-                dataset_properties=dataset_properties,
+                dataset_properties=copy.copy(dataset_properties),
                 dataset=dataset,
                 split_id=split_id)
             fit_and_suppress_warnings(self._logger, model, X, y=None)
