@@ -346,16 +346,18 @@ class BasePipeline(Pipeline):
                 cyclic_lr_name = 'CyclicLR'
                 if cyclic_lr_name in available_schedulers:
                     # disable snapshot ensembles and stochastic weight averaging
-                    cs.add_forbidden_clause(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(cs.get_hyperparameter(
-                            f'trainer:{trainer}:use_snapshot_ensemble'), True),
-                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
-                    ))
-                    cs.add_forbidden_clause(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(cs.get_hyperparameter(
-                            f'trainer:{trainer}:use_stochastic_weight_averaging'), True),
-                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
-                    ))
+                    snapshot_ensemble_hyperparameter = cs.get_hyperparameter(f'trainer:{trainer}:use_snapshot_ensemble')
+                    if True in snapshot_ensemble_hyperparameter.choices:
+                        cs.add_forbidden_clause(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(snapshot_ensemble_hyperparameter, True),
+                            ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
+                        ))
+                    swa_hyperparameter = cs.get_hyperparameter(f'trainer:{trainer}:use_stochastic_weight_averaging')
+                    if True in swa_hyperparameter.choices:
+                        cs.add_forbidden_clause(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(swa_hyperparameter, True),
+                            ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
+                        ))
         return cs
 
     def __repr__(self) -> str:
