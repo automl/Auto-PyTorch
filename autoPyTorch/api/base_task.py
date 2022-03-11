@@ -125,6 +125,81 @@ def get_search_updates(categorical_indicator: List[bool]):
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
+    # architecture head
+    search_space_updates.append(
+        node_name='network_head',
+        hyperparameter='__choice__',
+        value_range=['no_head'],
+        default_value='no_head',
+    )
+    search_space_updates.append(
+        node_name='network_head',
+        hyperparameter='no_head:activation',
+        value_range=['relu'],
+        default_value='relu',
+    )
+
+    # weights initialisation
+    search_space_updates.append(
+        node_name='network_init',
+        hyperparameter='__choice__',
+        value_range=['NoInit'],
+        default_value='NoInit',
+    )
+    search_space_updates.append(
+        node_name='network_init',
+        hyperparameter='NoInit:bias_strategy',
+        value_range=['Zero'],
+        default_value='Zero',
+    )
+
+    # backbone architecture choices
+    search_space_updates.append(
+        node_name='network_backbone',
+        hyperparameter='__choice__',
+        value_range=['ShapedResNetBackbone'],
+        default_value='ShapedResNetBackbone',
+    )
+
+    # training updates
+    # lr scheduler
+    search_space_updates.append(
+        node_name='lr_scheduler',
+        hyperparameter='CosineAnnealingWarmRestarts:n_restarts',
+        value_range=[1, 3],
+        default_value=2,
+    )
+    # optimizer
+    search_space_updates.append(
+        node_name='data_loader',
+        hyperparameter='batch_size',
+        value_range=[16, 512],
+        default_value=128,
+        log=True
+    )
+
+    # preprocessing
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='TruncatedSVD:target_dim',
+        value_range=[0.1, 0.9],
+        default_value=0.4,
+    )
+    search_space_updates.append(
+        node_name='feature_preprocessor',
+        hyperparameter='FeatureAgglomeration:n_clusters',
+        value_range=[0.1, 0.9],
+        default_value=0.4,
+    )
+    n_components_preprocessors = ['FastICA', 'KernelPCA', 'RandomKitchenSinks', 'Nystroem']
+    for preprocessor in n_components_preprocessors:
+        search_space_updates.append(
+            node_name='feature_preprocessor',
+            hyperparameter=f'{preprocessor}:n_components',
+            value_range=[0.1, 0.9],
+            default_value=0.4,
+        )
+
     return search_space_updates
 
 
