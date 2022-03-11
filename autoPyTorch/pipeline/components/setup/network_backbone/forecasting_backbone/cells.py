@@ -112,7 +112,7 @@ class TemporalFusionLayer(nn.Module):
         if self.enrich_with_static:
             static_context_enrichment = self.static_context_enrichment(static_embedding)
             attn_input = self.enrichment(
-                network_output, static_context_enrichment[:, None].expand(-1, self.window_size + decoder_length, -1)
+                network_output, static_context_enrichment[:, None].expand(-1, network_output.shape[1], -1)
             )
         else:
             attn_input = self.enrichment(network_output)
@@ -120,8 +120,9 @@ class TemporalFusionLayer(nn.Module):
         # Attention
         encoder_lengths = torch.where(encoder_lengths < self.window_size, encoder_lengths, self.window_size)
         encoder_lengths = encoder_lengths.to(self.device)
+
         attn_output, attn_output_weights = self.attention_fusion(
-            q=attn_input[:, self.window_size:],  # query only for predictions
+            q=attn_input[:, -decoder_length:],  # query only for predictions
             k=attn_input,
             v=attn_input,
             mask=self.get_attention_mask(
@@ -129,7 +130,7 @@ class TemporalFusionLayer(nn.Module):
             ),
         )
         # skip connection over attention
-        attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, self.window_size:])
+        attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, -decoder_length:])
         output = self.pos_wise_ff(attn_output)
 
         if self.network_structure.skip_connection:
