@@ -162,36 +162,38 @@ def get_search_updates(categorical_indicator: List[bool]):
     )
 
     # preprocessing
-    search_space_updates.append(
-        node_name='feature_preprocessor',
-        hyperparameter='__choice__',
-        value_range=['NoFeaturePreprocessor', 'TruncatedSVD'],
-        default_value='NoFeaturePreprocessor',
-    )
-    search_space_updates.append(
-        node_name='feature_preprocessor',
-        hyperparameter='TruncatedSVD:target_dim',
-        value_range=[0.1, 0.9],
-        default_value=0.4,
-    )
-    search_space_updates.append(
-        node_name='imputer',
-        hyperparameter='numerical_strategy',
-        value_range=['mean'],
-        default_value='mean',
-    )
-    search_space_updates.append(
-        node_name='scaler',
-        hyperparameter='__choice__',
-        value_range=['StandardScaler'],
-        default_value='StandardScaler',
-    )
-    search_space_updates.append(
-        node_name='encoder',
-        hyperparameter='__choice__',
-        value_range=['OneHotEncoder'],
-        default_value='OneHotEncoder',
-    )
+    if has_numerical_features:
+        search_space_updates.append(
+            node_name='feature_preprocessor',
+            hyperparameter='__choice__',
+            value_range=['NoFeaturePreprocessor', 'TruncatedSVD'],
+            default_value='NoFeaturePreprocessor',
+        )
+        search_space_updates.append(
+            node_name='feature_preprocessor',
+            hyperparameter='TruncatedSVD:target_dim',
+            value_range=[0.1, 0.9],
+            default_value=0.4,
+        )
+        search_space_updates.append(
+            node_name='imputer',
+            hyperparameter='numerical_strategy',
+            value_range=['mean'],
+            default_value='mean',
+        )
+        search_space_updates.append(
+            node_name='scaler',
+            hyperparameter='__choice__',
+            value_range=['StandardScaler'],
+            default_value='StandardScaler',
+        )
+    if has_cat_features:
+        search_space_updates.append(
+            node_name='encoder',
+            hyperparameter='__choice__',
+            value_range=['OneHotEncoder'],
+            default_value='OneHotEncoder',
+        )
     # trainer
     trainer_choices = ['StandardTrainer', 'MixUpTrainer']
     search_space_updates.append(
