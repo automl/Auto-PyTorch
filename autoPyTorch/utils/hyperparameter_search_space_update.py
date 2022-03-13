@@ -144,7 +144,7 @@ class HyperparameterSearchSpaceUpdates:
             None
         """
 
-        self.updates = [keep_update for keep_update in self.updates if keep_update != update]
+        self.updates = [keep_update for keep_update in self.updates if keep_update.hyperparameter != update.hyperparameter]
 
     def save_as_file(self, path: str) -> None:
         """
