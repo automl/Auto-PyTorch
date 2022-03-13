@@ -263,26 +263,27 @@ def get_search_updates(categorical_indicator: List[bool]):
     )
 
     # preprocessing
-    search_space_updates.append(
-        node_name='feature_preprocessor',
-        hyperparameter='TruncatedSVD:target_dim',
-        value_range=[0.1, 0.9],
-        default_value=0.4,
-    )
-    search_space_updates.append(
-        node_name='feature_preprocessor',
-        hyperparameter='FeatureAgglomeration:n_clusters',
-        value_range=[0.1, 0.9],
-        default_value=0.4,
-    )
-    n_components_preprocessors = ['FastICA', 'KernelPCA', 'RandomKitchenSinks', 'Nystroem']
-    for preprocessor in n_components_preprocessors:
+    if has_numerical_features:
         search_space_updates.append(
             node_name='feature_preprocessor',
-            hyperparameter=f'{preprocessor}:n_components',
+            hyperparameter='TruncatedSVD:target_dim',
             value_range=[0.1, 0.9],
             default_value=0.4,
         )
+        search_space_updates.append(
+            node_name='feature_preprocessor',
+            hyperparameter='FeatureAgglomeration:n_clusters',
+            value_range=[0.1, 0.9],
+            default_value=0.4,
+        )
+        n_components_preprocessors = ['FastICA', 'KernelPCA', 'RandomKitchenSinks', 'Nystroem']
+        for preprocessor in n_components_preprocessors:
+            search_space_updates.append(
+                node_name='feature_preprocessor',
+                hyperparameter=f'{preprocessor}:n_components',
+                value_range=[0.1, 0.9],
+                default_value=0.4,
+            )
 
     return search_space_updates
 
