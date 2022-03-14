@@ -1,4 +1,6 @@
+import json
 from multiprocessing.queues import Queue
+import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
@@ -195,12 +197,22 @@ class TrainEvaluator(AbstractEvaluator):
 
             # add learning curve of configurations to additional_run_info
             if isinstance(pipeline, TabularClassificationPipeline):
-                run_summary = pipeline.named_steps['trainer'].run_summary
-                split_types = ['train', 'val', 'test']
-                additional_run_info['run_summary'] = dict()
-                for split_type in split_types:
-                    additional_run_info['run_summary'][f'{split_type}_loss'] = run_summary.performance_tracker[f'{split_type}_loss']
-                    additional_run_info['run_summary'][f'{split_type}_metrics'] = run_summary.performance_tracker[f'{split_type}_metrics']
+                if hasattr(pipeline.named_steps['trainer'], 'run_summary'):
+                    run_summary = pipeline.named_steps['trainer'].run_summary
+                    split_types = ['train', 'val', 'test']
+                    run_summary_dict = dict(
+                        run_summary={},
+                        budget=self.budget,
+                        seed=self.seed,
+                        config_id=self.configuration.config_id,
+                        num_run=self.num_run
+                        )
+                    for split_type in split_types:
+                        run_summary_dict['run_summary'][f'{split_type}_loss'] = run_summary.performance_tracker.get(f'{split_type}_loss', None)
+                        run_summary_dict['run_summary'][f'{split_type}_metrics'] = run_summary.performance_tracker.get(f'{split_type}_metrics', None)
+                    self.logger.debug(f"run_summary_dict {json.dumps(run_summary_dict)}")
+                    with open(os.path.join(self.backend.temporary_directory, 'run_summary.txt'), 'a') as file:
+                        file.write(f"{json.dumps(run_summary_dict)}\n")
 
             status = StatusType.SUCCESS
 
