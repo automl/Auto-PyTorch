@@ -1,7 +1,6 @@
 import os
 from collections import OrderedDict
 from typing import Dict, List, Optional
-import warnings
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -170,18 +169,13 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                                                                available_embedding,
                                                                choice_hyperparameter.value_range))
             if len(categorical_columns) == 0:
-                # assert len(choice_hyperparameter.value_range) == 1
+                assert len(choice_hyperparameter.value_range) == 1
                 if 'NoEmbedding' not in choice_hyperparameter.value_range:
-                    warnings.warn("Provided {} in choices, however, the dataset "
-                                  "is incompatible with it, fixing it to `NoEmbedding`".format(choice_hyperparameter.value_range))
-                embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                            ['NoEmbedding'],
-                                                            default_value='NoEmbedding')
-            else:
-
-                embedding = CSH.CategoricalHyperparameter('__choice__',
-                                                            choice_hyperparameter.value_range,
-                                                            default_value=choice_hyperparameter.default_value)
+                    raise ValueError("Provided {} in choices, however, the dataset "
+                                     "is incompatible with it".format(choice_hyperparameter.value_range))
+            embedding = CSH.CategoricalHyperparameter('__choice__',
+                                                      choice_hyperparameter.value_range,
+                                                      default_value=choice_hyperparameter.default_value)
         else:
 
             if len(categorical_columns) == 0:
