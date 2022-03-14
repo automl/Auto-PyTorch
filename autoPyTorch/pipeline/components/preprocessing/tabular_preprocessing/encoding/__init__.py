@@ -86,7 +86,7 @@ class EncoderChoice(autoPyTorchChoice):
                                  "choices in {} got {}".format(self.__class__.__name__,
                                                                available_preprocessors,
                                                                choice_hyperparameter.value_range))
-            if len(choice_hyperparameter) == 0:
+            if len(categorical_columns) == 0:
                 assert len(choice_hyperparameter.value_range) == 1
                 assert 'NoEncoder' in choice_hyperparameter.value_range, \
                     "Provided {} in choices, however, the dataset " \

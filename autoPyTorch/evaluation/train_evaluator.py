@@ -1,4 +1,6 @@
+import json
 from multiprocessing.queues import Queue
+import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
@@ -21,6 +23,7 @@ from autoPyTorch.evaluation.abstract_evaluator import (
 )
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -192,6 +195,25 @@ class TrainEvaluator(AbstractEvaluator):
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
+
+            # add learning curve of configurations to additional_run_info
+            if isinstance(pipeline, TabularClassificationPipeline):
+                if hasattr(pipeline.named_steps['trainer'], 'run_summary'):
+                    run_summary = pipeline.named_steps['trainer'].run_summary
+                    split_types = ['train', 'val', 'test']
+                    run_summary_dict = dict(
+                        run_summary={},
+                        budget=self.budget,
+                        seed=self.seed,
+                        config_id=self.configuration.config_id,
+                        num_run=self.num_run
+                        )
+                    for split_type in split_types:
+                        run_summary_dict['run_summary'][f'{split_type}_loss'] = run_summary.performance_tracker.get(f'{split_type}_loss', None)
+                        run_summary_dict['run_summary'][f'{split_type}_metrics'] = run_summary.performance_tracker.get(f'{split_type}_metrics', None)
+                    self.logger.debug(f"run_summary_dict {json.dumps(run_summary_dict)}")
+                    with open(os.path.join(self.backend.temporary_directory, 'run_summary.txt'), 'a') as file:
+                        file.write(f"{json.dumps(run_summary_dict)}\n")
 
             status = StatusType.SUCCESS
 
