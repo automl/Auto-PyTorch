@@ -567,12 +567,13 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             if future_features is not None:
                 future_features = future_features
 
+            if self.has_temporal_fusion:
+                decoder_output_all = None
+
             if self.forecast_strategy != 'sample':
                 all_predictions = []
                 predicted_target = past_targets[:, [-1]]
                 past_targets = past_targets[:, :-1]
-                if self.has_temporal_fusion:
-                    decoder_output_all = None
                 for idx_pred in range(self.n_prediction_steps):
                     predicted_target = predicted_target.cpu()
                     if self.decoder_lagged_input:
@@ -633,6 +634,13 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     is_hidden_states=self.encoder.encoder_has_hidden_states,
                     repeats=self.num_samples)
 
+                intermediate_values = self.repeat_intermediate_values([encoder_output, encoder_lengths],
+                                                                      is_hidden_states=[False, False],
+                                                                      repeats=self.num_samples)
+
+                encoder_output = intermediate_values[0]
+                encoder_lengths = intermediate_values[1]
+
                 if self.decoder_lagged_input:
                     max_lag_seq_length = max(self.decoder_lagged_value) + 1
                 else:
@@ -650,6 +658,12 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     repeats=self.num_samples, dim=0
                 ) if future_features is not None else None
 
+                if self.network_structure.variable_selection:
+                    self.variable_selector.cached_static_contex = self.repeat_intermediate_values(
+                        [self.variable_selector.cached_static_contex],
+                        is_hidden_states=[False],
+                        repeats=self.num_samples)[0]
+
                 for idx_pred in range(self.n_prediction_steps):
                     if self.decoder_lagged_input:
                         x_future = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
@@ -658,8 +672,9 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                         x_future = repeated_predicted_target[:, [-1]]
 
                     if self.network_structure.variable_selection:
-                        x_future = self.decoder_select_variable(future_targets=x_future[:, -1:],
-                                                                future_features=repeated_time_feat[:, [idx_pred]])
+                        x_future = self.decoder_select_variable(
+                            future_targets=x_future[:, -1:],
+                            future_features=None if repeated_time_feat is None else repeated_time_feat[:, [idx_pred]])
                     else:
                         x_future = x_future if repeated_time_feat is None else torch.cat(
                             [repeated_time_feat[:, [idx_pred], :], x_future], dim=-1)
@@ -678,7 +693,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                         decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                               decoder_output=decoder_output_all,
                                                               encoder_lengths=encoder_lengths,
-                                                              static_embedding=x_static
+                                                              decoder_length=idx_pred + 1,
+                                                              static_embedding=x_static,
                                                               )[:, -1:]
 
                     net_output = self.head(decoder_output)
@@ -887,13 +903,15 @@ class ForecastingDeepARNet(ForecastingNet):
                                                            cache_intermediate_state=True,
                                                            )
 
-            self.repeat_intermediate_values(self.encoder.cached_intermediate_state,
-                                            is_hidden_states=self.encoder.encoder_has_hidden_states,
-                                            repeats=self.num_samples)
+            self.encoder.cached_intermediate_state = self.repeat_intermediate_values(
+                self.encoder.cached_intermediate_state,
+                is_hidden_states=self.encoder.encoder_has_hidden_states,
+                repeats=self.num_samples)
             if self.network_structure.variable_selection:
-                self.repeat_intermediate_values([self.variable_selector.cached_static_contex],
-                                                is_hidden_states=[False],
-                                                repeats=self.num_samples)
+                self.variable_selector.cached_static_contex = self.repeat_intermediate_values(
+                    [self.variable_selector.cached_static_contex],
+                    is_hidden_states=[False],
+                    repeats=self.num_samples)[0]
 
             if self.encoder_lagged_input:
                 max_lag_seq_length = max(max(self.encoder_lagged_value), self.window_size)

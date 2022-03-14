@@ -61,7 +61,7 @@ class TemporalFusionLayer(nn.Module):
                     output_size=d_model,
                     dropout=dropout,
                     context_size=n_encoder_output_first,
-                    residual=True,
+                    residual=False,
                 )
                 self.enrich_with_static = True
         if not hasattr(self, 'enrichment'):
@@ -107,6 +107,7 @@ class TemporalFusionLayer(nn.Module):
         """
         if self.decoder_proj_layer is not None:
             decoder_output = self.decoder_proj_layer(decoder_output)
+
         network_output = torch.cat([encoder_output, decoder_output], dim=1)
 
         if self.enrich_with_static:
@@ -120,15 +121,20 @@ class TemporalFusionLayer(nn.Module):
         # Attention
         encoder_lengths = torch.where(encoder_lengths < self.window_size, encoder_lengths, self.window_size)
         encoder_lengths = encoder_lengths.to(self.device)
+        mask = self.get_attention_mask(encoder_lengths=encoder_lengths, decoder_length=decoder_length)
+        if mask.shape[-1] < attn_input.shape[1]:
+            # in case that none of the samples has length greater than window_size
+            mask = torch.cat([
+                mask.new_full((*mask.shape[:-1], attn_input.shape[1] - mask.shape[-1]), True),
+                mask
+            ], dim=-1)
 
         attn_output, attn_output_weights = self.attention_fusion(
             q=attn_input[:, -decoder_length:],  # query only for predictions
             k=attn_input,
             v=attn_input,
-            mask=self.get_attention_mask(
-                encoder_lengths=encoder_lengths, decoder_length=decoder_length
-            ),
-        )
+            mask=mask)
+
         # skip connection over attention
         attn_output = self.post_attn_gate_norm(attn_output, attn_input[:, -decoder_length:])
         output = self.pos_wise_ff(attn_output)
@@ -201,6 +207,7 @@ class VariableSelector(nn.Module):
             )
         self.static_input_sizes = static_input_sizes
         if dataset_properties['uni_variant']:
+            """
             # variable selection for encoder and decoder
             encoder_input_sizes = {
                 'past_targets': dataset_properties['input_shape'][-1],
@@ -211,6 +218,23 @@ class VariableSelector(nn.Module):
             }
             if auto_regressive:
                 decoder_input_sizes.update({'future_prediction': dataset_properties['output_shape'][-1]})
+            """
+            pre_scalar = {
+                'past_targets': nn.Linear(dataset_properties['input_shape'][-1], self.hidden_size),
+                'features': nn.Linear(1, self.hidden_size),
+            }
+            encoder_input_sizes = {
+                'past_targets': self.hidden_size,
+                'features': self.hidden_size
+            }
+            decoder_input_sizes = {
+                'features': self.hidden_size
+            }
+            if auto_regressive:
+                pre_scalar.update({'future_prediction': nn.Linear(dataset_properties['output_shape'][-1],
+                                                                  self.hidden_size)})
+                decoder_input_sizes.update({'future_prediction': self.hidden_size})
+            self.pre_scalars = {nn.ModuleDict(pre_scalar)}
         else:
             # TODO
             pass
@@ -245,6 +269,7 @@ class VariableSelector(nn.Module):
             single_variable_grns={}
             if not network_structure.share_single_variable_networks
             else self.shared_single_variable_grns,
+            prescalers=self.pre_scalars,
         )
 
         self.decoder_variable_selection = VariableSelectionNetwork(
@@ -256,6 +281,7 @@ class VariableSelector(nn.Module):
             single_variable_grns={}
             if not network_structure.share_single_variable_networks
             else self.shared_single_variable_grns,
+            prescalers=self.pre_scalars,
         )
 
         self.static_context_variable_selection = GatedResidualNetwork(
@@ -289,7 +315,7 @@ class VariableSelector(nn.Module):
         self._device = device
 
     def forward(self,
-                x_past: Optional[Dict[str,torch.Tensor]],
+                x_past: Optional[Dict[str, torch.Tensor]],
                 x_future: Optional[Dict[str, torch.Tensor]],
                 x_static: Optional[Dict[str, torch.Tensor]] = None,
                 length_past: int = 0,
@@ -307,7 +333,8 @@ class VariableSelector(nn.Module):
             if self.static_input_sizes > 0:
                 static_embedding, _ = self.static_variable_selection(x_static)
             else:
-                model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(iter(x_future.values())).dtype
+                model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(
+                    iter(x_future.values())).dtype
                 static_embedding = torch.zeros(
                     (batch_size, self.hidden_size), dtype=model_dtype, device=self.device
                 )
@@ -315,7 +342,7 @@ class VariableSelector(nn.Module):
 
             static_context_variable_selection = self.static_context_variable_selection(static_embedding)[:, None]
             static_context_initial_hidden = tuple(init_hidden(static_embedding) for init_hidden in
-                                             self.static_context_initial_hidden)
+                                                  self.static_context_initial_hidden)
             if cache_static_contex:
                 self.cached_static_contex = static_context_variable_selection
                 self.cached_static_embedding = static_embedding
@@ -370,9 +397,9 @@ class StackedEncoder(nn.Module):
                     encoder[f'skip_connection_{block_idx}'] = AddLayer(input_size, skip_size)
                 elif network_structure.skip_connection_type == 'gate_add_norm':
                     encoder[f'skip_connection_{block_idx}'] = GateAddNorm(input_size,
-                                                                  hidden_size=input_size,
-                                                                  skip_size=skip_size,
-                                                                  dropout=network_structure.grn_dropout_rate)
+                                                                          hidden_size=input_size,
+                                                                          skip_size=skip_size,
+                                                                          dropout=network_structure.grn_dropout_rate)
             if block_id in decoder_info:
                 if decoder_info[block_id].decoder_properties.recurrent:
                     if decoder_info[block_id].decoder_properties.has_hidden_states:
@@ -424,9 +451,10 @@ class StackedEncoder(nn.Module):
                         fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
                     else:
                         if self.encoder_num_hidden_states[i] == 1:
-                            fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx[0].expand((rnn_num_layers, -1, -1)))
+                            fx, hx = encoder_i(x, output_seq=output_seq_i,
+                                               hx=hx[0].expand((rnn_num_layers, -1, -1)).contiguous())
                         else:
-                            hx = tuple(hx_i.expand(rnn_num_layers, -1, -1) for hx_i in hx)
+                            hx = tuple(hx_i.expand(rnn_num_layers, -1, -1).contiguous() for hx_i in hx)
                             fx, hx = encoder_i(x, output_seq=output_seq_i, hx=hx)
             else:
                 if incremental_update:
@@ -465,7 +493,7 @@ class StackedEncoder(nn.Module):
 
         if self.has_temporal_fusion:
             if incremental_update:
-                self.cached_intermediate_state[i + 1] = torch.cat([self.cached_intermediate_state[i+1], x], dim=1)
+                self.cached_intermediate_state[i + 1] = torch.cat([self.cached_intermediate_state[i + 1], x], dim=1)
             else:
                 self.cached_intermediate_state[i + 1] = x
             return encoder2decoder, x

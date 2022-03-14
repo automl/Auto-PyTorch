@@ -25,7 +25,7 @@ class TargetScaler(BaseEstimator):
             scale[scale == 0.0] = 1.0
             if future_targets is not None:
                 future_targets = (future_targets - loc) / scale
-            return (past_targets - loc) / scale, future_targets,loc, scale
+            return (past_targets - loc) / scale, future_targets, loc, scale
 
         elif self.mode == "min_max":
             min_ = torch.min(past_targets, dim=-2, keepdim=True)[0]

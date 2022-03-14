@@ -222,6 +222,19 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
                     forbidden_losses_all.append(forbidden_hp_dist)
 
+            decoder_auto_regressive = cs.get_hyperparameter("network_backbone:seq_encoder:decoder_auto_regressive")
+            forecast_strategy = cs.get_hyperparameter("loss:DistributionLoss:forecast_strategy")
+            use_tf = cs.get_hyperparameter("network_backbone:seq_encoder:use_temporal_fusion")
+
+            if True in decoder_auto_regressive.choices and 'sample' in forecast_strategy.choices and True in use_tf.choices:
+                cs.add_forbidden_clause(
+                    ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(decoder_auto_regressive, True),
+                        ForbiddenEqualsClause(forecast_strategy, 'sample'),
+                        ForbiddenEqualsClause(use_tf, True)
+                    )
+                )
+
             network_flat_encoder_hp = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
 
             if 'MLPEncoder' in network_flat_encoder_hp.choices:
@@ -243,6 +256,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
 
             cs.add_forbidden_clauses(forbidden_losses_all)
+
+
 
             # NBEATS
             network_encoder_hp = cs.get_hyperparameter("network_backbone:__choice__")

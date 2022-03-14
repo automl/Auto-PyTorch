@@ -89,6 +89,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.max_budget = max_budget
         self.min_num_test_instances = min_num_test_instances
 
+        import os
+        os.system("sh -c \"scontrol -d show job $SLURM_JOB_ID\"")
+        os.system("nvidia-smi.user")
+
+
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
         holdout"""

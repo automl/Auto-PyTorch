@@ -79,6 +79,17 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 value_range=(True, False),
                 default_value=False
             ),
+            variable_selection_use_dropout: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="variable_selection_use_dropout",
+                value_range=(True, False),
+                default_value=False,
+            ),
+            variable_selection_dropout_rate: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="variable_selection_dropout_rate",
+                value_range=(0.0, 0.8),
+                default_value=0.1,
+            ),
+
             share_single_variable_networks: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="share_single_variable_networks",
                 value_range=(True, False),
@@ -120,14 +131,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             variable_selection (HyperparameterSearchSpace): if variable selection is applied, if True, then the first
                 block will be attached with a variable selection block while the following will be enriched with static
                 features.
-            share_single_variable_networks( HyperparameterSearchSpace): if single variable networks are shared between
+            variable_selection_use_dropout (HyperparameterSearchSpace): if variable selection network uses dropout
+            variable_selection_dropout_rate (HyperparameterSearchSpace): dropout rate of variable selection network
+            share_single_variable_networks (HyperparameterSearchSpace): if single variable networks are shared between
                 encoder and decoder
             skip_connection: HyperparameterSearchSpace: if skip connection is applied
             use_temporal_fusion (HyperparameterSearchSpace): if temporal fusion layer is applied
-            tf_attention_n_head_log (HyperparameterSearchSpace): log value of tf attention dims
-            tf_attention_d_model_log (HyperparameterSearchSpace): log value of tf attention d model
-            tf_use_dropout (HyperparameterSearchSpace): if tf uses dropout
-            tf_dropout_rate (HyperparameterSearchSpace): dropout rate of tf layer
             skip_connection_type (HyperparameterSearchSpace): skip connection type, it could be directly added or a grn
                 network (
                 Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
@@ -175,30 +184,41 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         hp_network_structures = [num_blocks, decoder_auto_regressive, variable_selection,
                                  skip_connection]
         cond_skip_connections = []
+
+
         if True in skip_connection.choices:
             skip_connection_type = get_hyperparameter(skip_connection_type, CategoricalHyperparameter)
             hp_network_structures.append(skip_connection_type)
             cond_skip_connections.append(EqualsCondition(skip_connection_type, skip_connection, True))
-            if 'grn' in skip_connection_type.choices:
+            if 'gate_add_norm' in skip_connection_type.choices:
                 grn_use_dropout = get_hyperparameter(grn_use_dropout, CategoricalHyperparameter)
                 hp_network_structures.append(grn_use_dropout)
                 if True in variable_selection.choices:
                     cond_skip_connections.append(
-                        OrConjunction(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"),
-                                      EqualsCondition(grn_dropout_rate, variable_selection, True))
+                        EqualsCondition(grn_use_dropout, skip_connection_type, "gate_add_norm")
                     )
                 else:
-                    cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "grn"))
+                    cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "gate_add_norm"))
                 if True in grn_use_dropout.choices:
                     grn_dropout_rate = get_hyperparameter(grn_dropout_rate, UniformFloatHyperparameter)
                     hp_network_structures.append(grn_dropout_rate)
                     cond_skip_connections.append(EqualsCondition(grn_dropout_rate, grn_use_dropout, True))
-        elif True in variable_selection.choices:
-            cond_skip_connections.append(EqualsCondition(grn_dropout_rate, variable_selection, True))
-
         cs.add_hyperparameters(hp_network_structures)
         if cond_skip_connections:
             cs.add_conditions(cond_skip_connections)
+
+        if True in variable_selection.choices:
+            variable_selection_use_dropout = get_hyperparameter(variable_selection_use_dropout,
+                                                                CategoricalHyperparameter)
+            variable_selection_dropout_rate = get_hyperparameter(variable_selection_dropout_rate,
+                                                                 UniformFloatHyperparameter)
+            cs.add_hyperparameters([variable_selection_use_dropout, variable_selection_dropout_rate])
+
+            cond_vs_dropout = EqualsCondition(variable_selection_use_dropout, variable_selection, True)
+            cond_vs_dropoutrate = EqualsCondition(variable_selection_dropout_rate, variable_selection_use_dropout, True)
+            cs.add_conditions([cond_vs_dropout, cond_vs_dropoutrate])
+
+
 
         if static_features_shape + future_feature_shapes[-1] == 0:
             if False in variable_selection.choices and False in decoder_auto_regressive.choices:
@@ -417,6 +437,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         if True in skip_connection.choices:
             forbidden_mlp_skip = []
             forbidden_skip = ForbiddenEqualsClause(skip_connection, True)
+            forbidden_temporal_fusion = ForbiddenEqualsClause(use_temporal_fusion, True)
             for i in range(1, max_num_blocks + 1):
                 hp_mlp_has_local_layer = f"block_{i}:MLPDecoder:has_local_layer"
                 if hp_mlp_has_local_layer in cs:
@@ -424,6 +445,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     forbidden_mlp_skip.append(ForbiddenAndConjunction(
                         ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
                         forbidden_skip
+                    ))
+                    forbidden_mlp_skip.append(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
+                        forbidden_temporal_fusion
                     ))
             cs.add_forbidden_clauses(forbidden_mlp_skip)
 

@@ -91,7 +91,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                 if auto_regressive:
                     if self.decoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                         future_in_features += len(self.lagged_value) * output_shape[-1]
-                    else:
+                    elif self.decoder_properties().recurrent:
                         future_in_features += output_shape[-1]
             future_variable_input = (self.n_prediction_heads, future_in_features)
         else:
