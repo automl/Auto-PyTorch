@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, Set
 import uuid
 import bisect
 import copy
@@ -31,6 +31,11 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 
 from gluonts.time_feature.lag import get_lags_for_frequency
+from gluonts.time_feature import (
+    Constant,
+    TimeFeature,
+    time_features_from_frequency_str,
+)
 from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
@@ -49,16 +54,22 @@ class TimeSeriesSequence(Dataset):
     def __init__(self,
                  X: Optional[Union[np.ndarray, pd.DataFrame]],
                  Y: Union[np.ndarray, pd.Series],
+                 start_time_train: Optional[pd.DatetimeIndex] = None,
+                 freq: str = '1Y',
+                 time_feature_transform: List[TimeFeature] = [],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+                 start_time_test: Optional[pd.DatetimeIndex] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  static_features: Optional[np.ndarray] = None,
-                 n_prediction_steps: int = 1,
+                 n_prediction_steps: int = 0,
                  sp: int = 1,
-                 known_future_features: Optional[List[Union[str, int]]] = None,
+                 known_future_features: Optional[Tuple[str]] = None,
                  only_has_past_targets: bool = False,
                  compute_mase_coefficient_value: bool = True,
+                 time_features=None,
+                 is_test_set=False,
                  ):
         """
         A dataset representing a time series sequence.
@@ -72,14 +83,21 @@ class TimeSeriesSequence(Dataset):
 
         self.X = X
         self.Y = Y
+        if start_time_train is None:
+            start_time_train = pd.DatetimeIndex(pd.to_datetime(['1900-01-01']), freq=freq)
+        self.start_time_train = start_time_train
 
         self.X_val = None
         self.Y_val = None
 
         self.X_test = X_test
         self.Y_tet = Y_test
+        self.start_time_test = start_time_test
 
+        self.time_feature_transform = time_feature_transform
         self.static_features = static_features
+
+        self.freq = freq
 
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
@@ -98,11 +116,17 @@ class TimeSeriesSequence(Dataset):
         self.only_has_past_targets = only_has_past_targets
         self.known_future_features = known_future_features
 
+        self.transform_time_features = False
+        self._cached_time_features: Optional[np.ndarray] = time_features
+        self.is_test_set = is_test_set
+
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
         """
         get a subsequent of time series data, unlike vanilla tabular dataset, we obtain all the previous sequences
-        until the given index, this allows us to do further transformation when the
+        until the given index, this allows us to do further transformation.
+        (When fed to the neural network, the data is arranged as follows:
+        [past_targets, time_features, X_features])
 
         Args:
             index (int): what element to yield from all the train/test tensors
@@ -113,24 +137,47 @@ class TimeSeriesSequence(Dataset):
         """
         if index < 0:
             index = self.__len__() + index
+
         if self.X is not None:
             if hasattr(self.X, 'loc'):
                 past_features = self.X.iloc[:index + 1]
             else:
                 past_features = self.X[:index + 1]
 
-            if self.train_transform is not None and train:
-                past_features = self.train_transform(past_features)
-            elif self.val_transform is not None and not train:
-                past_features = self.val_transform(past_features)
-
-            if self.known_future_features is not None:
-                future_features = self.X[index + 1: index + self.n_prediction_steps + 1, self.known_future_features]
+            if self.known_future_features:
+                future_features = self.X.iloc[index + 1: index + self.n_prediction_steps + 1,
+                                  self.known_future_feature_index]
             else:
                 future_features = None
         else:
             past_features = None
             future_features = None
+
+        if self.transform_time_features:
+            if self.time_feature_transform:
+                self.compute_time_features()
+
+                if past_features:
+                    past_features = np.hstack([self._cached_time_features[:index + 1], past_features])
+                else:
+                    past_features = self._cached_time_features[:index + 1]
+                if future_features:
+                    future_features = np.hstack([self._cached_time_features[
+                                                 index + 1:index + self.n_prediction_steps +1], past_features
+                                                 ])
+                else:
+                    future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+        if future_features is not None and future_features.shape[0] == 0:
+            future_features = None
+
+        if self.train_transform is not None and train and past_features is not None:
+            past_features = self.train_transform(past_features)
+            if future_features is not None:
+                future_features = self.train_transform(future_features)
+        elif self.val_transform is not None and not train and past_features is not None:
+            past_features = self.val_transform(past_features)
+            if future_features is not None:
+                future_features = self.val_transform(future_features)
 
         # In case of prediction, the targets are not provided
         targets = self.Y
@@ -139,6 +186,12 @@ class TimeSeriesSequence(Dataset):
         else:
             targets_future = targets[index + 1: index + self.n_prediction_steps + 1]
             targets_future = torch.from_numpy(targets_future)
+
+        if isinstance(past_features, np.ndarray):
+            past_features = torch.from_numpy(past_features)
+
+        if isinstance(future_features, np.ndarray):
+            future_features = torch.from_numpy(future_features)
 
         past_target = targets[:index + 1]
         past_target = torch.from_numpy(past_target)
@@ -149,10 +202,34 @@ class TimeSeriesSequence(Dataset):
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
                 'encoder_lengths': past_target.shape[0],
-                'decoder_lengths': None if targets_future is None else targets_future.shape[0] }, targets_future
+                'decoder_lengths': None if targets_future is None else targets_future.shape[0]}, targets_future
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
+
+    def compute_time_features(self,):
+        if self._cached_time_features is None:
+            periods = self.Y.shape[0]
+            if self.is_test_set:
+                periods += self.n_prediction_steps
+
+            date_info = pd.date_range(start=self.start_time_train,
+                                      periods=periods,
+                                      freq=self.freq)
+
+            self._cached_time_features = np.vstack(
+                [transform(date_info).to_numpy(float) for transform in self.time_feature_transform]
+            ).T
+        else:
+            if self.is_test_set:
+                if self._cached_time_features.shape[0] == self.Y.shape[0]:
+                    date_info = pd.date_range(start=self.start_time_train,
+                                              periods=self.n_prediction_steps + self.Y.shape[0],
+                                              freq=self.freq)
+                    time_feature_future = np.vstack(
+                        [transform(date_info[-self.n_prediction_steps:]).to_numpy(float) for transform in self.time_feature_transform]
+                    ).T
+                    self._cached_time_features = np.concatenate([self._cached_time_features, time_feature_future])
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
                          train: bool = True,
@@ -190,8 +267,16 @@ class TimeSeriesSequence(Dataset):
                 X = self.X[:index + 1 + self.n_prediction_steps]
             else:
                 X = None
-            return TimeSeriesSequence(X,
-                                      self.Y[:index + 1],
+            if self._cached_time_features:
+                cached_time_feautres = None
+            else:
+                cached_time_feautres = self._cached_time_features[:index + 1 + self.n_prediction_steps]
+
+            return TimeSeriesSequence(X=X,
+                                      Y=self.Y[:index + 1],
+                                      start_time_train=self.start_time_train,
+                                      freq=self.freq,
+                                      time_feature_transform=self.time_feature_transform,
                                       train_transforms=self.train_transform,
                                       val_transforms=self.val_transform,
                                       n_prediction_steps=self.n_prediction_steps,
@@ -199,7 +284,8 @@ class TimeSeriesSequence(Dataset):
                                       known_future_features=self.known_future_features,
                                       sp=self.sp,
                                       only_has_past_targets=True,
-                                      compute_mase_coefficient_value=False)
+                                      compute_mase_coefficient_value=False,
+                                      time_features=cached_time_feautres)
 
     def get_test_target(self, test_idx: int):
         if self.only_has_past_targets:
@@ -208,6 +294,12 @@ class TimeSeriesSequence(Dataset):
             test_idx = self.__len__() + test_idx
         Y_future = self.Y[test_idx + 1: test_idx + self.n_prediction_steps + 1]
         return Y_future
+
+    def update_attribute(self, **kwargs):
+        for key, value in kwargs.items():
+            if not hasattr(self, key):
+                raise ValueError('Trying to update invalid attribute for TimeSeriesSequence!!!')
+            setattr(self, key, value)
 
 
 class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
@@ -219,7 +311,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 known_future_features: Optional[Union[Tuple[int], int]] = None,
+                 start_times_train: Optional[List[pd.DatetimeIndex]] = None,
+                 start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+                 known_future_features: Optional[Tuple[str]] = None,
+                 time_feature_transform: Optional[List[TimeFeature]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  resampling_strategy: Optional[Union[
                      CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
@@ -299,6 +394,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if not self.validator._is_fitted:
             self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
+                               start_times_train=start_times_train, start_times_test=start_times_test,
                                n_prediction_steps=n_prediction_steps)
 
         self.is_uni_variant = self.validator._is_uni_variant
@@ -311,6 +407,25 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.categories = self.validator.feature_validator.categories
 
+        self.feature_shapes = self.validator.feature_shapes
+        self.feature_names = tuple(self.validator.feature_names)
+
+        self.start_times_train = self.validator.start_times_train
+        self.start_times_test = self.validator.start_times_test
+
+        self._transform_time_feature = False
+        if not time_feature_transform:
+            time_feature_transform = time_features_from_frequency_str(self.freq)
+            if not time_feature_transform:
+                # If time features are empty (as for yearly data), we add a
+                # constant feature of 0
+                time_feature_transform = [Constant()]
+
+        self.time_feature_transform = time_feature_transform
+        self.time_feature_names = tuple([f'time_feature_{t.__class__.__name__}' for t in self.time_feature_transform])
+
+        # Time features are lazily generated, we do not count them as either numerical_columns or categorical columns
+
         X, Y, sequence_lengths = self.validator.transform(X, Y)
         if X_test is not None:
             X_test, Y_test, self.sequence_lengths_tests = self.validator.transform(X_test, Y_test)
@@ -320,6 +435,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
 
+        # check if dataset could be split with cross validation
         minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
         if isinstance(resampling_strategy, CrossValTypes):
             num_splits = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy].get(
@@ -408,8 +524,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_sequences = len(Y)
         self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
 
+        if known_future_features is None:
+            known_future_features = tuple()
+
         # initialize datasets
-        sequences_kwargs = {"train_transforms": self.train_transform,
+        sequences_kwargs = {"freq": self.freq,
+                            "time_feature_transform": self.time_feature_transform,
+                            "train_transforms": self.train_transform,
                             "val_transforms": self.val_transform,
                             "n_prediction_steps": n_prediction_steps,
                             "sp": self.seasonality,
@@ -419,10 +540,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.y_train_mean = [0] * len(self.sequence_lengths_train)
         self.y_train_std = [1] * len(self.sequence_lengths_train)
 
-        sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(X=X, Y=Y,
-                                                                                      X_test=X_test, Y_test=Y_test,
-                                                                                      normalize_y=normalize_y,
-                                                                                      **sequences_kwargs)
+        sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(
+            X=X, Y=Y,
+            X_test=X_test, Y_test=Y_test,
+            start_times_train=self.start_times_train,
+            start_times_test=self.start_times_test,
+            normalize_y=normalize_y,
+            **sequences_kwargs)
 
         self.normalize_y = normalize_y
 
@@ -548,8 +672,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def make_sequences_datasets(self,
                                 X: np.ndarray,
                                 Y: np.ndarray,
+                                start_times_train: List[pd.DatetimeIndex],
                                 X_test: Optional[np.ndarray] = None,
                                 Y_test: Optional[np.ndarray] = None,
+                                start_times_test: Optional[List[pd.DatetimeIndex]] = None,
                                 normalize_y: bool = True,
                                 **sequences_kwargs: Optional[Dict]) -> \
             Tuple[List[TimeSeriesSequence], Tuple[List, List], Tuple[List, List]]:
@@ -588,10 +714,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         idx_start_test = 0
 
         seq_length_train_flat = self.sequence_lengths_train + self.n_prediction_steps
+        group_ids = np.arange(len(seq_length_train_flat)).repeat(seq_length_train_flat)
 
         for seq_idx, seq_length_train in enumerate(seq_length_train_flat):
             idx_end_train = idx_start_train + seq_length_train
-
             X_seq = X[idx_start_train: idx_end_train]
             Y_seq = Y[idx_start_train: idx_end_train]
 
@@ -614,22 +740,24 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                     Y_test_seq_std = np.std(Y_test_seq)
                     Y_seq = (Y_seq - Y_test_seq_mean) / Y_test_seq_std
 
-
                 Y_test[idx_start_test: idx_end_test] = Y_seq
 
             else:
                 X_test_seq = None
                 Y_test_seq = None
 
-            if not X_seq:
+            if X_seq.size == 0:
                 X_seq = None
                 X_test_seq = None
 
-            sequence = TimeSeriesSequence(X=X_seq,
-                                          Y=Y_seq,
-                                          X_test=X_test_seq,
-                                          Y_test=Y_test_seq,
-                                          **sequences_kwargs)
+            sequence = TimeSeriesSequence(
+                X=X_seq,
+                Y=Y_seq,
+                start_time_train=start_times_train[seq_idx],
+                X_test=X_test_seq,
+                Y_test=Y_test_seq,
+                start_time_test=None if start_times_test is None else start_times_test[seq_idx],
+                **sequences_kwargs)
             sequence_datasets.append(sequence)
             idx_start_train = idx_end_train
 
@@ -657,7 +785,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.update_tensros_seqs(X_test, self.sequence_lengths_tests, is_train=False)
         return self
 
-    def update_tensros_seqs(self, X, sequence_lengths, is_train=True):
+    def update_tensros_seqs(self, X: np.ndarray, sequence_lengths, is_train=True):
+        if X.size == 0:
+            return
         idx_start = 0
         if is_train:
             for seq, seq_length in zip(self.datasets, sequence_lengths):
@@ -695,6 +825,15 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         for seq in self.datasets:
             seq = seq.update_transform(transform, train)
         return self
+
+    @property
+    def transform_time_features(self):
+        return self._transform_time_features
+
+    @transform_time_features.setter
+    def transform_time_features(self, value: bool):
+        for seq in self.datasets:
+            seq.transform_time_features = value
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
         """
@@ -760,9 +899,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'freq': self.freq,
                                    'sequence_lengths_train': self.sequence_lengths_train,
                                    'seq_length_max': self.seq_length_max,
-                                   'input_shape':self.input_shape,
+                                   'input_shape': self.input_shape,
                                    'lagged_value': self.lagged_value,
+                                   'feature_names': self.feature_names,
+                                   'feature_shapes': self.feature_shapes,
+                                   'known_future_features': self.known_future_features,
                                    'static_features': self.static_features,
+                                   'time_feature_transform': self.time_feature_transform,
+                                   'time_feature_names': self.time_feature_names,
                                    'future_feature_shapes': self.future_feature_shapes,
                                    'uni_variant': self.is_uni_variant})
         return dataset_properties
@@ -896,11 +1040,23 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 splits[idx_split][idx_seq] = idx_start + split[idx_split]
             idx_start += self.sequence_lengths_train[idx_seq]
 
-
         train_indices = np.hstack([sp for sp in splits[0]])
         test_indices = np.hstack([sp for sp in splits[1]])
 
         return train_indices, test_indices
+
+    def create_refit_set(self) -> "TimeSeriesForecastingDataset":
+        refit_set: TimeSeriesForecastingDataset = copy.deepcopy(self)
+        refit_set.resampling_strategy = None
+        refit_set.splits = refit_set.get_splits_from_resampling_strategy()
+        return refit_set
+
+    def generatet_test_seqs(self) -> List[TimeSeriesSequence]:
+        test_sets = copy.deepcopy(self.datasets)
+        for test_seq in test_sets:
+            test_seq.is_test_set = True
+            test_seq.only_has_past_targets = True
+        return test_sets
 
 
 def _check_time_series_forecasting_inputs(train: np.ndarray,

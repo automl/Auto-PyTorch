@@ -120,6 +120,8 @@ class TimeSeriesForecastingTask(BaseTask):
             target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
+            start_times_train: List[pd.DatetimeIndex] = [],
+            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
             dataset_name: Optional[str] = None,
             budget_type: str = 'epochs',
             min_budget: Union[int, str] = 5,
@@ -266,12 +268,15 @@ class TimeSeriesForecastingTask(BaseTask):
         # Fit a input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
-        self.InputValidator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
+        self.InputValidator.fit(X_train=X_train, y_train=y_train, start_times_train=start_times_train,
+                                X_test=X_test, y_test=y_test, start_times_test=start_times_test)
 
         self.dataset = TimeSeriesForecastingDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             freq=freq,
+            start_times_train=start_times_train,
+            start_times_test=start_times_test,
             validator=self.InputValidator,
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,

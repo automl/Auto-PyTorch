@@ -13,7 +13,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 import torchvision
 
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.utils.common import (
     HyperparameterSearchSpace,
     custom_collate_fn,
@@ -47,6 +47,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
                  sample_strategy='seq_uniform',
+                 transform_time_features=False,
                  random_state: Optional[np.random.RandomState] = None) -> None:
         """
         initialize a dataloader
@@ -79,6 +80,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.known_future_features = None
         self._is_uni_variant = False
 
+        self.transform_time_features = transform_time_features
+        self.freq = "1Y"
+        self.time_feature_transform = []
+
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
         Fits a component by using an input dictionary with pre-requisites
@@ -106,12 +111,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         sample_interval = X.get('sample_interval', 1)
         padding_value = X.get('required_padding_value', 0.0)
 
+
         if sample_interval > 1:
             # for lower resolution, window_size should be smaller
             self.window_size = (self.window_size - 1) // sample_interval + 1
 
         max_lagged_value = max(X['dataset_properties'].get('lagged_value', [np.inf]))
         max_lagged_value += self.window_size + self.n_prediction_steps
+
 
         self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value, max_lagged_value)
 
@@ -133,6 +140,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             self.val_transform,
             train=False,
         )
+        datamanager.transform_time_features = self.transform_time_features
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
@@ -142,6 +150,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             self.dataset_small_preprocess = False
 
         self._is_uni_variant = X['dataset_properties']['uni_variant']
+
+        self.freq = X['dataset_properties']['freq']
+        self.time_feature_transform = X['dataset_properties']['time_feature_transform']
 
         train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
 
@@ -233,7 +244,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         return self
 
     def transform(self, X: Dict) -> Dict:
-        X.update({"window_size": self.window_size})
+        X.update({"window_size": self.window_size,
+                  'transform_time_features': self.transform_time_features})
         return super().transform(X)
 
     def build_transform(self, X: Dict[str, Any], mode: str) -> torchvision.transforms.Compose:
@@ -272,69 +284,33 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         applying the transformations meant to validation objects
         This is a lazy loaded test set, each time only one piece of series
         """
-        if self._is_uni_variant:
-            if isinstance(X, TimeSeriesSequence):
-                X.update_transform(self.test_transform, train=False)
-                dataset = [X]
-            elif isinstance(X, Sequence):
-                dataset = []
-                if isinstance(X[0], TimeSeriesSequence):
-                    for X_seq in X:
-                        X_seq.update_transform(self.test_transform, train=False)
-                        dataset.append(X_seq)
-                else:
-                    for X_seq in X:
-                        seq = TimeSeriesSequence(
-                            X=None, Y=X_seq,
-                            # This dataset is used for loading test data in a batched format
-                            train_transforms=self.test_transform,
-                            val_transforms=self.test_transform,
-                            n_prediction_steps=0,
-                            static_features=self.static_features,
-                            known_future_features=self.known_future_features,
-                            only_has_past_targets=True,
-                        )
-                        dataset.append(seq)
-            else:
-                raise NotImplementedError(f"Unsupported type of input: {type(y)}")
+        if isinstance(X, TimeSeriesSequence):
+            X = [X]
+        if isinstance(X, List):
+            for x_seq in X:
+                if not isinstance(x_seq, TimeSeriesSequence):
+                    raise NotImplementedError('Test Set must be a TimeSeriesSequence or a'
+                                              ' list of time series objects!')
+                if x_seq.freq != self.freq:
+                    # WE need to recompute the cached time features (However, this should not happen)
+                    x_seq._cached_time_features = None
+
+                x_seq.update_transform(self.test_transform, train=False)
+                x_seq.update_attribute(freq=self.freq,
+                                       transform_time_features=self.transform_time_features,
+                                       time_feature_transform=self.time_feature_transform,
+                                       static_features=self.static_features,
+                                       known_future_features=self.known_future_features,
+                                       )
+                if self.transform_time_features:
+                    x_seq.compute_time_features()
+
+                x_seq.freq = self.freq
+                x_seq.update_transform(self.test_transform, train=False)
         else:
-            if y is None:
-                # TODO consider other circumstances!
-                y = X['past_targets']
-                X = X['features']
+            raise NotImplementedError('Unsupported data type for time series data loader!')
 
-            # TODO replace with strings
-            if isinstance(y, (np.ndarray, torch.Tensor)):
-                if isinstance(y, torch.Tensor):
-                    y = y.numpy()
-                    X = X.numpy()
-                if y.ndim == 1:
-                    y = [y]
-                if X.ndim == 1:
-                    X = [X]
-
-            if isinstance(y, Sequence):
-                dataset = []
-                if isinstance(y[0], TimeSeriesSequence):
-                    for y_seq in y:
-                        y_seq.update_transform(self.test_transform, train=False)
-                        dataset.append(y_seq)
-                else:
-                    for X_seq, y_seq in zip(X, y):
-                        seq = TimeSeriesSequence(
-                            X=X_seq, Y=y_seq,
-                            # This dataset is used for loading test data in a batched format
-                            train_transforms=self.test_transform,
-                            val_transforms=self.test_transform,
-                            n_prediction_steps=0,
-                            static_features=self.static_features,
-                            known_future_features=self.known_future_features,
-                            only_has_past_targets=True,
-                        )
-                        dataset.append(seq)
-            else:
-                raise NotImplementedError(f"Unsupported type of input: {type(y)}")
-
+        dataset = X
         dataset_test = TestSequenceDataset(dataset, train=False)
 
         return torch.utils.data.DataLoader(
@@ -395,7 +371,11 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                         backcast_period: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter='backcast_period',
                                                                   value_range=(1, 7),
-                                                                  default_value=2)
+                                                                  default_value=2),
+                                        transform_time_features: HyperparameterSearchSpace =
+                                        HyperparameterSearchSpace(hyperparameter='transform_time_features',
+                                                                  value_range=(True, False),
+                                                                  default_value=False)
                                         ) -> ConfigurationSpace:
         """
         hyperparameter search space for forecasting dataloader. Forecasting dataloader construct the window size in two
@@ -418,6 +398,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             multiple of n_prediction_steps)
             backcast_period (int): activate if backcast is activate, the window size is then computed with
                                    backcast_period * n_prediction_steps
+            transform_time_features (bool) if time feature trasnformation is applied
 
         Returns:
             cs: Configuration Space
@@ -455,6 +436,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         window_size_cond = EqualsCondition(window_size, backcast, False)
         backcast_period_cond = EqualsCondition(backcast_period, backcast, True)
         cs.add_conditions([window_size_cond, backcast_period_cond])
+
+        time_feature_transform = dataset_properties.get('time_feature_transform', [])
+        if time_feature_transform:
+            add_hyperparameter(cs, transform_time_features, CategoricalHyperparameter)
 
         return cs
 

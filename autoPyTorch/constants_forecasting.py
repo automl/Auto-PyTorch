@@ -5,15 +5,15 @@
 FORECASTING_BUDGET_TYPE = ['resolution', 'num_seq', 'num_sample_per_seq']
 
 SEASONALITY_MAP = {
-    "minutely": [1440, 10080, 525960],
-    "10_minutes": [144, 1008, 52596],
-    "half_hourly": [48, 336, 17532],
-    "hourly": [24, 168, 8766],
-    "daily": 7,
-    "weekly": 365.25 / 7,
-    "monthly": 12,
-    "quarterly": 4,
-    "yearly": 1
+    "1min": [1440, 10080, 525960],
+    "10min": [144, 1008, 52596],
+    "30min": [48, 336, 17532],
+    "1H": [24, 168, 8766],
+    "1D": 7,
+    "1W": 365.25 / 7,
+    "1M": 12,
+    "1Q": 4,
+    "1Y": 1
 }
 
 MAX_WINDOW_SIZE_BASE = 500

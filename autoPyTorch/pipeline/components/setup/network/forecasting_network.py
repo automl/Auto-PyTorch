@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Union, Tuple, List
+from typing import Any, Dict, Optional, Union, Tuple, List, Iterable
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
@@ -56,6 +56,10 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),
             FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
             FitRequirement("net_output_type", (str,), user_defined=False, dataset_property=False),
+            FitRequirement("feature_names", (Iterable,), user_defined=False, dataset_property=True),
+            FitRequirement("feature_shapes", (Iterable,), user_defined=False, dataset_property=True),
+            FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
+            FitRequirement('time_feature_names', (Iterable,), user_defined=False, dataset_property=True)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
@@ -68,6 +72,16 @@ class ForecastingNetworkComponent(NetworkComponent):
         network_decoder = X['network_decoder']
 
         net_output_type = X['net_output_type']
+
+        feature_names = X['dataset_properties']['feature_names']
+        feature_shapes = X['dataset_properties']['feature_shapes']
+        transform_time_features = X['transform_time_features']
+        known_future_features = X['dataset_properties']['known_future_features']
+        if transform_time_features:
+            time_feature_names = X['dataset_properties']['time_feature_names']
+        else:
+            time_feature_names = ()
+
         network_init_kwargs = dict(network_structure=network_structure,
                                    network_embedding=X['network_embedding'],
                                    network_encoder=network_encoder,
@@ -78,7 +92,12 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    window_size=X['window_size'],
                                    dataset_properties=X['dataset_properties'],
                                    target_scaler=X['target_scaler'],
-                                   output_type=net_output_type,)
+                                   output_type=net_output_type,
+                                   feature_names=feature_names,
+                                   feature_shapes=feature_shapes,
+                                   known_future_features=known_future_features,
+                                   time_feature_names=time_feature_names,
+                                   )
         if net_output_type == 'distribution':
             dist_forecasting_strategy = X['dist_forecasting_strategy']  # type: DisForecastingStrategy
 

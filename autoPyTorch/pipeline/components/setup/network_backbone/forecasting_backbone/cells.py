@@ -1,6 +1,6 @@
 from pytorch_forecasting.utils import create_mask
 
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List, Tuple, Set
 
 import torch
 from torch import nn
@@ -119,8 +119,11 @@ class TemporalFusionLayer(nn.Module):
             attn_input = self.enrichment(network_output)
 
         # Attention
+        encoder_out_length = encoder_output.shape[1]
         encoder_lengths = torch.where(encoder_lengths < self.window_size, encoder_lengths, self.window_size)
+        encoder_lengths = torch.where(encoder_lengths > encoder_out_length, encoder_out_length, encoder_lengths)
         encoder_lengths = encoder_lengths.to(self.device)
+
         mask = self.get_attention_mask(encoder_lengths=encoder_lengths, decoder_length=decoder_length)
         if mask.shape[-1] < attn_input.shape[1]:
             # in case that none of the samples has length greater than window_size
@@ -172,6 +175,10 @@ class TemporalFusionLayer(nn.Module):
         decoder_mask = attend_step >= predict_step
         # do not attend to steps where data is padded
         encoder_mask = create_mask(encoder_lengths.max(), encoder_lengths)
+
+        # this is the result of our padding strategy: we pad values at the start of the tensors
+        encoder_mask = torch.flip(encoder_mask, dims=[1])
+
         # combine masks along attended time - first encoder and then decoder
         mask = torch.cat(
             (
@@ -188,12 +195,84 @@ class VariableSelector(nn.Module):
                  network_structure: NetworkStructure,
                  dataset_properties: Dict,
                  network_encoder: Dict[str, EncoderBlockInfo],
-                 auto_regressive: bool = False
+                 auto_regressive: bool = False,
+                 feature_names: Tuple[str] = (),
+                 known_future_features: Tuple[str] = tuple(),
+                 feature_shapes: Dict[str, int] = {},
+                 time_feature_names: Tuple[str] = (),
                  ):
         super().__init__()
         first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape[-1]
         static_input_sizes = dataset_properties['static_features_shape']
         self.hidden_size = first_encoder_output_shape
+
+        assert set(feature_names) == set(feature_shapes.keys()), "feature_names and feature_shapes must have " \
+                                                                 "the same variable names"
+        pre_scalar = {'past_targets': nn.Linear(dataset_properties['output_shape'][-1], self.hidden_size)}
+        encoder_input_sizes = {'past_targets': self.hidden_size}
+        decoder_input_sizes = {}
+        feature_names2tensor_idx = {}
+        future_feature_name2tensor_idx = {}
+        idx_tracker = 0
+        idx_tracker_future = 0
+        if time_feature_names:
+            for name in time_feature_names:
+                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker+1]
+                future_feature_name2tensor_idx[name] = [idx_tracker_future, idx_tracker_future + 1]
+                idx_tracker += 1
+                idx_tracker_future += 1
+                pre_scalar[name] = nn.Linear(1, self.hidden_size)
+                encoder_input_sizes[name] = self.hidden_size
+                decoder_input_sizes[name] = self.hidden_size
+
+        if feature_names:
+            for name in feature_names:
+                feature_shape = feature_shapes[name]
+                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker + feature_shape]
+                idx_tracker += feature_shape
+                pre_scalar[name] = nn.Linear(feature_shape, self.hidden_size)
+                encoder_input_sizes[name] = self.hidden_size
+                if name in known_future_features:
+                    decoder_input_sizes[name] = self.hidden_size
+
+        for future_name in known_future_features:
+            feature_shape = feature_shapes[future_name]
+            future_feature_name2tensor_idx[future_name] = [idx_tracker_future, idx_tracker_future + feature_shape]
+            idx_tracker_future += feature_shape
+
+        feature_names = time_feature_names + feature_names
+        known_future_features = time_feature_names + known_future_features
+        # if not feature_names or not(known_future_features or time_feature_names):
+        # Ensure that at least one feature is applied
+        placeholder_features = 'placeholder_features'
+        i = 0
+        self.placeholder_features = []
+        for j in range(1):
+            while placeholder_features in feature_names or placeholder_features in self.placeholder_features:
+                i += 1
+                placeholder_features = f'placeholder_features_{i}'
+                if i == 5000:
+                    raise RuntimeError(
+                        "Cannot assign name to placeholder features, please considering rename your features")
+
+            name = placeholder_features
+            pre_scalar[name] = nn.Linear(1, self.hidden_size)
+            encoder_input_sizes[name] = self.hidden_size
+            decoder_input_sizes[name] = self.hidden_size
+            self.placeholder_features.append(placeholder_features)
+
+        # self.placeholder_features = [placeholder_features]
+
+        self.feature_names = feature_names
+        self.feature_names2tensor_idx = feature_names2tensor_idx
+        self.future_feature_name2tensor_idx = future_feature_name2tensor_idx
+        self.known_future_features = known_future_features
+
+        if auto_regressive:
+            pre_scalar.update({'future_prediction': nn.Linear(dataset_properties['output_shape'][-1],
+                                                              self.hidden_size)})
+            decoder_input_sizes.update({'future_prediction': self.hidden_size})
+        self.pre_scalars = {nn.ModuleDict(pre_scalar)}
 
         self._device = torch.device('cpu')
 
@@ -206,38 +285,6 @@ class VariableSelector(nn.Module):
                 dropout=network_structure.grn_dropout_rate,
             )
         self.static_input_sizes = static_input_sizes
-        if dataset_properties['uni_variant']:
-            """
-            # variable selection for encoder and decoder
-            encoder_input_sizes = {
-                'past_targets': dataset_properties['input_shape'][-1],
-                'features': 1
-            }
-            decoder_input_sizes = {
-                'features': 1
-            }
-            if auto_regressive:
-                decoder_input_sizes.update({'future_prediction': dataset_properties['output_shape'][-1]})
-            """
-            pre_scalar = {
-                'past_targets': nn.Linear(dataset_properties['input_shape'][-1], self.hidden_size),
-                'features': nn.Linear(1, self.hidden_size),
-            }
-            encoder_input_sizes = {
-                'past_targets': self.hidden_size,
-                'features': self.hidden_size
-            }
-            decoder_input_sizes = {
-                'features': self.hidden_size
-            }
-            if auto_regressive:
-                pre_scalar.update({'future_prediction': nn.Linear(dataset_properties['output_shape'][-1],
-                                                                  self.hidden_size)})
-                decoder_input_sizes.update({'future_prediction': self.hidden_size})
-            self.pre_scalars = {nn.ModuleDict(pre_scalar)}
-        else:
-            # TODO
-            pass
 
         self.auto_regressive = auto_regressive
 
@@ -566,7 +613,7 @@ class StackedDecoder(nn.Module):
                 else:
                     fx = decoder_i(x, encoder_output=encoder_output[i])
             skip_id = f'skip_connection_{block_id}'
-            if self.skip_connection and skip_id in self.decoder:
+            if self.skip_connection and skip_id in self.decoder and x is not None:
                 fx = self.decoder[skip_id](fx, x)
             if cache_intermediate_state:
                 if self.decoder_has_hidden_states[i]:

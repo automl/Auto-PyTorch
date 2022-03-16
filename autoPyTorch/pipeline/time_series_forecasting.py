@@ -257,16 +257,14 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
             cs.add_forbidden_clauses(forbidden_losses_all)
 
-
-
             # NBEATS
             network_encoder_hp = cs.get_hyperparameter("network_backbone:__choice__")
             forbidden_NBEATS = []
-            encoder_non_BEATS = [choice for choice in network_encoder_hp.choices if choice != 'flat_encoder']
+            encoder_non_flat = [choice for choice in network_encoder_hp.choices if choice != 'flat_encoder']
             loss_non_regression = [choice for choice in hp_loss.choices if choice != 'RegressionLoss']
             data_loader_backcast = cs.get_hyperparameter('data_loader:backcast')
 
-            forbidden_encoder_NBEATS = ForbiddenInClause(network_encoder_hp, encoder_non_BEATS)
+            forbidden_encoder_non_flat = ForbiddenInClause(network_encoder_hp, encoder_non_flat)
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
 
@@ -278,9 +276,17 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                     ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
                     forbidden_loss_non_regression)
                 )
+                transform_time_features = "data_loader:transform_time_features"
+                if transform_time_features in cs:
+                    hp_ttf = cs.get_hyperparameter(transform_time_features)
+                    forbidden_NBEATS.append(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
+                        ForbiddenEqualsClause(hp_ttf, True))
+                    )
+
             forbidden_NBEATS.append(ForbiddenAndConjunction(
                 forbidden_backcast,
-                forbidden_encoder_NBEATS
+                forbidden_encoder_non_flat
             ))
 
             cs.add_forbidden_clauses(forbidden_NBEATS)

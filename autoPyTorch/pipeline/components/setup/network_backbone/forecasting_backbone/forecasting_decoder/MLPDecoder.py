@@ -57,7 +57,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         in_features = encoder_output_shape[-1]
         num_decoder_output_features = in_features
         has_local_layer = 'units_local_layer' in self.config
-        if not has_local_layer:
+        if not has_local_layer and not self.auto_regressive:
             in_features += int(np.prod(future_variable_input))
         if 'num_layers' in self.config and self.config["num_layers"] > 0:
             for i in range(1, self.config["num_layers"] + 1):

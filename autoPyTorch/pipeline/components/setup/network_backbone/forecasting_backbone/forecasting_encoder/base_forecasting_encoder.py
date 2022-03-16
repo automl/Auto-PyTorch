@@ -53,7 +53,9 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('static_features_shape', (int,), user_defined=True, dataset_property=True),
-            FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False)
+            FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False),
+            FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
+            FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -73,19 +75,22 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                     X_train = X_train[:1, np.newaxis, ...]
                     X_train = transforms(X_train)
                     input_shape = np.concatenate(X_train).shape[1:]
+            if X['transform_time_features']:
+                n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
+            else:
+                n_time_feature_transform = 0
 
             if 'network_embedding' in X.keys():
                 input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
-
-            in_features = input_shape[-1]
 
             variable_selection = X['network_structure'].variable_selection
             if variable_selection:
                 in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
-                in_features = len(self.lagged_value) * output_shape[-1] + input_shape[-1] + static_features_shape
+                in_features = len(self.lagged_value) * output_shape[-1] + \
+                              input_shape[-1] + static_features_shape + n_time_feature_transform
             else:
-                in_features = output_shape[-1] + input_shape[-1] + static_features_shape
+                in_features = output_shape[-1] + input_shape[-1] + static_features_shape + n_time_feature_transform
 
             input_shape = (X['window_size'], in_features)
         else:

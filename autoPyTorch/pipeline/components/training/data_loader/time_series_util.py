@@ -74,14 +74,14 @@ class PadSequenceCollector:
         self.target_padding_value = target_padding_value
         self.seq_max_length = seq_max_length
 
-    def __call__(self, batch, sample_interval=1, padding_value=0.0):
+    def __call__(self, batch, sample_interval=1, seq_minimal_length=1, padding_value=0.0):
         elem = batch[0]
         elem_type = type(elem)
         if isinstance(elem, torch.Tensor):
             seq = pad_sequence_with_minimal_length(batch,
-                                          seq_minimal_length=self.window_size,
-                                          seq_max_length=self.seq_max_length,
-                                          batch_first=True, padding_value=padding_value)  # type: torch.Tensor
+                                                   seq_minimal_length=seq_minimal_length,
+                                                   seq_max_length=self.seq_max_length,
+                                                   batch_first=True, padding_value=padding_value)  # type: torch.Tensor
 
             if sample_interval > 1:
                 subseq_length = seq.shape[1]
@@ -109,8 +109,13 @@ class PadSequenceCollector:
             return batch
         elif isinstance(elem, collections.abc.Mapping):
             # only past targets and features needs to be transformed
-            return {key: self([d[key] for d in batch]) if "past" not in key
-            else self([d[key] for d in batch], self.sample_interval, self.target_padding_value) for key in elem}
+
+            return {key: self([d[key] for d in batch]) if "past" not in key else self([d[key] for d in batch],
+                                                                                  self.sample_interval,
+                                                                                  self.window_size,
+                                                                                  self.target_padding_value) for key
+                in elem}
+
         elif elem is None:
             return None
         raise TypeError(f"Unsupported data type {elem_type}")

@@ -42,7 +42,9 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             FitRequirement('future_feature_shapes', (Tuple,), user_defined=False, dataset_property=True),
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
             FitRequirement('network_encoder', (OrderedDict,), user_defined=False, dataset_property=False),
-            FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False)
+            FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
+            FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
+            FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
         ]
 
     @property
@@ -78,8 +80,14 @@ class BaseForecastingDecoder(autoPyTorchComponent):
 
         network_structure = X['network_structure']
         variable_selection = network_structure.variable_selection
+
         if 'n_decoder_output_features' not in X:
             future_feature_shapes = X['dataset_properties']['future_feature_shapes']
+
+            if X['transform_time_features']:
+                n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
+            else:
+                n_time_feature_transform = 0
 
             if self.block_number == network_structure.num_blocks:
                 self.is_last_decoder = True
@@ -93,6 +101,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                         future_in_features += len(self.lagged_value) * output_shape[-1]
                     elif self.decoder_properties().recurrent:
                         future_in_features += output_shape[-1]
+                future_in_features += n_time_feature_transform
             future_variable_input = (self.n_prediction_heads, future_in_features)
         else:
             future_variable_input = (self.n_prediction_heads, X['n_decoder_output_features'])

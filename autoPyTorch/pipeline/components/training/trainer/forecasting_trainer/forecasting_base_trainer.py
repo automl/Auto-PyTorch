@@ -89,6 +89,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.model.train()
         outputs_data = list()
         targets_data = list()
+        import time
+        time_start = time.time()
 
         for step, (data, targets) in enumerate(train_loader):
             if self.budget_tracker.is_max_time_reached():
@@ -113,6 +115,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 )
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
+
+        time_end = time.time()
+        print(f'time used epoch {epoch}: {time_end - time_start}')
+        print(f'loss: {loss_sum / N}')
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
@@ -145,7 +151,18 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         past_target = data['past_targets'].float()
         encoder_lengths = data['encoder_lengths']
 
+        past_features = data["past_features"]
+        if past_features is not None:
+            past_features = past_features.float()
+        future_features = data['future_features']
+        if future_features is not None:
+            future_features = future_features.float()
+        static_features = data['static_features']
+        if static_features is not None:
+            static_features = static_features.float()
+
         future_targets = self.cast_targets(future_targets)
+
 
         if isinstance(self.criterion, MASELoss):
             self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
@@ -182,7 +199,12 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             else:
                 past_target, criterion_kwargs = self.data_preparation(past_target, future_targets.to(self.device))
 
-            outputs = self.model(past_targets=past_target, future_targets=future_targets, encoder_lengths=encoder_lengths)
+            outputs = self.model(past_targets=past_target,
+                                 past_features=past_features,
+                                 future_features=future_features,
+                                 static_features=static_features,
+                                 future_targets=future_targets,
+                                 encoder_lengths=encoder_lengths)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
 
@@ -228,6 +250,16 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 past_target = data['past_targets'].float()
                 encoder_lengths = data['encoder_lengths']
 
+                past_features = data["past_features"]
+                if past_features is not None:
+                    past_features = past_features.float()
+                future_features = data['future_features']
+                if future_features is not None:
+                    future_features = future_features.float()
+                static_features = data['static_features']
+                if static_features is not None:
+                    static_features = static_features.float()
+
                 mase_coefficients.append(data['mase_coefficient'])
                 if isinstance(self.criterion, MASELoss):
                     self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
@@ -239,9 +271,18 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
 
                 if isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
-                    outputs = self.model(past_targets=past_target, future_targets=future_targets, encoder_lengths=encoder_lengths)
+                    outputs = self.model(past_targets=past_target,
+                                         past_features=past_features,
+                                         future_targets=future_targets,
+                                         future_features=future_features,
+                                         static_features=static_features,
+                                         encoder_lengths=encoder_lengths)
                 else:
-                    outputs = self.model(past_targets=past_target, encoder_lengths=encoder_lengths)
+                    outputs = self.model(past_targets=past_target,
+                                         past_features=past_features,
+                                         future_features=future_features,
+                                         static_features=static_features,
+                                         encoder_lengths=encoder_lengths)
 
                 # prepare
                 future_targets = future_targets.to(self.device)
