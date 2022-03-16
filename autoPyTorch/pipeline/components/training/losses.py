@@ -87,7 +87,7 @@ class MASELoss(Loss):
 class QuantileLoss(Loss):
     __constants__ = ['reduction']
 
-    def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5]) -> None:
+    def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5], loss_weights=None) -> None:
         super(QuantileLoss, self).__init__(reduction)
         self.quantiles = quantiles
 
@@ -101,9 +101,10 @@ class QuantileLoss(Loss):
         losses_all = []
         for q, y_pred in zip(self.quantiles, input):
             diff = target_tensor - y_pred
+
             loss_q = torch.max(q * diff, (q - 1) * diff)
-            losses_all.append(loss_q.unsqueeze(0))
-        losses_all = torch.concat(losses_all)
+            losses_all.append(loss_q.unsqueeze(-1))
+        losses_all = torch.mean(torch.concat(losses_all, dim=-1), dim=-1)
 
         if self.reduction == 'mean':
             return losses_all.mean()

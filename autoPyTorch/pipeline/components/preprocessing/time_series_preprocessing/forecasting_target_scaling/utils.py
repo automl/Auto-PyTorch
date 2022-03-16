@@ -22,6 +22,7 @@ class TargetScaler(BaseEstimator):
         if self.mode == "standard":
             loc = torch.mean(past_targets, dim=-2, keepdim=True)
             scale = torch.std(past_targets, dim=-2, keepdim=True)
+
             scale[scale == 0.0] = 1.0
             if future_targets is not None:
                 future_targets = (future_targets - loc) / scale
