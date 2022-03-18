@@ -148,7 +148,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             past_features = X_batch['past_features']
             future_features = X_batch["future_features"]
             static_features = X_batch["static_features"]
-            encoder_lengths = X_batch['encoder_lengths']
+            past_observed_values = X_batch['past_observed_values']
 
             if past_targets.ndim == 2:
                 past_targets = past_targets.unsqueeze(-1)
@@ -162,7 +162,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                 if pred_kwargs[key] is not None:
                     pred_kwargs[key] = pred_kwargs[key].float()
 
-            pred_kwargs.update({'encoder_lengths': encoder_lengths})
+            pred_kwargs.update({'past_observed_values': past_observed_values})
 
             with torch.no_grad():
                 Y_batch_pred = self.network.predict(**pred_kwargs)

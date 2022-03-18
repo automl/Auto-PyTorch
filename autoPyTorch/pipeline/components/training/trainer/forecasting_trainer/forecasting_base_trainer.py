@@ -118,7 +118,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         time_end = time.time()
         print(f'time used epoch {epoch}: {time_end - time_start}')
-        print(f'loss: {loss_sum / N}')
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
@@ -149,7 +148,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: the loss incurred in the prediction
         """
         past_target = data['past_targets'].float()
-        encoder_lengths = data['encoder_lengths']
+        past_observed_values = data['past_observed_values']
 
         past_features = data["past_features"]
         if past_features is not None:
@@ -163,7 +162,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         future_targets = self.cast_targets(future_targets)
 
-
         if isinstance(self.criterion, MASELoss):
             self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
 
@@ -172,10 +170,11 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         if isinstance(self.model, NBEATSNet):
             past_target = past_target[:, -self.window_size:]
+            past_observed_values = past_observed_values[:, -self.window_size:]
             past_target, criterion_kwargs_past = self.data_preparation(past_target,
                                                                        past_target.to(self.device))
             past_target, criterion_kwargs_future = self.data_preparation(past_target, future_targets.to(self.device))
-            backcast, forecast = self.model(past_targets=past_target, encoder_lengths=encoder_lengths)
+            backcast, forecast = self.model(past_targets=past_target, past_observed_values=past_observed_values)
 
             loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
             loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
@@ -204,7 +203,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                  future_features=future_features,
                                  static_features=static_features,
                                  future_targets=future_targets,
-                                 encoder_lengths=encoder_lengths)
+                                 past_observed_values=past_observed_values)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
 
@@ -248,7 +247,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         with torch.no_grad():
             for step, (data, future_targets) in enumerate(test_loader):
                 past_target = data['past_targets'].float()
-                encoder_lengths = data['encoder_lengths']
+                past_observed_values = data['past_observed_values']
 
                 past_features = data["past_features"]
                 if past_features is not None:
@@ -276,13 +275,13 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                          future_targets=future_targets,
                                          future_features=future_features,
                                          static_features=static_features,
-                                         encoder_lengths=encoder_lengths)
+                                         past_observed_values=past_observed_values)
                 else:
                     outputs = self.model(past_targets=past_target,
                                          past_features=past_features,
                                          future_features=future_features,
                                          static_features=static_features,
-                                         encoder_lengths=encoder_lengths)
+                                         past_observed_values=past_observed_values)
 
                 # prepare
                 future_targets = future_targets.to(self.device)

@@ -46,8 +46,10 @@ def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
         out_dims = (len(sequences), max_len) + trailing_dims
     else:
         out_dims = (max_len, len(sequences)) + trailing_dims
-
-    out_tensor = sequences[0].new_full(out_dims, padding_value)
+    if sequences[0].dtype == torch.bool:
+        out_tensor = sequences[0].new_full(out_dims, False)
+    else:
+        out_tensor = sequences[0].new_full(out_dims, padding_value)
     for i, tensor in enumerate(sequences):
         length = min(tensor.size(0), seq_max_length)
         # use index notation to prevent duplicate references to the tensor

@@ -54,6 +54,7 @@ class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
 
     def __call__(self,
                  past_target: Union[np.ndarray, torch.tensor],
+                 past_observed_values: Optional[torch.BoolTensor] = None,
                  future_targets: Optional[Union[np.ndarray, torch.Tensor]]=None,
                  ) -> Union[np.ndarray, torch.tensor]:
 
@@ -64,5 +65,7 @@ class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
         if len(past_target.shape) == 2:
             # expand batch dimension when called on a single record
             past_target = past_target[np.newaxis, ...]
-        past_target, future_targets, loc, scale = self.scaler.transform(past_target, future_targets)
+        past_target, future_targets, loc, scale = self.scaler.transform(past_target,
+                                                                        past_observed_values,
+                                                                        future_targets)
         return past_target, future_targets, loc, scale

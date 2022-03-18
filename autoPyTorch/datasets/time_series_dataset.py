@@ -196,12 +196,15 @@ class TimeSeriesSequence(Dataset):
         past_target = targets[:index + 1]
         past_target = torch.from_numpy(past_target)
 
+        # TODO combine with imputer!
+        past_observed_values = torch.ones([past_target.shape[0], 1], dtype=torch.bool)
+
         return {"past_targets": past_target,
                 "past_features": past_features,
                 "future_features": future_features,
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
-                'encoder_lengths': past_target.shape[0],
+                'past_observed_values': past_observed_values,
                 'decoder_lengths': None if targets_future is None else targets_future.shape[0]}, targets_future
 
     def __len__(self) -> int:
@@ -327,7 +330,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  lagged_value: Optional[List[int]] = None,
                  n_prediction_steps: int = 1,
                  dataset_name: Optional[str] = None,
-                 normalize_y: bool = True,
+                 normalize_y: bool = False,
                  static_features: Optional[np.ndarray] = None,
                  ):
         """
@@ -1051,7 +1054,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         refit_set.splits = refit_set.get_splits_from_resampling_strategy()
         return refit_set
 
-    def generatet_test_seqs(self) -> List[TimeSeriesSequence]:
+    def generate_test_seqs(self) -> List[TimeSeriesSequence]:
         test_sets = copy.deepcopy(self.datasets)
         for test_seq in test_sets:
             test_seq.is_test_set = True

@@ -48,9 +48,14 @@ class MAPELoss(Loss):
         super(MAPELoss, self).__init__(reduction)
 
     def forward(self, input: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
-        target = torch.abs(target_tensor)
-        target[target == 0] = 1
-        loss = torch.abs(input - target_tensor) / target
+        # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/model/n_beats/_network.py
+        denominator = torch.abs(target_tensor)
+        diff = torch.abs(input - target_tensor)
+
+        flag = (denominator == 0).float()
+
+        loss = (diff * (1 - flag)) / (denominator + flag)
+
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':
@@ -104,6 +109,7 @@ class QuantileLoss(Loss):
 
             loss_q = torch.max(q * diff, (q - 1) * diff)
             losses_all.append(loss_q.unsqueeze(-1))
+
         losses_all = torch.mean(torch.concat(losses_all, dim=-1), dim=-1)
 
         if self.reduction == 'mean':
