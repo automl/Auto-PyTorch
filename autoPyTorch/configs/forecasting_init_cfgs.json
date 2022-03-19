@@ -169,7 +169,6 @@
             "network_backbone:seq_encoder:block_1:TransformerDecoder:layer_norm_eps_output": 1e-05
         },
         "NBEATS-I": {
-            "target_scaler:__choice__": "TargetNoScaler",
             "data_loader:backcast": true,
             "data_loader:backcast_period": 2,
             "loss:__choice__": "RegressionLoss",
@@ -198,6 +197,7 @@
             "network_backbone:flat_encoder:NBEATSDecoder:dropout_i_2": 0.1
         },
         "NBEATS-G": {
+            "target_scaler:__choice__": "TargetNoScaler",
             "loss:__choice__": "RegressionLoss",
             "loss:RegressionLoss:loss_name": "mape",
             "network_backbone:__choice__": "flat_encoder",
@@ -225,10 +225,10 @@
             "network_backbone:seq_encoder:skip_connection": true,
             "network_backbone:seq_encoder:num_blocks": 1,
             "network_backbone:seq_encoder:variable_selection": true,
-            "network_backbone:seq_encoder:share_single_variable_networks": false,
-            "network_backbone:seq_encoder:skip_connection_type": "gate_add_norm",
             "network_backbone:seq_encoder:variable_selection_use_dropout": true,
             "network_backbone:seq_encoder:variable_selection_dropout_rate": 0.1,
+            "network_backbone:seq_encoder:share_single_variable_networks": false,
+            "network_backbone:seq_encoder:skip_connection_type": "gate_add_norm",
             "network_backbone:seq_encoder:grn_use_dropout": true,
             "network_backbone:seq_encoder:grn_dropout_rate": 0.1,
             "network_backbone:seq_encoder:block_1:__choice__": "RNNEncoder",

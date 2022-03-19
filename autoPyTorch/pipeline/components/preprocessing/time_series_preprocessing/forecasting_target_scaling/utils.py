@@ -72,7 +72,8 @@ class TargetScaler(BaseEstimator):
             if self.mode == "standard":
                 dfredom = 1
                 loc = torch.sum(valid_past_targets, dim=1, keepdim=True) / valid_past_obs
-                scale = torch.sum(torch.square((valid_past_targets - loc) * past_observed_values), dim=1, keepdim=True)
+                scale = torch.sum(torch.square((valid_past_targets - loc * past_observed_values)), dim=1, keepdim=True)
+
                 scale /= valid_past_obs - dfredom
                 scale = torch.sqrt(scale)
 

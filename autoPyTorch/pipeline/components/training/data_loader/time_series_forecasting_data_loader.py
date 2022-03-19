@@ -423,7 +423,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 window_size_value_range = window_size.value_range
                 window_size = HyperparameterSearchSpace(hyperparameter='window_size',
                                                         value_range=(window_size_value_range[0], seq_length_max),
-                                                        default_value=window_size_value_range[0])
+                                                        default_value=min(window_size.default_value, seq_length_max))
                 window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
         else:
             window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)

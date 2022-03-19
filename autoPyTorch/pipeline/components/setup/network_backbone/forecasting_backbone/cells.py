@@ -237,14 +237,12 @@ class VariableSelector(nn.Module):
             future_feature_name2tensor_idx[future_name] = [idx_tracker_future, idx_tracker_future + feature_shape]
             idx_tracker_future += feature_shape
 
-        feature_names = time_feature_names + feature_names
-        known_future_features = time_feature_names + known_future_features
-        # if not feature_names or not(known_future_features or time_feature_names):
-        # Ensure that at least one feature is applied
-        placeholder_features = 'placeholder_features'
-        i = 0
-        self.placeholder_features = []
-        for j in range(1):
+        if not feature_names or not known_future_features:
+            # Ensure that at least one feature is applied
+            placeholder_features = 'placeholder_features'
+            i = 0
+
+            self.placeholder_features = []
             while placeholder_features in feature_names or placeholder_features in self.placeholder_features:
                 i += 1
                 placeholder_features = f'placeholder_features_{i}'
@@ -258,7 +256,8 @@ class VariableSelector(nn.Module):
             decoder_input_sizes[name] = self.hidden_size
             self.placeholder_features.append(placeholder_features)
 
-        # self.placeholder_features = [placeholder_features]
+        feature_names = time_feature_names + feature_names
+        known_future_features = time_feature_names + known_future_features
 
         self.feature_names = feature_names
         self.feature_names2tensor_idx = feature_names2tensor_idx
