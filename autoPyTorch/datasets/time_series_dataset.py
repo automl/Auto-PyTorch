@@ -146,7 +146,7 @@ class TimeSeriesSequence(Dataset):
 
             if self.known_future_features:
                 future_features = self.X.iloc[index + 1: index + self.n_prediction_steps + 1,
-                                  self.known_future_feature_index]
+                                  self.known_future_features]
             else:
                 future_features = None
         else:
@@ -163,7 +163,7 @@ class TimeSeriesSequence(Dataset):
                     past_features = self._cached_time_features[:index + 1]
                 if future_features:
                     future_features = np.hstack([self._cached_time_features[
-                                                 index + 1:index + self.n_prediction_steps +1], past_features
+                                                 index + 1:index + self.n_prediction_steps + 1], past_features
                                                  ])
                 else:
                     future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
@@ -210,7 +210,7 @@ class TimeSeriesSequence(Dataset):
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
 
-    def compute_time_features(self,):
+    def compute_time_features(self, ):
         if self._cached_time_features is None:
             periods = self.Y.shape[0]
             if self.is_test_set:
@@ -230,7 +230,8 @@ class TimeSeriesSequence(Dataset):
                                               periods=self.n_prediction_steps + self.Y.shape[0],
                                               freq=self.freq)
                     time_feature_future = np.vstack(
-                        [transform(date_info[-self.n_prediction_steps:]).to_numpy(float) for transform in self.time_feature_transform]
+                        [transform(date_info[-self.n_prediction_steps:]).to_numpy(float) for transform in
+                         self.time_feature_transform]
                     ).T
                     self._cached_time_features = np.concatenate([self._cached_time_features, time_feature_future])
 
@@ -561,10 +562,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
         self.seq_length_max = int(np.max(self.sequence_lengths_train))
 
-        if max(n_prediction_steps, freq_value) > self.seq_length_median:
-            self.base_window_size = min(n_prediction_steps, freq_value, self.seq_length_median)
+        if freq_value > self.seq_length_median:
+            self.base_window_size = self.seq_length_median
         else:
-            self.base_window_size = max(n_prediction_steps, freq_value)
+            self.base_window_size = freq_value
 
         self.train_tensors = train_tensors
 
@@ -624,11 +625,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         # TODO doing experiments to give the most proper way of defining these two values
         if lagged_value is None:
-            if self.freq in FREQUENCY_MAP:
-                freq = FREQUENCY_MAP[self.freq]
+            try:
                 lagged_value = [0] + get_lags_for_frequency(freq)
-            else:
+            except Exception:
                 lagged_value = list(range(8))
+
         self.lagged_value = lagged_value
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
