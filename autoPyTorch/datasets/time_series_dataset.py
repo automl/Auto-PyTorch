@@ -368,7 +368,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if isinstance(freq_value, list):
             if np.max(freq_value) < n_prediction_steps:
-                tmp_freq = n_prediction_steps
+                tmp_freq = max(freq_value)
             else:
                 tmp_freq = min([freq_value_item for
                                 freq_value_item in freq_value if freq_value_item >= n_prediction_steps])
