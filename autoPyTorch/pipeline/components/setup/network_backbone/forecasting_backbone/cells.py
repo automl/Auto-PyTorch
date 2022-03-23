@@ -590,6 +590,7 @@ class StackedDecoder(nn.Module):
     def forward(self,
                 x_future: Optional[torch.Tensor],
                 encoder_output: List[torch.Tensor],
+                pos_idx: Optional[Tuple[int]] = None,
                 cache_intermediate_state: bool = False,
                 incremental_update: bool = False
                 ) -> torch.Tensor:
@@ -599,25 +600,28 @@ class StackedDecoder(nn.Module):
             if self.decoder_has_hidden_states[i]:
                 if incremental_update:
                     hx = self.cached_intermediate_state[i]
-                    fx, hx = decoder_i(x_future=x, encoder_output=hx)
+                    fx, hx = decoder_i(x_future=x, encoder_output=hx, pos_idx=pos_idx)
                 else:
-                    fx, hx = decoder_i(x_future=x, encoder_output=encoder_output[i])
+                    fx, hx = decoder_i(x_future=x, encoder_output=encoder_output[i], pos_idx=pos_idx)
             else:
                 if incremental_update:
-                    x_all = torch.cat([self.cached_intermediate_state[i], x], dim=1)
-                    fx = decoder_i(x_all, encoder_output=encoder_output[i])[:, -1:]
+                    # in this case, we only have Transformer, thus x_all needs to be None value!
+                    # TODO make this argument clearer!
+                    #x_all = torch.cat([self.cached_intermediate_state[i], x], dim=1)
+                    fx = decoder_i(x, encoder_output=encoder_output[i], pos_idx=pos_idx)
                 else:
-                    fx = decoder_i(x, encoder_output=encoder_output[i])
+                    fx = decoder_i(x, encoder_output=encoder_output[i], pos_idx=pos_idx)
             skip_id = f'skip_connection_{block_id}'
             if self.skip_connection and skip_id in self.decoder and x is not None:
                 fx = self.decoder[skip_id](fx, x)
             if cache_intermediate_state:
                 if self.decoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
-                else:
-                    if incremental_update:
-                        self.cached_intermediate_state[i] = x_all
-                    else:
-                        self.cached_intermediate_state[i] = x
+                    #TODO consider if there are other case that could make use of cached intermediate states
+                # else:
+                #    if incremental_update:
+                #        self.cached_intermediate_state[i] = x_all
+                #    else:
+                #        self.cached_intermediate_state[i] = x
             x = fx
         return x

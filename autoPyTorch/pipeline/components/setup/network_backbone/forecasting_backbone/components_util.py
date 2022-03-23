@@ -1,7 +1,7 @@
 import math
 from sklearn.base import BaseEstimator
 
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import torch
 from torch import nn
@@ -71,13 +71,14 @@ def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='e
     dropout = config.get('dropout', 0.0)
     activation = config['activation']
     layer_norm_eps = config['layer_norm_eps']
+    norm_first = config['norm_first']
     if layer_type == 'encoder':
         return nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward,
-                                          dropout=dropout, activation=activation,
+                                          dropout=dropout, activation=activation, norm_first=norm_first,
                                           layer_norm_eps=layer_norm_eps, batch_first=True)
     elif layer_type == 'decoder':
         return nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward,
-                                          dropout=dropout, activation=activation,
+                                          dropout=dropout, activation=activation, norm_first=norm_first,
                                           layer_norm_eps=layer_norm_eps, batch_first=True)
     else:
         raise ValueError('layer_type must be encoder or decoder!')
@@ -115,15 +116,19 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self, x):
+    def forward(self, x, pos_idx:Optional[Tuple[int]] = None):
         r"""Inputs of forward function
         Args:
             x: the sequence fed to the positional encoder model (required).
         Shape:
             x: [batch size, sequence length embed dim]
+            pos_idx: positional index, indicating the index of the current
             output: [batch size, sequence length, embed dim]
         Examples:
             >>> output = pos_encoder(x)
         """
-        x = x + self.pe[:, :x.size(1), :]
+        if pos_idx is None:
+            x = x + self.pe[:, :x.size(1), :]
+        else:
+            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]
         return self.dropout(x)

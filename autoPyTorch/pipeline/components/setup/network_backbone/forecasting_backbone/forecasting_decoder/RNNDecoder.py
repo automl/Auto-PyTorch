@@ -46,8 +46,10 @@ class RNN_Module(DecoderNetwork):
                          bidirectional=False,
                          batch_first=True)
 
-    def forward(self, x_future: torch.Tensor,
-                encoder_output: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, ...]:
+    def forward(self,
+                x_future: torch.Tensor,
+                encoder_output: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+                pos_idx: Optional[Tuple[int]] = None) -> Tuple[torch.Tensor, ...]:
         if x_future.ndim == 2:
             x_future = x_future.unsqueeze(1)
         outputs, hidden_state, = self.lstm(x_future, encoder_output)

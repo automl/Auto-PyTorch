@@ -16,7 +16,7 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.utils.common import add_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.\
+from autoPyTorch.pipeline.components.setup.network_backbone. \
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
     BaseForecastingDecoder,
     DecoderProperties
@@ -40,16 +40,18 @@ class _TransformerDecoder(DecoderNetwork):
                  use_layer_norm_output: bool,
                  dropout_pd: float = 0.0,
                  layer_norm_eps_output: Optional[float] = None,
-                 n_prediction_steps:int = 1,
+                 n_prediction_steps: int = 1,
                  lagged_value: Optional[Union[List, np.ndarray]] = None):
         super().__init__()
         self.lagged_value = lagged_value
         in_features = in_features
 
-        self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
+        # self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
+        self.input_layer = nn.Linear(in_features, d_model, bias=False)
+
+        self.use_positional_decoder = use_positional_decoder
         if use_positional_decoder:
-            self.input_layer.append(PositionalEncoding(d_model, dropout_pd))
-        self.input_layer = nn.Sequential(*self.input_layer)
+            self.pos_encoding = PositionalEncoding(d_model, dropout_pd)
 
         self.use_layer_norm_output = use_layer_norm_output
 
@@ -62,8 +64,10 @@ class _TransformerDecoder(DecoderNetwork):
                                                                 norm=norm)
         self.tgt_mask = nn.Transformer.generate_square_subsequent_mask(n_prediction_steps)
 
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor):
+    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]] = None):
         output = self.input_layer(x_future)
+        if self.use_positional_decoder:
+            output = self.pos_encoding(output, pos_idx)
         if self.training:
             output = self.transformer_decoder_layers(output, encoder_output,
                                                      tgt_mask=self.tgt_mask.to(encoder_output.device))
@@ -110,7 +114,9 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
 
     @staticmethod
     def decoder_properties():
-        return DecoderProperties(recurrent=True, lagged_input=True, mask_on_future_target=True)
+        return DecoderProperties(recurrent=True,
+                                 lagged_input=True,
+                                 mask_on_future_target=True)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.transformer_encoder_kwargs = X['transformer_encoder_kwargs']
@@ -148,6 +154,10 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
             HyperparameterSearchSpace(hyperparameter='d_feed_forward_log',
                                       value_range=(6, 12),
                                       default_value=7),
+            norm_first: HyperparameterSearchSpace =
+            HyperparameterSearchSpace(hyperparameter="norm_first",
+                                      value_range=(True, False),
+                                      default_value=True),
             layer_norm_eps: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='layer_norm_eps',
                                       value_range=(1e-7, 1e-3),
@@ -185,6 +195,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
         cs = CS.ConfigurationSpace()
 
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
+        add_hyperparameter(cs, norm_first, CategoricalHyperparameter)
 
         min_transformer_layers, max_transformer_layers = num_layers.value_range
 

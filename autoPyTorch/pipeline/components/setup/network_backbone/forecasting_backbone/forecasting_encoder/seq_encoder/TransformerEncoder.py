@@ -151,6 +151,10 @@ class TransformerEncoder(BaseForecastingEncoder):
             HyperparameterSearchSpace(hyperparameter='d_feed_forward_log',
                                       value_range=(6, 12),
                                       default_value=7),
+            norm_first: HyperparameterSearchSpace =
+            HyperparameterSearchSpace(hyperparameter="norm_first",
+                                      value_range=(True, False),
+                                      default_value=True),
             layer_norm_eps: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='layer_norm_eps',
                                       value_range=(1e-7, 1e-3),
@@ -193,6 +197,7 @@ class TransformerEncoder(BaseForecastingEncoder):
 
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
         add_hyperparameter(cs, d_model_log, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, norm_first, CategoricalHyperparameter)
 
         min_transformer_layers, max_transformer_layers = num_layers.value_range
 

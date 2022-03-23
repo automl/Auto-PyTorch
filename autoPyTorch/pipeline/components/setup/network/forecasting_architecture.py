@@ -428,7 +428,7 @@ class ForecastingNet(AbstractForecastingNet):
                 **variable_selector_kwargs
             )
 
-            return x_past, x_future, x_static, loc, scale, static_context_initial_hidden
+            return x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets
         else:
             if past_features is not None:
                 past_features = past_features[:, -self.window_size:]
@@ -440,7 +440,7 @@ class ForecastingNet(AbstractForecastingNet):
             if static_features is not None:
                 static_features = static_features.to(self.device)
             x_past = self.embedding(x_past)  # TODO embedding for future features!
-            return x_past, future_features, static_features, loc, scale, None
+            return x_past, future_features, static_features, loc, scale, None, past_targets
 
     def forward(self,
                 past_targets: torch.Tensor,
@@ -451,7 +451,7 @@ class ForecastingNet(AbstractForecastingNet):
                 past_observed_values: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None,
                 ):
-        x_past, x_future, x_static, loc, scale, static_context_initial_hidden = self.pre_processing(
+        x_past, x_future, x_static, loc, scale, static_context_initial_hidden, _ = self.pre_processing(
             past_targets=past_targets,
             past_observed_values=past_observed_values,
             past_features=past_features,
@@ -464,7 +464,9 @@ class ForecastingNet(AbstractForecastingNet):
         encoder_additional = [static_context_initial_hidden]
         encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
         encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
-        decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder)
+
+        decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
+                                      pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
 
         if self.has_temporal_fusion:
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
@@ -475,7 +477,6 @@ class ForecastingNet(AbstractForecastingNet):
                                                   )
 
         output = self.head(decoder_output)
-
 
         return self.rescale_output(output, loc, scale, self.device)
 
@@ -572,7 +573,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 static_features: Optional[torch.Tensor] = None,
                 past_observed_values: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
-        x_past, x_future, x_static, loc, scale, static_context_initial_hidden = self.pre_processing(
+        x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(
             past_targets=past_targets,
             past_observed_values=past_observed_values,
             past_features=past_features,
@@ -586,6 +587,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
         if self.training:
+            future_targets = self.scale_value(future_targets, loc, scale)
             # we do one step ahead forecasting
             if self.decoder_lagged_input:
                 future_targets = torch.cat([past_targets, future_targets[:, :-1, :]], dim=1)
@@ -606,7 +608,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
                                                            additional_input=encoder_additional)
 
-            decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder)
+            decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
+                                          pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
 
             if self.has_temporal_fusion:
                 decoder_output = self.temporal_fusion(encoder_output=encoder_output,
@@ -652,6 +655,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
+                                                  pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1),
                                                   cache_intermediate_state=True,
                                                   incremental_update=idx_pred > 0)
 
@@ -741,6 +745,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
+                                                  pos_idx=(x_past.shape[1]+idx_pred, x_past.shape[1] + idx_pred+1),
                                                   cache_intermediate_state=True,
                                                   incremental_update=idx_pred > 0)
                     if self.has_temporal_fusion:
@@ -753,7 +758,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                               past_observed_values=past_observed_values,
                                                               decoder_length=idx_pred + 1,
                                                               static_embedding=x_static,
-                                                              )[:, -1:]
+                                                              )
 
                     net_output = self.head(decoder_output)
                     samples = self.pred_from_net_output(net_output).cpu()
