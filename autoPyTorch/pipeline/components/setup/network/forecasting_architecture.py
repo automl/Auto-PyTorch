@@ -365,7 +365,10 @@ class ForecastingNet(AbstractForecastingNet):
                 past_targets[:, -self.window_size:],
                 past_observed_values[:, -self.window_size:]
             )
-            past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
+            past_targets[:, :-self.window_size] = torch.where(
+                past_observed_values[:, :-self.window_size],
+                self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                past_targets[:, :-self.window_size])
             x_past, self.cached_lag_mask_encoder = get_lagged_subsequences(past_targets,
                                                                            self.window_size,
                                                                            self.encoder_lagged_value,
@@ -567,7 +570,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
                 static_features: Optional[torch.Tensor] = None,
-                past_observed_values: Optional[torch.Tensor] = None,
+                past_observed_values: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
         x_past, x_future, x_static, loc, scale, static_context_initial_hidden = self.pre_processing(
             past_targets=past_targets,
@@ -851,7 +854,11 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     past_observed_values[:, -self.window_size:]
                 )
 
-                past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
+                past_targets[:, :-self.window_size] = torch.where(
+                    past_observed_values[:, :-self.window_size],
+                    self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                    past_targets[:, :-self.window_size])
+
 
                 future_targets = self.scale_value(future_targets, loc, scale)
 
@@ -909,7 +916,10 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     past_observed_values[:, -self.window_size:],
                 )
 
-                past_targets[:, :-self.window_size] = self.scale_value(past_targets[:, :-self.window_size], loc, scale)
+                past_targets[:, :-self.window_size] = torch.where(
+                    past_observed_values[:, :-self.window_size],
+                    self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                    past_targets[:, :-self.window_size])
 
                 x_past, self.cached_lag_mask_encoder_test = get_lagged_subsequences(past_targets,
                                                                                     self.window_size,
