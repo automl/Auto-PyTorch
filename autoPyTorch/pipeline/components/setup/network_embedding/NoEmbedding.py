@@ -27,10 +27,15 @@ class NoEmbedding(NetworkEmbeddingComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None):
         super().__init__(random_state=random_state)
 
+<<<<<<< HEAD
     def build_embedding(self,
                         num_input_features: np.ndarray,
                         num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
         return _NoEmbedding(), None
+=======
+    def build_embedding(self, num_categories_per_col: np.ndarray, num_numerical_features: int) -> nn.Module:
+        return _NoEmbedding()
+>>>>>>> have working embedding from pytroch
 
     @staticmethod
     def get_hyperparameter_search_space(

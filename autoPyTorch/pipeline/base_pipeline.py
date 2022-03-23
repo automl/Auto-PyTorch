@@ -322,15 +322,13 @@ class BasePipeline(Pipeline):
                 possible_default_embeddings = copy(list(embeddings))
                 del possible_default_embeddings[possible_default_embeddings.index('LearnedEntityEmbedding')]
 
-                for encoder in encoders:
-                    if encoder == 'OneHotEncoder':
-                        continue
+                if 'OneHotEncoder' in encoders:
                     while True:
                         try:
                             cs.add_forbidden_clause(ForbiddenAndConjunction(
                                 ForbiddenEqualsClause(cs.get_hyperparameter(
                                     'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), "OneHotEncoder")
                             ))
                             break
                         except ValueError:
@@ -340,6 +338,7 @@ class BasePipeline(Pipeline):
                             except IndexError:
                                 raise ValueError("Cannot find a legal default configuration")
                             cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+                    
 
         # Disable CyclicLR until todo is completed.
         if 'lr_scheduler' in self.named_steps.keys() and 'trainer' in self.named_steps.keys():

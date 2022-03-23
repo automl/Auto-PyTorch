@@ -19,10 +19,10 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        num_numerical_columns, num_input_features = self._get_args(X)
+        num_numerical_columns, num_categories_per_col = self._get_args(X)
 
         self.embedding, num_output_features = self.build_embedding(
-            num_input_features=num_input_features,
+            num_categories_per_col=num_categories_per_col,
             num_numerical_features=num_numerical_columns
         )
         if "feature_shapes" in X['dataset_properties']:
@@ -45,7 +45,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         return X
 
     def build_embedding(self,
-                        num_input_features: np.ndarray,
+                        num_categories_per_col: np.ndarray,
                         num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
         raise NotImplementedError
 
@@ -70,10 +70,11 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             else:
                 num_numerical_columns = numerical_column_transformer.transform(
                     X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
-        num_input_features = np.zeros((num_numerical_columns + len(X['dataset_properties']['categorical_columns'])),
-                                      dtype=np.int32)
-        categories = X['dataset_properties']['categories']
+        num_cols = num_numerical_columns + len(X['dataset_properties']['categorical_columns'])
+        num_categories_per_col = np.zeros(num_cols, dtype=np.int32)
 
-        for i, category in enumerate(categories):
-            num_input_features[num_numerical_columns + i, ] = len(category)
-        return num_numerical_columns, num_input_features
+        categories = X['dataset_properties']['categories']
+        for idx, cats in enumerate(categories, start=num_numerical_columns):
+            num_categories_per_col[idx] = len(cats)
+
+        return num_numerical_columns, num_categories_per_col

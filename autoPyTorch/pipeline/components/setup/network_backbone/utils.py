@@ -27,7 +27,7 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...], has
         the network will return a Tuple, we will then only consider the first item
     :return: output_shape
     """
-    placeholder = torch.randn((2, *input_shape), dtype=torch.float)
+    placeholder = torch.randint(high=2, size=(2, *input_shape), dtype=torch.float)
     with torch.no_grad():
         if has_hidden_states:
             output = network(placeholder)[0]
