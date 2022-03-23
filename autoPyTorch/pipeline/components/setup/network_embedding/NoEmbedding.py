@@ -24,7 +24,7 @@ class NoEmbedding(NetworkEmbeddingComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None):
         super().__init__(random_state=random_state)
 
-    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
+    def build_embedding(self, num_categories_per_col: np.ndarray, num_numerical_features: int) -> nn.Module:
         return _NoEmbedding()
 
     @staticmethod

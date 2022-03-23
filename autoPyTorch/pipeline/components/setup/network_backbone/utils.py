@@ -25,7 +25,7 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...]
     :param input_shape: shape of the input
     :return: output_shape
     """
-    placeholder = torch.randn((2, *input_shape), dtype=torch.float)
+    placeholder = torch.randint(high=2, size=(2, *input_shape), dtype=torch.float)
     with torch.no_grad():
         output = network(placeholder)
 

@@ -17,10 +17,10 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        num_numerical_columns, num_input_features = self._get_required_info_from_data(X)
+        num_numerical_columns, num_categories_per_col = self._get_required_info_from_data(X)
 
         self.embedding = self.build_embedding(
-            num_input_features=num_input_features,
+            num_categories_per_col=num_categories_per_col,
             num_numerical_features=num_numerical_columns)
         return self
 
@@ -28,7 +28,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         X.update({'network_embedding': self.embedding})
         return X
 
-    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
+    def build_embedding(self, num_categories_per_col: np.ndarray, num_numerical_features: int) -> nn.Module:
         raise NotImplementedError
 
     def _get_required_info_from_data(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
@@ -60,10 +60,10 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                 X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
 
         num_cols = num_numerical_columns + len(X['dataset_properties']['categorical_columns'])
-        num_input_feats = np.zeros(num_cols, dtype=np.int32)
+        num_categories_per_col = np.zeros(num_cols, dtype=np.int32)
 
         categories = X['dataset_properties']['categories']
         for idx, cats in enumerate(categories, start=num_numerical_columns):
-            num_input_feats[idx] = len(cats)
+            num_categories_per_col[idx] = len(cats)
 
-        return num_numerical_columns, num_input_feats
+        return num_numerical_columns, num_categories_per_col
