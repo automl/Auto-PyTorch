@@ -115,6 +115,7 @@ class AutoMLSMBO(object):
                  pynisher_context: str = 'spawn',
                  min_budget: int = 5,
                  max_budget: int = 50,
+                 num_numerical_features=None
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -245,7 +246,8 @@ class AutoMLSMBO(object):
         self.initial_configurations: Optional[List[Configuration]] = None
         if portfolio_selection is not None:
             initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                        portfolio_selection=portfolio_selection)
+                                                                        portfolio_selection=portfolio_selection,
+                                                                        num_numerical_features=num_numerical_features)
             # incase we dont have any valid configuration from the portfolio
             self.initial_configurations = initial_configurations \
                 if len(initial_configurations) > 0 else None

@@ -1471,6 +1471,7 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
+                num_numerical_features=len(dataset_properties['numerical_columns'])
             )
             try:
                 run_history, self._results_manager.trajectory, budget_type = \
