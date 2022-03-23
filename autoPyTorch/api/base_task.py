@@ -219,7 +219,7 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='optimizer',
         hyperparameter='__choice__',
-        value_range=['AdamWOptimizer'],
+        value_range=['AdamWOptimizer', 'SGDWOptimizer'],
         default_value='AdamWOptimizer',
     )
     # adamw
@@ -242,6 +242,15 @@ def get_search_updates(categorical_indicator: List[bool]):
         value_range=[0.999],
         default_value=0.999,
     )
+    # sgdw
+    search_space_updates.append(
+        node_name='optimizer',
+        hyperparameter='SGDWOptimizer:lr',
+        value_range=[1e-4, 1e-1],
+        default_value=1e-3,
+        log=True
+    )
+
     search_space_updates.append(
         node_name='data_loader',
         hyperparameter='batch_size',

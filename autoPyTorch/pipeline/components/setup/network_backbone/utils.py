@@ -10,6 +10,7 @@ __license__ = "BSD"
 
 
 _activations = {
+    "selu": torch.nn.SELU,
     "relu": torch.nn.ReLU,
     "tanh": torch.nn.Tanh,
     "sigmoid": torch.nn.Sigmoid

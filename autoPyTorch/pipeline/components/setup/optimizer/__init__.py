@@ -135,6 +135,7 @@ class OptimizerChoice(autoPyTorchChoice):
 
         if default is None:
             defaults = [
+                'SGDWOptimizer',
                 'AdamOptimizer',
                 'AdamWOptimizer',
                 'SGDOptimizer',
