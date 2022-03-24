@@ -135,7 +135,7 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='network_head',
         hyperparameter='no_head:activation',
-        value_range=['relu'],
+        value_range=['relu', 'selu'],
         default_value='relu',
     )
 
@@ -197,7 +197,7 @@ def get_search_updates(categorical_indicator: List[bool]):
     search_space_updates.append(
         node_name='network_backbone',
         hyperparameter='ShapedResNetBackbone:activation',
-        value_range=['relu'],
+        value_range=['relu', 'selu'],
         default_value='relu',
     )
 
