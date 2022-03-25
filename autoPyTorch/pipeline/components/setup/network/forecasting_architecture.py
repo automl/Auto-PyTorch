@@ -688,7 +688,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
             else:
                 # we follow the DeepAR implementation:
-                all_samples = []
                 batch_size = past_targets.shape[0]
 
                 encoder2decoder = self.repeat_intermediate_values(
@@ -696,12 +695,13 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                     is_hidden_states=self.encoder.encoder_has_hidden_states,
                     repeats=self.num_samples)
 
-                intermediate_values = self.repeat_intermediate_values([encoder_output, past_observed_values],
-                                                                      is_hidden_states=[False, False],
-                                                                      repeats=self.num_samples)
+                if self.has_temporal_fusion:
+                    intermediate_values = self.repeat_intermediate_values([encoder_output, past_observed_values],
+                                                                          is_hidden_states=[False, False],
+                                                                          repeats=self.num_samples)
 
-                encoder_output = intermediate_values[0]
-                past_observed_values = intermediate_values[1]
+                    encoder_output = intermediate_values[0]
+                    past_observed_values = intermediate_values[1]
 
                 if self.decoder_lagged_input:
                     max_lag_seq_length = max(self.decoder_lagged_value) + 1
@@ -761,14 +761,13 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                               )
 
                     net_output = self.head(decoder_output)
-                    samples = self.pred_from_net_output(net_output).cpu()
+                    samples = net_output.sample().cpu()
 
                     repeated_predicted_target = torch.cat([repeated_predicted_target,
                                                            samples],
                                                           dim=1)
-                    all_samples.append(samples)
 
-                all_predictions = torch.cat(all_samples, dim=1).unflatten(0, (batch_size, self.num_samples))
+                all_predictions = repeated_predicted_target[:, 1:].unflatten(0, (batch_size, self.num_samples))
 
                 if self.aggregation == 'mean':
                     return self.rescale_output(torch.mean(all_predictions, dim=1), loc, scale)
