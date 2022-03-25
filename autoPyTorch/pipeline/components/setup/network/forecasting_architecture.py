@@ -1096,8 +1096,10 @@ class NBEATSNet(ForecastingNet):
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
         if self.window_size < past_targets.shape[1]:
             past_targets = past_targets[:, -self.window_size:]
-            past_observed_values = past_observed_values[:, -self.window_size]
+            past_observed_values = past_observed_values[:, -self.window_size:]
+
         past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_values)
+
         past_targets = past_targets.to(self.device)
 
         batch_size = past_targets.shape[0]

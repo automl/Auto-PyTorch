@@ -113,10 +113,10 @@ class PadSequenceCollector:
             # only past targets and features needs to be transformed
 
             return {key: self([d[key] for d in batch]) if "past" not in key else self([d[key] for d in batch],
-                                                                                  self.sample_interval,
-                                                                                  self.window_size,
-                                                                                  self.target_padding_value) for key
-                in elem}
+                                                                                      self.sample_interval,
+                                                                                      self.window_size,
+                                                                                      self.target_padding_value) for key
+                    in elem}
 
         elif elem is None:
             return None
