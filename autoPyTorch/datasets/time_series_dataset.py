@@ -271,7 +271,7 @@ class TimeSeriesSequence(Dataset):
                 X = self.X[:index + 1 + self.n_prediction_steps]
             else:
                 X = None
-            if self._cached_time_features:
+            if self._cached_time_features is None:
                 cached_time_feautres = None
             else:
                 cached_time_feautres = self._cached_time_features[:index + 1 + self.n_prediction_steps]
