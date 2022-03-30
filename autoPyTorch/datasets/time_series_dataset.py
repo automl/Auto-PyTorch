@@ -372,7 +372,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 tmp_freq = max(freq_value)
             else:
                 tmp_freq = min([freq_value_item for
-                                freq_value_item in freq_value if freq_value_item > min_base_size])
+                                freq_value_item in freq_value if freq_value_item >= min_base_size])
             freq_value = tmp_freq
 
         seasonality = SEASONALITY_MAP.get(freq, 1)
