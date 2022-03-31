@@ -202,10 +202,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 encoded_categories = self.column_transformer.\
                     named_transformers_['categorical_pipeline'].\
                     named_steps['ordinalencoder'].categories_
-                self.categories = [
-                    list(range(len(cat)))
-                    for cat in encoded_categories
-                ]
+
+                self.num_categories_per_col = [len(cat) for cat in encoded_categories]
 
             # differently to categorical_columns and numerical_columns,
             # this saves the index of the column.
