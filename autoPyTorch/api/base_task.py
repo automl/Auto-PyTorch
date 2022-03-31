@@ -120,8 +120,8 @@ def get_search_updates(categorical_indicator: List[bool]):
         The search space updates like setting different hps to different values or ranges.
     """
 
-    # has_cat_features = any(categorical_indicator)
-    # has_numerical_features = not all(categorical_indicator)
+    has_cat_features = any(categorical_indicator)
+    has_numerical_features = not all(categorical_indicator)
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 

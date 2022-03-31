@@ -437,8 +437,6 @@ class TabularClassificationTask(BaseTask):
             dataset_name=dataset_name,
             dataset_compression=self._dataset_compression)
 
-        # import sys
-        # sys.exit(0)
         return self._search(
             dataset=self.dataset,
             optimize_metric=optimize_metric,
