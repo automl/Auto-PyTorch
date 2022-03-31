@@ -27,6 +27,8 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...], has
         the network will return a Tuple, we will then only consider the first item
     :return: output_shape
     """
+    # as we are using nn embedding, 2 is a safe upper limit as 3
+    # is the lowest `min_values_for_embedding` can be
     placeholder = torch.randint(high=2, size=(2, *input_shape), dtype=torch.float)
     with torch.no_grad():
         if has_hidden_states:

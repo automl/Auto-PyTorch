@@ -1,5 +1,4 @@
-import copy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -8,30 +7,35 @@ from sklearn.base import BaseEstimator
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
+from autoPyTorch.utils.common import FitRequirement
 
 
 class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
-        super().__init__()
+    def __init__(self, random_state: Optional[np.random.RandomState] = None):
+        super().__init__(random_state=random_state)
+        self.add_fit_requirements([
+            FitRequirement('num_categories_per_col', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('shape_after_preprocessing', (Tuple), user_defined=False, dataset_property=False)])
+
         self.embedding: Optional[nn.Module] = None
         self.random_state = random_state
         self.feature_shapes: Dict[str, int] = {}
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
-        num_numerical_columns, num_categories_per_col = self._get_args(X)
+        num_features_excl_embed, num_categories_per_col = self._get_required_info_from_data(X)
 
         self.embedding, num_output_features = self.build_embedding(
             num_categories_per_col=num_categories_per_col,
-            num_numerical_features=num_numerical_columns
+            num_features_excl_embed=num_features_excl_embed
         )
         if "feature_shapes" in X['dataset_properties']:
             if num_output_features is not None:
                 feature_shapes = X['dataset_properties']['feature_shapes']
                 # forecasting tasks
                 feature_names = X['dataset_properties']['feature_names']
-                for idx_cat, n_output_cat in enumerate(num_output_features[num_numerical_columns:]):
-                    cat_feature_name = feature_names[idx_cat + num_numerical_columns]
+                for idx_cat, n_output_cat in enumerate(num_output_features[num_features_excl_embed:]):
+                    cat_feature_name = feature_names[idx_cat + num_features_excl_embed]
                     feature_shapes[cat_feature_name] = n_output_cat
                 self.feature_shapes = feature_shapes
             else:
@@ -49,32 +53,33 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                         num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
         raise NotImplementedError
 
-    def _get_args(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
-        # Feature preprocessors can alter numerical columns
-        if len(X['dataset_properties']['numerical_columns']) == 0:
-            num_numerical_columns = 0
-        else:
-            X_train = copy.deepcopy(X['backend'].load_datamanager().train_tensors[0][:2])
+    def _get_required_info_from_data(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:
+        """
+        Returns the number of numerical columns after preprocessing and
+        an array of size equal to the number of input features
+        containing zeros for numerical data and number of categories
+        for categorical data. This is required to build the embedding.
 
-            if 'tabular_transformer' in X:
-                numerical_column_transformer = X['tabular_transformer'].preprocessor. \
-                    named_transformers_['numerical_pipeline']
-            elif 'time_series_feature_transformer' in X:
-                numerical_column_transformer = X['time_series_feature_transformer'].preprocessor. \
-                    named_transformers_['numerical_pipeline']
-            else:
-                raise ValueError("Either a tabular or time_series transformer must be contained!")
-            if hasattr(X_train, 'iloc'):
-                num_numerical_columns = numerical_column_transformer.transform(
-                    X_train.iloc[:, X['dataset_properties']['numerical_columns']]).shape[1]
-            else:
-                num_numerical_columns = numerical_column_transformer.transform(
-                    X_train[:, X['dataset_properties']['numerical_columns']]).shape[1]
-        num_cols = num_numerical_columns + len(X['dataset_properties']['categorical_columns'])
-        num_categories_per_col = np.zeros(num_cols, dtype=np.int32)
+        Args:
+            X (Dict[str, Any]):
+                Fit dictionary
 
-        categories = X['dataset_properties']['categories']
-        for idx, cats in enumerate(categories, start=num_numerical_columns):
-            num_categories_per_col[idx] = len(cats)
+        Returns:
+            Tuple[int, np.ndarray]:
+                number of numerical columns and array indicating
+                number of categories for categorical columns and
+                0 for numerical columns
+        """
+        num_cols = X['shape_after_preprocessing']
+        # only works for 2D(rows, features) tabular data
+        num_features_excl_embed = num_cols[0] - len(X['embed_columns'])
+        
+        num_categories_per_col = np.zeros(num_cols, dtype=np.int16)
 
-        return num_numerical_columns, num_categories_per_col
+        categories_per_embed_col = X['dataset_properties']['num_categories_per_col']
+
+        # only fill num categories for embedding columns
+        for idx, cats in enumerate(categories_per_embed_col, start=num_features_excl_embed):
+            num_categories_per_col[idx] = cats
+
+        return num_features_excl_embed, num_categories_per_col
