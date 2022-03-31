@@ -18,6 +18,9 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.column_splitting.ColumnSplitter import (
+    ColumnSplitter
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer import (
     CoalescerChoice
 )
@@ -133,21 +136,24 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
         torch.manual_seed(self.random_state.get_state()[1][0])
 
-    def _predict_proba(self, X: np.ndarray) -> np.ndarray:
-        # Pre-process X
-        loader = self.named_steps['data_loader'].get_loader(X=X)
-        pred = self.named_steps['network'].predict(loader)
-        if isinstance(self.dataset_properties['output_shape'], int):
-            # The final layer is always softmax now (`pred` already gives pseudo proba)
-            return pred
-        else:
-            raise ValueError("Expected output_shape to be integer, got {},"
-                             "Tabular Classification only supports 'binary' and 'multiclass' outputs"
-                             "got {}".format(type(self.dataset_properties['output_shape']),
-                                             self.dataset_properties['output_type']))
+    def predict(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
+        """Predict the output using the selected model.
+
+        Args:
+            X (np.ndarray): input data to the array
+            batch_size (Optional[int]): batch_size controls whether the pipeline will be
+                called on small chunks of the data. Useful when calling the
+                predict method on the whole array X results in a MemoryError.
+
+        Returns:
+            np.ndarray: the predicted values given input X
+        """
+        probas = super().predict(X=X, batch_size=batch_size)
+        return np.argmax(probas, axis=1)
+
 
     def predict_proba(self, X: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
-        """predict_proba.
+        """predict probabilities.
 
         Args:
             X (np.ndarray):
@@ -161,30 +167,19 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 Probabilities of the target being certain class
         """
         if batch_size is None:
-            y = self._predict_proba(X)
-
+            warnings.warn("Batch size not provided. "
+                          "Will predict on the whole data in a single iteration")
+            batch_size = X.shape[0]
+        loader = self.named_steps['data_loader'].get_loader(X=X, batch_size=batch_size)
+        pred = self.named_steps['network'].predict(loader)
+        if isinstance(self.dataset_properties['output_shape'], int):
+            # The final layer is always softmax now (`pred` already gives pseudo proba)
+            return pred
         else:
-            if not isinstance(batch_size, int):
-                raise ValueError("Argument 'batch_size' must be of type int, "
-                                 "but is '%s'" % type(batch_size))
-            if batch_size <= 0:
-                raise ValueError("Argument 'batch_size' must be positive, "
-                                 "but is %d" % batch_size)
-
-            else:
-                # Probe for the target array dimensions
-                target = self.predict_proba(X[0:2].copy())
-
-                y = np.zeros((X.shape[0], target.shape[1]),
-                             dtype=np.float32)
-
-                for k in range(max(1, int(np.ceil(float(X.shape[0]) / batch_size)))):
-                    batch_from = k * batch_size
-                    batch_to = min([(k + 1) * batch_size, X.shape[0]])
-                    pred_prob = self.predict_proba(X[batch_from:batch_to], batch_size=None)
-                    y[batch_from:batch_to] = pred_prob.astype(np.float32)
-
-        return y
+            raise ValueError("Expected output_shape to be integer, got {},"
+                             "Tabular Classification only supports 'binary' and 'multiclass' outputs"
+                             "got {}".format(type(self.dataset_properties['output_shape']),
+                                             self.dataset_properties['output_type']))
 
     def score(self, X: np.ndarray, y: np.ndarray,
               batch_size: Optional[int] = None,
@@ -208,7 +203,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
         """
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, [metric_name])
-        y_pred = self.predict(X, batch_size=batch_size)
+        y_pred = self.predict_proba(X, batch_size=batch_size)
         score = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
                                 metrics=metrics)[metric_name]
         return score
@@ -289,6 +284,7 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
             ("imputer", SimpleImputer(random_state=self.random_state)),
             # ("variance_threshold", VarianceThreshold(random_state=self.random_state)),
             # ("coalescer", CoalescerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("column_splitter", ColumnSplitter(random_state=self.random_state)),
             ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,
