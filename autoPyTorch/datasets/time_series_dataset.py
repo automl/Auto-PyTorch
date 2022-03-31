@@ -8,6 +8,7 @@ import warnings
 import numpy as np
 
 import pandas as pd
+from pandas._libs.tslibs import to_offset
 from scipy.sparse import issparse
 
 import torch
@@ -32,7 +33,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 
 from gluonts.time_feature.lag import get_lags_for_frequency
 from gluonts.time_feature import (
-    Constant,
+    Constant as ConstantTransform,
     TimeFeature,
     time_features_from_frequency_str,
 )
@@ -425,7 +426,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if not time_feature_transform:
                 # If time features are empty (as for yearly data), we add a
                 # constant feature of 0
-                time_feature_transform = [Constant()]
+                time_feature_transform = [ConstantTransform()]
 
         self.time_feature_transform = time_feature_transform
         self.time_feature_names = tuple([f'time_feature_{t.__class__.__name__}' for t in self.time_feature_transform])
@@ -657,8 +658,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             date_info = pd.date_range(start=start_t,
                                       periods=max_l,
                                       freq=self.freq)
+
+
             series_time_features[start_t] = np.vstack(
-                [transform(date_info).to_numpy(float) for transform in self.time_feature_transform]
+                [transform(date_info).to_numpy(float)
+                 if not isinstance(transform, ConstantTransform) else transform(date_info)
+                 for transform in self.time_feature_transform]
             ).T
         return series_time_features
 
