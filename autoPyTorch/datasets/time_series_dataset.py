@@ -9,6 +9,7 @@ import numpy as np
 
 import pandas as pd
 from pandas._libs.tslibs import to_offset
+from pandas._libs.tslibs.np_datetime import OutOfBoundsDatetime
 from scipy.sparse import issparse
 
 import torch
@@ -227,13 +228,19 @@ class TimeSeriesSequence(Dataset):
         else:
             if self.is_test_set:
                 if self._cached_time_features.shape[0] == self.Y.shape[0]:
-                    date_info = pd.date_range(start=self.start_time_train,
-                                              periods=self.n_prediction_steps + self.Y.shape[0],
-                                              freq=self.freq)
-                    time_feature_future = np.vstack(
-                        [transform(date_info[-self.n_prediction_steps:]).to_numpy(float) for transform in
-                         self.time_feature_transform]
-                    ).T
+                    try:
+                        date_info = pd.date_range(start=self.start_time_train,
+                                                  periods=self.n_prediction_steps + self.Y.shape[0],
+                                                  freq=self.freq)
+                        time_feature_future = np.vstack(
+                            [transform(date_info).to_numpy(float)
+                             if not isinstance(transform, ConstantTransform) else transform(date_info)
+                             for transform in self.time_feature_transform]
+                        ).T
+                    except OutOfBoundsDatetime:
+                        # This is only a temporal solution TODO consider how to solve this!
+                        time_feature_future = np.zeros([self.n_prediction_steps, len(self.time_feature_transform)])
+
                     self._cached_time_features = np.concatenate([self._cached_time_features, time_feature_future])
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
@@ -418,7 +425,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.start_times_train = self.validator.start_times_train
         self.start_times_test = self.validator.start_times_test
-
 
         self._transform_time_feature = False
         if not time_feature_transform:
@@ -655,16 +661,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 series_lengths_max[start_t] = seq_l
         series_time_features = {}
         for start_t, max_l in series_lengths_max.items():
-            date_info = pd.date_range(start=start_t,
-                                      periods=max_l,
-                                      freq=self.freq)
-
-
-            series_time_features[start_t] = np.vstack(
-                [transform(date_info).to_numpy(float)
-                 if not isinstance(transform, ConstantTransform) else transform(date_info)
-                 for transform in self.time_feature_transform]
-            ).T
+            try:
+                date_info = pd.date_range(start=start_t,
+                                          periods=max_l,
+                                          freq=self.freq)
+                series_time_features[start_t] = np.vstack(
+                    [transform(date_info).to_numpy(float)
+                     if not isinstance(transform, ConstantTransform) else transform(date_info)
+                     for transform in self.time_feature_transform]
+                ).T
+            except OutOfBoundsDatetime as e:
+                series_time_features[start_t] = np.zeros([max_l, len(self.time_feature_transform)])
         return series_time_features
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
