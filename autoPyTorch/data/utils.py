@@ -474,12 +474,74 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
     return float(memory_in_bytes / (2**20))
 
 
+def compute_adapted_memory_allocation(size_in_mb: int, memory_limit: int) -> float:
+    """
+    memory_limit = 3GB ==> memory_allocation = 40MB
+    memory_limit = 4GB ==> memory_allocation = 200MB
+    memory_limit = 5GB ==> memory_allocation = 360MB
+    memory_limit = 6GB ==> memory_allocation = 520MB
+    memory_limit = 7GB ==> memory_allocation = 680MB
+    memory_limit = 8GB ==> memory_allocation = 840MB (it could actually ran with 920MB)
+    memory_limit = 9GB ==> memory_allocation = 1000MB (it could actually ran with 1.2GB)
+    The induced equation for the adapted_memory_allocation is:
+        memory_allocation = (memory_limit - 3000) / 1000 * 160 + 40
+    """
+    memory_allocation = (memory_limit - 3000) / 1000 * 160 + 40
+    if memory_allocation <= 0:
+        raise ValueError(
+            f"memory_limit ({memory_limit}MB < 3000MB) is too small to run AutoPyTorch."
+        )
+    return memory_allocation
+
+
+def reduce_size_by_subsample(
+    X: DatasetCompressionInputType,
+    memory_allocation: Union[int, float],
+    is_classification: bool,
+    random_state: Union[int, np.random.RandomState],
+    memory_limit: int,
+    y: Optional[SupportedTargetTypes] = None,
+    adaptive_memory_allocation: bool = True,
+) -> DatasetCompressionInputType:
+
+    n_samples_before = X.shape[0]
+    dataset_size_in_mb = megabytes(X)
+    warn_msg = " If it still causes the memory issue, please consider to decrease `memory_allocation`"
+
+    if adaptive_memory_allocation:
+        warn_msg = " The memory was calculated by a heuristic, so you might still face memory issues."
+        memory_allocation = compute_adapted_memory_allocation(size_in_mb=dataset_size_in_mb, memory_limit=memory_limit)
+
+    # NOTE: type ignore
+    #
+    # Tried the generic `def subsample(X: T) -> T` approach but it was
+    # failing elsewhere, keeping it simple for now
+    sample_percentage = memory_allocation / dataset_size_in_mb
+    X, y = subsample(  # type: ignore
+        X,
+        y=y,
+        sample_size=sample_percentage,
+        is_classification=is_classification,
+        random_state=random_state,
+    )
+
+    n_samples_after = X.shape[0]
+    warnings.warn(
+        f"Dataset too large for allocated memory {memory_allocation}MB,"
+        f" reduced number of samples from {n_samples_before} to"
+        f" {n_samples_after}. {warn_msg}"
+    )
+    return X, y
+
+
 def reduce_dataset_size_if_too_large(
     X: DatasetCompressionInputType,
     memory_allocation: Union[int, float],
     is_classification: bool,
     random_state: Union[int, np.random.RandomState],
+    memory_limit: int = 4096,  # TODO: input memory_limit from outside
     y: Optional[SupportedTargetTypes] = None,
+    adaptive_memory_allocation: bool = True,
     methods: List[str] = ['precision', 'subsample'],
 ) -> DatasetCompressionInputType:
     f""" Reduces the size of the dataset if it's too close to the memory limit.
@@ -513,15 +575,26 @@ def reduce_dataset_size_if_too_large(
                 Reduce the amount of samples of the dataset such that it fits into the allocated
                 memory. Ensures stratification and that unique labels are present
 
+        memory_limit (int):
+            Memory limit in MB.
 
         memory_allocation (Union[int, float]):
             The amount of memory to allocate to the dataset. It should specify an
             absolute amount.
+        adaptive_memory_allocation (bool):
+            Whether we allocate memory adaptively depending on the dataset
+            in case the dataset size does not fit into the memory.
 
     Returns:
         DatasetCompressionInputType
             The reduced X if reductions were needed
     """
+    known_methods = set(["precision", "subsample"])
+    unknown_methods = set(methods) - known_methods
+    if len(unknown_methods) > 0:
+        raise ValueError(f"unknown_methods must be a subset of {known_methods}, but got {unknown_methods}")
+    if methods == list(known_methods)[::-1]:
+        methods = methods[::-1]  # Always apply from precision!
 
     for method in methods:
         if megabytes(X) <= memory_allocation:
@@ -536,32 +609,10 @@ def reduce_dataset_size_if_too_large(
                 f'reduced the precision from {dtypes} to {reduced_dtypes}',
             )
         elif method == "subsample":
-            # If the dataset is still too big such that we couldn't fit
-            # into the allocated memory, we subsample it so that it does
-
-            n_samples_before = X.shape[0]
-            sample_percentage = memory_allocation / megabytes(X)
-
-            # NOTE: type ignore
-            #
-            # Tried the generic `def subsample(X: T) -> T` approach but it was
-            # failing elsewhere, keeping it simple for now
-            X, y = subsample(  # type: ignore
-                X,
-                y=y,
-                sample_size=sample_percentage,
-                is_classification=is_classification,
-                random_state=random_state,
+            X, y = reduce_size_by_subsample(
+                X=X, memory_allocation=memory_allocation, memory_limit=memory_limit,
+                is_classification=is_classification, random_state=random_state,
+                y=y, adaptive_memory_allocation=adaptive_memory_allocation
             )
-
-            n_samples_after = X.shape[0]
-            warnings.warn(
-                f"Dataset too large for allocated memory {memory_allocation}MB,"
-                f" reduced number of samples from {n_samples_before} to"
-                f" {n_samples_after}."
-            )
-
-        else:
-            raise ValueError(f"Unknown operation `{method}`")
 
     return X, y

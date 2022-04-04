@@ -41,15 +41,20 @@ class TabularInputValidator(BaseInputValidator):
         dataset_compression (Optional[DatasetCompressionSpec]):
             specifications for dataset compression. For more info check
             documentation for `BaseTask.get_dataset`.
+        adaptive_memory_allocation (bool):
+            Whether we allocate memory adaptively depending on the dataset
+            in case the dataset size does not fit into the memory.
     """
     def __init__(
         self,
         is_classification: bool = False,
         logger_port: Optional[int] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        adaptive_memory_allocation: bool = True,
         seed: int = 42,
     ):
         self.dataset_compression = dataset_compression
+        self._adaptive_memory_allocation = adaptive_memory_allocation
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
@@ -104,6 +109,7 @@ class TabularInputValidator(BaseInputValidator):
                 y=y,
                 is_classification=self.is_classification,
                 random_state=self.seed,
+                adaptive_memory_allocation=self._adaptive_memory_allocation,
                 **self.dataset_compression  # type: ignore [arg-type]
             )
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype

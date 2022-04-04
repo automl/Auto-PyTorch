@@ -168,6 +168,7 @@ class TabularRegressionTask(BaseTask):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        adaptive_memory_allocation: bool = True
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -194,6 +195,10 @@ class TabularRegressionTask(BaseTask):
             dataset_compression (Optional[DatasetCompressionSpec]):
                 specifications for dataset compression. For more info check
                 documentation for `BaseTask.get_dataset`.
+            adaptive_memory_allocation (bool):
+                Whether we allocate memory adaptively depending on the dataset
+                in case the dataset size does not fit into the memory.
+
         Returns:
             TabularDataset:
                 the dataset object.
@@ -210,7 +215,8 @@ class TabularRegressionTask(BaseTask):
         input_validator = TabularInputValidator(
             is_classification=False,
             logger_port=self._logger_port,
-            dataset_compression=dataset_compression
+            dataset_compression=dataset_compression,
+            adaptive_memory_allocation=adaptive_memory_allocation
         )
 
         # Fit a input validator to check the provided data

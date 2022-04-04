@@ -322,6 +322,7 @@ class BaseTask(ABC):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        adaptive_memory_allocation: bool = True
     ) -> Tuple[BaseDataset, BaseInputValidator]:
         """
         Returns an object of a child class of `BaseDataset` and
@@ -368,6 +369,7 @@ class BaseTask(ABC):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        adaptive_memory_allocation: bool = True
     ) -> BaseDataset:
         """
         Returns an object of a child class of `BaseDataset` according to the current task.
@@ -422,6 +424,9 @@ class BaseTask(ABC):
                         Subsampling takes into account classification labels and stratifies
                         accordingly. We guarantee that at least one occurrence of each
                         label is included in the sampled set.
+            adaptive_memory_allocation (bool):
+                Whether we allocate memory adaptively depending on the dataset
+                in case the dataset size does not fit into the memory.
 
         Returns:
             BaseDataset:
@@ -435,7 +440,8 @@ class BaseTask(ABC):
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name,
-            dataset_compression=dataset_compression)
+            dataset_compression=dataset_compression,
+            adaptive_memory_allocation=adaptive_memory_allocation)
 
         return dataset
 
