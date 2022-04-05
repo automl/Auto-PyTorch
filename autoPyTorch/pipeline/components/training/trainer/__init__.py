@@ -492,7 +492,7 @@ class TrainerChoice(autoPyTorchChoice):
         Verifies and validates the labels from train split.
         """
         # Ensure that the split is not missing any class.
-        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        labels: List[int] = X['y_train'][X['train_indices']]
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
             unique_labels = len(np.unique(labels))
             if unique_labels < X['dataset_properties']['output_shape']:
