@@ -474,24 +474,33 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
     return float(memory_in_bytes / (2**20))
 
 
-def compute_adapted_memory_allocation(size_in_mb: int, memory_limit: int) -> float:
+def compute_adapted_memory_allocation(size_in_mb: int, memory_limit: int) -> int:
     """
-    memory_limit = 3GB ==> memory_allocation = 40MB
-    memory_limit = 4GB ==> memory_allocation = 200MB
-    memory_limit = 5GB ==> memory_allocation = 360MB
-    memory_limit = 6GB ==> memory_allocation = 520MB
-    memory_limit = 7GB ==> memory_allocation = 680MB
-    memory_limit = 8GB ==> memory_allocation = 840MB (it could actually ran with 920MB)
-    memory_limit = 9GB ==> memory_allocation = 1000MB (it could actually ran with 1.2GB)
-    The induced equation for the adapted_memory_allocation is:
+    We performed experiments about memory consumption using neural networks with
+    the default configuration trained on synthetic numpy array and measure
+    how much dataset AutoPyTorch can handle when we fix the column size to 10000.
+    We got the following data:
+        memory_limit = 3GB ==> memory_allocation = 40MB
+        memory_limit = 4GB ==> memory_allocation = 200MB
+        memory_limit = 5GB ==> memory_allocation = 360MB
+        memory_limit = 6GB ==> memory_allocation = 520MB
+        memory_limit = 7GB ==> memory_allocation = 680MB
+        memory_limit = 8GB ==> memory_allocation = 840MB (it could actually ran with 920MB)
+        memory_limit = 9GB ==> memory_allocation = 1000MB (it could actually ran with 1.2GB)
+
+    The induced equation for the adapted_memory_allocation from this result is:
         memory_allocation = (memory_limit - 3000) / 1000 * 160 + 40
+
+    Note:
+        When memory_allocation is float, memory_allocation will be handled as a percentage,
+        so we need to handle memory_allocation as an integer, i.e. an absolute data size.
     """
-    memory_allocation = (memory_limit - 3000) / 1000 * 160 + 40
+    memory_allocation = int((memory_limit - 3000) // 1000 * 160 + 40)
     if memory_allocation <= 0:
         raise ValueError(
             f"memory_limit ({memory_limit}MB < 3000MB) is too small to run AutoPyTorch."
         )
-    return memory_allocation
+    return min(size_in_mb, memory_allocation)
 
 
 def reduce_size_by_subsample(
