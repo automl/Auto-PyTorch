@@ -83,7 +83,7 @@ def get_smac_object(
         run_id=seed,
         intensifier=Hyperband,
         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
-                            'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+                            'eta': 2, 'min_chall': 1, 'instance_order': 'shuffle_once'},
         dask_client=dask_client,
         n_jobs=n_jobs,
         smbo_class=smbo_class
