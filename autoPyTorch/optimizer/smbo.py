@@ -82,7 +82,7 @@ def get_smac_object(
         run_id=seed,
         intensifier=Hyperband,
         intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
-                            'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+                            'eta': 2, 'min_chall': 1, 'instance_order': 'shuffle_once'},
         dask_client=dask_client,
         n_jobs=n_jobs,
         smbo_class=smbo_class
@@ -308,11 +308,14 @@ class AutoMLSMBO(object):
 
         self.initial_configurations: Optional[List[Configuration]] = None
         if portfolio_selection is not None:
-            initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                        portfolio_selection=portfolio_selection)
-            # incase we dont have any valid configuration from the portfolio
-            self.initial_configurations = initial_configurations \
-                if len(initial_configurations) > 0 else None
+            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                             portfolio_selection=portfolio_selection)
+            if len(self.initial_configurations) == 0:
+                self.initial_configurations = None
+                self.logger.warning("None of the portfolio configurations are compatible"
+                                    " with the current search space. Skipping initial configuration...")
+
+        self.use_ensemble_opt_loss = use_ensemble_opt_loss
 
         self.use_ensemble_opt_loss = use_ensemble_opt_loss
 

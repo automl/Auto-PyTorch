@@ -520,6 +520,8 @@ class AbstractEvaluator(object):
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+        self.use_ensemble_opt_loss = use_ensemble_opt_loss
+
 
     def _init_datamanager_info(
         self,
