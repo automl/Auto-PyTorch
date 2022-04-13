@@ -16,7 +16,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
     ):
         super().__init__(logger)
-        self.data_contain_ser_idx = False
+        self.only_contain_series_idx = True
 
     def fit(self,
             X_train: Union[pd.DataFrame, np.ndarray],
@@ -46,9 +46,16 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                     if series_id not in X_train.columns:
                         raise ValueError(f"All Series ID must be contained in the training column, however, {series_id}"
                                          f"is not part of {X_train.columns.tolist()}")
-                self.data_contain_ser_idx = True
+                self.only_contain_series_idx = len(X_train.columns) == series_idx
+                if self.only_contain_series_idx:
+                    self._is_fitted = True
+
+                    self.num_features = 0
+                    self.numerical_columns = []
+                    self.categorical_columns = []
 
                 X_train_ = X_train.drop(series_idx, axis=1)
+
                 X_test_ = X_test.drop(series_idx, axis=1) if X_test is not None else None
 
                 super().fit(X_train_, X_test_)
@@ -57,10 +64,6 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                                           f"X_train is {type(X_train)} ")
         else:
             super().fit(X_train, X_test)
-        if isinstance(X_train, pd.DataFrame):
-            if series_idx is None:
-                series_idx = ['Series Idx']
-            self.column_order = series_idx + self.column_order
 
         return self
 

@@ -86,10 +86,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         if X_train is None:
             self._is_uni_variant = True
         if isinstance(y_train, List):
-            if self.series_idx is not None:
-                # TODO: add support for this
-                raise NotImplementedError("When training data is given in the form of list, providing series idx info"
-                                          "is not supported")
             # X_train and y_train are stored as lists
             if self._is_uni_variant:
                 self.feature_validator.num_features = 0
@@ -116,6 +112,10 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     super().fit(X_train[0], y_train[0], X_test[0], y_test[0])
                 self.feature_validator.fit(X_train[0], None if X_test is None else X_test[0], series_idx=series_idx)
                 self.target_validator.fit(y_train[0], None if y_test is None else y_test[0])
+
+                if self.feature_validator.only_contain_series_idx:
+                    self._is_uni_variant = True
+
                 self._is_fitted = True
 
                 # In this case we don't assign series index to the data, we manually assigne
@@ -163,14 +163,12 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self,
             X: Optional[Union[List, pd.DataFrame]],
             y: Optional[Union[List, pd.DataFrame]] = None,
-    ) -> Tuple[DataFrameGroupBy, Optional[DataFrameGroupBy], List[int]]:
+    ) -> Tuple[Optional[DataFrameGroupBy], DataFrameGroupBy, np.ndarray]:
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
 
         if y is None:
             raise ValueError('Targets must be given!')
-
-        series_idx = ['Series Index'] or self.series_idx
 
         if isinstance(y, List):
             num_sequences = len(y)
@@ -181,6 +179,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 if X is None:
                     raise ValueError('Multi Variant dataset requires X as input!')
                 num_features = self.feature_validator.num_features
+            assert len(X) == len(y), "Length of features must equal to length of targets!"
 
             for seq_idx in range(num_sequences):
                 sequence_lengths[seq_idx] = len(y[seq_idx])
@@ -192,38 +191,44 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
             start_idx = 0
 
+            y_flat = np.empty([num_data, num_targets])
 
-            group_ids = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
-
-            if self._is_uni_variant:
-                y_flat = pd.DataFrame(np.empty([num_data, num_targets]), index=group_ids)
-                for seq_idx, seq_length in enumerate(sequence_lengths):
-                    end_idx = start_idx + seq_length
-                    y_flat[start_idx: end_idx] = np.array(y[seq_idx]).reshape([-1, num_targets])
-                    start_idx = end_idx
-
-                y_transformed = self.target_validator.transform(y_flat)
-
-                if y_transformed.ndim == 1:
-                    y_transformed = np.expand_dims(y_transformed, -1)
-                return np.asarray([]), y_transformed, sequence_lengths
-
-            # a matrix that is concatenated by all the time series sequences
-
-            X_flat = pd.DataFrame(np.empty([num_data, num_features]), index=group_ids)
-            y_flat = pd.DataFrame(np.empty([num_data, num_targets]), index=group_ids)
-
-            start_idx = 0
             for seq_idx, seq_length in enumerate(sequence_lengths):
                 end_idx = start_idx + seq_length
-                X_flat[start_idx: end_idx] = np.array(X[seq_idx]).reshape([-1, num_features])
                 y_flat[start_idx: end_idx] = np.array(y[seq_idx]).reshape([-1, num_targets])
                 start_idx = end_idx
 
-            X_transformed = self.feature_validator.transform(X_flat)  # type:np.ndarray
-            y_transformed = self.target_validator.transform(y_flat)  # type:np.ndarray
+            y_transformed = self.target_validator.transform(y_flat)
             if y_transformed.ndim == 1:
                 y_transformed = np.expand_dims(y_transformed, -1)
-            return X_transformed, y_transformed, sequence_lengths
+
+            if self.series_idx is None:
+                series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+                if not self._is_uni_variant:
+                    if isinstance(X[0], np.ndarray):
+                        x_flat: pd.DataFrame = pd.DataFrame(np.vstack(X))
+                    elif isinstance(X[0], pd.DataFrame):
+                        x_flat: pd.DataFrame = pd.concat(X)
+                    else:
+                        raise NotImplementedError(f'Cannot transform a List of {type(X[0])}')
+                    x_transformed = self.feature_validator.transform(x_flat)
+
+            else:
+                # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
+                x_flat = pd.concat(X)
+                x_columns = x_flat.columns
+                for ser_id in self.series_idx:
+                    if ser_id not in x_columns:
+                        raise ValueError(f'{ser_id} does not exist in input feature X')
+
+                series_number = pd.MultiIndex.from_frame(x_flat[self.series_idx])
+                if not self._is_uni_variant:
+                    x_transformed = self.feature_validator.transform(x_flat.drop[self.series_idx])
+            y_transformed: pd.DataFrame = pd.DataFrame(y_transformed,
+                                                       index=pd.Index(series_number))
+            y_transformed: DataFrameGroupBy = y_transformed.groupby(y_transformed.index)
+            if self._is_uni_variant:
+                return None, y_transformed, sequence_lengths
+            return x_transformed.groupby(x_transformed.index), y_transformed, sequence_lengths
         else:
             raise NotImplementedError
