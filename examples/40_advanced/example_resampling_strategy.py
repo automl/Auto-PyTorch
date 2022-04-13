@@ -93,7 +93,7 @@ api = TabularClassificationTask(
 
 ############################################################################
 # Search for an ensemble of machine learning algorithms
-# -----------------------------------------------------------------------
+# -----------------------------------------------------
 
 api.search(
     X_train=X_train,
@@ -107,7 +107,7 @@ api.search(
 
 ############################################################################
 # Print the final ensemble performance
-# ------------
+# ------------------------------------
 y_pred = api.predict(X_test)
 score = api.score(y_pred, y_test)
 print(score)

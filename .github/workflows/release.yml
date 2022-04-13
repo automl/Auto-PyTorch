@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-n-publish:
+  publish:
     runs-on: "ubuntu-latest"
 
     steps:
@@ -50,4 +50,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          password: ${{ secrets.pypi_token }}

@@ -1133,6 +1133,7 @@
     "1": {
       "data_loader:batch_size": 64,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "NoFeaturePreprocessor",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "mean",
@@ -1166,6 +1167,7 @@
     "2": {
       "data_loader:batch_size": 142,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "median",
@@ -1203,6 +1205,7 @@
     "3": {
       "data_loader:batch_size": 246,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "most_frequent",
@@ -1281,6 +1284,7 @@
     "4": {
       "data_loader:batch_size": 269,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "median",
@@ -1324,6 +1328,7 @@
     "5": {
       "data_loader:batch_size": 191,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "most_frequent",
@@ -1373,6 +1378,7 @@
     "6": {
       "data_loader:batch_size": 53,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "median",
@@ -1429,6 +1435,7 @@
     "7": {
       "data_loader:batch_size": 232,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "most_frequent",
@@ -1506,6 +1513,7 @@
     "8": {
       "data_loader:batch_size": 164,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "NoFeaturePreprocessor",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "mean",
@@ -1540,6 +1548,7 @@
     "9": {
       "data_loader:batch_size": 94,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PolynomialFeatures",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "mean",
@@ -1589,6 +1598,7 @@
     "10": {
       "data_loader:batch_size": 70,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "constant_zero",
@@ -1637,6 +1647,7 @@
     "11": {
       "data_loader:batch_size": 274,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "RandomKitchenSinks",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "mean",
@@ -1675,6 +1686,7 @@
     "12": {
       "data_loader:batch_size": 191,
       "encoder:__choice__": "NoEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "NoFeaturePreprocessor",
       "imputer:categorical_strategy": "constant_!missing!",
       "imputer:numerical_strategy": "median",
@@ -1730,6 +1742,7 @@
     "13": {
       "data_loader:batch_size": 35,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "PowerTransformer",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "most_frequent",
@@ -1766,6 +1779,7 @@
     "14": {
       "data_loader:batch_size": 154,
       "encoder:__choice__": "OneHotEncoder",
+      "coalescer:__choice__": "NoCoalescer",
       "feature_preprocessor:__choice__": "KernelPCA",
       "imputer:categorical_strategy": "most_frequent",
       "imputer:numerical_strategy": "mean",

@@ -47,6 +47,7 @@ class TestTabularTransformer:
 
         X = np.random.binomial(1, 0.1, (100, 2000))
         sparse_X = csr_matrix(X)
+        y = np.random.randint(0, 1, 100)
         numerical_columns = list(range(2000))
         categorical_columns = []
         train_indices = np.array(range(50))
@@ -56,6 +57,7 @@ class TestTabularTransformer:
                                   issparse=True)
         X = {
             'X_train': sparse_X,
+            'y_train': y,
             'train_indices': train_indices,
             'dataset_properties': dataset_properties
         }

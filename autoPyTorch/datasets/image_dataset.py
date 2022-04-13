@@ -24,6 +24,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 
 IMAGE_DATASET_INPUT = Union[Dataset, Tuple[Union[np.ndarray, List[str]], np.ndarray]]
@@ -39,7 +40,7 @@ class ImageDataset(BaseDataset):
             validation data
         test (Union[Dataset, Tuple[Union[np.ndarray, List[str]], np.ndarray]]):
             testing data
-        resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+        resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
             (default=HoldoutValTypes.holdout_validation):
             strategy to split the training data.
         resampling_strategy_args (Optional[Dict[str, Any]]): arguments
@@ -57,7 +58,9 @@ class ImageDataset(BaseDataset):
                  train: IMAGE_DATASET_INPUT,
                  val: Optional[IMAGE_DATASET_INPUT] = None,
                  test: Optional[IMAGE_DATASET_INPUT] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[CrossValTypes,
+                                            HoldoutValTypes,
+                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,

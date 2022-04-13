@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union, Callable
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -13,12 +14,17 @@ import numpy as np
 
 import pandas as pd
 
-import scipy.sparse
+from scipy.sparse import spmatrix
 
 import torch
 from torch.utils.data.dataloader import default_collate
 
 HyperparameterValueType = Union[int, str, float]
+
+
+def ispandas(X: Any) -> bool:
+    """ Whether X is pandas.DataFrame or pandas.Series """
+    return hasattr(X, "iloc")
 
 
 class FitRequirement(NamedTuple):
@@ -73,6 +79,30 @@ class HyperparameterSearchSpace(NamedTuple):
         """
         return "Hyperparameter: %s | Range: %s | Default: %s | log: %s" % (
             self.hyperparameter, self.value_range, self.default_value, self.log)
+
+
+class autoPyTorchEnum(str, Enum):
+    """
+    Utility class for enums in autoPyTorch.
+    Allows users to use strings, while we internally use
+    this enum
+    """
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, autoPyTorchEnum):
+            return type(self) == type(other) and self.value == other.value
+        elif isinstance(other, str):
+            return bool(self.value == other)
+        else:
+            enum_name = self.__class__.__name__
+            raise RuntimeError(f"Unsupported type {type(other)}. "
+                               f"{enum_name} only supports `str` and"
+                               f"`{enum_name}`")
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
 
 
 def custom_collate_fn(batch: List, x_collector: Callable = default_collate) -> List[Optional[torch.Tensor]]:
@@ -148,10 +178,10 @@ def get_device_from_fit_dictionary(X: Dict[str, Any]) -> torch.device:
     return torch.device(X.get("device", "cpu"))
 
 
-def subsampler(data: Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix],
+def subsampler(data: Union[np.ndarray, pd.DataFrame, spmatrix],
                x: Union[np.ndarray, List[int]]
-               ) -> Union[np.ndarray, pd.DataFrame, scipy.sparse.csr_matrix]:
-    return data[x] if isinstance(data, (np.ndarray, scipy.sparse.csr_matrix)) else data.iloc[x]
+               ) -> Union[np.ndarray, pd.DataFrame, spmatrix]:
+    return data[x] if isinstance(data, (np.ndarray, spmatrix)) else data.iloc[x]
 
 
 def get_hyperparameter(hyperparameter: HyperparameterSearchSpace,
@@ -216,3 +246,20 @@ def add_hyperparameter(cs: ConfigurationSpace,
         None
     """
     cs.add_hyperparameter(get_hyperparameter(hyperparameter, hyperparameter_type))
+
+
+def check_none(p: Any) -> bool:
+    """
+    utility function to check if `p` is None.
+
+    Args:
+        p (str):
+            variable to check
+
+    Returns:
+        bool:
+            True, if `p` is in (None, "none", "None")
+    """
+    if p in ("None", "none", None):
+        return True
+    return False

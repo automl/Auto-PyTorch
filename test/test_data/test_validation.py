@@ -10,6 +10,7 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.utils import megabytes
 
 
 @pytest.mark.parametrize('openmlid', [2, 40975, 40984])
@@ -137,3 +138,50 @@ def test_validation_unsupported():
             X=np.array([[0, 1, 0], [0, 1, 1]]),
             y=np.array([0, 1]),
         )
+
+
+@pytest.mark.parametrize(
+    'input_data_featuretest',
+    (
+        'numpy_numericalonly_nonan',
+        'numpy_numericalonly_nan',
+        'numpy_mixed_nan',
+        'pandas_numericalonly_nan',
+        'sparse_bsr_nonan',
+        'sparse_bsr_nan',
+        'sparse_coo_nonan',
+        'sparse_coo_nan',
+        'sparse_csc_nonan',
+        'sparse_csc_nan',
+        'sparse_csr_nonan',
+        'sparse_csr_nan',
+        'sparse_dia_nonan',
+        'sparse_dia_nan',
+        'sparse_dok_nonan',
+        'sparse_dok_nan',
+        'openml_40981',  # Australian
+    ),
+    indirect=True
+)
+def test_featurevalidator_dataset_compression(input_data_featuretest):
+    n_samples = input_data_featuretest.shape[0]
+    input_data_targets = np.random.random_sample((n_samples))
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+        input_data_featuretest, input_data_targets, test_size=0.1, random_state=1)
+    validator = TabularInputValidator(
+        dataset_compression={'memory_allocation': 0.8 * megabytes(X_train), 'methods': ['precision', 'subsample']}
+    )
+    validator.fit(X_train=X_train, y_train=y_train)
+    transformed_X_train, _ = validator.transform(X_train.copy(), y_train.copy())
+
+    assert validator._reduced_dtype is not None
+    assert megabytes(transformed_X_train) < megabytes(X_train)
+
+    transformed_X_test, _ = validator.transform(X_test.copy(), y_test.copy())
+    assert megabytes(transformed_X_test) < megabytes(X_test)
+    if hasattr(transformed_X_train, 'iloc'):
+        assert all(transformed_X_train.dtypes == transformed_X_test.dtypes)
+        assert all(transformed_X_train.dtypes == validator._precision)
+    else:
+        assert transformed_X_train.dtype == transformed_X_test.dtype
+    assert transformed_X_test.dtype == validator._reduced_dtype

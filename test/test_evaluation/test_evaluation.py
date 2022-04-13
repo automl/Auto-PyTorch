@@ -92,13 +92,14 @@ class EvaluationTest(unittest.TestCase):
 
     ############################################################################
     # Test ExecuteTaFuncWithQueue.run_wrapper()
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout(self, pynisher_mock):
         pynisher_mock.side_effect = safe_eval_success_mock
         config = unittest.mock.Mock()
         config.config_id = 198
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
+                                    multi_objectives=["cost"],
                                     memory_limit=3072,
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
@@ -106,7 +107,7 @@ class EvaluationTest(unittest.TestCase):
                                     logger_port=self.logger_port,
                                     pynisher_context='fork',
                                     )
-        info = ta.run_wrapper(RunInfo(config=config, cutoff=30, instance=None,
+        info = ta.run_wrapper(RunInfo(config=config, cutoff=2000000, instance=None,
                                       instance_specific=None, seed=1, capped=False))
         self.assertEqual(info[0].config.config_id, 198)
         self.assertEqual(info[1].status, StatusType.SUCCESS, info)
@@ -120,6 +121,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -146,6 +148,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -166,6 +169,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -178,7 +182,7 @@ class EvaluationTest(unittest.TestCase):
                                              instance_specific=None, seed=1, capped=False))
         self.assertEqual(run_value.status, StatusType.STOP)
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_fail_silent(self, pynisher_mock):
         pynisher_mock.return_value = None
         config = unittest.mock.Mock()
@@ -187,6 +191,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -220,7 +225,7 @@ class EvaluationTest(unittest.TestCase):
                                                    'subprocess_stdout': '',
                                                    'subprocess_stderr': ''})
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_fail_memory_error(self, pynisher_mock):
         pynisher_mock.side_effect = MemoryError
         config = unittest.mock.Mock()
@@ -228,6 +233,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -266,6 +272,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -289,6 +296,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -302,7 +310,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIsInstance(info[1].time, float)
         self.assertNotIn('exitcode', info[1].additional_info)
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_eval_with_limits_holdout_2(self, eval_houldout_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
@@ -316,6 +324,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -331,7 +340,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn('configuration_origin', info[1].additional_info)
         self.assertEqual(info[1].additional_info['message'], "{'subsample': 30}")
 
-    @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_function')
+    @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function')
     def test_exception_in_target_function(self, eval_holdout_mock):
         config = unittest.mock.Mock()
         config.config_id = 198
@@ -340,6 +349,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -363,6 +373,7 @@ class EvaluationTest(unittest.TestCase):
         ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
+                                    multi_objectives=["cost"],
                                     metric=accuracy,
                                     cost_for_crash=get_cost_of_crash(accuracy),
                                     abort_on_first_run_crash=False,
@@ -393,6 +404,33 @@ class EvaluationTest(unittest.TestCase):
         self.assertNotIn('exitcode', info[1].additional_info)
         self.assertNotIn('exit_status', info[1].additional_info)
         self.assertNotIn('traceback', info[1])
+
+    def test_eval_with_simple_intensification(self):
+        config = unittest.mock.Mock(spec=int)
+        config.config_id = 198
+
+        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+                                    stats=self.stats,
+                                    memory_limit=3072,
+                                    multi_objectives=["cost"],
+                                    metric=accuracy,
+                                    cost_for_crash=get_cost_of_crash(accuracy),
+                                    abort_on_first_run_crash=False,
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
+                                    budget_type='runtime'
+                                    )
+        ta.pynisher_logger = unittest.mock.Mock()
+        run_info = RunInfo(config=config, cutoff=3000, instance=None,
+                           instance_specific=None, seed=1, capped=False)
+
+        for budget in [0.0, 50.0]:
+            # Simple intensification always returns budget = 0
+            # Other intensifications return a non-zero value
+            self.stats.submitted_ta_runs += 1
+            run_info = run_info._replace(budget=budget)
+            run_info_out, _ = ta.run_wrapper(run_info)
+            self.assertEqual(run_info_out.budget, budget)
 
 
 @pytest.mark.parametrize("metric,expected", [(accuracy, 1.0), (log_loss, MAXINT)])

@@ -5,7 +5,7 @@ import numpy as np
 
 import pandas as pd
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import spmatrix
 
 import torch
 from torch import nn
@@ -32,7 +32,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
         super().__init__()
         self.add_fit_requirements([
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
+            FitRequirement('X_train', (np.ndarray, pd.DataFrame, spmatrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('tabular_transformer', (BaseEstimator,), user_defined=False, dataset_property=False),

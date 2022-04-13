@@ -7,8 +7,8 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 
-from autoPyTorch.data.base_feature_validator import SUPPORTED_FEAT_TYPES
-from autoPyTorch.data.base_target_validator import SUPPORTED_TARGET_TYPES
+from autoPyTorch.data.base_feature_validator import SupportedFeatTypes
+from autoPyTorch.data.base_target_validator import SupportedTargetTypes
 
 
 class BaseInputValidator(BaseEstimator):
@@ -40,10 +40,10 @@ class BaseInputValidator(BaseEstimator):
 
     def fit(
         self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        y_train: SUPPORTED_TARGET_TYPES,
-        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
-        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
+        X_train: SupportedFeatTypes,
+        y_train: SupportedTargetTypes,
+        X_test: Optional[SupportedFeatTypes] = None,
+        y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         Validates and fit a categorical encoder (if needed) to the features, and
@@ -59,15 +59,15 @@ class BaseInputValidator(BaseEstimator):
             + If performing a classification task, the data is going to be encoded
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks). If this data contains categorical columns, an encoder is going to
                 be instantiated and trained with this data.
-            y_train (SUPPORTED_TARGET_TYPES):
+            y_train (SupportedTargetTypes):
                 A set of targets that are going to be encoded if the task is for classification
-            X_test (Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SupportedFeatTypes]):
                 A hold out set of features used for checking
-            y_test (SUPPORTED_TARGET_TYPES):
+            y_test (SupportedTargetTypes):
                 A hold out set of targets used for checking. Additionally, if the current task
                 is a classification task, this y_test categories are also going to be used to
                 fit a pre-processing encoding (to prevent errors on unseen classes).
@@ -96,16 +96,16 @@ class BaseInputValidator(BaseEstimator):
 
     def transform(
         self,
-        X: SUPPORTED_FEAT_TYPES,
-        y: Optional[SUPPORTED_TARGET_TYPES] = None,
+        X: SupportedFeatTypes,
+        y: Optional[SupportedTargetTypes] = None,
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Transform the given target or features to a numpy array
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features to transform
-            y (Optional[SUPPORTED_TARGET_TYPES]):
+            y (Optional[SupportedTargetTypes]):
                 A set of targets to transform
 
         Returns:

@@ -21,6 +21,7 @@ from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetProperties
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 
 
@@ -32,11 +33,11 @@ class TabularDataset(BaseDataset):
             Y (Union[np.ndarray, pd.Series]): training data targets.
             X_test (Optional[Union[np.ndarray, pd.DataFrame]]):  input testing data.
             Y_test (Optional[Union[np.ndarray, pd.DataFrame]]): testing data targets
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
+            resampling_strategy (Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]),
                 (default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
-            resampling_strategy_args (Optional[Dict[str, Any]]): arguments
-                required for the chosen resampling strategy. If None, uses
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
                 the default values provided in DEFAULT_RESAMPLING_PARAMETERS
                 in ```datasets/resampling_strategy.py```.
             shuffle:  Whether to shuffle the data before performing splits
@@ -55,7 +56,9 @@ class TabularDataset(BaseDataset):
                  Y: Union[np.ndarray, pd.Series],
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[CrossValTypes,
+                                            HoldoutValTypes,
+                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
@@ -86,6 +89,7 @@ class TabularDataset(BaseDataset):
                          seed=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)
+        self.issigned = bool(np.any((X.data if self.issparse else X) < 0))
         if self.output_type is not None:
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.task_type = TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION]
@@ -124,6 +128,7 @@ class TabularDataset(BaseDataset):
         info.update({
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
-            'task_type': self.task_type
+            'task_type': self.task_type,
+            'issigned': self.issigned
         })
         return info

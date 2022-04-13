@@ -16,6 +16,13 @@ from typing_extensions import Protocol
 
 
 # Use callback protocol as workaround, since callable with function fields count 'self' as argument
+class NoResamplingFunc(Protocol):
+    def __call__(self,
+                 random_state: np.random.RandomState,
+                 indices: np.ndarray) -> np.ndarray:
+        ...
+
+
 class CrossValFunc(Protocol):
     def __call__(self,
                  random_state: np.random.RandomState,
@@ -93,10 +100,20 @@ class HoldoutValTypes(IntEnum):
         return getattr(self, self.name) in stratified
 
 
-# TODO: replace it with another way
-RESAMPLING_STRATEGIES = [CrossValTypes, HoldoutValTypes]
+class NoResamplingStrategyTypes(IntEnum):
+    no_resampling = 8
 
-DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[str, Any]] = {
+    def is_stratified(self) -> bool:
+        return False
+
+
+# TODO: replace it with another way
+ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
+
+DEFAULT_RESAMPLING_PARAMETERS: Dict[
+    ResamplingStrategies,
+    Dict[str, Any]
+] = {
     HoldoutValTypes.holdout_validation: {
         'val_share': 0.33,
     },
@@ -120,7 +137,8 @@ DEFAULT_RESAMPLING_PARAMETERS: Dict[Union[HoldoutValTypes, CrossValTypes], Dict[
     },
     CrossValTypes.time_series_ts_cross_validation: {
         'num_splits': 2
-    }
+    },
+    NoResamplingStrategyTypes.no_resampling: {}
 }
 
 
@@ -333,3 +351,30 @@ class CrossValFuncs():
             for cross_val_type in cross_val_types
         }
         return cross_validators
+
+
+class NoResamplingFuncs():
+    @classmethod
+    def get_no_resampling_validators(cls, *no_resampling_types: NoResamplingStrategyTypes
+                                     ) -> Dict[str, NoResamplingFunc]:
+        no_resampling_strategies: Dict[str, NoResamplingFunc] = {
+            no_resampling_type.name: getattr(cls, no_resampling_type.name)
+            for no_resampling_type in no_resampling_types
+        }
+        return no_resampling_strategies
+
+    @staticmethod
+    def no_resampling(random_state: np.random.RandomState,
+                      indices: np.ndarray) -> np.ndarray:
+        """
+        Returns the indices without performing
+        any operation on them. To be used for
+        fitting on the whole dataset.
+        This strategy is not compatible with
+        HPO search.
+        Args:
+            indices:  array of indices
+        Returns:
+            np.ndarray: array of indices
+        """
+        return indices

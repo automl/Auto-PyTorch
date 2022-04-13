@@ -6,7 +6,7 @@ import numpy as np
 
 import pandas as pd
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import spmatrix
 
 import torch
 
@@ -24,7 +24,7 @@ class autoPyTorchPreprocessingComponent(autoPyTorchComponent):
         super().__init__()
         self.add_fit_requirements([
             FitRequirement('X_train',
-                           (np.ndarray, pd.DataFrame, csr_matrix),
+                           (np.ndarray, pd.DataFrame, spmatrix),
                            user_defined=True, dataset_property=False),
             FitRequirement('backend',
                            (Backend, ),

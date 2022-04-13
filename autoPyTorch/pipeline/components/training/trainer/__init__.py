@@ -18,7 +18,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
@@ -228,8 +228,10 @@ class TrainerChoice(autoPyTorchChoice):
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
         if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
-
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+
+        labels = self._get_train_label(X)
+
         self.choice.prepare(
             model=X['network'],
             metrics=metrics,
@@ -241,8 +243,8 @@ class TrainerChoice(autoPyTorchChoice):
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
-            step_interval=X['step_interval'],
+            labels=labels,
+            step_interval=X['step_interval']
         )
 
     def get_budget_tracker(self, X):
@@ -282,12 +284,18 @@ class TrainerChoice(autoPyTorchChoice):
         self.budget_tracker = self.get_budget_tracker(X)
 
         self.prepare_trainer(X)
+
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
             total_parameter_count,
             trainable_parameter_count,
             optimize_metric=None if not X['metrics_during_training'] else X.get('optimize_metric'),
         )
+
+        if X['val_data_loader'] is not None:
+            self.early_stopping_split_type = 'val'
+        else:
+            self.early_stopping_split_type = 'train'
 
         epoch = 1
 
@@ -305,9 +313,17 @@ class TrainerChoice(autoPyTorchChoice):
                 writer=writer,
             )
 
+            # its fine if train_loss is None due to `is_max_time_reached()`
+            if train_loss is None:
+                if self.budget_tracker.is_max_time_reached():
+                    break
+                else:
+                    raise RuntimeError("Got an unexpected None in `train_loss`.")
+
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+                if X['val_data_loader']:
+                    val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
 
@@ -346,9 +362,13 @@ class TrainerChoice(autoPyTorchChoice):
             if 'cuda' in X['device']:
                 torch.cuda.empty_cache()
 
+        if self.run_summary.is_empty():
+            raise RuntimeError("Budget exhausted without finishing an epoch.")
+
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
-            val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+            if X['val_data_loader']:
+                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['val_data_loader']:
                 test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
             self.run_summary.add_performance(
@@ -375,6 +395,21 @@ class TrainerChoice(autoPyTorchChoice):
 
         return self
 
+    def _get_train_label(self, X: Dict[str, Any]) -> List[int]:
+        """
+        Verifies and validates the labels from train split.
+        """
+        # Ensure that the split is not missing any class.
+        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
+            unique_labels = len(np.unique(labels))
+            if unique_labels < X['dataset_properties']['output_shape']:
+                raise ValueError(f"Expected number of unique labels {unique_labels} in train split: {X['split_id']}"
+                                 f" to be = num_classes {X['dataset_properties']['output_shape']}."
+                                 f" Consider using stratified splitting strategies.")
+
+        return labels
+
     def _load_best_weights_and_clean_checkpoints(self, X: Dict[str, Any]) -> None:
         """
         Load the best model until the last epoch and delete all the files for checkpoints.
@@ -384,14 +419,17 @@ class TrainerChoice(autoPyTorchChoice):
         """
         assert self.checkpoint_dir is not None  # mypy
         assert self.run_summary is not None  # mypy
+        assert self.early_stopping_split_type is not None  # mypy
 
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')
-        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+        best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)
+        self.logger.debug(f" Early stopped model {X['num_run']} on epoch {best_epoch}")
         # We will stop the training. Load the last best performing weights
         X['network'].load_state_dict(torch.load(best_path))
 
         # Clean the temp dir
         shutil.rmtree(self.checkpoint_dir)
+        self.checkpoint_dir = None
 
     def early_stop_handler(self, X: Dict[str, Any]) -> bool:
         """
@@ -406,6 +444,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: If true, training should be stopped
         """
         assert self.run_summary is not None
+        assert self.early_stopping_split_type is not None  # mypy
 
         # Allow to disable early stopping
         if X['early_stopping'] is None or X['early_stopping'] < 0:
@@ -417,7 +456,10 @@ class TrainerChoice(autoPyTorchChoice):
 
         if not os.path.exists(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir, exist_ok=True)
-        epochs_since_best = self.run_summary.get_last_epoch() - self.run_summary.get_best_epoch()
+
+        last_epoch = self.run_summary.get_last_epoch()
+        best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)
+        epochs_since_best = last_epoch - best_epoch
 
         # Save the checkpoint if there is a new best epoch
         best_path = os.path.join(self.checkpoint_dir, 'best.pth')

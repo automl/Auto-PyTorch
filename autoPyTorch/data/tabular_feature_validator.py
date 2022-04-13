@@ -1,12 +1,13 @@
 import functools
-from typing import Dict, List, Optional, Tuple, cast
+from logging import Logger
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-import scipy.sparse
+from scipy.sparse import issparse, spmatrix
 
 import sklearn.utils
 from sklearn import preprocessing
@@ -16,7 +17,9 @@ from sklearn.exceptions import NotFittedError
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 
-from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
+from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SupportedFeatTypes
+from autoPyTorch.utils.common import ispandas
+from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def _create_column_transformer(
@@ -92,6 +95,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         categorical_columns (List[int]):
             List of indices of categorical columns
     """
+    def __init__(
+        self,
+        logger: Optional[Union[PicklableClientLogger, Logger]] = None,
+    ):
+        super().__init__(logger)
+
     @staticmethod
     def _comparator(cmp1: str, cmp2: str) -> int:
         """Order so that categorical columns come left and numerical columns come right
@@ -117,7 +126,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def _fit(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> BaseEstimator:
         """
         In case input data is a pandas DataFrame, this utility encodes the user provided
@@ -125,7 +134,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         will be able to use
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and an encoder fitted in the case the data needs encoding
 
@@ -139,7 +148,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+        if ispandas(X) and not issparse(X):
             X = cast(pd.DataFrame, X)
             # Treat a column with all instances a NaN as numerical
             # This will prevent doing encoding to a categorical column made completely
@@ -204,14 +213,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def transform(
         self,
-        X: SUPPORTED_FEAT_TYPES,
-    ) -> np.ndarray:
+        X: SupportedFeatTypes,
+    ) -> Union[np.ndarray, spmatrix, pd.DataFrame]:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features, whose categorical features are going to be
                 transformed
 
@@ -229,7 +238,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         if isinstance(X, np.ndarray):
             X = self.numpy_array_to_pandas(X)
 
-        if hasattr(X, "iloc") and not scipy.sparse.issparse(X):
+        if ispandas(X) and not issparse(X):
             if np.any(pd.isnull(X)):
                 for column in X.columns:
                     if X[column].isna().all():
@@ -243,7 +252,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         self._check_data(X)
 
         # Pandas related transformations
-        if hasattr(X, "iloc") and self.column_transformer is not None:
+        if ispandas(X) and self.column_transformer is not None:
             if np.any(pd.isnull(X)):
                 # After above check it means that if there is a NaN
                 # the whole column must be NaN
@@ -256,7 +265,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
         # Sparse related transformations
         # Not all sparse format support index sorting
-        if scipy.sparse.issparse(X) and hasattr(X, 'sort_indices'):
+        if issparse(X) and hasattr(X, 'sort_indices'):
             X.sort_indices()
 
         try:
@@ -272,22 +281,23 @@ class TabularFeatureValidator(BaseFeatureValidator):
                                   "Please try to manually cast it to a supported "
                                   "numerical or categorical values.")
             raise e
+
         return X
 
     def _check_data(
         self,
-        X: SUPPORTED_FEAT_TYPES,
+        X: SupportedFeatTypes,
     ) -> None:
         """
         Feature dimensionality and data type checks
 
         Args:
-            X (SUPPORTED_FEAT_TYPES):
+            X (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and an encoder fitted in the case the data needs encoding
         """
 
-        if not isinstance(X, (np.ndarray, pd.DataFrame)) and not scipy.sparse.issparse(X):
+        if not isinstance(X, (np.ndarray, pd.DataFrame)) and not issparse(X):
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " scipy sparse and Python Lists, yet, the provided input is"
                              " of type {}".format(type(X))
@@ -316,7 +326,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 )
 
         # Then for Pandas, we do not support Nan in categorical columns
-        if hasattr(X, "iloc"):
+        if ispandas(X):
             # If entered here, we have a pandas dataframe
             X = cast(pd.DataFrame, X)
 
@@ -429,8 +439,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def list_to_dataframe(
         self,
-        X_train: SUPPORTED_FEAT_TYPES,
-        X_test: Optional[SUPPORTED_FEAT_TYPES] = None,
+        X_train: SupportedFeatTypes,
+        X_test: Optional[SupportedFeatTypes] = None,
     ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """
         Converts a list to a pandas DataFrame. In this process, column types are inferred.
@@ -438,10 +448,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
         If test data is provided, we proactively match it to train data
 
         Args:
-            X_train (SUPPORTED_FEAT_TYPES):
+            X_train (SupportedFeatTypes):
                 A set of features that are going to be validated (type and dimensionality
                 checks) and a encoder fitted in the case the data needs encoding
-            X_test (Optional[SUPPORTED_FEAT_TYPES]):
+            X_test (Optional[SupportedFeatTypes]):
                 A hold out set of data used for checking
 
         Returns:

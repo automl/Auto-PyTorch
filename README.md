@@ -7,7 +7,9 @@ While early AutoML frameworks focused on optimizing traditional ML pipelines and
 
 Auto-PyTorch is mainly developed to support tabular data (classification, regression).
 The newest features in Auto-PyTorch for tabular data are described in the paper ["Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL"](https://arxiv.org/abs/2006.13799) (see below for bibtex ref).
+
 Also, find the documentation [here](https://automl.github.io/Auto-PyTorch/master).
+
 
 ***From v0.1.0, AutoPyTorch has been updated to further improve usability, robustness and efficiency by using SMAC as the underlying optimization package as well as changing the code structure. Therefore, moving from v0.0.2 to v0.1.0 will break compatibility. 
 In case you would like to use the old API, you can find it at [`master_old`](https://github.com/automl/Auto-PyTorch/tree/master-old).***
@@ -24,7 +26,6 @@ The current version only supports the *greedy portfolio* as described in the pap
 This portfolio is used to warm-start the optimization of SMAC.
 In other words, we evaluate the portfolio on a provided data as initial configurations.
 Then API starts the following procedures:
-
 1. **Validate input data**: Process each data type, e.g. encoding categorical data, so that Auto-Pytorch can handled.
 2. **Create dataset**: Create a dataset that can be handled in this API with a choice of cross validation or holdout splits.
 3. **Evaluate baselines** *1: Train each algorithm in the predefined pool with a fixed hyperparameter configuration and dummy model from `sklearn.dummy` that represents the worst possible performance.

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-import scipy.sparse
+from scipy.sparse import issparse, spmatrix
 
 import sklearn.utils
 from sklearn import preprocessing
@@ -13,14 +13,43 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.multiclass import type_of_target
 
-from autoPyTorch.data.base_target_validator import BaseTargetValidator, SUPPORTED_TARGET_TYPES
+from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
+from autoPyTorch.utils.common import ispandas
+
+
+ArrayType = Union[np.ndarray, spmatrix]
+
+
+def _check_and_to_array(y: SupportedTargetTypes) -> ArrayType:
+    """ sklearn check array will make sure we have the correct numerical features for the array """
+    return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
+
+
+def _modify_regression_target(y: ArrayType) -> ArrayType:
+    # Regression targets must have numbers after a decimal point.
+    # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
+    y_min = np.abs(y).min()
+    offset = max(y_min, 1e-13) * 1e-13  # Sufficiently small number
+    if y_min > 1e12:
+        raise ValueError(
+            "The minimum value for the target labels of regression tasks must be smaller than "
+            f"1e12 to avoid errors caused by an overflow, but got {y_min}"
+        )
+
+    # Since it is all integer, we can just add a random small number
+    if isinstance(y, np.ndarray):
+        y = y.astype(dtype=np.float64) + offset
+    else:
+        y.data = y.data.astype(dtype=np.float64) + offset
+
+    return y
 
 
 class TabularTargetValidator(BaseTargetValidator):
     def _fit(
         self,
-        y_train: SUPPORTED_TARGET_TYPES,
-        y_test: Optional[SUPPORTED_TARGET_TYPES] = None,
+        y_train: SupportedTargetTypes,
+        y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         If dealing with classification, this utility encodes the targets.
@@ -29,10 +58,10 @@ class TabularTargetValidator(BaseTargetValidator):
         errors
 
         Args:
-            y_train (SUPPORTED_TARGET_TYPES)
+            y_train (SupportedTargetTypes)
                 The labels of the current task. They are going to be encoded in case
                 of classification
-            y_test (Optional[SUPPORTED_TARGET_TYPES])
+            y_test (Optional[SupportedTargetTypes])
                 A holdout set of labels
         """
         if not self.is_classification or self.type_of_target == 'multilabel-indicator':
@@ -42,7 +71,7 @@ class TabularTargetValidator(BaseTargetValidator):
             return self
 
         if y_test is not None:
-            if hasattr(y_train, "iloc"):
+            if ispandas(y_train):
                 y_train = pd.concat([y_train, y_test], ignore_index=True, sort=False)
             elif isinstance(y_train, list):
                 y_train = y_train + y_test
@@ -71,7 +100,7 @@ class TabularTargetValidator(BaseTargetValidator):
         if ndim > 1:
             self.encoder.fit(y_train)
         else:
-            if hasattr(y_train, 'iloc'):
+            if ispandas(y_train):
                 y_train = cast(pd.DataFrame, y_train)
                 self.encoder.fit(y_train.to_numpy().reshape(-1, 1))
             else:
@@ -94,16 +123,31 @@ class TabularTargetValidator(BaseTargetValidator):
 
         return self
 
-    def transform(
-        self,
-        y: Union[SUPPORTED_TARGET_TYPES],
-    ) -> np.ndarray:
+    def _transform_by_encoder(self, y: SupportedTargetTypes) -> np.ndarray:
+        if self.encoder is None:
+            return _check_and_to_array(y)
+
+        # remove ravel warning from pandas Series
+        shape = np.shape(y)
+        if len(shape) > 1:
+            y = self.encoder.transform(y)
+        elif ispandas(y):
+            # The Ordinal encoder expects a 2 dimensional input.
+            # The targets are 1 dimensional, so reshape to match the expected shape
+            y = cast(pd.DataFrame, y)
+            y = self.encoder.transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
+        else:
+            y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
+
+        return _check_and_to_array(y)
+
+    def transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
 
         Args:
-            y (SUPPORTED_TARGET_TYPES)
+            y (SupportedTargetTypes)
                 A set of targets that are going to be encoded if the current task
                 is classification
 
@@ -116,47 +160,23 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # Check the data here so we catch problems on new test data
         self._check_data(y)
+        y = self._transform_by_encoder(y)
 
-        if self.encoder is not None:
-            # remove ravel warning from pandas Series
-            shape = np.shape(y)
-            if len(shape) > 1:
-                y = self.encoder.transform(y)
-            else:
-                # The Ordinal encoder expects a 2 dimensional input.
-                # The targets are 1 dimensional, so reshape to match the expected shape
-                if hasattr(y, 'iloc'):
-                    y = cast(pd.DataFrame, y)
-                    y = self.encoder.transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
-                else:
-                    y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
-
-        # sklearn check array will make sure we have the
-        # correct numerical features for the array
-        # Also, a numpy array will be created
-        y = sklearn.utils.check_array(
-            y,
-            force_all_finite=True,
-            accept_sparse='csr',
-            ensure_2d=False,
-        )
-
-        # When translating a dataframe to numpy, make sure we
-        # honor the ravel requirement
+        # When translating a dataframe to numpy, make sure we honor the ravel requirement
         if y.ndim == 2 and y.shape[1] == 1:
             y = np.ravel(y)
 
+        if not self.is_classification and "continuous" not in type_of_target(y):
+            y = _modify_regression_target(y)
+
         return y
 
-    def inverse_transform(
-        self,
-        y: SUPPORTED_TARGET_TYPES,
-    ) -> np.ndarray:
+    def inverse_transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
         Revert any encoding transformation done on a target array
 
         Args:
-            y (Union[np.ndarray, pd.DataFrame, pd.Series]):
+            y (SupportedTargetTypes):
                 Target array to be transformed back to original form before encoding
         Returns:
             np.ndarray:
@@ -172,7 +192,7 @@ class TabularTargetValidator(BaseTargetValidator):
             y = self.encoder.inverse_transform(y)
         else:
             # The targets should be a flattened array, hence reshape with -1
-            if hasattr(y, 'iloc'):
+            if ispandas(y):
                 y = cast(pd.DataFrame, y)
                 y = self.encoder.inverse_transform(y.to_numpy().reshape(-1, 1)).reshape(-1)
             else:
@@ -185,21 +205,18 @@ class TabularTargetValidator(BaseTargetValidator):
             y = y.astype(self.dtype)
         return y
 
-    def _check_data(
-        self,
-        y: SUPPORTED_TARGET_TYPES,
-    ) -> None:
+    def _check_data(self, y: SupportedTargetTypes) -> None:
         """
         Perform dimensionality and data type checks on the targets
 
         Args:
-            y (Union[np.ndarray, pd.DataFrame, pd.Series]):
+            y (SupportedTargetTypes):
                 A set of features whose dimensionality and data type is going to be checked
         """
 
         if not isinstance(y, (np.ndarray, pd.DataFrame,
                               List, pd.Series)) \
-                and not scipy.sparse.issparse(y):  # type: ignore[misc]
+                and not issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
                              "the provided input is of type {}".format(
@@ -208,8 +225,8 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # Sparse data muss be numerical
         # Type ignore on attribute because sparse targets have a dtype
-        if scipy.sparse.issparse(y) and not np.issubdtype(y.dtype.type,  # type: ignore[union-attr]
-                                                          np.number):
+        if issparse(y) and not np.issubdtype(y.dtype.type,  # type: ignore[union-attr]
+                                             np.number):
             raise ValueError("When providing a sparse matrix as targets, the only supported "
                              "values are numerical. Please consider using a dense"
                              " instead."
@@ -228,10 +245,10 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # No Nan is supported
         has_nan_values = False
-        if hasattr(y, 'iloc'):
+        if ispandas(y):
             has_nan_values = cast(pd.DataFrame, y).isnull().values.any()
-        if scipy.sparse.issparse(y):
-            y = cast(scipy.sparse.spmatrix, y)
+        if issparse(y):
+            y = cast(spmatrix, y)
             has_nan_values = not np.array_equal(y.data, y.data)
         else:
             # List and array like values are considered here

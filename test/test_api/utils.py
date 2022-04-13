@@ -69,7 +69,7 @@ class DummyTrainEvaluator(TrainEvaluator):
 
 
 # create closure for evaluating an algorithm
-def dummy_eval_function(
+def dummy_eval_train_function(
         backend,
         queue,
         metric,

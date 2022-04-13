@@ -39,8 +39,9 @@ from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetProperties
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
 
 from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters,
     VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel
+    convert_multioutput_multiclass_to_multilabel,
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
@@ -423,10 +424,25 @@ class AbstractEvaluator(object):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Union[bool, List[str]]):
-            By default, the model, it's predictions and other metadata is stored on disk
-            for each finished configuration. This argument allows the user to skip
-            saving certain file type, for example the model, from being written to disk.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
+
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -452,7 +468,7 @@ class AbstractEvaluator(object):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Union[bool, List[str]] = False,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
@@ -465,43 +481,24 @@ class AbstractEvaluator(object):
         self.backend: Backend = backend
         self.queue = queue
 
-        self.datamanager: BaseDataset = self.backend.load_datamanager()
-
-        assert self.datamanager.task_type is not None, \
-            "Expected dataset {} to have task_type got None".format(self.datamanager.__class__.__name__)
-        self.task_type = STRING_TO_TASK_TYPES[self.datamanager.task_type]
-        self.output_type = STRING_TO_OUTPUT_TYPES[self.datamanager.output_type]
-        self.issparse = self.datamanager.issparse
-
         self.include = include
         self.exclude = exclude
         self.search_space_updates = search_space_updates
-
-        self.X_train, self.y_train = self.datamanager.train_tensors
-
-        if self.datamanager.val_tensors is not None:
-            self.X_valid, self.y_valid = self.datamanager.val_tensors
-        else:
-            self.X_valid, self.y_valid = None, None
-
-        if self.datamanager.test_tensors is not None:
-            self.X_test, self.y_test = self.datamanager.test_tensors
-        else:
-            self.X_test, self.y_test = None, None
 
         self.metric = metric
 
         self.seed = seed
 
+        self._init_datamanager_info()
+
         # Flag to save target for ensemble
         self.output_y_hat_optimization = output_y_hat_optimization
 
-        if isinstance(disable_file_output, bool):
-            self.disable_file_output: bool = disable_file_output
-        elif isinstance(disable_file_output, List):
-            self.disabled_file_outputs: List[str] = disable_file_output
-        else:
-            raise ValueError('disable_file_output should be either a bool or a list')
+        disable_file_output = disable_file_output if disable_file_output is not None else []
+        # check compatibility of disable file output
+        DisableFileOutputParameters.check_compatibility(disable_file_output)
+
+        self.disable_file_output = disable_file_output
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
 
@@ -550,12 +547,7 @@ class AbstractEvaluator(object):
             self.predict_function = self._predict_regression
 
 
-        self.dataset_properties = self.datamanager.get_dataset_properties(
-            get_dataset_requirements(info=self.datamanager.get_required_dataset_info(),
-                                     include=self.include,
-                                     exclude=self.exclude,
-                                     search_space_updates=self.search_space_updates
-                                     ))
+
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
         metrics_dict: Optional[Dict[str, List[str]]] = None
@@ -594,6 +586,53 @@ class AbstractEvaluator(object):
         self.pipeline: Optional[BaseEstimator] = None
         self.logger.debug("Fit dictionary in Abstract evaluator: {}".format(dict_repr(self.fit_dictionary)))
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
+
+    def _init_datamanager_info(
+        self,
+    ) -> None:
+        """
+        Initialises instance attributes that come from the datamanager.
+        For example,
+            X_train, y_train, etc.
+        """
+
+        datamanager: BaseDataset = self.backend.load_datamanager()
+
+        assert datamanager.task_type is not None, \
+            "Expected dataset {} to have task_type got None".format(datamanager.__class__.__name__)
+        self.task_type = STRING_TO_TASK_TYPES[datamanager.task_type]
+        self.output_type = STRING_TO_OUTPUT_TYPES[datamanager.output_type]
+        self.issparse = datamanager.issparse
+
+        self.X_train, self.y_train = datamanager.train_tensors
+
+        if datamanager.val_tensors is not None:
+            self.X_valid, self.y_valid = datamanager.val_tensors
+        else:
+            self.X_valid, self.y_valid = None, None
+
+        if datamanager.test_tensors is not None:
+            self.X_test, self.y_test = datamanager.test_tensors
+        else:
+            self.X_test, self.y_test = None, None
+
+        self.resampling_strategy = datamanager.resampling_strategy
+
+        self.num_classes: Optional[int] = getattr(datamanager, "num_classes", None)
+
+        self.dataset_properties = datamanager.get_dataset_properties(
+            get_dataset_requirements(info=datamanager.get_required_dataset_info(),
+                                     include=self.include,
+                                     exclude=self.exclude,
+                                     search_space_updates=self.search_space_updates
+                                     ))
+        self.splits = datamanager.splits
+        if self.splits is None:
+            raise AttributeError(f"create_splits on {datamanager.__class__.__name__} must be called "
+                                 f"before the instantiation of {self.__class__.__name__}")
+
+        # delete datamanager from memory
+        del datamanager
 
     def _init_fit_dictionary(
         self,
@@ -913,20 +952,17 @@ class AbstractEvaluator(object):
                 )
 
         # Abort if we don't want to output anything.
-        if hasattr(self, 'disable_file_output'):
-            if self.disable_file_output:
-                return None, {}
-            else:
-                self.disabled_file_outputs = []
+        if 'all' in self.disable_file_output:
+            return None, {}
 
         # This file can be written independently of the others down bellow
-        if 'y_optimization' not in self.disabled_file_outputs:
+        if 'y_optimization' not in self.disable_file_output:
             if self.output_y_hat_optimization:
                 self.backend.save_targets_ensemble(self.Y_optimization)
 
-        if hasattr(self, 'pipelines') and self.pipelines is not None:
-            if self.pipelines[0] is not None and len(self.pipelines) > 0:
-                if 'pipelines' not in self.disabled_file_outputs:
+        if getattr(self, 'pipelines', None) is not None:
+            if self.pipelines[0] is not None and len(self.pipelines) > 0:  # type: ignore[index, arg-type]
+                if 'pipelines' not in self.disable_file_output:
                     if self.task_type in CLASSIFICATION_TASKS:
                         pipelines = VotingClassifier(estimators=None, voting='soft', )
                     else:
@@ -939,8 +975,8 @@ class AbstractEvaluator(object):
         else:
             pipelines = None
 
-        if hasattr(self, 'pipeline') and self.pipeline is not None:
-            if 'pipeline' not in self.disabled_file_outputs:
+        if getattr(self, 'pipeline', None) is not None:
+            if 'pipeline' not in self.disable_file_output:
                 pipeline = self.pipeline
             else:
                 pipeline = None
@@ -956,15 +992,15 @@ class AbstractEvaluator(object):
             cv_model=pipelines,
             ensemble_predictions=(
                 Y_optimization_pred if 'y_optimization' not in
-                                       self.disabled_file_outputs else None
+                                       self.disable_file_output else None
             ),
             valid_predictions=(
                 Y_valid_pred if 'y_valid' not in
-                                self.disabled_file_outputs else None
+                                self.disable_file_output else None
             ),
             test_predictions=(
                 Y_test_pred if 'y_test' not in
-                               self.disabled_file_outputs else None
+                               self.disable_file_output else None
             ),
         )
 
@@ -1055,21 +1091,20 @@ class AbstractEvaluator(object):
             (np.ndarray):
                 The formatted prediction
         """
-        assert self.datamanager.num_classes is not None, "Called function on wrong task"
-        num_classes: int = self.datamanager.num_classes
+        assert self.num_classes is not None, "Called function on wrong task"
 
         if self.output_type == MULTICLASS and \
-                prediction.shape[1] < num_classes:
+                prediction.shape[1] < self.num_classes:
             if Y_train is None:
                 raise ValueError('Y_train must not be None!')
             classes = list(np.unique(Y_train))
 
             mapping = dict()
-            for class_number in range(num_classes):
+            for class_number in range(self.num_classes):
                 if class_number in classes:
                     index = classes.index(class_number)
                     mapping[index] = class_number
-            new_predictions = np.zeros((prediction.shape[0], num_classes),
+            new_predictions = np.zeros((prediction.shape[0], self.num_classes),
                                        dtype=np.float32)
 
             for index in mapping:

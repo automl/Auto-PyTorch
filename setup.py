@@ -32,6 +32,7 @@ setuptools.setup(
     keywords="machine learning algorithm configuration hyperparameter"
              "optimization tuning neural architecture deep learning",
     packages=setuptools.find_packages(),
+    package_data={"autoPyTorch": ['py.typed']},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",

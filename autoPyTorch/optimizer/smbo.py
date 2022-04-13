@@ -20,11 +20,11 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -111,7 +111,9 @@ class AutoMLSMBO(object):
                  pipeline_config: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[HoldoutValTypes,
+                                            CrossValTypes,
+                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
@@ -211,9 +213,8 @@ class AutoMLSMBO(object):
         super(AutoMLSMBO, self).__init__()
         # data related
         self.dataset_name = dataset_name
-        self.datamanager: Optional[BaseDataset] = None
         self.metric = metric
-        self.task: Optional[str] = None
+
         self.backend = backend
         self.all_supported_metrics = all_supported_metrics
 
@@ -263,20 +264,24 @@ class AutoMLSMBO(object):
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
-        self.initial_configurations: Optional[List[Configuration]] = None
+        initial_configurations = []
         if portfolio_selection is not None:
-            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
+            initial_configurations = read_return_initial_configurations(config_space=config_space,
                                                                              portfolio_selection=portfolio_selection)
+
         suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
         custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
 
         # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
         # do not provide any initial configurations
         if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
-            self.initial_configurations = read_forecasting_init_configurations(
+            initial_configurations = read_forecasting_init_configurations(
                 config_space=config_space,
                 suggested_init_models=suggested_init_models,
                 custom_init_setting_path=custom_init_setting_path)
+
+        self.initial_configurations = initial_configurations \
+            if len(initial_configurations) > 0 else None
 
         if self.time_series_forecasting:
             self.min_num_test_instances = kwargs.get('min_num_test_instances', None)
@@ -294,8 +299,6 @@ class AutoMLSMBO(object):
 
         self.watcher.start_task('SMBO')
         self.logger.info("Started run of SMBO")
-        # == first things first: load the datamanager
-        self.reset_data_manager()
 
         # == Initialize non-SMBO stuff
         # first create a scenario

@@ -13,6 +13,7 @@ from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend, BackendContext
 from autoPyTorch.evaluation.abstract_evaluator import AbstractEvaluator
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
 this_directory = os.path.dirname(__file__)
@@ -129,7 +130,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
         ae = AbstractEvaluator(
             backend=self.backend_mock,
             queue=queue_mock,
-            disable_file_output=True,
+            disable_file_output=[DisableFileOutputParameters.all],
             metric=accuracy,
             logger_port=unittest.mock.Mock(),
             budget=0,
@@ -310,6 +311,38 @@ class AbstractEvaluatorTest(unittest.TestCase):
                     metric=accuracy,
                     budget=0,
                     configuration=1)
+            except Exception as e:
+                self.assertIsInstance(e, ValueError)
+
+            shutil.rmtree(self.working_directory, ignore_errors=True)
+
+    def test_error_unsupported_disable_file_output_parameters(self):
+        shutil.rmtree(self.working_directory, ignore_errors=True)
+        os.mkdir(self.working_directory)
+
+        queue_mock = unittest.mock.Mock()
+
+        context = BackendContext(
+            prefix='autoPyTorch',
+            temporary_directory=os.path.join(self.working_directory, 'tmp'),
+            output_directory=os.path.join(self.working_directory, 'out'),
+            delete_tmp_folder_after_terminate=True,
+            delete_output_folder_after_terminate=True,
+        )
+        with unittest.mock.patch.object(Backend, 'load_datamanager') as load_datamanager_mock:
+            load_datamanager_mock.return_value = get_multiclass_classification_datamanager()
+
+            backend = Backend(context, prefix='autoPyTorch')
+
+            try:
+                AbstractEvaluator(
+                    backend=backend,
+                    output_y_hat_optimization=False,
+                    queue=queue_mock,
+                    metric=accuracy,
+                    budget=0,
+                    configuration=1,
+                    disable_file_output=['model'])
             except Exception as e:
                 self.assertIsInstance(e, ValueError)
 

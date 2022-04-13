@@ -22,9 +22,20 @@ from smac.stats.stats import Stats
 from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
-import autoPyTorch.evaluation.train_evaluator
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.evaluation.utils import empty_queue, extract_learning_curve, read_queue
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes,
+    NoResamplingStrategyTypes
+)
+from autoPyTorch.evaluation.test_evaluator import eval_test_function
+from autoPyTorch.evaluation.train_evaluator import eval_train_function
+from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters,
+    empty_queue,
+    extract_learning_curve,
+    read_queue
+)
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -94,33 +105,54 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     """
 
     def __init__(
-            self,
-            backend: Backend,
-            seed: int,
-            metric: autoPyTorchMetric,
-            cost_for_crash: float,
-            abort_on_first_run_crash: bool,
-            pynisher_context: str,
-            pipeline_config: Optional[Dict[str, Any]] = None,
-            initial_num_run: int = 1,
-            stats: Optional[Stats] = None,
-            run_obj: str = 'quality',
-            par_factor: int = 1,
-            output_y_hat_optimization: bool = True,
-            include: Optional[Dict[str, Any]] = None,
-            exclude: Optional[Dict[str, Any]] = None,
-            memory_limit: Optional[int] = None,
-            disable_file_output: bool = False,
-            init_params: Dict[str, Any] = None,
-            budget_type: str = None,
-            ta: Optional[Callable] = None,
-            logger_port: int = None,
-            all_supported_metrics: bool = True,
-            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-            **eval_func_kwargs: Dict
-    ):
+        self,
+        backend: Backend,
+        seed: int,
+        metric: autoPyTorchMetric,
+        cost_for_crash: float,
+        abort_on_first_run_crash: bool,
+        pynisher_context: str,
+        multi_objectives: List[str],
+        pipeline_config: Optional[Dict[str, Any]] = None,
+        initial_num_run: int = 1,
+        stats: Optional[Stats] = None,
+        run_obj: str = 'quality',
+        par_factor: int = 1,
+        output_y_hat_optimization: bool = True,
+        include: Optional[Dict[str, Any]] = None,
+        exclude: Optional[Dict[str, Any]] = None,
+        memory_limit: Optional[int] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+        init_params: Dict[str, Any] = None,
+        budget_type: str = None,
+        ta: Optional[Callable] = None,
+        logger_port: int = None,
+        all_supported_metrics: bool = True,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+        ** eval_func_kwargs: Dict):
 
-        eval_function = functools.partial(autoPyTorch.evaluation.train_evaluator.eval_function, **eval_func_kwargs)
+        self.backend = backend
+
+        dm = self.backend.load_datamanager()
+        if dm.val_tensors is not None:
+            self._get_validation_loss = True
+        else:
+            self._get_validation_loss = False
+        if dm.test_tensors is not None:
+            self._get_test_loss = True
+        else:
+            self._get_test_loss = False
+
+        self.resampling_strategy = dm.resampling_strategy
+        self.resampling_strategy_args = dm.resampling_strategy_args
+
+        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+            eval_function =  functools.partial(eval_train_function, **eval_func_kwargs)
+            self.output_y_hat_optimization = output_y_hat_optimization
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            # TODO check eval_test for forecasting tasks
+            eval_function = eval_test_function
+            self.output_y_hat_optimization = False
 
         self.worst_possible_result = cost_for_crash
 
@@ -139,12 +171,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             abort_on_first_run_crash=abort_on_first_run_crash,
         )
 
-        self.backend = backend
         self.pynisher_context = pynisher_context
         self.seed = seed
         self.initial_num_run = initial_num_run
         self.metric = metric
-        self.output_y_hat_optimization = output_y_hat_optimization
         self.include = include
         self.exclude = exclude
         self.disable_file_output = disable_file_output
@@ -172,20 +202,28 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             memory_limit = int(math.ceil(memory_limit))
         self.memory_limit = memory_limit
 
-        dm = self.backend.load_datamanager()
-        if dm.val_tensors is not None:
-            self._get_validation_loss = True
-        else:
-            self._get_validation_loss = False
-        if dm.test_tensors is not None:
-            self._get_test_loss = True
-        else:
-            self._get_test_loss = False
-
-        self.resampling_strategy = dm.resampling_strategy
-        self.resampling_strategy_args = dm.resampling_strategy_args
-
         self.search_space_updates = search_space_updates
+
+    def _check_and_get_default_budget(self) -> float:
+        budget_type_choices = ('epochs', 'runtime')
+        budget_choices = {
+            budget_type: float(self.pipeline_config.get(budget_type, np.inf))
+            for budget_type in budget_type_choices
+        }
+
+        budget_choices_forecasting = {budget_type: 1.0 for budget_type in FORECASTING_BUDGET_TYPE}
+        budget_choices.update(budget_choices_forecasting)
+        budget_type_choices = (*budget_type_choices, *FORECASTING_BUDGET_TYPE)
+
+        # budget is defined by epochs by default
+        budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
+        if self.budget_type is not None:
+            budget_type = self.budget_type
+
+        if budget_type not in budget_type_choices:
+            raise ValueError(f"budget type must be in {budget_type_choices}, but got {budget_type}")
+        else:
+            return budget_choices[budget_type]
 
     def run_wrapper(
         self,
@@ -204,33 +242,21 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             RunValue:
                 Contains information about the status/performance of config
         """
-        if self.budget_type is None:
-            if run_info.budget != 0:
-                raise ValueError(
-                    'If budget_type is None, budget must be.0, but is %f' % run_info.budget
-                )
-        else:
-            if self.budget_type in ('epochs', 'runtime'):
-                if run_info.budget == 0:
-                    # SMAC can return budget zero for intensifiers that don't have a concept
-                    # of budget, for example a simple bayesian optimization intensifier.
-                    # Budget determines how our pipeline trains, which can be via runtime or epochs
-                    epochs_budget = self.pipeline_config.get('epochs', np.inf)
-                    runtime_budget = self.pipeline_config.get('runtime', np.inf)
-                    run_info = run_info._replace(budget=min(epochs_budget, runtime_budget))
-                elif run_info.budget <= 0 or run_info.budget > 100:
-                    raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
-                                     run_info.budget)
-            elif self.budget_type in FORECASTING_BUDGET_TYPE:
-                if run_info.budget == 0:
-                    run_info = run_info._replace(budget=1.0)
-                elif run_info.budget <= 0 or run_info.budget > 1.:
-                    raise ValueError('Illegal value for budget, must be >0 and <=100, but is %f' %
-                                     run_info.budget)
-            else:
-                raise ValueError("Illegal value for budget type, must be one of "
-                                 f"('epochs', 'runtime', or {FORECASTING_BUDGET_TYPE} (for forecasting tasks)), "
-                                 f"but is : {self.budget_type}")
+
+        # SMAC returns non-zero budget for intensification
+        # In other words, SMAC returns budget=0 for a simple intensifier (i.e. no intensification)
+        is_intensified = (run_info.budget != 0)
+        default_budget = self._check_and_get_default_budget()
+
+        if self.budget_type is None and is_intensified:
+            raise ValueError(f'budget must be 0 (=no intensification) for budget_type=None, but got {run_info.budget}')
+        if self.budget_type is not None and run_info.budget < 0:
+            raise ValueError(f'budget must be greater than zero but got {run_info.budget}')
+
+        if self.budget_type is not None and not is_intensified:
+            # The budget will be provided in train evaluator when budget_type is None
+            run_info = run_info._replace(budget=default_budget)
+
 
         remaining_time = self.stats.get_remaing_time_budget()
 
@@ -254,6 +280,10 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         self.logger.info("Starting to evaluate configuration %s" % run_info.config.config_id)
         run_info, run_value = super().run_wrapper(run_info=run_info)
+
+        if not is_intensified:  # It is required for the SMAC compatibility
+            run_info = run_info._replace(budget=0.0)
+
         return run_info, run_value
 
     def run(

@@ -1,6 +1,7 @@
 import os
 import re
 import unittest
+import unittest.mock
 
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
