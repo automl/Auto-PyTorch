@@ -2,11 +2,6 @@
 import logging
 import typing
 
-from sklearn.base import BaseEstimator
-
-from autoPyTorch.data.base_feature_validator import SUPPORTED_FEAT_TYPES
-from autoPyTorch.data.base_target_validator import SUPPORTED_TARGET_TYPES
-
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator

@@ -10,6 +10,7 @@ from pandas.core.groupby.generic import DataFrameGroupBy
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 
+from autoPyTorch.data.utils import  DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
@@ -24,8 +25,9 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     def __init__(self,
                  is_classification: bool = False,
                  logger_port: Optional[int] = None,
+                 dataset_compression: Optional[DatasetCompressionSpec] = None,
                  ) -> None:
-        super(TimeSeriesForecastingInputValidator, self).__init__(is_classification, logger_port)
+        super(TimeSeriesForecastingInputValidator, self).__init__(is_classification, logger_port, dataset_compression)
         self.feature_validator = TimeSeriesFeatureValidator(logger=self.logger)
         self._is_uni_variant = False
         self.known_future_features = None
@@ -68,7 +70,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                           'risk of not proper evaluated ')
 
         if start_times_train is None:
-            start_times_train = [pd.DatetimeIndex(pd.to_datetime(['1900-01-01']), freq=freq)] * len(y_train)
+            start_times_train = [pd.DatetimeIndex(pd.to_datetime(['2000-01-01']), freq=freq)] * len(y_train)
         else:
             assert len(start_times_train) == len(y_train), 'start_times_train must have the same length as y_train!'
 
@@ -201,8 +203,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     start_idx = end_idx
 
                 y_transformed = self.target_validator.transform(y_flat)
-                import pdb
-                pdb.set_trace()
+
                 if y_transformed.ndim == 1:
                     y_transformed = np.expand_dims(y_transformed, -1)
                 return np.asarray([]), y_transformed, sequence_lengths

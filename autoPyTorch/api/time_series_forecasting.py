@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple, Mapping
 
 import numpy as np
 
@@ -13,7 +13,13 @@ from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
+    ResamplingStrategies,
 )
+from autoPyTorch.data.utils import (
+    DatasetCompressionSpec,
+    get_dataset_compression_mapping,
+)
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.automl_common.common.utils.backend import Backend
@@ -107,17 +113,136 @@ class TimeSeriesForecastingTask(BaseTask):
             ))
         return dataset.get_required_dataset_info()
 
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> TimeSeriesForecastingPipeline:
-        return TimeSeriesForecastingPipeline(dataset_properties=dataset_properties)
+    def build_pipeline(
+            self,
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
+            include_components: Optional[Dict[str, Any]] = None,
+            exclude_components: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ) -> TimeSeriesForecastingPipeline:
+        """
+        Build pipeline according to current task
+        and for the passed dataset properties
+
+        Args:
+            dataset_properties (Dict[str, Any]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
+            include_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to include. Key is the node
+                name and Value is an Iterable of the names of the components
+                to include. Only these components will be present in the
+                search space.
+            exclude_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to exclude. Key is the node
+                name and Value is an Iterable of the names of the components
+                to exclude. All except these components will be present in
+                the search space.
+            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+                Search space updates that can be used to modify the search
+                space of particular components or choice modules of the pipeline
+
+        Returns:
+            TimeSeriesForecastingPipeline:
+
+        """
+        return TimeSeriesForecastingPipeline(dataset_properties=dataset_properties,
+                                             include=include_components,
+                                             exclude=exclude_components,
+                                             search_space_updates=search_space_updates)
+
+    def _get_dataset_input_validator(
+            self,
+            X_train: Union[List, pd.DataFrame, np.ndarray],
+            y_train: Union[List, pd.DataFrame, np.ndarray],
+            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            resampling_strategy: Optional[ResamplingStrategies] = None,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            dataset_name: Optional[str] = None,
+            dataset_compression: Optional[DatasetCompressionSpec] = None,
+            freq: Optional[Union[str, int, List[int]]] = None,
+            start_times_train: List[pd.DatetimeIndex] = [],
+            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+            n_prediction_steps: int = 1,
+    ) -> Tuple[TimeSeriesForecastingDataset, TimeSeriesForecastingInputValidator]:
+        """
+        Returns an object of `TabularDataset` and an object of
+        `TabularInputValidator` according to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+                Strategy to split the training data. if None, uses
+                HoldoutValTypes.holdout_validation.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                specifications for dataset compression. For more info check
+                documentation for `BaseTask.get_dataset`.
+            freq: Optional[Union[str, int, List[int]]]
+                frequency information, it determines the configuration space of the window size, if it is not given,
+                we will use the default configuration
+            forecasting_kwargs (Any)
+                kwargs for forecasting dataset, for more details, please check
+                ```datasets/time_series_dataset.py```
+        Returns:
+            TabularDataset:
+                the dataset object.
+            TabularInputValidator:
+                the input validator fitted on the data.
+        """
+
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
+            self.resampling_strategy_args
+
+        # Create a validator object to make sure that the data provided by
+        # the user matches the autopytorch requirements
+        input_validator = TimeSeriesForecastingInputValidator(
+            is_classification=False,
+            logger_port=self._logger_port,
+            dataset_compression=dataset_compression
+        )
+
+        # Fit a input validator to check the provided data
+        # Also, an encoder is fit to both train and test data,
+        # to prevent unseen categories during inference
+        input_validator.fit(X_train=X_train, y_train=y_train, start_times_train=start_times_train,
+                                X_test=X_test, y_test=y_test, start_times_test=start_times_test)
+
+        dataset = TimeSeriesForecastingDataset(
+            X=X_train, Y=y_train,
+            X_test=X_test, Y_test=y_test,
+            freq=freq,
+            start_times_train=start_times_train,
+            start_times_test=start_times_test,
+            validator=input_validator,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            n_prediction_steps=n_prediction_steps,
+        )
+
+        return dataset, input_validator
 
     def search(
             self,
             optimize_metric: str,
-            X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
+            X_train: Optional[Union[List, pd.DataFrame]] = None,
+            y_train: Optional[Union[List, pd.DataFrame]] = None,
+            X_test: Optional[Union[List, pd.DataFrame]] = None,
+            y_test: Optional[Union[List, pd.DataFrame]] = None,
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
             start_times_train: List[pd.DatetimeIndex] = [],
@@ -137,10 +262,10 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output: List = [],
             load_models: bool = True,
             portfolio_selection: Optional[str] = None,
-            normalize_y: bool = True,
             suggested_init_models: Optional[List[str]] = None,
             custom_init_setting_path: Optional[str] = None,
             min_num_test_instances: Optional[int] = None,
+            dataset_compression: Union[Mapping[str, Any], bool] = False,
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -149,21 +274,29 @@ class TimeSeriesForecastingTask(BaseTask):
         To disable ensembling, set ensemble_size==0.
         using the optimizer.
         Args:
-            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
+            optimize_metric (str):
+                name of the metric that is used to evaluate a pipeline.
+            X_train: Optional[Union[List, pd.DataFrame]]
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
-            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
-                (used for multi-variable prediction), indicates which value needs to be predicted
+            y_train: Union[List, pd.DataFrame]
+                training target, must be given
+            X_test: Optional[Union[List, pd.DataFrame]]
+                Test Features, Test series need to end at one step before forecasting
+            y_test: Optional[Union[List, pd.DataFrame]]
+                Test Targets
             n_prediction_steps: int
                 How many steps in advance we need to predict
             freq: Optional[Union[str, int, List[int]]]
                 frequency information, it determines the configuration space of the window size, if it is not given,
                 we will use the default configuration
+            start_times_train: : List[pd.DatetimeIndex]
+                A list indicating the start time of each series in the training sets
+            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+            A list indicating the start time of each series in the test sets
             dataset_name: Optional[str],
                 dataset name
-            optimize_metric (str): name of the metric that is used to
-                evaluate a pipeline.
             budget_type (str):
                 Type of budget to be used when fitting the pipeline.
                 It can be one of:
@@ -237,8 +370,6 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output (Union[bool, List]):
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
-            normalize_y: bool
-                if the input y values need to be normalized
             suggested_init_models: Optional[List[str]]
                 suggested initial models with their default configurations setting
             custom_init_setting_path: Optional[str]
@@ -251,37 +382,22 @@ class TimeSeriesForecastingTask(BaseTask):
             self
 
         """
-        if dataset_name is None:
-            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
 
-        # we have to create a logger for at this point for the validator
-        self._logger = self._get_logger(dataset_name)
-        # TODO we will only consider target variables as int here
-        self.target_variables = target_variables
-        # Create a validator object to make sure that the data provided by
-        # the user matches the autopytorch requirements
-        self.InputValidator = TimeSeriesForecastingInputValidator(
-            is_classification=False,
-            logger_port=self._logger_port,
-        )
+        self._dataset_compression = get_dataset_compression_mapping(memory_limit, dataset_compression)
 
-        # Fit a input validator to check the provided data
-        # Also, an encoder is fit to both train and test data,
-        # to prevent unseen categories during inference
-        self.InputValidator.fit(X_train=X_train, y_train=y_train, start_times_train=start_times_train,
-                                X_test=X_test, y_test=y_test, start_times_test=start_times_test)
-
-        self.dataset = TimeSeriesForecastingDataset(
-            X=X_train, Y=y_train,
-            X_test=X_test, Y_test=y_test,
+        self.dataset, self.input_validator = self._get_dataset_input_validator(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            resampling_strategy=self.resampling_strategy,
+            resampling_strategy_args=self.resampling_strategy_args,
+            dataset_name=dataset_name,
+            dataset_compression=self._dataset_compression,
             freq=freq,
             start_times_train=start_times_train,
             start_times_test=start_times_test,
-            validator=self.InputValidator,
-            resampling_strategy=self.resampling_strategy,
-            resampling_strategy_args=self.resampling_strategy_args,
-            n_prediction_steps=n_prediction_steps,
-            normalize_y=normalize_y,
+            n_prediction_steps=n_prediction_steps
         )
 
         if self.dataset.base_window_size is not None or not self.customized_window_size:
@@ -331,13 +447,12 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
-            time_series_forecasting=self.time_series_forecasting,
-            **forecasting_kwargs,
+            **forecasting_kwargs
         )
 
     def predict(
             self,
-            X_test: Optional[Union[Union[List[np.ndarray]], pd.DataFrame, Dict]]=None,
+            X_test: Optional[Union[Union[List[np.ndarray]], pd.DataFrame, Dict]] = None,
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
             past_targets: Optional[List[np.ndarray]] = None,

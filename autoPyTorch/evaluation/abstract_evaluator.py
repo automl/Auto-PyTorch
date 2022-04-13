@@ -546,9 +546,6 @@ class AbstractEvaluator(object):
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression
 
-
-
-
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
         metrics_dict: Optional[Dict[str, List[str]]] = None
         if all_supported_metrics:

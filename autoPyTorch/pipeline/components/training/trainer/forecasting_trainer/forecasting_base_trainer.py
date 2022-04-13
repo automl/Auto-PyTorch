@@ -89,8 +89,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self.model.train()
         outputs_data = list()
         targets_data = list()
-        import time
-        time_start = time.time()
 
         for step, (data, targets) in enumerate(train_loader):
             if self.budget_tracker.is_max_time_reached():
@@ -115,9 +113,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 )
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
-
-        time_end = time.time()
-        print(f'time used epoch {epoch}: {time_end - time_start}')
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
@@ -229,8 +224,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: test loss
             Dict[str, float]: scores for each desired metric
         """
-        import time
-        time_start = time.time()
         if not isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
             # To save time, we simply make one step prediction for DeepAR and Seq2Seq
             self.model.eval()
@@ -315,7 +308,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
 
         self.model.train()
-        print(f'time for evaluation: {time.time() - time_start}')
         return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
 
     def compute_metrics(self, outputs_data: List[torch.Tensor], targets_data: List[torch.Tensor]

@@ -154,7 +154,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.freq = X['dataset_properties']['freq']
         self.time_feature_transform = X['dataset_properties']['time_feature_transform']
 
-        train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
+        train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
+        val_dataset = datamanager.get_dataset(split_id=X['split_id'], train=False)
 
         train_split, test_split = datamanager.splits[X['split_id']]
 

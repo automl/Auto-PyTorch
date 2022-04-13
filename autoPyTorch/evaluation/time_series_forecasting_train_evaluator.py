@@ -76,7 +76,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             pipeline_config=pipeline_config,
             search_space_updates=search_space_updates
         )
-        self.datamanager: TimeSeriesForecastingDataset
+        self.datamanager = backend.load_datamanager()
         self.n_prediction_steps = self.datamanager.n_prediction_steps
         self.num_sequences = self.datamanager.num_sequences
         self.num_targets = self.datamanager.num_target

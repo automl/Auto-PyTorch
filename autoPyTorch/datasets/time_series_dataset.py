@@ -713,6 +713,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if dataset_idx != 0:
                 test_idx = test_idx - self.cumulative_sizes[dataset_idx - 1]
             y_test[y_i] = self.datasets[dataset_idx].get_test_target(test_idx)
+
         return y_test.reshape([-1, self.num_target])
 
     def make_sequences_datasets(self,

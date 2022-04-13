@@ -336,6 +336,7 @@ class AutoMLSMBO(object):
             pipeline_config=self.pipeline_config,
             search_space_updates=self.search_space_updates,
             pynisher_context=self.pynisher_context,
+            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
         )
 
         ta = ExecuteTaFuncWithQueue

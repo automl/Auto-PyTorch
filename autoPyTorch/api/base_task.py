@@ -745,14 +745,9 @@ class BaseTask(ABC):
             initial_num_run=num_run,
             stats=stats,
             memory_limit=memory_limit,
-<<<<<<< HEAD
-            disable_file_output=True if len(self._disable_file_output) > 0 else False,
+            disable_file_output=self._disable_file_output,
             all_supported_metrics=self._all_supported_metrics,
             evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
-=======
-            disable_file_output=self._disable_file_output,
-            all_supported_metrics=self._all_supported_metrics
->>>>>>> upstream/development
         )
 
         status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -838,7 +833,8 @@ class BaseTask(ABC):
                     stats=stats,
                     memory_limit=memory_limit,
                     disable_file_output=self._disable_file_output,
-                    all_supported_metrics=self._all_supported_metrics
+                    all_supported_metrics=self._all_supported_metrics,
+                    evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
                 )
                 dask_futures.append([
                     classifier,
@@ -937,7 +933,6 @@ class BaseTask(ABC):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None,
-        time_series_forecasting: bool = False,
         **kwargs: Dict[str, Any]
     ) -> 'BaseTask':
         """
@@ -1134,7 +1129,7 @@ class BaseTask(ABC):
 
         # Incorporate budget to pipeline config
         if budget_type not in ('epochs', 'runtime') and (budget_type in FORECASTING_BUDGET_TYPE
-                                                         and not time_series_forecasting):
+                                                         and not self.time_series_forecasting):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
@@ -1254,7 +1249,6 @@ class BaseTask(ABC):
         if time_left_for_smac <= 0:
             self._logger.warning(" Not starting SMAC because there is no time left")
         else:
-
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
                 dataset_name=str(dataset.dataset_name),
@@ -1285,7 +1279,7 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
-                time_series_forecasting=time_series_forecasting,
+                time_series_forecasting=self.time_series_forecasting,
                 **kwargs,
             )
             try:
@@ -1662,7 +1656,9 @@ class BaseTask(ABC):
             exclude=exclude_components,
             search_space_updates=search_space_updates,
             pipeline_config=pipeline_options,
-            pynisher_context=self._multiprocessing_context
+            pynisher_context=self._multiprocessing_context,
+            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
+
         )
 
         run_info, run_value = tae.run_wrapper(
