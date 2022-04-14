@@ -222,8 +222,9 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                         raise ValueError(f'{ser_id} does not exist in input feature X')
 
                 series_number = pd.MultiIndex.from_frame(x_flat[self.series_idx])
+
                 if not self._is_uni_variant:
-                    x_transformed = self.feature_validator.transform(x_flat.drop[self.series_idx])
+                    x_transformed = self.feature_validator.transform(x_flat.drop(self.series_idx, axis=1))
             y_transformed: pd.DataFrame = pd.DataFrame(y_transformed,
                                                        index=pd.Index(series_number))
             if self._is_uni_variant:

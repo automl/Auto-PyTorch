@@ -71,6 +71,7 @@ class TimeSeriesSequence(Dataset):
                  only_has_past_targets: bool = False,
                  compute_mase_coefficient_value: bool = True,
                  time_features=None,
+                 time_features_test=None,
                  is_test_set=False,
                  ):
         """
@@ -442,12 +443,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         X, Y, sequence_lengths = self.validator.transform(X, Y)
         time_features_train = self.compute_time_features(self.start_times_train, sequence_lengths)
 
-        if X_test is not None:
+        if Y_test is not None:
             X_test, Y_test, self.sequence_lengths_tests = self.validator.transform(X_test, Y_test)
             time_features_test = self.compute_time_features(self.start_times_test, self.sequence_lengths_tests)
         else:
             self.sequence_lengths_tests = None
             time_features_test = None
+
+        y_groups = Y.groupby(Y.index)
+        if normalize_y:
+            mean = y_groups.transform("mean")
+            std = y_groups.transform("std")
+            std[std == 0] = 1.
+            Y = (Y[mean.columns] - mean) / std
+            if Y_test is not None:
+                y_groups_test = Y_test.groupby(Y.index)
+
+                mean = y_groups_test.transform("mean")
+                std = y_groups_test.transform("std")
+                std[std == 0] = 1.
+                Y_test = (Y_test[mean.columns] - mean) / std
 
         self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
@@ -554,9 +569,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                             "known_future_features": known_future_features,
                             "static_features": static_features}
 
-        self.y_train_mean = [0] * len(self.sequence_lengths_train)
-        self.y_train_std = [1] * len(self.sequence_lengths_train)
-
         sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(
             X=X, Y=Y,
             X_test=X_test, Y_test=Y_test,
@@ -564,7 +576,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             start_times_test=self.start_times_test,
             time_features_train=time_features_train,
             time_features_test=time_features_test,
-            normalize_y=normalize_y,
             **sequences_kwargs)
 
         self.normalize_y = normalize_y
@@ -721,13 +732,15 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                 Y: pd.DataFrame,
                                 start_times_train: List[pd.DatetimeIndex],
                                 time_features_train: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
-                                X_test: Optional[pd.DataFram] = None,
-                                Y_test: Optional[pd.DataFram] = None,
+                                X_test: Optional[pd.DataFrame] = None,
+                                Y_test: Optional[pd.DataFrame] = None,
                                 start_times_test: Optional[List[pd.DatetimeIndex]] = None,
                                 time_features_test: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
-                                normalize_y: bool = True,
-                                **sequences_kwargs: Optional[Dict]) -> \
-            Tuple[List[TimeSeriesSequence], Tuple[List, List], Tuple[List, List]]:
+                                **sequences_kwargs: Optional[Dict]) -> Tuple[
+        List[TimeSeriesSequence],
+        Tuple[Optional[pd.DataFrame], pd.DataFrame],
+        Optional[Tuple[pd.DataFrame, pd.DataFrame]]
+    ]:
         """
         build a series time sequence datasets
         Args:
@@ -749,8 +762,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 start time for each test series
             time_features_test:Optional[Dict[pd.Timestamp, np.ndarray]]
                 time features for each possible start test times.
-            normalize_y: bool
-                if we want to normalize target vaues (normalization is conducted w.r.t. each sequence)
             sequences_kwargs: Dict
                 additional arguments for test sets
         Returns:
@@ -763,67 +774,39 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         """
         sequence_datasets = []
-        idx_start_train = 0
         idx_start_test = 0
 
-        seq_length_train_flat = self.sequence_lengths_train + self.n_prediction_steps
-        group_ids = np.arange(len(seq_length_train_flat)).repeat(seq_length_train_flat)
+        y_group = Y.groupby(Y.index)
+        if X is not None:
+            x_group = X.groupby(X.index)
+        if Y_test is not None:
+            y_test_group = Y_test.groupby(Y_test.index)
+        if X_test is not None:
+            x_test_group = X_test.groupby(X_test.index)
 
-        for seq_idx, seq_length_train in enumerate(seq_length_train_flat):
-            idx_end_train = idx_start_train + seq_length_train
-            X_seq = X[idx_start_train: idx_end_train]
-            Y_seq = Y[idx_start_train: idx_end_train]
+        for i_ser, (start_train, y) in enumerate(zip(start_times_train, y_group)):
+            ser_id = y[0]
+            y_ser = y[1].transform(np.array).values
+            x_ser = x_group.get_group(ser_id).transform(np.array).values if X is not None else None
 
-            if normalize_y:
-                Y_seq_mean = np.mean(Y_seq)
-                Y_seq_std = np.std(Y_seq)
-                Y_seq = (Y_seq - Y_seq_mean) / Y_seq_std
+            y_test_ser = y_test_group.get_group(ser_id).transform(np.array).values if Y_test is not None else None
+            x_test_ser = x_test_group.get_group(ser_id).transform(np.array).values if X_test is not None else None
 
-            Y[idx_start_train: idx_end_train] = Y_seq
-
-            if X_test is not None and Y_test is not None:
-                seq_length_test = self.sequence_lengths_tests[seq_idx]
-                idx_end_test = idx_start_test + seq_length_test
-
-                X_test_seq = X_test[idx_start_test: idx_end_test]
-                Y_test_seq = Y_test[idx_start_test: idx_end_test]
-
-                if normalize_y:
-                    Y_test_seq_mean = np.mean(Y_test_seq)
-                    Y_test_seq_std = np.std(Y_test_seq)
-                    Y_seq = (Y_seq - Y_test_seq_mean) / Y_test_seq_std
-
-                Y_test[idx_start_test: idx_end_test] = Y_seq
-
-            else:
-                X_test_seq = None
-                Y_test_seq = None
-
-            if X_seq.size == 0:
-                X_seq = None
-                X_test_seq = None
-            start_time_train = start_times_train[seq_idx]
+            start_test = None if start_times_test is None else start_times_test[i_ser]
+            time_feature_test = None if time_features_test is None else time_features_test[start_test][:len(y_test_ser)]
 
             sequence = TimeSeriesSequence(
-                X=X_seq,
-                Y=Y_seq,
-                start_time_train=start_time_train,
-                X_test=X_test_seq,
-                Y_test=Y_test_seq,
-                start_time_test=None if start_times_test is None else start_times_test[seq_idx],
-                time_features=time_features_train[start_time_train][:len(Y_seq)],
+                X=x_ser,
+                Y=y_ser,
+                start_time_train=start_train,
+                X_test=x_test_ser,
+                Y_test=y_test_ser,
+                start_time_test=start_test,
+                time_features=time_features_train[start_train][:len(y_ser)],
+                time_features_test=time_feature_test,
                 **sequences_kwargs)
             sequence_datasets.append(sequence)
-            idx_start_train = idx_end_train
 
-            # self.sequence_lengths_train[seq_idx] = len(sequence)
-
-            # X_seq_all.append(X_seq)
-            # Y_seq_all.append(Y_seq)
-
-            # X_test_seq_all.append(X_test_seq)
-            # Y_test_seq_all.append(Y_test_seq)
-        # train_tensors = (X_seq_all, Y_seq_all)
         train_tensors = (X, Y)
         if Y_test is None:
             test_tensors = None
