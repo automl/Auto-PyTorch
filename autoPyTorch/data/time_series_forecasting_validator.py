@@ -6,13 +6,11 @@ import warnings
 from typing import Optional, Tuple, List, Union, Dict
 import numpy as np
 import pandas as pd
-from pandas.core.groupby.generic import DataFrameGroupBy
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 
-from autoPyTorch.data.utils import  DatasetCompressionSpec
+from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
 
 
@@ -57,7 +55,9 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         Args:
             X_train (Optional[Union[List, pd.DataFrame]]): training features, could be None for "pure" forecasting tasks
             y_train (Union[List, pd.DataFrame]), training targets
-            series_idx (Optional[Union[List[Union[str, int]], str, int]]): which columns of the data are considered as
+            series_idx (Optional[Union[List[Union[str, int]], str, int]]): which columns of the data are considered to
+                identify the
+
 
         """
         if isinstance(series_idx, (str, int)):
@@ -163,7 +163,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self,
             X: Optional[Union[List, pd.DataFrame]],
             y: Optional[Union[List, pd.DataFrame]] = None,
-    ) -> Tuple[Optional[DataFrameGroupBy], DataFrameGroupBy, np.ndarray]:
+    ) -> Tuple[Optional[pd.DataFrame], pd.DataFrame, np.ndarray]:
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
 
@@ -226,9 +226,14 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     x_transformed = self.feature_validator.transform(x_flat.drop[self.series_idx])
             y_transformed: pd.DataFrame = pd.DataFrame(y_transformed,
                                                        index=pd.Index(series_number))
-            y_transformed: DataFrameGroupBy = y_transformed.groupby(y_transformed.index)
             if self._is_uni_variant:
                 return None, y_transformed, sequence_lengths
-            return x_transformed.groupby(x_transformed.index), y_transformed, sequence_lengths
+
+            if x_transformed.ndim == 1:
+                x_transformed = np.expand_dims(x_transformed, -1)
+            x_transformed: pd.DataFrame = pd.DataFrame(x_transformed,
+                                                       index=series_number)
+
+            return x_transformed, y_transformed, sequence_lengths
         else:
             raise NotImplementedError

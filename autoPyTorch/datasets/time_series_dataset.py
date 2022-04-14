@@ -717,31 +717,29 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return y_test.reshape([-1, self.num_target])
 
     def make_sequences_datasets(self,
-                                X: np.ndarray,
-                                Y: np.ndarray,
+                                X: pd.DataFrame,
+                                Y: pd.DataFrame,
                                 start_times_train: List[pd.DatetimeIndex],
-                                time_features_train:Optional[Dict[pd.Timestamp, np.ndarray]]=None,
-                                X_test: Optional[np.ndarray] = None,
-                                Y_test: Optional[np.ndarray] = None,
+                                time_features_train: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
+                                X_test: Optional[pd.DataFram] = None,
+                                Y_test: Optional[pd.DataFram] = None,
                                 start_times_test: Optional[List[pd.DatetimeIndex]] = None,
-                                time_features_test:Optional[Dict[pd.Timestamp, np.ndarray]]=None,
+                                time_features_test: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
                                 normalize_y: bool = True,
                                 **sequences_kwargs: Optional[Dict]) -> \
             Tuple[List[TimeSeriesSequence], Tuple[List, List], Tuple[List, List]]:
         """
-        build a series time seequences datasets
+        build a series time sequence datasets
         Args:
-            X: np.ndarray (N_all, N_feature)
-                flattened train feature array with size N_all (the sum of all the series sequences) and N_feature,
-                number of features
-            Y: np.ndarray (N_all, N_target)
+            X: pd.DataFrame (N_all, N_feature)
+                flattened train feature DataFrame with size N_all (the sum of all the series sequences) and N_feature,
+                number of features, X's index should contain the information identifying its series number
+            Y: pd.DataFrame (N_all, N_target)
                 flattened train target array with size N_all (the sum of all the series sequences) and number of targets
             start_times_train: List[pd.DatetimeIndex]
                 start time of each training series
             time_features_train: Dict[pd.Timestamp, np.ndarray]:
                 time features for each possible start training times
-            sequence_lengths_train: List[int]
-                a list containing all the sequences length in the training set
             X_test: Optional[np.ndarray (N_all_test, N_feature)]
                 flattened test feature array with size N_all_test (the sum of all the series sequences) and N_feature,
                 number of features
@@ -751,8 +749,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 start time for each test series
             time_features_test:Optional[Dict[pd.Timestamp, np.ndarray]]
                 time features for each possible start test times.
-            sequence_lengths_test: Optional[List[int]]
-                a list containing all the sequences length in the test set
             normalize_y: bool
                 if we want to normalize target vaues (normalization is conducted w.r.t. each sequence)
             sequences_kwargs: Dict

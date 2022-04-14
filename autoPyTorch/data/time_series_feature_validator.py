@@ -16,7 +16,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
     ):
         super().__init__(logger)
-        self.only_contain_series_idx = True
+        self.only_contain_series_idx = False
 
     def fit(self,
             X_train: Union[pd.DataFrame, np.ndarray],
@@ -53,6 +53,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                     self.num_features = 0
                     self.numerical_columns = []
                     self.categorical_columns = []
+                    return self
 
                 X_train_ = X_train.drop(series_idx, axis=1)
 
