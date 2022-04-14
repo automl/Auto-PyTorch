@@ -86,6 +86,8 @@ class TimeSeriesSequence(Dataset):
 
         self.X = X
         self.Y = Y
+
+        self.observed_target = ~np.isnan(self.Y)
         if start_time_train is None:
             start_time_train = pd.DatetimeIndex(pd.to_datetime(['1900-01-01']), freq=freq)
         self.start_time_train = start_time_train
@@ -185,10 +187,14 @@ class TimeSeriesSequence(Dataset):
         # In case of prediction, the targets are not provided
         targets = self.Y
         if self.only_has_past_targets:
-            targets_future = None
+            future_targets = None
         else:
-            targets_future = targets[index + 1: index + self.n_prediction_steps + 1]
-            targets_future = torch.from_numpy(targets_future)
+            future_targets = targets[index + 1: index + self.n_prediction_steps + 1]
+            future_targets = torch.from_numpy(future_targets)
+            future_targets = {
+                'future_targets': future_targets,
+                'future_observed_targets': self.observed_target[index + 1: index + self.n_prediction_steps + 1]
+            }
 
         if isinstance(past_features, np.ndarray):
             past_features = torch.from_numpy(past_features)
@@ -207,8 +213,8 @@ class TimeSeriesSequence(Dataset):
                 "future_features": future_features,
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
-                'past_observed_values': past_observed_values,
-                'decoder_lengths': None if targets_future is None else targets_future.shape[0]}, targets_future
+                'past_observed_targets': self.observed_target[:index + 1],
+                'decoder_lengths': None if future_targets is None else future_targets.shape[0]}, future_targets
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
